@@ -1,0 +1,218 @@
+"""
+Translator Agent - PC2 Enhanced Version
+- Translates commands from Filipino to English
+- Sits between listener and Enhanced Model Router
+- Uses tiered translation approach with multiple fallbacks
+- Maintains command context and session history
+- Includes health monitoring endpoints
+- Features enhanced Taglish detection and error recovery
+"""
+import zmq
+import json
+import time
+import logging
+import sys
+import os
+import traceback
+import requests
+import urllib.parse
+import socket
+import random
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Tuple, Union
+from datetime import datetime
+
+# EARLY LOGGING
+try:
+    with open("translator_agent_early.log", "a", encoding="utf-8") as f:
+        f.write(f"[EARLY LOG {datetime.now()}] Translator agent script started.\n")
+except Exception as e:
+    pass
+
+# Add the parent directory to sys.path to import the config module
+sys.path.append(str(Path(__file__).parent.parent))
+from config.system_config import config
+
+# Configure logging
+log_level = config.get('system.log_level', 'INFO')
+log_file = Path(config.get('system.logs_dir', 'logs')) / "translator_agent.log"
+log_file.parent.mkdir(exist_ok=True)
+
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("TranslatorAgent")
+
+# ZMQ Configuration
+LISTENER_PORT = config.get('zmq.listener_port', 5561)  # Listener's publish port
+NLLB_ADAPTER_PORT = config.get('zmq.nllb_adapter_port', 5581)  # NLLB Translation Adapter
+MODEL_MANAGER_PORT = config.get('zmq.model_manager_port', 5556)  # Model manager for translation
+
+# Google Translate configuration
+GOOGLE_TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
+GOOGLE_TRANSLATE_TIMEOUT = 5  # seconds
+
+# Session tracking
+MAX_SESSION_HISTORY = 10
+SESSION_EXPIRY = 3600  # seconds
+
+# Health check
+HEALTH_CHECK_PORT = config.get('zmq.translator_health_port', 5559)  # Health check port
+
+# Filipino command patterns and their English equivalents
+COMMON_TRANSLATIONS = {
+    "buksan": "open",
+    "buksan mo": "open",
+    "buksan mo ang": "open",
+    "isara": "close",
+    "isara mo": "close",
+    "isara mo ang": "close",
+    "i-save": "save",
+    "i-save mo": "save",
+    "i-save mo ang": "save",
+    "gumawa": "create",
+    "gumawa ng": "create",
+    "gumawa ka ng": "create",
+    "magsimula": "start",
+    "magsimula ng": "start",
+    "tumigil": "stop",
+    "ihinto": "stop",
+    "i-search": "search",
+    "hanapin": "search",
+    "hanapin mo": "search",
+    "maghanap": "search",
+    "maghanap ng": "search",
+    "i-restart": "restart",
+    "i-restart mo": "restart",
+    "ayusin": "fix",
+    "ayusin mo": "fix",
+    "ayusin mo ang": "fix",
+    "i-debug": "debug",
+    "i-debug mo": "debug",
+    "i-check": "check",
+    "i-check mo": "check",
+    "tingnan": "check",
+    "tingnan mo": "check",
+    "ipakita": "show",
+    "ipakita mo": "show",
+    "ipakita mo ang": "show",
+    "i-run": "run",
+    "patakbuhin": "run",
+    "patakbuhin mo": "run",
+    "i-execute": "execute",
+    "i-execute mo": "execute",
+    "i-translate": "translate",
+    "i-translate mo": "translate",
+    "isalin": "translate",
+    "isalin mo": "translate",
+    "magsalita": "speak",
+    "magsalita ka": "speak",
+    "sabihin": "say",
+    "sabihin mo": "say",
+    "i-play": "play",
+    "i-play mo": "play",
+    "i-pause": "pause",
+    "i-pause mo": "pause",
+    "i-resume": "resume",
+    "i-resume mo": "resume",
+    "i-stop": "stop",
+    "i-stop mo": "stop",
+    "i-cancel": "cancel",
+    "i-cancel mo": "cancel",
+    "kanselahin": "cancel",
+    "kanselahin mo": "cancel",
+    "i-delete": "delete",
+    "i-delete mo": "delete",
+    "burahin": "delete",
+    "burahin mo": "delete",
+    "i-update": "update",
+    "i-update mo": "update",
+    "i-upgrade": "upgrade",
+    "i-upgrade mo": "upgrade",
+    "i-install": "install",
+    "i-install mo": "install",
+    "i-uninstall": "uninstall",
+    "i-uninstall mo": "uninstall",
+    "i-download": "download",
+    "i-download mo": "download",
+    "i-upload": "upload",
+    "i-upload mo": "upload",
+    "i-send": "send",
+    "i-send mo": "send",
+    "ipadala": "send",
+    "ipadala mo": "send",
+    "i-receive": "receive",
+    "i-receive mo": "receive",
+    "tanggapin": "receive",
+    "tanggapin mo": "receive",
+    "i-accept": "accept",
+    "i-accept mo": "accept",
+    "tanggapin": "accept",
+    "tanggapin mo": "accept",
+    "i-reject": "reject",
+    "i-reject mo": "reject",
+    "tanggihan": "reject",
+    "tanggihan mo": "reject",
+    "i-approve": "approve",
+    "i-approve mo": "approve",
+    "aprubahan": "approve",
+    "aprubahan mo": "approve",
+    "i-deny": "deny",
+    "i-deny mo": "deny",
+    "tanggihan": "deny",
+    "tanggihan mo": "deny",
+    "i-confirm": "confirm",
+    "i-confirm mo": "confirm",
+    "kumpirmahin": "confirm",
+    "kumpirmahin mo": "confirm",
+    "i-verify": "verify",
+    "i-verify mo": "verify",
+    "patunayan": "verify",
+    "patunayan mo": "verify",
+    "i-validate": "validate",
+    "i-validate mo": "validate",
+    "patunayan": "validate",
+    "patunayan mo": "validate",
+    "i-check": "check",
+    "i-check mo": "check",
+    "suriin": "check",
+    "suriin mo": "check",
+    "i-test": "test",
+    "i-test mo": "test",
+    "subukan": "test",
+    "subukan mo": "test",
+    "i-try": "try",
+    "i-try mo": "try",
+    "subukan": "try",
+    "subukan mo": "try",
+    "i-analyze": "analyze",
+    "i-analyze mo": "analyze",
+    "suriin": "analyze",
+    "suriin mo": "analyze",
+    "i-monitor": "monitor",
+    "i-monitor mo": "monitor",
+    "bantayan": "monitor",
+    "bantayan mo": "monitor",
+    "i-track": "track",
+    "i-track mo": "track",
+    "subaybayan": "track",
+    "subaybayan mo": "track",
+    "i-follow": "follow",
+    "i-follow mo": "follow",
+    "sundan": "follow",
+    "sundan mo": "follow",
+    "i-generate": "generate",
+    "i-generate mo": "generate",
+    "gumawa": "generate",
+    "gumawa ka": "generate",
+    "gumawa ka ng": "generate",
+    "i-fix": "fix",
+    "i-fix mo": "fix",
+    "ayusin": "fix",
+    "ayusin mo": "fix",
+}

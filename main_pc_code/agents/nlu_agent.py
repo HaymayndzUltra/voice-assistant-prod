@@ -1,0 +1,280 @@
+from src.core.base_agent import BaseAgent
+#!/usr/bin/env python3
+"""
+NLU Agent
+---------
+Natural Language Understanding agent that analyzes user input and extracts intents and entities.
+"""
+
+import os
+import zmq
+import json
+import time
+import logging
+import re
+import threading
+from typing import Dict, Any, List, Tuple
+from utils.config_parser import parse_agent_args
+_agent_args = parse_agent_args()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("logs/nlu_agent.log")
+    ]
+)
+logger = logging.getLogger("NLUAgent")
+
+# Constants
+NLU_PORT = 5558
+
+class NLUAgent(BaseAgent):
+    """Natural Language Understanding agent that analyzes user input and extracts intents and entities."""
+    
+    def __init__(self, port: int = None, **kwargs):
+        super().__init__(port=port, name="NluAgent")
+        """Initialize the NLU Agent."""
+        self.port = port
+        
+        # Initialize basic state
+        self.running = True
+        
+        # Define intent patterns
+        self.intent_patterns = [
+            # Vision intents
+            (r"what (do you see|can you see|is on my screen|is visible)", "[Vision] Describe"),
+            (r"describe (my screen|what you see|this|the screen|the image)", "[Vision] Describe"),
+            (r"show me what you (see|can see)", "[Vision] Describe"),
+            (r"analyze (my screen|what you see|this|the screen|the image)", "[Vision] Analyze"),
+            (r"identify (objects|items|things|elements) (on|in) (my screen|the screen|this image)", "[Vision] Identify"),
+            (r"take a (screenshot|picture|photo|snapshot)", "[Vision] Capture"),
+            (r"capture (my screen|the screen|a screenshot)", "[Vision] Capture"),
+            
+            # PC2 intents (complex processing)
+            (r"(calculate|compute|solve|evaluate)", "[PC2] Calculate"),
+            (r"(search|find|look up|google)", "[PC2] Search"),
+            (r"(summarize|summarise|summary)", "[PC2] Summarize"),
+            
+            # Regular intents
+            (r"(hello|hi|hey|greetings)", "[Greeting]"),
+            (r"(goodbye|bye|see you|farewell)", "[Farewell]"),
+            (r"(thank you|thanks)", "[Thanks]"),
+            (r"(help|assist|support)", "[Help]"),
+            (r"(what time|current time|what is the time)", "[Time]"),
+            (r"(what day|what date|current date)", "[Date]"),
+            (r"(weather|temperature|forecast)", "[Weather]"),
+            (r"(play music|play song|play audio)", "[PlayMusic]"),
+            (r"(stop music|pause music|stop audio|pause audio)", "[StopMusic]"),
+            (r"(volume up|increase volume|louder)", "[VolumeUp]"),
+            (r"(volume down|decrease volume|quieter)", "[VolumeDown]"),
+            (r"(set timer|start timer|countdown)", "[Timer]"),
+            (r"(set alarm|wake me up)", "[Alarm]"),
+            (r"(remind me|set reminder|create reminder)", "[Reminder]"),
+            (r"(what can you do|your capabilities|your functions)", "[Capabilities]"),
+        ]
+        
+        # Initialize ZMQ in background
+        self.initialization_status = {
+            "is_initialized": False,
+            "error": None,
+            "progress": 0.0
+        }
+        self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
+        self.init_thread.start()
+        
+        logger.info("NLUAgent basic initialization complete")
+    
+    def _perform_initialization(self):
+        """Perform ZMQ initialization in background."""
+        try:
+            # Create ZMQ context and socket
+            self.context = zmq.Context()
+            self.socket = self.context.socket(zmq.REP)
+            self.socket.bind(f"tcp://*:{self.port}")
+            
+            # Mark as initialized
+            self.initialization_status.update({
+                "is_initialized": True,
+                "progress": 1.0
+            })
+            logger.info(f"NLUAgent ZMQ initialization complete on port {self.port}")
+            
+        except Exception as e:
+            self.initialization_status.update({
+                "error": str(e),
+                "progress": 0.0
+            })
+            logger.error(f"ZMQ initialization failed: {e}")
+    
+    def start(self):
+        """Start the NLU Agent."""
+        logger.info("Starting NLUAgent")
+        
+        try:
+            self._handle_requests()
+        except KeyboardInterrupt:
+            logger.info("NLUAgent interrupted by user")
+        finally:
+            self.stop()
+    
+    def stop(self):
+        """Stop the NLU Agent."""
+        logger.info("Stopping NLUAgent")
+        self.running = False
+        if hasattr(self, 'socket'):
+            self.socket.close()
+        if hasattr(self, 'context'):
+            self.context.term()
+    
+    def _handle_requests(self):
+        """Handle incoming ZMQ requests."""
+        while self.running:
+            try:
+                # Only process requests if initialized
+                if not self.initialization_status["is_initialized"]:
+                    time.sleep(0.1)
+                    continue
+                    
+                # Wait for a request
+                request = self.socket.recv_json()
+                logger.info(f"Received request: {request.get('action', 'unknown')}")
+                
+                # Process the request
+                response = self._process_request(request)
+                
+                # Send the response
+                self.socket.send_json(response)
+                
+            except zmq.ZMQError as e:
+                logger.error(f"ZMQ error: {e}")
+            except Exception as e:
+                logger.error(f"Error handling request: {e}")
+                # Try to send an error response
+                try:
+                    self.socket.send_json({"status": "error", "error": str(e)})
+                except:
+                    pass
+    
+    def _process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a request and return a response."""
+        action = request.get("action", "")
+        
+        if action == "analyze":
+            return self._analyze_text(request)
+        elif action == "health_check":
+            return {
+                "status": "ok",
+                "message": "NLUAgent is running",
+                "initialization_status": self.initialization_status
+            }
+        else:
+            return {"status": "error", "error": f"Unknown action: {action}"}
+    
+    def _analyze_text(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze text to extract intent and entities."""
+        try:
+            # Check if initialized
+            if not self.initialization_status["is_initialized"]:
+                return {
+                    "status": "error",
+                    "error": "NLUAgent is still initializing",
+                    "initialization_status": self.initialization_status
+                }
+            
+            # Extract text data
+            text = request.get("text", "").lower().strip()
+            if not text:
+                return {"status": "error", "error": "No text provided"}
+            
+            # Extract intent
+            intent, confidence = self._extract_intent(text)
+            
+            # Extract entities
+            entities = self._extract_entities(text, intent)
+            
+            # Return the analysis
+            return {
+                "status": "ok",
+                "text": text,
+                "intent": intent,
+                "entities": entities,
+                "confidence": confidence
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing text: {e}")
+            return {"status": "error", "error": f"Failed to analyze text: {str(e)}"}
+    
+    def _extract_intent(self, text: str) -> Tuple[str, float]:
+        """Extract intent from text."""
+        # Check each pattern
+        for pattern, intent in self.intent_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                # Calculate a simple confidence score
+                match_length = len(re.search(pattern, text, re.IGNORECASE).group(0))
+                confidence = min(0.9, match_length / len(text) * 0.9)
+                return intent, confidence
+        
+        # Default to unknown intent with low confidence
+        return "[Unknown]", 0.3
+    
+    def _extract_entities(self, text: str, intent: str) -> List[Dict[str, Any]]:
+        """Extract entities from text based on intent."""
+        entities = []
+        
+        # Extract entities based on intent
+        if intent == "[Vision] Describe" or intent == "[Vision] Analyze":
+            # No specific entities needed for these intents
+            pass
+        
+        elif intent == "[Vision] Identify":
+            # Try to extract what to identify
+            match = re.search(r"identify ([\w\s]+) (on|in)", text, re.IGNORECASE)
+            if match:
+                entities.append({
+                    "entity": "target",
+                    "value": match.group(1).strip(),
+                    "confidence": 0.8
+                })
+        
+        elif intent.startswith("[PC2]"):
+            # Extract query for PC2
+            if intent == "[PC2] Calculate":
+                match = re.search(r"(calculate|compute|solve|evaluate) (.*)", text, re.IGNORECASE)
+                if match:
+                    entities.append({
+                        "entity": "query",
+                        "value": match.group(2).strip(),
+                        "confidence": 0.8
+                    })
+            
+            elif intent == "[PC2] Search":
+                match = re.search(r"(search|find|look up|google) (.*)", text, re.IGNORECASE)
+                if match:
+                    entities.append({
+                        "entity": "query",
+                        "value": match.group(2).strip(),
+                        "confidence": 0.8
+                    })
+            
+            elif intent == "[PC2] Summarize":
+                match = re.search(r"(summarize|summarise|summary) (.*)", text, re.IGNORECASE)
+                if match:
+                    entities.append({
+                        "entity": "query",
+                        "value": match.group(2).strip(),
+                        "confidence": 0.8
+                    })
+        
+        return entities
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5709)
+    args = parser.parse_args()
+    agent = NLUAgent(port=args.port)
+    agent.start()

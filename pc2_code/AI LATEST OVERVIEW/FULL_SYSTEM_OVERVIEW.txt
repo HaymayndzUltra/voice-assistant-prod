@@ -1,0 +1,263 @@
+================================================================================
+AI Voice Assistant: Full System Architecture, Component Capabilities, Routing Logic, and Workflow
+================================================================================
+
+1. System Overview
+------------------
+Your voice assistant is an integrated system with two closely connected components: a Modular Streaming System for real-time voice processing and a Distributed Agent System for advanced AI capabilities. These components work together seamlessly, with the streaming pipeline handling low-latency audio processing and user interactions, while the distributed agents provide specialized AI services like code generation, memory management, and translation. The entire system operates across two machines (Main PC and PC2) and is designed for real-world, production-grade use with comprehensive fallback mechanisms.
+
+2. Modular Component Inventory & Capabilities
+---------------------------------
+
+### Main Streaming Pipeline (PC1 - Ryzen 9 7900, RTX 4090, 32GB RAM)
+
+A. Audio Input & Processing Components
+--------------------------------
+| Component Name                  | Input Port | Output Port | Key Features & Logic |
+|--------------------------------|-----------|------------|----------------------|
+| streaming_audio_capture.py     | -         | 5570       | Real-time audio capture, Adaptive audio buffer management, Signal processing, VAD integration, Wake word detection |
+| streaming_speech_recognition.py| 5570      | 5571       | Whisper-based ASR, Chunked processing, Optimized for speed, Language auto-detection |
+| streaming_partial_transcripts.py| 5571     | 5575       | Provides partial transcription before full processing, Enables low-latency responses, Faster UX |
+| streaming_interrupt_handler.py | 5575      | 5576       | Detects keywords for interruption, Stops TTS playback when interrupted, Using Vosk for speed |
+
+B. Language Processing Components
+----------------------------------
+| Component Name                | Input Port | Output Port | Key Features & Logic |
+|------------------------------|-----------|------------|----------------------|
+| streaming_language_analyzer.py| 5571      | 5572       | Detects Filipino/English/Taglish, Language identification, Confidence scoring, **Performs Taglish detection and logs Filipino/English ratios before translation** |
+| fixed_streaming_translation.py | 5572    | 5573     | **UPDATED**: Simple ZMQ client/forwarder that directly connects to translator_agent.py (PC2 @ 5561) for all translation needs. No longer contains its own fallback mechanism - relies completely on PC2 Translator's tiered fallback system |
+| streaming_text_processor.py  | 5573      | 5574       | Intent extraction, Command parsing, Response generation, Context management, Custom command handling, Parameter extraction, Command confirmation |
+
+**DEPRECATED**: The Main PC version of translator_agent.py (formerly on port 8044) has been completely replaced by the enhanced PC2 version.
+
+C. Output & Coordination Components
+------------------------------
+| Component Name          | Input Port | Output Port | Key Features & Logic |
+|------------------------|-----------|------------|----------------------|
+| tts_connector.py       | 5574      | 5562       | Connects text processor to TTS, Caching, Priority management |
+| xtts_agent.py          | 5562      | -          | High-quality TTS using XTTS, Multilingual support, Voice customization |
+| coordinator.py         | 5560      | 5561/5597  | System health monitoring, Component status tracking, Auto-restart capability |
+
+### Streaming Optimizations
+
+D. New Streaming Components
+----------------------------------
+> **IMPORTANT**: The modular streaming system represents a significant architectural upgrade from the previous distributed agent system.
+> The streaming components work together to provide a more responsive and natural user experience.
+
+New Streaming Capabilities
+--------------------------
+| Component               | Port(s) | Host       | Key Features & Logic |
+|------------------------|---------|------------|----------------------|
+| Partial Transcripts    | 5575    | Main PC    | Real-time feedback during speech, Reduces perceived latency, Enables early processing |
+| Streaming Interrupt    | 5576    | Main PC    | Lightweight keyword detection, Immediate response to interruptions, Natural conversation flow |
+| Enhanced Model Router (EMR) | 7602/7701 | 192.168.1.2 | Central intelligence hub for all model-related requests with dynamic port allocation (REP: 7602, PUB: 7701). Consolidated Task Router functionality. Integrates with Contextual Memory, Chain of Thought, and Model Manager. Handles task classification, context integration, and routing to appropriate model services via Remote Connector. |
+| Context Bridge Agent      | 5595    | 192.168.1.2 | Bridges face recognition, user authentication, and memory modules. Ensures seamless transfer of user/session context between agents. |
+| Human Awareness Agent     | -       | Main PC    | Monitors active windows and file activity, Analyzes voice tone, Generates reactive prompts in Filipino/English |
+
+Code Generation & Execution
+---------------------------
+| Agent Name                | Port(s) | Host       | Key Features & Logic |
+|---------------------------|---------|------------|----------------------|
+| Code Generator            | 6000    | Main PC    | Multi-model voting (Deepseek, Phi3, Llama3, etc.), Auto language detection, Solution selection by execution |
+| Chain of Thought Agent (CoT) | 5612 | 192.168.1.2 | Multi-step reasoning for complex tasks, uses Remote Connector for all LLM inference needs. Implements self-verification, problem breakdown, and solution refinement. |
+| Progressive Code Generator| 6002    | Main PC    | Guided, stepwise code gen, Maintains context between steps |
+| Auto-Fixer Agent          | 6003    | Main PC    | Auto debug/correct loop, Error analysis & learned fixes |
+| Test Generator Agent      | 6004    | Main PC    | Auto test creation, Sandbox validation, Test-driven fixes |
+| Executor Agent            | 6001    | Main PC    | Safe, isolated code execution, Multi-language support, Resource/time limits |
+
+Language & Information
+----------------------
+| Agent Name                | Port(s) | Host       | Key Features & Logic |
+|---------------------------|---------|------------|----------------------|
+| Enhanced Model Router (EMR) | 7602 (REP) / 7701 (PUB) | 192.168.1.2 | **CONSOLIDATED & ENHANCED**: Central intelligence hub that receives all model requests. Integrates advanced routing logic from task_router_agent.py (now deprecated). Features intelligent task classification, dynamic model selection with MMA consultation, context integration via Contextual Memory Agent, and multi-step reasoning using Chain of Thought for complex tasks. Uses Remote Connector for all model inference. |
+| Translator Agent (PC2) | 5561 | 192.168.1.2 | **ENHANCED**: Implements sophisticated tiered translation approach (Google API → NLLB → Dictionary/Pattern) with automatic fallbacks. Features Taglish/English detection to skip unnecessary translations, session tracking for context maintenance, dedicated health check endpoint (port 5559), and improved resiliency with comprehensive error handling. Outputs directly to Enhanced Model Router (7602). |
+| NLLB Translation Adapter | 5581 | 192.168.1.2 | NLLB (No Language Left Behind) model integration, specialized for Filipino language support, now used as first fallback in the Translator Agent's tiered approach |
+| Contextual Memory Agent | 5596 | 192.168.1.2 | **CONSOLIDATED**: Now handles both context management and advanced summarization (integrated functionality from context_summarizer_agent.py, now deprecated). Manages short-term context with memory decay and provides context-aware response enhancement. |
+| Digital Twin Agent | 5597 | 192.168.1.2 | User modeling and behavioral analysis for personalized responses |
+| Jarvis Memory Agent | 5598 | 192.168.1.2 | User-specific information storage with persistent JSON backend (scheduled for future consolidation) |
+| Learning Mode Agent | 5599 | 192.168.1.2 | Learns from user interaction with feedback-driven improvement |
+| Enhanced Web Scraper | 5602 | 192.168.1.2 | Advanced web scraping capabilities with content summarization, data extraction, and authentication handling |
+| Autonomous Web Assistant | 5604 | 192.168.1.2 | Specialized agent for web-based research and task execution |
+| Filesystem Assistant Agent | 5606 | 192.168.1.2 | Handles file operations and management via ZMQ interface |
+| Error Pattern Memory | 5611 | 192.168.1.2 | Tracks error patterns and their solutions, suggests fixes for recurring issues |
+| Chain of Thought Agent (CoT) | 5612 | 192.168.1.2 | Provides multi-step reasoning for complex tasks by breaking problems into manageable steps |
+| Self-Healing Agent | 5614 (REP) / 5616 (PUB) | 192.168.1.2 | System health monitoring with automatic recovery capabilities |
+| TinyLlama Service | 5615 | 192.168.1.2 | Lightweight LLM fallback service for fast, low-resource operations |
+| Model Manager Agent (MMA) | 5556 (REP) / 5566 (PUB) | 192.168.1.2 | **DEPRECATED on PC2** - Functionality centralized to Main PC MMA. (Formerly: Handles model selection based on task requirements and availability) |
+| Remote Connector Agent (RCA) | 5557 | 192.168.1.2 | Direct gateway to all model services with caching capabilities |
+| Memory Agent (Base) | 5590 | 192.168.1.2 | Core memory management services (scheduled for future consolidation) |
+
+**DEPRECATED COMPONENTS**:
+- **task_router_agent.py** (formerly port 5558): Functionality fully consolidated into Enhanced Model Router (EMR)
+- **context_summarizer_agent.py** (formerly port 5610): Features merged into contextual_memory_agent.py
+- **Main PC Translator Agent** (formerly port 8044): Completely replaced by enhanced PC2 Translator Agent
+
+E. Current TTS: XTTS Integration
+-----------------------------------------
+| Feature                  | Implemented XTTS Capabilities                     |
+|--------------------------|--------------------------------------------------|
+| Audio Quality            | 24kHz, high-fidelity audio                       |
+| Voice Customization      | Multiple speakers, Voice cloning, Temperature control |
+| Multilingual Support     | Enhanced Filipino support, Natural pronunciation |
+| Streaming Capability     | Sentence-by-sentence streaming for faster response |
+| Expressiveness           | Emotional speech, Natural prosody and intonation |
+
+Memory & Context
+----------------
+| Agent Name                | Port(s) | Host       | Key Features & Logic |
+|---------------------------|---------|------------|----------------------|
+| Contextual Memory Agent | 5596 | 192.168.1.2 | Advanced context management and summarization (consolidated Context Summarizer functionality), short-term context, memory decay, context-aware responses |
+| Error Pattern Memory | 5611 | 192.168.1.2 | Error/fix database, suggests solutions for new errors, tracks fix success rates |
+| Jarvis Memory Agent | 5598 | 192.168.1.2 | User-specific info, reminders, calendar, preferences, persistent JSON backend (scheduled for future consolidation) |
+| Digital Twin Agent | 5597 | 192.168.1.2 | User model/profile, simulates user behavior, personalized responses |
+| Filesystem Assistant Agent | 5606 | 192.168.1.2 | File operations, search, management via ZMQ interface |
+| Learning Mode Agent | 5599 | 192.168.1.2 | Learns from interaction, feedback-driven improvement |
+| Model Manager Agent (MMA) | 5556/5566 | 192.168.1.2 | **DEPRECATED on PC2** - Functionality centralized to Main PC MMA. (Formerly: Model selection advisor, monitors health/status of model services, publishes status updates) |
+| Remote Connector Agent (RCA) | 5557 | 192.168.1.2 | Direct gateway to model services (Ollama, Deepseek, TinyLlama), handles caching of model responses |
+| TinyLlama Service | 5615 | 192.168.1.2 | Lightweight LLM fallback service |
+| Autonomous Web Assistant | 5604 | 192.168.1.2 | Specialized agent for web-based research and tasks |
+| Self-Healing Agent | 5614/5616 | 192.168.1.2 | System health monitoring, automatic recovery, publishes health status |
+
+3. Routing Logic
+----------------
+### Updated Translation Flow (Main PC to PC2)
+
+```
+Main PC: fixed_streaming_translation.py (5572)
+   └→ (ZMQ REQ to PC2:5563)
+   └→ PC2: translator_agent.py (5563) - Tiered Translation Approach
+      └→ Primary: Google Translate API
+      └→ Fallback 1: NLLB Translation Adapter (5581)
+      └→ Fallback 2: Dictionary/Pattern Matching
+      └→ Fallback 3: Return original with failure flag
+   └→ (ZMQ REQ to PC2:7602)
+   └→ PC2: Enhanced Model Router (EMR) - for further processing if needed
+```
+
+### PC2 Standardized Model Access Flow (Updated)
+
+```
+Requester → Enhanced Model Router (EMR - 7602)
+   └→ Contextual Memory Agent (5596) for context enhancement
+   └→ Model Manager Agent (MMA - 5556) for model selection advice
+   └→ Chain of Thought Agent (CoT - 5612) if complex reasoning needed
+      └→ Remote Connector Agent (RCA - 5557) for LLM steps
+   └→ Remote Connector Agent (RCA - 5557) for final model inference
+      └→ Actual Model Service (Ollama, Deepseek, TinyLlama)
+   └→ Broadcasts response on PUB socket (7701) and sends reply to requester
+```
+
+- **Enhanced Model Router (EMR)**: Consolidated central intelligence hub that receives all model requests (previously split between Task Router and other components). Uses advanced_router module to detect task types. Integrates context from Contextual Memory, consults Model Manager for model selection, and triggers Chain of Thought for complex tasks. Uses Remote Connector for all model inference.
+
+- Model Manager Agent (MMA) on PC2: **DEPRECATED.** Functionality centralized to Main PC MMA. (Formerly: Acts as an advisor for model selection based on task requirements and availability. Monitors health/status of model services and publishes updates. Does not perform direct inference.)
+
+- Chain of Thought Agent (CoT): Handles multi-step reasoning for complex tasks by breaking problems into smaller steps. Uses Remote Connector for all LLM inference needs.
+
+- Remote Connector Agent (RCA): Serves as the direct gateway to all model services. Handles model inference requests with caching. Routes to appropriate backend (Ollama, Deepseek, TinyLlama) based on model name.
+
+- Interpreter/Responder: Uses NLP to detect intent and entities. Contextual memory for personalized, context-aware replies. Bilingual logic: auto-switches language as needed.
+- Auto-Fixer & Test Generator: If code execution fails, triggers auto-fix loop. Test Generator creates/executes tests, suggests fixes.
+- Fallbacks: If primary model/agent fails, system automatically tries secondary/tertiary options (e.g., Whisper → Google → Sphinx for ASR).
+
+4. Features & Advanced Capabilities
+-----------------------------------
+- Hybrid ASR: Both streaming and file-based for best latency and accuracy (Whisper large on RTX 4090).
+- **Enhanced Distributed Translation System**: Completely redesigned translation pipeline:
+  * PC1: simplified fixed_streaming_translation.py now acts as a pure ZMQ forwarder to PC2
+  * PC2: Advanced Translator Agent with dual socket architecture:
+    + REP socket (5563) for direct REQ-REP communication with Main PC's fixed_streaming_translation.py
+    + SUB socket (5561) for PUB-SUB interactions with other components
+  * Dedicated health monitoring endpoint (5559) for system status checks
+  * Session tracking to maintain translation context across interactions
+  * Complete error resilience with extensive recovery mechanisms
+
+- **Sophisticated Tiered Translation**: PC2's Translator Agent implements a robust fallback system:
+  * Primary: Google Translate API for fast and accurate translations
+  * First Fallback: NLLB Translation Adapter (port 5581) for specialized machine translation
+  * Second Fallback: Extensive dictionary/pattern matching with 200+ common phrases and patterns
+  * Final Fallback: Returns original text with failure flag if all methods fail
+
+- **Intelligent Language Detection**: Enhanced logic for various language scenarios:
+  * Taglish Detection: Identifies mixed Filipino-English text with ratio analysis
+  * Pure English Detection: Automatically skips translation for already-English inputs
+  * Statistics Tracking: Maintains performance metrics for all translation paths
+- Multi-Model Voting: Uses several LLMs, selects best via execution/test results.
+- Self-Healing: Orchestrator auto-restarts failed agents on both PC1 and PC2.
+- Contextual Memory: Short/long-term, with decay and summarization (PC2).
+- Personalization: Digital Twin + Jarvis Memory for user-specific behavior (PC2).
+- Emotion & Face Recognition: Adapts responses based on user mood/identity (PC1).
+- Distributed/Scalable: Multi-PC, multi-GPU, network bridge, load balancing.
+  * PC1: Ryzen 9 7900, RTX 4090, 32GB RAM - Primary audio processing, core coordination
+  * PC2 (192.168.1.2): RTX 3060 - Handles compute-intensive LLM tasks, enhanced translation (REP port 5563, SUB port 5561), central routing (EMR port 7602), memory services, and specialized agents
+- Telemetry & Monitoring: Centralized logs, agent health, dashboard visualization.
+- Streaming Responses: Fast, partial transcripts for better responsiveness.
+
+5. Workflow Diagram (Mermaid Syntax)
+------------------------------------
+flowchart TD
+    User((User))
+    Mic((Mic))
+    Listener
+    Trigger[Trigger Word Detector]
+    FaceRec[Face Recognition]
+    ContextBridge[Context Bridge Agent]
+    Dashboard
+    Orchestrator
+    Interpreter
+    Responder
+    TTS
+    RemoteConn[Remote Connector]
+    TaskRouter
+    ModelManager
+    EnhancedModelRouter[Enhanced Model Router Agent]
+    CodeGen[Code Generator Agent]
+    ChainOfThought[Chain of Thought Agent]
+    ProgGen[Progressive Code Generator]
+    AutoFixer[Auto-Fixer Agent]
+    TestGen[Test Generator Agent]
+    Executor[Executor Agent]
+    Translator
+    WebScraper
+    ContextMem[Contextual Memory Agent]
+    Summarizer[Context Summarizer Agent]
+    ErrorMem[Error Pattern Memory]
+    JarvisMem[Jarvis Memory Agent]
+    DigitalTwin[Digital Twin Agent]
+    Filesystem[Filesystem Assistant Agent]
+    LearningMode[Learning Mode Agent]
+
+    User-->|Speaks|Mic-->|Audio|Listener-->|Audio|Trigger
+    Listener-->|User Data|FaceRec
+    FaceRec-->|Context|ContextBridge
+    ContextBridge-->|Session|ContextMem
+    Listener-->|UI|Dashboard
+    Trigger-->|Command|Orchestrator
+    FaceRec-->|User Info|Orchestrator
+    Orchestrator-->|Task|Interpreter
+    Interpreter-->|Intent|Responder
+    Responder-->|Text|TTS
+    Orchestrator-->|Remote|RemoteConn
+    RemoteConn-->|Task|TaskRouter
+    TaskRouter-->|Model|ModelManager
+    TaskRouter-->|Route|EnhancedModelRouter
+    EnhancedModelRouter-->|Code|CodeGen
+    EnhancedModelRouter-->|Stepwise|ChainOfThought
+    EnhancedModelRouter-->|Stepwise|ProgGen
+    EnhancedModelRouter-->|Error|AutoFixer
+    EnhancedModelRouter-->|Test|TestGen
+    EnhancedModelRouter-->|Exec|Executor
+    EnhancedModelRouter-->|Fallback Translation|LLMTranslator[NLLB Translation Adapter]
+    FixedStreamingTranslation[fixed_streaming_translation.py]-->|Direct Translation|TranslatorAgentPC2[Translator Agent (PC2)]
+    TranslatorAgentPC2-->|Fallback|LLMTranslator
+    EnhancedModelRouter-->|Web|WebScraper
+    EnhancedModelRouter-->|Memory|ContextMem
+    EnhancedModelRouter-->|Summarize|Summarizer
+    EnhancedModelRouter-->|Error|ErrorMem
+    EnhancedModelRouter-->|User|JarvisMem
+    EnhancedModelRouter-->|Twin|DigitalTwin
+    EnhancedModelRouter-->|Files|Filesystem
+    EnhancedModelRouter-->|Learn|LearningMode
+
+================================================================================
+Summary: This document provides a detailed, presentable, and technical overview of your distributed AI voice assistant system, including all agents, their ports, routing logic, features, and a workflow diagram suitable for company presentation.

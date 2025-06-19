@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Waveform Animation - Mundong Digital v3.0 (Pinahusay na Realismo at Buhay na Usok)</title>
+    <style>
+        /* CSS para sa full screen canvas at walang scroll */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Iwasan ang scrollbar */
+            background-color: #000; /* Pang-seguridad na background black */
+        }
+        canvas {
+            display: block; /* Alisin ang default na margin ng inline elements */
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; /* Ilagay sa ibabaw ang canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="aiWaveformCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('aiWaveformCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height; // Kasalukuyang dimensyon ng canvas
+        let waveformPoints = []; // Array para sa data ng waveform points
+        const numWaveformPoints = 300; // Hindi siksik, hindi tinatakpan ang buong container
+        let time = 0; // Global time counter para sa animation
+        let energyLevel = 0; // Pangkalahatang antas ng enerhiya ng waveform, nakakaapekto sa iba't ibang elemento
+
+        // Mga property ng Waveform, dynamic na ina-adjust batay sa laki ng screen sa resizeCanvas
+        let baseAmplitude = 50; // Mas maliit na taas ng waveform
+        let pulseAmplitude = 20; // Mas maliit na amplitude para sa pulsing effect
+        let pulseFrequency = 0.015; // Bilis ng pangunahing pulse ng waveform
+        let noiseFactor = 25; // Randomness/jaggedness ng waveform
+        let waveSpeed = 0.04; // Horizontal movement speed ng waveform
+        let mainBarThickness = 1.0; // Mas manipis na core waveform bars
+        let neonGlowBlur = 10; // Mas manipis na glow effect
+        const kryptoniteColorBase = { r: 60, g: 255, b: 40 }; // Base green color para sa waveform (matingkad na berde)
+        let kryptoniteGlowColor = 'rgba(60, 255, 40, 0.7)'; // Glow color, na may initial alpha
+        const strandColorBase = [120, 255, 100]; // Base color para sa energy strands (bahagyang mas maliwanag na berde)
+
+        // SIMULATED AI VOICE ASSISTANT STATE para sa "breathing" effect
+        let isSpeaking = false;
+        let speakingIntensity = 0; // Gaano ka-"intense" ang pagsasalita (0 to 1)
+        const speakingAttackTime = 20; // Bilang ng frames para tumaas ang intensity
+        const speakingDecayTime = 45; // Bilang ng frames para bumaba ang intensity
+        const speakingMinDuration = 1000; // Minimum na tagal ng pagsasalita sa ms
+        const speakingMaxDuration = 3000; // Maximum na tagal ng pagsasalita sa ms
+        const speakingMinInterval = 3000; // Minimum na oras sa pagitan ng mga speaking bursts sa ms
+        const speakingMaxInterval = 6000; // Maximum na oras sa pagitan ng mga speaking bursts sa ms
+
+        function startSpeaking() { isSpeaking = true; }
+        function stopSpeaking() { isSpeaking = false; }
+
+        // Random na mag-trigger ng "speaking" para gayahin ang AI activity
+        function setupSpeakingTrigger() {
+            setTimeout(() => {
+                if (!isSpeaking) {
+                    startSpeaking();
+                    setTimeout(stopSpeaking, Math.random() * (speakingMaxDuration - speakingMinDuration) + speakingMinDuration);
+                }
+                setupSpeakingTrigger(); // Mag-loop nang walang hanggan
+            }, Math.random() * (speakingMaxInterval - speakingMinInterval) + speakingMinInterval);
+        }
+        setupSpeakingTrigger(); // Simulan ang speaking trigger loop
+
+        // PINAHUSAY NA SMOKE WISP SYSTEM (Para sa "buhay na buhay na usok")
+        let smokeWisps = [];
+        const numSmokeWisps = 220; // Dinagdagan ang bilang para sa mas siksik na usok
+        const smokeColors = [ // Iba't ibang color palette para sa banayad na pagbabago sa hitsura ng usok
+            { r: 25, g: 60, b: 35 }, { r: 30, g: 75, b: 45 },   
+            { r: 35, g: 90, b: 55 }, { r: 45, g: 110, b: 65 },
+            { r: 40, g: 100, b: 60 }, { r: 50, g: 120, b: 70 } // Mas matingkad na berde
+        ];
+
+        class SmokeWisp {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // Spawn position, na inuuna ang paligid ng gitna ng screen
+                this.x = Math.random() * width;
+                this.y = (height / 2) + (Math.random() - 0.5) * (height * 0.5); 
+                
+                this.maxLife = Math.random() * 550 + 450; // Mas mahabang buhay para sa mas makinis, nagtatagal na mga trail (450-1000 frames)
+                this.life = Math.random() * this.maxLife; // Magsimula na may kaunting buhay para sa initial randomness
+                
+                this.xPhase = Math.random() * Math.PI * 2; // Para sa sinusoidal horizontal motion
+                this.yPhase = Math.random() * Math.PI * 2; // Para sa sinusoidal vertical motion
+                this.sizePhase = Math.random() * Math.PI * 2; // Para sa size pulsing
+                
+                // Mas mabagal at mas banayad na oscillation frequencies
+                this.xOmega = (Math.random() - 0.5) * 0.0025; 
+                this.yOmega = (Math.random() - 0.5) * 0.0015;
+                this.sizeOmega = Math.random() * 0.001; // Mas mabagal na size pulse
+                
+                // Base size at fluctuation range para sa mas maraming variation
+                this.baseSize = Math.random() * (width / 8) + (width / 25); 
+                this.sizeFluctuation = this.baseSize * 0.4; 
+                
+                // Bahagyang mas mababa ang base opacity per wisp, umaasa sa mas mataas na bilang para sa pangkalahatang densidad
+                this.baseOpacity = Math.random() * 0.08 + 0.02; 
+                this.colorPalette = smokeColors[Math.floor(Math.random() * smokeColors.length)];
+                
+                // Drift factors para sa pangkalahatang direksyon ng paggalaw, na may bahagyang bias
+                this.driftFactorX = (Math.random() - 0.5) * 0.35 + (Math.random() < 0.5 ? -0.04 : 0.04); 
+                this.driftFactorY = (Math.random() - 0.5) * 0.15 + (Math.random() < 0.5 ? -0.015 : 0.015);
+            }
+
+            update() {
+                // Pinagsamang oscillation at pare-parehong drift para sa natural na daloy
+                this.vx = Math.sin(this.xPhase + time * this.xOmega * 0.8) * this.driftFactorX * 0.8 + this.driftFactorX * 0.4;
+                this.vy = Math.sin(this.yPhase + time * this.yOmega * 0.8) * this.driftFactorY * 0.8 + this.driftFactorY * 0.2;
+                
+                this.x += this.vx; this.y += this.vy;
+                this.size = this.baseSize + Math.sin(this.sizePhase + time * this.sizeOmega) * this.sizeFluctuation;
+                this.life++;
+
+                // Kalkulahin ang lapit sa gitnang vertical line (kung saan ang waveform)
+                const distFromCenterY = Math.abs(this.y - height / 2);
+                // Ang mga wisp na mas malapit sa gitna ay mas nakikita at mas siksik
+                const proximityFactor = Math.max(0.02, 1 - distFromCenterY / (height * 0.40)); 
+                
+                const lifeRatio = Math.sin((this.life / this.maxLife) * Math.PI); // Makinis na fade-in/out sa buong buhay
+                
+                // Ang usok ay nagre-react sa antas ng enerhiya ng waveform, nagiging mas prominente
+                let energyInfluence = 0.7 + energyLevel * 1.6; 
+                this.opacity = this.baseOpacity * lifeRatio * energyInfluence * proximityFactor;
+                // I-cap ang opacity upang maiwasan ang sobrang harsh/solid na usok
+                this.opacity = Math.max(0, Math.min(this.baseOpacity * 4.0, this.opacity)); 
+
+                // I-reset ang wisp kung lumabas ito sa screen o umabot sa dulo ng buhay
+                if (this.life >= this.maxLife || this.x + this.size < -50 || this.x - this.size > width + 50 || this.y + this.size < -50 || this.y - this.size > height + 50) {
+                    this.reset(); this.life = 0; 
+                    // Mag-respawn malapit sa gilid ng screen para sa tuloy-tuloy na daloy, may bias patungo sa direksyon ng paggalaw
+                    if (Math.random() > 0.5) { // Horizontal respawn
+                        this.y = (height / 2) + (Math.random() - 0.5) * (height * 0.4);
+                        this.x = (this.vx > 0 || Math.random() > 0.5) ? -this.size : width + this.size;
+                    } else { // Vertical respawn
+                        this.x = Math.random() * width;
+                        this.y = (this.vy > 0 || Math.random() > 0.5) ? -this.size : height + this.size;
+                    }
+                }
+            }
+
+            draw() {
+                if (this.opacity <= 0.001 || this.size <= 0.1) return; // Huwag i-drawing kung invisible o masyadong maliit
+                ctx.save(); 
+                const c = this.colorPalette;
+                
+                // Radial gradient para sa malambot, volumetric na hitsura ng usok
+                const gradient = ctx.createRadialGradient(this.x, this.y, this.size * 0.05, this.x, this.y, this.size);
+                gradient.addColorStop(0, `rgba(${c.r}, ${c.g}, ${c.b}, ${this.opacity * 0.7})`);
+                gradient.addColorStop(0.4, `rgba(${c.r}, ${c.g}, ${c.b}, ${this.opacity * 0.3})`);
+                gradient.addColorStop(1, `rgba(${c.r}, ${c.g}, ${c.b}, 0)`);
+                
+                ctx.fillStyle = gradient; 
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
+                ctx.fill(); 
+                ctx.restore();
+            }
+        }
+        function initSmokeWisps() { smokeWisps = []; for (let i = 0; i < numSmokeWisps; i++) smokeWisps.push(new SmokeWisp()); }
+        function updateAndDrawSmokeWisps() { smokeWisps.forEach(wisp => { wisp.update(); wisp.draw(); }); }
+
+        // Humahawak sa pag-resize ng canvas at pag-scale ng elemento
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            
+            // Ayusin ang mga property ng waveform nang proporsyonal sa laki ng screen
+            baseAmplitude = height / 7.0; 
+            pulseAmplitude = height / 13;
+            noiseFactor = height / 33;
+            mainBarThickness = Math.max(1.2, Math.min(3.0, width / 650)); 
+            neonGlowBlur = Math.max(12, Math.min(35, width / 60)); 
+
+            // I-initialize o i-reposition ang mga smoke wisps sa pag-resize
+            if (smokeWisps.length === 0) {
+                initSmokeWisps();
+            } else {
+                smokeWisps.forEach(wisp => { 
+                    // I-reset ang mga wisp na malayo sa screen upang maiwasan ang biglaang paglitaw
+                    if (wisp.x > width + wisp.size * 2 || wisp.x < -wisp.size * 2 || wisp.y > height + wisp.size * 2 || wisp.y < -wisp.size * 2) {
+                        wisp.reset();
+                    }
+                });
+            }
+        }
+
+        // Kinakalkula ang waveform points para sa kasalukuyang frame
+        function updateWaveform() {
+            waveformPoints = [];
+            const centerY = height / 2;
+
+            // I-update ang speaking intensity: makinis na pagtaas/pagbaba
+            if (isSpeaking && speakingIntensity < 1) speakingIntensity += 1 / speakingAttackTime;
+            else if (!isSpeaking && speakingIntensity > 0) speakingIntensity -= 1 / speakingDecayTime;
+            speakingIntensity = Math.max(0, Math.min(1, speakingIntensity));
+
+            // Dynamic na adjustment ng mga property ng waveform batay sa speaking intensity
+            const speakingStretchFactor = 1 + speakingIntensity * 1.2; 
+            const dynamicBaseAmplitude = baseAmplitude * speakingStretchFactor;
+            const dynamicPulseAmplitude = pulseAmplitude * (1 + speakingIntensity * 0.4);
+            
+            // Kalkulahin ang pangkalahatang antas ng enerhiya, na naiimpluwensyahan ng time pulse at speaking state
+            energyLevel = (Math.sin(time * pulseFrequency * 1.2 + Math.PI / 2) + 1) / 2; 
+            energyLevel = energyLevel * (1 + speakingIntensity * 0.5); // Palakasin ang enerhiya kapag nagsasalita
+
+            let dynamicNoiseFactor = noiseFactor * (1 + speakingIntensity * 1.8); 
+            // Mas mataas na tsansa para sa mga spikes kapag mataas ang enerhiya o speaking intensity
+            let dynamicSpikeChance = (0.0015 + (0.005 * energyLevel * energyLevel)) * (1 + speakingIntensity * 6.0); 
+
+            for (let i = 0; i < numWaveformPoints; i++) {
+                const x = (i / (numWaveformPoints - 1)) * width;
+                let yOffset = 0;
+
+                // Pagsamahin ang maraming sine waves para sa isang kumplikado, fluid na base waveform
+                yOffset += Math.sin(i * 0.035 + time * waveSpeed) * (dynamicBaseAmplitude * 0.30);
+                yOffset += Math.sin(i * 0.09 + time * waveSpeed * 1.6) * (dynamicBaseAmplitude * 0.25);
+                yOffset += Math.sin(i * 0.015 + time * waveSpeed * 0.5) * (dynamicBaseAmplitude * 0.28);
+                yOffset += Math.cos(i * 0.20 + time * waveSpeed * 2.0) * (dynamicBaseAmplitude * 0.06);
+                yOffset += Math.sin(i * 0.06 + time * waveSpeed * 0.8) * dynamicPulseAmplitude;
+
+                // Magdagdag ng high-frequency details para sa texture at reactivity
+                const hfAmplitude = dynamicBaseAmplitude * 0.045 * (1 + speakingIntensity * 2.0);
+                const hfNoise = dynamicNoiseFactor * 0.45 * (1 + speakingIntensity * 1.5);
+                for (let k = 1; k <= 3; k++) {
+                    yOffset += Math.sin(i * (0.35 + k*0.22) + time * waveSpeed * (3.5 + k*1.8)) * (hfAmplitude / (k*0.8 + 0.2));
+                }
+                yOffset += (Math.random() - 0.5) * hfNoise * energyLevel * ((Math.sin(i*0.01 + time *0.01) + 1.5)/2.5) ;
+
+                // Magdagdag ng organic noise na binago ng enerhiya at oras
+                let noiseModulation = (Math.sin(time * 0.033 + i * 0.022) + 1.5) / 2.5; 
+                yOffset += (Math.random() - 0.5) * dynamicNoiseFactor * noiseModulation * energyLevel;
+
+                // Magpasok ng random, biglaang peaks (spikes) para sa dynamic na epekto
+                if (Math.random() < dynamicSpikeChance) { 
+                    const spikeDirection = (Math.random() > 0.5 ? 1 : -1);
+                    // Ang mga spikes ay mas malakas na may mas mataas na enerhiya/speaking intensity
+                    const spikeMagnitude = (Math.random() * 0.65 + 0.35) * (1 + energyLevel * 0.8) * (1 + speakingIntensity * 0.7); 
+                    yOffset += spikeDirection * dynamicBaseAmplitude * spikeMagnitude;
+                }
+                // I-cap ang yOffset upang hindi sumakop sa buong screen kahit anong energy/spike
+                const maxWaveHeight = height * 0.35; // 35% lang ng canvas height mula gitna
+                yOffset = Math.max(-maxWaveHeight, Math.min(maxWaveHeight, yOffset));
+                waveformPoints.push({ x: x, y_offset: yOffset }); // I-store ang kinakalkulang offset
+            }
+        }
+
+        // I-drawing ang waveform na may maraming glow layers at energy strands
+        function drawWaveform() {
+            if (waveformPoints.length < 2) return;
+
+            const centerY = height / 2;
+            // Pinagsamang energy factor mula sa pulsing at speaking state, na naka-cap sa 1 para sa pare-parehong max effect
+            const currentEnergyFactor = Math.min(1, energyLevel * (1 + speakingIntensity * 0.3)); 
+
+            // --- Drawing Layers (mula sa pinakalabas na blur patungo sa solid core) ---
+
+            // 1. Pinakalabas na Glow Layer (pinakamalawak at pinaka-diffused na glow)
+            ctx.lineWidth = mainBarThickness * 3.5; // Mas makapal na linya para sa mas malawak na glow
+            // Dynamic na opacity para sa glow, na nagre-react sa antas ng enerhiya
+            ctx.strokeStyle = kryptoniteGlowColor.replace(/,\s*\d(\.\d+)?\)/, `, ${0.04 + currentEnergyFactor * 0.07})`);
+            ctx.shadowColor = kryptoniteGlowColor.replace(/,\s*\d(\.\d+)?\)/, `, ${0.08 + currentEnergyFactor * 0.12})`);
+            ctx.shadowBlur = neonGlowBlur * (1.5 + currentEnergyFactor * 0.4); // Mas maraming blur kapag energetic
+            ctx.beginPath();
+            for (let i = 0; i < waveformPoints.length; i++) {
+                const p = waveformPoints[i]; const amp = p.y_offset;
+                if (Math.abs(amp) < 0.5) continue; // Laktawan kung masyadong maliit ang amplitude
+                ctx.moveTo(p.x, centerY - amp); ctx.lineTo(p.x, centerY + amp);
+            }
+            ctx.stroke();
+
+            // 2. Inner Glow / Thicker Core Layer (mas maliwanag, mas defined na glow)
+            ctx.lineWidth = mainBarThickness * 2.2; 
+            ctx.strokeStyle = kryptoniteGlowColor.replace(/,\s*\d(\.\d+)?\)/, `, ${0.35 + currentEnergyFactor * 0.15})`);
+            ctx.shadowColor = kryptoniteGlowColor.replace(/,\s*\d(\.\d+)?\)/, `, ${0.25 + currentEnergyFactor * 0.12})`);
+            ctx.shadowBlur = neonGlowBlur * (0.8 + currentEnergyFactor * 0.25);
+            ctx.beginPath();
+            for (let i = 0; i < waveformPoints.length; i++) {
+                const p = waveformPoints[i]; const amp = p.y_offset;
+                 if (Math.abs(amp) < 0.5) continue;
+                ctx.moveTo(p.x, centerY - amp); ctx.lineTo(p.x, centerY + amp);
+            }
+            ctx.stroke();
+
+            // 3. Solid Core Bars (pangunahing visual body, nagiging mas maliwanag nang malaki sa intensity)
+            ctx.lineWidth = mainBarThickness * 1.5; // Pangunahing visual line thickness
+            // Ang kulay ng core ay lumilipat patungo sa white-green habang tumataas ang intensity
+            let coreIntensity = Math.min(1, speakingIntensity * 0.8 + currentEnergyFactor * 0.6); 
+            let r = Math.floor(kryptoniteColorBase.r + (255 - kryptoniteColorBase.r) * coreIntensity * 0.8);
+            let g = 255; // Laging maximum green para sa matingkad na hitsura
+            let b = Math.floor(kryptoniteColorBase.b + (255 - kryptoniteColorBase.b) * coreIntensity * 0.8);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.9 + speakingIntensity * 0.1})`; // Solid opacity
+            
+            ctx.shadowColor = `rgba(${kryptoniteColorBase.r}, ${kryptoniteColorBase.g}, ${kryptoniteColorBase.b}, ${0.5 + currentEnergyFactor * 0.15})`;
+            ctx.shadowBlur = neonGlowBlur * (0.35 + currentEnergyFactor * 0.15);
+            ctx.beginPath();
+            for (let i = 0; i < waveformPoints.length; i++) {
+                const p = waveformPoints[i]; const amp = p.y_offset;
+                if (Math.abs(amp) < 0.5) continue;
+                ctx.moveTo(p.x, centerY - amp); ctx.lineTo(p.x, centerY + amp);
+            }
+            ctx.stroke();
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; // I-reset ang shadow para sa mga susunod na drawing
+
+            // --- Drawing Thin Energy Strands ("plasma" o "energy fibers") ---
+            // Mas maraming strands at mas reactive sa enerhiya/pagsasalita
+            const numStrands = 15 + Math.floor(speakingIntensity * 18 + currentEnergyFactor * 10); 
+            // Max deviation ng mga strands mula sa pangunahing waveform
+            const strandMaxOffset = baseAmplitude * 0.22 * (1 + speakingIntensity * 0.7); 
+
+            for (let j = 0; j < numStrands; j++) {
+                ctx.beginPath();
+                let firstPoint = waveformPoints[0];
+
+                // Upper strand path
+                let yStrandPerturb = (Math.random() - 0.5) * strandMaxOffset * (0.2 + Math.random() * 0.8);
+                ctx.moveTo(firstPoint.x, centerY - (firstPoint.y_offset + yStrandPerturb));
+
+                for (let i = 1; i < waveformPoints.length; i++) {
+                    let p = waveformPoints[i];
+                    // Magpasok ng random vertical at horizontal perturbations para sa organic na hitsura
+                    let currentYStrandPerturb = (Math.random() - 0.5) * strandMaxOffset * (0.2 + Math.random() * 0.8);
+                    let currentXStrandPerturb = (Math.random() - 0.5) * mainBarThickness * 5.0; // Horizontal wobble
+                    ctx.lineTo(p.x + currentXStrandPerturb, centerY - (p.y_offset + currentYStrandPerturb));
+                }
+                
+                // Lower strand path (symmetrical sa upper)
+                ctx.moveTo(firstPoint.x, centerY + (firstPoint.y_offset + yStrandPerturb)); 
+                 for (let i = 1; i < waveformPoints.length; i++) {
+                    let p = waveformPoints[i];
+                    let currentYStrandPerturb = (Math.random() - 0.5) * strandMaxOffset * (0.2 + Math.random() * 0.8);
+                    let currentXStrandPerturb = (Math.random() - 0.5) * mainBarThickness * 5.0;
+                    ctx.lineTo(p.x + currentXStrandPerturb, centerY + (p.y_offset + currentYStrandPerturb));
+                }
+
+                // Kapal ng strand (mas manipis kaysa core, nagre-react sa enerhiya)
+                ctx.lineWidth = Math.max(0.1, mainBarThickness * (0.07 + Math.random() * 0.20) * (1 + speakingIntensity * 0.3));
+                // Opacity ng strand (mas nakikita, nagre-react sa enerhiya)
+                const strandOpacity = 0.08 + currentEnergyFactor * 0.18 + speakingIntensity * 0.15 + Math.random() * 0.08; 
+                ctx.strokeStyle = `rgba(${strandColorBase[0]}, ${strandColorBase[1]}, ${strandColorBase[2]}, ${Math.min(0.8, strandOpacity)})`; 
+                ctx.stroke();
+            }
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; // I-reset muli ang shadow
+        }
+        
+        let lastFrameTime = performance.now();
+        const targetFPS = 60; 
+        const frameInterval = 1000 / targetFPS; 
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate); // I-loop ang animation
+
+            // Frame timing para sa pare-parehong FPS
+            const elapsed = currentTime - lastFrameTime;
+            if (elapsed < frameInterval && !document.hidden) { // Mag-drawing lang kung sapat na oras ang lumipas at nakikita ang tab
+                return; 
+            }
+            lastFrameTime = currentTime - (elapsed % frameInterval); // Ayusin ang last frame time para sa makinis na catch-up
+
+            // Motion blur effect para sa background at nagtatagal na mga trail. 
+            // Ang mas mababang alpha ay lumilikha ng mas "ghosting" o persistent na usok.
+            // Ito ang nagbibigay ng "madilim na dimensyon" na may "berdeng usok" sa background.
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.12)'; // Ang mas mababang alpha value ay nagbibigay ng mas persistent, smoky na background
+            ctx.fillRect(0, 0, width, height); // Bahagyang i-clear ang canvas para sa blur
+
+            // updateWaveform(); // TINANGGAL MUNA ANG WAVEFORM
+            updateAndDrawSmokeWisps(); // I-drawing ang usok bago ang waveform para nasa likod ito
+            // drawWaveform(); // TINANGGAL MUNA ANG WAVEFORM
+            time++; // I-increment ang global time counter para sa animation
+        }
+
+        // Event listeners para sa responsiveness at visibility ng tab
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('visibilitychange', () => { 
+            if (!document.hidden) { 
+                lastFrameTime = performance.now(); // I-reset ang oras kapag naging visible ang tab
+            }
+        });
+
+        resizeCanvas(); // Initial setup ng canvas size at elements
+        requestAnimationFrame(animate); // Simulan ang animation loop
+    </script>
+</body>
+</html>

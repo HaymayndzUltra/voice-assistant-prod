@@ -1,0 +1,438 @@
+    def _nllb_adapter_translation(self, text: str, source_lang="tl", target_lang="en") -> Tuple[str, bool]:
+        """Send translation request to NLLB adapter service"""
+        try:
+            # Prepare request
+            request = {
+                "action": "translate",
+                "text": text,
+                "source_lang": source_lang,
+                "target_lang": target_lang,
+                "token": "supersecret"  # This should be loaded from environment variables in production
+            }
+            
+            # Send request to NLLB adapter
+            self.nllb_adapter.send_string(json.dumps(request))
+            
+            # Use poller to avoid blocking indefinitely
+            poller = zmq.Poller()
+            poller.register(self.nllb_adapter, zmq.POLLIN)
+            
+            if poller.poll(5000):  # 5 second timeout
+                response_str = self.nllb_adapter.recv_string()
+                response = json.loads(response_str)
+                
+                if response.get("success", False):
+                    translation = response.get("translated", text)
+                    # Verify we actually got a translation
+                    if translation and translation != text:
+                        return translation, True
+                else:
+                    logger.error(f"NLLB adapter error: {response.get('message', 'Unknown error')}")
+                    
+            else:
+                logger.error("Timeout waiting for response from NLLB adapter")
+                
+            return text, False
+            
+        except zmq.ZMQError as e:
+            logger.error(f"ZMQ error with NLLB adapter: {str(e)}")
+            return text, False
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing error from NLLB adapter: {str(e)}")
+            return text, False
+        except Exception as e:
+            logger.error(f"Unexpected error with NLLB adapter: {str(e)}")
+            return text, False
+    
+    def _is_likely_english(self, text: str) -> bool:
+        """Enhanced check if text is likely already in English"""
+        # Simple heuristic: check if common Filipino words/prefixes are present
+        filipino_markers = [
+            "ang", "ng", "mga", "sa", "ko", "mo", "niya", "namin", "natin", "ninyo", "nila",
+            "ito", "iyan", "iyon", "dito", "diyan", "doon", "na", "pa", "pang-", "pag-", 
+            "nag", "mag", "i-", "ka-", "makipag-", "nakipag-", "siya", "tayo", "kami", "kayo", "sila"
+        ]
+        
+        # Count words in the text
+        words = text.lower().split()
+        total_words = len(words)
+        
+        # If very short text, be more strict
+        if total_words <= 3:
+            for word in words:
+                for marker in filipino_markers:
+                    if word == marker or word.startswith(marker + " ") or word.endswith(" " + marker):
+                        return False
+            return True
+        
+        # For longer text, use a threshold approach
+        filipino_word_count = 0
+        for word in words:
+            for marker in filipino_markers:
+                if word == marker or word.startswith(marker + " ") or word.endswith(" " + marker):
+                    filipino_word_count += 1
+                    break
+        
+        # If more than 15% Filipino markers, consider it Filipino/Taglish
+        filipino_ratio = filipino_word_count / total_words
+        return filipino_ratio < 0.15
+    
+    def _pattern_match_translation(self, text: str) -> Optional[str]:
+        """Enhanced translation using pattern matching for common phrases"""
+        text_lower = text.lower()
+        
+        # Try to match the start of the command with known patterns
+        for filipino, english in COMMON_TRANSLATIONS.items():
+            if text_lower.startswith(filipino + " "):
+                # Replace the pattern and keep the rest of the command
+                rest_of_command = text[len(filipino):].strip()
+                return f"{english} {rest_of_command}"
+        
+        # If no direct pattern match, try more flexible matching
+        words = text_lower.split()
+        if len(words) >= 2:
+            # Try first two words
+            first_two = " ".join(words[:2])
+            if first_two in COMMON_TRANSLATIONS:
+                return f"{COMMON_TRANSLATIONS[first_two]} {' '.join(words[2:])}"
+            
+            # Try just the first word
+            if words[0] in COMMON_TRANSLATIONS:
+                return f"{COMMON_TRANSLATIONS[words[0]]} {' '.join(words[1:])}"
+            
+            # Try words with attached articles (ang, ng)
+            for i, word in enumerate(words):
+                if i < len(words) - 1:
+                    if words[i+1] in ["ang", "ng"]:
+                        combined = f"{word} {words[i+1]}"
+                        if combined in COMMON_TRANSLATIONS:
+                            rest = ' '.join(words[:i] + words[i+2:])
+                            return f"{COMMON_TRANSLATIONS[combined]} {rest}"
+        
+        # If nothing matched, return the original text
+        return text
+    
+    def _get_session_id(self, message):
+        """Extract or generate a session ID from a message"""
+        # Try to get existing session ID
+        session_id = message.get("session_id", None)
+        
+        # Generate new session ID if not present
+        if not session_id:
+            session_id = f"session_{time.time()}_{random.randint(1000, 9999)}"
+            
+        return session_id
+    
+    def _update_session(self, session_id, original_text, translated_text):
+        """Update session history with translation"""
+        # Create new session if needed
+        if session_id not in self.sessions:
+            self.sessions[session_id] = {
+                "created": time.time(),
+                "last_updated": time.time(),
+                "translations": []
+            }
+            self.stats["session_count"] += 1
+        
+        # Add translation to session history
+        self.sessions[session_id]["translations"].append({
+            "timestamp": time.time(),
+            "original": original_text,
+            "translated": translated_text
+        })
+        
+        # Update last_updated
+        self.sessions[session_id]["last_updated"] = time.time()
+        
+        # Trim history if needed
+        if len(self.sessions[session_id]["translations"]) > MAX_SESSION_HISTORY:
+            self.sessions[session_id]["translations"] = \
+                self.sessions[session_id]["translations"][-MAX_SESSION_HISTORY:]
+        
+        # Cleanup old sessions
+        self._cleanup_old_sessions()
+    
+    def _cleanup_old_sessions(self):
+        """Remove expired sessions"""
+        current_time = time.time()
+        expired_sessions = []
+        
+        for session_id, session in self.sessions.items():
+            if current_time - session["last_updated"] > SESSION_EXPIRY:
+                expired_sessions.append(session_id)
+        
+        for session_id in expired_sessions:
+            del self.sessions[session_id]
+            
+        if expired_sessions:
+            logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
+    
+    def _determine_translation_method(self):
+        """Determine which translation method was most recently successful"""
+        if self.stats["google_translate_success"] > 0 and \
+           self.stats["google_translate_success"] >= self.stats["requests"] - 1:
+            return "google_translate"
+        elif self.stats["nllb_success"] > 0 and \
+             self.stats["nllb_success"] >= self.stats["requests"] - self.stats["google_translate_success"] - 1:
+            return "nllb_adapter"
+        elif self.stats["pattern_match_success"] > 0:
+            return "pattern_match"
+        else:
+            return "failed"
+    
+    def handle_health_check(self):
+        """Handle health check requests"""
+        try:
+            # Check if there's a health check request with a short timeout
+            if self.health_socket.poll(timeout=10) == 0:  # 10ms timeout
+                return False  # No request
+            
+            # Receive the request
+            request_str = self.health_socket.recv_string(flags=zmq.NOBLOCK)
+            try:
+                request = json.loads(request_str)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON in health check request")
+                self.health_socket.send_string(json.dumps({"status": "error", "message": "Invalid JSON"}))
+                return True
+            
+            # Check if it's a health check request
+            if request.get("action") == "health_check" or request.get("request_type") == "health_check":
+                logger.debug("Received health check request")
+                self.stats["health_check_count"] += 1
+                
+                # Send success response
+                response = {
+                    "status": "ok",
+                    "agent": "translator",
+                    "timestamp": time.time(),
+                    "stats": self.stats,
+                    "sessions": len(self.sessions),
+                    "uptime": time.time() - self.stats["last_update"]
+                }
+                self.health_socket.send_string(json.dumps(response))
+                return True
+            else:
+                # Unknown request type
+                logger.warning(f"Unknown request type: {request.get('action') or request.get('request_type')}")
+                self.health_socket.send_string(json.dumps({"status": "error", "message": "Unknown request type"}))
+                return True
+                
+        except zmq.Again:
+            # No message available
+            return False
+        except Exception as e:
+            logger.error(f"Error handling health check: {str(e)}")
+            try:
+                self.health_socket.send_string(json.dumps({"status": "error", "message": str(e)}))
+            except Exception:
+                pass  # Ignore errors in sending error response
+            return True
+    
+    def handle_commands(self):
+        """Listen for commands from the listener and translate them using tiered approach"""
+        # Process a batch of messages with timeout to avoid blocking forever
+        start_time = time.time()
+        max_processing_time = 1.0  # Maximum time to process messages before returning
+        message_count = 0
+        
+        try:
+            while self.running and (time.time() - start_time < max_processing_time):
+                # First check for health check requests
+                self.handle_health_check()
+                
+                # Wait for message from listener with timeout
+                poller = zmq.Poller()
+                poller.register(self.listener_sub, zmq.POLLIN)
+                
+                if poller.poll(100):  # 100ms timeout for more responsive shutdown
+                    # Receive message
+                    try:
+                        message_str = self.listener_sub.recv_string(flags=zmq.NOBLOCK)
+                        message_count += 1
+                    except zmq.Again:
+                        # No message available yet
+                        continue
+                        
+                    try:
+                        message = json.loads(message_str)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Invalid JSON in message from listener: {str(e)}")
+                        continue
+                    
+                    # Check if this is a health check request
+                    if message.get("action") == "health_check":
+                        # Handle via special health check socket
+                        continue
+                    
+                    # Extract the command text and language fields
+                    original_text = message.get("text", "")
+                    source_lang = message.get("source_lang", "tl")
+                    target_lang = message.get("target_lang", "en")
+                    
+                    # Skip empty messages
+                    if not original_text.strip():
+                        logger.warning("Received empty command, skipping")
+                        continue
+                        
+                    # Get or create session ID
+                    session_id = self._get_session_id(message)
+                    
+                    logger.info(f"Received command [{session_id}]: {original_text}")
+                    
+                    # Translate the command using tiered approach with fallbacks
+                    try:
+                        start_time_translation = time.time()
+                        translated_text = self.translate_command(original_text, source_lang=source_lang, target_lang=target_lang)
+                        translation_time = time.time() - start_time_translation
+                    except Exception as e:
+                        logger.error(f"Translation error: {str(e)}, using original text")
+                        translated_text = original_text
+                        translation_time = 0
+                    
+                    # Update session with translation
+                    self._update_session(session_id, original_text, translated_text)
+                    
+                    # Determine if translation was successful
+                    translation_success = (translated_text != original_text) 
+                    translation_status = "success" if translation_success else "failed"
+                    
+                    # Log translation result
+                    logger.info(f"Translation [{session_id}] ({translation_status}): '{original_text}' -> '{translated_text}' in {translation_time:.2f}s")
+                    
+                    # Forward message to Enhanced Model Router
+                    try:
+                        # Format message for EMR
+                        emr_request = {
+                            "request": "process_task",
+                            "text": translated_text,
+                            "original_text": original_text,
+                            "source": "translator_agent",
+                            "request_id": message.get("request_id", str(time.time())),
+                            "session_id": session_id,
+                            "translation": {
+                                "success": translation_success,
+                                "method": self._determine_translation_method(),
+                                "time": translation_time
+                            },
+                            "context": message.get("context", {})
+                        }
+                        
+                        # Send to EMR and wait for response
+                        logger.info(f"Sending translated command to EMR [{session_id}]: {translated_text}")
+                        self.model_router.send_string(json.dumps(emr_request))
+                        
+                        # Use poller to avoid blocking indefinitely
+                        poller = zmq.Poller()
+                        poller.register(self.model_router, zmq.POLLIN)
+                        
+                        if poller.poll(5000):  # 5 second timeout
+                            emr_response = self.model_router.recv_string()
+                            emr_data = json.loads(emr_response)
+                            logger.info(f"Received response from EMR [{session_id}]: {emr_data.get('status', 'unknown')}")
+                        else:
+                            logger.warning(f"Timeout waiting for response from EMR [{session_id}]")
+                    except Exception as e:
+                        logger.error(f"Error forwarding to EMR [{session_id}]: {str(e)}")
+                else:
+                    # No message received, just continue the loop
+                    break
+                    
+        except zmq.Again:
+            # Timeout, normal condition
+            pass
+        except Exception as e:
+            logger.error(f"Error in handle_commands: {str(e)}")
+            traceback.print_exc()
+            
+        # Return after processing batch or timeout
+        if message_count > 0:
+            logger.debug(f"Processed {message_count} messages in this batch")
+    
+    def run(self):
+        """Run the translator agent with enhanced resilience"""
+        try:
+            logger.info("Starting Enhanced Translator Agent...")
+            self.running = True
+            
+            # Main processing loop - resilient design that will continue despite errors
+            while self.running:
+                try:
+                    # Handle health check requests
+                    self.handle_health_check()
+                    
+                    # Handle commands with timeout to prevent blocking forever
+                    self.handle_commands()
+                    
+                    # Small sleep to prevent CPU hogging
+                    time.sleep(0.01)
+                    
+                except zmq.error.Again:
+                    # Socket timeout, normal condition
+                    continue
+                except KeyboardInterrupt:
+                    # Log but don't exit - let the orchestrator handle termination
+                    logger.info("Translator Agent received keyboard interrupt, continuing operation")
+                    time.sleep(0.5)
+                except Exception as e:
+                    # Log error but keep running
+                    logger.error(f"Error in message processing loop: {str(e)}")
+                    logger.error("Attempting to recover and continue...")
+                    traceback.print_exc()
+                    time.sleep(1)  # Slow down on errors
+                    
+        except Exception as e:
+            # This should never happen - the inner loop should catch all exceptions
+            logger.critical(f"CRITICAL: Outer exception handler triggered: {str(e)}")
+            traceback.print_exc()
+        finally:
+            logger.info("Translator agent run() method exiting")
+            self.cleanup()
+    
+    def cleanup(self):
+        """Clean up resources with enhanced error handling"""
+        self.running = False
+        logger.info("Cleaning up ZMQ sockets...")
+        
+        # Close all sockets
+        try:
+            self.listener_sub.close()
+            logger.debug("Closed listener subscription socket")
+        except Exception as e:
+            logger.error(f"Error closing listener socket: {str(e)}")
+            
+        try:
+            self.model_manager.close()
+            logger.debug("Closed model manager socket")
+        except Exception as e:
+            logger.error(f"Error closing model manager socket: {str(e)}")
+            
+        try:
+            self.model_router.close()
+            logger.debug("Closed model router socket")
+        except Exception as e:
+            logger.error(f"Error closing model router socket: {str(e)}")
+            
+        try:
+            self.nllb_adapter.close()
+            logger.debug("Closed NLLB adapter socket")
+        except Exception as e:
+            logger.error(f"Error closing NLLB adapter socket: {str(e)}")
+            
+        try:
+            self.health_socket.close()
+            logger.debug("Closed health socket")
+        except Exception as e:
+            logger.error(f"Error closing health socket: {str(e)}")
+        
+        # Terminate ZMQ context
+        try:
+            self.context.term()
+            logger.debug("Terminated ZMQ context")
+        except Exception as e:
+            logger.error(f"Error terminating ZMQ context: {str(e)}")
+        
+        # Log final stats
+        logger.info(f"Translator Agent stopped with stats: {json.dumps(self.stats)}")
+        logger.info(f"Active sessions at shutdown: {len(self.sessions)}")
+        logger.info("Translator Agent successfully shut down")

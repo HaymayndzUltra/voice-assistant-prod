@@ -1,0 +1,189 @@
+# Voice Assistant System Port Configuration
+
+This document provides a comprehensive reference for all port assignments across the voice assistant distributed system. It reflects the current active production setup, including the recent restructuring of components between the Main PC and PC2, and the implementation of the Human Awareness Agent.
+
+## System Architecture Overview
+
+The voice assistant system operates across two machines:
+- **Main PC (192.168.1.27)**: Ryzen 9 7900, RTX 4090
+- **PC2 (192.168.1.2)**: RTX 3060
+
+## Cross-Machine Communication
+
+ZMQ Bridge on port 5600 facilitates communication between Main PC and PC2.
+
+## PORTS CONFIGURATION
+
+### 2025-05-26: PC2 Services Updated
+- Translator Agent: 5563 (health_check verified)
+- TinyLlama Service: 5615 (health_check verified)
+- Both services now bind to 0.0.0.0 for network accessibility
+- PC2 MMA officially deprecated
+
+## Port Assignments by Machine
+
+### Main PC (192.168.1.27) Components
+
+#### Modular Streaming System
+
+| Component | Input Port | Output Port | Pattern | Notes |
+|-----------|-----------|------------|---------|-------|
+| streaming_audio_capture.py | - | 5570 | PUB | Sends audio chunks |
+| streaming_speech_recognition.py | 5570 | 5571 | SUB/PUB | Whisper transcription |
+| streaming_partial_transcripts.py | 5571 | 5575 | SUB/PUB | Handles partial text |
+| streaming_interrupt_handler.py | 5575 | 5576 | SUB/PUB | For interruption support |
+| streaming_language_analyzer.py | 5571 | 5572 | SUB/PUB | Detects language |
+| fixed_streaming_translation.py | 5572 | 5573 | SUB/PUB | Connects directly to Translator Agent on PC2 (port 5563) |
+| streaming_text_processor.py | 5573 | 5574 | SUB/PUB | Processes text |
+| tts_connector.py | 5574 | 5562 | SUB/REQ | Sends to TTS |
+| xtts_agent.py | 5562 | - | REP | XTTS v2 synthesis |
+| coordinator.py | 5560 | 5561/5597 | SUB/PUB | System coordination |
+
+#### Developer/Execution Agents (Relocated from PC2)
+
+| Component | Port | Pattern | Notes |
+|-----------|------|---------|-------|
+| Code Generator | 6000 | REQ/REP | Code generation service |
+| Executor | 6001 | REQ/REP | Code execution service |
+| Progressive Generator | 6002 | REQ/REP | For step-by-step code |
+| Auto-Fixer | 6003 | REQ/REP | Automated code fixing |
+| Test Generator | 6004 | REQ/REP | Test code generation |
+
+#### Human Awareness Agent
+
+| Component | Input Port | Output Port | Pattern | Notes |
+|-----------|-----------|------------|---------|-------|
+| agent_main.py | Various | 5600 | PUSH | Main entry point |
+| watcher.py | - | Internal | - | Window monitoring |
+| tone_detector.py | Audio input | Internal | - | Voice tone analysis |
+| event_trigger.py | Internal | Internal | - | Generates prompts |
+| media_pose_detector.py | Camera | 6071 | PUB | MediaPipe-based detection |
+| multi_person_pose_detector.py | Camera | 6071 | PUB | Multi-person interaction |
+| simple_sipping_detector.py | Camera | 6071 | PUB | OpenCV-based detection |
+| media_pose_client.py | 6071 | 6000 | SUB/REQ | Connects detection to TTS |
+| tagalog_analyzer.py | 6010 | 6011 | REP/PUB | TagaBERTa-enhanced analysis |
+
+### PC2 (192.168.1.2) Components
+
+#### Model & Routing Section
+
+| Component | Port | Pattern | Notes |
+|-----------|------|---------|-------|
+| Enhanced Model Router (EMR) | 7602 | REP/PUB | Central intelligence hub; consolidated Task Router functionality. Uses dynamic port allocation with fallback ports |
+| Model Manager Agent (MMA) | 5556 | REP/PUB | **DEPRECATED on PC2** - Functionality centralized to Main PC MMA |
+| Remote Connector Agent (RCA) | 5557 | REP | Manages direct model inference and caching |
+| Chain of Thought Agent (CoT) | 5612 | REP | Provides multi-step reasoning for complex tasks |
+| Translator Agent (PC2) | 5563 | REP | **UPDATED**: Enhanced agent that handles translation requests AND health_check requests on the same port (5563). Binds to 0.0.0.0 for network accessibility |
+
+**Note**: The Task Router Agent (previously on port 5558) has been deprecated and its functionality consolidated into the Enhanced Model Router (EMR).
+
+#### Memory & Context Section
+
+| Component | Port | Pattern | Notes |
+|-----------|------|---------|-------|
+| Contextual Memory Agent | 5596 | REP | Advanced context management and summarization |
+| Digital Twin Agent | 5597 | REP | User modeling and behavioral analysis |
+| Jarvis Memory Agent | 5598 | REP | Long-term memory (scheduled for future consolidation) |
+| Learning Mode Agent | 5599 | REP | System adaptation and continuous learning |
+| Error Pattern Memory | 5611 | REP | Tracks error patterns and solutions |
+| Memory Agent (Base) | 5590 | REP | Core memory management (scheduled for future consolidation) |
+
+**Note**: The Context Summarizer Agent has been consolidated into the Contextual Memory Agent (port 5596), which now handles both context management and advanced summarization functions.
+
+#### Model Services Section
+
+| Component | Port | Pattern | Notes |
+|-----------|------|---------|-------|
+| NLLB Translation Adapter | 5581 | REP | Specialized for Filipino translation |
+| TinyLlama Service | 5615 | REP | **VERIFIED**: Lightweight LLM fallback service, binds to 0.0.0.0, GPU-accelerated |
+
+#### Assistants & Utility Agents
+
+| Component | Port | Pattern | Notes |
+|-----------|------|---------|-------|
+| Autonomous Web Assistant | 5604 | REP | Web-based research and tasks |
+| Enhanced Web Scraper | 5602 | REP | Advanced web content retrieval |
+| Filesystem Assistant Agent | 5606 | REP | File operations and management |
+| Self-Healing Agent | 5614 | REP/PUB | System health monitoring and recovery |
+
+## Reserved Port Ranges
+
+- **5555-5569**: System component base ports on PC2
+- **5570-5580**: Modular streaming pipeline on Main PC
+- **5581-5590**: Translation, language services, and base memory components on PC2
+- **5596-5599**: Memory and context management components on PC2
+- **5600-5610**: Cross-machine communication and utility agents
+- **5611-5615**: Advanced reasoning and specialized model services on PC2
+- **6000-6010**: Development/execution agents on Main PC
+- **7601-7610**: Dynamic fallback ports for Enhanced Model Router (REP socket)
+- **7701-7710**: Dynamic fallback ports for Enhanced Model Router (PUB socket)
+
+## Configuration Files
+
+Port assignments are defined in:
+- `distributed_config.json`: Main configuration for distributed components
+- `system_config.py`: General system settings including ports for PC2 components
+
+## Network Security
+
+- All ZMQ connections use TCP (configured in distributed_config.json)
+- Default timeout: 5000ms
+- Retry attempts: 3
+
+## Recent Changes
+
+1. **Component Relocation**: Development/execution agents moved from PC2 to Main PC (ports 6000-6004)
+2. **Human Awareness Agent**: New component on Main PC connecting to orchestrator (port 5600)
+3. **Translation Service**: Replaced Phi-3 with NLLB for improved translation (maintained port 5581)
+4. **Translator Agent Enhancement**: PC2 Translator Agent (port 5563) now handles both translation and health_check requests on the same port
+5. **Network Binding Update**: PC2 services now bind to 0.0.0.0 instead of localhost for network accessibility
+6. **PC2 MMA Removed**: Model Manager Agent on PC2 has been deprecated, as services now implement self-managed loading/unloading
+
+## Testing Communication
+
+Use the following command to test if a port is open and responding:
+
+```bash
+python -c "import zmq; ctx=zmq.Context(); socket=ctx.socket(zmq.REQ); socket.connect('tcp://IP:PORT'); print('Connected')"
+```
+
+Replace `IP` with the target machine IP and `PORT` with the target port.
+
+## Health Check Testing
+
+For services that support health checks, you can use this script to verify they're working properly:
+
+```python
+import zmq
+import json
+import time
+
+def test_health_check(service_name, ip, port):
+    print(f"Testing {service_name} health check on {ip}:{port}...")
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
+    socket.connect(f"tcp://{ip}:{port}")
+    
+    request = {"action": "health_check"}
+    socket.send_json(request)
+    
+    try:
+        response = socket.recv_json()
+        print(f"✅ {service_name} health check successful:")
+        print(json.dumps(response, indent=2))
+        return True
+    except zmq.error.Again:
+        print(f"❌ {service_name} health check timed out after 5 seconds")
+        return False
+    except Exception as e:
+        print(f"❌ {service_name} health check error: {e}")
+        return False
+    finally:
+        socket.close()
+        context.term()
+
+# Example usage
+test_health_check("Translator Agent", "localhost", 5563)
+test_health_check("TinyLlama Service", "localhost", 5615)
+```

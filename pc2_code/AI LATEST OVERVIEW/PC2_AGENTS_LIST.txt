@@ -1,0 +1,255 @@
+================================================================================
+PC2 AGENTS INVENTORY - KOMPLETONG LISTAHAN
+Last Updated: 2025-05-25
+================================================================================
+
+Ang dokumentong ito ay naglalaman ng kumpletong listahan ng lahat ng agents na
+tumatakbo sa PC2 (192.168.1.2 - RTX 3060). Kasama ang mga port numbers, 
+dependencies, at startup sequence para sa mga agents.
+
+================================================================================
+STARTUP SEQUENCE (RECOMMENDED ORDER)
+================================================================================
+
+-----------------------------------
+GROUP 1: CORE MODEL SERVICES
+-----------------------------------
+
+1. NLLB Translation Adapter (nllb_translation_adapter.py)
+   - Port: 5581 (REP)
+   - Function: Specialized translation service
+   - Features: Used as a fallback by Translator Agent
+   - Dependencies: None
+   - Start Command: python nllb_translation_adapter.py --server
+
+2. TinyLlama Service (tinyllama_service.py)
+   - Port: 5615 (REP)
+   - Function: Lightweight LLM fallback service
+   - Features: Low-resource inference
+   - Dependencies: None
+   - Start Command: python tinyllama_service.py --server
+
+-----------------------------------
+GROUP 2: MEMORY AND CONTEXT MANAGEMENT
+-----------------------------------
+
+3. Memory Agent (Base) (memory.py)
+   - Port: 5590 (REP)
+   - Function: Core memory management functionality
+   - Features: Basic storage and retrieval
+   - Dependencies: None
+   - Start Command: python memory.py --server
+
+4. Contextual Memory Agent (contextual_memory_agent.py)
+   - Port: 5596 (REP)
+   - Function: Context management and advanced summarization
+   - Features: Integrated context_summarizer_agent functionality
+   - Dependencies: Memory Agent
+   - Start Command: python contextual_memory_agent.py --server
+
+5. Digital Twin Agent (digital_twin_agent.py)
+   - Port: 5597 (REP)
+   - Function: User modeling and behavioral analysis
+   - Features: Personalized interaction
+   - Dependencies: None
+   - Start Command: python digital_twin_agent.py --server
+
+6. Jarvis Memory Agent (jarvis_memory_agent.py)
+   - Port: 5598 (REP)
+   - Function: Long-term memory services
+   - Features: Scheduled for future consolidation
+   - Dependencies: None
+   - Start Command: python jarvis_memory_agent.py --server
+
+7. Learning Mode Agent (learning_mode_agent.py)
+   - Port: 5599 (REP)
+   - Function: System adaptation and continuous learning
+   - Features: Feedback-driven improvement
+   - Dependencies: None
+   - Start Command: python learning_mode_agent.py --server
+
+8. Error Pattern Memory (error_pattern_memory.py)
+   - Port: 5611 (REP)
+   - Function: Tracks error patterns and solutions
+   - Features: Solution database
+   - Dependencies: None
+   - Start Command: python error_pattern_memory.py --server
+
+-----------------------------------
+GROUP 3: CORE PROCESSING AGENTS
+-----------------------------------
+
+9. Model Manager Agent (MMA) (model_manager_agent.py)
+   - Port: 5556 (REP), 5566 (PUB)
+   - Function: Monitors model health, provides selection advice
+   - Features: Model service status tracking
+   - Dependencies: Core Model Services
+   - Start Command: python model_manager_agent.py --server
+
+10. Remote Connector Agent (RCA) (remote_connector_agent.py)
+    - Port: 5557 (REP)
+    - Function: Direct gateway to model services
+    - Features: Communication with external models
+    - Dependencies: Core Model Services
+    - Start Command: python remote_connector_agent.py --server
+
+11. Chain of Thought Agent (CoT) (chain_of_thought_agent.py)
+    - Port: 5612 (REP)
+    - Function: Multi-step reasoning capability
+    - Features: Complex problem decomposition
+    - Dependencies: Remote Connector Agent
+    - Start Command: python chain_of_thought_agent.py --server
+
+12. Self-Healing Agent (self_healing_agent.py)
+    - Port: 5614 (REP), 5616 (PUB)
+    - Function: System health monitoring and recovery
+    - Features: Automatic service restoration
+    - Dependencies: None
+    - Start Command: python self_healing_agent.py --server
+
+-----------------------------------
+GROUP 4: SPECIALIZED ASSISTANTS
+-----------------------------------
+
+13. Enhanced Web Scraper (enhanced_web_scraper.py)
+    - Port: 5602 (REP)
+    - Function: Web content retrieval
+    - Features: Advanced parsing and extraction
+    - Dependencies: None
+    - Start Command: python enhanced_web_scraper.py --server
+
+14. Autonomous Web Assistant (autonomous_web_assistant.py)
+    - Port: 5604 (REP)
+    - Function: Web-based research and tasks
+    - Features: Autonomous information gathering
+    - Dependencies: Enhanced Web Scraper
+    - Start Command: python autonomous_web_assistant.py --server
+
+15. Filesystem Assistant Agent (filesystem_assistant_agent.py)
+    - Port: 5606 (REP)
+    - Function: File operations and management
+    - Features: Directory organization, search
+    - Dependencies: None
+    - Start Command: python filesystem_assistant_agent.py --server
+
+-----------------------------------
+GROUP 5: CENTRAL ROUTING AND TRANSLATION
+-----------------------------------
+
+16. Enhanced Model Router (EMR) (enhanced_model_router.py)
+    - Port: 7602 (REP), 7701 (PUB)
+    - Function: Central intelligence hub
+    - Features: Integrated task_router functionality
+    - Dependencies: Contextual Memory Agent, Model Manager Agent,
+                   Chain of Thought Agent, Remote Connector Agent
+    - Start Command: python enhanced_model_router.py --server
+
+17. Translator Agent (PC2) (translator_agent.py)
+    - Ports: 
+      * 5563 (REP socket for Main PC communication)
+      * 5561 (SUB socket for PUB-SUB interactions)
+      * 5559 (Health check endpoint)
+    - Function: Advanced tiered translation with fallbacks
+    - Features: Multi-method translation with fallback system:
+      * Primary: Google Translate API
+      * Fallback 1: NLLB Translation Adapter
+      * Fallback 2: Dictionary/Pattern Matching
+      * Fallback 3: Return original with failure flag
+    - Dependencies: NLLB Translation Adapter, Enhanced Model Router
+    - Start Command: python translator_agent.py --server
+
+================================================================================
+CONSOLIDATED STARTUP SCRIPT
+================================================================================
+
+Para sa automated startup ng lahat ng PC2 agents, maaaring gamitin ang PowerShell script:
+
+```powershell
+# PC2 Agents Startup Script
+# Run from: D:\DISKARTE\Voice Assistant
+
+$agentsDir = "D:\DISKARTE\Voice Assistant\agents"
+$logDir = "D:\DISKARTE\Voice Assistant\logs"
+
+# Ensure log directory exists
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir
+}
+
+# Helper function to start agent
+function Start-Agent {
+    param (
+        [string]$name,
+        [string]$args = "--server"
+    )
+    
+    Write-Host "Starting $name..." -ForegroundColor Green
+    $logFile = Join-Path $logDir "$name.log"
+    Start-Process -FilePath "python" -ArgumentList "$name.py $args" -WorkingDirectory $agentsDir -RedirectStandardOutput $logFile -RedirectStandardError "$logFile.error"
+    
+    # Wait briefly to ensure process starts
+    Start-Sleep -Seconds 3
+    Write-Host "$name started. Logs at $logFile" -ForegroundColor Cyan
+}
+
+# Group 1: Core Model Services
+Write-Host "Starting Group 1: Core Model Services..." -ForegroundColor Yellow
+Start-Agent "nllb_translation_adapter"
+Start-Agent "tinyllama_service"
+
+# Group 2: Memory and Context Management
+Write-Host "Starting Group 2: Memory and Context Management..." -ForegroundColor Yellow
+Start-Agent "memory"
+Start-Agent "contextual_memory_agent"
+Start-Agent "digital_twin_agent"
+Start-Agent "jarvis_memory_agent"
+Start-Agent "learning_mode_agent"
+Start-Agent "error_pattern_memory"
+
+# Group 3: Core Processing Agents
+Write-Host "Starting Group 3: Core Processing Agents..." -ForegroundColor Yellow
+Start-Agent "model_manager_agent"
+Start-Agent "remote_connector_agent"
+Start-Agent "chain_of_thought_agent"
+Start-Agent "self_healing_agent"
+
+# Group 4: Specialized Assistants
+Write-Host "Starting Group 4: Specialized Assistants..." -ForegroundColor Yellow
+Start-Agent "enhanced_web_scraper"
+Start-Agent "autonomous_web_assistant"
+Start-Agent "filesystem_assistant_agent"
+
+# Group 5: Central Routing and Translation
+Write-Host "Starting Group 5: Central Routing and Translation..." -ForegroundColor Yellow
+Start-Agent "enhanced_model_router"
+Start-Agent "translator_agent"
+
+Write-Host "All PC2 agents started successfully." -ForegroundColor Green
+Write-Host "Run Self-Healing Agent status check to verify all services." -ForegroundColor Yellow
+```
+
+================================================================================
+QUICK REFERENCE: PORT NUMBERS
+================================================================================
+
+| Component                  | REP/SUB Port                       | PUB/Health Port  |
+|----------------------------|-----------------------------------|-----------------|
+| Enhanced Model Router      | 7602 (REP)                        | 7701 (PUB)      |
+| Model Manager Agent        | 5556 (REP)                        | 5566 (PUB)      |
+| Remote Connector Agent     | 5557 (REP)                        | -               |
+| Chain of Thought Agent     | 5612 (REP)                        | -               |
+| Translator Agent           | 5563 (REP for Main PC), 5561 (SUB) | 5559 (Health)   |
+| Contextual Memory Agent    | 5596 (REP)                        | -               |
+| Digital Twin Agent         | 5597 (REP)                        | -               |
+| Jarvis Memory Agent        | 5598 (REP)                        | -               |
+| Learning Mode Agent        | 5599 (REP)                        | -               |
+| Error Pattern Memory       | 5611 (REP)                        | -               |
+| Memory Agent (Base)        | 5590 (REP)                        | -               |
+| NLLB Translation Adapter   | 5581 (REP)                        | -               |
+| TinyLlama Service          | 5615 (REP)                        | -               |
+| Enhanced Web Scraper       | 5602 (REP)                        | -               |
+| Autonomous Web Assistant   | 5604 (REP)                        | -               |
+| Filesystem Assistant Agent | 5606 (REP)                        | -               |
+| Self-Healing Agent         | 5614 (REP)                        | 5616 (PUB)      |
+
+================================================================================

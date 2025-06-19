@@ -1,0 +1,26 @@
+<!-- Original content with updates -->
+
+<!-- ... existing content above ... -->
+
+#### Advanced AI Agents
+
+| Agent Name | Port | Key Features & Logic |
+|------------|------|----------------------|
+| Model Manager | 5556 | **DEPRECATED on PC2** - Functionality centralized to Main PC MMA. (Formerly: Dynamic model loading/unloading, VRAM optimization, Model selection) |
+| Enhanced Model Router | 7602 | Advanced routing with context awareness, Chain-of-thought integration |
+| Chain of Thought | 5612 | Multi-step reasoning for complex tasks |
+
+<!-- ... existing content above ... -->
+
+#### Support Agents
+
+| Agent Name | Port | Location | Key Features & Logic |
+|------------|------|----------|----------------------|
+| Enhanced Web Scraper | 5602 | PC2 | Advanced web scraping, Content extraction |
+| Filesystem Assistant | 5594 | PC2 | File operations, Directory management |
+| Self-Healing | 5614 | PC2 | System repair, Crash recovery |
+| NLLB Translation Adapter | 5581 | PC2 | Filipino-English translation using NLLB (No Language Left Behind) model, Replaced Phi-3 for improved accuracy, **Taglish detection and Filipino/English ratio logging before translation** |
+| Translator Agent | 5563 | PC2 | **Enhanced**: Advanced translation service responding to 'translate' and 'health_check' actions on port 5563. Main PC communication socket (REP) bound to 0.0.0.0:5563. Uses tiered translation with Google Translate primary, NLLB adapter fallback, and pattern matching as final fallback. |
+| TinyLlama Service | 5615 | PC2 | Lightweight LLM service for fallback language processing. Self-managed loading with configurable idle timeout. Runs on CUDA for GPU acceleration. |
+
+<!-- ... existing content below ... -->

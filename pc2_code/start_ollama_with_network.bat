@@ -1,0 +1,3 @@
+@echo off
+echo Starting Ollama on all network interfaces...
+"C:\Users\63956\AppData\Local\Programs\Ollama\ollama.exe" serve --listen "0.0.0.0:11434"

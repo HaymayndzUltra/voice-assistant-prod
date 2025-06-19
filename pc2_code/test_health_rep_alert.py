@@ -1,0 +1,10 @@
+import zmq
+ctx = zmq.Context()
+s = ctx.socket(zmq.REQ)
+s.setsockopt(zmq.RCVTIMEO, 3000)
+s.setsockopt(zmq.SNDTIMEO, 3000)
+s.connect('tcp://localhost:5595')
+s.send_json({'action':'health_check'})
+print(s.recv_json())
+s.close()
+ctx.term() 

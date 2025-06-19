@@ -1,0 +1,250 @@
+from src.core.base_agent import BaseAgent
+import zmq
+import json
+import logging
+import time
+import os
+from datetime import datetime
+from typing import Dict, Any, List
+from utils.config_parser import parse_agent_args
+import threading
+_agent_args = parse_agent_args()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('dynamic_identity.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+class DynamicIdentityAgent(BaseAgent):
+    def __init__(self, port: int = None, **kwargs):
+        # Load config just to get the port
+        config_path = os.path.join('config', 'system_config.json')
+        try:
+            with open(config_path, 'r', encoding='utf-8-sig') as f:
+                config = json.load(f)
+        except UnicodeDecodeError:
+            with open(config_path, 'r', encoding='utf-16') as f:
+                config = json.load(f)
+        agent_config = None
+        if 'agents' in config and 'dynamic_identity' in config['agents']:
+            agent_config = config['agents']['dynamic_identity']
+        elif 'personality_pipeline' in config and 'dynamic_identity' in config['personality_pipeline']:
+            agent_config = config['personality_pipeline']['dynamic_identity']
+        else:
+            agent_config = {}
+        agent_config.setdefault('port', 5802)
+        # Determine port priority: explicit __init__ arg > CLI --port arg > config
+        cmd_port = getattr(_agent_args, 'port', None)
+        if port is not None:
+            self.port = port
+        elif cmd_port is not None:
+            self.port = int(cmd_port)
+        else:
+            self.port = agent_config['port']
+        # Use strict_port=True to ensure bind failure surfaces instead of silent port change
+        super().__init__(port=self.port, name="Dynamicidentityagent", strict_port=True)
+        self.initialization_status = {
+            "is_initialized": False,
+            "error": None,
+            "progress": 0.0
+        }
+        self.current_persona = 'teacher'
+        # Perform remaining initialization asynchronously so that health checks can succeed quickly
+        threading.Thread(target=self._perform_initialization, daemon=True).start()
+        logger.info("Dynamic Identity Agent initialized (async init started)")
+    
+    def _perform_initialization(self):
+        try:
+            # Load configuration and personas in background
+            config_path = os.path.join('config', 'system_config.json')
+            try:
+                with open(config_path, 'r', encoding='utf-8-sig') as f:
+                    config = json.load(f)
+            except UnicodeDecodeError:
+                with open(config_path, 'r', encoding='utf-16') as f:
+                    config = json.load(f)
+            agent_config = None
+            if 'agents' in config and 'dynamic_identity' in config['agents']:
+                agent_config = config['agents']['dynamic_identity']
+            elif 'personality_pipeline' in config and 'dynamic_identity' in config['personality_pipeline']:
+                agent_config = config['personality_pipeline']['dynamic_identity']
+            else:
+                agent_config = {}
+            agent_config.setdefault('port', 5802)
+            agent_config.setdefault('emr_port', 5803)
+            agent_config.setdefault('empathy_port', 5804)
+            agent_config.setdefault('personas_path', os.path.join('data', 'personas.json'))
+            self.emr_port = agent_config['emr_port']
+            self.empathy_port = agent_config['empathy_port']
+            personas_path = agent_config['personas_path']
+            with open(personas_path, 'r', encoding='utf-8-sig') as f:
+                self.personas = json.load(f)
+            # REQ socket for EnhancedModelRouter
+            self.model_socket = self.context.socket(zmq.REQ)
+            _host = getattr(_agent_args, 'host', 'localhost')
+            self.model_socket.connect(f"tcp://{_host}:{self.emr_port}")
+            # REQ socket for EmpathyAgent
+            self.empathy_socket = self.context.socket(zmq.REQ)
+            self.empathy_socket.connect(f"tcp://{_host}:{self.empathy_port}")
+            self.initialization_status.update({
+                "is_initialized": True,
+                "progress": 1.0
+            })
+            # Signal that initialization is complete so health checks succeed
+            if hasattr(self, 'is_initialized'):
+                self.is_initialized.set()
+            logger.info("DynamicIdentityAgent async initialization complete")
+        except Exception as e:
+            self.initialization_status.update({
+                "error": str(e),
+                "progress": 0.0
+            })
+            logger.error(f"Initialization error: {e}")
+    
+    def _update_model_router(self, persona: str) -> Dict[str, Any]:
+        """Update the EnhancedModelRouter with new persona settings."""
+        try:
+            self.model_socket.send_json({
+                'action': 'update_system_prompt',
+                'prompt': self.personas[persona]['system_prompt']
+            })
+            
+            response = self.model_socket.recv_json()
+            if response['status'] != 'success':
+                logger.error(f"Error updating model router: {response['message']}")
+                return response
+                
+        except Exception as e:
+            logger.error(f"Error in _update_model_router: {str(e)}")
+            return {
+                'status': 'error',
+                'message': str(e)
+            }
+    
+    def _update_empathy_agent(self, persona: str) -> Dict[str, Any]:
+        """Update the EmpathyAgent with new persona settings."""
+        try:
+            self.empathy_socket.send_json({
+                'action': 'update_emotional_profile',
+                'profile': {
+                    'persona': persona,
+                    'voice_settings': self.personas[persona]['voice_settings']
+                }
+            })
+            
+            response = self.empathy_socket.recv_json()
+            if response['status'] != 'success':
+                logger.error(f"Error updating empathy agent: {response['message']}")
+                return response
+                
+        except Exception as e:
+            logger.error(f"Error in _update_empathy_agent: {str(e)}")
+            return {
+                'status': 'error',
+                'message': str(e)
+            }
+    
+    def switch_persona(self, persona: str) -> Dict[str, Any]:
+        """Switch to a different persona."""
+        if persona not in self.personas:
+            return {
+                'status': 'error',
+                'message': f'Unknown persona: {persona}'
+            }
+        
+        # Update model router
+        model_response = self._update_model_router(persona)
+        if model_response['status'] != 'success':
+            return model_response
+        
+        # Update empathy agent
+        empathy_response = self._update_empathy_agent(persona)
+        if empathy_response['status'] != 'success':
+            return empathy_response
+        
+        # Update current persona
+        self.current_persona = persona
+        
+        return {
+            'status': 'success',
+            'message': f'Switched to {self.personas[persona]["name"]} persona',
+            'persona': self.personas[persona]
+        }
+    
+    def get_current_persona(self) -> Dict[str, Any]:
+        """Get the current persona settings."""
+        return {
+            'status': 'success',
+            'persona': self.personas[self.current_persona]
+        }
+    
+    def list_personas(self) -> Dict[str, Any]:
+        """List all available personas."""
+        return {
+            'status': 'success',
+            'personas': {
+                name: data['name']
+                for name, data in self.personas.items()
+            }
+        }
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        action = request.get('action')
+        if action == 'health_check':
+            return {'status': 'ok', 'initialization_status': self.initialization_status}
+        if action == 'switch_persona':
+            persona = request.get('persona')
+            return self.switch_persona(persona)
+        elif action == 'get_current_persona':
+            return self.get_current_persona()
+        elif action == 'list_personas':
+            return self.list_personas()
+        else:
+            return {
+                'status': 'error',
+                'message': f'Unknown action: {action}'
+            }
+    
+    def run(self):
+        """Run the agent's main loop."""
+        logger.info("Dynamic Identity Agent started")
+        
+        while True:
+            try:
+                # Receive request
+                request = self.socket.recv_json()
+                
+                # Handle request
+                response = self.handle_request(request)
+                
+                # Send response
+                self.socket.send_json(response)
+                
+            except Exception as e:
+                logger.error(f"Error in main loop: {str(e)}")
+                self.socket.send_json({
+                    'status': 'error',
+                    'message': str(e)
+                })
+    
+    def stop(self):
+        """Stop the agent and clean up resources."""
+        self.socket.close()
+        self.model_socket.close()
+        self.empathy_socket.close()
+        self.context.term()
+        
+        logger.info("Dynamic Identity Agent stopped")
+
+if __name__ == '__main__':
+    agent = DynamicIdentityAgent()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        agent.stop()

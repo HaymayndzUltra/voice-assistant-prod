@@ -1,0 +1,827 @@
+version: '3.9'
+
+x-build-args: &build-args
+  BUILDKIT_INLINE_CACHE: 1
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+networks:
+  voice-assistant-network:
+    name: voice-assistant-network
+    driver: bridge
+
+# Base configurations
+x-base-agent-config: &base-agent-config
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      <<: *build-args
+  user: "${UID:-1000}:${GID:-1000}"
+  restart: "no"
+  networks:
+    - voice-assistant-network
+  volumes:
+    - ./logs:/app/logs
+    - ./config:/app/config:ro
+    - ./models:/app/models:ro
+    - ./data:/app/data
+    - ./utils:/app/utils
+  healthcheck:
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+  environment:
+    - PYTHONUNBUFFERED=1
+    - LOG_LEVEL=INFO
+    - DEBUG_MODE=false
+    - ENABLE_METRICS=true
+    - ENABLE_TRACING=true
+    - MAX_RETRIES=3
+    - RETRY_DELAY=5
+    - TIMEOUT=30
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 256M
+
+x-gpu-agent-config: &gpu-agent-config
+  <<: *base-agent-config
+  runtime: nvidia
+  environment:
+    - NVIDIA_VISIBLE_DEVICES=all
+  deploy:
+    resources:
+      limits:
+        memory: 2G
+      reservations:
+        memory: 1G
+
+# Volumes configuration
+volumes:
+  models:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/models
+      o: bind
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/data
+      o: bind
+  logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/logs
+      o: bind
+
+# Services
+services:
+  # Core System Services
+  healthmonitor:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/core/health_monitor.py"]
+    ports:
+      - "5584:5584"
+    environment:
+      - PORT=5584
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  taskrouter:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/core/task_router.py"]
+    ports:
+      - "5571:5571"
+    environment:
+      - PORT=5571
+    depends_on:
+      - healthmonitor
+      - modelmanageragent
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 256M
+
+  modelmanageragent:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/model_manager_agent.py"]
+    ports:
+      - "5570:5570"
+    environment:
+      - PORT=5570
+      - CUDA_VISIBLE_DEVICES=0
+      - VRAM_FRACTION=0.3
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  # Memory System
+  memorymanager:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/memory_manager.py"]
+    ports:
+      - "5641:5641"
+    environment:
+      - PORT=5641
+    depends_on:
+      - modelmanageragent
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  sessionmemoryagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/session_memory_agent.py"]
+    ports:
+      - "5640:5640"
+    environment:
+      - PORT=5640
+    depends_on:
+      - memorymanager
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 256M
+
+  # Audio Processing
+  streamingspeechrecognition:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/streaming_speech_recognition.py"]
+    ports:
+      - "6578:6578"
+    environment:
+      - PORT=6578
+      - CUDA_VISIBLE_DEVICES=0
+      - VRAM_FRACTION=0.2
+    depends_on:
+      - taskrouter
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  fusedaudiopreprocessor:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/audio/fused_audio_preprocessor.py"]
+    ports:
+      - "6581:6581"
+    environment:
+      - PORT=6581
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  wakeworddetector:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/wake_word_detector.py"]
+    ports:
+      - "6577:6577"
+    environment:
+      - PORT=6577
+    depends_on:
+      - fusedaudiopreprocessor
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 256M
+
+  # Language Processing
+  languageandtranslationcoordinator:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/language_and_translation_coordinator.py"]
+    ports:
+      - "6580:6580"
+    environment:
+      - PORT=6580
+    depends_on:
+      - taskrouter
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  base:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        <<: *build-args
+    image: voice-assistant-base:latest
+
+  nluagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/agents/nlu_agent.py"]
+    environment:
+      - SERVICE_NAME=nluagent
+
+  streamingttsagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/agents/streaming_tts_agent.py"]
+    environment:
+      - SERVICE_NAME=streamingttsagent
+
+  # Code Generation
+  codegenerator:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/code_generator_agent.py"]
+    ports:
+      - "5604:5604"
+    environment:
+      - PORT=5604
+      - CUDA_VISIBLE_DEVICES=0
+      - VRAM_FRACTION=0.2
+    depends_on:
+      - modelmanageragent
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  proactivecontextmonitor:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/core/proactive_context_monitor.py"]
+    ports:
+      - "5585:5585"
+    environment:
+      - PORT=5585
+    depends_on:
+      - healthmonitor
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5585/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  rcaagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/core/rca_agent.py"]
+    ports:
+      - "5586:5586"
+    environment:
+      - PORT=5586
+    depends_on:
+      - healthmonitor
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5586/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  systemdigitaltwin:
+    <<: *base-agent-config
+    command: ["python", "-u", "src/core/system_digital_twin.py"]
+    ports:
+      - "5587:5587"
+    environment:
+      - PORT=5587
+    depends_on:
+      - healthmonitor
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5587/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Emotion System
+  emotionengine:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/emotion_engine.py"]
+    ports:
+      - "5575:5575"
+    environment:
+      - PORT=5575
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5591/health"]
+      interval: 10s
+      retries: 3
+
+  moodtrackeragent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/mood_tracker_agent.py"]
+    ports:
+      - "5581:5581"
+    environment:
+      - PORT=5581
+    depends_on:
+      - emotionengine
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5581/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  humanawarenessagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/human_awareness_agent.py"]
+    ports:
+      - "5595:5595"
+    environment:
+      - PORT=5595
+    depends_on:
+      - emotionengine
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5595/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  emotionsynthesisagent:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/emotion_synthesis_agent.py"]
+    ports:
+      - "5612:5612"
+    environment:
+      - PORT=5612
+    depends_on:
+      - coordinatoragent
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5612/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  tonedetector:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/tone_detector.py"]
+    ports:
+      - "5625:5625"
+    environment:
+      - PORT=5625
+    depends_on:
+      - emotionengine
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5625/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  voiceprofiler:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/voice_profiling_agent.py"]
+    ports:
+      - "5626:5626"
+    environment:
+      - PORT=5626
+    depends_on:
+      - emotionengine
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5626/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  advancedcommandhandler:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/advanced_command_handler.py"]
+    ports:
+      - "5632:5632"
+    environment:
+      - PORT=5632
+    depends_on:
+      - nluagent
+      - codegenerator
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5632/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  chitchatagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/chitchat_agent.py"]
+    ports:
+      - "5635:5635"
+    environment:
+      - PORT=5635
+    depends_on:
+      - nluagent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5635/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  feedbackhandler:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/feedback_handler.py"]
+    ports:
+      - "5636:5636"
+    environment:
+      - PORT=5636
+    depends_on:
+      - nluagent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5636/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  responder:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/responder.py"]
+    ports:
+      - "5637:5637"
+    environment:
+      - PORT=5637
+    depends_on:
+      - nluagent
+      - emotionengine
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5637/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  metricscollector:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/metrics_collector.py"]
+    ports:
+      - "5680:5680"
+    environment:
+      - PORT=5680
+    depends_on:
+      - systemdigitaltwin
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5680/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  systemmonitor:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/system_monitor.py"]
+    ports:
+      - "5681:5681"
+    environment:
+      - PORT=5681
+    depends_on:
+      - metricscollector
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5681/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  errorhandler:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/error_handler.py"]
+    ports:
+      - "5682:5682"
+    environment:
+      - PORT=5682
+    depends_on:
+      - systemmonitor
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5682/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  performanceanalyzer:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/performance_analyzer.py"]
+    ports:
+      - "5683:5683"
+    environment:
+      - PORT=5683
+    depends_on:
+      - metricscollector
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5683/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  learningmanager:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/learning_manager.py"]
+    ports:
+      - "5650:5650"
+    environment:
+      - PORT=5650
+    depends_on:
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5650/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  knowledgebase:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/knowledge_base.py"]
+    ports:
+      - "5651:5651"
+    environment:
+      - PORT=5651
+    depends_on:
+      - learningmanager
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5651/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  metacognitionagent:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/metacognition_agent.py"]
+    ports:
+      - "5652:5652"
+    environment:
+      - PORT=5652
+    depends_on:
+      - learningmanager
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5652/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  activelearningmonitor:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/active_learning_monitor.py"]
+    ports:
+      - "5653:5653"
+    environment:
+      - PORT=5653
+    depends_on:
+      - learningmanager
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5653/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifiedplanningagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/unified_planning_agent.py"]
+    ports:
+      - "5660:5660"
+    environment:
+      - PORT=5660
+    depends_on:
+      - nluagent
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5660/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  multiagentswarmmanager:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/multi_agent_swarm_manager.py"]
+    ports:
+      - "5661:5661"
+    environment:
+      - PORT=5661
+    depends_on:
+      - unifiedplanningagent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5661/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifiedsystemagent:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/unified_system_agent.py"]
+    ports:
+      - "5662:5662"
+    environment:
+      - PORT=5662
+    depends_on:
+      - unifiedplanningagent
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5662/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # TTS Services
+  coordinatoragent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/coordinator_agent.py"]
+    ports:
+      - "5590:5590"
+    environment:
+      - PORT=5590
+    depends_on:
+      - languageandtranslationcoordinator
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5590/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ttsconnector:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/tts_connector.py"]
+    ports:
+      - "5582:5582"
+    environment:
+      - PORT=5582
+    depends_on:
+      - coordinatoragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5582/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ttscache:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/tts_cache.py"]
+    ports:
+      - "5627:5627"
+    environment:
+      - PORT=5627
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5627/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  executor:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/executor.py"]
+    ports:
+      - "5606:5606"
+    environment:
+      - PORT=5606
+    depends_on:
+      - codegenerator
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5606/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  audiocapture:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/streaming_audio_capture.py"]
+    ports:
+      - "6575:6575"
+    environment:
+      - PORT=6575
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:6575/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  facerecognitionagent:
+    <<: *gpu-agent-config
+    command: ["python", "-u", "agents/face_recognition_agent.py"]
+    ports:
+      - "5610:5610"
+    environment:
+      - PORT=5610
+    depends_on:
+      - taskrouter
+      - modelmanageragent
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5610/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  predictivehealthmonitor:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/predictive_health_monitor.py"]
+    ports:
+      - "5613:5613"
+    environment:
+      - PORT=5613
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5613/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifiedmonitoring:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/unified_monitoring.py"]
+    ports:
+      - "5614:5614"
+    environment:
+      - PORT=5614
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5614/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifiedutilsagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/unified_utils_agent.py"]
+    ports:
+      - "5615:5615"
+    environment:
+      - PORT=5615
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5615/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifiederroragent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/unified_error_agent.py"]
+    ports:
+      - "5641:5641"
+    environment:
+      - PORT=5641
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5641/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  authenticationagent:
+    <<: *base-agent-config
+    command: ["python", "-u", "agents/authentication_agent.py"]
+    ports:
+      - "5642:5642"
+    environment:
+      - PORT=5642
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5642/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Add other services as needed...
+
+ 

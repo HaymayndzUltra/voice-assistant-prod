@@ -1,0 +1,137 @@
+<!--
+AI Assistant Face - Version 1
+Inspired by your reference image (futuristic, iridescent, 3D look)
+No background, face only, ready for further animation (e.g. mouth sync)
+-->
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+    .ai-face-container {
+      width: 400px;
+      height: 450px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+    }
+    .ai-face-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="ai-face-container">
+    <svg class="ai-face-svg" viewBox="0 0 400 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="faceGradient" cx="50%" cy="40%" r="80%">
+          <stop offset="0%" stop-color="#e0e7ff" />
+          <stop offset="10%" stop-color="#7f5af0" />
+          <stop offset="22%" stop-color="#38bdf8" />
+          <stop offset="38%" stop-color="#a21caf" />
+          <stop offset="50%" stop-color="#f472b6" />
+          <stop offset="65%" stop-color="#38bdf8" />
+          <stop offset="80%" stop-color="#06b6d4" />
+          <stop offset="92%" stop-color="#312e81" />
+          <stop offset="100%" stop-color="#fff" stop-opacity="0.13" />
+        </radialGradient>
+        <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fff" stop-opacity="0.7" />
+          <stop offset="100%" stop-color="#7f5af0" stop-opacity="0.1" />
+        </linearGradient>
+        <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="20" stdDeviation="15" flood-color="#3b0764" flood-opacity="0.6"/>
+        </filter>
+      </defs>
+      <!-- Face Shape -->
+      <ellipse cx="200" cy="220" rx="150" ry="200" fill="url(#faceGradient)" filter="url(#shadow)"/>
+      <!-- Forehead Shine -->
+      <ellipse cx="200" cy="120" rx="70" ry="32" fill="url(#shine)" opacity="0.8"/>
+      <ellipse cx="200" cy="95" rx="40" ry="14" fill="#fff" opacity="0.18"/>
+      <!-- Nose Bridge Shine -->
+      <ellipse cx="200" cy="200" rx="22" ry="10" fill="#fff" opacity="0.28"/>
+      <ellipse cx="200" cy="210" rx="10" ry="4" fill="#f472b6" opacity="0.14"/>
+      <!-- Nose -->
+      <path d="M200 200 Q210 230 200 240 Q190 230 200 200" fill="#fff" opacity="0.22"/>
+      <ellipse cx="200" cy="235" rx="18" ry="8" fill="#fff" opacity="0.18"/>
+      <!-- Specular highlight on nose -->
+      <ellipse cx="200" cy="225" rx="8" ry="3" fill="#fff" opacity="0.35"/>
+      <!-- Cheekbone highlights -->
+      <ellipse cx="155" cy="225" rx="14" ry="5" fill="#fff" opacity="0.17"/>
+      <ellipse cx="245" cy="225" rx="14" ry="5" fill="#fff" opacity="0.17"/>
+      <!-- Color variation on skin -->
+      <ellipse cx="200" cy="270" rx="60" ry="30" fill="#38bdf8" opacity="0.08"/>
+      <ellipse cx="200" cy="180" rx="50" ry="22" fill="#f472b6" opacity="0.07"/>
+      <!-- Iridescent color flecks -->
+      <ellipse cx="185" cy="210" rx="2.5" ry="1.1" fill="#06b6d4" opacity="0.23"/>
+      <ellipse cx="215" cy="240" rx="2.5" ry="1.1" fill="#a21caf" opacity="0.23"/>
+      <ellipse cx="180" cy="260" rx="1.5" ry="0.7" fill="#7f5af0" opacity="0.25"/>
+      <ellipse cx="220" cy="185" rx="1.5" ry="0.7" fill="#f472b6" opacity="0.25"/>
+      <!-- Lips refinement -->
+      <path d="M155 290 Q200 324 245 290 Q200 312 155 290" fill="#fff" opacity="0.31"/>
+      <path d="M170 285 Q200 302 230 285" stroke="#fff" stroke-width="8" fill="none" opacity="0.32"/>
+      <!-- Upper lip highlight -->
+      <ellipse cx="200" cy="295" rx="10" ry="2.5" fill="#fff" opacity="0.26"/>
+      <!-- Eyes -->
+      <ellipse cx="145" cy="195" rx="30" ry="18" fill="#22223b" opacity="0.85"/>
+      <ellipse cx="255" cy="195" rx="30" ry="18" fill="#22223b" opacity="0.85"/>
+      <!-- Irises -->
+      <ellipse cx="145" cy="195" rx="12" ry="8" fill="#38bdf8" opacity="0.43"/>
+      <ellipse cx="255" cy="195" rx="12" ry="8" fill="#38bdf8" opacity="0.43"/>
+      <!-- Eye reflection -->
+      <ellipse cx="145" cy="192" rx="5" ry="2" fill="#fff" opacity="0.22"/>
+      <ellipse cx="255" cy="192" rx="5" ry="2" fill="#fff" opacity="0.22"/>
+      <!-- Eye Shadows -->
+      <ellipse cx="145" cy="205" rx="18" ry="7" fill="#312e81" opacity="0.12"/>
+      <ellipse cx="255" cy="205" rx="18" ry="7" fill="#312e81" opacity="0.12"/>
+      <!-- Forehead green-blue highlight -->
+      <ellipse cx="200" cy="115" rx="18" ry="7" fill="#06b6d4" opacity="0.19"/>
+      <!-- Cheek color variation -->
+      <ellipse cx="125" cy="255" rx="12" ry="5" fill="#38bdf8" opacity="0.10"/>
+      <ellipse cx="275" cy="255" rx="12" ry="5" fill="#f472b6" opacity="0.10"/>
+      <!-- Eye Highlights -->
+      <ellipse cx="135" cy="190" rx="7" ry="3" fill="#fff" opacity="0.75"/>
+      <ellipse cx="245" cy="190" rx="7" ry="3" fill="#fff" opacity="0.75"/>
+      <!-- Eyebrows -->
+      <path d="M120 175 Q145 170 170 180" stroke="#a21caf" stroke-width="8" fill="none" opacity="0.60"/>
+      <path d="M230 180 Q255 170 280 175" stroke="#a21caf" stroke-width="8" fill="none" opacity="0.60"/>
+      <!-- Lips -->
+      <path d="M155 290 Q200 320 245 290 Q200 310 155 290" fill="#fff" opacity="0.27"/>
+      <path d="M170 285 Q200 300 230 285" stroke="#fff" stroke-width="6" fill="none" opacity="0.32"/>
+      <ellipse cx="200" cy="305" rx="18" ry="7" fill="#f472b6" opacity="0.14"/>
+      <!-- Micro-highlights on lips -->
+      <ellipse cx="210" cy="310" rx="3" ry="1.2" fill="#fff" opacity="0.38"/>
+      <!-- Purple cheek glow -->
+      <ellipse cx="285" cy="260" rx="14" ry="7" fill="#a21caf" opacity="0.11"/>
+      <!-- Eyebrow refinement -->
+      <path d="M120 175 Q145 165 170 180" stroke="#a21caf" stroke-width="9" fill="none" opacity="0.68"/>
+      <path d="M230 180 Q255 165 280 175" stroke="#a21caf" stroke-width="9" fill="none" opacity="0.68"/>
+      <!-- Cheek Highlights -->
+      <ellipse cx="135" cy="250" rx="26" ry="12" fill="#fff" opacity="0.18"/>
+      <ellipse cx="265" cy="250" rx="26" ry="12" fill="#fff" opacity="0.18"/>
+      <!-- Jaw Shadows -->
+      <ellipse cx="135" cy="320" rx="20" ry="9" fill="#3b0764" opacity="0.18"/>
+      <ellipse cx="265" cy="320" rx="20" ry="9" fill="#3b0764" opacity="0.18"/>
+      <!-- Rim lighting -->
+      <ellipse cx="65" cy="230" rx="22" ry="100" fill="#38bdf8" opacity="0.07"/>
+      <ellipse cx="335" cy="230" rx="22" ry="100" fill="#f472b6" opacity="0.07"/>
+      <!-- Chin Shine -->
+      <ellipse cx="200" cy="375" rx="32" ry="14" fill="#fff" opacity="0.19"/>
+      <!-- Under-chin Shadow -->
+      <ellipse cx="200" cy="410" rx="48" ry="18" fill="#312e81" opacity="0.20"/>
+      <!-- Extra micro-highlights on lips and nose -->
+      <ellipse cx="210" cy="315" rx="2" ry="0.8" fill="#fff" opacity="0.40"/>
+      <ellipse cx="200" cy="222" rx="3" ry="1.1" fill="#fff" opacity="0.28"/>
+      <!-- Deepen eye shadows -->
+      <ellipse cx="145" cy="205" rx="18" ry="7" fill="#22223b" opacity="0.18"/>
+      <ellipse cx="255" cy="205" rx="18" ry="7" fill="#22223b" opacity="0.18"/>
+    </svg>
+  </div>
+</body>
+</html>

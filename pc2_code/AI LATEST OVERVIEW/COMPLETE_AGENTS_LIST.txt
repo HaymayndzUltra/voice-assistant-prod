@@ -1,0 +1,271 @@
+================================================================================
+VOICE ASSISTANT SYSTEM - COMPLETE AGENTS INVENTORY
+Last Updated: 2025-05-25
+================================================================================
+
+This document provides a comprehensive list of all agents across the entire voice 
+assistant system, including both Main PC and PC2. It includes port numbers, 
+dependencies, and key functionalities for each agent.
+
+================================================================================
+MAIN PC AGENTS (192.168.1.27 - Ryzen 9 7900, RTX 4090, 32GB RAM)
+================================================================================
+
+-----------------------------------
+CORE STREAMING PIPELINE COMPONENTS
+-----------------------------------
+
+1. streaming_audio_capture.py
+   - Port (Output): 5570
+   - Function: Real-time audio capture, Adaptive audio buffer management
+   - Features: Signal processing, VAD integration, Wake word detection
+
+2. streaming_speech_recognition.py
+   - Port (Input/Output): 5570/5571
+   - Function: Whisper-based ASR, Chunked processing
+   - Features: Optimized for speed, Language auto-detection
+
+3. streaming_partial_transcripts.py
+   - Port (Input/Output): 5571/5575
+   - Function: Provides partial transcription before full processing
+   - Features: Enables low-latency responses, Faster UX
+
+4. streaming_interrupt_handler.py
+   - Port (Input/Output): 5575/5576
+   - Function: Detects keywords for interruption
+   - Features: Stops TTS playback when interrupted, Using Vosk for speed
+
+5. streaming_language_analyzer.py
+   - Port (Input/Output): 5571/5572
+   - Function: Detects Filipino/English/Taglish, Language identification
+   - Features: Confidence scoring, Taglish detection and logs Filipino/English ratios
+
+6. fixed_streaming_translation.py
+   - Port (Input/Output): 5572/5573
+   - Function: ZMQ client/forwarder that connects to translator_agent.py on PC2
+   - Features: Connects to PC2 Translator Agent (REP port 5563)
+
+7. streaming_text_processor.py
+   - Port (Input/Output): 5573/5574
+   - Function: Intent extraction, Command parsing, Response generation
+   - Features: Context management, Custom command handling, Parameter extraction
+
+-----------------------------------
+OUTPUT & COORDINATION COMPONENTS
+-----------------------------------
+
+8. tts_connector.py
+   - Port (Input/Output): 5574/5562
+   - Function: Connects text processor to TTS
+   - Features: Caching, Priority management
+
+9. xtts_agent.py
+   - Port (Input): 5562
+   - Function: High-quality TTS using XTTS
+   - Features: Multilingual support, Voice customization
+
+10. coordinator.py
+    - Port (Input/Output): 5560/5561/5597
+    - Function: System health monitoring, Component status tracking
+    - Features: Auto-restart capability
+
+-----------------------------------
+CORE SYSTEM AGENTS
+-----------------------------------
+
+11. Orchestrator
+    - Port: 5600
+    - Function: Central controller for all agents
+    - Features: Health monitoring, Agent discovery
+
+12. Listener
+    - Port: 5555
+    - Function: Audio capture with VAD, Wake word detection
+    - Features: Adaptive silence detection
+
+13. Face Recognition
+    - Port: 5560
+    - Function: InsightFace-based recognition
+    - Features: Multi-user tracking, Emotion detection
+
+14. Human Awareness Agent
+    - Components: Window Watcher, Tone Detector, Media Pose Detector,
+                 TagaBERTa Analyzer, Reactive Prompt Agent
+    - Function: Monitors user environment, windows, tone, and physical poses
+    - Features: Proactive assistance based on context
+
+-----------------------------------
+TASK PROCESSING AGENTS
+-----------------------------------
+
+15. Interpreter
+    - Function: Intent/entity extraction
+    - Features: Context-aware understanding
+
+16. Responder
+    - Function: Response generation
+    - Features: Conversation context maintenance
+
+17. Remote Connector
+    - Port: 5557
+    - Function: Secure PC1-PC2 communication
+    - Features: Auto-reconnect, Heartbeat monitoring
+
+18. Task Router
+    - Port: 5558
+    - Function: Task-based routing
+    - Features: Load balancing, Fallback logic
+
+-----------------------------------
+CODE EXECUTION & GENERATION AGENTS
+-----------------------------------
+
+19. Code Generator
+    - Port: 6000
+    - Function: Generates code based on natural language descriptions
+    - Features: Multiple language support, IDE integration
+
+20. Executor
+    - Port: 6001
+    - Function: Safe code execution and testing
+    - Features: Sandboxed environment, Result validation
+
+21. Progressive Generator
+    - Port: 6002
+    - Function: Step-by-step code generation
+    - Features: Interactive development, Code refinement
+
+22. Auto-Fixer
+    - Port: 6003
+    - Function: Automatic error detection and correction
+    - Features: Error pattern matching, Solution generation
+
+23. Test Generator
+    - Port: 6004
+    - Function: Automatic test case generation
+    - Features: Edge case identification, Regression testing
+
+================================================================================
+PC2 AGENTS (192.168.1.2 - RTX 3060)
+================================================================================
+
+-----------------------------------
+CORE MODEL SERVICES
+-----------------------------------
+
+24. NLLB Translation Adapter
+    - Port: 5581
+    - Function: Specialized translation service
+    - Features: Used as a fallback by Translator Agent
+
+25. TinyLlama Service
+    - Port: 5615
+    - Function: Lightweight LLM fallback service
+    - Features: Low-resource inference
+
+-----------------------------------
+MEMORY AND CONTEXT MANAGEMENT
+-----------------------------------
+
+26. Memory Agent (Base)
+    - Port: 5590
+    - Function: Core memory management functionality
+    - Features: Basic storage and retrieval
+
+27. Contextual Memory Agent
+    - Port: 5596
+    - Function: Context management and advanced summarization
+    - Features: Integrated context_summarizer_agent functionality
+
+28. Digital Twin Agent
+    - Port: 5597
+    - Function: User modeling and behavioral analysis
+    - Features: Personalized interaction
+
+29. Jarvis Memory Agent
+    - Port: 5598
+    - Function: Long-term memory services
+    - Features: Scheduled for future consolidation
+
+30. Learning Mode Agent
+    - Port: 5599
+    - Function: System adaptation and continuous learning
+    - Features: Feedback-driven improvement
+
+31. Error Pattern Memory
+    - Port: 5611
+    - Function: Tracks error patterns and solutions
+    - Features: Solution database
+
+-----------------------------------
+CORE PROCESSING AGENTS
+-----------------------------------
+
+32. Model Manager Agent (MMA)
+    - Port: 5556/5566
+    - Function: Monitors model health, provides selection advice
+    - Features: Model service status tracking
+
+33. Remote Connector Agent (RCA)
+    - Port: 5557
+    - Function: Direct gateway to model services
+    - Features: Communication with external models
+
+34. Chain of Thought Agent (CoT)
+    - Port: 5612
+    - Function: Multi-step reasoning capability
+    - Features: Complex problem decomposition
+
+35. Self-Healing Agent
+    - Port: 5614/5616
+    - Function: System health monitoring and recovery
+    - Features: Automatic service restoration
+
+-----------------------------------
+SPECIALIZED ASSISTANTS
+-----------------------------------
+
+36. Enhanced Web Scraper
+    - Port: 5602
+    - Function: Web content retrieval
+    - Features: Advanced parsing and extraction
+
+37. Autonomous Web Assistant
+    - Port: 5604
+    - Function: Web-based research and tasks
+    - Features: Autonomous information gathering
+
+38. Filesystem Assistant Agent
+    - Port: 5606
+    - Function: File operations and management
+    - Features: Directory organization, search
+
+-----------------------------------
+CENTRAL ROUTING AND TRANSLATION
+-----------------------------------
+
+39. Translator Agent (PC2)
+    - Ports: 
+      * 5563 (REP socket for Main PC communication)
+      * 5561 (SUB socket for PUB-SUB interactions)
+      * 5559 (Health check endpoint)
+    - Function: Advanced tiered translation with fallbacks
+    - Features: Multi-method translation with fallback system
+    - Dependencies: NLLB Translation Adapter, Enhanced Model Router
+
+================================================================================
+DEPRECATED COMPONENTS (DO NOT USE)
+================================================================================
+
+- task_router_agent.py (formerly port 5558)
+  Functionality consolidated into Enhanced Model Router
+
+- context_summarizer_agent.py (formerly port 5610)
+  Features merged into contextual_memory_agent.py
+
+- translator_agent.py (Main PC) (formerly port 8044)
+  Replaced by enhanced PC2 Translator Agent
+
+- Main PC version of various services now migrated to PC2
+
+================================================================================

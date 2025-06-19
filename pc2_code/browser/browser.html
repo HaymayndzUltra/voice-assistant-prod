@@ -1,0 +1,2326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Nexus Core Interface v3.0 (Quantum Refined)</title>
+    <style>
+        @import url(https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap);
+        :root{
+            --primary-dark:#05080D;
+            --secondary-dark:#0A0F1A;
+            --accent-glow:#00DDFF;
+            --accent-glow-rgb:0,221,255;
+            --accent-secondary-glow:#00FF99;
+            --accent-secondary-glow-rgb:0,255,153;
+            --accent-warning-glow:#FF3300;
+            --text-color:#C0E0FF;
+            --text-dim:#6080A0;
+            --panel-bg:rgba(8, 12, 22, 0.9);
+            --panel-border-color:rgba(var(--accent-glow-rgb), 0.3);
+            --panel-shadow:0 0 25px rgba(var(--accent-glow-rgb), 0.2),0 0 45px rgba(var(--accent-glow-rgb), 0.15);
+            --browser-modal-bg:rgba(8, 12, 20, 0.97);
+            --browser-modal-solid-border:1.5px solid rgba(var(--accent-glow-rgb), 0.4);
+            --browser-modal-shadow:0 0 35px rgba(var(--accent-glow-rgb), 0.25);
+            --modal-futuristic-entry-duration:0.7s;
+            --modal-futuristic-timing:cubic-bezier(0.165, 0.84, 0.44, 1);
+            --header-transition-duration:0.3s;
+            --header-transition-timing:cubic-bezier(0.23, 1, 0.32, 1);
+            --border-anim-color-start:var(--accent-glow);
+            --border-anim-color-mid:var(--accent-secondary-glow);
+            --border-anim-color-end:#8A2BE2;
+            --border-anim-color-end-rgb:138,43,226;
+            --viz-primary:#00FF47;
+            --viz-secondary:#00AA33;
+            --viz-tertiary:#44FF77;
+            --viz-accent:#11DD44;
+            --viz-highlight:#AAFF99;
+            --viz-glow:0 0 15px rgba(0, 255, 71, 0.8),0 0 30px rgba(0, 255, 71, 0.3);
+            --viz-particle-glow:0 0 12px rgba(0, 200, 50, 0.9),0 0 25px rgba(0, 170, 51, 0.7);
+            --smoke-primary:rgba(0, 40, 20, 0.7);
+            --smoke-secondary:rgba(0, 70, 30, 0.5);
+            --smoke-highlight:rgba(40, 255, 100, 0.2);
+            --voice-freq-high:#7FFF8E;
+            --voice-freq-mid:#00FF47;
+            --voice-freq-low:#006622;
+            --voice-reactive-speed:0.3s;
+            --quantum-particle-color:rgba(120, 255, 160, 0.9);
+            --ai-caption-bg:rgba(0, 15, 30, 0.7);
+            --ai-caption-text-color:var(--accent-glow);
+            --dynamic-placeholder-bg:rgba(0, 10, 20, 0.8);
+            --border-radius-base:5px;
+            --border-radius-large:12px;
+            --transition-fast:0.2s;
+            --transition-normal:0.3s;
+            --transition-slow:0.5s;
+            --panel-inner-shadow:inset 0 0 10px rgba(var(--accent-glow-rgb), 0.05);
+            --panel-hover-border:rgba(var(--accent-secondary-glow-rgb), 0.6);
+            --panel-hover-shadow:0 0 30px rgba(var(--accent-secondary-glow-rgb), 0.3),0 0 50px rgba(var(--accent-secondary-glow-rgb), 0.2);
+            --panel-noise-opacity:0.015;
+            --panel-noise-color:rgba(var(--accent-glow-rgb), 0.05);
+            --browser-header-bg:rgba(18,28,48,.95);
+            --browser-button-active-shadow:0 0 15px var(--accent-secondary-glow);
+            --browser-loading-color:rgba(var(--accent-secondary-glow-rgb), 0.5);
+            --browser-loading-bar-height:4px;
+            --core-node-color:#FF00AA;
+            --core-node-glow:0 0 20px var(--core-node-color),0 0 40px rgba(var(--core-node-color), 0.5);
+            --panel-scanline-opacity:0.02;
+            --panel-scanline-color:rgba(var(--accent-glow-rgb), 0.08);
+            --starfield-color:rgba(var(--accent-glow-rgb), 0.1);
+            --starfield-color-bright:rgba(var(--accent-glow-rgb), 0.3);
+            --shape-color-1:rgba(var(--accent-glow-rgb), 0.1);
+            --shape-color-2:rgba(var(--accent-secondary-glow-rgb), 0.1);
+            --shape-border-color:rgba(var(--accent-glow-rgb), 0.4);
+            --panel-border-glow-color:rgba(var(--accent-glow-rgb), 0.6);
+            --panel-border-glow-color-secondary:rgba(var(--accent-secondary-glow-rgb), 0.6);
+            --panel-border-glow-size:2px;
+            /* NEW: Additional variables for enhanced effects */
+            --background-pulse-color:rgba(var(--accent-glow-rgb), 0.01);
+            --background-pulse-color-strong:rgba(var(--accent-glow-rgb), 0.03);
+            --panel-active-border-glow:rgba(var(--accent-secondary-glow-rgb), 0.8);
+            --text-glow-strong:0 0 12px var(--accent-glow), 0 0 20px rgba(var(--accent-glow-rgb), 0.4);
+            --browser-modal-active-border:rgba(var(--accent-secondary-glow-rgb), 0.7);
+            --browser-modal-active-shadow:0 0 45px rgba(var(--accent-secondary-glow-rgb), 0.4),0 0 70px rgba(var(--accent-secondary-glow-rgb), 0.3);
+            --browser-modal-entry-duration-full:1.2s; /* Longer duration for complex entry */
+            --browser-modal-exit-duration-full:0.8s;
+            --browser-modal-entry-timing:cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Springy effect */
+            --browser-modal-exit-timing:cubic-bezier(0.895, 0.03, 0.685, 0.22);
+            --browser-modal-glitch-color:rgba(255, 0, 255, 0.5);
+            --browser-modal-glitch-color-alt:rgba(0, 255, 255, 0.5);
+            --browser-modal-glitch-duration:0.1s;
+            --browser-modal-glitch-timing:steps(1);
+            --browser-modal-glitch-intensity:0.05;
+            --browser-modal-scanline-color:rgba(var(--accent-glow-rgb), 0.05);
+            --browser-modal-scanline-opacity:0.05;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body,html{
+            height:100%;
+            overflow:hidden;
+            background-color:var(--primary-dark);
+            color:var(--text-color);
+            font-family:'Share Tech Mono',monospace;
+            font-size:16px;
+            /* NEW: Subtle radial gradient for overall depth */
+            background-image:radial-gradient(circle at 50% 50%, rgba(var(--accent-glow-rgb), 0.03) 0%, transparent 70%);
+        }
+        .nexus-shell{
+            position:relative;
+            width:100vw;
+            height:100vh;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+            padding:10px;
+            transform-style:preserve-3d;
+            /* NEW: Add a subtle perspective to the shell itself */
+            perspective:1500px;
+        }
+        .background-effects{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            z-index:-1;
+            pointer-events:none;
+            overflow:hidden;
+            perspective:1000px;
+            /* NEW: Add a subtle background pulse */
+            background:radial-gradient(circle at 50% 50%, var(--background-pulse-color) 0%, transparent 50%);
+            animation:backgroundPulse 30s infinite alternate ease-in-out;
+        }
+        @keyframes backgroundPulse {
+            0%, 100% { background-color: var(--primary-dark); background-image: radial-gradient(circle at 50% 50%, var(--background-pulse-color) 0%, transparent 50%); }
+            50% { background-color: var(--secondary-dark); background-image: radial-gradient(circle at 50% 50%, var(--background-pulse-color-strong) 0%, transparent 60%); }
+        }
+        .grid-overlay{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background-image:linear-gradient(to right,rgba(var(--accent-glow-rgb),.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(var(--accent-glow-rgb),.03) 1px,transparent 1px),linear-gradient(to right,rgba(0,255,153,.015) 2px,transparent 2px),linear-gradient(to bottom,rgba(0,255,153,.015) 2px,transparent 2px);
+            background-size:30px 30px,30px 30px,90px 90px,90px 90px;
+            animation:pulseGrid 15s linear infinite,subtleShift 60s linear infinite;
+            opacity:.6;
+            transform-origin:center bottom;
+            transform:rotateX(50deg) translateZ(-300px);
+            filter:blur(.5px);
+            animation:pulseGrid 15s linear infinite,subtleShift 60s linear infinite,gridRotate 120s linear infinite;
+            /* NEW: Add a subtle distortion/wave effect to the grid */
+            mask-image:radial-gradient(circle at 50% 50%, black 0%, transparent 80%);
+            animation:pulseGrid 15s linear infinite,subtleShift 60s linear infinite,gridRotate 120s linear infinite, gridDistort 20s ease-in-out infinite alternate;
+        }
+        .grid-overlay::before{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background-image:linear-gradient(to right,rgba(var(--accent-secondary-glow-rgb),.02) 1px,transparent 1px),linear-gradient(to bottom,rgba(var(--accent-secondary-glow-rgb),.02) 1px,transparent 1px);
+            background-size:20px 20px;
+            opacity:.4;
+            transform:translateZ(-100px) rotateX(50deg) scale(1.05);
+            animation:pulseGrid 18s linear infinite reverse,subtleShift 70s linear infinite reverse;
+            /* NEW: Add a subtle distortion/wave effect to the inner grid */
+            mask-image:radial-gradient(circle at 50% 50%, black 0%, transparent 70%);
+            animation:pulseGrid 18s linear infinite reverse,subtleShift 70s linear infinite reverse, gridDistort 25s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes pulseGrid{0%,100%{opacity:.5;transform:scale(1) rotateX(50deg) translateZ(-300px)}50%{opacity:1;transform:scale(1.003) rotateX(51deg) translateZ(-310px)}}
+        @keyframes subtleShift{0%{background-position:0 0}100%{background-position:90px 90px}}
+        @keyframes gridRotate{0%{transform:rotateX(50deg) translateZ(-300px) rotateZ(0)}100%{transform:rotateX(50deg) translateZ(-300px) rotateZ(360deg)}}
+        /* NEW: Grid distortion animation */
+        @keyframes gridDistort {
+            0%, 100% { transform: rotateX(50deg) translateZ(-300px) scale(1) skewX(0deg); filter: blur(0.5px); }
+            25% { transform: rotateX(50deg) translateZ(-305px) scale(1.005) skewX(0.5deg); filter: blur(0.7px); }
+            50% { transform: rotateX(51deg) translateZ(-310px) scale(1.01) skewX(-0.5deg); filter: blur(0.6px); }
+            75% { transform: rotateX(50deg) translateZ(-305px) scale(1.005) skewX(0.5deg); filter: blur(0.7px); }
+        }
+        .background-effects::after{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:radial-gradient(circle at 20% 80%,rgba(var(--accent-glow-rgb),.02) 0,transparent 40%),radial-gradient(circle at 80% 20%,rgba(var(--accent-secondary-glow-rgb),.015) 0,transparent 40%),radial-gradient(circle at 50% 50%,rgba(var(--accent-secondary-glow-rgb),.01) 0,transparent 60%);
+            animation:nebulaPulse 25s infinite alternate ease-in-out;
+            opacity:.5;
+            z-index:-2;
+            transform:translateZ(-200px);
+            /* NEW: Add a subtle noise filter to the nebula */
+            filter:url(#noiseFilter);
+        }
+        @keyframes nebulaPulse{0%{transform:scale(1) rotate(0) translateZ(-200px);opacity:.5}100%{transform:scale(1.05) rotate(5deg) translateZ(-250px);opacity:.7}}
+        .data-stream{
+            position:absolute;
+            width:1px;
+            background:linear-gradient(to bottom,transparent,var(--accent-glow),var(--accent-secondary-glow),transparent);
+            opacity:0;
+            animation:flow 3s linear infinite;
+            filter:blur(.3px);
+            box-shadow:0 0 5px var(--accent-glow);
+            transform-origin:top;
+            will-change:transform,opacity;
+            /* NEW: More varied data stream appearance */
+            background:linear-gradient(to bottom,transparent,var(--accent-glow),var(--accent-secondary-glow),transparent);
+            box-shadow:0 0 8px rgba(var(--accent-glow-rgb), 0.7);
+            animation:flow 3s linear infinite, dataStreamPulse 1.5s infinite alternate;
+        }
+        @keyframes flow{0%{transform:translateY(-250px) scaleY(0);opacity:0}10%{transform:translateY(0) scaleY(1);opacity:.7}90%{transform:translateY(calc(100vh - 50px)) scaleY(1);opacity:.7}100%{transform:translateY(calc(100vh + 250px)) scaleY(0);opacity:0}}
+        /* NEW: Data stream pulse animation */
+        @keyframes dataStreamPulse {
+            0%, 100% { opacity: 0.7; transform: scaleY(1) scaleX(1); }
+            50% { opacity: 1; transform: scaleY(1.05) scaleX(1.5); }
+        }
+        .starfield-overlay{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:radial-gradient(2px 2px at 20% 30%,var(--starfield-color-bright),transparent),radial-gradient(1px 1px at 70% 80%,var(--starfield-color),transparent),radial-gradient(1.5px 1.5px at 50% 50%,var(--starfield-color-bright),transparent);
+            background-size:300px 300px,200px 200px,400px 400px;
+            animation:starfieldPan 180s linear infinite;
+            opacity:.15;
+            transform:translateZ(-500px);
+            /* NEW: Add more star layers and subtle flicker */
+            background-image:
+                radial-gradient(1.5px 1.5px at 10% 90%, var(--starfield-color-bright), transparent),
+                radial-gradient(0.8px 0.8px at 90% 10%, var(--starfield-color), transparent),
+                radial-gradient(2px 2px at 20% 30%, var(--starfield-color-bright), transparent),
+                radial-gradient(1px 1px at 70% 80%, var(--starfield-color), transparent),
+                radial-gradient(1.5px 1.5px at 50% 50%, var(--starfield-color-bright), transparent);
+            background-size: 250px 250px, 150px 150px, 300px 300px, 200px 200px, 400px 400px;
+            animation: starfieldPan 180s linear infinite, starFlicker 5s infinite alternate;
+        }
+        @keyframes starfieldPan{0%{background-position:0 0}100%{background-position:100% 100%}}
+        /* NEW: Star flicker animation */
+        @keyframes starFlicker {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: 0.2; }
+            51% { opacity: 0.13; }
+        }
+        .floating-shapes-container{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            perspective:1200px;
+            transform-style:preserve-3d;
+            z-index:-1;
+        }
+        .floating-shape{
+            position:absolute;
+            width:50px;
+            height:50px;
+            background:var(--shape-color-1);
+            border:1px solid var(--shape-border-color);
+            box-shadow:0 0 15px rgba(var(--accent-glow-rgb),.1);
+            opacity:.08;
+            animation:floatAndRotate 30s infinite ease-in-out alternate;
+            transform-style:preserve-3d;
+            /* NEW: Add more complex 3D transforms and subtle glow */
+            border-radius: 10%; /* Make some shapes slightly rounded */
+            box-shadow:0 0 20px rgba(var(--accent-glow-rgb),.15), inset 0 0 5px rgba(var(--accent-glow-rgb),.05);
+            animation:floatAndRotate 30s infinite ease-in-out alternate, shapeGlow 5s infinite alternate;
+        }
+        .floating-shape:nth-child(2){
+            width:70px;
+            height:70px;
+            background:var(--shape-color-2);
+            animation-duration:40s;
+            animation-delay:5s;
+            opacity:.06;
+            transform:translate3d(80vw,10vh,-200px) rotateX(45deg) rotateY(10deg);
+            /* NEW: Make it a triangle */
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            border-radius: 0;
+        }
+        .floating-shape:nth-child(3){
+            width:40px;
+            height:40px;
+            background:var(--shape-color-1);
+            animation-duration:25s;
+            animation-delay:10s;
+            opacity:.1;
+            transform:translate3d(10vw,70vh,-50px) rotateX(10deg) rotateY(60deg);
+            /* NEW: Make it a hexagon */
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            border-radius: 0;
+        }
+        .floating-shape:nth-child(4){
+            width:60px;
+            height:60px;
+            background:var(--shape-color-2);
+            animation-duration:35s;
+            animation-delay:15s;
+            opacity:.07;
+            transform:translate3d(90vw,80vh,-150px) rotateX(20deg) rotateY(30deg);
+            /* NEW: Make it a circle */
+            border-radius: 50%;
+        }
+        @keyframes floatAndRotate{0%{transform:translate3d(0,0,0) rotateX(0) rotateY(0) rotateZ(0);opacity:.08}25%{transform:translate3d(10vw,5vh,50px) rotateX(90deg) rotateY(45deg) rotateZ(10deg);opacity:.1}50%{transform:translate3d(20vw,10vh,0) rotateX(180deg) rotateY(90deg) rotateZ(20deg);opacity:.08}75%{transform:translate3d(10vw,15vh,-50px) rotateX(270deg) rotateY(135deg) rotateZ(30deg);opacity:.1}100%{transform:translate3d(0,0,0) rotateX(360deg) rotateY(180deg) rotateZ(40deg);opacity:.08}}
+        /* NEW: Shape glow animation */
+        @keyframes shapeGlow {
+            0%, 100% { box-shadow:0 0 20px rgba(var(--accent-glow-rgb),.15), inset 0 0 5px rgba(var(--accent-glow-rgb),.05); }
+            50% { box-shadow:0 0 35px rgba(var(--accent-secondary-glow-rgb),.25), inset 0 0 10px rgba(var(--accent-secondary-glow-rgb),.1); }
+        }
+        .command-bar{
+            background:var(--panel-bg);
+            border:1px solid var(--panel-border-color);
+            box-shadow:var(--panel-shadow),var(--panel-inner-shadow);
+            border-radius:var(--border-radius-base);
+            padding:7px 10px;
+            margin-bottom:10px;
+            display:flex;
+            align-items:center;
+            backdrop-filter:blur(8px) saturate(120%);
+            animation:fadeInPanel .5s ease-out forwards;
+            position:relative;
+            transition:border-color var(--transition-normal),box-shadow var(--transition-normal),transform var(--transition-normal);
+            overflow:visible;
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform-origin: center center;
+            transform: translateZ(0);
+        }
+        .command-bar:hover{
+            border-color:var(--panel-hover-border);
+            box-shadow:var(--panel-hover-shadow),var(--panel-inner-shadow);
+            transform:translateY(-2px);
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform: translateY(-2px) rotateX(1deg) rotateY(-0.5deg) translateZ(5px);
+        }
+        .command-bar::before{
+            content:'';
+            position:absolute;
+            top:-1px;
+            left:0;
+            width:100%;
+            height:2px;
+            background:linear-gradient(to right,transparent,rgba(var(--accent-glow-rgb),.5),transparent);
+            opacity:.7;
+            pointer-events:none;
+        }
+        .command-bar::after{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:repeating-linear-gradient(45deg,var(--panel-noise-color) 0,var(--panel-noise-color) 1px,transparent 1px,transparent 3px);
+            opacity:var(--panel-noise-opacity);
+            pointer-events:none;
+            border-radius:inherit;
+        }
+        .command-bar input[type=text]{
+            flex-grow:1;
+            background:0 0;
+            border:none;
+            color:var(--accent-glow);
+            font-family:Orbitron,sans-serif;
+            font-size:1.1em;
+            padding:5px;
+            outline:0;
+            text-shadow:0 0 8px var(--accent-glow);
+            caret-color:var(--accent-secondary-glow);
+            /* NEW: Add subtle text glow on focus */
+            transition:text-shadow var(--transition-fast);
+        }
+        .command-bar input[type=text]:focus{
+            text-shadow:var(--text-glow-strong);
+        }
+        .command-bar input[type=text]::placeholder{color:rgba(var(--accent-glow-rgb),.4)}
+        .status-indicators{display:flex;gap:10px;margin-left:12px}
+        .status-indicators span{font-size:.8em;color:var(--text-dim);position:relative;padding-left:10px}
+        .status-indicators span::before{
+            content:'';
+            position:absolute;
+            left:0;
+            top:50%;
+            transform:translateY(-50%);
+            width:6px;
+            height:6px;
+            border-radius:50%;
+            background-color:var(--accent-secondary-glow);
+            box-shadow:0 0 8px var(--accent-secondary-glow);
+            animation:pulseIndicator 1.5s infinite ease-in-out;
+        }
+        @keyframes pulseIndicator{0%,100%{opacity:.5;transform:translateY(-50%) scale(.7)}50%{opacity:1;transform:translateY(-50%) scale(1)}}
+        .main-content-wrapper{flex-grow:1;display:flex;gap:10px;overflow:hidden}
+        .command-bar,.content-panel,.sidebar-panel,.system-footer{overflow:hidden}
+        .content-panel,.sidebar-panel{
+            background:var(--panel-bg);
+            border:1px solid var(--panel-border-color);
+            box-shadow:var(--panel-shadow),var(--panel-inner-shadow);
+            border-radius:var(--border-radius-base);
+            padding:12px;
+            overflow-y:auto;
+            backdrop-filter:blur(8px) saturate(120%);
+            animation:fadeInPanel .7s ease-out forwards;
+            animation-delay:.1s;
+            position:relative;
+            transition:border-color var(--transition-normal),box-shadow var(--transition-normal);
+            overflow:visible;
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform-origin: center center;
+            transform: translateZ(0);
+        }
+        .content-panel:hover,.sidebar-panel:hover{
+            border-color:var(--panel-hover-border);
+            box-shadow:var(--panel-hover-shadow),var(--panel-inner-shadow);
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform: translateY(-2px) rotateX(1deg) rotateY(-0.5deg) translateZ(5px);
+        }
+        .content-panel::before,.sidebar-panel::before{
+            content:'';
+            position:absolute;
+            width:15px;
+            height:15px;
+            border:1px solid rgba(var(--accent-glow-rgb),.4);
+            border-right:none;
+            border-bottom:none;
+            top:5px;
+            left:5px;
+            transform:rotate(0);
+            transition:border-color var(--transition-normal);
+        }
+        .content-panel::after,.sidebar-panel::after{
+            content:'';
+            position:absolute;
+            width:15px;
+            height:15px;
+            border:1px solid rgba(var(--accent-glow-rgb),.4);
+            border-left:none;
+            border-top:none;
+            bottom:5px;
+            right:5px;
+            transform:rotate(0);
+            transition:border-color var(--transition-normal);
+        }
+        .content-panel:hover::after,.content-panel:hover::before,.sidebar-panel:hover::after,.sidebar-panel:hover::before{border-color:var(--accent-secondary-glow)}
+        .content-panel::before,.sidebar-panel::before{
+            content:'';
+            position:absolute;
+            width:15px;
+            height:15px;
+            border:1px solid rgba(var(--accent-glow-rgb),.4);
+            border-right:none;
+            border-bottom:none;
+            top:5px;
+            left:5px;
+            transform:rotate(0);
+            transition:border-color var(--transition-normal);
+            z-index:1;
+        }
+        .content-panel::after,.sidebar-panel::after{
+            content:'';
+            position:absolute;
+            width:15px;
+            height:15px;
+            border:1px solid rgba(var(--accent-glow-rgb),.4);
+            border-left:none;
+            border-top:none;
+            bottom:5px;
+            right:5px;
+            transform:rotate(0);
+            transition:border-color var(--transition-normal);
+            z-index:1;
+        }
+        .panel-noise-overlay{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:repeating-linear-gradient(45deg,var(--panel-noise-color) 0,var(--panel-noise-color) 1px,transparent 1px,transparent 3px);
+            opacity:var(--panel-noise-opacity);
+            pointer-events:none;
+            border-radius:inherit;
+            z-index:0;
+            animation:slightNoiseMove 60s linear infinite;
+            opacity:calc(var(--panel-noise-opacity) * 1.5);
+            /* NEW: Add a subtle blur to the noise */
+            filter:blur(0.2px);
+        }
+        @keyframes slightNoiseMove{from{background-position:0 0}to{background-position:100% 100%}}
+        .panel-scanline-overlay{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:repeating-linear-gradient(180deg,transparent,transparent 1px,var(--panel-scanline-color) 1px,var(--panel-scanline-color) 2px);
+            pointer-events:none;
+            opacity:var(--panel-scanline-opacity);
+            z-index:2;
+            animation:scanlineFlicker 8s linear infinite;
+            border-radius:inherit;
+            /* NEW: Add a subtle vertical shift to scanlines */
+            animation:scanlineFlicker 8s linear infinite, scanlineShift 15s linear infinite;
+        }
+        @keyframes scanlineFlicker{0%,100%{opacity:var(--panel-scanline-opacity)}50%{opacity:calc(var(--panel-scanline-opacity) * 1.5)}51%{opacity:var(--panel-scanline-opacity)}}
+        /* NEW: Scanline shift animation */
+        @keyframes scanlineShift {
+            0% { background-position-y: 0; }
+            100% { background-position-y: 100%; }
+        }
+        .content-panel::-webkit-scrollbar,.sidebar-panel::-webkit-scrollbar{width:4px}
+        .content-panel::-webkit-scrollbar-thumb,.sidebar-panel::-webkit-scrollbar-thumb{background-color:var(--accent-glow);border-radius:2px}
+        .content-panel::-webkit-scrollbar-track,.sidebar-panel::-webkit-scrollbar-track{background-color:rgba(var(--accent-glow-rgb),.05)}
+        .content-panel{flex-grow:3;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+        .sidebar-panel{flex-grow:1;min-width:200px;max-width:26%}
+        .panel-title{
+            font-family:Orbitron,sans-serif;
+            color:var(--accent-glow);
+            font-size:1.15em;
+            margin-bottom:10px;
+            padding-bottom:7px;
+            border-bottom:1px solid rgba(var(--accent-glow-rgb),.2);
+            text-shadow:0 0 5px var(--accent-glow);
+            position:relative;
+            /* NEW: Add a subtle text glow animation */
+            transition:text-shadow var(--transition-normal);
+        }
+        .panel-title:hover{
+            text-shadow:var(--text-glow-strong);
+        }
+        .panel-title::after{
+            content:'';
+            position:absolute;
+            bottom:-1px;
+            left:0;
+            width:100%;
+            height:1px;
+            background:linear-gradient(to right,transparent,var(--accent-secondary-glow),transparent);
+            opacity:.5;
+        }
+        .data-list{padding-left:0}
+        .data-list li{
+            list-style:none;
+            padding:6px 3px;
+            border-bottom:1px dashed rgba(var(--accent-glow-rgb),.07);
+            cursor:pointer;
+            transition:color var(--transition-fast),background-color var(--transition-fast),padding-left var(--transition-fast),text-shadow var(--transition-fast);
+            font-size:.85em;
+            /* NEW: Add subtle transform on hover */
+            transform: translateX(0);
+        }
+        .data-list li:hover{
+            color:var(--accent-glow);
+            background-color:rgba(var(--accent-glow-rgb),.05);
+            padding-left:7px;
+            text-shadow:0 0 5px var(--accent-glow);
+            /* NEW: Add subtle transform on hover */
+            transform: translateX(2px);
+        }
+        .data-list li:last-child{border-bottom:none}
+        .data-list li.warning{color:var(--accent-warning-glow);font-weight:700}
+        .data-list li.warning:hover{background-color:rgba(255,51,0,.1);text-shadow:0 0 6px var(--accent-warning-glow)}
+        .ai-caption-area{
+            width:90%;
+            max-width:800px;
+            padding:8px 15px;
+            margin-bottom:15px;
+            background:var(--ai-caption-bg);
+            border:1px solid rgba(var(--accent-glow-rgb),.1);
+            border-radius:4px;
+            text-align:center;
+            min-height:2.5em;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            position:relative;
+            overflow:hidden;
+            box-shadow:0 0 10px rgba(var(--accent-glow-rgb),.1),inset 0 0 5px rgba(var(--accent-glow-rgb),.05);
+            /* NEW: Add a subtle 3D tilt on active */
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+            transition: transform var(--transition-normal) ease-out, box-shadow var(--transition-normal) ease-out;
+        }
+        .ai-caption-area.active {
+            transform: perspective(500px) rotateX(1deg) rotateY(-0.5deg) translateZ(10px);
+            box-shadow:0 0 20px rgba(var(--accent-glow-rgb),.2),inset 0 0 8px rgba(var(--accent-glow-rgb),.08);
+        }
+        .ai-caption-area::before{
+            content:'';
+            position:absolute;
+            top:-2px;
+            left:-2px;
+            right:-2px;
+            bottom:-2px;
+            border-radius:inherit;
+            padding:2px;
+            background:conic-gradient(from var(--angle,0deg),transparent 0,var(--accent-glow) 10%,transparent 30%,transparent 70%,var(--accent-secondary-glow) 90%,transparent 100%);
+            -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            mask-composite:exclude;
+            animation:rotateBorder 8s linear infinite;
+            opacity:.6;
+            z-index:-1;
+        }
+        .ai-caption-area::after{
+            content:'';
+            position:absolute;
+            top:-3px;
+            left:-3px;
+            right:-3px;
+            bottom:-3px;
+            border-radius:inherit;
+            padding:3px;
+            background:conic-gradient(from calc(var(--angle,0deg) * -1.5),transparent 0,rgba(var(--accent-glow-rgb),.2) 5%,transparent 20%,transparent 80%,rgba(var(--accent-secondary-glow-rgb),.2) 95%,transparent 100%);
+            -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            mask-composite:exclude;
+            animation:rotateBorder 5s linear infinite reverse;
+            opacity:.4;
+            z-index:-2;
+        }
+        .ai-caption-area .inner-glow-border{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            border-radius:inherit;
+            box-shadow:inset 0 0 10px rgba(var(--accent-glow-rgb),.08);
+            pointer-events:none;
+            z-index:-3;
+        }
+        .ai-realtime-text-caption{
+            font-family:'Share Tech Mono',monospace;
+            font-size:1.05em;
+            color:var(--ai-caption-text-color);
+            text-shadow:0 0 6px var(--ai-caption-text-color);
+            line-height:1.4;
+            width:100%;
+            overflow-wrap:break-word;
+            position:relative;
+            /* NEW: Add subtle text flicker */
+            animation:textFlicker 0.5s infinite alternate;
+        }
+        .ai-realtime-text-caption.glitch{animation:textGlitch .8s infinite alternate}
+        @keyframes textGlitch{0%,100%{text-shadow:0 0 6px var(--ai-caption-text-color);transform:translate(0,0)}10%{text-shadow:1px 0 6px red,-1px 0 6px #00f;transform:translate(-.5px,.5px)}20%{text-shadow:-1px 0 6px red,1px 0 6px #00f;transform:translate(.5px,-.5px)}30%{text-shadow:0 0 6px var(--ai-caption-text-color);transform:translate(0,0)}40%{text-shadow:1px 1px 6px #ff0,-1px -1px 6px #f0f;transform:translate(-.3px,-.3px)}50%{text-shadow:-1px -1px 6px #ff0,1px 1px 6px #f0f;transform:translate(.3px,.3px)}100%,60%{text-shadow:0 0 6px var(--ai-caption-text-color);transform:translate(0,0)}}
+        /* NEW: Text flicker animation */
+        @keyframes textFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.98; }
+            51% { opacity: 1; }
+        }
+        @keyframes fadeInCharAI{to{opacity:1;text-shadow:0 0 4px var(--ai-caption-text-color),0 0 8px rgba(var(--accent-glow-rgb),.3);transform:scale(1)}}
+        .ai-realtime-text-caption.typing::after{content:'|';display:inline-block;vertical-align:bottom;margin-left:2px;animation:blinkCursor .8s step-end infinite;color:var(--accent-secondary-glow);text-shadow:0 0 8px var(--accent-secondary-glow)}
+        @keyframes blinkCursor{from,to{opacity:1}50%{opacity:0}}
+        .dynamic-content-placeholder{
+            width:100%;
+            max-width:800px;
+            height:auto;
+            min-height:220px;
+            padding:0;
+            border:none;
+            box-shadow:none;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            transition:opacity .5s,transform .5s;
+            opacity:.9;
+            overflow:hidden;
+            position:relative;
+            margin:15px 0;
+            border-radius:var(--border-radius-base);
+            background:0 0;
+            transition:all var(--transition-slow) ease-out;
+            /* NEW: Add a subtle 3D tilt on active */
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+        }
+        .dynamic-content-placeholder.active{
+            opacity:1;
+            transform:scale(1.01) perspective(500px) rotateX(1deg);
+            box-shadow:0 0 30px rgba(var(--accent-glow-rgb),.3),inset 0 0 20px rgba(var(--accent-glow-rgb),.1);
+            /* NEW: Add a subtle 3D tilt on active */
+            transform: scale(1.01) perspective(500px) rotateX(1deg) rotateY(-0.5deg) translateZ(10px);
+        }
+        .smoke-container{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:0;background:0 0;border-radius:inherit}
+        #voice-visualization-canvas{width:100%;height:220px;background:0 0;z-index:1;position:relative}
+        #voice-visualization-canvas::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(to bottom,rgba(255,255,255,.03) 0,rgba(255,255,255,0) 50%,rgba(0,0,0,.05) 100%);mix-blend-mode:overlay;animation:subtleCanvasGlitch 20s linear infinite;opacity:.8}
+        @keyframes subtleCanvasGlitch{0%,100%{transform:translate(0,0);opacity:.8}50%{transform:translate(0,2px);opacity:.85}50.1%{transform:translate(0,-2px);opacity:.75}}
+        #testBrowserPopupButton{
+            background-color:var(--accent-glow);
+            color:var(--primary-dark);
+            border:none;
+            padding:8px 15px;
+            font-family:Orbitron,sans-serif;
+            font-size:.9em;
+            cursor:pointer;
+            border-radius:4px;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            transition:all var(--transition-fast);
+            box-shadow:0 0 10px rgba(var(--accent-glow-rgb),.5);
+            margin-top:10px;
+            /* NEW: Add subtle 3D transform on hover */
+            transform: translateZ(0);
+        }
+        #testBrowserPopupButton:hover{
+            background-color:var(--accent-secondary-glow);
+            box-shadow:0 0 15px var(--accent-secondary-glow),0 0 25px var(--accent-secondary-glow);
+            transform:scale(1.05);
+            /* NEW: Add subtle 3D transform on hover */
+            transform: scale(1.05) translateZ(5px);
+        }
+        #testBrowserPopupButton:active{transform:scale(.98);box-shadow:var(--browser-button-active-shadow)}
+        .system-footer{
+            background:var(--panel-bg);
+            border:1px solid var(--panel-border-color);
+            box-shadow:var(--panel-shadow),var(--panel-inner-shadow);
+            border-radius:var(--border-radius-base);
+            padding:7px 10px;
+            margin-top:10px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            font-size:.8em;
+            backdrop-filter:blur(8px) saturate(120%);
+            animation:fadeInPanel .9s ease-out forwards;
+            animation-delay:.2s;
+            position:relative;
+            transition:border-color var(--transition-normal),box-shadow var(--transition-normal),transform var(--transition-normal);
+            overflow:visible;
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform-origin: center center;
+            transform: translateZ(0);
+        }
+        .system-footer:hover{
+            border-color:var(--panel-hover-border);
+            box-shadow:var(--panel-hover-shadow),var(--panel-inner-shadow);
+            transform:translateY(-2px);
+            /* NEW: Add a subtle 3D tilt on hover */
+            transform: translateY(-2px) rotateX(1deg) rotateY(-0.5deg) translateZ(5px);
+        }
+        .system-footer::before{
+            content:'';
+            position:absolute;
+            bottom:-1px;
+            left:0;
+            width:100%;
+            height:2px;
+            background:linear-gradient(to right,transparent,rgba(var(--accent-secondary-glow-rgb),.5),transparent);
+            opacity:.7;
+            pointer-events:none;
+        }
+        .system-footer::after{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:repeating-linear-gradient(45deg,var(--panel-noise-color) 0,var(--panel-noise-color) 1px,transparent 1px,transparent 3px);
+            opacity:var(--panel-noise-opacity);
+            pointer-events:none;
+            border-radius:inherit;
+        }
+        .system-footer .status,.system-footer .time{color:var(--text-dim)}
+        .system-footer .status span{color:var(--accent-secondary-glow);font-weight:700}
+        @keyframes fadeInPanel{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .headless-browser-overlay{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(3,5,10,.9);
+            backdrop-filter:blur(18px) brightness(.35) saturate(200%);
+            z-index:1999;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            opacity:0;
+            visibility:hidden;
+            pointer-events:none;
+            transition:opacity calc(var(--modal-futuristic-entry-duration) * .7) ease-out,visibility 0s linear calc(var(--modal-futuristic-entry-duration) * .7);
+            /* NEW: Add subtle noise/scanline to overlay */
+            background-image:repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 3px);
+            background-size:100% 4px;
+            animation: overlayNoise 10s linear infinite;
+        }
+        @keyframes overlayNoise {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+        .headless-browser-overlay.active{opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
+        .headless-browser-modal{
+            position:relative;
+            width:90%;
+            height:90%;
+            max-width:1600px;
+            max-height:900px;
+            background:var(--browser-modal-bg);
+            border:var(--browser-modal-solid-border);
+            box-shadow:var(--browser-modal-shadow);
+            border-radius:var(--border-radius-large);
+            padding:0;
+            display:flex;
+            flex-direction:column;
+            z-index:2000;
+            overflow:hidden;
+            opacity:0;
+            transform:scale(.85);
+            clip-path:polygon(50% 0,50% 0,50% 100%,50% 100%);
+            will-change:transform,opacity,clip-path;
+            transition:opacity calc(var(--modal-futuristic-entry-duration) * .5) var(--modal-futuristic-timing) calc(var(--modal-futuristic-entry-duration) * .3),transform var(--modal-futuristic-entry-duration) var(--modal-futuristic-timing),clip-path var(--modal-futuristic-entry-duration) var(--modal-futuristic-timing),width .3s ease,height .3s ease;
+            /* NEW: Enhanced entry/exit animations */
+            transition:
+                opacity var(--browser-modal-entry-duration-full) var(--browser-modal-entry-timing),
+                transform var(--browser-modal-entry-duration-full) var(--browser-modal-entry-timing),
+                clip-path var(--browser-modal-entry-duration-full) var(--browser-modal-entry-timing),
+                width var(--transition-normal) ease,
+                height var(--transition-normal) ease,
+                border-color var(--transition-normal),
+                box-shadow var(--transition-normal);
+            transform-origin: center center; /* Ensure 3D transforms originate from center */
+        }
+        .headless-browser-overlay.active .headless-browser-modal{
+            opacity:1;
+            transform:scale(1) perspective(1000px) rotateX(2deg) rotateY(-.5deg) translateZ(0);
+            clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+            /* NEW: More dramatic entry transform */
+            transform: scale(1) perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0);
+            box-shadow: var(--browser-modal-active-shadow);
+            border-color: var(--browser-modal-active-border);
+        }
+        .headless-browser-modal.modal-opening-flash{animation:browserFlashIn .7s cubic-bezier(.19,1,.22,1) forwards}
+        @keyframes browserFlashIn{0%{transform:scale(.9) perspective(1000px) rotateX(10deg) rotateY(-2deg) translateZ(-50px);opacity:.2;box-shadow:0 0 100px rgba(var(--accent-secondary-glow-rgb),.9);border-color:rgba(var(--accent-secondary-glow-rgb),.8)}30%{transform:scale(1.05) perspective(1000px) rotateX(0) rotateY(0) translateZ(0);opacity:1;box-shadow:0 0 80px rgba(var(--accent-glow-rgb),.8);border-color:rgba(var(--accent-glow-rgb),.8)}100%{transform:scale(1) perspective(1000px) rotateX(2deg) rotateY(-.5deg) translateZ(0);opacity:1;box-shadow:var(--browser-modal-shadow);border-color:var(--browser-modal-solid-border)}}
+        /* NEW: Browser modal entry animation (more complex) */
+        .headless-browser-modal.entering {
+            animation: browserEntry 1.2s var(--browser-modal-entry-timing) forwards;
+        }
+        @keyframes browserEntry {
+            0% {
+                opacity: 0;
+                transform: scale(0.7) perspective(1000px) rotateX(20deg) rotateY(10deg) translateZ(-200px);
+                clip-path: polygon(50% 0, 50% 0, 50% 100%, 50% 100%);
+                filter: blur(10px) brightness(0.5);
+                box-shadow: 0 0 100px rgba(var(--accent-secondary-glow-rgb), 0.9);
+            }
+            20% {
+                opacity: 0.5;
+                transform: scale(1.05) perspective(1000px) rotateX(-5deg) rotateY(-2deg) translateZ(50px);
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                filter: blur(5px) brightness(1.2);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0);
+                filter: blur(0) brightness(1);
+                box-shadow: var(--browser-modal-shadow);
+            }
+        }
+        /* NEW: Browser modal exit animation */
+        .headless-browser-modal.exiting {
+            animation: browserExit 0.8s var(--browser-modal-exit-timing) forwards;
+        }
+        @keyframes browserExit {
+            0% {
+                opacity: 1;
+                transform: scale(1) perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0);
+                filter: blur(0) brightness(1);
+            }
+            80% {
+                opacity: 0.2;
+                transform: scale(0.8) perspective(1000px) rotateX(-10deg) rotateY(5deg) translateZ(-100px);
+                filter: blur(5px) brightness(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.6) perspective(1000px) rotateX(-20deg) rotateY(10deg) translateZ(-200px);
+                clip-path: polygon(50% 0, 50% 0, 50% 100%, 50% 100%);
+                filter: blur(10px) brightness(0.5);
+            }
+        }
+        .headless-browser-modal::before{
+            content:"";
+            position:absolute;
+            top:-2px;
+            left:-2px;
+            right:-2px;
+            bottom:-2px;
+            border-radius:inherit;
+            padding:2px;
+            background:conic-gradient(from var(--angle,0deg),var(--border-anim-color-start),var(--border-anim-color-mid),var(--border-anim-color-end),var(--border-anim-color-mid),var(--border-anim-color-start));
+            -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            mask-composite:exclude;
+            animation:rotateBorder var(--border-anim-duration) linear infinite;
+            z-index:-1;
+            opacity:0;
+            transition:opacity .5s ease-in-out;
+            /* NEW: Add subtle glitch effect to border */
+            filter:drop-shadow(0 0 5px var(--browser-modal-glitch-color));
+            animation:rotateBorder var(--border-anim-duration) linear infinite, borderGlitch 0.5s infinite alternate;
+        }
+        .headless-browser-overlay.active .headless-browser-modal::before{opacity:.8;transition-delay:var(--modal-futuristic-entry-duration)}
+        @property --angle{syntax:'<angle>';initial-value:0deg;inherits:false}
+        @keyframes rotateBorder{to{--angle:360deg}}
+        /* NEW: Border glitch animation */
+        @keyframes borderGlitch {
+            0%, 100% { filter: drop-shadow(0 0 5px var(--browser-modal-glitch-color)); }
+            20% { filter: drop-shadow(0 0 8px var(--browser-modal-glitch-color-alt)) translateX(1px); }
+            40% { filter: drop-shadow(0 0 5px var(--browser-modal-glitch-color)); }
+            60% { filter: drop-shadow(0 0 8px var(--browser-modal-glitch-color-alt)) translateX(-1px); }
+            80% { filter: drop-shadow(0 0 5px var(--browser-modal-glitch-color)); }
+        }
+        .browser-header-trigger-area{position:absolute;top:0;left:0;width:100%;height:45px;z-index:15}
+        .browser-modal-header{
+            width:100%;
+            height:45px;
+            flex-shrink:0;
+            padding:0 15px;
+            background:var(--browser-header-bg);
+            border-bottom:1px solid rgba(var(--accent-glow-rgb),.35);
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            cursor:grab;
+            opacity:0;
+            max-height:0;
+            overflow:hidden;
+            pointer-events:none;
+            transition:opacity var(--header-transition-duration) var(--header-transition-timing),max-height var(--header-transition-duration) var(--header-transition-timing),padding var(--header-transition-duration) var(--header-transition-timing);
+            border-top-left-radius:calc(var(--border-radius-large) - 1px);
+            border-top-right-radius:calc(var(--border-radius-large) - 1px);
+            z-index:20;
+            will-change:opacity,max-height;
+            box-shadow:inset 0 -3px 10px rgba(var(--accent-glow-rgb),.1);
+            /* NEW: Add subtle 3D transform on hover */
+            transform: translateZ(0);
+            transition:
+                opacity var(--header-transition-duration) var(--header-transition-timing),
+                max-height var(--header-transition-duration) var(--header-transition-timing),
+                padding var(--header-transition-duration) var(--header-transition-timing),
+                transform var(--transition-fast);
+        }
+        .browser-modal-header:hover {
+            transform: translateZ(5px);
+            box-shadow:inset 0 -3px 15px rgba(var(--accent-secondary-glow-rgb),.2);
+        }
+        .headless-browser-modal.header-visible .browser-modal-header{opacity:1;max-height:45px;padding:0 15px;pointer-events:auto}
+        .browser-modal-header:active{cursor:grabbing}
+        .browser-controls{display:flex;align-items:center;gap:10px}
+        .browser-controls button,.browser-modal-close{
+            background:0 0;
+            border:1px solid rgba(var(--accent-glow-rgb),.5);
+            color:rgba(var(--accent-glow-rgb),.75);
+            width:30px;
+            height:30px;
+            border-radius:50%;
+            font-size:1.1em;
+            font-weight:700;
+            line-height:1;
+            text-align:center;
+            cursor:pointer;
+            transition:all var(--transition-fast) ease-in-out;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:0;
+            /* NEW: Add subtle 3D transform on hover */
+            transform: translateZ(0);
+        }
+        .browser-controls button:hover,.browser-modal-close:hover{
+            background-color:rgba(var(--accent-glow-rgb),.2);
+            box-shadow:0 0 10px var(--accent-glow);
+            color:var(--accent-glow);
+            transform:scale(1.1);
+            /* NEW: Add subtle 3D transform on hover */
+            transform: scale(1.1) translateZ(5px);
+        }
+        .browser-controls button:active,.browser-modal-close:active{transform:scale(.95);box-shadow:var(--browser-button-active-shadow)}
+        .browser-modal-close:hover{transform:rotate(90deg) scale(1.1)}
+        .browser-modal-header .url-display{
+            color:var(--accent-glow);
+            font-family:Orbitron,sans-serif;
+            font-size:.9em;
+            text-shadow:0 0 4px var(--accent-glow);
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+            flex-grow:1;
+            margin:0 15px;
+            text-align:center;
+            /* NEW: Add subtle text glow animation */
+            transition:text-shadow var(--transition-normal);
+        }
+        .browser-modal-header .url-display:hover {
+            text-shadow:var(--text-glow-strong);
+        }
+        .browser-content-wrapper{
+            flex-grow:1;
+            width:100%;
+            overflow:hidden;
+            border-bottom-left-radius:calc(var(--border-radius-large) - 1px);
+            border-bottom-right-radius:calc(var(--border-radius-large) - 1px);
+            background-color:#080a0f;
+            position:relative;
+            /* NEW: Add subtle scanline overlay to content */
+            background-image:repeating-linear-gradient(180deg, transparent, transparent 1px, var(--browser-modal-scanline-color) 1px, var(--browser-modal-scanline-color) 2px);
+            background-size:100% 4px;
+            animation: scanlineShift 15s linear infinite;
+            opacity: 1;
+            transition: opacity var(--transition-normal);
+        }
+        .browser-content-wrapper.loading{
+            opacity: 0.8; /* Dim content slightly when loading */
+        }
+        .browser-content-wrapper.loading::before{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:var(--browser-loading-bar-height);
+            background:linear-gradient(to right,transparent,var(--accent-secondary-glow),transparent);
+            animation:loadingBar 1.5s infinite linear;
+            z-index:10;
+            /* NEW: Add subtle glow to loading bar */
+            box-shadow:0 0 10px var(--accent-secondary-glow);
+        }
+        @keyframes loadingBar{0%{transform:translateX(-100%)}50%{transform:translateX(0)}100%{transform:translateX(100%)}}
+        .browser-content-wrapper.loading::after{
+            content:'Loading...';
+            position:absolute;
+            top:var(--browser-loading-bar-height);
+            left:0;
+            width:100%;
+            height:calc(100% - var(--browser-loading-bar-height));
+            background-color:rgba(10,15,25,.95);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:var(--browser-loading-color);
+            font-family:Orbitron,sans-serif;
+            font-size:1.5em;
+            text-shadow:0 0 15px var(--browser-loading-color);
+            z-index:9;
+            /* NEW: Add subtle flicker to loading text */
+            animation: textFlicker 0.8s infinite alternate;
+        }
+        #headlessBrowserFrame{width:100%;height:100%;border:none}
+        .headless-browser-modal.minimized{
+            width:280px!important;
+            height:45px!important;
+            overflow:hidden;
+            box-shadow:var(--browser-modal-shadow);
+            border-radius:var(--border-radius-base);
+            transition:width var(--transition-normal) ease,height var(--transition-normal) ease,border-radius var(--transition-normal) ease,box-shadow var(--transition-normal) ease;
+            /* NEW: Add subtle 3D transform on minimize */
+            transform: translateZ(0);
+        }
+        .headless-browser-modal.minimized::before{opacity:0!important}
+        .headless-browser-modal.minimized .browser-content-wrapper{display:none}
+        .headless-browser-modal.minimized .browser-modal-header{border-radius:var(--border-radius-base);border-bottom:none;opacity:1;max-height:45px;pointer-events:auto}
+        .headless-browser-modal.minimized .url-display{display:none}
+        .ai-popup-overlay{display:none}
+        .panel-border-glow{
+            position:absolute;
+            top:-var(--panel-border-glow-size);
+            left:-var(--panel-border-glow-size);
+            right:-var(--panel-border-glow-size);
+            bottom:-var(--panel-border-glow-size);
+            border-radius:inherit;
+            background:conic-gradient(from var(--angle,0deg),transparent 0,var(--panel-border-glow-color) 10%,transparent 30%,transparent 70%,var(--panel-border-glow-color-secondary) 90%,transparent 100%);
+            -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            mask-composite:exclude;
+            animation:rotateBorder 10s linear infinite;
+            opacity:0;
+            pointer-events:none;
+            z-index:3;
+            transition:opacity var(--transition-normal) ease-in-out;
+            /* NEW: Add subtle flicker to border glow */
+            animation:rotateBorder 10s linear infinite, borderGlowFlicker 2s infinite alternate;
+        }
+        .panel-border-glow.active{opacity:.7}
+        /* NEW: Border glow flicker animation */
+        @keyframes borderGlowFlicker {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.85; }
+            51% { opacity: 0.65; }
+        }
+        /* NEW: SVG filter for background noise */
+        .svg-filters {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="nexus-shell">
+        <div class="background-effects">
+            <div class="grid-overlay"></div>
+            <div class="starfield-overlay"></div>
+            <div class="floating-shapes-container">
+                <div class="floating-shape" style="top:20%;left:15%;transform:translate3d(0,0,-100px) rotateX(0) rotateY(0)"></div>
+                <div class="floating-shape" style="top:60%;left:80%;transform:translate3d(0,0,-250px) rotateX(0) rotateY(0)"></div>
+                <div class="floating-shape" style="top:40%;left:40%;transform:translate3d(0,0,-50px) rotateX(0) rotateY(0)"></div>
+                <div class="floating-shape" style="top:10%;left:60%;transform:translate3d(0,0,-180px) rotateX(0) rotateY(0)"></div>
+            </div>
+        </div>
+        <header class="command-bar">
+            <input type="text" id="nexusCommandInput" placeholder="[NEXUS_CMD]> Awaiting Directive...">
+            <div class="status-indicators">
+                <span>Q-LINK: ACTIVE</span>
+                <span>CORE: STABLE</span>
+            </div>
+            <div class="panel-border-glow"></div>
+        </header>
+        <div class="main-content-wrapper">
+            <aside class="sidebar-panel">
+                <h2 class="panel-title">Cognitive Nodes</h2>
+                <ul class="data-list">
+                    <li>Node Prime</li>
+                    <li>Temporal Archive</li>
+                    <li>Xeno-Comms</li>
+                    <li>Bio-Synth</li>
+                </ul>
+                <div class="panel-noise-overlay"></div>
+                <h2 class="panel-title" style="margin-top:15px">System Diagnostics</h2>
+                <ul class="data-list">
+                    <li>[INFO] Nexus OS v3.0 Synced</li>
+                    <li class="warning">[ALERT] Border Integrity Scan</li>
+                    <li>[LOG] Operator Σ-01 Monitoring</li>
+                </ul>
+                <div class="panel-border-glow"></div>
+            </aside>
+            <main class="content-panel">
+                <div class="ai-caption-area">
+                    <div class="ai-realtime-text-caption" id="aiRealtimeTextCaptionOutput" aria-live="polite">Awaiting voice input...</div>
+                    <div class="inner-glow-border"></div>
+                </div>
+                <div class="dynamic-content-placeholder" id="dynamicPlaceholder">
+                    <div class="smoke-container" id="smokeContainer"></div>
+                    <canvas id="voice-visualization-canvas"></canvas>
+                </div>
+                <button id="testBrowserPopupButton">Test Browser Pop-up</button>
+                <div class="panel-noise-overlay"></div>
+                <div class="panel-border-glow"></div>
+            </main>
+        </div>
+        <footer class="system-footer">
+            <div class="status">NEXUS OS v3.0 :: STATUS:<span id="systemDynamicStatus">IDLE</span></div>
+            <div class="time" id="currentTime">--:--:--.--</div>
+            <div class="panel-border-glow"></div>
+        </footer>
+    </div>
+    <div class="headless-browser-overlay" id="headlessBrowserOverlay">
+        <div class="headless-browser-modal" id="headlessBrowserModal">
+            <div class="browser-header-trigger-area" id="browserHeaderTriggerArea"></div>
+            <div class="browser-modal-header" id="browserModalHeader">
+                <div class="browser-controls">
+                    <button id="browserBackButton" title="Back" aria-label="Navigate back in browser">‹</button>
+                    <button id="browserMinimizeButton" title="Minimize" aria-label="Minimize browser window">_</button>
+                </div>
+                <span class="url-display" id="browserUrlDisplay">Loading...</span>
+                <button class="browser-modal-close" id="closeHeadlessBrowser" title="Close Browser" aria-label="Close browser window">×</button>
+            </div>
+            <div class="browser-content-wrapper" id="browserContentWrapper">
+                <iframe id="headlessBrowserFrame" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+    <!-- NEW: SVG Filters for background effects -->
+    <div class="svg-filters">
+        <svg>
+            <filter id="noiseFilter">
+                <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" result="noise"></feTurbulence>
+                <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.1 0" result="noiseAlpha"></feColorMatrix>
+                <feComposite in="SourceGraphic" in2="noiseAlpha" operator="in" result="composite"></feComposite>
+            </filter>
+        </svg>
+    </div>
+    <audio id="typewriterSound" src="https://cdn.jsdelivr.net/gh/kairi003/misc-assets/codepen/futuristic_ui_sounds/type_char_subtle.wav" preload="auto"></audio>
+    <audio id="browserOpenSound" src="https://cdn.jsdelivr.net/gh/kairi003/misc-assets/codepen/futuristic_ui_sounds/sci_fi_activate_digital_powerup.wav" preload="auto"></audio>
+    <audio id="browserCloseSound" src="https://cdn.jsdelivr.net/gh/kairi003/misc-assets/codepen/futuristic_ui_sounds/sci_fi_deactivate_powerdown.wav" preload="auto"></audio>
+    <audio id="headerSound" src="https://cdn.jsdelivr.net/gh/kairi003/misc-assets/codepen/futuristic_ui_sounds/ui_tap_metallic_sharp.wav" preload="auto"></audio>
+    <script>
+        // --- JavaScript (condensed - mostly same as v2.7, ensure all elements are fetched) ---
+        const currentTimeElem = document.getElementById('currentTime');
+        const systemDynamicStatus = document.getElementById('systemDynamicStatus');
+        const backgroundEffects = document.querySelector('.background-effects');
+        const dynamicPlaceholder = document.getElementById('dynamicPlaceholder');
+        const voiceVizCanvas = document.getElementById('voice-visualization-canvas');
+        const aiRealtimeTextCaptionOutput = document.getElementById('aiRealtimeTextCaptionOutput');
+        let vizCtx;
+        const headlessBrowserOverlay = document.getElementById('headlessBrowserOverlay');
+        const headlessBrowserModal = document.getElementById('headlessBrowserModal');
+        const browserModalHeader = document.getElementById('browserModalHeader');
+        const browserHeaderTriggerArea = document.getElementById('browserHeaderTriggerArea');
+        const browserContentWrapper = document.getElementById('browserContentWrapper');
+        const closeHeadlessBrowserButton = document.getElementById('closeHeadlessBrowser');
+        const headlessBrowserFrame = document.getElementById('headlessBrowserFrame');
+        const browserUrlDisplay = document.getElementById('browserUrlDisplay');
+        const browserBackButton = document.getElementById('browserBackButton');
+        const browserMinimizeButton = document.getElementById('browserMinimizeButton');
+        const testBrowserPopupButton = document.getElementById('testBrowserPopupButton');
+        const typewriterAudio = document.getElementById('typewriterSound'); if (typewriterAudio) typewriterAudio.volume = 0.1;
+        const browserOpenAudio = document.getElementById('browserOpenSound'); if (browserOpenAudio) browserOpenAudio.volume = 0.5;
+        const browserCloseAudio = document.getElementById('browserCloseSound'); if (browserCloseAudio) browserCloseAudio.volume = 0.5;
+        const headerSound = document.getElementById('headerSound'); if (headerSound) headerSound.volume = 0.25;
+        // NEW: Store references to all panels for activity indication
+        const allPanels = document.querySelectorAll('.command-bar, .sidebar-panel, .content-panel, .system-footer');
+        // NEW: References for panel border glows
+        const panelGlows = document.querySelectorAll('.panel-border-glow');
+
+        function updateTime() { const now = new Date(); const h = String(now.getHours()).padStart(2, '0'); const m = String(now.getMinutes()).padStart(2, '0'); const s = String(now.getSeconds()).padStart(2, '0'); const ms = String(now.getMilliseconds()).padStart(3, '0').substring(0,2); if (currentTimeElem) currentTimeElem.textContent = `${h}:${m}:${s}.${ms}`; }
+        if (currentTimeElem) { setInterval(updateTime, 50); updateTime(); }
+
+        const statuses = ["IDLE", "MONITORING", "AWAITING CMD", "PROCESSING", "SYS ONLINE", "Q-LINK STABLE", "DIAGNOSTIC RUN", "DATA SYNC", "QUANTUM ALIGN", "HYPER-STATE", "CRITICAL"]; // MODIFIED: Added new statuses
+        if (systemDynamicStatus) { setInterval(() => {
+            const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            systemDynamicStatus.textContent = newStatus;
+            if (newStatus === "CRITICAL") { // NEW: Add visual flair for critical status
+                systemDynamicStatus.style.color = 'var(--accent-warning-glow)';
+                systemDynamicStatus.style.textShadow = '0 0 10px var(--accent-warning-glow), 0 0 20px rgba(255, 51, 0, 0.5)';
+            } else {
+                systemDynamicStatus.style.color = 'var(--accent-secondary-glow)';
+                systemDynamicStatus.style.textShadow = 'none';
+            }
+        }, 3000); /* MODIFIED: Slightly faster update */ }
+
+        function createDataStream() {
+            if (document.hidden || !backgroundEffects) return;
+            const s=document.createElement('div');
+            s.classList.add('data-stream');
+            s.style.left=`${Math.random()*100}vw`;
+            s.style.height=`${Math.random()*120+60}px`;
+            s.style.animationDuration=`${Math.random()*2.5+2.8}s`;
+            s.style.animationDelay=`${Math.random()*2.2}s`;
+            // MODIFIED: Increased color variety for streams
+            s.style.background=Math.random()<.3?`linear-gradient(to bottom,transparent,var(--accent-secondary-glow),var(--accent-secondary-glow),transparent)`:
+            Math.random()<.6?`linear-gradient(to bottom,transparent,var(--accent-glow),var(--accent-glow),transparent)`:
+            `linear-gradient(to bottom,transparent,rgba(var(--accent-glow-rgb), 0.7),rgba(var(--border-anim-color-end-rgb), 0.7),transparent)`;
+            s.style.filter=`blur(${Math.random()*.5+.2}px)`;
+            // MODIFIED: Added more variety to streams, adjusted 3D slightly
+            s.style.width = `${Math.random() * 1.5 + 0.5}px`;
+            s.style.transform = `perspective(100px) rotateX(${Math.random() * 10 - 5}deg) skewX(${Math.random() * 5 - 2.5}deg) translateZ(${Math.random() * 50 - 25}px)`; // NEW: Added translateZ for 3D depth
+            backgroundEffects.appendChild(s);
+            s.addEventListener('animationend',()=>s.remove());
+        }
+        if (backgroundEffects) { for (let i=0; i<60; i++) setTimeout(createDataStream,Math.random()*2500); setInterval(createDataStream,100); } // MODIFIED: Increased count and frequency of streams
+
+        let voiceActive = false;
+        let animationFrameIdViz;
+        const numVizBars = 60;
+        let vizAmplitudes = new Array(numVizBars).fill(0);
+        let targetAmplitudes = new Array(numVizBars).fill(0);
+        let lastActivityTime = 0;
+        const activityTimeout = 1500;
+
+        // Speech data object for advanced visualization - ENHANCED
+        let speechData = {
+            active: false,
+            intensity: 0, // Overall loudness/energy (0-1)
+            frequencies: [0, 0, 0], // low, mid, high (normalized 0-1)
+            pitch: 0.5, // Simulated pitch (0-1, 0.5 is neutral)
+            speed: 0.5, // Simulated speech speed (0-1, 0.5 is neutral)
+            pattern: 0, // 0-1, for wave patterns
+            wordEmphasis: false,
+            punctuationPause: false,
+            currentWordLength: 0,
+            charSpeedFactor: 1, // Influences visualization speed
+            glitchIntensity: 0 // NEW: for glitch effects on AI text/viz
+        };
+
+        // Smoke particles for visualization
+        const maxSmokeParticles = 100; // MODIFIED: Increased
+        let smokeParticles = [];
+        function createSmokeParticle() {
+            return {
+                x: Math.random() * 1.2 - 0.1, // Slightly wider than canvas
+                y: Math.random() * 1.2 - 0.1, // Slightly taller than canvas
+                size: Math.random() * 80 + 40, // Larger smoke puffs
+                speed: Math.random() * 0.001 + 0.0005, // Slow movement
+                angle: Math.random() * Math.PI * 2,
+                opacity: Math.random() * 0.4 + 0.1, // Subtle opacity
+                growth: Math.random() * 0.02 + 0.01, // Smoke gradually grows
+                rotation: Math.random() * 0.01 - 0.005, // Slight rotation
+                colorVariant: Math.floor(Math.random() * 3) // 0, 1, or 2 for different green smoke shades
+            };
+        }
+        // Initialize smoke particles
+        for (let i = 0; i < maxSmokeParticles / 2; i++) {
+            smokeParticles.push(createSmokeParticle());
+        }
+
+        // Green waveform particles (Quantum Particles)
+        const maxWaveParticles = 350; // MODIFIED: Increased
+        let waveParticles = [];
+        function createWaveParticle() {
+            return {
+                x: Math.random(),
+                y: 0.5 + (Math.random() - 0.5) * 0.3, // Near the center line
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 0.01 + 0.005,
+                angle: (Math.random() > 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.5, // Mostly horizontal
+                opacity: Math.random() * 0.7 + 0.3,
+                energy: Math.random(), // Energy level affects vertical movement
+                hue: Math.random() * 40 + 110, // Green hue range
+                life: 1, // For fading out
+                decay: Math.random() * 0.01 + 0.005, // Rate of decay
+                trailLength: Math.random() * 10 + 5, // For particle trails
+                history: [], // To store previous positions for trails
+                vz: Math.random() * 2 - 1, // NEW: Z-speed for 3D effect
+                pz: 0 // NEW: Current Z-position
+            };
+        }
+        // Initialize wave particles
+        for (let i = 0; i < maxWaveParticles / 4; i++) {
+            waveParticles.push(createWaveParticle());
+        }
+
+        // NEW: Core Node Effect for background of main content panel
+        const maxCoreNodes = 10;
+        let coreNodes = [];
+        function createCoreNode() {
+            return {
+                x: Math.random() * voiceVizCanvas.width,
+                y: Math.random() * voiceVizCanvas.height,
+                radius: Math.random() * 15 + 5,
+                speed: Math.random() * 0.5 + 0.2,
+                direction: Math.random() * Math.PI * 2,
+                opacity: Math.random() * 0.3 + 0.1,
+                life: Math.random() * 100 + 50,
+                color: `calc(270 + ${Math.random()*60})`, // NEW: Use HSL color values for hue rotation
+                glow: Math.random() * 15 + 5
+            };
+        }
+        for (let i = 0; i < maxCoreNodes / 2; i++) {
+            coreNodes.push(createCoreNode());
+        }
+
+        function updateVizAmplitudes() {
+            const n = Date.now();
+            const phase = n / 1000; // For creating wave-like patterns
+
+            // Update smoke particles for background effect
+            smokeParticles.forEach((p, index) => {
+                p.size += p.growth * (speechData.active ? 1.5 : 1); // Grow faster when active
+                p.x += Math.cos(p.angle) * p.speed * (speechData.active ? 2 : 1);
+                p.y += Math.sin(p.angle) * p.speed * (speechData.active ? 2 : 1);
+                p.angle += p.rotation;
+                p.opacity = Math.max(0, p.opacity - 0.001);
+                // Make smoke react to speech intensity
+                if (speechData.active) {
+                    p.opacity = Math.min(0.8, p.opacity + speechData.intensity * 0.005);
+                    p.size += speechData.intensity * 0.5;
+                }
+                if (p.size > 200 || p.opacity <= 0.02) {
+                    smokeParticles[index] = createSmokeParticle();
+                }
+            });
+            if (smokeParticles.length < maxSmokeParticles && Math.random() > 0.95) {
+                smokeParticles.push(createSmokeParticle());
+            }
+
+            // NEW: Update core nodes (background element)
+            coreNodes.forEach((node, index) => {
+                node.x += Math.cos(node.direction) * node.speed;
+                node.y += Math.sin(node.direction) * node.speed;
+                node.opacity -= 0.0005; // Slowly fade out
+                node.life--;
+                // React to speech intensity
+                if (speechData.active) {
+                    node.radius = Math.min(25, node.radius + speechData.intensity * 0.5);
+                    node.glow = Math.min(30, node.glow + speechData.intensity * 1);
+                    node.opacity = Math.min(0.5, node.opacity + speechData.intensity * 0.002);
+                } else {
+                    node.radius = Math.max(5, node.radius * 0.99);
+                    node.glow = Math.max(5, node.glow * 0.98);
+                }
+                // Wrap around
+                if (node.x < -node.radius * 2) node.x = voiceVizCanvas.width + node.radius * 2;
+                if (node.x > voiceVizCanvas.width + node.radius * 2) node.x = -node.radius * 2;
+                if (node.y < -node.radius * 2) node.y = voiceVizCanvas.height + node.radius * 2;
+                if (node.y > voiceVizCanvas.height + node.radius * 2) node.y = -node.radius * 2;
+                if (node.life <= 0 || node.opacity <= 0) {
+                    coreNodes[index] = createCoreNode(); // Re-create faded node
+                }
+            });
+            if (coreNodes.length < maxCoreNodes && Math.random() > 0.98) {
+                coreNodes.push(createCoreNode());
+            }
+
+            // Update wave particles (green energy wave)
+            if (speechData.active || voiceActive) {
+                if (waveParticles.length < maxWaveParticles && Math.random() > 0.75) {
+                    waveParticles.push(createWaveParticle());
+                }
+                const speechEnergy = speechData.active ? speechData.intensity : 0.5;
+                const freqComponents = speechData.frequencies;
+                waveParticles.forEach((p, index) => {
+                    const baseY = 0.5;
+                    const time = Date.now() / 1000;
+                    const positionFactor = Math.sin(p.x * 10 + time * 2) * 0.15;
+                    let freqIndex = 0;
+                    if (p.x < 0.33) freqIndex = 0;
+                    else if (p.x < 0.66) freqIndex = 1;
+                    else freqIndex = 2;
+                    const freqEnergy = freqComponents[freqIndex] * speechEnergy;
+                    const energyFactor = freqEnergy * 0.3;
+
+                    p.x += Math.cos(p.angle) * p.speed * (1 + speechEnergy * 0.5);
+                    const targetY = baseY + positionFactor * (p.energy + energyFactor);
+                    p.y += (targetY - p.y) * 0.1;
+                    p.opacity = 0.3 + freqEnergy * 0.7;
+                    p.size = 1 + freqEnergy * 3;
+
+                    // NEW: Glitch effect on particles during intense speech
+                    if (speechData.glitchIntensity > 0 && Math.random() < speechData.glitchIntensity * 0.1) {
+                        p.x += (Math.random() - 0.5) * 0.05 * speechData.glitchIntensity;
+                        p.y += (Math.random() - 0.5) * 0.05 * speechData.glitchIntensity;
+                    }
+
+                    if (speechData.wordEmphasis) {
+                        p.size *= 1.2;
+                        p.opacity *= 1.1;
+                    }
+
+                    // Add a subtle "quantum" jump effect
+                    if (Math.random() < 0.005 * speechEnergy) {
+                        p.x = Math.random();
+                        p.y = 0.5 + (Math.random() - 0.5) * 0.3;
+                    }
+
+                    // NEW: Update 3D position
+                    p.pz += p.vz * 0.01 * (1 + speechEnergy);
+                    if (p.pz > 100) p.pz = -100;
+                    if (p.pz < -100) p.pz = 100;
+
+                    // Store history for trails
+                    p.history.push({x: p.x, y: p.y, pz: p.pz, opacity: p.opacity}); // MODIFIED: Store z-position and current opacity
+                    if (p.history.length > p.trailLength) {
+                        p.history.shift();
+                    }
+
+                    if (p.x < -0.1) p.x = 1.1;
+                    if (p.x > 1.1) p.x = -0.1;
+                });
+            } else {
+                waveParticles.forEach((p, index) => {
+                    const baseY = 0.5;
+                    const time = Date.now() / 1000;
+                    const positionFactor = Math.sin(p.x * 8 + time) * 0.08;
+                    p.x += Math.cos(p.angle) * p.speed * 0.5;
+                    const targetY = baseY + positionFactor * p.energy;
+                    p.y += (targetY - p.y) * 0.05;
+                    p.opacity = Math.max(0.05, p.opacity * 0.99); // Fade out slowly
+                    p.life -= p.decay; // Decrease life
+                    // Fade out trail history as well
+                    p.history = p.history.map(pos => ({...pos, opacity: pos.opacity ? pos.opacity * 0.99 : p.opacity * 0.99}));
+                    p.history = p.history.filter(pos => (pos.opacity || 1) > 0.05);
+                    p.pz += p.vz * 0.005; // MODIFIED: Continue z-movement even when inactive
+                    if (p.pz > 100) p.pz = -100;
+                    if (p.pz < -100) p.pz = 100;
+                    if (p.life <= 0 || p.opacity <= 0.05) { // Remove if life or opacity too low
+                        waveParticles.splice(index, 1);
+                        index--; // Adjust index due to removal
+                    }
+                });
+                if (waveParticles.length > maxWaveParticles / 4 && Math.random() > 0.98) {
+                    waveParticles.pop();
+                }
+            }
+
+            if(voiceActive) {
+                lastActivityTime = n;
+                let basePattern = [];
+                if (speechData.active) {
+                    const intensity = speechData.intensity;
+                    const pattern = speechData.pattern;
+                    const frequencies = speechData.frequencies;
+                    const pitch = speechData.pitch;
+                    const speed = speechData.speed;
+
+                    for (let i = 0; i < numVizBars; i++) {
+                        const position = i / numVizBars;
+                        let amplitude = 0;
+
+                        // Base frequency distribution
+                        if (position < 0.33) {
+                            amplitude = frequencies[0] * (0.6 + 0.4 * (1 - position * 3));
+                        } else if (position < 0.66) {
+                            amplitude = frequencies[1] * (0.6 + 0.4 * (1 - Math.abs((position - 0.5) * 3)));
+                        } else {
+                            amplitude = frequencies[2] * (0.6 + 0.4 * ((position - 0.66) * 3));
+                        }
+                        amplitude *= intensity;
+
+                        // Add wave-like patterns influenced by speech pattern and speed
+                        amplitude += 0.1 * Math.sin(position * 15 + phase * (1 + pattern * 2) * (1 + speed * 0.5));
+                        amplitude += 0.05 * Math.cos(position * 8 - phase * (0.7 + pitch * 0.5)); // Influence by pitch
+
+                        if (speechData.wordEmphasis) {
+                            amplitude *= 1 + 0.3 * Math.sin(position * 30 + phase * 5);
+                        }
+
+                        amplitude = Math.max(0.05, Math.min(1, amplitude));
+                        basePattern[i] = amplitude;
+                    }
+                } else {
+                    for(let i = 0; i < numVizBars; i++) {
+                        const position = i / numVizBars;
+                        basePattern[i] = 0.05 + 0.08 * Math.sin(position * 15 + phase * 0.8) +
+                                        0.04 * Math.cos(position * 7 - phase * 0.5);
+                    }
+                }
+
+                for (let i = 0; i < numVizBars; i++) {
+                    targetAmplitudes[i] = basePattern[i];
+                }
+            } else {
+                if(n - lastActivityTime > activityTimeout) {
+                    for(let i = 0; i < numVizBars; i++) {
+                        const position = i / numVizBars;
+                        targetAmplitudes[i] = 0.05 + 0.08 * Math.sin(position * 15 + phase * 0.8) +
+                                            0.04 * Math.cos(position * 7 - phase * 0.5);
+                    }
+                }
+            }
+
+            for(let i = 0; i < numVizBars; i++) {
+                const diff = targetAmplitudes[i] - vizAmplitudes[i];
+                let adjustSpeed;
+                if (speechData.active) {
+                    adjustSpeed = speechData.punctuationPause ?
+                                0.05 :
+                                Math.min(0.5, 0.2 + Math.abs(diff) * 0.3 * speechData.charSpeedFactor);
+                } else {
+                    adjustSpeed = Math.min(0.3, 0.1 + Math.abs(diff) * 0.2);
+                }
+                vizAmplitudes[i] += diff * adjustSpeed;
+            }
+        }
+
+        function drawEnhancedVoiceVisualization() {
+            if(!vizCtx || !voiceVizCanvas) {
+                if(animationFrameIdViz) cancelAnimationFrame(animationFrameIdViz);
+                return;
+            }
+
+            updateVizAmplitudes();
+
+            const w = voiceVizCanvas.width;
+            const h = voiceVizCanvas.height;
+            const bW = w / numVizBars;
+            const cY = h / 2;
+            const time = Date.now() / 1000;
+
+            if(w === 0 || h === 0) {
+                animationFrameIdViz = requestAnimationFrame(drawEnhancedVoiceVisualization);
+                return;
+            }
+
+            vizCtx.clearRect(0, 0, w, h); // Clear the canvas
+
+            // NEW: Apply global glitch effect if intense enough
+            if (speechData.glitchIntensity > 0.3 && Math.random() < speechData.glitchIntensity * 0.5) {
+                vizCtx.filter = `blur(${speechData.glitchIntensity * 2}px) saturate(${1 + speechData.glitchIntensity * 0.5}) brightness(${1 + speechData.glitchIntensity * 0.3})`;
+                vizCtx.globalAlpha = 1 - speechData.glitchIntensity * 0.2;
+            } else {
+                vizCtx.filter = 'none';
+                vizCtx.globalAlpha = 1;
+            }
+
+            if(dynamicPlaceholder) {
+                if(voiceActive || Date.now() - lastActivityTime <= activityTimeout) {
+                    dynamicPlaceholder.classList.add('active');
+                    aiRealtimeTextCaptionOutput.parentElement.classList.add('active'); // NEW: Activate AI caption area
+                } else {
+                    dynamicPlaceholder.classList.remove('active');
+                    aiRealtimeTextCaptionOutput.parentElement.classList.remove('active'); // NEW: Deactivate AI caption area
+                }
+            }
+
+            // NEW: Step 0: Draw core nodes
+            coreNodes.forEach(node => {
+                const x = node.x;
+                const y = node.y;
+                const radius = node.radius * (1 + Math.sin(time * 0.5 + node.life) * 0.1);
+                const gradient = vizCtx.createRadialGradient(x, y, 0, x, y, radius);
+                gradient.addColorStop(0, `hsla(${node.color}, 100%, 70%, ${node.opacity * 0.8})`);
+                gradient.addColorStop(0.5, `hsla(${node.color}, 100%, 50%, ${node.opacity * 0.4})`);
+                gradient.addColorStop(1, `hsla(${node.color}, 100%, 30%, 0)`);
+                vizCtx.beginPath();
+                vizCtx.arc(x, y, radius, 0, Math.PI * 2);
+                vizCtx.fillStyle = gradient;
+                vizCtx.shadowColor = `hsla(${node.color}, 100%, 60%, ${node.opacity})`;
+                vizCtx.shadowBlur = node.glow;
+                vizCtx.fill();
+            });
+
+            // Step 1: Draw subtle dark green smoke background (from particles)
+            vizCtx.shadowBlur = 0; // Reset shadow for background elements
+            vizCtx.globalCompositeOperation = 'lighter'; // For better blending of smoke
+            smokeParticles.forEach(p => {
+                const x = p.x * w;
+                const y = p.y * h;
+                const size = p.size;
+                const smokeGrad = vizCtx.createRadialGradient(x, y, 0, x, y, size);
+                let color = 'rgba(0, 40, 20, 0)';
+                if (p.colorVariant === 0) {
+                    smokeGrad.addColorStop(0, `rgba(0, 60, 30, ${p.opacity * 1.5})`);
+                    smokeGrad.addColorStop(0.4, `rgba(0, 40, 20, ${p.opacity})`);
+                    smokeGrad.addColorStop(1, 'rgba(0, 20, 10, 0)');
+                } else if (p.colorVariant === 1) {
+                    smokeGrad.addColorStop(0, `rgba(0, 80, 40, ${p.opacity * 1.2})`);
+                    smokeGrad.addColorStop(0.5, `rgba(0, 60, 30, ${p.opacity * 0.8})`);
+                    smokeGrad.addColorStop(1, 'rgba(0, 40, 20, 0)');
+                } else {
+                    // MODIFIED: Brighter highlight color for this smoke variant
+                    smokeGrad.addColorStop(0, `rgba(40, 255, 100, ${p.opacity * 0.8})`);
+                    smokeGrad.addColorStop(0.5, `rgba(20, 180, 60, ${p.opacity * 0.5})`);
+                    smokeGrad.addColorStop(1, 'rgba(10, 100, 40, 0)');
+                }
+                vizCtx.beginPath();
+                vizCtx.fillStyle = smokeGrad;
+                vizCtx.arc(x, y, size, 0, Math.PI * 2);
+                vizCtx.fill();
+            });
+            vizCtx.globalCompositeOperation = 'source-over'; // Reset composite operation
+
+            // Step 2: Draw the main glowing waveform with outer glow
+            const avgA = vizAmplitudes.reduce((a,b) => a+b, 0) / numVizBars;
+            let points = [];
+            for (let i = 0; i < numVizBars; i++) {
+                const x = i * bW;
+                const amplified = Math.pow(vizAmplitudes[i], 0.7) * 1.2;
+                const height = amplified * h * 0.4;
+                const oscFactor = Math.sin(time * 2 + i / 5) * 3;
+                const y = cY - height + oscFactor;
+                points.push({x, y});
+            }
+
+            // Draw waveform body (filled area)
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            for (let i = 0; i < points.length; i++) {
+                vizCtx.lineTo(points[i].x, points[i].y);
+            }
+            vizCtx.lineTo(w, cY);
+            for (let i = points.length - 1; i >= 0; i--) {
+                const x = points[i].x;
+                const y = cY + (cY - points[i].y);
+                vizCtx.lineTo(x, y);
+            }
+            vizCtx.closePath();
+            const waveGrad = vizCtx.createLinearGradient(0, 0, 0, h);
+            waveGrad.addColorStop(0, 'rgba(0, 255, 70, 0.4)');
+            waveGrad.addColorStop(0.3, 'rgba(0, 180, 50, 0.3)');
+            waveGrad.addColorStop(0.5, 'rgba(0, 100, 30, 0.3)');
+            waveGrad.addColorStop(0.7, 'rgba(0, 180, 50, 0.3)');
+            waveGrad.addColorStop(1, 'rgba(0, 255, 70, 0.4)');
+            vizCtx.shadowColor = 'rgba(0, 255, 70, 0.8)';
+            vizCtx.shadowBlur = 20;
+            vizCtx.fillStyle = waveGrad;
+            vizCtx.fill();
+
+            // Draw a second, slightly offset waveform layer for depth
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            for (let i = 0; i < points.length; i++) {
+                vizCtx.lineTo(points[i].x, points[i].y + Math.sin(time * 3 + i / 3) * 2); // Slight offset
+            }
+            vizCtx.lineTo(w, cY);
+            for (let i = points.length - 1; i >= 0; i--) {
+                const x = points[i].x;
+                const y = cY + (cY - (points[i].y + Math.sin(time * 3 + i / 3) * 2));
+                vizCtx.lineTo(x, y);
+            }
+            vizCtx.closePath();
+            vizCtx.fillStyle = 'rgba(0, 200, 50, 0.15)'; // More subtle color
+            vizCtx.fill();
+
+            // Draw the bright outer stroke of the waveform (top and bottom)
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            for (let i = 0; i < points.length; i++) {
+                vizCtx.lineTo(points[i].x, points[i].y);
+            }
+            vizCtx.strokeStyle = 'rgba(140, 255, 170, 0.9)';
+            vizCtx.lineWidth = 1.5 + speechData.intensity * 1; // Line width reacts to intensity
+            vizCtx.shadowColor = 'rgba(0, 255, 70, 1)';
+            vizCtx.shadowBlur = 12;
+            vizCtx.stroke();
+
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            for (let i = 0; i < points.length; i++) {
+                const x = points[i].x;
+                const y = cY + (cY - points[i].y);
+                vizCtx.lineTo(x, y);
+            }
+            vizCtx.stroke();
+
+            // NEW: Inner glowing core line, reacts more strongly to pitch
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            for (let i = 0; i < numVizBars; i++) {
+                const x = i * bW;
+                const amplified = Math.pow(vizAmplitudes[i], 1.2) * (speechData.pitch * 0.2 + 0.8);
+                const y = cY - amplified * h * 0.1 + Math.sin(time * 5 + i / 2) * 5 * speechData.pitch;
+                vizCtx.lineTo(x, y);
+            }
+            vizCtx.strokeStyle = `rgba(255, 255, 200, ${speechData.intensity * 0.5 + 0.1})`; // Brighter, subtle glow
+            vizCtx.lineWidth = 0.8;
+            vizCtx.shadowColor = `rgba(255, 255, 180, ${speechData.intensity})`;
+            vizCtx.shadowBlur = 8 * speechData.intensity;
+            vizCtx.stroke();
+            vizCtx.shadowBlur = 0; // Reset after drawing glow
+
+            // Step 3: Add bright center line through waveform
+            vizCtx.beginPath();
+            vizCtx.moveTo(0, cY);
+            vizCtx.lineTo(w, cY);
+            vizCtx.strokeStyle = 'rgba(0, 255, 70, 0.3)';
+            vizCtx.lineWidth = 1;
+            vizCtx.stroke();
+
+            // Step 4: Add horizontal movement lines for effect
+            for (let i = 0; i < 4; i++) {
+                const lineY = cY + Math.sin(time * (1 + i/4) + i) * h * 0.2;
+                const opacity = 0.03 + Math.sin(time + i) * 0.02;
+                vizCtx.beginPath();
+                vizCtx.moveTo(0, lineY);
+                vizCtx.lineTo(w, lineY);
+                vizCtx.strokeStyle = `rgba(0, 255, 70, ${opacity})`;
+                vizCtx.lineWidth = 1;
+                vizCtx.stroke();
+            }
+
+            // Step 5: Draw Quantum Particles (Wave Particles) with trails
+            vizCtx.shadowBlur = 8;
+            vizCtx.shadowColor = 'var(--viz-particle-glow)';
+            waveParticles.forEach(p => {
+                // NEW: Apply 3D perspective to particle position
+                const scaleFactor = 1 + p.pz * 0.005; // Scale based on Z-position
+                const x = p.x * w;
+                const y = p.y * h;
+                const scaledX = (x - w/2) * scaleFactor + w/2;
+                const scaledY = (y - h/2) * scaleFactor + h/2;
+                const size = p.size * scaleFactor;
+                const color = `hsla(${p.hue}, 100%, ${60 + p.energy * 30}%, ${p.opacity})`; // Vary lightness by energy
+
+                // Draw particle body
+                vizCtx.beginPath();
+                vizCtx.fillStyle = color;
+                vizCtx.arc(scaledX, scaledY, size, 0, Math.PI * 2);
+                vizCtx.fill();
+
+                // Draw particle trail
+                if (p.history.length > 1) {
+                    vizCtx.beginPath();
+                    // Start from scaled previous position
+                    const firstScaledX = (p.history[0].x * w - w/2) * (1 + p.history[0].pz * 0.005) + w/2;
+                    const firstScaledY = (p.history[0].y * h - h/2) * (1 + p.history[0].pz * 0.005) + h/2;
+                    vizCtx.moveTo(firstScaledX, firstScaledY);
+                    for (let i = 1; i < p.history.length; i++) {
+                        const trailScaledX = (p.history[i].x * w - w/2) * (1 + p.history[i].pz * 0.005) + w/2;
+                        const trailScaledY = (p.history[i].y * h - h/2) * (1 + p.history[i].pz * 0.005) + h/2;
+                        vizCtx.lineTo(trailScaledX, trailScaledY);
+                    }
+                    vizCtx.strokeStyle = `hsla(${p.hue}, 100%, ${70 + p.energy * 20}%, ${p.opacity * 0.5})`;
+                    vizCtx.lineWidth = size / 2;
+                    vizCtx.stroke();
+                }
+            });
+            vizCtx.shadowBlur = 0; // Reset shadow
+
+            // Step 6: Add subtle scanline/noise overlay
+            vizCtx.fillStyle = 'rgba(0, 0, 0, 0.02)'; // Very subtle dark overlay
+            for (let y = 0; y < h; y += 2) {
+                vizCtx.fillRect(0, y, w, 1);
+            }
+            vizCtx.fillStyle = 'rgba(0, 255, 70, 0.005)'; // Very subtle green overlay
+            for (let y = 1; y < h; y += 2) {
+                vizCtx.fillRect(0, y, w, 1);
+            }
+
+            animationFrameIdViz = requestAnimationFrame(drawEnhancedVoiceVisualization);
+        }
+
+        function resizeVizCanvas() {
+            if(voiceVizCanvas){
+                voiceVizCanvas.width=voiceVizCanvas.offsetWidth;
+                voiceVizCanvas.height=voiceVizCanvas.offsetHeight;
+            }
+        }
+
+        let typingAiInProgress = false;
+        let currentAiTypingTimeout;
+        let cursorBlinkInterval;
+
+        function typeAiCaption(message, charSpeed=45) {
+            if(!aiRealtimeTextCaptionOutput) return;
+
+            // Clear any previous typing timeout and cursor interval
+            clearTimeout(currentAiTypingTimeout);
+            clearInterval(cursorBlinkInterval);
+
+            if(typingAiInProgress && aiRealtimeTextCaptionOutput.textContent.length > 0) {
+                aiRealtimeTextCaptionOutput.innerHTML += "<span class='typed-char-ai'> ... </span>";
+            } else {
+                aiRealtimeTextCaptionOutput.innerHTML = '';
+            }
+            aiRealtimeTextCaptionOutput.classList.add('typing'); // Add typing class for cursor
+            typingAiInProgress = true;
+            voiceActive = true;
+            lastActivityTime = Date.now();
+
+            // Reset speech data for new input
+            speechData = {
+                active: true,
+                intensity: 0,
+                frequencies: [0, 0, 0],
+                pitch: 0.5,
+                speed: 0.5,
+                pattern: 0,
+                wordEmphasis: false,
+                punctuationPause: false,
+                currentWordLength: 0,
+                charSpeedFactor: 1,
+                glitchIntensity: 0
+            };
+
+            let charIdx = 0;
+            let wordCount = 0;
+            let lastCharType = 'neutral'; // neutral, vowel, consonant, punctuation
+
+            // NEW: Panel activity flicker on AI speak
+            let panelFlickerInterval = setInterval(() => {
+                allPanels.forEach(panel => {
+                    if (Math.random() < 0.1 * speechData.intensity) { // More intense flicker with higher speech intensity
+                        panel.style.transform = `translate(${Math.random() * 0.5 - 0.25}px, ${Math.random() * 0.5 - 0.25}px)`;
+                        panel.style.boxShadow = `0 0 ${25 + Math.random() * 15}px rgba(var(--accent-glow-rgb), ${0.2 + speechData.intensity * 0.3}),
+                                                inset 0 0 ${10 + Math.random() * 5}px rgba(var(--accent-glow-rgb), ${0.05 + speechData.intensity * 0.1})`;
+                        // NEW: Activate panel border glow
+                        const glowElement = panel.querySelector('.panel-border-glow');
+                        if (glowElement) {
+                            glowElement.classList.add('active');
+                        }
+                    } else {
+                        // Reset to original if not flickering
+                        panel.style.transform = '';
+                        panel.style.boxShadow = `var(--panel-shadow),var(--panel-inner-shadow)`;
+                        // NEW: Deactivate panel border glow
+                        const glowElement = panel.querySelector('.panel-border-glow');
+                        if (glowElement) {
+                            glowElement.classList.remove('active');
+                        }
+                    }
+                });
+            }, 50);
+
+            function analyzeChar(char) {
+                const isSpace = char === ' ';
+                const isPunctuation = ['.', ',', '!', '?', ';', ':'].includes(char);
+
+                // NEW: Manage glitch effect based on certain characters/conditions
+                if (char === '!' || char === '?') {
+                    speechData.glitchIntensity = 0.5; // High glitch for exclamations/questions
+                    aiRealtimeTextCaptionOutput.classList.add('glitch');
+                } else if (isSpace || isPunctuation) {
+                    speechData.glitchIntensity = Math.max(0, speechData.glitchIntensity - 0.2); // Reduce glitch on space/punctuation
+                    if (speechData.glitchIntensity < 0.1) aiRealtimeTextCaptionOutput.classList.remove('glitch');
+                } else {
+                    speechData.glitchIntensity = Math.max(0, speechData.glitchIntensity - 0.05); // Gradual reduction
+                    if (speechData.glitchIntensity < 0.1) aiRealtimeTextCaptionOutput.classList.remove('glitch');
+                }
+
+                if (isSpace || isPunctuation) {
+                    speechData.wordEmphasis = false;
+                    speechData.currentWordLength = 0;
+                    if (isPunctuation) {
+                        speechData.punctuationPause = true;
+                        speechData.intensity = 0.2 + Math.random() * 0.1; // Lower intensity at punctuation
+                        speechData.charSpeedFactor = 0.2; // Slow down viz reaction
+                        speechData.pitch = 0.4 + Math.random() * 0.2; // Slightly lower pitch for pauses
+                        speechData.speed = 0.2 + Math.random() * 0.2; // Slower speed
+                    } else {
+                        speechData.punctuationPause = false;
+                        speechData.charSpeedFactor = 1;
+                        speechData.pitch = 0.5 + Math.random() * 0.1; // Reset to neutral
+                        speechData.speed = 0.5 + Math.random() * 0.2; // Reset to neutral
+                    }
+                    wordCount++;
+                    lastCharType = isPunctuation ? 'punctuation' : 'neutral';
+                    return;
+                }
+
+                speechData.punctuationPause = false;
+                speechData.currentWordLength++;
+                speechData.charSpeedFactor = 1;
+
+                if (speechData.currentWordLength > 6 || (char === char.toUpperCase() && char.match(/[A-Z]/))) {
+                    speechData.wordEmphasis = true;
+                } else {
+                    speechData.wordEmphasis = false; // Reset emphasis for new words
+                }
+
+                const isVowel = 'aeiouAEIOU'.includes(char);
+                const isHardConsonant = 'tkpbdgTKPBDG'.includes(char);
+
+                if (isVowel) {
+                    speechData.frequencies[1] = 0.7 + Math.random() * 0.3; // Mid frequencies for vowels
+                    speechData.intensity = 0.7 + Math.random() * 0.3;
+                    speechData.pitch = 0.6 + Math.random() * 0.3; // Higher pitch for vowels
+                    speechData.speed = 0.6 + Math.random() * 0.2; // Slightly faster
+                    lastCharType = 'vowel';
+                } else if (isHardConsonant) {
+                    speechData.frequencies[0] = 0.8 + Math.random() * 0.2; // Low frequencies for hard consonants
+                    speechData.intensity = 0.9 + Math.random() * 0.1;
+                    speechData.pitch = 0.3 + Math.random() * 0.2; // Lower pitch for hard consonants
+                    speechData.speed = 0.4 + Math.random() * 0.2; // Slightly slower
+                    lastCharType = 'consonant';
+                } else {
+                    speechData.frequencies[2] = 0.6 + Math.random() * 0.4; // High frequencies for soft consonants
+                    speechData.intensity = 0.5 + Math.random() * 0.3;
+                    speechData.pitch = 0.5 + Math.random() * 0.2; // Neutral to slightly higher pitch
+                    speechData.speed = 0.5 + Math.random() * 0.2; // Neutral speed
+                    lastCharType = 'consonant';
+                }
+
+                speechData.pattern = (charIdx % 5) / 5;
+
+                if (speechData.wordEmphasis) {
+                    speechData.intensity = Math.min(1, speechData.intensity * 1.3);
+                    for (let i = 0; i < 3; i++) {
+                        speechData.frequencies[i] = Math.min(1, speechData.frequencies[i] * 1.2);
+                    }
+                    speechData.pitch = Math.min(1, speechData.pitch * 1.1); // Higher pitch for emphasis
+                    speechData.speed = Math.min(1, speechData.speed * 1.1); // Faster for emphasis
+                }
+            }
+
+            function typeChar() {
+                if (charIdx < message.length) {
+                    const char = message.charAt(charIdx);
+                    analyzeChar(char);
+
+                    const span = document.createElement('span');
+                    span.className = 'typed-char-ai';
+                    span.textContent = char;
+                    aiRealtimeTextCaptionOutput.appendChild(span);
+
+                    if (typewriterAudio && char !== ' ' && char !== '\n') {
+                        typewriterAudio.currentTime = 0;
+                        // MODIFIED: Vary playback rate for typewriter sound for realism AND pitch for character type
+                        typewriterAudio.playbackRate = 0.9 + Math.random() * 0.2;
+                        if (lastCharType === 'vowel') typewriterAudio.playbackRate += 0.1;
+                        if (lastCharType === 'consonant') typewriterAudio.playbackRate -= 0.1;
+                        typewriterAudio.play().catch(e => {});
+                    }
+
+                    charIdx++;
+                    let adjustedSpeed = charSpeed;
+                    if (lastCharType === 'punctuation') {
+                        if (char === '.') adjustedSpeed *= 4;
+                        else if (char === ',') adjustedSpeed *= 2;
+                    } else if (speechData.wordEmphasis) {
+                        adjustedSpeed *= 0.8;
+                    }
+                    adjustedSpeed *= (Math.random() * 0.25 + 0.875);
+                    // MODIFIED: Adjust charSpeed based on simulated speechData.speed
+                    adjustedSpeed /= speechData.speed * 1.5; // Faster if speechData.speed is high
+
+                    currentAiTypingTimeout = setTimeout(typeChar, adjustedSpeed);
+                } else {
+                    typingAiInProgress = false;
+                    aiRealtimeTextCaptionOutput.classList.remove('typing'); // Remove typing class to stop cursor
+                    aiRealtimeTextCaptionOutput.classList.remove('glitch'); // NEW: Ensure glitch class is removed
+                    clearInterval(panelFlickerInterval); // NEW: Stop panel flickering
+                    allPanels.forEach(panel => { // NEW: Reset panel styles
+                        panel.style.transform = ''; // Reset transform
+                        panel.style.boxShadow = `var(--panel-shadow),var(--panel-inner-shadow)`; // Reset shadow
+                        // NEW: Deactivate panel border glow
+                        const glowElement = panel.querySelector('.panel-border-glow');
+                        if (glowElement) {
+                            glowElement.classList.remove('active');
+                        }
+                    });
+
+                    // Gradually end speech activity
+                    setTimeout(() => {
+                        speechData.active = false;
+                        speechData.intensity = 0;
+                        speechData.frequencies = [0, 0, 0];
+                        speechData.pitch = 0.5;
+                        speechData.speed = 0.5;
+                        speechData.glitchIntensity = 0; // NEW: Reset glitch
+                        setTimeout(() => {
+                            voiceActive = false;
+                        }, 1000); // Allow viz to fade out after speech ends
+                    }, 500);
+                }
+            }
+            typeChar();
+        }
+
+        let isDragging = false;
+        let dragOffsetX, dragOffsetY;
+        let initialHeaderHideTimeout;
+        let isModalMinimized = false;
+
+        function showBrowserHeader() {
+            if (headlessBrowserModal && !isModalMinimized) {
+                headlessBrowserModal.classList.add('header-visible');
+                if(headerSound) { headerSound.currentTime = 0; headerSound.play().catch(e=>{});}
+                clearTimeout(initialHeaderHideTimeout);
+            }
+        }
+
+        function hideBrowserHeader() {
+            if (headlessBrowserModal) {
+                headlessBrowserModal.classList.remove('header-visible');
+            }
+        }
+
+        function openHeadlessBrowser(url = 'about:blank') {
+            if (!headlessBrowserModal || !headlessBrowserOverlay) return;
+
+            isModalMinimized = false;
+            headlessBrowserModal.classList.remove('minimized');
+            headlessBrowserModal.style.top = '';
+            headlessBrowserModal.style.left = '';
+
+            browserContentWrapper.classList.add('loading'); // NEW: Show loading state
+
+            if (headlessBrowserFrame) {
+                headlessBrowserFrame.src = url;
+                browserUrlDisplay.textContent = 'Connecting...'; // Show connecting message
+                headlessBrowserFrame.onload = () => {
+                    browserContentWrapper.classList.remove('loading'); // NEW: Hide loading state
+                    if (browserUrlDisplay) {
+                        try {
+                            // Attempt to get the actual URL, might be blocked by CORS
+                            browserUrlDisplay.textContent = headlessBrowserFrame.contentWindow.location.href;
+                        } catch (e) {
+                            browserUrlDisplay.textContent = url; // Fallback to requested URL
+                        }
+                    }
+                    // Enable/disable back button based on history
+                    try {
+                        browserBackButton.disabled = headlessBrowserFrame.contentWindow.history.length <= 1;
+                    } catch (e) {
+                        browserBackButton.disabled = true; // Default to disabled if access is blocked
+                    }
+                };
+            }
+
+            // NEW: Add a class for a short animation on open
+            headlessBrowserOverlay.classList.add('active');
+            headlessBrowserModal.classList.add('entering'); // Use the new entering animation
+            setTimeout(() => { headlessBrowserModal.classList.remove('entering'); }, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--browser-modal-entry-duration-full')) * 1000); // Remove class after anim
+
+            showBrowserHeader();
+            clearTimeout(initialHeaderHideTimeout);
+            initialHeaderHideTimeout = setTimeout(() => {
+                const isHoveringTrigger = browserHeaderTriggerArea && browserHeaderTriggerArea.matches(':hover');
+                const isHoveringHeader = browserModalHeader && browserModalHeader.matches(':hover');
+                if (!isHoveringTrigger && !isHoveringHeader) {
+                    hideBrowserHeader();
+                }
+            }, 3000);
+
+            if (browserOpenAudio) { browserOpenAudio.currentTime = 0; browserOpenAudio.play().catch(e => {}); }
+        }
+
+        function closeHeadlessBrowser() {
+            if (!headlessBrowserOverlay) return;
+
+            // NEW: Add exiting animation
+            headlessBrowserModal.classList.add('exiting');
+            setTimeout(() => {
+                headlessBrowserOverlay.classList.remove('active');
+                headlessBrowserModal.classList.remove('exiting'); // Remove class after anim
+                if (headlessBrowserFrame) headlessBrowserFrame.src = 'about:blank';
+                if (browserUrlDisplay) browserUrlDisplay.textContent = 'Loading...';
+                browserContentWrapper.classList.remove('loading'); // Ensure loading state is off
+                isModalMinimized = false;
+                headlessBrowserModal.classList.remove('minimized', 'header-visible');
+                // NEW: Ensure styles are reset if manually moved
+                headlessBrowserModal.style.top = '';
+                headlessBrowserModal.style.left = '';
+                headlessBrowserModal.style.transform = ''; // Reset transform
+            }, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--browser-modal-exit-duration-full')) * 1000); // Wait for exit animation to complete
+
+            if (browserCloseAudio) { browserCloseAudio.currentTime = 0; browserCloseAudio.play().catch(e => {}); }
+            clearTimeout(initialHeaderHideTimeout);
+        }
+
+        function makeDraggable(modal, header) {
+            if (!modal || !header) return;
+            let animationFrameIdDrag = null;
+
+            header.onmousedown = function(event) {
+                // MODIFIED: Allow dragging even if minimized (removed check)
+                isDragging = true;
+                const rect = modal.getBoundingClientRect();
+                const overlayRect = headlessBrowserOverlay.getBoundingClientRect();
+
+                let initialLeft = rect.left - overlayRect.left;
+                let initialTop = rect.top - overlayRect.top;
+
+                dragOffsetX = event.clientX - initialLeft;
+                dragOffsetY = event.clientY - initialTop;
+
+                modal.style.position = 'absolute'; // Ensure absolute positioning for dragging
+                modal.style.transform = 'none'; // Remove transform for direct positioning
+                modal.style.left = initialLeft + 'px';
+                modal.style.top = initialTop + 'px';
+
+                const updatePosition = () => {
+                    if (!isDragging) {
+                        animationFrameIdDrag = null;
+                        return;
+                    }
+                    let newX = event.clientX - dragOffsetX;
+                    let newY = event.clientY - dragOffsetY;
+
+                    // Constrain within overlay bounds
+                    newX = Math.max(0, Math.min(newX, overlayRect.width - modal.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, overlayRect.height - modal.offsetHeight));
+
+                    modal.style.left = newX + 'px';
+                    modal.style.top = newY + 'px';
+
+                    animationFrameIdDrag = requestAnimationFrame(updatePosition);
+                };
+
+                document.onmousemove = function(e) {
+                    event = e; // Update event for rAF
+                    if (!animationFrameIdDrag) {
+                        animationFrameIdDrag = requestAnimationFrame(updatePosition);
+                    }
+                };
+
+                document.onmouseup = function() {
+                    isDragging = false;
+                    cancelAnimationFrame(animationFrameIdDrag);
+                    animationFrameIdDrag = null;
+                    document.onmousemove = null;
+                    document.onmouseup = null;
+
+                    setTimeout(() => {
+                        const isHoveringTrigger = browserHeaderTriggerArea && browserHeaderTriggerArea.matches(':hover');
+                        const isHoveringHeader = browserModalHeader && browserModalHeader.matches(':hover');
+                        if (!isHoveringTrigger && !isHoveringHeader) {
+                            hideBrowserHeader();
+                        }
+                    }, 50);
+                };
+                event.preventDefault();
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // NEW: Add noise and scanline overlay elements to panels
+            const panelNoiseOverlayHTML = '<div class="panel-noise-overlay"></div>';
+            const panelScanlineOverlayHTML = '<div class="panel-scanline-overlay"></div>'; // New scanline overlay
+            const panelBorderGlowHTML = '<div class="panel-border-glow"></div>'; // NEW: Border glow overlay
+
+            document.querySelectorAll('.command-bar, .sidebar-panel, .content-panel, .system-footer').forEach(panel => {
+                if (!panel.querySelector('.panel-noise-overlay')) { // Prevent adding duplicates if already present
+                    panel.insertAdjacentHTML('beforeend', panelNoiseOverlayHTML);
+                }
+                if (!panel.querySelector('.panel-scanline-overlay')) { // Add scanline overlay
+                    panel.insertAdjacentHTML('beforeend', panelScanlineOverlayHTML);
+                }
+                if (!panel.querySelector('.panel-border-glow')) { // Add border glow overlay
+                    panel.insertAdjacentHTML('beforeend', panelBorderGlowHTML);
+                }
+            });
+
+            if (voiceVizCanvas) {
+                vizCtx = voiceVizCanvas.getContext('2d');
+                resizeVizCanvas();
+                if (vizCtx && voiceVizCanvas.width > 0 && voiceVizCanvas.height > 0) {
+                    drawEnhancedVoiceVisualization();
+                } else {
+                    console.error("Could not start voice viz loop (v2.9).");
+                }
+            } else {
+                console.error("Voice viz canvas NOT FOUND (v2.9)!");
+            }
+
+            if (closeHeadlessBrowserButton) closeHeadlessBrowserButton.addEventListener('click', closeHeadlessBrowser);
+            if (headlessBrowserOverlay) headlessBrowserOverlay.addEventListener('click', (e) => { if (e.target === headlessBrowserOverlay) closeHeadlessBrowser(); });
+
+            if (browserHeaderTriggerArea) {
+                browserHeaderTriggerArea.addEventListener('mouseenter', showBrowserHeader);
+                browserHeaderTriggerArea.addEventListener('mouseleave', (event) => {
+                    if (!browserModalHeader || !browserModalHeader.contains(event.relatedTarget)) {
+                        hideBrowserHeader();
+                    }
+                });
+            }
+
+            if (browserModalHeader) {
+                browserModalHeader.addEventListener('mouseenter', () => {
+                    clearTimeout(initialHeaderHideTimeout);
+                    showBrowserHeader();
+                });
+                browserModalHeader.addEventListener('mouseleave', (event) => {
+                    if (!browserHeaderTriggerArea || !browserHeaderTriggerArea.contains(event.relatedTarget)) {
+                        hideBrowserHeader();
+                    }
+                });
+            }
+
+            if (browserBackButton && headlessBrowserFrame) {
+                browserBackButton.addEventListener('click', () => {
+                    try {
+                        if (headlessBrowserFrame.contentWindow.history.length > 1) {
+                            headlessBrowserFrame.contentWindow.history.back();
+                            typeAiCaption("Navigating back...");
+                            browserContentWrapper.classList.add('loading'); // Show loading on navigation
+                        } else {
+                            typeAiCaption("No history to go back to.");
+                        }
+                    } catch (e) {
+                        typeAiCaption("Cannot navigate back. Cross-origin frame access denied.");
+                    }
+                });
+            }
+
+            if (browserMinimizeButton && headlessBrowserModal) {
+                browserMinimizeButton.addEventListener('click', () => {
+                    isModalMinimized = !isModalMinimized;
+                    headlessBrowserModal.classList.toggle('minimized', isModalMinimized);
+                    if (isModalMinimized) {
+                        typeAiCaption("Browser minimized.");
+                        headlessBrowserModal.classList.remove('header-visible');
+                    } else {
+                        typeAiCaption("Browser restored.");
+                        // NEW: Ensure modal snaps back to default center if not explicitly dragged
+                        if (!isDragging) {
+                            headlessBrowserModal.style.left = '';
+                            headlessBrowserModal.style.top = '';
+                            headlessBrowserModal.style.transform = ''; // Reset transform on restore
+                        }
+                        showBrowserHeader();
+                        clearTimeout(initialHeaderHideTimeout);
+                        initialHeaderHideTimeout = setTimeout(() => {
+                            const isHoveringTrigger = browserHeaderTriggerArea && browserHeaderTriggerArea.matches(':hover');
+                            const isHoveringHeader = browserModalHeader && browserModalHeader.matches(':hover');
+                            if (!isHoveringTrigger && !isHoveringHeader) {
+                                hideBrowserHeader();
+                            }
+                        }, 2000);
+                    }
+                });
+            }
+
+            if (testBrowserPopupButton) {
+                testBrowserPopupButton.addEventListener('click', () => {
+                    typeAiCaption("Initiating browser pop-up...");
+                    openHeadlessBrowser('https://www.google.com/webhp?igu=1'); // Google's "I'm Feeling Lucky" page, often allows embedding
+                });
+            }
+
+            const nexusCommandInputElement = document.getElementById('nexusCommandInput');
+            if (nexusCommandInputElement) {
+                nexusCommandInputElement.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const command = e.target.value.toLowerCase();
+                        if (command.startsWith("browse ")) {
+                            let url = command.substring(7).trim();
+                            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                                url = 'https://' + url;
+                            }
+                            typeAiCaption(`Accessing: ${url}`);
+                            setTimeout(() => openHeadlessBrowser(url), 600);
+                            e.target.value = '';
+                        } else if (command.startsWith("say ")) {
+                            const textToSay = e.target.value.substring(4);
+                            typeAiCaption(textToSay);
+                            e.target.value = '';
+                        } else if (command === "clear") {
+                            aiRealtimeTextCaptionOutput.innerHTML = 'Output cleared.';
+                            e.target.value = '';
+                        } else {
+                            typeAiCaption(`Command "${command}" not recognized. Please try "browse [url]" or "say [text]".`);
+                            e.target.value = '';
+                        }
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                if (document.getElementById('aiRealtimeTextCaptionOutput')) {
+                    typeAiCaption("Nexus Core v3.0 Online. Quantum Refined Systems Active."); // MODIFIED: Updated text
+                }
+            }, 2500);
+
+            if (headlessBrowserModal && browserModalHeader) {
+                makeDraggable(headlessBrowserModal, browserModalHeader);
+            }
+        });
+
+        window.addEventListener('resize', resizeVizCanvas);
+    </script>
+</body>
+</html>

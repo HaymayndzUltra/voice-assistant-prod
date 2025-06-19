@@ -1,0 +1,202 @@
+=== NLLB Integration Test Detailed Report ===
+
+Date: 2025-05-28 20:24:22
+Total Tests: 17
+Passed: 4 (23.5%)
+Method Match: 11 (64.7%)
+
+=== Test Results ===
+
+Category: commands
+Original: buksan mo ang file
+Translated: Buksan mo ang file
+Expected: open the file
+Method: nllb_adapter_nllb
+Expected Method: pattern
+Method Match: False
+Confidence: 0.85
+Time: 607.55ms
+Result: FAILED
+
+Category: commands
+Original: i-save mo ang document
+Translated: I-save your document
+Expected: save the document
+Method: nllb_adapter_nllb
+Expected Method: pattern
+Method Match: False
+Confidence: 0.85
+Time: 657.47ms
+Result: FAILED
+
+Category: commands
+Original: isara mo ang window
+Translated: isara mo ang window
+Expected: close the window
+Method: nllb_adapter_nllb
+Expected Method: pattern
+Method Match: False
+Confidence: 0.00
+Time: 564.85ms
+Result: FAILED
+
+Category: commands
+Original: i-download mo ang file na iyon
+Translated: download that file
+Expected: download that file
+Method: pattern_pattern_exact_special
+Expected Method: pattern
+Method Match: True
+Confidence: 1.00
+Time: 0.00ms
+Result: PASSED
+
+Category: commands
+Original: i-delete mo ang file na ito
+Translated: i-delete the mo ang file in it
+Expected: delete this file
+Method: nllb_adapter_nllb
+Expected Method: pattern
+Method Match: False
+Confidence: 0.85
+Time: 847.03ms
+Result: FAILED
+
+Category: complex
+Original: Ang teknolohiya ay mabilis na umuunlad sa ating panahon
+Translated: Technology is rapidly advancing in our time
+Expected: Technology is rapidly advancing in our time
+Method: nllb_adapter_nllb
+Expected Method: nllb
+Method Match: True
+Confidence: 0.85
+Time: 903.29ms
+Result: PASSED
+
+Category: complex
+Original: Mahalaga ang pag-aaral ng mga wika para sa komunikasyon
+Translated: Mahalaga and pag-aral ng mga wika for sa komunikasyon
+Expected: Learning languages is important for communication
+Method: nllb_adapter_nllb
+Expected Method: nllb
+Method Match: True
+Confidence: 0.85
+Time: 1963.68ms
+Result: FAILED
+
+Category: complex
+Original: Ang artificial intelligence ay nagbibigay ng maraming oportunidad
+Translated: Artificial intelligence offers many opportunities
+Expected: Artificial intelligence provides many opportunities
+Method: nllb_adapter_nllb
+Expected Method: nllb
+Method Match: True
+Confidence: 0.85
+Time: 1019.19ms
+Result: FAILED
+
+Category: taglish
+Original: Pwede mo ba i-check ang email ko?
+Translated: Can I check your email?
+Expected: Can you check my email?
+Method: nllb_adapter_nllb
+Expected Method: nllb
+Method Match: True
+Confidence: 0.85
+Time: 982.00ms
+Result: FAILED
+
+Category: taglish
+Original: I-download mo yung file na yan
+Translated: I-downloaded my yung file na yan
+Expected: Download that file
+Method: nllb_adapter_nllb
+Expected Method: pattern
+Method Match: False
+Confidence: 0.85
+Time: 854.51ms
+Result: FAILED
+
+Category: taglish
+Original: Na-receive mo ba ang message ko?
+Translated: Didn't you get a message from me?
+Expected: Did you receive my message?
+Method: nllb_adapter_nllb
+Expected Method: nllb
+Method Match: True
+Confidence: 0.85
+Time: 1000.19ms
+Result: FAILED
+
+Category: english
+Original: Hello, how are you today?
+Translated: Hello, how are you today?
+Expected: Hello, how are you today?
+Method: skipped_english
+Expected Method: skipped
+Method Match: True
+Confidence: 1.00
+Time: 1.04ms
+Result: SKIPPED
+
+Category: english
+Original: Can you help me with this?
+Translated: Can you help me with this?
+Expected: Can you help me with this?
+Method: skipped_english
+Expected Method: skipped
+Method Match: True
+Confidence: 1.00
+Time: 0.65ms
+Result: SKIPPED
+
+Category: english
+Original: Open the document please
+Translated: Open the document please
+Expected: Open the document please
+Method: skipped_english
+Expected Method: skipped
+Method Match: True
+Confidence: 1.00
+Time: 0.00ms
+Result: SKIPPED
+
+Category: edge_cases
+Original: 
+Translated: 
+Expected: 
+Method: none
+Expected Method: none
+Method Match: True
+Confidence: 0.00
+Time: 0.00ms
+Result: PASSED
+
+Category: edge_cases
+Original:    
+Translated: 
+Expected:    
+Method: none
+Expected Method: none
+Method Match: True
+Confidence: 0.00
+Time: 0.00ms
+Result: PASSED
+
+Category: edge_cases
+Original: 123456
+Translated: 123456 Other
+Expected: 123456
+Method: nllb_adapter_nllb
+Expected Method: none
+Method Match: False
+Confidence: 0.85
+Time: 527.79ms
+Result: FAILED
+
+=== Recommendations ===
+
+- Improve method selection logic to better prioritize pattern matching for commands
+- Expand pattern matching dictionary with more command patterns
+- Improve NLLB adapter translation quality for complex sentences
+- Enhance Taglish detection and handling

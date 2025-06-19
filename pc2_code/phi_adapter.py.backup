@@ -1,0 +1,721 @@
+"""
+Phi Translation Adapter
+Connects to Ollama running Phi model for translation
+"""
+import zmq
+import json
+import time
+import logging
+import sys
+import os
+import requests
+import argparse
+import random
+from datetime import datetime
+import hmac
+import hashlib
+
+# --- Security Configuration ---
+AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")  # Set via env var or default
+ENABLE_AUTH = True  # Can be disabled via command-line argument
+
+# --- Tagalog-English Phrase Dictionary ---
+TAGALOG_ENGLISH_DICT = {
+    # Used for instant dictionary-based translations (exact match)
+
+    "Kumusta ka?": "How are you?",
+    "Magandang umaga": "Good morning",
+    "Salamat": "Thank you",
+    "Paalam": "Goodbye",
+    "Anong balita?": "What's up?",
+    "Tara na": "Let's go",
+    "Sandali lang": "Just a moment",
+    "Walang anuman": "You're welcome",
+    "Oo": "Yes",
+    "Hindi": "No",
+    # Add more as needed
+}
+
+# --- Utility: Dictionary-based Correction ---
+def correct_tagalog_to_english(text):
+    return TAGALOG_ENGLISH_DICT.get(text.strip(), text)
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("PhiTranslationAdapter")
+
+# --- Documentation Log: Prompt Update (2025-05-24) ---
+"""
+Update: Tagalog/Taglish→English prompt for Phi-3/Ollama translation agent now uses a dynamic, few-shot, and context-rich template.
+
+- For every translation request, 12–16 random examples are sampled and injected into the prompt.
+- Prompt logic ensures variety, robustness, and context-awareness for Tagalog, Taglish, and English.
+- The prompt builder is dynamic and easy to update.
+
+Sample prompt excerpt:
+You are a professional Filipino-English translator.
+You excel at translating Tagalog and Taglish (mixed Tagalog-English) into natural, conversational English.
+You understand Filipino idioms, slang, and context.
+Translate the following text accurately, preserving the meaning and sounding natural in English.
+
+If the text is already in English, just repeat it.
+If the text contains both Tagalog and English (Taglish), translate only the Tagalog parts and keep the English as is.
+
+Example 1:
+Taglish: "I-paste mo dito yung code, tapos explain mo line by line."
+English: "Paste the code here, then explain it line by line."
+...
+Now, translate this:
+Tagalog/Taglish: "{INPUT}"
+English:
+"""
+
+# --- Utility: Recursively convert bytes to str for JSON serialization ---
+def _deep_bytes_to_str(obj):
+    if isinstance(obj, dict):
+        return {k: _deep_bytes_to_str(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_deep_bytes_to_str(v) for v in obj]
+    elif isinstance(obj, bytes):
+        return obj.decode(errors='ignore')
+    else:
+        return obj
+
+# Default ZMQ port
+DEFAULT_PORT = 5581
+
+class PhiTranslationAdapter:
+    """
+    Advanced translation adapter for Tagalog/Taglish→English with dynamic, context-aware prompt engineering.
+    - Supports robust few-shot sampling from a large, deduplicated pool.
+    - Easily extensible for new examples, export, and prompt logic tweaks.
+    - Designed for maintainability, clarity, and high LLM performance.
+    """
+    DEFAULT_PORT = 5581
+    # Default prompt template for translations
+    DEFAULT_PROMPT_TEMPLATE = """Filipino: {INPUT}
+English: """
+    
+    # Pool of prompt examples for Tagalog/Taglish→English (bossy, coding, scraping, Messenger, etc)
+    # Pool of prompt examples for Tagalog/Taglish→English (bossy, coding, scraping, Messenger, etc)
+    PROMPT_EXAMPLES = [
+        # --- Examples 1–100 (combined, deduplicated) ---
+        ("I-patch mo na yung system bago pa lumala.", "Patch the system before it gets worse."),
+        ("Pakicheck kung may SQL injection sa form na yan.", "Check if there's an SQL injection in that form."),
+        ("Wag mong kalimutang i-commit yung changes mo.", "Don't forget to commit your changes."),
+        ("Pakilagay ng comments sa code para madaling maintindihan.", "Add comments to the code so it's easier to understand."),
+        ("I-enable mo yung firewall bago ka mag-test.", "Enable the firewall before testing."),
+        ("I-drop mo yung unnecessary columns sa table.", "Drop the unnecessary columns from the table."),
+        ("Check mo kung naka-lock na yung user account.", "Check if the user account is already locked."),
+        ("Pakilagay sa README yung installation steps.", "Put the installation steps in the README."),
+        ("Gumawa ka ng backup bago mag-upgrade.", "Make a backup before upgrading."),
+        ("Pakilimit yung user access sa admin panel.", "Limit user access to the admin panel."),
+        ("Check mo kung may duplicate entries sa database.", "Check if there are duplicate entries in the database."),
+        ("Paki-reformat yung code para consistent lahat.", "Reformat the code so everything is consistent."),
+        ("Maglagay ka ng loading state sa UI.", "Add a loading state to the UI."),
+        ("I-trace mo kung saan nanggagaling yung memory leak.", "Trace where the memory leak is coming from."),
+        ("Pakidelete yung unused assets sa project.", "Delete the unused assets in the project."),
+        ("Ilagay mo sa ignore list yung auto-generated files.", "Put the auto-generated files in the ignore list."),
+        ("Pakimove yung sensitive configs sa env file.", "Move the sensitive configs to the env file."),
+        ("Check mo yung server uptime logs.", "Check the server uptime logs."),
+        ("I-install mo na yung security patch.", "Install the security patch now."),
+        ("Gawan mo ng script yung automation na yan.", "Make a script for that automation."),
+        ("Pakilagyan ng test coverage yung bagong feature.", "Add test coverage for the new feature."),
+        ("I-deactivate mo yung old API keys.", "Deactivate the old API keys."),
+        ("Maghanda ka ng incident report template.", "Prepare an incident report template."),
+        ("Pakiclear yung cache bago mag-load ng data.", "Clear the cache before loading the data."),
+        ("Gamitin mo yung hashed password, wag plain text.", "Use the hashed password, not plain text."),
+        ("Check mo kung working pa yung fallback system.", "Check if the fallback system is still working."),
+        ("I-verify mo yung email tokens bago mo i-allow access.", "Verify the email tokens before allowing access."),
+        ("Mag-restart ka ng services kung nag-lag.", "Restart the services if it's lagging."),
+        ("I-revert mo yung breaking change kung di na gumagana.", "Revert the breaking change if it's no longer working."),
+        ("I-audit mo yung access logs linggo-linggo.", "Audit the access logs weekly."),
+        ("Gumamit ka ng prepared statements para secure.", "Use prepared statements for security."),
+        ("Pakiplan ng rollback procedure just in case.", "Plan a rollback procedure just in case."),
+        ("Mag-recheck ka ng certificate expiry dates.", "Recheck the certificate expiry dates."),
+        ("Ilagay sa changelog lahat ng major updates.", "Put all major updates in the changelog."),
+        ("Pakigawa ng staging environment for QA.", "Create a staging environment for QA."),
+        ("I-review mo yung architecture design.", "Review the architecture design."),
+        ("Pakibalik sa default settings kung may issue.", "Restore to default settings if there's an issue."),
+        ("Gawan mo ng alert kung may login attempt failure.", "Create an alert for login attempt failures."),
+        ("Ipa-double check mo yung encryption method.", "Have someone double-check the encryption method."),
+        ("Pakilock down yung unused ports.", "Lock down the unused ports."),
+        ("Pakilipat ng bucket sa encrypted storage.", "Move the bucket to encrypted storage."),
+        ("Mag-add ka ng webhook notification.", "Add a webhook notification."),
+        ("I-setup mo na yung anomaly detection rules.", "Set up the anomaly detection rules."),
+        ("Pakipull ng latest changes bago ka mag-edit.", "Pull the latest changes before editing."),
+        ("I-configure mo yung CDN para sa assets.", "Configure the CDN for assets."),
+        ("Pakisend ng deployment timeline kay manager.", "Send the deployment timeline to the manager."),
+        ("I-follow mo yung naming convention natin.", "Follow our naming convention."),
+        ("Pakipush sa testing branch lang ha.", "Push it only to the testing branch."),
+        ("I-validate mo yung input bago mo i-process.", "Validate the input before processing."),
+        ("Pakicheck kung may memory leaks sa bagong build.", "Check if there are memory leaks in the new build."),
+        ("I-locate mo kung saan nagfo-fail yung request.", "Locate where the request is failing."),
+        ("Wag mong gamitin yung deprecated method.", "Don’t use the deprecated method."),
+        ("Pakibalik sa working state yung build.", "Restore the build to a working state."),
+        ("Pakisync yung branch mo with main.", "Sync your branch with main."),
+        ("Gawan mo ng isolated test environment para safe.", "Create an isolated test environment for safety."),
+        ("Pakilagay yung final output sa shared folder.", "Put the final output in the shared folder."),
+        ("Mag-add ka ng console log sa loob ng loop para macheck.", "Add a console log inside the loop to check."),
+        ("I-auto restart mo yung service pag nag-crash.", "Auto-restart the service when it crashes."),
+        ("Gawan mo ng fallback yung login page.", "Add a fallback to the login page."),
+        ("Pakitest ulit sa incognito, baka naka-cache lang.", "Test it again in incognito, maybe it’s just cached."),
+        ("Pakipaste yung API key sa vault.", "Paste the API key into the vault."),
+        ("I-turn off mo yung verbose logs bago mag-deploy.", "Turn off verbose logs before deploying."),
+        ("Gawan mo ng retry logic kung nagfa-fail yung request.", "Add retry logic if the request is failing."),
+        ("Wag mong kalimutan i-refresh yung token kada session.", "Don’t forget to refresh the token every session.")
+    ]
+
+    @staticmethod
+    def export_prompt_examples(format: str = 'csv', file_path: str = None) -> str:
+        """
+        Export the full deduplicated prompt example pool to CSV or JSON.
+        Args:
+            format (str): 'csv' or 'json'.
+            file_path (str): Optional path to save the export. If None, returns as string.
+        Returns:
+            str: The exported content (if file_path is None).
+        """
+
+        """
+        Export the full deduplicated prompt example pool to CSV or JSON.
+        Args:
+            format (str): 'csv' or 'json'.
+            file_path (str): Optional path to save the export. If None, returns as string.
+        Returns:
+            str: The exported content (if file_path is None).
+        """
+        import csv, json, io
+        # Deduplicate while preserving order
+        seen = set()
+        pool = []
+        for src, tgt in PhiTranslationAdapter.PROMPT_EXAMPLES:
+            key = (src.strip(), tgt.strip())
+            if key not in seen:
+                seen.add(key)
+                pool.append(key)
+        if format == 'csv':
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Taglish', 'English'])
+            for src, tgt in pool:
+                writer.writerow([src, tgt])
+            content = output.getvalue()
+        elif format == 'json':
+            content = json.dumps([{'Taglish': src, 'English': tgt} for src, tgt in pool], ensure_ascii=False, indent=2)
+        else:
+            raise ValueError("Unsupported format. Use 'csv' or 'json'.")
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            return file_path
+        return content
+
+    @staticmethod
+    def import_prompt_examples(source: str, format: str = 'csv') -> int:
+        """
+        Bulk import examples from a CSV or JSON string/file. Deduplicates and validates entries.
+        Args:
+            source (str): Path to file or raw string content.
+            format (str): 'csv' or 'json'.
+        Returns:
+            int: Number of new unique examples added.
+        """
+        import csv, json, os
+        # Load content
+        if os.path.exists(source):
+            with open(source, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = source
+        new_examples = []
+        if format == 'csv':
+            reader = csv.DictReader(content.splitlines())
+            for row in reader:
+                taglish = row.get('Taglish', '').strip()
+                english = row.get('English', '').strip()
+                if taglish and english:
+                    new_examples.append((taglish, english))
+        elif format == 'json':
+            items = json.loads(content)
+            for entry in items:
+                taglish = entry.get('Taglish', '').strip()
+                english = entry.get('English', '').strip()
+                if taglish and english:
+                    new_examples.append((taglish, english))
+        else:
+            raise ValueError("Unsupported format. Use 'csv' or 'json'.")
+        # Deduplicate and add
+        existing = set((src.strip(), tgt.strip()) for src, tgt in PhiTranslationAdapter.PROMPT_EXAMPLES)
+        added = 0
+        for ex in new_examples:
+            key = (ex[0].strip(), ex[1].strip())
+            if key not in existing:
+                PhiTranslationAdapter.PROMPT_EXAMPLES.append(key)
+                existing.add(key)
+                added += 1
+        return added
+
+    @classmethod
+    def print_prompt_summary(cls, sample_count: int = 5):
+        """
+        Print a summary of the current prompt pool for review.
+        Args:
+            sample_count (int): Number of random examples to display.
+        """
+        import random
+        pool = list({(src.strip(), tgt.strip()) for src, tgt in cls.PROMPT_EXAMPLES})
+        print(f"Prompt pool size: {len(pool)} examples.")
+        if pool:
+            print(f"Sample {sample_count} entries:")
+            for src, tgt in random.sample(pool, min(sample_count, len(pool))):
+                print(f"  Taglish: {src}\n  English: {tgt}\n---")
+        else:
+            print("Prompt pool is empty!")
+
+    # Dynamic prompt builder with few-shot sampling
+    @staticmethod
+    def build_dynamic_prompt(input_text: str, sample_size: int = 14, debug: bool = False) -> str:
+        """
+        Build a dynamic, context-rich prompt for Tagalog/Taglish to English translation.
+
+        - Deduplicates the example pool (order-preserving).
+
+def test_ollama_connection(self):
+    """Test connection to Ollama"""
+    try:
+        logger.info("Testing connection to Ollama...")
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        
+        # REP socket for receiving translation requests
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind(f"tcp://*:{self.port}")
+        logger.info(f"Phi Translation Adapter bound to port {self.port}")
+        
+        # Statistics tracking
+        self.stats = {
+            "requests": 0,
+            "successful": 0,
+            "failures": 0,
+            "last_error": None,
+            "last_update": time.time(),
+            "last_client_ip": None,
+            "last_token": None
+        }
+        
+        # Test Ollama connection
+        self.test_ollama_connection()
+        
+        self.running = True
+        
+        # Only allow Tagalog to English for now (optimization)
+        self.allowed_direction = ("tl", "en")
+        # Security settings
+        self.auth_token = AUTH_TOKEN
+        self.enable_auth = enable_auth
+        # Configurable prompt template
+        self.prompt_template = prompt_template or PhiTranslationAdapter.DEFAULT_PROMPT_TEMPLATE
+        
+        # Statistics tracking
+        self.stats = {
+            "requests": 0,
+            "successful": 0,
+            "failures": 0,
+            "last_error": None,
+            "last_update": time.time(),
+            "last_client_ip": None,
+            "last_token": None
+        }
+        
+        # Test Ollama connection
+        self.test_ollama_connection()
+        
+        self.running = True
+        
+        # Only allow Tagalog to English for now (optimization)
+        self.allowed_direction = ("tl", "en")
+        # Security: expected token
+        self.auth_token = AUTH_TOKEN
+        
+    def test_ollama_connection(self):
+        """Test connection to Ollama"""
+        try:
+            logger.info("Testing connection to Ollama...")
+            response = requests.get("http://localhost:11434/api/tags", timeout=5)
+            
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                model_names = [model.get("name", "") for model in models]
+                logger.info(f"Ollama connection successful. Available models: {model_names}")
+                
+                # Check if phi model is available
+                phi_available = any("phi" in model.lower() for model in model_names)
+                if phi_available:
+                    logger.info("Phi model is available")
+                else:
+                    logger.warning("Phi model not found. Please run 'ollama pull phi'")
+            else:
+                logger.warning(f"Ollama returned status code: {response.status_code}")
+        except requests.exceptions.ConnectionError:
+            logger.error("Could not connect to Ollama. Make sure it's running with 'ollama serve'")
+        except Exception as e:
+            logger.error(f"Error testing Ollama connection: {e}")
+        
+    def _clean_translation_output(self, raw_output, original_text):
+        """
+        Aggressively clean and extract only the proper translation from LLM response.
+        Eliminates all artifacts, contamination, and formatting issues.
+        """
+        try:
+            # If raw output is too long compared to input, likely severe contamination
+            if len(raw_output) > len(original_text) * 5:
+                logger.warning(f"Extreme contamination detected. Raw length: {len(raw_output)}")
+                # Extract only the first sentence if possible
+                sentences = re.split(r'[.!?]\s', raw_output)
+                if sentences and len(sentences) > 0:
+                    raw_output = sentences[0] + ('.' if not raw_output.endswith('.') else '')
+                    
+            # FIRST PASS: Extract only first paragraph or sentence that isn't part of the prompt system
+            lines = [line.strip() for line in raw_output.strip().split('\n') if line.strip()]
+            filtered_lines = []
+            
+            # Skip all empty lines and instruction-like content
+            skip_markers = [
+                'translate', 'translation', 'english:', 'tagalog:', 'input:', 'output:', 
+                'example', 'note:', 'guidelines', 'instruction', 'taglish', 'please', 'can you', 
+                '```', '---', '###', '##', '#', 'system where', 'in a system', 'condition', 
+                'here is', 'from condition', 'question:', 'answer:'
+            ]
+            
+            # Take only the first non-instruction-like line
+            for line in lines:
+                lowercase_line = line.lower()
+                if not any(marker in lowercase_line for marker in skip_markers) and len(line.split()) > 1:
+                    filtered_lines.append(line)
+                    # Only get the first valid line to avoid contamination
+                    break
+                    
+            # If we found nothing with the strict approach, try just the first line
+            if not filtered_lines and lines:
+                filtered_lines = [lines[0]]
+                
+            # SECOND PASS: Brutal cleanup - remove all known artifacts
+            result = ' '.join(filtered_lines)
+            
+            # Remove all common prefixes/instructions
+            prefixes_to_remove = [
+                r'^translation:\s*',
+                r'^translated:\s*',
+                r'^english:\s*', 
+                r'^the english translation is:\s*',
+                r'^here is the translation:\s*',
+                r'^please update\s*',
+                r'^in english:\s*'
+            ]
+            
+            for pattern in prefixes_to_remove:
+                result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+                
+            # Clean up quotes and spacing
+            result = result.strip('"').strip("'").strip()
+            
+            # Final sanity check - if still contaminated, just take the first sentence
+            if len(result.split()) > 20 and len(original_text.split()) < 10:
+                sentences = re.split(r'[.!?]\s', result)
+                if sentences:
+                    result = sentences[0] + '.'
+                    
+            # If translation looks like gibberish or is suspiciously like prompt text, reject it
+            if any(x in result.lower() for x in ['condition', 'system', 'possible sequence', 'answer:', 'question:']):
+                logger.error(f"Translation contains prompt contamination: {result}")
+                return "ERROR: PROMPT CONTAMINATION"  # This will trigger validation failure
+                    
+            logger.debug(f"FINAL CLEANED TRANSLATION: '{result}' (original: '{original_text}')")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error cleaning translation output: {e}")
+            return raw_output  # Return original as fallback
+    
+    def _validate_translation(self, original_text, translation):
+        """
+        Validate translation quality and check for common issues.
+        Returns None if no issues, or a description of the issue.
+        """
+        if not translation:
+            return "Empty translation"
+            
+        # Check if translation is same as input (for non-English inputs)
+        if original_text.lower() == translation.lower() and not self._is_english(original_text):
+            return "Translation unchanged"
+            
+        # Check for excessive length (possible prompt contamination)
+        if len(translation) > len(original_text) * 3:
+            return "Translation suspiciously long"
+            
+        # Check for prompt contamination
+        contamination_markers = [
+            "Example", "Taglish:", "English:", "Guidelines:", 
+            "translate", "I am a", "professional translator", 
+            "Now, translate", "```"
+        ]
+        for marker in contamination_markers:
+            if marker in translation:
+                return f"Prompt contamination detected: '{marker}'"
+                
+        # Check for partial/incomplete translations
+        if len(translation.split()) < 2 and len(original_text.split()) > 3:
+            return "Translation suspiciously short"
+            
+        # Check for proper casing (shouldn't be all lowercase for sentences)
+        if translation and translation[0].islower() and len(translation) > 10:
+            return "Translation improperly cased"
+            
+        # All checks passed
+        return None
+        
+    def _is_english(self, text):
+        """
+        Check if text is primarily English.
+        """
+        english_words = set(["the", "a", "an", "is", "are", "were", "was", "be", "been", 
+                          "for", "to", "and", "or", "but", "in", "on", "at", "by", "with"])
+        words = text.lower().split()
+        if not words:
+            return False
+            
+        english_count = sum(1 for word in words if word in english_words)
+        return english_count / len(words) > 0.4  # If 40%+ are common English words
+        
+    def translate(self, text, source_lang="tl", target_lang="en"):
+        """Translate text using Phi model via Ollama. Optimized for Tagalog to English, with dictionary correction."""
+        logger.info(f"Translating: '{text}' from {source_lang} to {target_lang}")
+        start_time = time.time()
+        self.stats["requests"] += 1
+        
+        # Only allow Tagalog to English for now
+        if (source_lang, target_lang) != self.allowed_direction:
+            logger.warning(f"Blocked translation direction: {source_lang}->{target_lang}")
+            return {
+                "original": text,
+                "translated": text,
+                "model": "phi",
+                "success": False,
+                "elapsed_sec": time.time() - start_time,
+                "message": "Only Tagalog to English translation is enabled for optimization."
+            }
+        
+        # Dictionary-based correction
+        corrected = correct_tagalog_to_english(text)
+        if corrected != text:
+            logger.info(f"Dictionary correction applied: '{text}' -> '{corrected}'")
+            translation = corrected
+            self.stats["successful"] += 1
+            return {
+                "original": text,
+                "translated": translation,
+                "model": "phi-dict",
+                "success": True,
+                "elapsed_sec": time.time() - start_time,
+                "message": "Dictionary-based translation"
+            }
+        
+        if not text or text.strip() == "":
+            self.stats["successful"] += 1
+            return {
+                "original": text,
+                "translated": text,
+                "model": "phi",
+                "success": True,
+                "elapsed_sec": time.time() - start_time,
+                "message": "Empty text, no translation needed"
+            }
+        
+        # Build prompt for Tagalog/Taglish/English using dynamic few-shot sampling
+        prompt = PhiTranslationAdapter.build_dynamic_prompt(text, sample_size=random.randint(12, 16))
+        try:
+            logger.debug(f"Calling Ollama API with model phi")
+            response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "phi",
+                    "prompt": prompt,
+                    "stream": False
+                },
+                timeout=30
+            )
+            if response.status_code == 200:
+                result = response.json()
+                raw_response = result.get("response", "").strip()
+                
+                # Clean up the translation output to extract only the English translation
+                translation = self._clean_translation_output(raw_response, text)
+                
+                # Validate translation quality
+                quality_issues = self._validate_translation(text, translation)
+                
+                # Quality check: If output is empty, same as input, or has quality issues, flag as failure
+                if not translation or translation.strip() == text.strip() or quality_issues:
+                    logger.warning(f"Translation quality issues: {quality_issues or 'Empty or unchanged'}")
+                    self.stats["failures"] += 1
+                    return {
+                        "original": text,
+                        "translated": text,  # Return original text as fallback
+                        "model": "phi",
+                        "success": False,
+                        "elapsed_sec": time.time() - start_time,
+                        "message": f"Translation quality issues: {quality_issues or 'Empty or unchanged'}"
+                    }
+                
+                elapsed = time.time() - start_time
+                self.stats["successful"] += 1
+                
+                # Return well-formatted response with validated translation
+                return {
+                    "original": text,
+                    "translated": translation,
+                    "model": "phi",
+                    "success": True,
+                    "elapsed_sec": elapsed,
+                    "message": "Success"
+                }
+            else:
+                elapsed = time.time() - start_time
+                self.stats["failures"] += 1
+                self.stats["last_error"] = f"API error: {response.status_code}"
+                return {
+                    "original": text,
+                    "translated": text,
+                    "model": "phi",
+                    "success": False,
+                    "elapsed_sec": elapsed,
+                    "message": f"API error: {response.status_code}"
+                }
+        except Exception as e:
+            elapsed = time.time() - start_time
+            self.stats["failures"] += 1
+            self.stats["last_error"] = str(e)
+            logger.error(f"Translation error: {e}")
+            return {
+                "original": text,
+                "translated": text,
+                "model": "phi",
+                "success": False,
+                "elapsed_sec": elapsed,
+                "message": f"Error: {str(e)}"
+            }
+    
+    def run(self):
+        """Run the adapter, listening for translation and health check requests. Adds authentication, logging, and diagnostics."""
+        logger.info("Starting Phi Translation Adapter")
+        if not self.enable_auth:
+            logger.warning("AUTHENTICATION DISABLED - Running in insecure mode")
+        while self.running:
+            try:
+                request = self.socket.recv_json()
+                client_ip = None
+                try:
+                    # Try to get client IP (if available, ZMQ doesn't always provide this)
+                    client_ip = self.socket.getsockopt(zmq.LAST_ENDPOINT)
+                except Exception:
+                    client_ip = None
+                logger.debug(f"client_ip raw value: {client_ip} (type: {type(client_ip)})")
+                if isinstance(client_ip, bytes):
+                    try:
+                        client_ip_str = client_ip.decode('utf-8', errors='ignore')
+                    except Exception as e:
+                        logger.warning(f"Failed to decode client_ip: {e}")
+                        client_ip_str = None
+                else:
+                    client_ip_str = str(client_ip) if client_ip is not None else None
+                logger.info(f"Received request from {client_ip_str}: {request}")
+                self.stats["last_client_ip"] = client_ip_str
+                self.stats["last_update"] = time.time()
+                
+                # Security: check token only if authentication is enabled
+                if self.enable_auth:
+                    token = request.get("token")
+                    self.stats["last_token"] = token
+                    if token != self.auth_token:
+                        logger.warning(f"Authentication failed for {client_ip}")
+                        self.socket.send_json(_deep_bytes_to_str({
+                            "success": False,
+                            "message": "Authentication failed. Invalid or missing token."
+                        }))
+                        continue
+                # Health check endpoint
+                if request.get("action") == "health":
+                    try:
+                        stats_copy = _deep_bytes_to_str(self.stats.copy())
+                        self.socket.send_json(_deep_bytes_to_str({
+                            "success": True,
+                            "message": "Phi Translation Adapter is healthy.",
+                            "stats": stats_copy,
+                            "timestamp": time.time()
+                        }))
+                    except Exception as e:
+                        logger.error(f"Stats serialization error: {e}")
+                        self.socket.send_json(_deep_bytes_to_str({
+                            "success": False,
+                            "message": f"Stats serialization error: {str(e)}"
+                        }))
+                    logger.info("Health check responded.")
+                    continue
+
+                # Translation
+                if request.get("action") == "translate":
+                    text = request.get("text", "")
+                    source_lang = request.get("source_lang", "tl")
+                    target_lang = request.get("target_lang", "en")
+                    result = self.translate(text, source_lang, target_lang)
+                    self.socket.send_json(result)
+                    logger.info(f"Sent response: {result}")
+                else:
+                    self.socket.send_json(_deep_bytes_to_str({
+                        "success": False,
+                        "message": f"Unknown action: {request.get('action', 'none')}"
+                    }))
+                    logger.warning(f"Unknown action: {request.get('action', 'none')}")
+            except Exception as e:
+                logger.error(f"Error processing request: {e}")
+                try:
+                    self.socket.send_json(_deep_bytes_to_str({
+                        "success": False,
+                        "message": f"Error: {str(e)}"
+                    }))
+                except:
+                    pass
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Phi Translation Adapter")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"Port to bind to (default: {DEFAULT_PORT}))") 
+    parser.add_argument("--no-auth", action="store_true", help="Disable authentication (run in insecure mode)")
+    args = parser.parse_args()
+    
+    print(f"=== Phi Translation Adapter ===")
+    print(f"Using Phi model via Ollama")
+    print(f"Binding to port: {args.port}")
+    
+    # Authentication status
+    enable_auth = not args.no_auth
+    if not enable_auth:
+        print(f"WARNING: Authentication DISABLED - running in insecure mode")
+    else:
+        print(f"Authentication ENABLED - token required for requests")
+    
+    # Start the adapter
+    adapter = PhiTranslationAdapter(port=args.port, enable_auth=enable_auth)
+    
+    try:
+        adapter.run()
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        print("Adapter stopped.")

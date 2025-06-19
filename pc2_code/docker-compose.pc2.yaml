@@ -1,0 +1,237 @@
+version: '3.9'
+
+x-base-agent-config: &base-agent-config
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ./logs:/app/logs
+    - ./data:/app/data
+    - ./cache:/app/cache
+    - ./models:/app/models
+  networks:
+    - pc2_network
+  env_file:
+    - .env
+
+x-gpu-agent-config: &gpu-agent-config
+  <<: *base-agent-config
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+services:
+  # Core Infrastructure Agents
+  advanced_router:
+    <<: *base-agent-config
+    command: python agents/advanced_router.py
+
+  # Memory and Learning Agents
+  unified_memory_reasoning:
+    <<: *gpu-agent-config
+    command: python agents/unified_memory_reasoning_agent.py
+    ports:
+      - "5596:5596"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+
+  memory_decay_manager:
+    <<: *base-agent-config
+    command: python agents/memory_decay_manager.py
+
+  episodic_memory:
+    <<: *gpu-agent-config
+    command: python agents/EpisodicMemoryAgent.py
+
+  # Cognitive and Learning Agents
+  cognitive_model:
+    <<: *gpu-agent-config
+    command: python agents/CognitiveModelAgent.py
+
+  learning_adjuster:
+    <<: *gpu-agent-config
+    command: python agents/LearningAdjusterAgent.py
+
+networks:
+  pc2_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.17  # PC2 IP address
+          
+# Add all PC2 services with proper port mappings and configurations
+services:
+  # Core Infrastructure Agents
+  # Translation Services
+  consolidated_translator:
+    <<: *gpu-agent-config
+    command: python agents/consolidated_translator.py
+    ports:
+      - "5563:5563"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5563
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  nllb_adapter:
+    <<: *gpu-agent-config
+    command: python agents/nllb_adapter.py
+    ports:
+      - "5581:5581"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5581
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Memory Agents
+  unified_memory_reasoning:
+    <<: *gpu-agent-config
+    command: python agents/unified_memory_reasoning_agent.py
+    ports:
+      - "5596:5596"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5596
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Learning Agents
+  learning_adjuster:
+    <<: *gpu-agent-config
+    command: python agents/LearningAdjusterAgent.py
+    ports:
+      - "5643:5643"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5643
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  local_fine_tuner:
+    <<: *gpu-agent-config
+    command: python agents/local_fine_tuner_agent.py
+    ports:
+      - "5645:5645"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5645
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Model Services
+  tinyllama_service:
+    <<: *gpu-agent-config
+    command: python agents/tinyllama_service_enhanced.py
+    ports:
+      - "5615:5615"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5615
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  model_manager:
+    <<: *gpu-agent-config
+    command: python agents/model_manager.py
+    ports:
+      - "5610:5610"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5610
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Other Agents
+  self_healing_agent:
+    <<: *base-agent-config
+    command: python agents/self_healing_agent.py
+    ports:
+      - "5611:5611"
+      - "5613:5613"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5611
+      - ZMQ_PUB_PORT=5613
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  remote_connector:
+    <<: *base-agent-config
+    command: python agents/remote_connector_agent.py
+    ports:
+      - "5557:5557"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5557
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Monitoring and Health Services
+  health_monitor:
+    <<: *base-agent-config
+    command: python agents/health_monitor.py
+    ports:
+      - "5614:5614"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5614
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  # Additional Services
+  got_tot_agent:
+    <<: *gpu-agent-config
+    command: python agents/got_tot_agent.py
+    ports:
+      - "5646:5646"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5646
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  tutor_agent:
+    <<: *gpu-agent-config
+    command: python agents/tutor_agent.py
+    ports:
+      - "5647:5647"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5647
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  tutoring_service:
+    <<: *gpu-agent-config
+    command: python agents/tutoring_service_agent.py
+    ports:
+      - "5568:5568"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5568
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  agent_trust_scorer:
+    <<: *gpu-agent-config
+    command: python agents/agent_trust_scorer.py
+    ports:
+      - "5648:5648"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5648
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  self_training_orchestrator:
+    <<: *gpu-agent-config
+    command: python agents/self_training_orchestrator.py
+    ports:
+      - "5644:5644"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5644
+      - ZMQ_BIND_ADDRESS=0.0.0.0
+
+  dreaming_mode:
+    <<: *gpu-agent-config
+    command: python agents/dreaming_mode_agent.py
+    ports:
+      - "5640:5640"
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - ZMQ_PORT=5640
+      - ZMQ_BIND_ADDRESS=0.0.0.0
