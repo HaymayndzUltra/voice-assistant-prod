@@ -1,0 +1,51 @@
+# Simplified AI System Configuration
+# This configuration includes only the most essential agents to get the system running
+
+# Core agents that must be started
+agents:
+  - name: PredictiveHealthMonitor
+    path: agents/predictive_health_monitor.py
+    port: 5613
+    enabled: true
+    
+  - name: TaskRouter
+    path: src/core/task_router.py
+    port: 8570
+    enabled: true
+    
+  - name: ModelManagerAgent
+    path: agents/model_manager_agent.py
+    port: 5570
+    enabled: true
+    
+  - name: MemoryOrchestrator
+    path: src/memory/memory_orchestrator.py
+    port: 5576
+    enabled: true
+    
+  - name: MemoryClient
+    path: src/memory/memory_client.py
+    port: 5577
+    enabled: true
+    args:
+      orchestrator_port: 5576
+    
+  - name: TTSConnector
+    path: agents/tts_connector.py
+    port: 5582
+    enabled: false
+    
+  - name: StreamingTTSAgent
+    path: agents/core_speech_output/streaming_tts_agent.py
+    port: 5562
+    enabled: false
+    
+  - name: AudioCapture
+    path: agents/streaming_audio_capture.py
+    port: 6575
+    enabled: false
+    
+  - name: StreamingSpeechRecognition
+    path: agents/streaming_speech_recognition.py
+    port: 6580
+    enabled: false 
