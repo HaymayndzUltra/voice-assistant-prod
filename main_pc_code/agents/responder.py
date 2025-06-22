@@ -154,12 +154,18 @@ class ResponderAgent(BaseAgent):
         
         # Set up TTS service connections
         self.tts_socket = self.context.socket(zmq.REQ)
+        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tts_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_PORT}")
         
         self.tts_cache_socket = self.context.socket(zmq.REQ)
+        self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_cache_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tts_cache_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_CACHE_PORT}")
         
         self.tts_connector_socket = self.context.socket(zmq.REQ)
+        self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tts_connector_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_CONNECTOR_PORT}")
         
         # Health monitoring

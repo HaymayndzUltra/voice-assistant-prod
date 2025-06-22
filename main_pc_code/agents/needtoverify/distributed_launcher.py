@@ -24,6 +24,9 @@ from typing import Dict, List, Any, Optional
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs')) / "distributed_launcher.log"
@@ -75,11 +78,15 @@ class DistributedLauncher(BaseAgent):
             if self.machine_id == "main_pc":
                 # Main PC hosts the discovery service
                 self.discovery_socket = self.context.socket(zmq.REP)
+                self.discovery_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.discovery_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.discovery_socket.bind(f"tcp://*:{self.discovery_port}")
                 logger.info(f"Discovery service bound to port {self.discovery_port}")
             else:
                 # Other machines connect to the discovery service
                 self.discovery_socket = self.context.socket(zmq.REQ)
+                self.discovery_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.discovery_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 main_pc_ip = distributed_config["machines"]["main_pc"]["ip"]
                 self.discovery_socket.connect(f"tcp://{main_pc_ip}:{self.discovery_port}")
                 logger.info(f"Connected to discovery service at {main_pc_ip}:{self.discovery_port}")

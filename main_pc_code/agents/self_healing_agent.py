@@ -121,6 +121,8 @@ except ImportError as e:
             self.socket = None
             if port:
                 self.socket = self.context.socket(zmq.REP)
+                self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 try:
                     self.socket.bind(f"tcp://127.0.0.1:{port}")
                     logger.info(f"Agent {agent_id} bound to port {port}")
@@ -207,6 +209,8 @@ except ImportError as e:
             self.endpoint = endpoint
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REQ)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.connect(endpoint)
             
         def send_request(self, request):
@@ -223,6 +227,8 @@ except ImportError as e:
             self.port = port
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://127.0.0.1:{port}")
             
     class ZMQPublisher(BaseAgent):
@@ -638,6 +644,9 @@ class SelfHealingAgent(BaseAgent)(AgentBase):
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser(description="Self-Healing Agent: Monitors and recovers system agents.")
     parser.add_argument('--server', action='store_true', help='Run in server mode, waiting for ZMQ requests')
     args = parser.parse_args()

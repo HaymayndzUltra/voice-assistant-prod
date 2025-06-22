@@ -11,6 +11,9 @@ import threading
 import time
 import logging
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "learning_mode_agent.log"
 LEARNING_MODE_STORE_PATH = "learning_mode_store.json"
 ZMQ_LEARNING_MODE_PORT = 5598  # Changed from 5599 to avoid conflict with health monitoring
@@ -32,6 +35,8 @@ class LearningModeAgent(BaseAgent):
         super().__init__(port=port, name="LearningModeAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.learning_data = self.load_learning_data()
         self.lock = threading.Lock()

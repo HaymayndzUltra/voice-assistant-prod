@@ -16,6 +16,8 @@ import random
 from collections import deque
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import sys
+import os
 
 # Setup logging
 LOG_PATH = "logs/got_tot_agent.log"
@@ -31,6 +33,19 @@ logger = logging.getLogger("GoTToTAgent")
 
 # ZMQ port for this agent
 GOT_TOT_PORT = 5646
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
+from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+args = parse_agent_args()
 
 class Node:
     """Node in the reasoning tree/graph"""
@@ -51,6 +66,8 @@ class GoTToTAgent:
         """Initialize the GoT/ToT Agent"""
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{zmq_port}")
         
         # Load reasoning model
@@ -75,42 +92,67 @@ class GoTToTAgent:
     def _load_reasoning_model(self):
         """Load the reasoning model"""
         try:
-            # Load model and tokenizer
-            model_name = "microsoft/phi-2"  # or your preferred model
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.model = AutoModelForCausalLM.from_pretrained(model_name)
-            
+            logger.info("Attempting to load reasoning model...")
+            # Define the path to the local HuggingFace model directory (not .gguf file)
+            model_path = "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/phi-2.Q4_0.gguf"
+            fallback_model = "microsoft/phi-2"
+
+            # Try local directory (must be a directory with config.json, etc.)
+            if os.path.isdir(model_path):
+                logger.info(f"Trying to load local HuggingFace model directory: {model_path}")
+                self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+                self.model = AutoModelForCausalLM.from_pretrained(model_path)
+                logger.info(f"Loaded local model from {model_path}")
+            else:
+                logger.warning(f"Local model directory not found or not valid at {model_path}. Trying HuggingFace Hub model: {fallback_model}")
+                self.tokenizer = AutoTokenizer.from_pretrained(fallback_model)
+                self.model = AutoModelForCausalLM.from_pretrained(fallback_model)
+                logger.info(f"Loaded HuggingFace Hub model: {fallback_model}")
+
             # Move to GPU if available
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.model.to(self.device)
-            
-            logger.info(f"Reasoning model loaded on {self.device}")
-            
+            if self.model:
+                self.model.to(self.device)
+                logger.info(f"Reasoning model loaded on {self.device}")
+
         except Exception as e:
             logger.error(f"Error loading reasoning model: {str(e)}")
             self.model = None
             self.tokenizer = None
+            logger.info("Fallback mode initialized - health checks will pass but model generation will be limited")
+            return
     
     def _process_loop(self):
-        """Main processing loop"""
+        """Main processing loop (poller-based, safe REP pattern)"""
+        poller = zmq.Poller()
+        poller.register(self.socket, zmq.POLLIN)
+
         while self.running:
             try:
-                # Wait for request
-                request_str = self.socket.recv_string()
-                request = json.loads(request_str)
-                
-                # Process request
-                response = self._handle_request(request)
-                
-                # Send response
-                self.socket.send_string(json.dumps(response))
-                
+                socks = dict(poller.poll(1000))  # 1-s tick
+                if self.socket in socks:
+                    # Receive request
+                    request_str = self.socket.recv_string()
+                    request = json.loads(request_str)
+
+                    # Handle request
+                    response = self._handle_request(request)
+
+                    # Send response
+                    self.socket.send_string(json.dumps(response))
+            except zmq.Again:
+                # No message received within poll interval
+                continue
             except Exception as e:
                 logger.error(f"Error in process loop: {str(e)}")
-                self.socket.send_string(json.dumps({
-                    "status": "error",
-                    "message": str(e)
-                }))
+                try:
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
+                except zmq.ZMQError:
+                    # Socket may be in bad state; skip sending
+                    pass
     
     def _handle_request(self, request: Dict) -> Dict:
         """Handle incoming requests"""
@@ -231,19 +273,22 @@ class GoTToTAgent:
             return self._fallback_reasoning_step(state, step, branch)
     
     def _fallback_reasoning_step(self, state: Dict, step: int, branch: int) -> Dict:
-        """Fallback method for generating reasoning steps"""
-        prompt = state['prompt']
-        context = state['context']
-        new_fact = f"Step {step+1} (branch {branch+1}): {prompt} | Context: {context[-1] if context else ''}"
+        """Generate a simple reasoning step without using a model"""
+        # Create a mock reasoning step for fallback operation
+        prompt = state.get('prompt', '')
+        context = state.get('context', [])
         
-        # Simulate different branches by shuffling words
-        words = new_fact.split()
-        random.shuffle(words)
+        # Generate simple fallback response
+        fallback_reasoning = f"Step {step}, branch {branch}: Reasoning in fallback mode. "
+        fallback_reasoning += f"This is a placeholder response as the model is not available."
         
+        # Update state
         new_state = state.copy()
-        new_state['context'] = context + [' '.join(words)]
-        new_state['last_step'] = ' '.join(words)
+        new_state['context'] = context + [fallback_reasoning]
+        new_state['last_step'] = fallback_reasoning
+        new_state['is_fallback'] = True
         
+        logger.info(f"Generated fallback reasoning for step {step}, branch {branch}")
         return new_state
     
     def _create_reasoning_prompt(self, state: Dict, step: int, branch: int) -> str:
@@ -325,8 +370,9 @@ class GoTToTAgent:
 if __name__ == "__main__":
     agent = GoTToTAgent()
     try:
-        agent._process_loop()
+        # Keep the main thread alive while background thread handles requests
+        agent.process_thread.join()
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt")
     finally:
-        agent.shutdown() 
+        agent.shutdown()

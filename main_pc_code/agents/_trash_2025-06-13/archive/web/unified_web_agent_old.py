@@ -62,16 +62,22 @@ class UnifiedWebAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{WEB_AGENT_PORT}")
         logger.info(f"Unified Web Agent bound to port {WEB_AGENT_PORT}")
         
         # Socket to communicate with model manager
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
         logger.info(f"Connected to Model Manager on port {MODEL_MANAGER_PORT}")
         
         # Socket to communicate with executor agent
         self.executor = self.context.socket(zmq.REQ)
+        self.executor.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.executor.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor.connect(f"tcp://localhost:{EXECUTOR_PORT}")
         logger.info(f"Connected to Executor Agent on port {EXECUTOR_PORT}")
         
@@ -472,6 +478,9 @@ if __name__ == "__main__":
         
         # Combine everything
         full_code = imports + "\n" + code + "\n" + wrapper
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         return full_code
     
     def scrape_website(self, url: str, data_type: str, output_format: str = "csv", render_js: bool = False) -> Dict[str, Any]:

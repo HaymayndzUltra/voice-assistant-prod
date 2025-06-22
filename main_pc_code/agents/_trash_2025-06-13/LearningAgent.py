@@ -9,6 +9,9 @@ from typing import Dict, Any, List, Optional, Tuple
 from collections import defaultdict
 from threading import Thread
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -29,14 +32,20 @@ class LearningAgent(BaseAgent):
         
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port}")
         
         # REQ socket for EpisodicMemoryAgent
         self.memory_socket = self.context.socket(zmq.REQ)
+        self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.connect("tcp://localhost:5629")  # EpisodicMemoryAgent
         
         # REQ socket for LocalFineTunerAgent
         self.tuner_socket = self.context.socket(zmq.REQ)
+        self.tuner_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tuner_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tuner_socket.connect("tcp://localhost:5603")  # LocalFineTunerAgent
         
         # Initialize database

@@ -35,6 +35,8 @@ from enum import Enum
 import psutil
 import gc
 
+ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
+
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
@@ -196,7 +198,7 @@ class TinyLlamaService:
         self.model_state = ModelState.UNLOADED
         
         # Model configuration
-        self.model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+        self.model_name = "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf"
         self.model = None
         self.tokenizer = None
         
@@ -234,6 +236,8 @@ class TinyLlamaService:
     def _setup_zmq_socket(self):
         """Setup ZMQ socket with proper configuration"""
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.socket.bind(f"tcp://{ZMQ_BIND_ADDRESS}:{ZMQ_PORT}")
             logger.info(f"Bound to {ZMQ_BIND_ADDRESS}:{ZMQ_PORT}")
@@ -413,7 +417,7 @@ class TinyLlamaService:
                     'status': 'success' if success else 'error',
                     'message': 'Model unloaded' if success else 'Failed to unload model'
                 }
-            elif action == 'health_check':
+            elif action in ('health', 'health_check'):
                 return {
                     'status': 'ok',
                     'service': 'tinyllama_service',

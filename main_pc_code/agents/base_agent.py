@@ -11,6 +11,9 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 logger = logging.getLogger(__name__)
 
 class BaseAgent:
@@ -33,21 +36,57 @@ class BaseAgent:
         # Initialize ZMQ context and sockets
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Set socket options
         self.socket.setsockopt(zmq.LINGER, 0)
         self.health_socket.setsockopt(zmq.LINGER, 0)
         
-        # Bind sockets
-        self.socket.bind(f"tcp://{host}:{port}")
-        self.health_socket.bind(f"tcp://{host}:{port + 1}")
+        # Bind main socket with retry logic
+        max_attempts_main = 10
+        self.port = None  # Actual bound main port
+        for i in range(max_attempts_main):
+            candidate_main = port + i
+            try:
+                self.socket.bind(f"tcp://{host}:{candidate_main}")
+                self.port = candidate_main
+                break
+            except zmq.error.ZMQError as e:
+                if "Address already in use" not in str(e):
+                    raise
+                logger.warning(f"{name}: Main port {candidate_main} in use, trying next...")
+                time.sleep(0.1)
+        if self.port is None:
+            raise RuntimeError(f"{name}: Could not bind main socket after {max_attempts_main} attempts starting from {port}")
+
+        # Bind health socket with retry logic in case the default port is already occupied
+        max_attempts = 10
+        self.health_port = None  # Will be set once binding succeeds
+        for offset in range(1, max_attempts + 1):
+            candidate_port = port + offset  # Start with +1, then +2, etc.
+            try:
+                self.health_socket.bind(f"tcp://{host}:{candidate_port}")
+                self.health_port = candidate_port
+                break
+            except zmq.error.ZMQError as e:
+                # If the port is in use, try the next one. For any other ZMQError re-raise.
+                if "Address already in use" not in str(e):
+                    raise
+                logger.warning(f"{name}: Health port {candidate_port} in use, trying next...")
+                time.sleep(0.1)
+
+        if self.health_port is None:
+            raise RuntimeError(f"{name}: Unable to bind health socket after {max_attempts} attempts starting from {port + 1}")
         
         # Start health check thread
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
         
-        logger.info(f"{name} initialized with main port {port} and health check port {port + 1}")
+        logger.info(f"{name} initialized with main port {self.port} and health check port {self.health_port}")
         
     def _health_check_loop(self):
         """Health check loop that handles health check requests."""

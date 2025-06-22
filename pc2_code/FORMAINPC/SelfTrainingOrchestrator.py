@@ -489,6 +489,11 @@ class SelfTrainingOrchestrator:
             elif action == "get_status":
                 return self.get_cycle_status(request["cycle_id"])
                 
+            elif action == "health_check":
+                return {
+                    "status": "ok"
+                }
+                
             else:
                 return {
                     "status": "error",
@@ -503,26 +508,38 @@ class SelfTrainingOrchestrator:
             }
 
     def run(self):
-        """Run the orchestrator's main loop."""
+        """Run the orchestrator's main loop (poller-based)"""
         logger.info("Starting Self Training Orchestrator")
-        
-        while True:
+        self.is_running = True
+
+        poller = zmq.Poller()
+        poller.register(self.socket, zmq.POLLIN)
+
+        while self.is_running:
             try:
-                # Wait for request
-                request = json.loads(self.socket.recv_string())
-                
-                # Process request
-                response = self.handle_request(request)
-                
-                # Send response
-                self.socket.send_string(json.dumps(response))
-                
+                socks = dict(poller.poll(1000))  # 1-s tick
+                if self.socket in socks:
+                    # Receive request
+                    request = json.loads(self.socket.recv_string())
+                    
+                    # Process request
+                    response = self.handle_request(request)
+                    
+                    # Send response
+                    self.socket.send_string(json.dumps(response))
+            except zmq.Again:
+                # No message received; continue loop
+                continue
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
-                self.socket.send_string(json.dumps({
-                    "status": "error",
-                    "message": str(e)
-                }))
+                try:
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
+                except zmq.ZMQError:
+                    # Socket may be in bad state; skip sending
+                    pass
 
     def stop(self):
         """Stop the orchestrator."""

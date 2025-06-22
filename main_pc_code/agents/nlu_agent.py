@@ -93,6 +93,8 @@ class NLUAgent(BaseAgent):
             # Create ZMQ context and socket
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
             
             # Mark as initialized
@@ -273,6 +275,9 @@ class NLUAgent(BaseAgent):
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5709)
     args = parser.parse_args()

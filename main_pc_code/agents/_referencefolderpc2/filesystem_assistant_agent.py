@@ -19,6 +19,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -54,6 +57,8 @@ class FileSystemAssistantAgent:
         """Initialize the FileSystem Assistant Agent with ZMQ REP socket on specified port"""
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         self.lock = threading.Lock()
         self.running = True

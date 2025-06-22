@@ -24,6 +24,9 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import psutil
 
+# Timeout for ZeroMQ send/recv operations (milliseconds)
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
+
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -124,8 +127,12 @@ class NLLBTranslationAdapter:
         
         # Socket to handle requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.service_port = CONFIG_ZMQ_PORT
         self.bind_address = CONFIG_ZMQ_BIND_ADDRESS
+
+        # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
         
         # Health monitoring
         self.health_status = {
@@ -444,12 +451,20 @@ class NLLBTranslationAdapter:
                     "message": f"Unknown action: {message.get('action')}"
                 })
                 
+            except zmq.error.Again:
+                # Timeout waiting for message; continue listening
+                continue
             except Exception as e:
                 self.logger.error(f"Error handling request: {e}")
-                self.socket.send_json({
-                    "status": "error",
-                    "message": "Internal server error"
-                })
+                # Attempt to report error if socket is in a proper state
+                try:
+                    self.socket.send_json({
+                        "status": "error",
+                        "message": "Internal server error"
+                    })
+                except zmq.error.ZMQError:
+                    # Ignore if cannot send due to socket state
+                    pass
     
     def run(self):
         """Run the NLLB Translation Adapter"""

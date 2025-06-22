@@ -327,6 +327,7 @@ class FixedStreamingTranslation(BaseAgent):
         
         # Main translation service connection (PC2)
         self.translation_socket = self.context.socket(zmq.REQ)
+        self.translation_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.translation_socket.connect(PC2_TRANSLATOR_ADDRESS)
         
         # Health monitoring

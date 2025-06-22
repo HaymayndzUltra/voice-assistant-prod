@@ -59,12 +59,16 @@ class ExecutorAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{EXECUTOR_PORT}")
         logger.info(f"Executor Agent bound to port {EXECUTOR_PORT}")
         
         # Socket to communicate with autogen framework (if enabled)
         if USE_AUTOGEN_FRAMEWORK:
             self.framework = self.context.socket(zmq.REQ)
+            self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.framework.connect(f"tcp://localhost:{AUTOGEN_FRAMEWORK_PORT}")
             logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
         else:
@@ -120,6 +124,9 @@ class ExecutorAgent(BaseAgent):
         """Detect programming language from code"""
         # Check for common language patterns
         if "import " in code or "from " in code and " import " in code or "def " in code or "class " in code:
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             return "python"
         elif "function " in code or "const " in code or "let " in code or "var " in code:
             return "javascript"

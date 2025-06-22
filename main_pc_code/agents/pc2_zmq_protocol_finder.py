@@ -95,6 +95,7 @@ def find_working_health_check(service):
     for variation in HEALTH_CHECK_VARIATIONS:
         # Create socket for this attempt
         socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.setsockopt(zmq.LINGER, 0)  # Don't keep messages in memory after close
         socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
         

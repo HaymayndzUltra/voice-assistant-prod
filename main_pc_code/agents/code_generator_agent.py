@@ -89,6 +89,7 @@ class CodeGeneratorAgent(BaseAgent):
         # Set up ZMQ socket
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.port = port
         self.debug = debug
         
@@ -377,6 +378,7 @@ class CodeGeneratorAgent(BaseAgent):
         
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.setsockopt(zmq.RCVTIMEO, 60000)  # 60 second timeout
         
         try:

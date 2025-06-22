@@ -22,6 +22,9 @@ from enhanced_model_router import EnhancedModelRouter
 from remote_connector_agent import RemoteConnectorAgent
 from tinyllama_service_enhanced import TinyLlamaService
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -87,12 +90,18 @@ class TestModelManagementHierarchy(unittest.TestCase):
         
         # Create sockets for each component
         self.router_socket = self.context.socket(zmq.REQ)
+        self.router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.router_socket.connect("tcp://localhost:5610")
         
         self.connector_socket = self.context.socket(zmq.REQ)
+        self.connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.connector_socket.connect("tcp://localhost:5611")
         
         self.tinyllama_socket = self.context.socket(zmq.REQ)
+        self.tinyllama_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tinyllama_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tinyllama_socket.connect("tcp://localhost:5615")
     
     def tearDown(self):

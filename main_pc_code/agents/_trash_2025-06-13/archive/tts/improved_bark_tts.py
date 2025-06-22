@@ -73,10 +73,14 @@ class BarkTTSAgent(BaseAgent):
         # Initialize ZMQ socket for communication
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{ZMQ_PORT}")
         
         # Socket for health checks
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.health_socket.bind(f"tcp://127.0.0.1:{HEALTH_PORT}")
             logger.info(f"Health check socket bound to port {HEALTH_PORT}")
@@ -237,6 +241,9 @@ class BarkTTSAgent(BaseAgent):
     def play_audio(self, audio_array):
         """Play the audio array"""
         import sounddevice as sd
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         try:
             print("[DEBUG] Listing available audio output devices:")
             devices = sd.query_devices()

@@ -63,6 +63,8 @@ class UltimateTTSAgent(BaseAgent):
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{TTS_PORT}")
         
         # Connect to UnifiedSystemAgent for health monitoring
@@ -245,6 +247,9 @@ class UltimateTTSAgent(BaseAgent):
             
             # Read audio file
             import soundfile as sf
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             audio_data, _ = sf.read(temp_path)
             
             # Convert to float32 if needed

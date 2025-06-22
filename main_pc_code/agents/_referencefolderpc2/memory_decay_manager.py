@@ -5,6 +5,9 @@ import threading
 import time
 from datetime import datetime, timedelta
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -22,10 +25,14 @@ class MemoryDecayManager:
         
         # Connect to UnifiedMemoryReasoningAgent
         self.umra_socket = self.context.socket(zmq.REQ)
+        self.umra_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.umra_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.umra_socket.connect("tcp://localhost:5596")
         
         # Socket for other agents to query memory status
         self.query_socket = self.context.socket(zmq.REP)
+        self.query_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.query_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.query_socket.bind("tcp://*:5624")
         
         # Decay parameters

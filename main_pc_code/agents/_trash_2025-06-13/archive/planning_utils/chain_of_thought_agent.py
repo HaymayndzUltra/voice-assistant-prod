@@ -13,6 +13,9 @@ import logging
 import re
 from datetime import datetime
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "chain_of_thought_agent.log"
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5613  # Main PC CoT Agent port
 CGA_PORT = 5604  # Main PC CodeGeneratorAgent port
@@ -31,6 +34,8 @@ class ChainOfThoughtAgent(BaseAgent):
         super().__init__(port=port, name="ChainOfThoughtAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         self.running = True
         self.cga_context = zmq.Context()
@@ -42,6 +47,8 @@ class ChainOfThoughtAgent(BaseAgent):
         """Establish connection to the Main PC CodeGeneratorAgent for model inference"""
         if self.cga_socket is None:
             self.cga_socket = self.cga_context.socket(zmq.REQ)
+            self.cga_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.cga_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.cga_socket.connect(f"tcp://127.0.0.1:{self.cga_port}")
             logging.info(f"[ChainOfThought] Connected to CodeGeneratorAgent on port {self.cga_port}")
     
@@ -413,6 +420,8 @@ def send_cot_request(request, port=ZMQ_CHAIN_OF_THOUGHT_PORT):
     """
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
     socket.send_string(json.dumps(request))

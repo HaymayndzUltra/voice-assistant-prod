@@ -4,6 +4,9 @@ import sys
 import logging
 from datetime import datetime
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +30,8 @@ class WebPortMonitor:
     def setup_sockets(self):
         for name, port in self.ports.items():
             socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.LINGER, 0)
             socket.connect(f"tcp://localhost:{port}")
             self.sockets[name] = socket

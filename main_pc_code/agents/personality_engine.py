@@ -13,6 +13,9 @@ import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -43,6 +46,8 @@ class PersonalityEngine(BaseAgent):
         
         # REP socket for receiving requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port}")
         
         # SUB socket for subscribing to EmotionEngine broadcasts
@@ -52,6 +57,8 @@ class PersonalityEngine(BaseAgent):
         
         # REQ socket for connecting to CoordinatorAgent for LLM access
         self.coordinator_socket = self.context.socket(zmq.REQ)
+        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://localhost:{coordinator_port}")
         
         # Initialize poller for non-blocking socket operations

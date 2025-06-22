@@ -3,10 +3,15 @@ import json
 import time
 import uuid
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 def send_tutor_request(action, subject=None, difficulty=None, session_id=None, user_profile=None):
     """Sends a structured request to the TutorAgent."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect("tcp://localhost:5558")
 
     request = {

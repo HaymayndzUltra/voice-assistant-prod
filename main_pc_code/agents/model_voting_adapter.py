@@ -31,6 +31,9 @@ logger = logging.getLogger("ModelVotingAdapter")
 from lazy_voting import LazyVotingSystem
 from model_voting_manager import ModelVotingManager
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 class ModelVotingAdapter(BaseAgent):
     """Adapter for integrating PC2's router with main PC's voting system"""
     
@@ -47,6 +50,8 @@ class ModelVotingAdapter(BaseAgent):
         
         # Connect to PC2's router
         self.pc2_socket = self.context.socket(zmq.REQ)
+        self.pc2_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.pc2_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.pc2_socket.connect(f"tcp://192.168.1.2:{pc2_router_port}")
         logger.info(f"Connected to PC2's Enhanced Model Router on port {pc2_router_port}")
         

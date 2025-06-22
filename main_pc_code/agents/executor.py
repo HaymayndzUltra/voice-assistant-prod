@@ -1,4 +1,11 @@
-from src.core.base_agent import BaseAgent
+import os, sys
+# Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from agents.base_agent import BaseAgent
 import zmq
 import json
 import subprocess
@@ -10,6 +17,32 @@ import time
 # Logging setup
 LOG_PATH = "executor_agent.log"
 # Centralized logging: Forward logs to orchestrator
+
+# ---------------------------------------------------------------------------
+# Helper: Usage analytics logger (ensures NameError does not occur at runtime)
+# ---------------------------------------------------------------------------
+
+def log_usage_analytics(user: str, command: str, status: str):
+    """Basic stub for usage analytics so that ExecutorAgent does not crash.
+
+    In a production setup this would push structured events to a monitoring
+    service.  For now we forward the information over the same PUB socket used
+    for normal logs so that the orchestrator can collect them.
+    """
+    try:
+        analytics_msg = json.dumps({
+            "agent": "executor",
+            "event": "usage",
+            "user": user,
+            "command": command,
+            "status": status,
+            "timestamp": time.time(),
+        })
+        log_socket.send_string(analytics_msg)
+    except Exception as _e:
+        # Fall back to local logging if PUB socket unavailable
+        logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
+
 import zmq
 from utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
@@ -54,16 +87,54 @@ USER_PERMISSIONS = {
 
 class ExecutorAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="Executor")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.SUB)
-        self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        # Feedback PUB socket
+        # Default ports if none provided
+        if port is None:
+            port = 5606  # Base REP port to receive privileged commands (if any)
+        self.port = port
+
+        # Initialize BaseAgent (this allocates main REP and a health port, which may shift if ports are occupied)
+        super().__init__(port=self.port, name="Executor")
+
+        # Determine ports for command SUB and feedback PUB that do not clash with the chosen health port
+        sub_port_start = self.health_port + 1
+        pub_port_start = sub_port_start + 1
+
+        # Create additional sockets using existing context (do NOT overwrite BaseAgent sockets)
+        max_attempts = 10
+        self.command_socket = self.context.socket(zmq.SUB)
+        bound = False
+        for i in range(max_attempts):
+            candidate_sub_port = sub_port_start + i
+            try:
+                self.command_socket.bind(f"tcp://127.0.0.1:{candidate_sub_port}")
+                sub_port_start = candidate_sub_port
+                bound = True
+                break
+            except zmq.error.ZMQError:
+                logging.warning(f"[Executor] SUB port {candidate_sub_port} in use, trying next...")
+                continue
+        if not bound:
+            raise RuntimeError("[Executor] Unable to bind SUB socket after multiple attempts")
+        self.command_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+
+        # Bind PUB socket for feedback; retry on conflict
         self.feedback_socket = self.context.socket(zmq.PUB)
-        self.feedback_socket.bind(f"tcp://127.0.0.1:{zmq_feedback_port}")
+        pub_bound = False
+        for i in range(max_attempts):
+            candidate_pub_port = pub_port_start + i
+            try:
+                self.feedback_socket.bind(f"tcp://127.0.0.1:{candidate_pub_port}")
+                pub_port_start = candidate_pub_port
+                pub_bound = True
+                break
+            except zmq.error.ZMQError:
+                logging.warning(f"[Executor] PUB port {candidate_pub_port} in use, trying next...")
+                continue
+        if not pub_bound:
+            raise RuntimeError("[Executor] Unable to bind PUB socket after multiple attempts")
+
         logging.info(
-            f"[Executor] Listening for commands on port {zmq_port}...")
+            f"[Executor] main REP {self.port}, health REP {self.health_port}, SUB {sub_port_start}, PUB {pub_port_start}.")
         self.running = True
         self.last_command = None
         self.command_history = []
@@ -166,7 +237,7 @@ class ExecutorAgent(BaseAgent):
         logging.info("[Executor] Agent started. Press Ctrl+C to stop.")
         while self.running:
             try:
-                msg = self.socket.recv_string()
+                msg = self.command_socket.recv_string()
                 data = json.loads(msg)
                 command = data.get("command", "").strip().lower()
                 user = data.get("user", "default")
@@ -179,7 +250,7 @@ class ExecutorAgent(BaseAgent):
 
     def stop(self):
         self.running = False
-        self.socket.close()
+        self.command_socket.close()
         self.context.term()
         logging.info("[Executor] Stopped.")
 
@@ -216,5 +287,5 @@ if __name__ == "__main__":
             # Add your initialization code here
             pass
         except Exception as e:
-            logger.error(f"Initialization error: {e}")
+            logging.error(f"Initialization error: {e}")
             raise

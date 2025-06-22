@@ -7,6 +7,9 @@ import sqlite3
 from datetime import datetime
 from typing import Dict, Any, List, Set
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +28,8 @@ class SecurityPolicyAgent(BaseAgent):
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port}")
         
         # Initialize database

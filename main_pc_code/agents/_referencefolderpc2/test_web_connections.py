@@ -2,9 +2,14 @@ import zmq
 import time
 import sys
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 def test_connection(port):
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     try:
         socket.connect(f"tcp://localhost:{port}")
         socket.send_string("TEST")

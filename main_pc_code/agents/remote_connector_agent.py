@@ -24,6 +24,9 @@ import hashlib
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
 log_file = Path(config.get('system.logs_dir', 'logs')) / "remote_connector.log"
@@ -52,11 +55,15 @@ class RemoteConnectorAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{REMOTE_CONNECTOR_PORT}")
         logger.info(f"Remote Connector bound to port {REMOTE_CONNECTOR_PORT}")
         
         # Socket to communicate with task router (previously model manager)
         self.task_router = self.context.socket(zmq.REQ)
+        self.task_router.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.task_router.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         task_router_port = config.get('zmq.task_router_port', 8570)
         self.task_router.connect(f"tcp://localhost:{task_router_port}")
         logger.info(f"Connected to Task Router on port {task_router_port}")

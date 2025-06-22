@@ -244,13 +244,20 @@ class ContextManager:
         if items_to_remove:
             logger.debug(f"[ContextManager] Pruned {len(items_to_remove[:max_to_remove])} low-importance items")
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 class UnifiedMemoryReasoningAgent:
     def __init__(self, zmq_port=ZMQ_PORT, health_check_port=HEALTH_CHECK_PORT):
         """Initialize the unified memory and reasoning agent"""
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         try:
             self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
@@ -304,6 +311,8 @@ class UnifiedMemoryReasoningAgent:
         self.memory_agent_sockets = {}
         for agent, info in MEMORY_AGENT_REGISTRY.items():
             sock = self.context.socket(zmq.REQ)
+            sock.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            sock.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             sock.connect(f"tcp://{info['host']}:{info['port']}")
             self.memory_agent_sockets[agent] = sock
         # Track in-progress operations for conflict resolution

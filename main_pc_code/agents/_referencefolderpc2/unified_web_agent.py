@@ -85,16 +85,22 @@ class UnifiedWebAgent:
         
         # Main socket for requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{UNIFIED_WEB_PORT}")
         logger.info(f"Unified Web Agent bound to port {UNIFIED_WEB_PORT}")
         
         # Health check socket
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket.bind(f"tcp://0.0.0.0:{HEALTH_CHECK_PORT}")
         logger.info(f"Health check bound to port {HEALTH_CHECK_PORT}")
         
         # Connect to Model Manager
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.model_manager.connect(f"tcp://{MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
             logger.info(f"Connected to Model Manager on {MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
@@ -104,16 +110,22 @@ class UnifiedWebAgent:
         
         # Connect to AutoGen Framework
         self.framework = self.context.socket(zmq.REQ)
+        self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.framework.connect(f"tcp://localhost:{AUTOGEN_FRAMEWORK_PORT}")
         logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
         
         # Connect to Executor Agent
         self.executor = self.context.socket(zmq.REQ)
+        self.executor.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.executor.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor.connect(f"tcp://localhost:{EXECUTOR_PORT}")
         logger.info(f"Connected to Executor Agent on port {EXECUTOR_PORT}")
         
         # Connect to Context Summarizer
         self.context_summarizer = self.context.socket(zmq.REQ)
+        self.context_summarizer.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.context_summarizer.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.context_summarizer.connect(get_connection_string("context_summarizer"))
             logger.info("Connected to Context Summarizer on PC2")
@@ -123,6 +135,8 @@ class UnifiedWebAgent:
         
         # Connect to Memory Agent
         self.memory_agent = self.context.socket(zmq.REQ)
+        self.memory_agent.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_agent.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.memory_agent.connect(get_connection_string("contextual_memory"))
             logger.info("Connected to Memory Agent on PC2")

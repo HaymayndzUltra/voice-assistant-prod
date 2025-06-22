@@ -18,10 +18,11 @@ if not os.path.exists(CACHE_DIR):
 
 # Cache management
 class TTSCache(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int | None = None, *, max_size: int = 1000, cache_dir: str = CACHE_DIR, **kwargs):
         super().__init__(port=port, name="TtsCache")
-        self.max_size = max_size
-        self.cache_dir = cache_dir
+        # Cache configuration
+        self.max_size: int = max_size
+        self.cache_dir: str = cache_dir
         self.cache_index = {}
         self.load_cache_index()
         
@@ -150,10 +151,14 @@ class TTSCache(BaseAgent):
             logging.error(f"[TTS Cache] Error clearing cache: {e}")
             return False
 
-# Global cache instance
-tts_cache = TTSCache()
+# Global cache instance created with CLI-provided arguments if available
+# This allows external modules to import helper functions without running the agent loop.
+_port_arg = getattr(_agent_args, "port", None)
+_max_size_arg = getattr(_agent_args, "max_cache_size", 1000)
 
-# Helper functions
+tts_cache = TTSCache(port=_port_arg, max_size=_max_size_arg)
+
+# -------------------- Helper API --------------------
 def get_cached_audio(text, emotion=None):
     """Get audio from cache if available"""
     return tts_cache.get_from_cache(text, emotion)
@@ -169,11 +174,15 @@ def play_cached_audio(audio_data, sample_rate=16000):
 def clear_cache():
     """Clear the entire cache"""
     return tts_cache.clear_cache()
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+
+
+# -------------------- Agent Entrypoint --------------------
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    logging.info(
+        f"Starting TTSCache agent on port {tts_cache.port} (health: {tts_cache.health_check_port})"
+    )
+    try:
+        tts_cache.run()
+    except KeyboardInterrupt:
+        logging.info("TTSCache agent interrupted by user")

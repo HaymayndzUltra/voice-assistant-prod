@@ -33,6 +33,9 @@ import sounddevice as sd
 import librosa
 import soundfile as sf
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Load configuration
@@ -394,6 +397,8 @@ class InsightFaceAgent(BaseAgent):
         try:
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
             
             # Initialize publisher socket for events

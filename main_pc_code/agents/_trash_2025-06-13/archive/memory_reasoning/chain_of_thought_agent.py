@@ -7,6 +7,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from agents.memory_client import MemoryClient
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -20,6 +23,8 @@ class ChainOfThoughtAgent(BaseAgent):
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{port}")
         
         # Initialize memory client

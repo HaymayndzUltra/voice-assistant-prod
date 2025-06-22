@@ -78,10 +78,14 @@ class BarkTTSAgent(BaseAgent):
         # Initialize ZMQ socket for communication
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{ZMQ_PORT}")
         
         # Socket to handle health check requests from dashboard
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             # Use a different port (5563) for health checks to avoid conflict with main socket (5562)
             health_port = 5563  # Different port for health checks
@@ -141,6 +145,9 @@ class BarkTTSAgent(BaseAgent):
     def get_cache_path(self, text, voice_preset):
         """Generate a cache path for the given text and voice preset"""
         import hashlib
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         # Create a hash of the text and voice preset to use as the filename
         text_hash = hashlib.md5(f"{text}_{voice_preset}".encode()).hexdigest()
         return os.path.join(CACHE_DIR, f"{text_hash}.npy")

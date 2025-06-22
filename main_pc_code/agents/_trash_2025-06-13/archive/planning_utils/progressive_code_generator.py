@@ -54,16 +54,22 @@ class ProgressiveCodeGenerator(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{PROGRESSIVE_CODE_GEN_PORT}")
         logger.info(f"Progressive Code Generator bound to port {PROGRESSIVE_CODE_GEN_PORT}")
         
         # Socket to communicate with model manager
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
         logger.info(f"Connected to Model Manager on port {MODEL_MANAGER_PORT}")
         
         # Socket to communicate with executor agent
         self.executor = self.context.socket(zmq.REQ)
+        self.executor.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.executor.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor.connect(f"tcp://localhost:{EXECUTOR_PORT}")
         logger.info(f"Connected to Executor Agent on port {EXECUTOR_PORT}")
         
@@ -771,6 +777,9 @@ Please fix all errors in the code. Only provide the fully corrected code, no exp
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser(description="Progressive Code Generator: Builds code incrementally with testing.")
     parser.add_argument('--server', action='store_true', help='Run in server mode, waiting for ZMQ requests')
     args = parser.parse_args()

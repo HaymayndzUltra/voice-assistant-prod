@@ -6,6 +6,9 @@ import threading
 from consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
 from config.system_config import get_config_for_service, config
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 class TestConsolidatedTranslator(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -71,6 +74,8 @@ class TestConsolidatedTranslator(unittest.TestCase):
         # Initialize ZMQ client
         cls.context = zmq.Context()
         cls.socket = cls.context.socket(zmq.REQ)
+        cls.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        cls.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         cls.socket.connect(f"tcp://localhost:{cls.config['zmq_port']}")
         
     @classmethod
@@ -266,6 +271,8 @@ class TestConsolidatedTranslator(unittest.TestCase):
                 'session_id': session_id
             }
             socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.connect(f"tcp://localhost:{self.config['zmq_port']}")
             socket.send_json(request)
             response = socket.recv_json()

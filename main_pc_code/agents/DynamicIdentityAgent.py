@@ -1,21 +1,32 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
 import time
-import os
 from datetime import datetime
 from typing import Dict, Any, List
 from utils.config_parser import parse_agent_args
 import threading
-_agent_args = parse_agent_args()
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('dynamic_identity.log'),
+        logging.FileHandler(os.path.join(MAIN_PC_CODE, 'logs', 'dynamic_identity.log')),
         logging.StreamHandler()
     ]
 )
@@ -24,13 +35,16 @@ logger = logging.getLogger(__name__)
 class DynamicIdentityAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         # Load config just to get the port
-        config_path = os.path.join('config', 'system_config.json')
+        config_path = os.path.join(MAIN_PC_CODE, 'config', 'system_config.json')
         try:
             with open(config_path, 'r', encoding='utf-8-sig') as f:
                 config = json.load(f)
         except UnicodeDecodeError:
             with open(config_path, 'r', encoding='utf-16') as f:
                 config = json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"Config file not found at {config_path}, using defaults")
+            config = {}
         agent_config = None
         if 'agents' in config and 'dynamic_identity' in config['agents']:
             agent_config = config['agents']['dynamic_identity']
@@ -40,7 +54,7 @@ class DynamicIdentityAgent(BaseAgent):
             agent_config = {}
         agent_config.setdefault('port', 5802)
         # Determine port priority: explicit __init__ arg > CLI --port arg > config
-        cmd_port = getattr(_agent_args, 'port', None)
+        cmd_port = getattr(args, 'port', None)
         if port is not None:
             self.port = port
         elif cmd_port is not None:
@@ -62,7 +76,7 @@ class DynamicIdentityAgent(BaseAgent):
     def _perform_initialization(self):
         try:
             # Load configuration and personas in background
-            config_path = os.path.join('config', 'system_config.json')
+            config_path = os.path.join(MAIN_PC_CODE, 'config', 'system_config.json')
             try:
                 with open(config_path, 'r', encoding='utf-8-sig') as f:
                     config = json.load(f)
@@ -87,10 +101,14 @@ class DynamicIdentityAgent(BaseAgent):
                 self.personas = json.load(f)
             # REQ socket for EnhancedModelRouter
             self.model_socket = self.context.socket(zmq.REQ)
-            _host = getattr(_agent_args, 'host', 'localhost')
+            self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            _host = getattr(args, 'host', 'localhost')
             self.model_socket.connect(f"tcp://{_host}:{self.emr_port}")
             # REQ socket for EmpathyAgent
             self.empathy_socket = self.context.socket(zmq.REQ)
+            self.empathy_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.empathy_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.empathy_socket.connect(f"tcp://{_host}:{self.empathy_port}")
             self.initialization_status.update({
                 "is_initialized": True,

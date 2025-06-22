@@ -48,6 +48,8 @@ class UnifiedSystemAgent(BaseAgent):
         
         # Health check socket (REP)
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
         logger.info(f"Bound REP socket to port {HEALTH_CHECK_PORT}")
         
@@ -90,6 +92,9 @@ class UnifiedSystemAgent(BaseAgent):
             # Import the configuration module
             sys.path.append(str(config_path.parent))
             import system_config
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             
             # Get the configuration
             config = {

@@ -6,22 +6,35 @@ Chain of Thought Agent
 This agent implements chain-of-thought reasoning for complex tasks
 """
 
+import sys
 import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 import json
 import logging
 import zmq
 from typing import Dict, Any, Optional
 import time
+from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+args = parse_agent_args()
 
 # Configure logging
 logger = logging.getLogger("ChainOfThoughtAgent")
 
 class ChainOfThoughtAgent:
-    def __init__(self, port: int = 5612):
+    def __init__(self, port: int = None):
         """Initialize the Chain of Thought Agent"""
-        self.port = port
+        self.port = port if port is not None else (args.port if args.port else 5612)
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{self.port}")
         
         # Initialize poller for timeouts

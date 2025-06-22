@@ -17,6 +17,9 @@ from dataclasses import dataclass
 from enum import Enum
 from queue import PriorityQueue
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +61,8 @@ class SelfTrainingOrchestrator:
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.port = port
         self.socket.bind(f"tcp://*:{self.port}")
         

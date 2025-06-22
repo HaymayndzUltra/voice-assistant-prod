@@ -8,6 +8,9 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 import networkx as nx
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Network Configuration
 PC2_IP = "192.168.100.17"  # PC2's IP address
 MAIN_PC_IP = "192.168.100.16"  # Main PC's IP address
@@ -51,6 +54,8 @@ class CognitiveModelAgent:
         
         # Connect to Remote Connector on PC2
         self.remote_socket = self.context.socket(zmq.REQ)
+        self.remote_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.remote_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.remote_socket.connect(f"tcp://{PC2_IP}:{REMOTE_CONNECTOR_PORT}")
             logger.info(f"Connected to Remote Connector on {PC2_IP}:{REMOTE_CONNECTOR_PORT}")

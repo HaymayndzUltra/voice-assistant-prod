@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +32,8 @@ class LearningAdjusterAgent:
         # Main REP socket for handling requests
         try:
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://{self.host}:{self.port}")
             logger.info(f"LearningAdjusterAgent listening on {self.host}:{self.port}")
         except zmq.error.ZMQError as e:
@@ -38,6 +43,8 @@ class LearningAdjusterAgent:
         # REQ socket for PerformanceLoggerAgent
         try:
             self.performance_socket = self.context.socket(zmq.REQ)
+            self.performance_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.performance_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             performance_host = get_service_host('performance_logger', 'localhost')
             performance_port = get_service_port('performance_logger', 5632)
             self.performance_socket.connect(f"tcp://{performance_host}:{performance_port}")
@@ -49,6 +56,8 @@ class LearningAdjusterAgent:
         # REQ socket for AgentTrustScorer
         try:
             self.trust_socket = self.context.socket(zmq.REQ)
+            self.trust_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.trust_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             trust_host = get_service_host('agent_trust_scorer', 'localhost')
             trust_port = get_service_port('agent_trust_scorer', 5628)
             self.trust_socket.connect(f"tcp://{trust_host}:{trust_port}")
@@ -60,6 +69,8 @@ class LearningAdjusterAgent:
         # REQ socket for LearningAgent
         try:
             self.learning_socket = self.context.socket(zmq.REQ)
+            self.learning_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.learning_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             learning_host = get_service_host('learning_agent', 'localhost')
             learning_port = get_service_port('learning_agent', 5633)
             self.learning_socket.connect(f"tcp://{learning_host}:{learning_port}")

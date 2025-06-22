@@ -63,6 +63,7 @@ def check_zmq_service(model_id, service_info):
     # Prepare the ZMQ connection
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.LINGER, 0)
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
     

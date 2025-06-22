@@ -22,6 +22,9 @@ from typing import Dict, Any, List, Optional
 # Import the LazyVoting system
 from lazy_voting import LazyVotingSystem
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 LOG_PATH = "logs/model_voting_manager.log"
 Path(LOG_PATH).parent.mkdir(exist_ok=True)
@@ -58,11 +61,15 @@ class ModelVotingManager(BaseAgent):
         # Setup ZMQ communication
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         
         # Connect to the task router (which replaced the model manager)
         # This is the new central point for model-related requests
         self.model_backend_socket = self.context.socket(zmq.REQ)
+        self.model_backend_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_backend_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_backend_socket.connect("tcp://127.0.0.1:8570")  # Task Router port
         
         self.running = True

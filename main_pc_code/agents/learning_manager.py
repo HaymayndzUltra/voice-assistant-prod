@@ -46,16 +46,24 @@ class LearningManager(BaseAgent):
         
         # REP socket for receiving requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port}")
         
         # REQ sockets for connecting to other agents
         self.memory_manager_socket = self.context.socket(zmq.REQ)
+        self.memory_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_manager_socket.connect(f"tcp://{_agent_args.host}:{memory_manager_port}")
         
         self.knowledge_base_socket = self.context.socket(zmq.REQ)
+        self.knowledge_base_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.knowledge_base_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.knowledge_base_socket.connect(f"tcp://{_agent_args.host}:{knowledge_base_port}")
         
         self.coordinator_socket = self.context.socket(zmq.REQ)
+        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://{_agent_args.host}:{coordinator_port}")
         
         # Initialize socket poller for timeouts
@@ -224,6 +232,9 @@ class LearningManager(BaseAgent):
                 try:
                     # Find JSON in the response (in case LLM added extra text)
                     import re
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                     json_match = re.search(r'\{.*\}', analysis_text, re.DOTALL)
                     if json_match:
                         analysis_json = json.loads(json_match.group(0))

@@ -240,6 +240,7 @@ class TaskRouter:
             # Set up task router socket (REP)
             self.task_port = test_ports[0] if test_ports else TASK_ROUTER_PORT
             self.task_socket = self.context.socket(zmq.REP)
+            self.task_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.task_socket.bind(f"tcp://*:{self.task_port}")
             logger.info(f"Task socket bound to port {self.task_port}")
             
@@ -248,6 +249,7 @@ class TaskRouter:
             
             # Set up connection to Enhanced Model Router on PC2
             self.emr_socket = self.context.socket(zmq.REQ)
+            self.emr_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.emr_socket.setsockopt(zmq.LINGER, 0)
             self.emr_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
             self.emr_socket.connect(f"tcp://{PC2_IP}:{PC2_EMR_PORT}")
@@ -255,6 +257,7 @@ class TaskRouter:
             
             # Set up connection to Consolidated Translator on PC2
             self.translator_socket = self.context.socket(zmq.REQ)
+            self.translator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.translator_socket.setsockopt(zmq.LINGER, 0)
             self.translator_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
             self.translator_socket.connect(f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}")

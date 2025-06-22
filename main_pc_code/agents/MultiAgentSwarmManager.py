@@ -86,16 +86,22 @@ class MultiAgentSwarmManager(BaseAgent):
         
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         logger.info(f"MultiAgentSwarmManager bound to port {self.port}")
         
         # REQ socket for CoordinatorAgent (LLM access)
         self.coordinator_socket = self.context.socket(zmq.REQ)
+        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{COORDINATOR_PORT}")
         logger.info(f"Connected to CoordinatorAgent on port {COORDINATOR_PORT}")
         
         # REQ socket for AutoGen Framework
         self.autogen_socket = self.context.socket(zmq.REQ)
+        self.autogen_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.autogen_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.autogen_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{AUTOGEN_FRAMEWORK_PORT}")
         logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
         
@@ -265,6 +271,9 @@ class MultiAgentSwarmManager(BaseAgent):
                     
                     # Extract JSON array from the result
                     import re
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                     json_match = re.search(r'\[.*\]', result, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)

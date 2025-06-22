@@ -106,6 +106,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         self.tagabert_socket = None
         try:
             self.tagabert_socket = self.context.socket(zmq.REQ)
+            self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
             self.tagabert_socket.connect(TAGABERT_SERVICE_URL)
             logger.info(f"Connected to TagaBERTa service at {TAGABERT_SERVICE_URL}")

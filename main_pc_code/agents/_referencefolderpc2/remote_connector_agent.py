@@ -213,11 +213,13 @@ class RemoteConnectorAgent:
             
             # Socket to receive requests
             self.receiver = self.context.socket(zmq.REP)
+            self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.receiver.bind(f"tcp://{self.host}:{self.port}")
             logger.info(f"RemoteConnectorAgent listening on {self.host}:{self.port}")
             
             # Socket to communicate with model manager
             self.model_manager = self.context.socket(zmq.REQ)
+            self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             model_manager_host = config.get('zmq.model_manager_host', 'localhost')
             model_manager_port = config.get('zmq.model_manager_port', 5555)
             self.model_manager.connect(f"tcp://{model_manager_host}:{model_manager_port}")

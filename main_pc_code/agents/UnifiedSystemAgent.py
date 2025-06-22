@@ -26,6 +26,7 @@ class UnifiedSystemAgent(BaseAgent):
         
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind("tcp://*:5568")
         
         # Define all known agents and their ports
@@ -66,6 +67,7 @@ class UnifiedSystemAgent(BaseAgent):
         """Check if an agent is healthy by sending a ping request."""
         try:
             socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
             socket.connect(f"tcp://localhost:{port}")
             

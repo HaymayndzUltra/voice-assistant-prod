@@ -10,6 +10,9 @@ import time
 import logging
 import threading
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingInterruptHandler")
@@ -43,6 +46,8 @@ class StreamingInterruptHandler(BaseAgent):
         
         # TTS agent socket for direct stop commands
         self.tts_socket = self.context.socket(zmq.REQ)
+        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tts_socket.connect(f"tcp://localhost:{TTS_PORT}")
         logger.info(f"Connected to TTS agent on port {TTS_PORT}")
         

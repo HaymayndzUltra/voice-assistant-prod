@@ -19,6 +19,9 @@ import logging
 import re
 from pathlib import Path
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "logs/enhanced_model_router.log"
 ZMQ_MODEL_ROUTER_PORT = 5601 # Enhanced version of standard model router
 
@@ -42,10 +45,14 @@ class EnhancedModelRouter(BaseAgent):
         
         # Main REP socket for model requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         
         # Task Router REP socket for MMA requests
         self.task_router_socket = self.context.socket(zmq.REP)
+        self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.task_router_socket.bind("tcp://0.0.0.0:8570")
         
         # Setup poller for multiple sockets
@@ -55,13 +62,19 @@ class EnhancedModelRouter(BaseAgent):
         
         # Connect to advanced agents
         self.context_summarizer_socket = self.context.socket(zmq.REQ)
+        self.context_summarizer_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.context_summarizer_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.context_summarizer_socket.connect("tcp://127.0.0.1:5610")
         
         self.chain_of_thought_socket = self.context.socket(zmq.REQ)
+        self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.chain_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.chain_of_thought_socket.connect("tcp://127.0.0.1:5612")
         
         # Connect to original model manager
         self.model_manager_socket = self.context.socket(zmq.REQ)
+        self.model_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager_socket.connect("tcp://127.0.0.1:5555")
         
         self.running = True

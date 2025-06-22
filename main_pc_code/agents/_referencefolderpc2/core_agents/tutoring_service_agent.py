@@ -35,6 +35,8 @@ class TutoringServiceAgent:
         logger.info(f"Initializing Tutoring Service Agent on port {TUTORING_PORT}")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.socket.bind(f"tcp://*:{TUTORING_PORT}")
             logger.info(f"Successfully bound to tcp://*:{TUTORING_PORT}")
@@ -154,6 +156,9 @@ if __name__ == "__main__":
         logger.critical(f"Could not start TutoringServiceAgent due to ZMQ error: {e}")
         # Exit or handle as appropriate for your application startup
         import sys
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         sys.exit(1) # Indicate an error on exit
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received. Shutting down...")

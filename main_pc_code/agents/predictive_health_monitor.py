@@ -41,6 +41,8 @@ logger = logging.getLogger("PredictiveHealthMonitor")
 # Constants
 HEALTH_MONITOR_PORT = 5613
 HEALTH_CHECK_PORT = 5614
+# Default ZMQ send/receive timeout (milliseconds)
+ZMQ_REQUEST_TIMEOUT = 2000
 
 class PredictiveHealthMonitor:
     """Predictive health monitoring system for AI agents"""

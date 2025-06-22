@@ -269,11 +269,15 @@ class AgentBase:
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://0.0.0.0:{port}")
         logger.info(f"Agent {agent_id} bound to port {port}")
         
         # Socket to communicate with autogen framework
         self.framework = self.context.socket(zmq.REQ)
+        self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.framework.connect(f"tcp://localhost:{config.get('zmq.autogen_framework_port', 5600)}")
         logger.info(f"Connected to AutoGen Framework on port {config.get('zmq.autogen_framework_port', 5600)}")
         
@@ -495,6 +499,9 @@ def get_system_info() -> Dict[str, Any]:
     # Add psutil information if available
     try:
         import psutil
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         
         info.update({
             "cpu_count": psutil.cpu_count(),

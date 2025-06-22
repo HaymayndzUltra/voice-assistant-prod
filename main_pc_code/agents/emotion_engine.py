@@ -1,3 +1,12 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 """
 Emotion Engine Agent
@@ -33,18 +42,20 @@ class EmotionEngine(BaseAgent):
             port: Port for receiving requests
             pub_port: Port for publishing emotional state updates
         """
+        # Determine listening port
         if port is not None:
-            self.port = port
-        elif hasattr(_agent_args, 'port'):
+            self.port = int(port)
+        elif getattr(_agent_args, 'port', None):
             self.port = int(_agent_args.port)
         else:
-            raise ValueError("Port must be provided either through constructor or agent arguments")
+            # Default fallback used when agent is launched by external orchestrator without CLI args
+            self.port = 5590
+
+        # Determine pub_port (defaults to port + 2)
         if 'pub_port' in kwargs and kwargs['pub_port'] is not None:
-            self.pub_port = kwargs['pub_port']
-        elif hasattr(_agent_args, 'port'):
-            self.pub_port = int(_agent_args.port) + 2  # Use port + 2 to avoid conflict with health check port
+            self.pub_port = int(kwargs['pub_port'])
         else:
-            self.pub_port = None
+            self.pub_port = self.port + 2  # Use port + 2 to avoid conflict with health check port
             
         # Initialize ZMQ in background
         self.initialization_status = {
@@ -111,10 +122,26 @@ class EmotionEngine(BaseAgent):
         try:
             # BaseAgent already initialized the main socket and health socket
             # We just need to initialize the PUB socket for broadcasting emotional state updates
-            if self.pub_port:
+            if self.pub_port is not None:
                 self.pub_socket = self.context.socket(zmq.PUB)
-                self.pub_socket.bind(f"tcp://*:{self.pub_port}")
-                logger.info(f"Emotion Engine PUB socket initialized on port {self.pub_port}")
+                max_attempts = 10
+                attempts = 0
+                port = self.pub_port
+                while attempts < max_attempts:
+                    try:
+                        self.pub_socket.bind(f"tcp://*:{port}")
+                        self.pub_port = port
+                        logger.info(f"Emotion Engine PUB socket initialized on port {port}")
+                        break
+                    except zmq.ZMQError as e:
+                        if e.errno == zmq.EADDRINUSE:
+                            port += 1
+                            attempts += 1
+                            continue
+                        else:
+                            raise
+                else:
+                    raise RuntimeError("Unable to bind PUB socket after multiple attempts")
             
             # Mark as initialized
             self.initialization_status.update({

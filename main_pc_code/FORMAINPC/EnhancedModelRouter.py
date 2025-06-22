@@ -22,7 +22,15 @@ import sys
 import traceback
 from pathlib import Path
 from datetime import datetime
-from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory
+# Attempt to import the lightweight web_automation stub (present in main_pc_code/web_automation).
+# If it is not yet importable, prepend the parent directory (main_pc_code) to sys.path and retry.
+try:
+    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
+except ModuleNotFoundError:
+    parent_main_pc = Path(__file__).resolve().parent.parent  # main_pc_code
+    if str(parent_main_pc) not in sys.path:
+        sys.path.insert(0, str(parent_main_pc))
+    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
 from typing import Dict, Tuple, Optional, List
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -45,6 +53,9 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("EnhancedModelRouter")
+
+# Default ZMQ request/response timeout in milliseconds
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 
 # ZMQ port for this agent
 ZMQ_MODEL_ROUTER_PORT = 5598  # Primary port for all model routing
@@ -71,7 +82,14 @@ _router_cache = {}
 _router_cache_lock = threading.Lock()
 
 # Argument parsing
-_agent_args = parse_agent_args()
+args = parse_agent_args()
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
 
 def router_cache_key(*args, **kwargs):
     return str(args) + str(kwargs)
@@ -166,8 +184,8 @@ class EnhancedModelRouter:
     def __init__(self, zmq_port=None, pub_port=None):
         # Allow port override via --port
         if zmq_port is None:
-            if hasattr(_agent_args, 'port') and _agent_args.port is not None:
-                zmq_port = int(_agent_args.port)
+            if hasattr(args, 'port') and args.port is not None:
+                zmq_port = int(args.port)
             else:
                 zmq_port = ZMQ_MODEL_ROUTER_PORT
         if pub_port is None:
@@ -177,11 +195,15 @@ class EnhancedModelRouter:
 
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.zmq_port}")
 
         # Health check socket (main_port+1)
         self.health_check_port = self.zmq_port + 1
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket.bind(f"tcp://*:{self.health_check_port}")
 
         # Start health check thread immediately
@@ -207,30 +229,44 @@ class EnhancedModelRouter:
 
             # Connect to TaskRouter
             self.task_router_socket = self.context.socket(zmq.REQ)
+            self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.task_router_socket.connect(f"tcp://localhost:{TASK_ROUTER_PORT}")
             logger.info(f"Connected to TaskRouter on port {TASK_ROUTER_PORT}")
 
             # Connect to other required services
             self.model_manager_socket = self.context.socket(zmq.REQ)
+            self.model_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.model_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_manager_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
             logger.info(f"Connected to ModelManagerAgent on {MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
 
             self.contextual_memory_socket = self.context.socket(zmq.REQ)
+            self.contextual_memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.contextual_memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.contextual_memory_socket.connect(f"tcp://localhost:{CONTEXTUAL_MEMORY_PORT}")
 
             self.chain_of_thought_socket = self.context.socket(zmq.REQ)
+            self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.chain_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.chain_of_thought_socket.connect(f"tcp://localhost:{CHAIN_OF_THOUGHT_PORT}")
 
             self.remote_connector_socket = self.context.socket(zmq.REQ)
+            self.remote_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.remote_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.remote_connector_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:{REMOTE_CONNECTOR_PORT}")  # Connect to PC2
 
             # Connect to UnifiedUtilsAgent on Main PC
             self.utils_agent_socket = self.context.socket(zmq.REQ)
+            self.utils_agent_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.utils_agent_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.utils_agent_socket.connect(f"tcp://localhost:{UNIFIED_UTILS_PORT}")
             logger.info(f"Connected to UnifiedUtilsAgent on localhost:{UNIFIED_UTILS_PORT}")
 
             # Connect to Web Assistant for research capabilities
             self.web_assistant_socket = self.context.socket(zmq.REQ)
+            self.web_assistant_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.web_assistant_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.web_assistant_socket.connect(f"tcp://localhost:{WEB_ASSISTANT_PORT}")
             logger.info(f"Connected to Web Assistant on port {WEB_ASSISTANT_PORT}")
 
@@ -269,10 +305,6 @@ class EnhancedModelRouter:
                     "web_assistant": True
                 }
             }
-
-            # Start processing thread
-            self.process_thread = threading.Thread(target=self._process_loop)
-            self.process_thread.start()
 
             self.is_initialized.set()
             logger.info("EnhancedModelRouter async initialization complete.")
@@ -425,6 +457,8 @@ class EnhancedModelRouter:
             # Assume ToT agent is on a dedicated port (e.g., 5613)
             if not hasattr(self, 'tree_of_thought_socket'):
                 self.tree_of_thought_socket = self.context.socket(zmq.REQ)
+                self.tree_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tree_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.tree_of_thought_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:5613")
                 logger.info(f"Connected to Tree of Thought Agent on {MODEL_MANAGER_HOST}:5613")
             request = {
@@ -835,16 +869,39 @@ class EnhancedModelRouter:
     
     def run(self):
         """Start the router's main processing loop"""
-        logger.info("Starting Enhanced Model Router...")
-        
-        while True:
+        logger.info("Starting Enhanced Model Router ...")
+
+        while self.running:
             try:
+                # Attempt to receive a request. This call is non-blocking thanks to the
+                # RCVTIMEO we set on the socket during __init__. If no message is ready
+                # within ZMQ_REQUEST_TIMEOUT the call will raise zmq.error.Again.
                 request = self.socket.recv_json()
+            except zmq.error.Again:
+                # No request arrived in the allotted time. Continue waiting without
+                # trying to send a reply – attempting to send without a pending request
+                # would put the REP socket into an inconsistent state.
+                continue
+            except Exception as e:
+                # Any other error while receiving – log and continue the loop.
+                logger.error(f"Error receiving ZMQ message: {e}")
+                continue
+
+            # We have received a valid request; handle it and send a response.
+            try:
                 response = self.handle_request(request)
                 self.socket.send_json(response)
+            except zmq.error.Again:
+                # Timeout while sending response. Log and continue.
+                logger.warning("Timeout while sending response to client")
+                continue
             except Exception as e:
-                logger.error(f"Error in main loop: {str(e)}")
-                self.socket.send_json({"status": "error", "message": str(e)})
+                logger.error(f"Error handling request: {e}")
+                # Best-effort: attempt to inform client of error. Guard with try/except
+                try:
+                    self.socket.send_json({"status": "error", "message": str(e)})
+                except Exception:
+                    pass
 
     def handle_request(self, request):
         """Handle incoming requests."""
@@ -910,7 +967,6 @@ class EnhancedModelRouter:
 
 def main():
     """Main entry point for the Enhanced Model Router"""
-    args = parse_agent_args()
     router = EnhancedModelRouter(zmq_port=args.port)
     try:
         router.run()

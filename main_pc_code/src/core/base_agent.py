@@ -1,32 +1,36 @@
 """
 Base Agent Class with Proper Initialization and Health Check Patterns
 """
-
-import threading
-import time
+import sys
+import os
 import zmq
-import logging
 import json
-from typing import Dict, Any, Optional, Union, cast
-from datetime import datetime
+import time
+import logging
+import threading
+from typing import Dict, Any
+from abc import ABC, abstractmethod
+
+# Add the project root to the Python path to allow for absolute imports
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# Now that the path is set, we can use absolute imports
+from main_pc_code.utils.config_parser import parse_agent_args
 
 logger = logging.getLogger(__name__)
 
 class BaseAgent:
     """Base class for all agents with proper initialization and health check patterns."""
     
-    def __init__(self, port: Optional[int] = None, name: Optional[str] = None, *, strict_port: bool = False):
-        """Initialize the base agent.
-        
-        Args:
-            port: Port number for the agent's main socket
-            name: Name of the agent
-        """
-        self.name = name or self.__class__.__name__
-        self.port = port or self._find_available_port()
+    def __init__(self, *args, **kwargs):
+        self.args = parse_agent_args()
+        self.name = kwargs.get('name') or self.__class__.__name__
+        self.port = kwargs.get('port') or self._find_available_port()
         self.health_check_port = self.port + 1
         self.context = zmq.Context()
-        self.strict_port = strict_port  # If True, do not auto-switch ports on bind failure
+        self.strict_port = kwargs.get('strict_port', True)  # If True, do not auto-switch ports on bind failure
         
         # Initialize state
         self.running = True
@@ -77,24 +81,24 @@ class BaseAgent:
         """Initialize ZMQ sockets with retry logic."""
         max_retries = 3
         retry_delay = 1  # seconds
-        
         for attempt in range(max_retries):
             try:
+                print(f"[DEBUG] BaseAgent._init_sockets: Attempt {attempt+1} binding main socket to port {self.port}")
                 # Main socket for agent communication
                 self.socket = self.context.socket(zmq.REP)
                 self.socket.setsockopt(zmq.LINGER, 0)
                 self.socket.bind(f"tcp://*:{self.port}")
-                
+                print(f"[DEBUG] BaseAgent._init_sockets: Main socket bound to port {self.port}")
                 # Health check socket (use a separate context for thread safety)
                 self.health_context = zmq.Context()
                 self.health_socket = self.health_context.socket(zmq.REP)
                 self.health_socket.setsockopt(zmq.LINGER, 0)
                 self.health_socket.bind(f"tcp://*:{self.health_check_port}")
-                
+                print(f"[DEBUG] BaseAgent._init_sockets: Health socket bound to port {self.health_check_port}")
                 logger.info(f"{self.name} successfully bound to ports {self.port} and {self.health_check_port}")
                 return
-                
             except zmq.error.ZMQError as e:
+                print(f"[DEBUG] BaseAgent._init_sockets: ZMQError on attempt {attempt+1}: {e}")
                 logger.warning(f"Attempt {attempt + 1}/{max_retries} failed to initialize sockets: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
@@ -104,6 +108,7 @@ class BaseAgent:
                     self.port = self._find_available_port(self.port + 1)
                     self.health_check_port = self.port + 1
                 else:
+                    print(f"[DEBUG] BaseAgent._init_sockets: Failed after {max_retries} attempts")
                     logger.error(f"Failed to initialize sockets after {max_retries} attempts")
                     self.cleanup()
                     raise

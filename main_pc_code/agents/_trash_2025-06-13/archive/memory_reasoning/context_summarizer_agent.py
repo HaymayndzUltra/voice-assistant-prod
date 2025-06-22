@@ -31,6 +31,8 @@ class ContextSummarizerAgent(BaseAgent):
         super().__init__(port=port, name="ContextSummarizerAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.context_store = self.load_context_store()
         self.lock = threading.Lock()
@@ -257,6 +259,9 @@ class ContextSummarizerAgent(BaseAgent):
     
     def record_key_decision(self, session_id, decision):
         """Record an important design decision or choice"""
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         with self.lock:
             if "summaries" not in self.context_store:
                 self.context_store["summaries"] = {}
@@ -347,6 +352,8 @@ def send_context_request(request, port=ZMQ_CONTEXT_SUMMARIZER_PORT):
     """Send a request to the Context Summarizer Agent"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
     socket.send_string(json.dumps(request))

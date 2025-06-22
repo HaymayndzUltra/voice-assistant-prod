@@ -14,6 +14,9 @@ from dataclasses import dataclass
 from enum import Enum
 from config.system_config import get_service_host, get_service_port
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -99,6 +102,8 @@ class DreamWorldAgent:
         # REP socket for handling requests
         try:
             self.model_socket = self.context.socket(zmq.REQ)
+            self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             model_host = get_service_host('enhanced_model_router', 'localhost')
             model_port = get_service_port('enhanced_model_router', 5598)
             self.model_socket.connect(f"tcp://{model_host}:{model_port}")
@@ -110,6 +115,8 @@ class DreamWorldAgent:
         # REQ socket for EpisodicMemoryAgent
         try:
             self.memory_socket = self.context.socket(zmq.REQ)
+            self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             memory_host = get_service_host('episodic_memory', 'localhost')
             memory_port = get_service_port('episodic_memory', 5629)
             self.memory_socket.connect(f"tcp://{memory_host}:{memory_port}")

@@ -6,6 +6,9 @@ import threading
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -19,6 +22,8 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{port}")
         
         # Memory storage

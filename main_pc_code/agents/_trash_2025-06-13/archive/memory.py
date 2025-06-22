@@ -30,6 +30,7 @@ class MemoryAgent(BaseAgent):
         super().__init__(port=port, name="Memory")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Try to bind to the specified port
         try:
@@ -61,6 +62,7 @@ class MemoryAgent(BaseAgent):
         
         # Socket to handle health check requests from dashboard
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             # Use the port 5598 as specified in the distributed_config.json
             health_port = 5598  # jarvis_memory_agent port

@@ -391,6 +391,7 @@ class LanguageAndTranslationCoordinator(BaseAgent):
         
         # Translation service connection (PC2)
         self.translation_socket = self.context.socket(zmq.REQ)
+        self.translation_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.translation_socket.connect(PC2_TRANSLATOR_ADDRESS)
 
         # TagaBERTa service connection
@@ -398,6 +399,7 @@ class LanguageAndTranslationCoordinator(BaseAgent):
         self.tagabert_available = False
         try:
             self.tagabert_socket = self.context.socket(zmq.REQ)
+            self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
             self.tagabert_socket.setsockopt(zmq.LINGER, 0) # Prevent hanging on term
             self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)
@@ -687,6 +689,7 @@ class LanguageAndTranslationCoordinator(BaseAgent):
                     # Re-establish connection for next time if timeout
                     self.tagabert_socket.close()
                     self.tagabert_socket = self.context.socket(zmq.REQ)
+                    self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                     self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)
                     self.tagabert_socket.setsockopt(zmq.LINGER, 0)
                     self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)
@@ -697,6 +700,7 @@ class LanguageAndTranslationCoordinator(BaseAgent):
                     if self.tagabert_socket:
                         self.tagabert_socket.close()
                     self.tagabert_socket = self.context.socket(zmq.REQ)
+                    self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                     self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)
                     self.tagabert_socket.setsockopt(zmq.LINGER, 0)
                     self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)

@@ -26,6 +26,8 @@ class EpisodicMemoryAgent:
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port}")
         
         # Initialize database
@@ -519,6 +521,9 @@ class EpisodicMemoryAgent:
             'context': json.loads(episode[4]),
             'summary': episode[5],
             'importance_score': episode[6],
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             'status': episode[7],
             'interactions': [
                 {

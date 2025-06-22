@@ -1,12 +1,21 @@
-from src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
+import sys
+import os
+
+# Add the project's main_pc_code directory to the Python path
+MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if MAIN_PC_CODE_DIR not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR)
+
+# Now we can use absolute imports from the main_pc_code directory
+from src.core.base_agent import BaseAgent
+
 """
 Coordinator Agent
 ----------------
 Central coordinator that manages the flow of information between all agents.
 """
 
-import os
 import zmq
 import json
 import time
@@ -15,6 +24,9 @@ import threading
 import base64
 from typing import Dict, Any, List, Optional, Tuple, Union
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -39,48 +51,103 @@ VISION_PROCESSING_PORT = 5588
 PROACTIVE_SUGGESTION_PORT = 5591
 
 # PC2 address (update as needed)
-PC2_ADDRESS = _agent_args.get('host', 'localhost')  # Change to PC2's actual IP if needed
+PC2_ADDRESS = getattr(_agent_args, 'host', 'localhost')  # Change to PC2's actual IP if needed
 
 # Proactive assistance settings
 INACTIVITY_THRESHOLD = 30  # Seconds of inactivity before presenting a suggestion
 MAX_PENDING_SUGGESTIONS = 5  # Maximum number of pending suggestions to store
 
+# Utility -------------------------------------------------------------------
+
+def find_available_port(start_port: int, max_attempts: int = 20) -> int:
+    """Find and return an available TCP port starting from `start_port`.
+
+    This is a lightweight helper that incrementally checks ports
+    `[start_port, start_port + max_attempts)` and returns the first one that
+    can be bound. Raises RuntimeError if none are available.
+    """
+    import socket
+
+    for port in range(start_port, start_port + max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                # `SO_REUSEADDR` allows us to probe ports that are in TIME_WAIT.
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("", port))
+                return port
+        except OSError:
+            # Port is in use, try the next one
+            continue
+
+    raise RuntimeError(
+        f"CoordinatorAgent could not find an available port after {max_attempts} attempts, starting from {start_port}."
+    )
+
+
 class CoordinatorAgent(BaseAgent):
     """Central coordinator that manages the flow of information between all agents."""
     
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int = COORDINATOR_PORT, **kwargs):
         """Initialize the Coordinator Agent."""
-        self.port = port if port is not None else COORDINATOR_PORT
+        self.port = port
         super().__init__(port=self.port, name="CoordinatorAgent")
         
         # Create ZMQ context and socket for the coordinator
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         
         # Create sockets for communicating with other agents
         self.task_router_socket = self.context.socket(zmq.REQ)
-        self.task_router_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{TASK_ROUTER_PORT}")
+        self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.task_router_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{TASK_ROUTER_PORT}")
         
         self.tts_socket = self.context.socket(zmq.REQ)
-        self.tts_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{TTS_CONNECTOR_PORT}")
+        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{TTS_CONNECTOR_PORT}")
         
         self.pc2_socket = self.context.socket(zmq.REQ)
+        self.pc2_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.pc2_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.pc2_socket.connect(f"tcp://{PC2_ADDRESS}:{PC2_AGENT_PORT}")
         
         self.health_monitor_socket = self.context.socket(zmq.REQ)
-        self.health_monitor_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{HEALTH_MONITOR_PORT}")
+        self.health_monitor_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_monitor_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_monitor_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{HEALTH_MONITOR_PORT}")
         
         # Create sockets for vision pipeline
         self.vision_capture_socket = self.context.socket(zmq.REQ)
-        self.vision_capture_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{VISION_CAPTURE_PORT}")
+        self.vision_capture_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.vision_capture_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.vision_capture_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{VISION_CAPTURE_PORT}")
         
         self.vision_processing_socket = self.context.socket(zmq.REQ)
+        self.vision_processing_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.vision_processing_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.vision_processing_socket.connect(f"tcp://{PC2_ADDRESS}:{VISION_PROCESSING_PORT}")
         
-        # Create socket for proactive suggestions
+        # Create socket for proactive suggestions (with port fallback)
         self.suggestion_socket = self.context.socket(zmq.REP)
-        self.suggestion_socket.bind(f"tcp://*:{PROACTIVE_SUGGESTION_PORT}")
+        self.suggestion_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.suggestion_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        # Attempt to bind to the preferred port; fall back if it's unavailable.
+        self.suggestion_port = PROACTIVE_SUGGESTION_PORT
+        try:
+            self.suggestion_socket.bind(f"tcp://*:{self.suggestion_port}")
+        except zmq.ZMQError as e:
+            logger.warning(
+                f"Port {self.suggestion_port} already in use (error: {e}). "
+                "Searching for the next available port."
+            )
+            self.suggestion_port = find_available_port(self.suggestion_port + 1)
+            self.suggestion_socket.bind(f"tcp://*:{self.suggestion_port}")
+            logger.info(f"Proactive suggestion socket bound to fallback port {self.suggestion_port}")
         
         # Flag to control the agent
         self.running = True
@@ -258,6 +325,9 @@ class CoordinatorAgent(BaseAgent):
             return self._process_vision(request)
         elif action == "health_check":
             return self._health_check()
+        elif action == "ping":
+            # Simple ping response for health checks
+            return {"status": "ok", "message": "CoordinatorAgent is running"}
         else:
             return {"status": "error", "error": f"Unknown action: {action}"}
     

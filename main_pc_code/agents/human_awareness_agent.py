@@ -11,10 +11,18 @@ import os
 from typing import Dict, Any, Optional
 from datetime import datetime
 import argparse
+import sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from src.core.base_agent import BaseAgent
+from utils.config_parser import parse_agent_args
 
 logger = logging.getLogger(__name__)
+
+args = parse_agent_args()
 
 class HumanAwarenessAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):

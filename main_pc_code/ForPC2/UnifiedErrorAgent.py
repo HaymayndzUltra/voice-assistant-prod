@@ -7,6 +7,9 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -24,6 +27,8 @@ class UnifiedErrorAgent:
     def __init__(self, port=None, host="0.0.0.0"):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{port if port else 7041}")
         
         # Initialize error tracking

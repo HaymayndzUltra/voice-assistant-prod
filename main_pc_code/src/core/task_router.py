@@ -5,20 +5,26 @@ Task Router Agent
 - Manages communication with downstream services
 - Advanced routing with Chain of Thought and Graph/Tree of Thought
 """
-import zmq
-import json
-import time
-import logging
-import threading
 import sys
 import os
-import socket
-import errno
-import msgpack
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
+import json
+import logging
+import zmq
+import time
+import threading
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Tuple
 from src.core.http_server import setup_health_check_server
+from utils.config_parser import parse_agent_args
+
+args = parse_agent_args()
 
 # Configure logging
 log_dir = 'logs'
@@ -33,42 +39,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger('TaskRouter')
 
-# Add project root to Python path
-project_root = str(Path(__file__).parent.parent.parent)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-# Load configuration from JSON
-config_path = Path(__file__).parent.parent.parent / 'config' / 'system_config.json'
-try:
-    with open(config_path, encoding='utf-8', errors='replace') as f:
-        config = json.load(f)
-except Exception as e:
-    logger.error(f"Error loading config: {e}")
-    config = {}
-
-# Port configuration from system_config.json
-TASK_ROUTER_PORT = config.get('agents', {}).get('task_router', {}).get('port', 8570)
+# Port configuration from command line arguments
+TASK_ROUTER_PORT = args.port if args.port else 8570
 TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1  # Health check port is main port + 1
-MODEL_MANAGER_PORT = config.get('model_management', {}).get('manager', {}).get('port', 5556)
-PC2_EMR_PORT = config.get('agents', {}).get('enhanced_model_router', {}).get('port', 5598)
-PC2_TRANSLATOR_PORT = config.get('agents', {}).get('consolidated_translator', {}).get('port', 5563)
+MODEL_MANAGER_PORT = getattr(args, 'modelmanager_port', 5556)
+PC2_EMR_PORT = getattr(args, 'enhancedmodelrouter_port', 5598)
+PC2_TRANSLATOR_PORT = getattr(args, 'consolidatedtranslator_port', 5563)
 
 # Add new port configurations
-COT_PORT = config.get('agents', {}).get('chain_of_thought', {}).get('port', 5612)
-GOT_TOT_PORT = config.get('agents', {}).get('got_tot', {}).get('port', 5646)
+COT_PORT = getattr(args, 'chainofthought_port', 5612)
+GOT_TOT_PORT = getattr(args, 'gottot_port', 5646)
 
 # Host addresses - since we're on Main PC, use localhost
 MODEL_MANAGER_HOST = 'localhost'
 HEALTHMONITOR_HOST = 'localhost'
-HEALTHMONITOR_PORT = config.get('agents', {}).get('health_monitor', {}).get('port', 5584)
+HEALTHMONITOR_PORT = getattr(args, 'healthmonitor_port', 5584)
 # Since we're on Main PC, use localhost
 PC2_IP = 'localhost'  # We're on Main PC
 
 # Circuit breaker configuration
-CIRCUIT_BREAKER_FAILURE_THRESHOLD = config.get('agents', {}).get('circuit_breaker', {}).get('failure_threshold', 3)
-CIRCUIT_BREAKER_RESET_TIMEOUT = config.get('agents', {}).get('circuit_breaker', {}).get('reset_timeout', 30)
-CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT = config.get('agents', {}).get('circuit_breaker', {}).get('half_open_timeout', 5)
+CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3
+CIRCUIT_BREAKER_RESET_TIMEOUT = 30
+CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT = 5
 
 class CircuitBreaker:
     """
@@ -278,11 +270,11 @@ class TaskRouter:
         """Load configuration from files."""
         try:
             # Use the already loaded config dictionary
-            self.config = config
+            self.config = args
             logger.info("Configuration loaded successfully")
-            # Load model configuration
-            self.model_config = self.config.get('model_config', {})
-            logger.info(f"Loaded model configuration with {len(self.model_config.get('model_mapping', {}))} models")
+            # Load model configuration - args is a Namespace object, not a dict
+            self.model_config = getattr(args, 'model_config', {})
+            logger.info(f"Loaded model configuration with {len(self.model_config.get('model_mapping', {})) if isinstance(self.model_config, dict) else 0} models")
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
             self.config = {}

@@ -1,3 +1,12 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 """
 Unified Planning Agent
@@ -10,8 +19,6 @@ import zmq
 import json
 import time
 import logging
-import sys
-import os
 import traceback
 import tempfile
 import hashlib
@@ -25,6 +32,9 @@ import threading
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -69,21 +79,29 @@ class UnifiedPlanningAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{PLANNING_AGENT_PORT}")
         logger.info(f"Unified Planning Agent bound to port {PLANNING_AGENT_PORT}")
         
         # Health check socket
         self.health_check = self.context.socket(zmq.REP)
+        self.health_check.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_check.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_check.bind(f"tcp://127.0.0.1:{HEALTH_CHECK_PORT}")
         logger.info(f"Health check endpoint bound to port {HEALTH_CHECK_PORT}")
         
         # Socket to communicate with task router (which replaced model manager)
         self.task_router = self.context.socket(zmq.REQ)
+        self.task_router.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.task_router.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.task_router.connect(f"tcp://localhost:{_agent_args.task_router_port}")  # Task Router port
         logger.info(f"Connected to Task Router on port {_agent_args.task_router_port}")
         
         # Socket to communicate with autogen framework
         self.framework = self.context.socket(zmq.REQ)
+        self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.framework.connect(f"tcp://localhost:{AUTOGEN_FRAMEWORK_PORT}")
         logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
         
@@ -745,7 +763,7 @@ Analyze this task and identify its requirements and complexity. Return your anal
             self.framework.send_string(json.dumps({
                 "request_type": "register_agent",
                 "agent_id": "unified_planning",
-                "endpoint": f"tcp://{_agent_args.host}:"){PLANNING_AGENT_PORT}",
+                "endpoint": f"tcp://{_agent_args.host}:{PLANNING_AGENT_PORT}",
                 "capabilities": [
                     "planning",
                     "task_decomposition",

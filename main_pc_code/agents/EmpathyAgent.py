@@ -1,3 +1,12 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 import zmq
 import json
@@ -6,9 +15,11 @@ import threading
 import time
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
-import os
 from datetime import datetime
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -44,6 +55,8 @@ class EmpathyAgent(BaseAgent):
         
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         
         # SUB socket for subscribing to EmotionEngine broadcasts
@@ -58,6 +71,8 @@ class EmpathyAgent(BaseAgent):
         
         # REQ socket for TTSConnector
         self.tts_socket = self.context.socket(zmq.REQ)
+        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tts_socket.connect(f"tcp://{_host}:{tts_connector_port}")
         
         # Initialize poller for non-blocking socket operations

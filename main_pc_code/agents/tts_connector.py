@@ -1,4 +1,19 @@
-from src.core.base_agent import BaseAgent
+import sys
+import os
+# Ensure project root is on PYTHONPATH so 'src' can be imported when the agent
+# is launched as a standalone subprocess.
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+PROJECT_SRC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+for _p in (PROJECT_SRC_ROOT, PROJECT_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+    sys.path.insert(0, PROJECT_ROOT)
+
+try:
+    from src.core.base_agent import BaseAgent
+except ImportError:
+    # Fallback when running from project root already containing 'main_pc_code'
+    from main_pc_code.src.core.base_agent import BaseAgent
 """
 TTS Connector Module
 Connects the modular system's text processor to the Bark TTS agent
@@ -47,10 +62,10 @@ CONNECTION_POOL_SIZE = 5
 HEALTH_CHECK_INTERVAL = 5  # seconds
 SYSTEM_LOAD_THRESHOLD = 80  # percentage
 
-class ConnectionPool(BaseAgent):
+class ConnectionPool:
     """ZMQ connection pool for TTS agent"""
     def __init__(self, context: zmq.Context, address: str, pool_size: int, port: int = None, **kwargs):
-        super().__init__(port=port, name="TtsConnector")
+
         self.context = context
         self.address = address
         self.pool_size = pool_size
@@ -87,10 +102,10 @@ class ConnectionPool(BaseAgent):
             except queue.Empty:
                 break
 
-class RequestQueue(BaseAgent):
+class RequestQueue:
     """Priority-based request queue with batching support"""
     def __init__(self, max_size: int = MAX_QUEUE_SIZE, port: int = None, **kwargs):
-        super().__init__(port=port, name="TtsConnector")
+
         self.high_priority = queue.PriorityQueue(maxsize=max_size)
         self.normal_priority = queue.PriorityQueue(maxsize=max_size)
         self.low_priority = queue.PriorityQueue(maxsize=max_size)
@@ -138,26 +153,31 @@ class RequestQueue(BaseAgent):
 
 class TTSConnector(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="TtsConnector")
-        self.context = zmq.Context()
+        # If port not explicitly passed, fall back to command-line argument (if any)
+        if port is None:
+            port = getattr(_agent_args, 'port', None)
+        super().__init__(port=port, name="TtsConnector", strict_port=True)
+
+
+        host = getattr(_agent_args, 'host', 'localhost')
         
         # Initialize connection pool
         self.connection_pool = ConnectionPool(
             self.context,
-            f"tcp://{_agent_args.get('host', 'localhost')}:{TTS_AGENT_PORT}",
+            f"tcp://{host}:{TTS_AGENT_PORT}",
             CONNECTION_POOL_SIZE
         )
         
         # Socket to receive messages from text processor
         self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{TEXT_PROCESSOR_PORT}")
+        self.sub_socket.connect(f"tcp://{host}:{TEXT_PROCESSOR_PORT}")
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
         logger.info(f"Connected to language and translation coordinator on port {TEXT_PROCESSOR_PORT}")
         
         # Setup health reporting
         self.health_socket = self.context.socket(zmq.PUB)
         try:
-            self.health_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{ZMQ_HEALTH_PORT}")
+            self.health_socket.connect(f"tcp://{host}:{ZMQ_HEALTH_PORT}")
             logger.info(f"Connected to health dashboard on port {ZMQ_HEALTH_PORT}")
         except Exception as e:
             logger.warning(f"Could not connect to health dashboard: {e}")
@@ -165,10 +185,8 @@ class TTSConnector(BaseAgent):
         # Initialize request queue
         self.request_queue = RequestQueue()
         
-        # Health check REP socket
-        self.health_rep_socket = self.context.socket(zmq.REP)
-        self.health_rep_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
-        logger.info(f"Health check REP socket bound to port {HEALTH_CHECK_PORT}")
+        # BaseAgent already provides a dedicated REP health socket; we don't create another.
+        self.health_rep_socket = None
         
         # Statistics tracking
         self.stats = {
@@ -368,34 +386,10 @@ class TTSConnector(BaseAgent):
         self.health_thread = threading.Thread(target=self.report_health, daemon=True)
         self.health_thread.start()
         
-        poller = zmq.Poller()
-        poller.register(self.health_rep_socket, zmq.POLLIN)
+
         while self.running:
             try:
-                # Poll for health check requests (non-blocking)
-                socks = dict(poller.poll(timeout=10))
-                if self.health_rep_socket in socks and socks[self.health_rep_socket] == zmq.POLLIN:
-                    try:
-                        msg = self.health_rep_socket.recv_json(zmq.NOBLOCK)
-                        logger.info(f"Received health check request: {msg}")
-                        if isinstance(msg, dict) and msg.get("action") == "health":
-                            response = {
-                                "status": "ok",
-                                "ready": True,
-                                "initialized": True,
-                                "message": "TTS Connector is healthy",
-                                "timestamp": datetime.utcnow().isoformat(),
-                                "uptime": time.time() - self.stats.get("last_update", time.time()),
-                                "active_threads": threading.active_count(),
-                                "queue_size": self.request_queue.high_priority.qsize() + self.request_queue.normal_priority.qsize() + self.request_queue.low_priority.qsize()
-                            }
-                        else:
-                            response = {"status": "error", "error": "Unknown action"}
-                        logger.info(f"Sending health check response: {response}")
-                        self.health_rep_socket.send_json(response)
-                    except Exception as e:
-                        logger.error(f"Error handling health check: {e}")
-                        self.health_rep_socket.send_json({"status": "error", "error": str(e)})
+
                 # Get batch of requests
                 batch = self.request_queue.get_batch()
                 if not batch:

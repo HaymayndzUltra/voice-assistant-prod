@@ -24,6 +24,9 @@ import torch
 from datasets import load_dataset, Dataset
 import numpy as np
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -63,6 +66,8 @@ class LocalFineTunerAgent:
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.port = port
         self.socket.bind(f"tcp://*:{self.port}")
         
@@ -542,26 +547,37 @@ class LocalFineTunerAgent:
             }
 
     def run(self):
-        """Run the agent's main loop."""
+        """Run the agent's main loop (poller-based)"""
         logger.info(f"Starting Local Fine Tuner Agent on port {self.port}")
+        
+        poller = zmq.Poller()
+        poller.register(self.socket, zmq.POLLIN)
         
         while self.is_running:
             try:
-                # Wait for request
-                request = json.loads(self.socket.recv_string())
-                
-                # Process request
-                response = self.handle_request(request)
-                
-                # Send response
-                self.socket.send_string(json.dumps(response))
-                
+                socks = dict(poller.poll(1000))  # 1-s tick
+                if self.socket in socks:
+                    # Receive request
+                    request = json.loads(self.socket.recv_string())
+                    
+                    # Process request
+                    response = self.handle_request(request)
+                    
+                    # Send response
+                    self.socket.send_string(json.dumps(response))
+            except zmq.Again:
+                # No message received; continue
+                continue
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
-                self.socket.send_string(json.dumps({
-                    "status": "error",
-                    "message": str(e)
-                }))
+                try:
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
+                except zmq.ZMQError:
+                    # Socket may be in bad state; skip sending
+                    pass
 
     def stop(self):
         """Stop the agent."""

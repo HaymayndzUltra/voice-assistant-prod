@@ -2,11 +2,16 @@ import zmq
 import json
 import time
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 EMR_PORT = 5598
 EMR_HOST = 'localhost'
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
+socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
 socket.connect(f"tcp://{EMR_HOST}:{EMR_PORT}")
 
 prompt = {

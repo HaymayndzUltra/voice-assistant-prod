@@ -1,3 +1,12 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 import zmq
 import json
@@ -6,9 +15,11 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import threading
-import os
 from utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -41,8 +52,8 @@ class ProactiveAgent(BaseAgent):
         # Port selection logic
         if port is not None:
             self.port = port
-        elif hasattr(_agent_args, 'port') and _agent_args.port is not None:
-            self.port = int(_agent_args.port)
+        elif hasattr(args, 'port') and args.port is not None:
+            self.port = int(args.port)
         elif config_port is not None:
             self.port = int(config_port)
         else:
@@ -54,6 +65,8 @@ class ProactiveAgent(BaseAgent):
         
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         
         # Store tasks and reminders
@@ -76,7 +89,9 @@ class ProactiveAgent(BaseAgent):
         try:
             # Set up coordinator socket
             self.coordinator_socket = self.context.socket(zmq.REQ)
-            self.coordinator_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:5621")  # CoordinatorAgent
+            self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.coordinator_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5621")  # CoordinatorAgent
             logger.info("Coordinator socket initialized successfully")
         except Exception as e:
             logger.error(f"Initialization error: {e}")
@@ -295,7 +310,6 @@ class ProactiveAgent(BaseAgent):
         super().cleanup()
 
 if __name__ == '__main__':
-    args = parse_agent_args()
     agent = ProactiveAgent(port=args.port)
     try:
         agent.run()

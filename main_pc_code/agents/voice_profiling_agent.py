@@ -1,10 +1,17 @@
+# ✅ Path patch fix for src/ and utils/ imports
+import sys
+import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from src.core.base_agent import BaseAgent
 """
 Voice Profiling Agent
 Handles voice enrollment, speaker recognition, and voice profile management.
 """
 
-import os
 import json
 import uuid
 import numpy as np

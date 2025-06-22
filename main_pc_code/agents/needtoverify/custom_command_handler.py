@@ -16,6 +16,9 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 
 # Import CLI/agent args parser
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Setup logging
@@ -40,6 +43,8 @@ class CustomCommandHandler(BaseAgent):
         # Use a separate context for the memory socket
         self.memory_context = zmq.Context()
         self.memory_socket = self.memory_context.socket(zmq.REQ)
+        self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.connect(f"tcp://localhost:{zmq_port}")
         logger.info(f"Connected to Jarvis Memory Agent on port {zmq_port}")
         

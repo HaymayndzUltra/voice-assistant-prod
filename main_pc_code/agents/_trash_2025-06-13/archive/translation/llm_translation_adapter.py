@@ -44,6 +44,8 @@ class LLMTranslationAdapter(BaseAgent):
         
         # REP socket for receiving translation requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         logger.info(f"LLM Translation Adapter bound to port {self.port}")
         
@@ -424,6 +426,9 @@ class LLMTranslationAdapter(BaseAgent):
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="LLM Translation Adapter")

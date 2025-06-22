@@ -60,11 +60,15 @@ class AIStudioAssistant(BaseAgent):
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         logger.info(f"AI Studio Assistant bound to port {zmq_port}")
         
         # Connect to other agents
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             # Try to use PC2 connection if available
             self.model_manager.connect(get_connection_string("model_manager"))
@@ -76,6 +80,8 @@ class AIStudioAssistant(BaseAgent):
         
         # Connect to code generator
         self.code_generator = self.context.socket(zmq.REQ)
+        self.code_generator.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.code_generator.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.code_generator.connect(get_connection_string("code_generator"))
             logger.info("Connected to Code Generator on PC2")
@@ -643,6 +649,9 @@ if __name__ == "__main__":
         try:
             subprocess.call([sys.executable, "-m", "pip", "install", "webdriver-manager"])
             import webdriver_manager
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         except:
             logger.warning("Failed to install webdriver_manager, will use system chromedriver")
     

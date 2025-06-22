@@ -126,6 +126,8 @@ class InterpreterAgent(BaseAgent):
         
         # Set up Memory Agent REQ socket
         self.memory_socket = self.context.socket(zmq.REQ)
+        self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.connect(f"tcp://127.0.0.1:{MEMORY_AGENT_PORT}")
         
         # Cached memory data
@@ -747,6 +749,9 @@ class InterpreterAgent(BaseAgent):
         # Get context using appropriate method
         if has_advanced_context:
             # Use advanced context manager with importance-based retrieval
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             context_str = "Recent conversation:\n"
             context_str += self.context_manager.get_context_text(speaker=self.current_speaker, max_items=5)
         elif len(self.context_window) > 0:

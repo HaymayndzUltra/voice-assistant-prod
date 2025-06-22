@@ -1,4 +1,5 @@
-from src.core.base_agent import BaseAgent
+from src.core.base_agent import zmq
+import BaseAgent
 def generate_code_with_cga(self, request_data):
     """Send a code generation request to the Code Generator Agent and return the response.
     
@@ -76,6 +77,7 @@ def generate_code_with_cga(self, request_data):
         # Create a socket with appropriate timeout
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.setsockopt(zmq.LINGER, 0)
         socket.setsockopt(zmq.RCVTIMEO, timeout_ms)
         socket.connect(zmq_address)

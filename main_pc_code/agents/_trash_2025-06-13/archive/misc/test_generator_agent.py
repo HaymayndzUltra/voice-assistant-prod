@@ -32,6 +32,8 @@ class TestGeneratorAgent(BaseAgent):
         super().__init__(port=port, name="TestGeneratorAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.running = True
         # Context for LLM router connection
@@ -44,6 +46,8 @@ class TestGeneratorAgent(BaseAgent):
         """Establish connection to the LLM router"""
         if self.llm_router_socket is None:
             self.llm_router_socket = self.llm_router_context.socket(zmq.REQ)
+            self.llm_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.llm_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.llm_router_socket.connect(f"tcp://127.0.0.1:{self.llm_router_port}")
             logging.info(f"[TestGenerator] Connected to LLM router on port {self.llm_router_port}")
     
@@ -206,6 +210,9 @@ class TestGeneratorAgent(BaseAgent):
                 # Make sure tests import from the right module
                 modified_tests = tests.replace("import module_to_test", "").replace("from module_to_test", "")
                 f.write(f"from module_to_test import *\n{modified_tests}")
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             
             # Run pytest on the tests
             try:
@@ -399,6 +406,8 @@ def send_test_generator_request(request, port=ZMQ_TEST_GENERATOR_PORT):
     """
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
     socket.send_string(json.dumps(request))

@@ -34,6 +34,9 @@ import urllib.parse
 sys.path.append(str(Path(__file__).parent.parent))
 from config.pc2_connections import get_connection_string
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Setup logging
 LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "autonomous_web_assistant.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -68,10 +71,14 @@ class AutonomousWebAssistant(BaseAgent):
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         
         # Connect to other agents
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             # Try to use PC2 connection if available
             self.model_manager.connect(get_connection_string("model_manager"))
@@ -83,6 +90,8 @@ class AutonomousWebAssistant(BaseAgent):
             
         # Similarly for context summarizer
         self.context_summarizer = self.context.socket(zmq.REQ)
+        self.context_summarizer.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.context_summarizer.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.context_summarizer.connect(get_connection_string("context_summarizer"))
             logger.info("Connected to Context Summarizer on PC2")
@@ -92,6 +101,8 @@ class AutonomousWebAssistant(BaseAgent):
         
         # Similarly for memory agent
         self.memory_agent = self.context.socket(zmq.REQ)
+        self.memory_agent.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_agent.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.memory_agent.connect(get_connection_string("contextual_memory"))
             logger.info("Connected to Memory Agent on PC2")

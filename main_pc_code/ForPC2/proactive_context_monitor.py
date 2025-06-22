@@ -55,6 +55,8 @@ class ProactiveContextMonitor:
         try:
             # Set up main socket
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{PROACTIVE_MONITOR_PORT}")
             logger.info(f"Main socket bound to port {PROACTIVE_MONITOR_PORT}")
             
@@ -69,6 +71,9 @@ class ProactiveContextMonitor:
     def _setup_health_check_server(self):
         """Set up a simple HTTP server for health checks."""
         from http.server import HTTPServer, BaseHTTPRequestHandler
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         
         class HealthCheckHandler(BaseHTTPRequestHandler):
             def do_GET(self):

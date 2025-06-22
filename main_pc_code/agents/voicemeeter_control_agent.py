@@ -20,6 +20,9 @@ import psutil
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Setup logging
 LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "voicemeeter_control.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -46,6 +49,8 @@ class VoiceMeeterControlAgent(BaseAgent):
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         logger.info(f"VoiceMeeter Control Agent started on port {zmq_port}")
         

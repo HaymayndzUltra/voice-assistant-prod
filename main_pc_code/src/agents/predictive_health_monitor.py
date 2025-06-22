@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 HEALTH_MONITOR_PORT = config.get('zmq.health_monitor_port', 5605)
 SELF_HEALING_PORT = config.get('zmq.self_healing_port', 5606)
 RESTART_COOLDOWN = config.get('system.restart_cooldown', 60)  # seconds
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for health check requests
 
 class PredictiveHealthMonitor(BaseAgent):
     """Predictive health monitoring system for voice assistant agents"""
@@ -80,6 +81,8 @@ class PredictiveHealthMonitor(BaseAgent):
         
         # Socket to communicate with self-healing agent
         self.self_healing = self.context.socket(zmq.REQ)
+        self.self_healing.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.self_healing.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.self_healing.connect(f"tcp://localhost:{SELF_HEALING_PORT}")
         logger.info(f"Connected to Self-Healing Agent on port {SELF_HEALING_PORT}")
         
@@ -96,6 +99,8 @@ class PredictiveHealthMonitor(BaseAgent):
             elif self.machine_id:
                 # Other machines connect to the discovery service
                 self.discovery_socket = self.context.socket(zmq.REQ)
+                self.discovery_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.discovery_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 main_pc_ip = distributed_config["machines"]["main_pc"]["ip"]
                 self.discovery_socket.connect(f"tcp://{main_pc_ip}:{self.discovery_port}")
                 logger.info(f"Connected to discovery service at {main_pc_ip}:{self.discovery_port}")
@@ -964,4 +969,338 @@ class PredictiveHealthMonitor(BaseAgent):
             return disk_usage
         except Exception as e:
             logger.error(f"Error getting disk usage: {str(e)}")
-            return {"error": str(e)} 
+            return {"error": str(e)}
+
+    def check_agent_health(self, agent_name: str, host: str, port: int) -> bool:
+        """Check the health of an agent.
+        
+        Args:
+            agent_name: Name of the agent
+            host: Host address
+            port: Port number
+            
+        Returns:
+            True if agent is healthy, False otherwise
+        """
+        try:
+            # Create a new context and socket for each health check
+            # This prevents socket contention issues
+            context = zmq.Context()
+            socket = context.socket(zmq.REQ)
+            
+            # Set timeout values to prevent hanging
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Connect to agent
+            socket.connect(f"tcp://{host}:{port}")
+            
+            # Send health check request
+            request = {"action": "health"}
+            socket.send_json(request)
+            
+            # Wait for response
+            response = socket.recv_json()
+            
+            # Check response
+            if "status" in response and response["status"] == "ok":
+                logger.debug(f"Agent {agent_name} health check passed")
+                socket.close()
+                context.term()
+                return True
+            else:
+                logger.warning(f"Agent {agent_name} returned unexpected health status: {response}")
+                socket.close()
+                context.term()
+                return False
+                
+        except zmq.error.Again:
+            logger.warning(f"Agent {agent_name} health check failed: Timeout")
+            return False
+        except ConnectionRefusedError:
+            logger.warning(f"Agent {agent_name} health check failed: Connection refused")
+            return False
+        except Exception as e:
+            logger.warning(f"Agent {agent_name} health check failed: {str(e)}")
+            return False
+        finally:
+            # Ensure we clean up the socket resources even if an exception occurs
+            try:
+                socket.close()
+                context.term()
+            except:
+                pass
+            return False  # Ensure we always return a boolean
+
+    def _record_health_event(self, agent_name: str, event_type: str, details: Dict[str, Any]) -> None:
+        """Record a health event in the database.
+        
+        Args:
+            agent_name: Name of the agent
+            event_type: Type of event
+            details: Event details
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO health_events (agent_name, event_type, details) VALUES (?, ?, ?)",
+                (agent_name, event_type, json.dumps(details))
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error recording health event: {e}")
+    
+    def _attempt_recovery(self, agent_name: str, agent_config: Dict[str, Any]) -> None:
+        """Attempt to recover an unhealthy agent.
+        
+        Args:
+            agent_name: Name of the agent
+            agent_config: Agent configuration
+        """
+        # Check last restart time to avoid restart loops
+        last_restart = self.agent_last_restart.get(agent_name, 0)
+        now = time.time()
+        
+        if now - last_restart < RESTART_COOLDOWN:
+            logger.warning(f"Skipping recovery for {agent_name} - in cooldown period")
+            return
+            
+        try:
+            # Determine recovery strategy
+            strategy = agent_config.get("recovery_strategy", "tier1")
+            recovery_actions = self.recovery_strategies.get(strategy, {}).get("actions", ["restart_agent"])
+            
+            logger.info(f"Attempting recovery for {agent_name} using strategy {strategy}")
+            
+            # Execute recovery actions
+            for action in recovery_actions:
+                if action == "restart_agent":
+                    self.restart_agent(agent_name)
+                elif action == "clear_agent_state":
+                    # Clear agent state logic here
+                    pass
+                elif action == "restart_dependencies":
+                    # Restart dependencies logic here
+                    for dep in agent_config.get("dependencies", []):
+                        self.restart_agent(dep)
+                elif action == "restart_all_agents":
+                    # Restart all agents logic here
+                    for name in self.agent_configs.keys():
+                        self.restart_agent(name)
+                        
+            # Update last restart time
+            self.agent_last_restart[agent_name] = now
+            
+            # Record recovery action
+            self._record_health_event(agent_name, "recovery_attempted", 
+                                     {"strategy": strategy, "actions": recovery_actions})
+                                     
+        except Exception as e:
+            logger.error(f"Error attempting recovery for {agent_name}: {e}")
+            self._record_health_event(agent_name, "recovery_failed", {"error": str(e)})
+
+    def _record_system_metrics(self, metrics: Dict[str, Any]) -> None:
+        """Record system metrics in the database.
+        
+        Args:
+            metrics: System metrics
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """INSERT INTO system_metrics 
+                   (timestamp, cpu_usage, memory_usage, disk_usage, process_count) 
+                   VALUES (?, ?, ?, ?, ?)""",
+                (
+                    datetime.now().isoformat(),
+                    metrics.get("cpu_usage", 0),
+                    metrics.get("memory_usage", 0),
+                    metrics.get("disk_usage", 0),
+                    metrics.get("process_count", 0)
+                )
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error recording system metrics: {e}")
+    
+    def _predict_failures(self) -> None:
+        """Predict potential agent failures using the machine learning model."""
+        if not self.model:
+            return
+            
+        try:
+            # Get latest metrics for each agent
+            cursor = self.conn.cursor()
+            cursor.execute("""
+                SELECT agent_name, cpu_usage, memory_usage, response_time, error_rate
+                FROM health_metrics
+                WHERE id IN (
+                    SELECT MAX(id) FROM health_metrics GROUP BY agent_name
+                )
+            """)
+            
+            latest_metrics = {}
+            for row in cursor.fetchall():
+                agent_name, cpu_usage, memory_usage, response_time, error_rate = row
+                latest_metrics[agent_name] = {
+                    "cpu_usage": cpu_usage,
+                    "memory_usage": memory_usage,
+                    "response_time": response_time,
+                    "error_rate": error_rate
+                }
+                
+            # Predict failures for each agent
+            for agent_name, metrics in latest_metrics.items():
+                # Skip if not enough data
+                if None in metrics.values():
+                    continue
+                    
+                # Prepare input for model
+                X = [
+                    metrics["cpu_usage"],
+                    metrics["memory_usage"],
+                    metrics["response_time"],
+                    metrics["error_rate"]
+                ]
+                
+                # Make prediction
+                try:
+                    failure_probability = self.model.predict_proba([X])[0][1]
+                    
+                    # Log high probability failures
+                    if failure_probability > 0.7:
+                        logger.warning(f"High failure probability for {agent_name}: {failure_probability:.2f}")
+                        
+                        # Record prediction
+                        self._record_health_event(agent_name, "failure_predicted", 
+                                                {"probability": failure_probability})
+                                                
+                        # Send alert to self-healing agent
+                        self._send_alert(agent_name, "failure_predicted", failure_probability)
+                except Exception as e:
+                    logger.error(f"Error making prediction for {agent_name}: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Error predicting failures: {e}")
+
+    def _send_alert(self, agent_name: str, alert_type: str, severity: float) -> None:
+        """Send an alert to the self-healing agent.
+        
+        Args:
+            agent_name: Name of the agent
+            alert_type: Type of alert
+            severity: Alert severity (0.0 to 1.0)
+        """
+        try:
+            # Prepare alert message
+            alert = {
+                "action": "alert",
+                "agent_name": agent_name,
+                "alert_type": alert_type,
+                "severity": severity,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Send alert to self-healing agent
+            self.self_healing.send_json(alert)
+            
+            # Wait for response with timeout
+            try:
+                response = self.self_healing.recv_json()
+                logger.info(f"Self-healing agent acknowledged alert: {response.get('status', 'unknown')}")
+            except zmq.error.Again:
+                logger.warning("Self-healing agent did not respond to alert")
+                
+        except Exception as e:
+            logger.error(f"Error sending alert: {e}")
+
+    def _run_health_check_loop(self) -> None:
+        """Run the health check loop."""
+        try:
+            logger.info("Starting health check loop")
+            while self.running:
+                try:
+                    for agent_name, agent_config in self.agent_configs.items():
+                        # Skip disabled agents
+                        if not agent_config.get("enabled", True):
+                            continue
+                            
+                        # Check if agent is running on this machine
+                        if agent_config.get("machine") != self.machine_id and self.machine_id is not None:
+                            continue
+                            
+                        # Get agent host and port
+                        host = agent_config.get("host", "localhost")
+                        port = agent_config.get("health_port", agent_config.get("port", 0))
+                        
+                        if port > 0:
+                            # Check agent health
+                            is_healthy = self.check_agent_health(agent_name, host, port)
+                            
+                            # Update agent health status
+                            self.agent_health[agent_name] = {
+                                "healthy": is_healthy,
+                                "last_checked": datetime.now().isoformat(),
+                                "host": host,
+                                "port": port
+                            }
+                            
+                            # Log warning for unhealthy agents
+                            if not is_healthy:
+                                logger.warning(f"Agent {agent_name} health check failed: Resource temporarily unavailable")
+                                
+                                # Record failure in database
+                                self._record_health_event(agent_name, "health_check_failed", {"error": "Resource temporarily unavailable"})
+                                
+                                # Attempt recovery if needed
+                                if agent_config.get("auto_recover", False):
+                                    self._attempt_recovery(agent_name, agent_config)
+                        
+                        # Small delay between checks to prevent overwhelming the system
+                        time.sleep(2)
+                        
+                    # Update system metrics
+                    system_metrics = self._get_system_metrics()
+                    self._record_system_metrics(system_metrics)
+                    
+                    # Predict potential failures
+                    self._predict_failures()
+                    
+                    # Check if optimization is needed
+                    if self._needs_optimization(system_metrics):
+                        self.optimize_system()
+                        
+                except KeyboardInterrupt:
+                    logger.info("Keyboard interrupt received, shutting down")
+                    self.running = False
+                    break
+                except Exception as e:
+                    logger.error(f"Error in health check loop: {str(e)}")
+                    logger.debug(traceback.format_exc())
+                    time.sleep(5)  # Wait before continuing
+                
+                # Wait before next check cycle
+                time.sleep(10)
+                
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received, shutting down")
+            self.running = False
+        finally:
+            logger.info("Cleaning up resources")
+            try:
+                # Clean up resources
+                for agent_name in list(self.agent_processes.keys()):
+                    self.stop_agent(agent_name)
+            except Exception as e:
+                logger.error(f"Error during cleanup: {str(e)}")
+            logger.info("Cleanup complete")
+
+# --- Orchestrator Logic Integration (from orchestrator.py) ---
+from src.core.base_agent import BaseAgent
+import signal
+import psutil
+from pathlib import Path
+
+class OrchestratorAgent(BaseAgent):
+    # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with PredictiveHealthMonitor)
+    pass 

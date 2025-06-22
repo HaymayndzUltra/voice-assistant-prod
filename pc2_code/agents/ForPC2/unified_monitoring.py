@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
 from agents.agent_utils import AgentBase
+from src.core.base_agent import BaseAgent
+import signal
 
 class UnifiedMonitor(AgentBase):
     def __init__(self, port: Optional[int] = None, **kwargs):
@@ -181,4 +183,10 @@ class UnifiedMonitor(AgentBase):
             "memory_usage": self._get_memory_usage(),
             "disk_usage": self._get_disk_usage(),
             "processes": self._get_process_info()
-        } 
+        }
+
+class OrchestratorAgent(BaseAgent):
+    # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with UnifiedMonitor)
+    pass
+
+# ... existing code ... 

@@ -50,6 +50,17 @@ HEALTH_MONITOR_PORT = 5584  # Base port for health monitor
 STATUS_PORT = 6584  # Port for status updates
 TASK_ROUTER_PORT = 5571  # Port for task router agent
 
+# --- Orchestrator Logic Integration (from orchestrator.py) ---
+from src.core.base_agent import BaseAgent
+import signal
+import psutil
+from pathlib import Path
+
+class OrchestratorAgent(BaseAgent):
+    # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with HealthMonitor)
+    pass
+# ... existing code ...
+
 class HealthMonitor:
     """Health Monitor Agent for checking and reporting the health of all system components."""
     

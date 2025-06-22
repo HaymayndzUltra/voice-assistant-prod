@@ -85,6 +85,8 @@ class RCA_Agent:
         # Create ZMQ context and socket for communicating with Self-Healing Agent
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.connect(f"tcp://{self.pc2_ip}:{self_healing_port}")
         logger.info(f"Connected to Self-Healing Agent on {self.pc2_ip}:{self_healing_port}")
         
@@ -159,6 +161,9 @@ class RCA_Agent:
                 severity="high",
                 recommendation="proactive_restart",
                 description="Module import error detected"
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             )
         ]
         
@@ -337,6 +342,8 @@ class RCA_Agent:
                 # Reset the socket
                 self.socket.close()
                 self.socket = self.context.socket(zmq.REQ)
+                self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
                 
         except Exception as e:
@@ -344,6 +351,8 @@ class RCA_Agent:
             # Reset the socket
             self.socket.close()
             self.socket = self.context.socket(zmq.REQ)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
 
 if __name__ == "__main__":

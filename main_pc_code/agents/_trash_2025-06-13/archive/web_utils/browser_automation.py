@@ -7,6 +7,9 @@ import threading
 import time
 from playwright.sync_api import sync_playwright
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "browser_automation_agent.log"
 ZMQ_BROWSER_PORT = 5588
 
@@ -25,6 +28,8 @@ class BrowserAutomationAgent(BaseAgent):
         super().__init__(port=port, name="BrowserAutomation")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.running = True
         self.browser = None

@@ -329,6 +329,12 @@ class MemoryOrchestrator:
 
         """
 
+        # Quick health check bypass
+        if request.get("action") in ["ping", "health", "health_check"]:
+            return {
+                "status": "ok"
+            }
+
         # Validate request format
 
         if not self.validate_request(request):

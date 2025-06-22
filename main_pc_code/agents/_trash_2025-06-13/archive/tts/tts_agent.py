@@ -307,6 +307,8 @@ TTS_PORT = 5562  # Port for receiving TTS requests - updated to match config.jso
 def setup_zmq():
     context = zmq.Context()
     socket = context.socket(zmq.REP)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.bind(f"tcp://*:{TTS_PORT}")
     print(f"[TTS] Agent listening on port {TTS_PORT}")
     return context, socket
@@ -315,6 +317,9 @@ def setup_zmq():
 if __name__ == "__main__":
     print('[DEBUG] __main__ block reached')
     import sys
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     
     # Test speak functionality directly if arguments are provided
     if len(sys.argv) > 1:

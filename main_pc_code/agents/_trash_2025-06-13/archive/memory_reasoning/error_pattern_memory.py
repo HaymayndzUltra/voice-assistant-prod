@@ -14,6 +14,9 @@ import re
 import hashlib
 from datetime import datetime
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "error_pattern_memory.log"
 ERROR_PATTERN_STORE_PATH = "error_pattern_store.json"
 ZMQ_ERROR_PATTERN_PORT = 5611  # New agent port
@@ -32,6 +35,8 @@ class ErrorPatternMemory(BaseAgent):
         super().__init__(port=port, name="ErrorPatternMemory")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.error_store = self.load_error_store()
         self.lock = threading.Lock()
@@ -442,6 +447,8 @@ def send_error_pattern_request(request, port=ZMQ_ERROR_PATTERN_PORT):
     """
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect(f"tcp://127.0.0.1:{port}")
     
     socket.send_string(json.dumps(request))

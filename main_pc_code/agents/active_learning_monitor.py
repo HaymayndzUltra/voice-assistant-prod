@@ -8,6 +8,9 @@ import os
 from datetime import datetime
 from collections import deque
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -38,6 +41,8 @@ class ActiveLearningMonitor(BaseAgent):
         
         # Connect to SelfTrainingOrchestrator
         self.orchestrator_socket = self.context.socket(zmq.REQ)
+        self.orchestrator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.orchestrator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.orchestrator_socket.connect(f"tcp://localhost:{_agent_args.orchestrator_port}")
         
         self.running = True

@@ -1,10 +1,17 @@
+# ✅ Path patch fix for src/ and utils/ imports
+import sys
+import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
 import threading
 import time
-import os
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List, Optional, Tuple

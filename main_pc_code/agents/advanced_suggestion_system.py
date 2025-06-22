@@ -36,6 +36,9 @@ from command_suggestion_optimized import CommandSuggestionOptimized
 # Import clustering if available
 try:
     from command_clustering import CommandClusteringEngine
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     CLUSTERING_AVAILABLE = True
 except ImportError:
     CLUSTERING_AVAILABLE = False
@@ -81,15 +84,21 @@ class AdvancedSuggestionSystem(BaseAgent)(CommandSuggestionOptimized):
         
         # ZMQ setup for additional agents
         self.learning_mode_socket = self.context.socket(zmq.REQ)
+        self.learning_mode_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.learning_mode_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.learning_mode_socket.connect(f"tcp://192.168.1.2:{learning_mode_port}")  # PC2
         logger.info(f"Connected to Learning Mode Agent on port {learning_mode_port}")
         
         self.digital_twin_socket = self.context.socket(zmq.REQ)
+        self.digital_twin_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.digital_twin_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.digital_twin_socket.connect(f"tcp://192.168.1.2:{digital_twin_port}")  # PC2
         logger.info(f"Connected to Digital Twin Agent on port {digital_twin_port}")
         
         # Connect to Contextual Memory Agent (PC2)
         self.contextual_memory_socket = self.context.socket(zmq.REQ)
+        self.contextual_memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.contextual_memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.contextual_memory_socket.setsockopt(zmq.LINGER, 0)
         self.contextual_memory_socket.connect(f"tcp://192.168.1.2:{contextual_memory_port}")  # PC2
         logger.info(f"Connected to Contextual Memory Agent on port {contextual_memory_port}")

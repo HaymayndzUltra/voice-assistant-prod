@@ -4,6 +4,9 @@ import time
 import logging
 from datetime import datetime
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -15,6 +18,8 @@ def test_learning_analysis():
     """Test learning analysis functionality."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect("tcp://localhost:5630")
     
     # Test data
@@ -47,6 +52,8 @@ def test_memory_optimization():
     """Test memory optimization functionality."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect("tcp://localhost:5630")
     
     # Test data
@@ -72,6 +79,8 @@ def test_system_monitoring():
     """Test system monitoring functionality."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect("tcp://localhost:5630")
     
     # Test data

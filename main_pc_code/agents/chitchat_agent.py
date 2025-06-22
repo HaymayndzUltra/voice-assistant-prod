@@ -74,6 +74,7 @@ class ChitchatAgent(BaseAgent):
         try:
             # Main REP socket for chitchat requests with fallback if port in use
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             rep_port = self.chitchat_port
             while True:
                 try:
@@ -106,6 +107,7 @@ class ChitchatAgent(BaseAgent):
             
             # PC2 LLM socket
             self.llm_socket = self.context.socket(zmq.REQ)
+            self.llm_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.llm_socket.setsockopt(zmq.LINGER, 0)
             self.llm_socket.setsockopt(zmq.RCVTIMEO, 30000)  # 30 second timeout
             self.llm_socket.connect(f"tcp://{PC2_IP}:{PC2_LLM_PORT}")

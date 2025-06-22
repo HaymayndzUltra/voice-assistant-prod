@@ -23,6 +23,9 @@ from typing import Dict, Any
 # Import config parser for dynamic port support
 from utils.config_parser import parse_agent_args
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -48,9 +51,13 @@ class SimpleTranslatorServer:
         
         # Main service socket
         self.main_socket = self.context.socket(zmq.REP)
+        self.main_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.main_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Health check socket (separate endpoint)
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Bind sockets
         self._bind_sockets()

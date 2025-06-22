@@ -16,6 +16,9 @@ try:
 except ImportError:
     def send_proactive_event(event_type, data):
         logging.warning(f"[ContextualMemory] Could not import send_proactive_event, using fallback. Event: {event_type}")
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         return None
 
 LOG_PATH = "contextual_memory_agent.log"
@@ -39,6 +42,8 @@ class ContextualMemoryAgent(BaseAgent):
         super().__init__(port=port, name="ContextualMemoryAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Try to bind to the specified port
         try:
@@ -66,6 +71,8 @@ class ContextualMemoryAgent(BaseAgent):
 
         # Initialize health check socket
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             self.health_socket.bind(f"tcp://127.0.0.1:{HEALTH_CHECK_PORT}")
             logging.info(f"[ContextualMemory] Health check socket bound to port {HEALTH_CHECK_PORT}")

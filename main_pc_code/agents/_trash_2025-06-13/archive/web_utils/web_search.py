@@ -62,12 +62,17 @@ ZMQ_WEBSEARCH_PORT = 5592
 
 if __name__ == "__main__":
     import sys
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     if len(sys.argv) > 1:
         query = " ".join(sys.argv[1:])
         print(duckduckgo_search(query))
     else:
         context = zmq.Context()
         socket = context.socket(zmq.REP)
+        socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.bind(f"tcp://127.0.0.1:{ZMQ_WEBSEARCH_PORT}")
         logging.info(f"[WebSearch] Agent started on port {ZMQ_WEBSEARCH_PORT}.")
         try:

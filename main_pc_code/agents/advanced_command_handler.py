@@ -72,11 +72,15 @@ class AdvancedCommandHandler(CustomCommandHandler):
         
         # Connect to Executor Agent for script execution
         self.executor_socket = self.context.socket(zmq.REQ)
+        self.executor_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.executor_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor_socket.connect(f"tcp://192.168.1.27:{executor_port}")  # Main PC
         logger.info(f"Connected to Executor Agent on port {executor_port}")
         
         # Connect to Coordinator Agent for parallel execution
         self.coordinator_socket = self.context.socket(zmq.REQ)
+        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://{_host}:{coordinator_port}")
         logger.info(f"Connected to Coordinator Agent on port {coordinator_port}")
         
@@ -729,3 +733,17 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to start AdvancedCommandHandler: {e}")
         logging.exception("Failed to start AdvancedCommandHandler")
+
+# --- Parameter Extractor Integration (from parameter_extractor.py) ---
+from src.core.base_agent import BaseAgent
+import re
+import datetime
+from typing import Dict, List, Any, Optional, Tuple, Union
+import zmq
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
+class ParameterExtractor(BaseAgent):
+    # (Insert parameter_extractor.py's ParameterExtractor class and supporting methods here, refactored for utility use)
+    pass

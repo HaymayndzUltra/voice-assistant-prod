@@ -1,190 +1,238 @@
-#!/usr/bin/env python3
-"""
-System Launcher for Voice Assistant
------------------------------------
-Launches all active agents in the correct order with proper dependency management
-Last Updated: 2025-06-06
-"""
-
 import os
 import sys
+import yaml
 import time
+import socket
 import signal
 import logging
 import subprocess
-import threading
-from pathlib import Path
-from typing import Dict, List
+from graphlib import TopologicalSorter, CycleError
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/launcher.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('SystemLauncher')
+# --- Configuration ---
+CONFIG_PATH = "config/startup_config.yaml"
+LOGS_DIR = "logs"
+HEALTH_CHECK_TIMEOUT = 120  # seconds
+HEALTH_CHECK_INTERVAL = 2   # seconds
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+POSTGRES_HOST = "localhost"
+POSTGRES_PORT = 5432
 
-# Agent groups and their dependencies based on latest SOT
-AGENT_GROUPS = {
-    "core_models": {
-        "agents": [
-            {"name": "TinyLlama Service", "script": "tinyllama_service_enhanced.py", "port": 5615}
-        ],
-        "dependencies": []
-    },
-    "memory": {
-        "agents": [
-            {"name": "Memory Agent", "script": "memory.py", "port": 5590},
-            {"name": "Memory Agent Health", "script": "memory.py", "port": 5598},
-            {"name": "Contextual Memory", "script": "contextual_memory_agent.py", "port": 5596},
-            {"name": "Digital Twin", "script": "digital_twin_agent.py", "port": 5597},
-            {"name": "Error Pattern Memory", "script": "error_pattern_memory.py", "port": 5611},
-            {"name": "Context Summarizer", "script": "context_summarizer.py", "port": 5610}
-        ],
-        "dependencies": ["core_models"]
-    },
-    "core_processing": {
-        "agents": [
-            {"name": "Remote Connector", "script": "remote_connector_agent.py", "port": 5557},
-            {"name": "Unified Web Agent", "script": "unified_web_agent.py", "port": 8001}
-        ],
-        "dependencies": ["core_models"]
-    },
-    "specialized": {
-        "agents": [
-            {"name": "Self-Healing", "script": "self_healing_agent.py", "port": 5614, "pub_port": 5616}
-        ],
-        "dependencies": ["core_processing"]
-    }
-}
+# --- Global State ---
+child_processes = []
 
-class SystemLauncher:
-    def __init__(self):
-        self.processes: Dict[str, subprocess.Popen] = {}
-        self.running = True
+# --- Logging Setup ---
+def setup_logging():
+    """Sets up the main logger for the launcher."""
+    os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
+    log_file = os.path.join(BASE_DIR, LOGS_DIR, "system_launcher.log")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] - %(message)s",
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    return logging.getLogger("PC2SystemLauncher")
+
+logger = setup_logging()
+
+# --- Pre-flight Checks ---
+def check_postgres():
+    """Performs a pre-flight check to ensure PostgreSQL is accessible."""
+    logger.info(f"Performing pre-flight check for PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT}...")
+    try:
+        with socket.create_connection((POSTGRES_HOST, POSTGRES_PORT), timeout=5):
+            logger.info("PostgreSQL connection successful. Pre-flight check passed.")
+            return True
+    except (socket.error, ConnectionRefusedError):
+        logger.critical("--- CRITICAL: PostgreSQL IS NOT RUNNING ---")
+        logger.critical(f"Could not connect to PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT}.")
+        logger.critical("The AI system's memory components will fail to initialize.")
+        logger.critical("Please ensure the PostgreSQL database server is running before starting the system.")
+        return False
+
+# --- Core Logic ---
+def load_config():
+    """Loads the canonical YAML configuration."""
+    config_file = os.path.join(BASE_DIR, CONFIG_PATH)
+    logger.info(f"Loading canonical configuration from: {config_file}")
+    try:
+        with open(config_file, 'r') as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        logger.error(f"FATAL: Configuration file not found at {config_file}")
+        return None
+    except yaml.YAMLError as e:
+        logger.error(f"FATAL: Error parsing YAML configuration: {e}")
+        return None
+
+def build_dependency_graph(agents_config):
+    """Builds a dependency graph from the agent configurations."""
+    return {agent['name']: set(agent.get('dependencies', [])) for agent in agents_config}
+
+def calculate_startup_batches(graph):
+    """Calculates the startup order in batches using TopologicalSorter."""
+    try:
+        ts = TopologicalSorter(graph)
+        startup_order = tuple(ts.static_order())
+        logger.info(f"Calculated startup order: {startup_order}")
         
-        # Create necessary directories
-        Path("logs").mkdir(exist_ok=True)
+        batches = []
+        launched_agents = set()
+        remaining_agents = set(startup_order)
+
+        while remaining_agents:
+            batch = {agent for agent in remaining_agents if graph[agent].issubset(launched_agents)}
+            if not batch:
+                logger.error(f"FATAL: Dependency issue. Cannot find next batch. Launched: {launched_agents}, Remaining: {remaining_agents}")
+                return None
+            
+            batches.append(list(batch))
+            launched_agents.update(batch)
+            remaining_agents.difference_update(batch)
         
-        # Register signal handlers
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
+        logger.info(f"Successfully calculated startup batches: {batches}")
+        return batches
+    except CycleError as e:
+        logger.error(f"FATAL: A dependency cycle was detected in the configuration: {e.args[1]}")
+        return None
+
+def launch_agent(agent_config):
+    """Launches a single agent as a subprocess."""
+    name = agent_config['name']
+    relative_script_path = agent_config['script_path']
+    script_path = os.path.join(BASE_DIR, relative_script_path)
+    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_')}.log")
+
+    if not os.path.exists(script_path):
+        logger.error(f"Agent '{name}': Script not found at {script_path}. Skipping.")
+        return None
+
+    env = os.environ.copy()
+    project_root = os.path.dirname(BASE_DIR)
+    env["PYTHONPATH"] = f"{project_root}{os.pathsep}{env.get('PYTHONPATH', '')}"
     
-    def signal_handler(self, sig, frame):
-        """Handle shutdown signals"""
-        logger.info("Shutdown signal received, stopping all agents...")
-        self.running = False
-        self.stop_all_agents()
-        sys.exit(0)
-    
-    def start_agent(self, agent_info: dict) -> bool:
-        """Start a single agent"""
-        try:
-            name = agent_info["name"]
-            script = agent_info["script"]
-            port = agent_info.get("port")
-            pub_port = agent_info.get("pub_port")
-            args = agent_info.get("args", "")
-            
-            # Build command
-            cmd = f"python agents/{script}"
-            if port:
-                cmd += f" --port={port}"
-            if pub_port:
-                cmd += f" --pub_port={pub_port}"
-            if args:
-                cmd += f" {args}"
-            
-            # Start process
+    logger.info(f"Launching agent: {name}")
+    logger.info(f"  - Script: {script_path}")
+    logger.info(f"  - Log: {log_file_path}")
+
+    try:
+        with open(log_file_path, 'w') as log_file:
             process = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=open(f"logs/{name.lower().replace(' ', '_')}.log", "w"),
-                stderr=subprocess.STDOUT
+                [sys.executable, script_path],
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                cwd=BASE_DIR,
+                env=env
             )
-            
-            self.processes[name] = process
-            logger.info(f"Started {name} (PID: {process.pid})")
+        child_processes.append(process)
+        logger.info(f"Agent '{name}' started with PID: {process.pid}")
+        return process
+    except Exception as e:
+        logger.error(f"Failed to launch agent '{name}': {e}")
+        return None
+
+def check_agent_health(agent_config):
+    """Checks if an agent is healthy by probing its TCP port."""
+    host = agent_config.get('host', '127.0.0.1')
+    port = agent_config['port']
+    name = agent_config['name']
+    
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            logger.info(f"Health check PASSED for {name} at {host}:{port}")
+            return True
+    except (socket.error, ConnectionRefusedError):
+        logger.debug(f"Health check pending for {name} at {host}:{port}...")
+        return False
+
+def check_batch_health(batch, agents_map):
+    """Monitors a batch of agents until all are healthy or a timeout is reached."""
+    start_time = time.time()
+    healthy_agents = set()
+    agents_in_batch = set(batch)
+
+    while time.time() - start_time < HEALTH_CHECK_TIMEOUT:
+        for agent_name in list(agents_in_batch - healthy_agents):
+            agent_config = agents_map[agent_name]
+            if check_agent_health(agent_config):
+                healthy_agents.add(agent_name)
+        
+        if healthy_agents == agents_in_batch:
+            logger.info(f"All agents in batch {batch} are healthy.")
             return True
             
-        except Exception as e:
-            logger.error(f"Failed to start {name}: {str(e)}")
-            return False
+        time.sleep(HEALTH_CHECK_INTERVAL)
+
+    failed_agents = agents_in_batch - healthy_agents
+    logger.error(f"FATAL: Health check timed out after {HEALTH_CHECK_TIMEOUT} seconds.")
+    logger.error(f"Failed to confirm health for agents: {list(failed_agents)}")
+    return False
+
+def graceful_shutdown(signum, frame):
+    """Handles graceful shutdown of all child processes."""
+    logger.warning(f"Shutdown signal ({signal.strsignal(signum)}) received. Terminating all agent processes...")
+    for p in reversed(child_processes):
+        if p.poll() is None:
+            try:
+                logger.info(f"Terminating process with PID: {p.pid}")
+                p.terminate()
+            except Exception as e:
+                logger.error(f"Error terminating process {p.pid}: {e}")
     
-    def start_group(self, group_name: str) -> bool:
-        """Start all agents in a group"""
-        group = AGENT_GROUPS[group_name]
-        
-        # Check dependencies
-        for dep in group["dependencies"]:
-            if not self.check_group_running(dep):
-                logger.error(f"Cannot start {group_name} - dependency {dep} not running")
-                return False
-        
-        # Start each agent in the group
-        success = True
-        for agent in group["agents"]:
-            if not self.start_agent(agent):
-                success = False
-                break
-            time.sleep(2)  # Wait between agents
-        
-        return success
-    
-    def check_group_running(self, group_name: str) -> bool:
-        """Check if all agents in a group are running"""
-        group = AGENT_GROUPS[group_name]
-        return all(agent["name"] in self.processes and 
-                  self.processes[agent["name"]].poll() is None 
-                  for agent in group["agents"])
-    
-    def stop_all_agents(self):
-        """Stop all running agents"""
-        for name, process in self.processes.items():
-            if process.poll() is None:
-                logger.info(f"Stopping {name}...")
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-    
-    def run(self):
-        """Main launcher function"""
-        logger.info("Starting Voice Assistant System...")
-        
+    # Wait for processes to terminate
+    for p in child_processes:
         try:
-            # Start groups in order
-            for group_name in AGENT_GROUPS:
-                logger.info(f"Starting {group_name} group...")
-                if not self.start_group(group_name):
-                    logger.error(f"Failed to start {group_name} group")
-                    self.stop_all_agents()
-                    return
-                time.sleep(5)  # Wait between groups
-            
-            logger.info("All agents started successfully")
-            
-            # Monitor processes
-            while self.running:
-                for name, process in list(self.processes.items()):
-                    if process.poll() is not None:
-                        logger.error(f"{name} has stopped unexpectedly")
-                        self.running = False
-                        break
-                time.sleep(1)
-                
-        except KeyboardInterrupt:
-            logger.info("Interrupted by user")
-        except Exception as e:
-            logger.error(f"Error in launcher: {str(e)}")
-        finally:
-            self.stop_all_agents()
-            logger.info("System shutdown complete")
+            p.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Process {p.pid} did not terminate gracefully. Killing.")
+            p.kill()
+
+    logger.info("All agent processes have been shut down. Exiting.")
+    sys.exit(0)
+
+def main():
+    """Main function to orchestrate the system launch."""
+    signal.signal(signal.SIGINT, graceful_shutdown)
+    signal.signal(signal.SIGTERM, graceful_shutdown)
+
+    if not check_postgres():
+        sys.exit(1)
+
+    config = load_config()
+    if not config or 'pc2_services' not in config:
+        logger.error("Invalid or empty configuration. Aborting.")
+        sys.exit(1)
+
+    agents_config = config['pc2_services']
+    agents_map = {agent['name']: agent for agent in agents_config}
+    
+    dependency_graph = build_dependency_graph(agents_config)
+    startup_batches = calculate_startup_batches(dependency_graph)
+
+    if not startup_batches:
+        sys.exit(1)
+
+    logger.info("--- PC2 AGENT LAUNCH SEQUENCE INITIATED ---")
+    for i, batch in enumerate(startup_batches):
+        logger.info(f"--- Starting Batch {i+1}/{len(startup_batches)}: {batch} ---")
+        
+        for agent_name in batch:
+            launch_agent(agents_map[agent_name])
+        
+        logger.info(f"Batch {i+1} launched. Performing health checks...")
+        if not check_batch_health(batch, agents_map):
+            logger.error("A batch failed to become healthy. Aborting startup.")
+            graceful_shutdown(signal.SIGTERM, None)
+            sys.exit(1)
+
+    logger.info("--- ALL PC2 AGENTS LAUNCHED SUCCESSFULLY ---")
+    logger.info("System is operational. Monitoring for termination signals.")
+    
+    # Keep the launcher running to hold child processes
+    while True:
+        time.sleep(1)
 
 if __name__ == "__main__":
-    launcher = SystemLauncher()
-    launcher.run() 
+    main()

@@ -14,6 +14,9 @@ import threading
 import zmq
 from datetime import datetime
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -47,10 +50,14 @@ class DiscoveryService(BaseAgent):
         
         # Socket for service registration (REP)
         self.register_socket = self.context.socket(zmq.REP)
+        self.register_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.register_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.register_socket.bind(f"tcp://*:{self.port}")
         
         # Socket for service queries (REP)
         self.query_socket = self.context.socket(zmq.REP)
+        self.query_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.query_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.query_socket.bind(f"tcp://*:{self.port+1}")
         
         # Socket for service broadcasts (PUB)

@@ -50,16 +50,22 @@ class PlannerAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
+        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.bind(f"tcp://127.0.0.1:{PLANNER_AGENT_PORT}")
         logger.info(f"Planner Agent bound to port {PLANNER_AGENT_PORT}")
         
         # Socket to communicate with model manager
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
         logger.info(f"Connected to Model Manager on port {MODEL_MANAGER_PORT}")
         
         # Socket to communicate with autogen framework
         self.framework = self.context.socket(zmq.REQ)
+        self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.framework.connect(f"tcp://localhost:{AUTOGEN_FRAMEWORK_PORT}")
         logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
         
@@ -232,6 +238,9 @@ Analyze this task and identify its requirements and complexity. Return your anal
             
             # Extract JSON from response
             import re
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
             
             if json_match:

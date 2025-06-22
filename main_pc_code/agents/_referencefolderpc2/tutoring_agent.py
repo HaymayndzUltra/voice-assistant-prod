@@ -20,6 +20,7 @@ class AdvancedTutoringAgent:
             logging.info("Initializing ZMQ connection to EnhancedModelRouter")
             self.context = zmq.Context()
             self.llm_socket = self.context.socket(zmq.REQ)
+            self.llm_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.llm_socket.setsockopt(zmq.LINGER, 0)  # Don't wait on close
             self.llm_socket.setsockopt(zmq.RCVTIMEO, 15000)  # 15 second timeout
             self.llm_socket.connect(f"tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")

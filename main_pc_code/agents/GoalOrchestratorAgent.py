@@ -1,3 +1,12 @@
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 from src.core.base_agent import BaseAgent
 import zmq
 import json
@@ -7,6 +16,9 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from threading import Thread
 from utils.config_parser import parse_agent_args
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Remove argparse and use dynamic argument parser
 args = parse_agent_args()
@@ -40,10 +52,14 @@ class GoalOrchestratorAgent(BaseAgent):
         
         # REQ socket for UnifiedPlanningAgent
         self.planning_socket = self.context.socket(zmq.REQ)
+        self.planning_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.planning_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.planning_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5625")  # UnifiedPlanningAgent
         
         # REQ socket for PerformanceLoggerAgent
         self.performance_socket = self.context.socket(zmq.REQ)
+        self.performance_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.performance_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.performance_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5632")  # PerformanceLoggerAgent
         
         # Store active goals and their tasks

@@ -58,6 +58,8 @@ class VRAMManager(BaseAgent):
             # import zmq
             self.context_dt = zmq.Context()
             self.dt_socket = self.context_dt.socket(zmq.REQ)
+            self.dt_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.dt_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.dt_socket.connect("tcp://localhost:5585")
             logger.info("VRAMManager connected to SystemDigitalTwinAgent on port 5585.")
         except Exception as e:
@@ -132,6 +134,8 @@ class VRAMManager(BaseAgent):
                 logger.error("Timeout waiting for response from SystemDigitalTwinAgent.")
                 self.dt_socket.close()
                 self.dt_socket = self.context_dt.socket(zmq.REQ)
+                self.dt_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.dt_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.dt_socket.connect("tcp://localhost:5585")
                 return {"recommendation": "proceed"}
         except Exception as e:
@@ -408,8 +412,13 @@ class VRAMManager(BaseAgent):
         try:
             # Connect to ModelManagerAgent
             import zmq
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             context = zmq.Context()
             socket = context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.connect("tcp://localhost:5570")  # ModelManagerAgent port
             
             # Send unload request

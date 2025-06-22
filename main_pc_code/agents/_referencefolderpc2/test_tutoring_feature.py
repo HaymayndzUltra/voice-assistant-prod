@@ -3,6 +3,9 @@ import json
 import time
 import uuid
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # --- Configuration ---
 COORDINATOR_PORT = 5558
 COORDINATOR_HOST = "192.168.1.128"
@@ -12,6 +15,8 @@ def send_tutor_request(action, subject=None, question=None, session_id=None, use
     """Sends a structured request to the CoordinatorAgent."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+    socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.connect(f"tcp://{COORDINATOR_HOST}:{COORDINATOR_PORT}")
 
     request = {

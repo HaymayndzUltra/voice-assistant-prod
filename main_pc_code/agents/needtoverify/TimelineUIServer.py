@@ -8,6 +8,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -27,10 +30,14 @@ class TimelineUIServer(BaseAgent):
         
         # REQ socket for EpisodicMemoryAgent
         self.memory_socket = self.context.socket(zmq.REQ)
+        self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.connect("tcp://localhost:5629")  # EpisodicMemoryAgent
         
         # REQ socket for MetaCognitionAgent
         self.meta_socket = self.context.socket(zmq.REQ)
+        self.meta_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.meta_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.meta_socket.connect("tcp://localhost:5630")  # MetaCognitionAgent
         
         logger.info("TimelineUIServer initialized")

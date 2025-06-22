@@ -5,6 +5,15 @@ Intention Validator Agent
 - Implements security checks
 """
 
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
 import zmq
 import json
 import time
@@ -16,20 +25,26 @@ from typing import Dict, Any, List, Set, Tuple
 import argparse
 
 from src.core.base_agent import BaseAgent
+from utils.config_parser import parse_agent_args
+
+# Parse command line arguments
+args = parse_agent_args()
 
 # Configure logging
+log_dir = os.path.join(MAIN_PC_CODE, 'logs')
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/intention_validator.log'),
+        logging.FileHandler(os.path.join(log_dir, 'intention_validator.log')),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
 class IntentionValidatorAgent(BaseAgent):
-    def __init__(self, port=5572, host="localhost", taskrouter_host="localhost", taskrouter_port=5570):
+    def __init__(self, port=5572, host="localhost", taskrouter_host=None, taskrouter_port=None):
         """Initialize the IntentionValidatorAgent.
         
         Args:
@@ -43,10 +58,26 @@ class IntentionValidatorAgent(BaseAgent):
             "error": None,
             "progress": 0.0
         }
+        
+        # Get port from command line arguments if provided
+        if hasattr(args, 'port') and args.port is not None:
+            port = int(args.port)
+            
         super().__init__(port=port, name="IntentionValidator")
-        self.taskrouter_host = taskrouter_host
-        self.taskrouter_port = taskrouter_port
-        self.db_path = "data/intention_validation.db"
+        
+        # Get TaskRouter connection details from command line args (lowercase)
+        self.taskrouter_host = taskrouter_host or getattr(args, 'taskrouter_host', None) or "localhost"
+        self.taskrouter_port = taskrouter_port or getattr(args, 'taskrouter_port', None) or 5570
+        
+        # Also check for uppercase variant for backward compatibility
+        if hasattr(args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
+            self.taskrouter_host = args.TaskRouter_host
+        if hasattr(args, 'TaskRouter_port') and self.taskrouter_port == 5570:
+            self.taskrouter_port = args.TaskRouter_port
+            
+        self.db_path = os.path.join(MAIN_PC_CODE, "data", "intention_validation.db")
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        
         self.sensitive_commands = {
             'delete_file': ['file_path'],
             'modify_system': ['component', 'action'],

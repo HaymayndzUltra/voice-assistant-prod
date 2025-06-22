@@ -16,6 +16,9 @@ from enum import Enum
 import argparse
 import time
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -48,6 +51,8 @@ class LearningAdjusterAgent:
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.port = port
         self.socket.bind(f"tcp://*:{self.port}")
         
@@ -402,23 +407,50 @@ class LearningAdjusterAgent:
         """Run the agent's main loop."""
         logger.info(f"Starting Learning Adjuster Agent on port {self.port}")
         
+        poll_timeout_ms = 1000  # 1 second
         while self.running:
             try:
-                # Wait for request
-                request = json.loads(self.socket.recv_string())
-                
+                # Wait (non-blocking) for a request
+                if self.socket.poll(timeout=poll_timeout_ms) == 0:
+                    # No message ready; continue loop to keep checking running flag
+                    continue
+
+                # Receive request
+                try:
+                    request_raw = self.socket.recv_string(flags=0)
+                except zmq.error.Again:
+                    # recv timed out – safe to continue
+                    continue
+
+                # Decode JSON
+                try:
+                    request = json.loads(request_raw)
+                except json.JSONDecodeError:
+                    logger.warning(f"Received invalid JSON: {request_raw}")
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": "Invalid JSON"
+                    }))
+                    continue
+
                 # Process request
                 response = self.handle_request(request)
-                
+
                 # Send response
                 self.socket.send_string(json.dumps(response))
-                
+
+            except zmq.error.Again:
+                # General ZMQ timeout; ignore and loop
+                continue
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
-                self.socket.send_string(json.dumps({
-                    "status": "error",
-                    "message": str(e)
-                }))
+                logger.error(f"Unexpected error in main loop: {e}")
+                try:
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
+                except Exception:
+                    pass
 
     def stop(self):
         """Stop the agent."""

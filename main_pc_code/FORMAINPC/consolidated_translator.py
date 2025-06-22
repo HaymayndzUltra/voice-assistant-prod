@@ -55,6 +55,8 @@ logger = logging.getLogger("ConsolidatedTranslator")
 DEFAULT_ZMQ_PORT = 5563  # Main PC port for translator
 DEFAULT_HEALTH_PORT = 5564  # Health check port
 ZMQ_BIND_ADDRESS = "0.0.0.0"  # Listen on all interfaces
+# Timeout for ZeroMQ send/recv operations (milliseconds)
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 MAX_SESSION_HISTORY = 10
 SESSION_TIMEOUT_SECONDS = 3600  # 1 hour
 
@@ -723,8 +725,14 @@ class TranslationPipeline:
         # Initialize ZMQ context and sockets
         self.context = zmq.Context()
         self.nllb_socket = self.context.socket(zmq.REQ)
+        self.nllb_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.nllb_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.phi_socket = self.context.socket(zmq.REQ)
+        self.phi_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.phi_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.google_socket = self.context.socket(zmq.REQ)
+        self.google_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.google_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Initialize engine connections with graceful failure handling
         try:
@@ -1502,9 +1510,13 @@ class TranslatorServer:
         
         # Main service socket
         self.main_socket = self.context.socket(zmq.REP)
+        self.main_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.main_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Health check socket (separate endpoint)
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Bind sockets
         self._bind_sockets()
@@ -1585,50 +1597,54 @@ class TranslatorServer:
         logger.info("Health check server thread started and listening for requests")
         while True:
             try:
-                # Wait for health check request
-                logger.debug("Health server waiting for request...")
+                # Wait for health-check request (blocking with timeout)
+                logger.debug("Health server waiting for request…")
                 message = self.health_socket.recv_json()
                 logger.info(f"Received health check request: {message}")
-                
-                # Process health check
+
+                # Build and send the response
                 response = self._handle_health_check()
-                logger.info(f"Health check response: {response}")
-                
-                # Send response
                 self.health_socket.send_json(response)
                 logger.info("Health check response sent successfully")
-                
+
+            except zmq.error.Again:
+                # Timeout expired – no request arrived within the timeframe.
+                # Just continue waiting instead of treating it as an error.
+                continue
             except Exception as e:
-                logger.error(f"Error processing health check request: {str(e)}")
+                logger.error(f"Error processing health check request: {e}")
+                # Best effort attempt to reply **only** if a request was actually received.
                 try:
-                    self.health_socket.send_json({
-                        'status': 'error',
-                        'error': str(e)
-                    })
-                except:
+                    self.health_socket.send_json({'status': 'error', 'error': str(e)})
+                except zmq.ZMQError:
+                    # Socket not in a state that allows replying (e.g. no pending request).
                     pass
         
     def run(self):
         """Run the main translation server"""
         while True:
+            message = None  # Reset for each loop-iteration
             try:
-                # Wait for next request
+                # Wait (blocking with timeout) for the next client request
                 message = self.main_socket.recv_json()
                 logger.debug(f"Received request: {message}")
-                
-                # Process request
+
+                # Process and reply
                 response = self._handle_request(message)
-                
-                # Send response
                 self.main_socket.send_json(response)
                 logger.debug(f"Sent response: {response}")
-                
+
+            except zmq.error.Again:
+                # Socket timed-out waiting for a request – nothing to do.
+                continue
             except Exception as e:
-                logger.error(f"Error processing request: {str(e)}")
-                self.main_socket.send_json({
-                    'status': 'error',
-                    'error': str(e)
-                })
+                logger.error(f"Error processing request: {e}")
+                # Only attempt to reply if we actually received a request
+                if message is not None:
+                    try:
+                        self.main_socket.send_json({'status': 'error', 'error': str(e)})
+                    except zmq.ZMQError:
+                        pass
                 
     def _handle_request(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Enhanced request handler with API versioning and capabilities."""

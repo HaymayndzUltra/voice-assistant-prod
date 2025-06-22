@@ -1,3 +1,11 @@
+# ✅ Path patch fix for src/ and utils/ imports
+import sys
+import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from src.core.base_agent import BaseAgent
 # Tone detection for Human Awareness Agent
 
@@ -12,7 +20,6 @@ from queue import Queue
 import re
 import numpy as np
 import wave
-import sys
 from typing import Dict, Any, Optional
 from utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
@@ -194,6 +201,8 @@ class ToneDetectorAgent(BaseAgent):
         try:
             context = zmq.Context()
             socket = context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             host = _agent_args.get('tagalog_analyzer_host', 'localhost')
             port = _agent_args.get('tagalog_analyzer_port', 5707)
             socket.connect(f"tcp://{host}:{port}")  # TagalogAnalyzer service port
@@ -479,6 +488,9 @@ class ToneDetectorAgent(BaseAgent):
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5625)
     args = parser.parse_args()

@@ -37,6 +37,8 @@ class SimpleTTSAgent(BaseAgent):
         # Initialize ZMQ - using REP socket for reliable request-response pattern
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{TTS_PORT}")
         logger.info(f"TTS Agent listening on port {TTS_PORT}")
         
@@ -53,6 +55,9 @@ class SimpleTTSAgent(BaseAgent):
         """Initialize Windows TTS"""
         try:
             import win32com.client
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
             logger.info("Windows SAPI TTS initialized successfully")
             self.speaker.Speak("TTS system ready.")
@@ -160,6 +165,8 @@ class SimpleTTSAgent(BaseAgent):
             self.socket.close()
             time.sleep(0.5)
             self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{TTS_PORT}")
             logger.info("ZMQ socket reset successfully")
         except Exception as e:

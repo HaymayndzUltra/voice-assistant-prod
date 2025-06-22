@@ -18,6 +18,9 @@ import subprocess
 import signal
 import sys
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 # Setup logging
 LOG_PATH = "logs/human_awareness_agent.log"
 logging.basicConfig(
@@ -45,6 +48,8 @@ class HumanAwarenessAgent(BaseAgent):
         
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         
         # Connect to tone detector

@@ -43,9 +43,13 @@ class AutoFixerAgent(BaseAgent):
         self.context = zmq.Context()
         # Code generator
         self.code_gen = self.context.socket(zmq.REQ)
+        self.code_gen.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.code_gen.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.code_gen.connect(f"tcp://localhost:{code_gen_port}")
         # Executor
         self.executor = self.context.socket(zmq.REQ)
+        self.executor.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.executor.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor.connect(f"tcp://localhost:{executor_port}")
         self.max_attempts = max_attempts
 
@@ -123,6 +127,9 @@ class AutoFixerAgent(BaseAgent):
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser(description="Auto-Fixer Agent: Auto-code correction and debugging loop.")
     parser.add_argument('--description', type=str, help='Task description for code generation')
     parser.add_argument('--language', type=str, default=None, help='Programming language (optional)')

@@ -262,6 +262,8 @@ class DigitalTwinAgent(BaseAgent):
         
         # Set up REP socket for responding to requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{ZMQ_DIGITAL_TWIN_PORT}")
         logger.info(f"Digital Twin Agent listening on port {ZMQ_DIGITAL_TWIN_PORT}")
         
@@ -271,6 +273,8 @@ class DigitalTwinAgent(BaseAgent):
         
         # Memory access socket
         self.memory_socket = self.context.socket(zmq.REQ)
+        self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.connect(f"tcp://localhost:{ZMQ_JARVIS_MEMORY_PORT}")
         
         # Thread for automatic saving
@@ -743,6 +747,9 @@ if __name__ == "__main__":
     
     # Parse command line arguments
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser(description='Digital Twin Agent')
     parser.add_argument('--data-dir', type=str, help='Directory for user profile data')
     args = parser.parse_args()

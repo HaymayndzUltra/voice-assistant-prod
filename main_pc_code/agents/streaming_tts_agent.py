@@ -82,6 +82,8 @@ class UltimateTTSAgent(BaseAgent):
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{TTS_PORT}")
         
         # Connect to UnifiedSystemAgent for health monitoring
@@ -420,6 +422,9 @@ class UltimateTTSAgent(BaseAgent):
             except Exception as e:
                 print(f"XTTS generation failed: {e}")
                 import traceback
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                 traceback.print_exc()
                 # Fall back to SAPI
                 return self._speak_with_sapi(text)

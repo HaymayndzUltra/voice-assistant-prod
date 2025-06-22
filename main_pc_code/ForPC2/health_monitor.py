@@ -117,6 +117,7 @@ class HealthMonitor:
             # Set up health check socket (REP)
             self.health_port = test_ports[0] if test_ports else HEALTH_MONITOR_PORT
             self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.health_socket.bind(f"tcp://*:{self.health_port}")
             logger.info(f"Health socket bound to port {self.health_port}")
             
@@ -140,6 +141,7 @@ class HealthMonitor:
                 self.task_router_socket.close()
             
             self.task_router_socket = self.context.socket(zmq.REQ)
+            self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.task_router_socket.setsockopt(zmq.LINGER, 0)
             self.task_router_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
             self.task_router_socket.setsockopt(zmq.RECONNECT_IVL, 1000)  # 1 second reconnection interval
@@ -197,6 +199,7 @@ class HealthMonitor:
             # Create a socket with timeout
             context = zmq.Context()
             socket = context.socket(zmq.REQ)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.LINGER, 0)
             socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2 second timeout
             socket.connect(f"tcp://{host}:{port}")

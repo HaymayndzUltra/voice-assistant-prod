@@ -1,3 +1,11 @@
+# ✅ Path patch fix for src/ and utils/ imports
+import sys
+import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 import asyncio
 import zmq
 import json
@@ -6,7 +14,6 @@ from typing import Dict, Any, Callable, List
 import logging
 from datetime import datetime
 import threading
-import os
 from utils.config_parser import parse_agent_args
 from src.core.base_agent import BaseAgent
 _agent_args = parse_agent_args()

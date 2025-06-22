@@ -3,10 +3,11 @@
 
 # Main PC Core Services
 core_services:
-  - { name: TaskRouter, script_path: src/core/task_router.py, host: localhost, port: 8570, required: true }
+  - { name: TaskRouter, script_path: src/core/task_router.py, host: localhost, port: 8571, required: true }
   - { name: ChainOfThoughtAgent, script_path: FORMAINPC/ChainOfThoughtAgent.py, host: localhost, port: 5612, required: true }
   - { name: GOT_TOTAgent, script_path: FORMAINPC/GOT_TOTAgent.py, host: localhost, port: 5646, required: true }
-  - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: localhost , port: 5570 , required: true }
+  - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: localhost , port: 5010 , required: true }
+  - { name: CoordinatorAgent  , script_path: agents/coordinator_agent.py      , host: localhost , port: 26002 , required: true }
   - { name: GoalOrchestratorAgent, script_path: agents/GoalOrchestratorAgent.py  , host: localhost , port: 7001 , dependencies: [TaskRouter] , required: true }
   - { name: IntentionValidatorAgent, script_path: agents/IntentionValidatorAgent.py, host: localhost , port: 5701 , dependencies: [TaskRouter] , required: true }
   - { name: DynamicIdentityAgent, script_path: agents/DynamicIdentityAgent.py    , host: localhost , port: 5802 , dependencies: [TaskRouter] , required: true }
@@ -49,7 +50,7 @@ memory_system:
   - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: localhost , port: 5576 , required: true }
   - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: localhost , port: 5577 , required: true }
   - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: localhost, port: 5596, dependencies: [MemoryOrchestrator], required: true }
-  - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: localhost, port: 5596, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: localhost, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
 
 # Learning and Knowledge
 learning_knowledge:
@@ -77,7 +78,7 @@ code_generation:
 
 # Audio Processing
 audio_processing:
-  - { name: AudioCapture       , script_path: agents/streaming_audio_capture.py , host: localhost , port: 6575 , required: true }
+  - { name: AudioCapture, script_path: agents/streaming_audio_capture.py, host: localhost, port: 6575, required: true, env_vars: { USE_DUMMY_AUDIO: "true" } }
   - { name: FusedAudioPreprocessor, script_path: src/audio/fused_audio_preprocessor.py, host: localhost , port: 6578 , dependencies: [AudioCapture] , required: true }
   - { name: WakeWordDetector   , script_path: agents/wake_word_detector.py     , host: localhost , port: 6577 , dependencies: [AudioCapture, FusedAudioPreprocessor] , required: true }
   - { name: StreamingSpeechRecognition, script_path: agents/streaming_speech_recognition.py, host: localhost , port: 6580 , dependencies: [TaskRouter] , required: true }

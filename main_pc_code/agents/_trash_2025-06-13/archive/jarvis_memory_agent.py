@@ -20,6 +20,9 @@ import threading
 import time
 import logging
 
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
 LOG_PATH = "jarvis_memory_agent.log"
 JARVIS_MEMORY_STORE_PATH = "jarvis_memory_store.json"
 ZMQ_JARVIS_MEMORY_PORT = 5598
@@ -41,6 +44,8 @@ class JarvisMemoryAgent(BaseAgent):
         super().__init__(port=port, name="JarvisMemoryAgent")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://127.0.0.1:{zmq_port}")
         self.memory = self.load_memory()
         self.lock = threading.Lock()

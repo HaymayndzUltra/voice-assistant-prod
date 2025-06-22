@@ -195,6 +195,8 @@ class EnhancedContextualMemory:
     def __init__(self, zmq_port=5596):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         
         self.memory = MemoryHierarchy()
@@ -233,6 +235,9 @@ class EnhancedContextualMemory:
     
     def _calculate_importance(self, entry: MemoryEntry) -> float:
         """Calculate importance score for memory entry"""
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         base_score = 0.5
         
         # Adjust based on type

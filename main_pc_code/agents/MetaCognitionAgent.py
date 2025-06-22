@@ -64,6 +64,8 @@ class MetaCognitionAgent(BaseAgent):
         
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
         
         # SUB sockets for observing other agents
@@ -84,9 +86,13 @@ class MetaCognitionAgent(BaseAgent):
         
         # Connect to KnowledgeBase and CoordinatorAgent
         self.kb_socket = self.context.socket(zmq.REQ)
+        self.kb_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.kb_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.kb_socket.connect(f"tcp://localhost:{default_ports.knowledge_base_port}")  # KnowledgeBase port
         
         self.coordinator_socket = self.context.socket(zmq.REQ)
+        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://localhost:{default_ports.coordinator_port}")  # CoordinatorAgent port
         
         # Initialize learning analysis components
@@ -345,6 +351,9 @@ class MetaCognitionAgent(BaseAgent):
         
         # Clear unused variables
         import gc
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         gc.collect()
 
     def _calculate_response_time(self) -> float:

@@ -286,6 +286,8 @@ class TranslatorAgent(BaseAgent):
         
         # Socket to communicate with model manager
         self.model_manager = self.context.socket(zmq.REQ)
+        self.model_manager.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
         logger.info(f"Connected to Model Manager on port {MODEL_MANAGER_PORT}")
         
@@ -513,6 +515,9 @@ English translation:"""
 
 if __name__ == "__main__":
     import argparse
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     parser = argparse.ArgumentParser(description="Translator Agent: Translates commands from Filipino to English.")
     parser.add_argument('--server', action='store_true', help='Run in server mode, waiting for ZMQ messages')
     args = parser.parse_args()

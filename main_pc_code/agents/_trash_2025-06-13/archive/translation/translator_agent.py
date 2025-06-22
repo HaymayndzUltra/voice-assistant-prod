@@ -303,6 +303,7 @@ class TranslatorAgent(BaseAgent):
             
         # Socket to handle health check requests from dashboard
         self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         try:
             # Use the port 8044 as specified in the distributed_config.json
             health_port = 8044
@@ -326,6 +327,7 @@ class TranslatorAgent(BaseAgent):
         # Socket to communicate with model manager
         try:
             self.model_manager = self.context.socket(zmq.REQ)
+            self.model_manager.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_manager.connect(f"tcp://localhost:{MODEL_MANAGER_PORT}")
             logger.info(f"Connected to Model Manager on port {MODEL_MANAGER_PORT}")
         except Exception as e:
