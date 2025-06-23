@@ -39,23 +39,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger('TaskRouter')
 
-# Port configuration from command line arguments
-TASK_ROUTER_PORT = args.port if args.port else 8570
-TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1  # Health check port is main port + 1
-MODEL_MANAGER_PORT = getattr(args, 'modelmanager_port', 5556)
-PC2_EMR_PORT = getattr(args, 'enhancedmodelrouter_port', 5598)
-PC2_TRANSLATOR_PORT = getattr(args, 'consolidatedtranslator_port', 5563)
+# Port and Host configuration from command line arguments
+TASK_ROUTER_PORT = args.port if args.port else 8571
+TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1
 
-# Add new port configurations
-COT_PORT = getattr(args, 'chainofthought_port', 5612)
-GOT_TOT_PORT = getattr(args, 'gottot_port', 5646)
+# Downstream service connection parameters
+COT_HOST = getattr(args, 'cot_host', None)
+COT_PORT = getattr(args, 'cot_port', None)
 
-# Host addresses - since we're on Main PC, use localhost
-MODEL_MANAGER_HOST = 'localhost'
-HEALTHMONITOR_HOST = 'localhost'
-HEALTHMONITOR_PORT = getattr(args, 'healthmonitor_port', 5584)
-# Since we're on Main PC, use localhost
-PC2_IP = 'localhost'  # We're on Main PC
+GOT_TOT_HOST = getattr(args, 'got_tot_host', None)
+GOT_TOT_PORT = getattr(args, 'got_tot_port', None)
+
+EMR_HOST = getattr(args, 'emr_host', None)
+EMR_PORT = getattr(args, 'emr_port', None)
+
+TRANSLATOR_HOST = getattr(args, 'translator_host', None)
+TRANSLATOR_PORT = getattr(args, 'translator_port', None)
 
 # Circuit breaker configuration
 CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3
@@ -235,32 +234,30 @@ class TaskRouter:
             self.task_socket.bind(f"tcp://*:{self.task_port}")
             logger.info(f"Task socket bound to port {self.task_port}")
             
-            # Set up Chain of Thought socket
-            self.cot_socket = self.context.socket(zmq.REQ)
-            self.cot_socket.connect(f"tcp://127.0.0.1:{COT_PORT}")
-            logger.info(f"Connected to Chain of Thought service on port {COT_PORT}")
+            # Dynamically connect to downstream services based on provided arguments
+            if COT_HOST and COT_PORT:
+                self.cot_socket = self.context.socket(zmq.REQ)
+                self.cot_socket.connect(f"tcp://{COT_HOST}:{COT_PORT}")
+                logger.info(f"Connected to Chain of Thought service at tcp://{COT_HOST}:{COT_PORT}")
             
-            # Set up Graph/Tree of Thought socket
-            self.got_tot_socket = self.context.socket(zmq.REQ)
-            self.got_tot_socket.connect(f"tcp://127.0.0.1:{GOT_TOT_PORT}")
-            logger.info(f"Connected to Graph/Tree of Thought service on port {GOT_TOT_PORT}")
-            
-            # Removed connection to Model Manager since TaskRouter is now the replacement for it
-            # No need for self-referential connection
-            
-            # Set up connection to Enhanced Model Router on PC2
-            self.emr_socket = self.context.socket(zmq.REQ)
-            self.emr_socket.setsockopt(zmq.LINGER, 0)
-            self.emr_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-            self.emr_socket.connect(f"tcp://{PC2_IP}:{PC2_EMR_PORT}")
-            logger.info(f"Connected to Enhanced Model Router on {PC2_IP}:{PC2_EMR_PORT}")
-            
-            # Set up connection to Consolidated Translator on PC2
-            self.translator_socket = self.context.socket(zmq.REQ)
-            self.translator_socket.setsockopt(zmq.LINGER, 0)
-            self.translator_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-            self.translator_socket.connect(f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}")
-            logger.info(f"Connected to Consolidated Translator on {PC2_IP}:{PC2_TRANSLATOR_PORT}")
+            if GOT_TOT_HOST and GOT_TOT_PORT:
+                self.got_tot_socket = self.context.socket(zmq.REQ)
+                self.got_tot_socket.connect(f"tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+                logger.info(f"Connected to Graph/Tree of Thought service at tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+
+            if EMR_HOST and EMR_PORT:
+                self.emr_socket = self.context.socket(zmq.REQ)
+                self.emr_socket.setsockopt(zmq.LINGER, 0)
+                self.emr_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
+                self.emr_socket.connect(f"tcp://{EMR_HOST}:{EMR_PORT}")
+                logger.info(f"Connected to Enhanced Model Router at tcp://{EMR_HOST}:{EMR_PORT}")
+
+            if TRANSLATOR_HOST and TRANSLATOR_PORT:
+                self.translator_socket = self.context.socket(zmq.REQ)
+                self.translator_socket.setsockopt(zmq.LINGER, 0)
+                self.translator_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
+                self.translator_socket.connect(f"tcp://{TRANSLATOR_HOST}:{TRANSLATOR_PORT}")
+                logger.info(f"Connected to Consolidated Translator at tcp://{TRANSLATOR_HOST}:{TRANSLATOR_PORT}")
             
         except Exception as e:
             logger.error(f"Error initializing ZMQ: {str(e)}")

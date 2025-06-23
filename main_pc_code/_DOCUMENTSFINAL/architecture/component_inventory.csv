@@ -1,0 +1,90 @@
+Agent Name,Filename,Primary Function,Subsystem,Status,Dependencies
+Streaming Audio Capture,streaming_audio_capture.py,Captures raw audio from microphone and publishes to ZMQ,Audio Pipeline,Active,None
+Noise Reduction Agent,noise_reduction_agent.py,Cleans audio stream by removing background noise,Audio Pipeline,Active,streaming_audio_capture.py
+VAD Agent,vad_agent.py,Detects speech activity in audio stream,Audio Pipeline,Active,noise_reduction_agent.py
+Wake Word Detector,wake_word_detector.py,Triggers system on wake word detection,Audio Pipeline,Active,streaming_audio_capture.py
+Streaming Speech Recognition,streaming_speech_recognition.py,Converts speech to text using Whisper,Audio Pipeline,Active,noise_reduction_agent.py
+Language and Translation Coordinator,language_and_translation_coordinator.py,Processes and routes text including translation,Text Pipeline,Active,streaming_speech_recognition.py
+Coordinator Agent,coordinator_agent.py,Classifies and routes user requests,Text Pipeline,Active,language_and_translation_coordinator.py
+Chitchat Agent,chitchat_agent.py,Handles casual conversation,Text Pipeline,Active,coordinator_agent.py
+Session Memory Agent,session_memory_agent.py,Maintains short-term conversation context,Memory System,Active,coordinator_agent.py
+TTS Connector,tts_connector.py,Manages text-to-speech request queue,TTS System,Active,language_and_translation_coordinator.py
+Model Manager Agent,model_manager_agent.py,Manages local AI models and PC2 communication,Model Management,Active,None
+Progressive Generator,progressive_generator.py,Generates code using chain-of-thought approach,Code Generation,Active,model_manager_agent.py
+Auto Fixer,auto_fixer.py,Automatically fixes code issues,Code Generation,Active,progressive_generator.py
+Executor,executor.py,Executes generated code,Code Generation,Active,auto_fixer.py
+Test Generator,test_generator.py,Generates tests for code,Code Generation,Active,executor.py
+Streaming Text Processor,streaming_text_processor.py,Processes text for code generation,Text Pipeline,Active,coordinator_agent.py
+Emotion Engine,emotion_engine.py,Analyzes and manages emotional state,Intelligence,Active,None
+Personality Engine,personality_engine.py,Provides consistent personality,Intelligence,Active,emotion_engine.py
+Mood Tracker Agent,mood_tracker_agent.py,Tracks user mood over time,Intelligence,Active,emotion_engine.py
+Meta Cognition Agent,MetaCognitionAgent.py,Enables system self-awareness,System Management,Active,None
+VRAM Manager,vram_manager.py,Manages GPU memory allocation,System Management,Active,None
+Monitoring Dashboard,monitoring_dashboard.py,Provides system monitoring UI,System Management,Active,None
+Advanced Tutoring Agent,advanced_tutoring_agent.py,Provides educational content,Education,Active,None
+Knowledge Base,knowledge_base.py,Stores and retrieves factual information,Memory System,Active,memory_manager.py
+Learning Manager,learning_manager.py,Manages continuous learning,Intelligence,Active,knowledge_base.py
+Multi-Agent Swarm Manager,MultiAgentSwarmManager.py,Orchestrates multiple agents for complex tasks,Intelligence,Active,None
+Agent Breeder,AgentBreeder.py,Creates specialized agents dynamically,Intelligence,Active,multi_agent_swarm_manager.py
+Autogen Framework,autogen_framework.py,Framework for autonomous agents,Intelligence,Active,multi_agent_swarm_manager.py
+Advanced Timeout Manager,advanced_timeout_manager.py,Manages timeouts for long-running tasks,System Management,Active,None
+Performance Metrics Collector,performance_metrics_collector.py,Collects system performance metrics,System Management,Active,None
+Debug Voice Pipeline,debug_voice_pipeline.py,Tools for debugging audio pipeline,System Management,Active,None
+Noise Profile Builder,noise_profile_builder.py,Builds noise profiles for reduction,Audio Pipeline,Active,noise_reduction_agent.py
+Empathy Agent,EmpathyAgent.py,Provides empathetic responses,Intelligence,Active,emotion_engine.py
+Unified System Agent,unified_system_agent.py,Provides unified system interface,System Management,Active,None
+Face Recognition Agent,face_recognition_agent.py,Identifies users via camera,Perception,Active,None
+Error Handler,error_handler.py,Centralized error handling,System Management,Active,None
+Speech Processor,speech_processor.py,Low-level speech processing,Audio Pipeline,Active,None
+Voice Controller,voice_controller.py,Controls voice characteristics,TTS System,Active,tts_connector.py
+Unified Memory Reasoning Agent,unified_memory_reasoning_agent.py,Reasoning over memory content,Memory System,Active,None
+Tutoring Service Agent,tutoring_service_agent.py,Provides ZMQ interface for tutoring,Education,Active,None
+Self-Healing Agent (PC2),self_healing_agent.py,Monitors and restarts PC2 agents,Infrastructure,Active,None
+TinyLlama Service,tinyllama_service_enhanced.py,Provides TinyLlama language model,LLM Services,Active,enhanced_model_router.py
+Enhanced Model Router,enhanced_model_router.py,Routes requests to appropriate models,Model Routing,Active,None
+Unified Memory Reasoning Agent (PC2),unified_memory_reasoning_agent.py,Central memory and reasoning for PC2,Memory System,Active,None
+Unified Web Agent,unified_web_agent.py,Web interaction and information gathering,Web Services,Active,enhanced_model_router.py
+Remote Connector Agent,remote_connector_agent.py,Gateway for remote LLMs,LLM Services,Active,enhanced_model_router.py
+Advanced Router,advanced_router.py,Task classification utilities,Model Routing,Active,None
+Consolidated Translator,consolidated_translator.py,Multi-engine translation service,Translation,Active,None
+Digital Twin Agent,digital_twin_agent.py,Creates digital twins for users,User Modeling,Deprecated,None
+Filesystem Assistant Agent,filesystem_assistant_agent.py,Provides filesystem operations,System Management,Active,None
+Agent Trust Scorer,AgentTrustScorer.py,Evaluates agent/model reliability,System Management,Active,None
+Cognitive Model Agent,CognitiveModelAgent.py,Manages belief system graph,Intelligence,Active,None
+Dream World Agent,DreamWorldAgent.py,Simulates hypothetical scenarios,Intelligence,Active,None
+Dreaming Mode Agent,DreamingModeAgent.py,Background memory replay,Memory System,Active,None
+Episodic Memory Agent,EpisodicMemoryAgent.py,Manages event-based history,Memory System,Active,None
+Learning Adjuster Agent,LearningAdjusterAgent.py,Adapts learning strategies,Intelligence,Active,None
+Performance Logger Agent,PerformanceLoggerAgent.py,Logs performance metrics,System Management,Active,None
+Graph of Thought Agent,got_tot_agent.py,Implements tree-of-thought reasoning,Reasoning,Active,enhanced_model_router.py
+Local Fine Tuner Agent,local_fine_tuner_agent.py,Fine-tunes models locally,Model Management,Active,None
+Self-Training Orchestrator,self_training_orchestrator.py,Orchestrates fine-tuning jobs,Model Management,Active,local_fine_tuner_agent.py
+Memory Decay Manager,memory_decay_manager.py,Manages memory relevance decay,Memory System,Active,unified_memory_reasoning_agent.py
+Context Summarizer Agent,context_summarizer_agent_pc2.py,Summarizes context for prompts,Intelligence,Active,None
+Chain of Thought Agent,chain_of_thought_agent_pc2.py,Advanced reasoning capability,Reasoning,Active,enhanced_model_router.py
+RCA Agent,rca_agent_pc2.py,Root cause analysis for errors,System Management,Active,None
+Learning Mode Agent,learning_mode_pc2.py,Manages system learning modes,Intelligence,Active,None
+Web Scraper,web_scraper_pc2.py,Extracts information from web,Web Services,Active,None
+Translator Adapter Phi3,translator_adapter_phi3.py,Phi-3 translation interface,Translation,Active,consolidated_translator.py
+NLLB Adapter,nllb_adapter_pc2.py,Interface for NLLB translation model,Translation,Active,consolidated_translator.py
+Fallback Translator,fallback_translator_pc2.py,Backup translation service,Translation,Standby,consolidated_translator.py
+Memory Agent Base,memory_agent_base_pc2.py,Base class for memory agents,Memory System,Active,None
+Jarvis Memory,jarvis_memory_pc2.py,Structured memory service,Memory System,Active,unified_memory_reasoning_agent.py
+Error Pattern Memory,error_pattern_memory_pc2.py,Stores error patterns and solutions,Memory System,Active,self_healing_agent.py
+Human Awareness Agent,HumanAwarenessAgent.py,Detects human presence,Perception,Active,None
+Dynamic Identity Agent,DynamicIdentityAgent.py,Manages system identity,Intelligence,Active,None
+Predictive Action Agent,PredictiveActionAgent.py,Predicts user actions,Intelligence,Active,None
+Proactive Agent,ProactiveAgent.py,Initiates actions proactively,Intelligence,Active,None
+Timeline UI Server,TimelineUIServer.py,UI for timeline visualization,System Management,Active,None
+Goal Orchestrator Agent,GoalOrchestratorAgent.py,Manages goal-directed behavior,Intelligence,Active,None
+Learning Agent,LearningAgent.py,Manages learning processes,Intelligence,Active,None
+Security Policy Agent,SecurityPolicyAgent.py,Enforces security policies,System Management,Active,None
+Intention Validator Agent,IntentionValidatorAgent.py,Validates user intentions,Intelligence,Active,None
+Emotion Synthesis Agent,emotion_synthesis_agent.py,Synthesizes emotional responses,Intelligence,Active,emotion_engine.py
+Active Learning Monitor,active_learning_monitor.py,Monitors learning progress,Intelligence,Active,learning_manager.py
+Model Voting Adapter,model_voting_adapter.py,Aggregates model outputs,Model Management,Active,None
+Context Bridge Agent,context_bridge_agent.py,Bridges context between systems,Memory System,Active,None
+Code Generator Agent,code_generator_agent.py,Generates code,Code Generation,Active,None
+Unified Planning Agent,unified_planning_agent.py,Handles task planning,Intelligence,Active,None
+Interpreter,interpreter.py,Interprets natural language commands,Text Pipeline,Active,None
+Streaming Language Analyzer,streaming_language_analyzer.py,Analyzes language patterns,Text Pipeline,Active,None 

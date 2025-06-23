@@ -41,8 +41,8 @@ system_digital_twin:
   command: python -u src/core/system_digital_twin.py
 # To this:
 system_digital_twin:
-  command: python -u src/core/system_digital_twin.py
-# (No change needed - file exists in correct location)
+  command: python -u agents/system_digital_twin.py
+# (File has been consolidated to agents directory)
 
 # Change this:
 rca_agent:
@@ -154,7 +154,7 @@ import zmq
 import logging
 
 # Constants
-SYSTEM_DIGITAL_TWIN_PORT = 5585
+SYSTEM_DIGITAL_TWIN_PORT = 7120
 
 class VRAMManager:
     def __init__(self):

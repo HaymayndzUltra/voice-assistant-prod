@@ -30,7 +30,7 @@ try:
     _agent_args = parse_agent_args()
 except ImportError:
     class DummyArgs:
-        host = 'localhost'
+        host = '0.0.0.0'  # Use 0.0.0.0 to allow external connections
     _agent_args = DummyArgs()
 
 # Configure logging
@@ -47,9 +47,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
-# ZMQ ports
-DIGITAL_TWIN_PORT = 7120
-DIGITAL_TWIN_HEALTH_PORT = 7121
+# Port configuration will be supplied by the startup_config.yaml
 
 # Default configuration
 DEFAULT_CONFIG = {
@@ -81,14 +79,44 @@ class SystemDigitalTwin:
         if config:
             self.config.update(config)
             
-        # Set up ports
-        self.main_port = port if port else DIGITAL_TWIN_PORT
-        self.health_port = self.main_port + 1
+        # Set up ports and host from configuration
+        # Use parameter port first, then config, then fall back to default
+        self.main_port = port if port is not None else self.config.get('port', 7120)
+        self.health_port = self.config.get('health_check_port', 8100)
+        self.host = getattr(_agent_args, 'host', '0.0.0.0')  # Get host from args or use 0.0.0.0
+        logger.info(f"Initializing with ZMQ port {self.main_port} and Health port {self.health_port} from configuration.")
         
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
+        
+        # Check if secure ZMQ is enabled
+        secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+        if secure_zmq:
+            try:
+                # Import secure ZMQ modules and start the authenticator
+                from main_pc_code.src.network.secure_zmq import configure_secure_server, start_auth
+                
+                # First ensure the authenticator is running
+                start_auth()
+                
+                # Then configure the socket
+                self.socket = configure_secure_server(self.socket)
+                logger.info("Secure ZMQ configured successfully")
+            except ImportError:
+                logger.warning("Secure ZMQ module not found, continuing with standard ZMQ")
+                secure_zmq = False
+            except Exception as e:
+                logger.error(f"Failed to configure secure ZMQ: {e}, continuing with standard ZMQ")
+                secure_zmq = False
+        
+        socket_address = f"tcp://{self.host}:{self.main_port}"
+        logger.info(f"Attempting to bind to {socket_address}")
+        self.socket.bind(socket_address)
+        logger.info(f"Successfully bound to {socket_address}")
+        
+        # Save secure ZMQ flag for future reference
+        self.secure_zmq_enabled = secure_zmq
         
         # Initialize Prometheus client with error handling
         self.prom = None
@@ -110,6 +138,15 @@ class SystemDigitalTwin:
             "timestamps": []
         }
         
+        # Initialize agent registry
+        self.registered_agents = {}
+        
+        # Initialize service registry for service discovery
+        self.service_registry = {}
+        
+        # Add self to agent registry
+        self._register_agent("SystemDigitalTwin", "MainPC", "HEALTHY", datetime.now().isoformat())
+        
         # Flag to control background threads
         self.running = True
         
@@ -118,8 +155,77 @@ class SystemDigitalTwin:
         self.metrics_thread.daemon = True
         self.metrics_thread.start()
         
-        logger.info(f"SystemDigitalTwin initialized on port {self.main_port}")
+        logger.info(f"SystemDigitalTwin initialized on port {self.main_port}" + 
+                   f" with {'secure' if secure_zmq else 'standard'} ZMQ")
         
+    def _register_agent(self, agent_name: str, location: str, status: str, timestamp: str) -> None:
+        """
+        Register an agent in the system.
+        
+        Args:
+            agent_name: Name of the agent
+            location: Location of the agent (MainPC/PC2)
+            status: Current status of the agent (HEALTHY/UNHEALTHY/NO_RESPONSE)
+            timestamp: ISO-formatted timestamp of the last status update
+        """
+        self.registered_agents[agent_name] = {
+            "location": location,
+            "status": status,
+            "last_seen": timestamp
+        }
+        logger.info(f"Registered agent {agent_name} at {location} with status {status}")
+        
+    def update_agent_status(self, agent_name: str, status: str, location: str = None) -> Dict[str, Any]:
+        """
+        Update the status of a registered agent or register a new agent.
+        
+        Args:
+            agent_name: Name of the agent
+            status: New status of the agent (HEALTHY/UNHEALTHY/NO_RESPONSE)
+            location: Location of the agent if new (MainPC/PC2), otherwise uses existing
+            
+        Returns:
+            Dictionary with the result of the operation
+        """
+        current_time = datetime.now().isoformat()
+        
+        if agent_name in self.registered_agents:
+            # Update existing agent
+            agent_data = self.registered_agents[agent_name]
+            old_status = agent_data["status"]
+            agent_data["status"] = status
+            agent_data["last_seen"] = current_time
+            if location is not None:
+                agent_data["location"] = location
+                
+            logger.info(f"Updated agent {agent_name} status from {old_status} to {status}")
+            return {
+                "status": "success",
+                "message": f"Updated {agent_name} status to {status}",
+                "agent": agent_name
+            }
+        else:
+            # Register new agent
+            if location is None:
+                location = "Unknown"
+            
+            self._register_agent(agent_name, location, status, current_time)
+            return {
+                "status": "success",
+                "message": f"Registered new agent {agent_name} at {location} with status {status}",
+                "agent": agent_name
+            }
+            
+    def get_all_agent_statuses(self) -> Dict[str, Any]:
+        """
+        Get the statuses of all registered agents.
+        
+        Returns:
+            Dictionary with all registered agents and their statuses
+        """
+        logger.info(f"Returning statuses for {len(self.registered_agents)} registered agents")
+        return self.registered_agents
+    
     def _collect_metrics_loop(self):
         """Background thread that periodically collects system metrics"""
         while self.running:
@@ -326,6 +432,8 @@ class SystemDigitalTwin:
     
     def _health_check(self) -> Dict[str, Any]:
         """Perform health check."""
+        # Don't check Prometheus connection for health checks to avoid long timeouts
+        # when Prometheus is not available
         return {
             'status': 'success',
             'agent': 'SystemDigitalTwin',
@@ -333,7 +441,7 @@ class SystemDigitalTwin:
             'metrics_thread_alive': self.metrics_thread.is_alive() if hasattr(self, 'metrics_thread') else False,
             'metrics_history_length': len(self.metrics_history["timestamps"]),
             'last_metrics_update': self.metrics_history["timestamps"][-1].isoformat() if self.metrics_history["timestamps"] else None,
-            'prometheus_connected': self._check_prometheus_connection(),
+            'prometheus_connected': self.prom is not None,  # Fast check without actual connection attempt
             'port': self.main_port
         }
     
@@ -399,6 +507,27 @@ class SystemDigitalTwin:
                     "network_latency_ms": self.metrics_history["network_latency_ms"]
                 }
             }
+            
+        elif action == "register_agent":
+            # Register a new agent or update existing
+            agent_name = request.get("agent_name", "")
+            status = request.get("status", "UNKNOWN")
+            location = request.get("location", None)
+            
+            if not agent_name:
+                return {
+                    "status": "error",
+                    "error": "Missing required parameter: agent_name"
+                }
+                
+            return self.update_agent_status(agent_name, status, location)
+            
+        elif action == "get_all_agents":
+            # Return all registered agents
+            return {
+                "status": "success",
+                "agents": self.get_all_agent_statuses()
+            }
         
         else:
             return {
@@ -426,11 +555,101 @@ class SystemDigitalTwin:
                     if self.socket.poll(1000) == 0:
                         continue
                     
-                    # Receive and process message
-                    message = self.socket.recv_json()
-                    logger.debug(f"Received request: {message}")
-                    response = self.handle_request(message)
-                    self.socket.send_json(response)
+                    # Receive the raw message first (works with both secure and non-secure sockets)
+                    try:
+                        raw_message = self.socket.recv()
+                        logger.info(f"Received raw message of {len(raw_message)} bytes")
+                        
+                        # First try to decode as string for special commands
+                        try:
+                            message_str = raw_message.decode('utf-8')
+                            
+                            # Handle simple string commands
+                            if message_str == "ping":
+                                logger.info("Received ping message, sending pong")
+                                self.socket.send_string("pong")
+                                logger.info("Pong response sent")
+                                continue
+                            elif message_str == "GET_ALL_STATUS":
+                                logger.info("Received request for all agent statuses")
+                                all_statuses = self.get_all_agent_statuses()
+                                self.socket.send_json(all_statuses)
+                                logger.info(f"Sent status info for {len(all_statuses)} agents")
+                                continue
+                                
+                            # Try to parse as JSON
+                            try:
+                                message = json.loads(message_str)
+                                logger.info(f"Parsed message as JSON: {message}")
+                                
+                                # Handle service discovery commands
+                                command = message.get("command")
+                                if command == "REGISTER":
+                                    payload = message.get("payload", {})
+                                    agent_name = payload.get("name")
+                                    if agent_name:
+                                        self.service_registry[agent_name] = payload
+                                        logger.info(f"Registered service: {agent_name} with details: {payload}")
+                                        self.socket.send_json({
+                                            "status": "SUCCESS", 
+                                            "message": f"Service {agent_name} registered successfully"
+                                        })
+                                    else:
+                                        logger.warning("Registration request missing agent name")
+                                        self.socket.send_json({
+                                            "status": "ERROR", 
+                                            "message": "Missing required field 'name' in registration payload"
+                                        })
+                                    continue
+                                    
+                                elif command == "DISCOVER":
+                                    payload = message.get("payload", {})
+                                    agent_name = payload.get("name")
+                                    if agent_name:
+                                        service_info = self.service_registry.get(agent_name)
+                                        if service_info:
+                                            logger.info(f"Service discovery request for {agent_name} - found")
+                                            self.socket.send_json({
+                                                "status": "SUCCESS",
+                                                "payload": service_info
+                                            })
+                                        else:
+                                            logger.warning(f"Service discovery request for {agent_name} - not found")
+                                            self.socket.send_json({
+                                                "status": "NOT_FOUND",
+                                                "message": f"Service '{agent_name}' not registered"
+                                            })
+                                    else:
+                                        logger.warning("Discovery request missing agent name")
+                                        self.socket.send_json({
+                                            "status": "ERROR",
+                                            "message": "Missing required field 'name' in discovery payload"
+                                        })
+                                    continue
+                                
+                                # Proceed with existing message handling
+                                response = self.handle_request(message)
+                                logger.info(f"Sending response: {response}")
+                                self.socket.send_json(response)
+                                logger.info("Response sent successfully")
+                            except json.JSONDecodeError:
+                                logger.warning(f"Failed to parse as JSON: {message_str}")
+                                self.socket.send_string(f"ERROR: Unknown command: {message_str}")
+                        except UnicodeDecodeError:
+                            # This means the message is binary (possibly encrypted)
+                            logger.warning("Received binary message that cannot be decoded as UTF-8. This may be a secure ZMQ message.")
+                            self.socket.send_json({
+                                "status": "ERROR",
+                                "message": "Received binary data that could not be processed. Check if your client is using secure ZMQ correctly."
+                            })
+                    except zmq.error.Again:
+                        logger.warning("Socket timeout or no message received")
+                    except Exception as e:
+                        logger.error(f"Error processing raw message: {e}")
+                        try:
+                            self.socket.send_json({"status": "error", "error": str(e)})
+                        except Exception as send_error:
+                            logger.error(f"Failed to send error response: {send_error}")
                     
                 except zmq.error.ZMQError as e:
                     if e.errno == zmq.EAGAIN:

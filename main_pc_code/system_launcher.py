@@ -161,6 +161,11 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
     if "port" in agent_cfg:
         cmd.extend(["--port", str(agent_cfg["port"])])
 
+    # Add dynamic parameters from the 'params' dictionary
+    if "params" in agent_cfg and isinstance(agent_cfg["params"], dict):
+        for key, value in agent_cfg["params"].items():
+            cmd.extend([f"--{key}", str(value)])
+
     return subprocess.Popen(cmd, cwd=str(base_dir), stdout=log_fh, stderr=subprocess.STDOUT, env=env)
 
 

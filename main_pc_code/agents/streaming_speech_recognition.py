@@ -148,7 +148,10 @@ class StreamingSpeechRecognition(BaseAgent):
         self.buffer = []
         self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
         
-        # Initialize model management
+        # VRAM management now handled by VRAMOptimizerAgent
+
+        self.model_manager = None
+
         self._init_model_management()
         
         # Initialize state
@@ -198,11 +201,28 @@ class StreamingSpeechRecognition(BaseAgent):
             logger.error(f"Error initializing ZMQ sockets: {str(e)}")
             raise
     
+    # Model unloading now handled by VRAMOptimizerAgent and ModelManagerAgent
+
     def _init_model_management(self):
-        """Initialize dynamic model management."""
+        """Initialize dynamic model management from a config file path passed as an argument."""
         try:
+            # Get model config path from command-line arguments
+            config_path_str = getattr(_agent_args, 'model_config_path', None)
+            if not config_path_str:
+                logger.error("Model config path not provided. Please specify with --model_config_path argument.")
+                self.stt_manager = None
+                return
+
+            # The path from config is relative to the main_pc_code directory, which is project_root
+            config_path = project_root / config_path_str
+            
+            if not config_path.is_file():
+                logger.error(f"Model config file not found at: {config_path}")
+                self.stt_manager = None
+                return
+
             # Load model config
-            config_path = project_root / 'config' / 'model_config.json'
+            logger.info(f"Loading model configuration from: {config_path}")
             with open(config_path, 'r') as f:
                 model_config = json.load(f)
             
@@ -226,9 +246,10 @@ class StreamingSpeechRecognition(BaseAgent):
             # Track model usage
             self.timestamp_last_used = {}
             
-            logger.info("Model management initialized")
+            logger.info(f"Model management initialized successfully from {config_path}")
         except Exception as e:
             logger.error(f"Error initializing model management: {str(e)}")
+            self.stt_manager = None # Ensure manager is None on failure
             raise
     
     def _check_wake_word_events(self):

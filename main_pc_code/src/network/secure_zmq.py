@@ -12,15 +12,21 @@ from zmq.auth.thread import ThreadAuthenticator
 import logging
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
+import threading
 
 # Configure logging
 logger = logging.getLogger("SecureZMQ")
 
-# Project root path
-project_root = Path(__file__).resolve().parent.parent.parent
+# Project root path - go up three levels to reach the AI_System_Monorepo root
+project_root = Path(__file__).resolve().parent.parent.parent.parent
 
-# Certificates directory
+# Certificates directory at the project root, not inside main_pc_code
 CERTIFICATES_DIR = project_root / "certificates"
+
+logger.info(f"Using certificates directory: {CERTIFICATES_DIR}")
+
+# Lock for thread-safe singleton initialization
+_auth_lock = threading.RLock()
 
 class ZMQAuthenticator:
     """
@@ -32,44 +38,63 @@ class ZMQAuthenticator:
     _instance = None
     
     def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(ZMQAuthenticator, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
+        with _auth_lock:
+            if cls._instance is None:
+                cls._instance = super(ZMQAuthenticator, cls).__new__(cls)
+                cls._instance._initialized = False
+            return cls._instance
     
     def __init__(self):
-        if self._initialized:
-            return
-            
-        self.context = zmq.Context.instance()
-        self.auth = None
-        self._initialized = True
-        logger.info("ZMQAuthenticator instance created")
+        with _auth_lock:
+            if self._initialized:
+                return
+                
+            self.context = zmq.Context.instance()
+            self.auth = None
+            self._initialized = True
+            self._auth_started = False
+            logger.info("ZMQAuthenticator instance created")
     
     def start(self) -> None:
         """Start the authenticator thread."""
-        if self.auth is not None:
-            logger.warning("Authenticator already started")
-            return
-            
-        # Start authentication thread
-        self.auth = ThreadAuthenticator(self.context)
-        self.auth.start()
-        logger.info("ZMQ authentication thread started")
-        
-        # Configure CURVE authentication
-        self.auth.configure_curve(domain='*', location=str(CERTIFICATES_DIR))
-        logger.info(f"CURVE authentication configured with certificates from {CERTIFICATES_DIR}")
+        with _auth_lock:
+            if self._auth_started:
+                logger.debug("Authenticator already started")
+                return
+                
+            # Start authentication thread - only if not already started
+            if self.auth is None:
+                try:
+                    self.auth = ThreadAuthenticator(self.context)
+                    self.auth.start()
+                    logger.info("ZMQ authentication thread started")
+                    
+                    # Configure CURVE authentication
+                    self.auth.configure_curve(domain='*', location=str(CERTIFICATES_DIR))
+                    logger.info(f"CURVE authentication configured with certificates from {CERTIFICATES_DIR}")
+                    self._auth_started = True
+                except Exception as e:
+                    logger.error(f"Error starting authenticator: {e}")
+                    self.auth = None
+                    raise
+            else:
+                logger.debug("Using existing authenticator instance")
     
     def stop(self) -> None:
         """Stop the authenticator thread."""
-        if self.auth is None:
-            logger.warning("Authenticator not started")
-            return
-            
-        self.auth.stop()
-        self.auth = None
-        logger.info("ZMQ authentication thread stopped")
+        with _auth_lock:
+            if not self._auth_started:
+                logger.debug("Authenticator not started")
+                return
+                
+            if self.auth is not None:
+                try:
+                    self.auth.stop()
+                    self.auth = None
+                    self._auth_started = False
+                    logger.info("ZMQ authentication thread stopped")
+                except Exception as e:
+                    logger.error(f"Error stopping authenticator: {e}")
 
 def load_certificates() -> Dict[str, bytes]:
     """
@@ -175,6 +200,33 @@ def start_auth() -> None:
 def stop_auth() -> None:
     """Stop the ZMQ authenticator."""
     authenticator.stop()
+
+# Alias functions to match naming conventions used in other parts of the codebase
+def configure_secure_server(socket: zmq.Socket) -> zmq.Socket:
+    """
+    Alias for secure_server_socket to maintain compatibility with existing code.
+    
+    Args:
+        socket: The ZMQ socket to secure
+        
+    Returns:
+        The secured ZMQ socket
+    """
+    start_auth()  # Ensure authenticator is started
+    return secure_server_socket(socket)
+
+def configure_secure_client(socket: zmq.Socket) -> zmq.Socket:
+    """
+    Alias for secure_client_socket to maintain compatibility with existing code.
+    
+    Args:
+        socket: The ZMQ socket to secure
+        
+    Returns:
+        The secured ZMQ socket
+    """
+    start_auth()  # Ensure authenticator is started 
+    return secure_client_socket(socket)
 
 def create_secure_context() -> zmq.Context:
     """

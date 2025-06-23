@@ -39,14 +39,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger('UnifiedUtilsAgent')
 
-# ZMQ ports
-UTILS_AGENT_PORT = 7118
-UTILS_AGENT_HEALTH_PORT = 7119
+# Default ZMQ ports (will be overridden by configuration)
+UTILS_AGENT_PORT = 7118  # Default, will be overridden by configuration
+UTILS_AGENT_HEALTH_PORT = 8118  # Default health check port
 
 class UnifiedUtilsAgent:
-    def __init__(self, port=None, host="0.0.0.0"):
-        self.main_port = port if port else UTILS_AGENT_PORT
-        self.health_port = self.main_port + 1
+    def __init__(self, port=None, health_check_port=None, host="0.0.0.0"):
+        self.main_port = port if port is not None else UTILS_AGENT_PORT
+        self.health_port = health_check_port if health_check_port is not None else UTILS_AGENT_HEALTH_PORT
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.main_port}")

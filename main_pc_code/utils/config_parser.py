@@ -52,7 +52,14 @@ def parse_agent_args(argv: List[str] | None = None):
     parser = argparse.ArgumentParser(add_help=False)
     # Standard flags
     parser.add_argument("--host", default="localhost", type=str)
+    parser.add_argument("--check_interval_seconds", type=int, default=15, help="How often to check VRAM and idle status.")
     parser.add_argument("--port", default=None, type=int)
+
+    # GGUF VRAM Management Arguments
+    parser.add_argument("--gguf_vram_management_enabled", action="store_true", help="Enable VRAM management for GGUF models.")
+    parser.add_argument("--gguf_vram_budget_gb", type=float, default=12.0, help="VRAM budget in GB for GGUF models.")
+    parser.add_argument("--gguf_idle_unload_timeout_seconds", type=int, default=300, help="Seconds of inactivity before unloading a GGUF model.")
+    parser.add_argument("--gguf_check_interval_seconds", type=int, default=30, help="How often to check VRAM and idle status for GGUF models.")
 
     # Dynamically add flags discovered in argv so argparse won't error out
     for flag in _discover_dynamic_flags(argv):

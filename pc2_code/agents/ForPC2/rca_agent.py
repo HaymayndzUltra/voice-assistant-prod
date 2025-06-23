@@ -59,8 +59,8 @@ logging.basicConfig(
 logger = logging.getLogger("RCA_Agent")
 
 # ZMQ ports
-RCA_AGENT_PORT = 7121
-RCA_AGENT_HEALTH_PORT = 7122
+RCA_AGENT_PORT = 7121  # Default, will be overridden by configuration
+RCA_AGENT_HEALTH_PORT = 8121  # Default health check port
 
 # Constants
 LOGS_DIR = "logs"
@@ -97,15 +97,15 @@ class RCA_Agent:
     """Root Cause Analysis Agent for proactive system healing"""
     
     def __init__(self, logs_dir: str = LOGS_DIR, self_healing_port: int = SELF_HEALING_PORT, 
-                 pc2_ip: str = PC2_IP, port: int = None):
+                 pc2_ip: str = PC2_IP, port: int = None, health_check_port: int = None):
         """Initialize the RCA Agent"""
         self.logs_dir = Path(logs_dir)
         self.self_healing_port = self_healing_port
         self.pc2_ip = pc2_ip
         
         # Set up ports
-        self.main_port = port if port else RCA_AGENT_PORT
-        self.health_port = self.main_port + 1
+        self.main_port = port if port is not None else RCA_AGENT_PORT
+        self.health_port = health_check_port if health_check_port is not None else RCA_AGENT_HEALTH_PORT
         
         # Create ZMQ context and server socket
         self.context = zmq.Context()

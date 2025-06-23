@@ -65,7 +65,7 @@ MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = {}
 
 class CodeGeneratorAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int = None, debug: bool = False, **kwargs):
         super().__init__(port=port, name="CodeGeneratorAgent")
         # Initialize the Code Generator Agent
         import logging
@@ -96,6 +96,8 @@ class CodeGeneratorAgent(BaseAgent):
         # Initialize model manager connection
         self.model_manager_address = f"tcp://{_agent_args.get('model_manager_host', 'localhost')}:{_agent_args.get('model_manager_port', 5570)}"
         
+        # VRAM management now handled by VRAMOptimizerAgent
+
         # Initialize GGUF support if available
         try:
             from agents.gguf_model_manager import GGUFModelManager
@@ -325,6 +327,8 @@ class CodeGeneratorAgent(BaseAgent):
             self.logger.error(f"Error loading GGUF model {model_id}: {e}")
             return {"status": "error", "error": str(e)}
     
+    # Model unloading now handled by VRAMOptimizerAgent and ModelManagerAgent
+
     def unload_gguf_model(self, model_id):
         """Unload a GGUF model"""
         if not self.gguf_manager:
@@ -343,6 +347,9 @@ class CodeGeneratorAgent(BaseAgent):
             return {"status": "error", "error": "GGUF manager not available"}
         
         try:
+            # Inform the VRAM manager that this model is being used
+            self._update_model_usage(model_id)
+            
             # Check if model is loaded
             models = self.gguf_manager.list_models()
             model_loaded = False
@@ -422,6 +429,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Code Generator Agent')
     parser.add_argument('--port', type=int, default=5604, help='Port to run the agent on')
+    parser.add_argument("--ollama_base_url", type=str, default="http://localhost:11434", help="Base URL for the Ollama API")
     parser.add_argument('--simple-debug', action='store_true', help='Enable simple debug mode')
     
     args = parser.parse_args()

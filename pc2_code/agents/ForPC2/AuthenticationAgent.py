@@ -59,18 +59,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger('AuthenticationAgent')
 
-# ZMQ ports
-AUTH_PORT = 7116  # Main authentication port
-AUTH_HEALTH_PORT = 7117  # Health check port (main port + 1)
+# Default ZMQ ports (will be overridden by configuration)
+AUTH_PORT = 7116  # Default, will be overridden by configuration
+AUTH_HEALTH_PORT = 8116  # Default health check port
 
 class AuthenticationAgent:
     """Authentication Agent for system-wide authentication and authorization."""
     
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int = None, health_check_port: int = None, **kwargs):
         """Initialize the Authentication Agent.
         
         Args:
             port: Optional port override for testing
+            health_check_port: Optional health check port override
         """
         # Initialize authentication data
         self.users = {}
@@ -78,8 +79,8 @@ class AuthenticationAgent:
         self.token_expiry = timedelta(hours=24)
         
         # Set up ports
-        self.main_port = port if port else AUTH_PORT
-        self.health_port = self.main_port + 1
+        self.main_port = port if port is not None else AUTH_PORT
+        self.health_port = health_check_port if health_check_port is not None else AUTH_HEALTH_PORT
         
         # Initialize ZMQ context and sockets
         self.context = zmq.Context()

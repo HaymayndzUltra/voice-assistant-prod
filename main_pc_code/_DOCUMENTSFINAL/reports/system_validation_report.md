@@ -51,7 +51,7 @@ Starting System Integrity Check...
   - task_router (Port 5571, Script: task_router.py)
   - memory_orchestrator (Port 5570, Script: memory_orchestrator.py)
   - coordinator (Port 5555, Script: coordinator_agent.py)
-  - system_digital_twin (Port 5585, Script: system_digital_twin.py)
+  - system_digital_twin (Port 7120, Script: system_digital_twin.py)
   - vision_capture_agent (Port 5587, Script: vision_capture_agent.py)
   - tts_connector (Port 5562, Script: tts_connector.py)
 

@@ -1,0 +1,43 @@
+Port,Agent,Socket Type,Payload Format,Connected Components,Notes
+5556,ModelManagerAgent,REP,"JSON {task_type, prompt, params}",StreamingTextProcessor/Coordinator,Local model interface
+5563,TranslatorAgent (PC2),REP,"JSON {action: ""translate"", text, source_lang, target_lang}",Language & Translation Coordinator,Main translation service
+5564,Language & Translation Coordinator,PUB,JSON {text: processed_text},TTS Connector/Downstream agents,Processed English text
+5568,TutoringServiceAgent (PC2),REP,"JSON {action, session_id, user_profile}",Dialog Manager,Educational content service
+5573,ChitchatAgent,REP,JSON {prompt: text},CoordinatorAgent,Casual conversation handling
+5574,SessionMemoryAgent,REP,"JSON {action, session_id, data}",CoordinatorAgent,Short-term memory service
+5580,StreamingSpeechRecognition,PUB,JSON {transcript: text},Language & Translation Coordinator,Final ASR transcript
+5581,NLLB Adapter (PC2),REP,"JSON {text, source_lang, target_lang}",TranslatorAgent,Neural translation model
+5590,CoordinatorAgent,REP,"JSON {task_type, content}",Various agents,Task reception endpoint
+5596,ContextualMemory (PC2),REP,"JSON {action: ""query"", query}",EnhancedModelRouter,Vector memory service
+5597,Digital Twin (PC2),REP,JSON {simulate: user_profile},EnhancedModelRouter,"Deprecated, port may be reused"
+5598,EnhancedModelRouter (PC2),REP,"JSON {prompt, model, params}","MMA, various agents",Central model routing service
+5599,EnhancedModelRouter (PC2),PUB,JSON status updates,Dashboard/monitoring,Router status broadcasts
+5600,ZMQ Bridge,ROUTER/DEALER,Raw ZMQ frames,Cross-machine communication,MainPC-PC2 bridge
+5603,EnhancedModelRouter (PC2),PUB,JSON notifications,Monitoring agents,Model router broadcasts
+5604,UnifiedWebAgent (PC2),REP,"JSON {action, url, params}",EnhancedModelRouter,Web content retrieval
+5605,UnifiedWebAgent (PC2),REP,JSON {action: health_check},Self-Healing Agent,Health check endpoint
+5610,ContextSummarizer (PC2),REP,JSON {text: content},EnhancedModelRouter,Context summarization
+5611,ErrorPatternMemory (PC2),REP,"JSON {log, pattern, solution}",Self-Healing Agent,Error pattern storage
+5612,ChainOfThoughtAgent (PC2),REP,JSON {prompt: reasoning_task},EnhancedModelRouter,Older CoT endpoint
+5614,SelfHealingAgent (PC2),REP,JSON {action: command},Admin tools/dashboard,System health management
+5615,TinyLlamaService (PC2),REP,"JSON {action: ""generate"", prompt}",EnhancedModelRouter,1.1B parameter LLM
+5616,SelfHealingAgent (PC2),PUB,JSON health broadcasts,Monitoring agents,Health status broadcasts
+5621,SelfTrainingOrchestrator (PC2),REP,JSON {trigger: job_spec},External callers,Fine-tuning job management
+5622,LocalFineTuner (PC2),REP,JSON {train: model_spec},SelfTrainingOrchestrator,Model fine-tuning service
+5626,AgentTrustScorer (PC2),REP,"JSON {action, agent_id, success}",Various agents,Agent reliability tracking
+5629,EpisodicMemoryAgent (PC2),REP,"JSON {action, episode_data}",Various agents,Event history storage
+5632,PerformanceLoggerAgent (PC2),REP,"JSON {metric, value, timestamp}",Various agents,Performance metrics logging
+5633,LearningAgent (PC2),REP,JSON {learning_task},LearningAdjusterAgent,Learning process management
+5634,LearningAdjusterAgent (PC2),REP,JSON {adjust: strategy},Various agents,Learning strategy adaptation
+5640,DreamingModeAgent (PC2),REP,JSON {dreaming_params},EnhancedModelRouter,Background memory processing
+5641,CognitiveModelAgent (PC2),REP,"JSON {action, belief_data}",Various agents,Belief system management
+5646,ChainOfThoughtAgent (PC2),REP,JSON {prompt: reasoning_task},EnhancedModelRouter,GoT/ToT reasoning endpoint
+6575,StreamingAudioCapture,PUB,Binary audio frames + metadata,NoiseReductionAgent/WakeWordDetector,Raw audio stream
+6576,NoiseReductionAgent,PUB,JSON health status,Monitoring dashboard,Health monitoring
+6577,WakeWordDetector,PUB,"JSON {""wake"":true/false}",StreamingSpeechRecognition,Wake word detection events
+6578,NoiseReductionAgent,PUB,Binary audio frames + metadata,"VADAgent, StreamingSpeechRecognition",Clean audio stream
+6579,VADAgent,PUB,"JSON {""prob"":0.0-1.0, ""state"":""speech""/""silence""}","WakeWordDetector, StreamingSpeechRecognition",Voice activity events
+6580,VADAgent,PUB,JSON health status,Monitoring dashboard,Health monitoring
+6581,StreamingSpeechRecognition,PUB,JSON health status,Monitoring dashboard,Health monitoring
+6582,ChitchatAgent,PUB,JSON health status,Self-Healing (mainPC),Health monitoring
+6583,SessionMemoryAgent,PUB,JSON health status,Self-Healing (mainPC),Health monitoring 

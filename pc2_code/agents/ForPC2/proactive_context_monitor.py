@@ -48,16 +48,17 @@ logging.basicConfig(
 logger = logging.getLogger('ProactiveContextMonitor')
 
 # ZMQ ports
-PROACTIVE_MONITOR_PORT = 7119  # Fixed port as specified
-PROACTIVE_MONITOR_HEALTH_PORT = PROACTIVE_MONITOR_PORT + 1  # Health check port is main port + 1
+PROACTIVE_MONITOR_PORT = 7119  # Default, will be overridden by configuration
+PROACTIVE_MONITOR_HEALTH_PORT = 8119  # Default health check port
+# Health check port is defined above
 
 class ProactiveContextMonitor:
     """Proactive Context Monitor Agent for analyzing context and triggering proactive actions."""
     
-    def __init__(self, port=None):
+    def __init__(self, port=None, health_check_port=None):
         """Initialize the Proactive Context Monitor Agent."""
-        self.main_port = port if port else PROACTIVE_MONITOR_PORT
-        self.health_port = self.main_port + 1
+        self.main_port = port if port is not None else PROACTIVE_MONITOR_PORT
+        self.health_port = health_check_port if health_check_port is not None else PROACTIVE_MONITOR_HEALTH_PORT
         self.context = zmq.Context()
         self.running = True
         self.context_history = []

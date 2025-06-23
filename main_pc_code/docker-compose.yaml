@@ -303,7 +303,7 @@ services:
 
   systemdigitaltwin:
     <<: *base-agent-config
-    command: ["python", "-u", "src/core/system_digital_twin.py"]
+    command: ["python", "-u", "agents/system_digital_twin.py"]
     ports:
       - "5587:5587"
     environment:

@@ -13,6 +13,8 @@ import logging
 import threading
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
+import time
+import torch
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent
@@ -58,19 +60,47 @@ class DynamicSTTModelManager(BaseAgent):
 
     def _load_model_if_needed(self, model_id: str) -> Any:
         """Load a model if it's not already loaded"""
-        if model_id in self.loaded_models:
-            self.logger.info(f"STT model '{model_id}' already loaded.")
-            return self.loaded_models[model_id]
-        try:
-            import whisper
-            self.logger.info(f"Loading STT model '{model_id}'...")
-            model = whisper.load_model(model_id)
-            self.loaded_models[model_id] = model
-            self.logger.info(f"STT model '{model_id}' loaded successfully.")
-            return model
-        except Exception as e:
-            self.logger.error(f"Failed to load STT model '{model_id}': {e}")
-            raise
+        with self.lock:
+            if model_id in self.loaded_models:
+                self.logger.debug(f"Model '{model_id}' is already loaded.")
+                return self.loaded_models[model_id]
+            
+            try:
+                import whisper
+                self.logger.info(f"Loading STT model '{model_id}'...")
+                start_time = time.time()
+                model = whisper.load_model(model_id)
+                self.loaded_models[model_id] = model
+                end_time = time.time()
+                self.logger.info(f"Loaded model '{model_id}' in {end_time - start_time:.2f} seconds.")
+                return model
+            except Exception as e:
+                self.logger.error(f"Failed to load STT model '{model_id}': {e}", exc_info=True)
+                raise
+
+    def unload_model(self, model_id: str) -> bool:
+        """Unloads a specific model from memory."""
+        with self.lock:
+            if model_id in self.loaded_models:
+                self.logger.info(f"Unloading model '{model_id}'...")
+                start_time = time.time()
+                try:
+                    # Remove the model object to allow garbage collection
+                    del self.loaded_models[model_id]
+                    
+                    # If using CUDA, explicitly empty the cache
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        
+                    end_time = time.time()
+                    self.logger.info(f"Unloaded model '{model_id}' in {end_time - start_time:.2f} seconds.")
+                    return True
+                except Exception as e:
+                    self.logger.error(f"Error unloading model '{model_id}': {e}", exc_info=True)
+                    return False
+            else:
+                self.logger.warning(f"Attempted to unload model '{model_id}', but it was not loaded.")
+                return False
 
     def clear_cache(self) -> None:
         """Unload all cached models (for test or memory management)."""
