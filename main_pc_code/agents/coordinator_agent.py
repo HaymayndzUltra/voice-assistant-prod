@@ -24,8 +24,9 @@ import threading
 import base64
 from typing import Dict, Any, List, Optional, Tuple, Union
 from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from utils.service_discovery_client import discover_service, register_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -43,8 +44,11 @@ logging.basicConfig(
 logger = logging.getLogger("CoordinatorAgent")
 
 # Constants for agent communication
-COORDINATOR_PORT = 26002
-PROACTIVE_SUGGESTION_PORT = 5591
+COORDINATOR_PORT = int(getattr(_agent_args, 'port', 26002))
+PROACTIVE_SUGGESTION_PORT = int(getattr(_agent_args, 'proactive_suggestion_port', 5591))
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
@@ -96,10 +100,16 @@ class CoordinatorAgent(BaseAgent):
         
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
-            setup_curve_client(self.socket, server_mode=True)
+            self.socket = configure_secure_server(self.socket)
             logger.info("Secure ZMQ enabled for CoordinatorAgent")
-            
-        self.socket.bind(f"tcp://*:{self.port}")
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        self.socket.bind(bind_address)
+        logger.info(f"Coordinator socket bound to {bind_address}")
+        
+        # Register with service discovery
+        self._register_service()
         
         # Discover and connect to required services using service discovery
         self.service_info = {}
@@ -112,20 +122,23 @@ class CoordinatorAgent(BaseAgent):
         
         # Apply secure ZMQ to suggestion socket if enabled
         if SECURE_ZMQ:
-            setup_curve_client(self.suggestion_socket, server_mode=True)
+            self.suggestion_socket = configure_secure_server(self.suggestion_socket)
 
         # Attempt to bind to the preferred port; fall back if it's unavailable.
         self.suggestion_port = PROACTIVE_SUGGESTION_PORT
         try:
-            self.suggestion_socket.bind(f"tcp://*:{self.suggestion_port}")
+            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+            self.suggestion_socket.bind(suggestion_bind_address)
+            logger.info(f"Proactive suggestion socket bound to {suggestion_bind_address}")
         except zmq.ZMQError as e:
             logger.warning(
                 f"Port {self.suggestion_port} already in use (error: {e}). "
                 "Searching for the next available port."
             )
             self.suggestion_port = find_available_port(self.suggestion_port + 1)
-            self.suggestion_socket.bind(f"tcp://*:{self.suggestion_port}")
-            logger.info(f"Proactive suggestion socket bound to fallback port {self.suggestion_port}")
+            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+            self.suggestion_socket.bind(suggestion_bind_address)
+            logger.info(f"Proactive suggestion socket bound to fallback port {suggestion_bind_address}")
         
         # Flag to control the agent
         self.running = True
@@ -154,15 +167,36 @@ class CoordinatorAgent(BaseAgent):
         
         logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
     
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="CoordinatorAgent",
+                port=self.port,
+                additional_info={
+                    "suggestion_port": self.suggestion_port,
+                    "capabilities": ["coordination", "memory_management", "proactive_assistance"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+    
     def _init_memory_connection(self):
         """Initialize connection to the MemoryOrchestrator"""
         try:
-            # Discover MemoryOrchestrator
-            memory_info = discover_service("MemoryOrchestrator")
-            if memory_info and memory_info.get("status") == "SUCCESS":
-                memory_payload = memory_info.get("payload")
-                self.memory_host = memory_payload["ip"]
-                self.memory_port = memory_payload["port"]
+            # Get MemoryOrchestrator address from service discovery
+            memory_address = get_service_address("MemoryOrchestrator")
+            if memory_address:
+                # Extract host and port from the address
+                # Format is typically "tcp://host:port"
+                parts = memory_address.split("://")[1].split(":")
+                self.memory_host = parts[0]
+                self.memory_port = int(parts[1])
                 logger.info(f"Discovered MemoryOrchestrator at {self.memory_host}:{self.memory_port}")
             else:
                 logger.warning("Failed to discover MemoryOrchestrator, will retry later")
@@ -176,28 +210,34 @@ class CoordinatorAgent(BaseAgent):
     def _get_memory_connection(self):
         """Get a connection to the MemoryOrchestrator"""
         try:
-            # First try to get the latest service info
-            memory_info = discover_service("MemoryOrchestrator")
-            if memory_info and memory_info.get("status") == "SUCCESS":
-                memory_payload = memory_info.get("payload")
-                host = memory_payload["ip"]
-                port = memory_payload["port"]
+            # Try to get the latest service address
+            memory_address = get_service_address("MemoryOrchestrator")
+            if memory_address:
+                # Create a new socket for the request
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    socket = configure_secure_client(socket)
+                    
+                socket.connect(memory_address)
+                logger.debug(f"Connected to MemoryOrchestrator at {memory_address}")
+                return socket
             else:
                 # Fall back to cached values
-                host = self.memory_host
-                port = self.memory_port
-            
-            # Create a new socket for the request
-            socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            
-            # Apply secure ZMQ if enabled
-            if SECURE_ZMQ:
-                setup_curve_client(socket)
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
                 
-            socket.connect(f"tcp://{host}:{port}")
-            return socket
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    socket = configure_secure_client(socket)
+                    
+                socket.connect(f"tcp://{self.memory_host}:{self.memory_port}")
+                logger.debug(f"Connected to MemoryOrchestrator at {self.memory_host}:{self.memory_port} (fallback)")
+                return socket
         except Exception as e:
             logger.error(f"Error getting memory connection: {str(e)}")
             return None
@@ -313,35 +353,41 @@ class CoordinatorAgent(BaseAgent):
     def _get_service_connection(self, service_name):
         """Get a connection to a service using service discovery"""
         try:
-            # First try to get the latest service info
-            service_info = discover_service(service_name)
-            if service_info and service_info.get("status") == "SUCCESS":
-                service_payload = service_info.get("payload")
-                host = service_payload["ip"]
-                port = service_payload["port"]
-                self.service_info[service_name] = {
-                    "host": host,
-                    "port": port
-                }
+            # Get service address using service discovery
+            service_address = get_service_address(service_name)
+            if service_address:
+                # Create a new socket for the request
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    socket = configure_secure_client(socket)
+                    
+                socket.connect(service_address)
+                logger.debug(f"Connected to {service_name} at {service_address}")
+                return socket
             elif service_name in self.service_info:
                 # Fall back to cached service info
                 host = self.service_info[service_name]["host"]
                 port = self.service_info[service_name]["port"]
+                
+                # Create a new socket for the request
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    socket = configure_secure_client(socket)
+                    
+                socket.connect(f"tcp://{host}:{port}")
+                logger.debug(f"Connected to {service_name} at {host}:{port} (fallback)")
+                return socket
             else:
                 logger.error(f"Failed to discover {service_name}")
                 return None
-            
-            # Create a new socket for the request
-            socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            
-            # Apply secure ZMQ if enabled
-            if SECURE_ZMQ:
-                setup_curve_client(socket)
-                
-            socket.connect(f"tcp://{host}:{port}")
-            return socket
         except Exception as e:
             logger.error(f"Error getting service connection for {service_name}: {str(e)}")
             return None

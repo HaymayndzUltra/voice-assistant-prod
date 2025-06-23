@@ -32,14 +32,15 @@ from scipy import signal
 from pathlib import Path
 from queue import Queue
 import psutil
+import traceback
 
 # Add project root to sys.path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import dynamic model management
-from modular_system.model_manager.model_manager_agent import DynamicSTTModelManager
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service, register_service
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -52,12 +53,13 @@ logging.basicConfig(
     ])
 logger = logging.getLogger("StreamingSpeechRecognition")
 
-# ZMQ Configuration
-ZMQ_RAW_AUDIO_PORT = 6575  # Raw audio from streaming_audio_capture.py
-ZMQ_CLEAN_AUDIO_PORT = int(getattr(_agent_args, 'clean_audio_port', 6578))  # Clean audio from FusedAudioPreprocessor
+# Check for secure ZMQ configuration
+SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
+
+# ZMQ Configuration - Use service discovery instead of hardcoded ports
 ZMQ_SUB_PORT = int(getattr(_agent_args, 'sub_port', 6578))  # Subscribe to clean audio from FusedAudioPreprocessor
 ZMQ_PUB_PORT = int(getattr(_agent_args, 'pub_port', 6580))  # Transcriptions to LanguageAndTranslationCoordinator
-ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 6578))  # Health check port (same as agent port)
+ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 6582))  # Health check port
 ZMQ_WAKE_WORD_PORT = int(getattr(_agent_args, 'wake_word_port', 6577))  # Wake word events from WakeWordDetector
 ZMQ_VAD_PORT = int(getattr(_agent_args, 'vad_port', 6579))  # VAD events
 
@@ -79,11 +81,6 @@ NOISE_REDUCTION_FREQ_MAX = 20000
 # Language Detection Settings
 SUPPORTED_LANGUAGES = ["en", "tl", "fil"]  # English, Tagalog, Filipino
 LANGUAGE_DETECTION_CONFIDENCE_THRESHOLD = 0.5
-
-# Model Management Settings
-MAX_CONCURRENT_MODELS = 2
-MODEL_IDLE_TIMEOUT = 600  # seconds
-model_last_used = {}
 
 # Resource management config (should be loaded from config in production)
 DEFAULT_BATCH_SIZE = 8
@@ -148,11 +145,8 @@ class StreamingSpeechRecognition(BaseAgent):
         self.buffer = []
         self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
         
-        # VRAM management now handled by VRAMOptimizerAgent
-
-        self.model_manager = None
-
-        self._init_model_management()
+        # Model management is now delegated to ModelManagerAgent
+        self.model_manager_socket = None
         
         # Initialize state
         self.wake_word_detected = False
@@ -168,89 +162,199 @@ class StreamingSpeechRecognition(BaseAgent):
         # Initialize ResourceManager
         self.resource_manager = ResourceManager()
         
+        # Initialize connection to ModelManagerAgent
+        self._connect_to_model_manager()
+        
         logger.info("Enhanced Streaming Speech Recognition initialized")
     
     def _init_sockets(self):
         """Initialize all ZMQ sockets."""
         try:
-            # Subscribe to cleaned audio (preferred)
+            # Discover FusedAudioPreprocessor for clean audio
+            audio_preprocessor = discover_service("FusedAudioPreprocessor")
+            if audio_preprocessor and audio_preprocessor.get("status") == "SUCCESS":
+                preprocessor_info = audio_preprocessor.get("payload", {})
+                preprocessor_host = preprocessor_info.get("host", _agent_args.host)
+                preprocessor_port = preprocessor_info.get("clean_audio_pub_port", ZMQ_SUB_PORT)
+                vad_port = preprocessor_info.get("vad_port", ZMQ_VAD_PORT)
+                logger.info(f"Discovered FusedAudioPreprocessor at {preprocessor_host}:{preprocessor_port}")
+            else:
+                logger.warning("Could not discover FusedAudioPreprocessor, using configured host and port")
+                preprocessor_host = _agent_args.host
+                preprocessor_port = ZMQ_SUB_PORT
+                vad_port = ZMQ_VAD_PORT
+            
+            # Discover WakeWordDetector
+            wake_word_detector = discover_service("StreamingAudioCapture")
+            if wake_word_detector and wake_word_detector.get("status") == "SUCCESS":
+                wake_word_info = wake_word_detector.get("payload", {})
+                wake_word_host = wake_word_info.get("host", _agent_args.host)
+                wake_word_port = wake_word_info.get("port", ZMQ_WAKE_WORD_PORT)
+                logger.info(f"Discovered WakeWordDetector at {wake_word_host}:{wake_word_port}")
+            else:
+                logger.warning("Could not discover WakeWordDetector, using configured host and port")
+                wake_word_host = _agent_args.host
+                wake_word_port = ZMQ_WAKE_WORD_PORT
+            
+            # Subscribe to cleaned audio
             self.sub_socket = self.zmq_context.socket(zmq.SUB)
-            self.sub_socket.connect(f"tcp://{_agent_args.host}:{ZMQ_SUB_PORT}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                try:
+                    from src.network.secure_zmq import secure_client_socket, start_auth
+                    start_auth()
+                    self.sub_socket = secure_client_socket(self.sub_socket)
+                    logger.info("Applied secure ZMQ to subscriber socket")
+                except Exception as e:
+                    logger.error(f"Failed to apply secure ZMQ to subscriber socket: {e}")
+            
+            self.sub_socket.connect(f"tcp://{preprocessor_host}:{preprocessor_port}")
             self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logger.info(f"Connected to audio preprocessor at tcp://{preprocessor_host}:{preprocessor_port}")
             
             # Subscribe to wake word events
             self.wake_word_socket = self.zmq_context.socket(zmq.SUB)
-            self.wake_word_socket.connect(f"tcp://{_agent_args.host}:{ZMQ_WAKE_WORD_PORT}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                try:
+                    from src.network.secure_zmq import secure_client_socket
+                    self.wake_word_socket = secure_client_socket(self.wake_word_socket)
+                    logger.info("Applied secure ZMQ to wake word subscriber socket")
+                except Exception as e:
+                    logger.error(f"Failed to apply secure ZMQ to wake word subscriber socket: {e}")
+            
+            self.wake_word_socket.connect(f"tcp://{wake_word_host}:{wake_word_port}")
             self.wake_word_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logger.info(f"Connected to wake word detector at tcp://{wake_word_host}:{wake_word_port}")
             
             # Subscribe to VAD events
             self.vad_socket = self.zmq_context.socket(zmq.SUB)
-            self.vad_socket.connect(f"tcp://{_agent_args.host}:{ZMQ_VAD_PORT}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                try:
+                    from src.network.secure_zmq import secure_client_socket
+                    self.vad_socket = secure_client_socket(self.vad_socket)
+                    logger.info("Applied secure ZMQ to VAD subscriber socket")
+                except Exception as e:
+                    logger.error(f"Failed to apply secure ZMQ to VAD subscriber socket: {e}")
+            
+            self.vad_socket.connect(f"tcp://{preprocessor_host}:{vad_port}")
             self.vad_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logger.info(f"Connected to VAD events at tcp://{preprocessor_host}:{vad_port}")
             
             # Publish transcriptions
             self.pub_socket = self.zmq_context.socket(zmq.PUB)
-            self.pub_socket.bind(f"tcp://*:{ZMQ_PUB_PORT}")  # Bind to port 6580 as configured in startup_config.yaml
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                try:
+                    from src.network.secure_zmq import secure_server_socket
+                    self.pub_socket = secure_server_socket(self.pub_socket)
+                    logger.info("Applied secure ZMQ to publisher socket")
+                except Exception as e:
+                    logger.error(f"Failed to apply secure ZMQ to publisher socket: {e}")
+            
+            self.pub_socket.bind(f"tcp://*:{ZMQ_PUB_PORT}")
+            logger.info(f"Publishing transcriptions on port {ZMQ_PUB_PORT}")
             
             # Health status
             self.health_socket = self.zmq_context.socket(zmq.PUB)
-            self.health_socket.bind(f"tcp://*:{ZMQ_HEALTH_PORT}")
             
-            logger.info(f"ZMQ sockets initialized - Clean Audio SUB: {ZMQ_SUB_PORT}, Wake Word SUB: {ZMQ_WAKE_WORD_PORT}, VAD SUB: {ZMQ_VAD_PORT}, Transcriptions PUB: {ZMQ_PUB_PORT}, Health: {ZMQ_HEALTH_PORT}")
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                try:
+                    from src.network.secure_zmq import secure_server_socket
+                    self.health_socket = secure_server_socket(self.health_socket)
+                    logger.info("Applied secure ZMQ to health publisher socket")
+                except Exception as e:
+                    logger.error(f"Failed to apply secure ZMQ to health publisher socket: {e}")
+            
+            self.health_socket.bind(f"tcp://*:{ZMQ_HEALTH_PORT}")
+            logger.info(f"Publishing health status on port {ZMQ_HEALTH_PORT}")
+            
+            # Register with SystemDigitalTwin
+            try:
+                register_service(
+                    name="StreamingSpeechRecognition",
+                    port=ZMQ_PUB_PORT,
+                    additional_info={
+                        "health_port": ZMQ_HEALTH_PORT,
+                        "description": "Speech recognition service"
+                    }
+                )
+                logger.info("Registered with SystemDigitalTwin")
+            except Exception as e:
+                logger.error(f"Failed to register with SystemDigitalTwin: {e}")
+            
         except Exception as e:
             logger.error(f"Error initializing ZMQ sockets: {str(e)}")
             raise
     
-    # Model unloading now handled by VRAMOptimizerAgent and ModelManagerAgent
-
-    def _init_model_management(self):
-        """Initialize dynamic model management from a config file path passed as an argument."""
+    def _connect_to_model_manager(self):
+        """Connect to the ModelManagerAgent for model management."""
         try:
-            # Get model config path from command-line arguments
-            config_path_str = getattr(_agent_args, 'model_config_path', None)
-            if not config_path_str:
-                logger.error("Model config path not provided. Please specify with --model_config_path argument.")
-                self.stt_manager = None
-                return
-
-            # The path from config is relative to the main_pc_code directory, which is project_root
-            config_path = project_root / config_path_str
-            
-            if not config_path.is_file():
-                logger.error(f"Model config file not found at: {config_path}")
-                self.stt_manager = None
-                return
-
-            # Load model config
-            logger.info(f"Loading model configuration from: {config_path}")
-            with open(config_path, 'r') as f:
-                model_config = json.load(f)
-            
-            # Prepare available models
-            available_models = {}
-            for k, v in model_config['models'].items():
-                if 'whisper' in v['name']:
-                    available_models[v['name']] = {
-                        'language': v.get('language', 'en'),
-                        'path': v['path'],
-                        'quantization': v.get('quantization', 'fp16'),
-                        'priority': v.get('priority', 5),
-                    }
-            
-            # Initialize model manager
-            self.stt_manager = DynamicSTTModelManager(
-                available_models,
-                default_model='whisper-large-v3'
-            )
-            
-            # Track model usage
-            self.timestamp_last_used = {}
-            
-            logger.info(f"Model management initialized successfully from {config_path}")
+            # Discover ModelManagerAgent
+            model_manager = discover_service("ModelManagerAgent")
+            if model_manager and model_manager.get("status") == "SUCCESS":
+                model_manager_info = model_manager.get("payload", {})
+                model_manager_host = model_manager_info.get("host", _agent_args.host)
+                model_manager_port = model_manager_info.get("port", 5570)
+                logger.info(f"Discovered ModelManagerAgent at {model_manager_host}:{model_manager_port}")
+                
+                # Create socket for ModelManagerAgent
+                self.model_manager_socket = self.zmq_context.socket(zmq.REQ)
+                self.model_manager_socket.setsockopt(zmq.RCVTIMEO, 10000)  # 10 second timeout
+                
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    try:
+                        from src.network.secure_zmq import secure_client_socket
+                        self.model_manager_socket = secure_client_socket(self.model_manager_socket)
+                        logger.info("Applied secure ZMQ to model manager socket")
+                    except Exception as e:
+                        logger.error(f"Failed to apply secure ZMQ to model manager socket: {e}")
+                
+                self.model_manager_socket.connect(f"tcp://{model_manager_host}:{model_manager_port}")
+                logger.info(f"Connected to ModelManagerAgent at tcp://{model_manager_host}:{model_manager_port}")
+                
+                # Request model loading
+                self._request_model_loading("whisper-large-v3", "high")
+            else:
+                logger.error("Could not discover ModelManagerAgent, speech recognition will not work properly")
+                self.model_manager_socket = None
         except Exception as e:
-            logger.error(f"Error initializing model management: {str(e)}")
-            self.stt_manager = None # Ensure manager is None on failure
-            raise
+            logger.error(f"Error connecting to ModelManagerAgent: {str(e)}")
+            self.model_manager_socket = None
+    
+    def _request_model_loading(self, model_id, priority="medium"):
+        """Request model loading from ModelManagerAgent."""
+        if not self.model_manager_socket:
+            logger.error("No connection to ModelManagerAgent, cannot load model")
+            return False
+        
+        try:
+            request = {
+                "command": "LOAD_MODEL",
+                "model_id": model_id,
+                "priority": priority,
+                "source": "StreamingSpeechRecognition"
+            }
+            
+            self.model_manager_socket.send_json(request)
+            response = self.model_manager_socket.recv_json()
+            
+            if response.get("status") == "success":
+                logger.info(f"Successfully requested loading of model {model_id}")
+                return True
+            else:
+                logger.error(f"Failed to load model {model_id}: {response.get('message', 'Unknown error')}")
+                return False
+        except Exception as e:
+            logger.error(f"Error requesting model loading: {str(e)}")
+            return False
     
     def _check_wake_word_events(self):
         """Check for wake word events."""
@@ -542,37 +646,12 @@ class StreamingSpeechRecognition(BaseAgent):
         This method now just informs the VRAMOptimizerAgent about the current model being used.
         """
         try:
-            # Connect to ModelManagerAgent/VRAMOptimizerAgent if needed
-            if not hasattr(self, 'vram_optimizer_socket'):
-                # Create socket for VRAMOptimizerAgent
-                self.vram_optimizer_socket = self.zmq_context.socket(zmq.REQ)
-                self.vram_optimizer_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-                
-                # Try to discover VRAMOptimizerAgent
-                try:
-                    from utils.service_discovery_client import discover_service
-                    vram_optimizer_info = discover_service("VRAMOptimizerAgent")
-                    if vram_optimizer_info and vram_optimizer_info.get("status") == "SUCCESS":
-                        vram_info = vram_optimizer_info.get("payload", {})
-                        vram_host = vram_info.get("host", "localhost") 
-                        vram_port = vram_info.get("port", 5572)  # Default port
-                        
-                        # Apply secure ZMQ if enabled
-                        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
-                        if is_secure_zmq_enabled():
-                            setup_curve_client(self.vram_optimizer_socket)
-                            
-                        self.vram_optimizer_socket.connect(f"tcp://{vram_host}:{vram_port}")
-                        logger.info(f"Connected to VRAMOptimizerAgent at tcp://{vram_host}:{vram_port}")
-                    else:
-                        logger.warning("Failed to discover VRAMOptimizerAgent, will continue with local model management")
-                        return
-                except Exception as e:
-                    logger.warning(f"Error discovering VRAMOptimizerAgent: {e}")
-                    return
+            # Use the existing model manager socket
+            if not self.model_manager_socket:
+                logger.warning("No connection to ModelManagerAgent, cannot update model usage")
+                return
             
-            # Send update to VRAMOptimizerAgent about the current model being used
-            # This allows VRAMOptimizerAgent to track model usage and make unloading decisions
+            # Send update to ModelManagerAgent about the current model being used
             try:
                 request = {
                     "command": "UPDATE_MODEL_USAGE",
@@ -581,28 +660,21 @@ class StreamingSpeechRecognition(BaseAgent):
                     "agent": "StreamingSpeechRecognition",
                     "model_type": "stt"
                 }
-                self.vram_optimizer_socket.send_json(request)
+                self.model_manager_socket.send_json(request)
                 
                 # Try to get response, but don't block if no response
                 try:
-                    response = self.vram_optimizer_socket.recv_json()
-                    logger.debug(f"VRAMOptimizerAgent response: {response}")
+                    response = self.model_manager_socket.recv_json()
+                    logger.debug(f"ModelManagerAgent response: {response}")
                 except zmq.error.Again:
                     # Timeout is okay for this non-critical operation
                     pass
                     
             except Exception as e:
-                logger.warning(f"Error sending model usage update to VRAMOptimizerAgent: {e}")
+                logger.warning(f"Error sending model usage update to ModelManagerAgent: {e}")
                 
-            # Track model usage locally
-            now = time.time()
-            self.timestamp_last_used[current_model_id] = now
-            
         except Exception as e:
             logger.error(f"Error in delegated model management: {str(e)}")
-            # Fallback to local tracking only
-            now = time.time()
-            self.timestamp_last_used[current_model_id] = now
     
     def health_broadcast_loop(self):
         """Broadcast health status."""
@@ -611,7 +683,7 @@ class StreamingSpeechRecognition(BaseAgent):
                 health_data = {
                     "component": "StreamingSpeechRecognition",
                     "status": "healthy",
-                    "model_loaded": hasattr(self, 'stt_manager') and len(self.stt_manager.loaded_models) > 0,
+                    "model_loaded": hasattr(self, 'model_manager_socket') and len(self.model_manager_socket) > 0,
                     "timestamp": time.time(),
                     "metrics": {
                         "pub_port": ZMQ_PUB_PORT,
@@ -681,28 +753,24 @@ class StreamingSpeechRecognition(BaseAgent):
             if hasattr(self, 'vad_socket'):
                 self.vad_socket.close()
                 
-            if hasattr(self, 'vram_optimizer_socket'):
-                self.vram_optimizer_socket.close()
+            if hasattr(self, 'model_manager_socket'):
+                # Notify ModelManagerAgent that we're shutting down
+                try:
+                    request = {
+                        "command": "AGENT_SHUTDOWN",
+                        "agent": "StreamingSpeechRecognition",
+                        "timestamp": time.time()
+                    }
+                    self.model_manager_socket.send_json(request)
+                    # Don't wait for response during shutdown
+                except Exception as e:
+                    logger.warning(f"Error notifying ModelManagerAgent of shutdown: {e}")
+                
+                self.model_manager_socket.close()
             
             # Terminate ZMQ context - do this after all sockets are closed
             if hasattr(self, 'zmq_context'):
                 self.zmq_context.term()
-            
-            # Clear model cache - now delegated to ModelManagerAgent via VRAMOptimizerAgent
-            if hasattr(self, 'stt_manager') and self.stt_manager:
-                # Send notification to VRAMOptimizerAgent that we're shutting down
-                try:
-                    # Only attempt if we have a VRAM optimizer socket
-                    if hasattr(self, 'vram_optimizer_socket') and not self.vram_optimizer_socket.closed:
-                        request = {
-                            "command": "AGENT_SHUTDOWN",
-                            "agent": "StreamingSpeechRecognition",
-                            "timestamp": time.time()
-                        }
-                        self.vram_optimizer_socket.send_json(request)
-                        # Don't wait for response during shutdown
-                except Exception as e:
-                    logger.warning(f"Error notifying VRAMOptimizerAgent of shutdown: {e}")
             
             logger.info("Resources cleaned up")
         except Exception as e:
@@ -782,37 +850,57 @@ class StreamingSpeechRecognition(BaseAgent):
                 detected_lang = 'en'
                 confidence = 0.5
             
-            # Get appropriate model
+            # Request transcription from ModelManagerAgent
             try:
-                model, model_id = self.stt_manager.get_model(
-                    language=detected_lang,
-                    context=None
-                )
-                self.timestamp_last_used[model_id] = time.time()
-            except Exception as model_error:
-                logger.error(f"Error getting speech recognition model: {str(model_error)}")
-                error_message = {
-                    "status": "error",
-                    "error_type": "ModelLoadError",
-                    "source_agent": "streaming_speech_recognition.py",
-                    "message": f"Failed to load speech recognition model: {str(model_error)}",
-                    "timestamp": datetime.now().isoformat()
+                if not self.model_manager_socket:
+                    raise RuntimeError("No connection to ModelManagerAgent")
+                
+                # Create a unique request ID
+                request_id = str(uuid.uuid4())
+                
+                # Prepare transcription request
+                request = {
+                    "command": "TRANSCRIBE_AUDIO",
+                    "request_id": request_id,
+                    "model_id": "whisper-large-v3",
+                    "language": detected_lang,
+                    "audio_data": audio_input_16k.tolist(),  # Convert to list for JSON serialization
+                    "timestamp": time.time(),
+                    "source": "StreamingSpeechRecognition"
                 }
-                self.pub_socket.send_json(error_message)
-                self.process_thread = None
-                return
-            
-            # Unload idle models
-            self._cleanup_idle_models(model_id)
-            
-            # Transcribe
-            try:
-                result = model.transcribe(
-                    audio_input_16k,
-                    language=detected_lang,
-                    fp16=False,
-                    verbose=False
-                )
+                
+                # Send request to ModelManagerAgent
+                self.model_manager_socket.send_json(request)
+                response = self.model_manager_socket.recv_json()
+                
+                if response.get("status") == "success":
+                    result = response.get("result", {})
+                    transcript = {
+                        "text": result.get("text", "").strip(),
+                        "confidence": result.get("confidence", 0.0),
+                        "language": detected_lang,
+                        "language_confidence": confidence,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    
+                    # Publish transcription if not empty
+                    if transcript["text"]:
+                        self.pub_socket.send_string(f"TRANSCRIPTION: {json.dumps(transcript)}")
+                        logger.info(f"Transcription: {transcript['text']} ({transcript['confidence']:.2f})")
+                    else:
+                        logger.info("Empty transcription result, nothing to publish")
+                    
+                    # Update model usage
+                    self._cleanup_idle_models("whisper-large-v3")
+                else:
+                    error_message = {
+                        "status": "error",
+                        "error_type": "TranscriptionError",
+                        "source_agent": "streaming_speech_recognition.py",
+                        "message": f"Transcription failed: {response.get('message', 'Unknown error')}",
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    self.pub_socket.send_json(error_message)
             except Exception as transcribe_error:
                 logger.error(f"Error transcribing audio: {str(transcribe_error)}")
                 error_message = {
@@ -822,47 +910,10 @@ class StreamingSpeechRecognition(BaseAgent):
                     "message": f"Transcription failed: {str(transcribe_error)}",
                     "timestamp": datetime.now().isoformat(),
                     "details": {
-                        "model_id": model_id,
-                        "language": detected_lang,
-                        "audio_length_seconds": len(audio_input_16k) / 16000
+                        "traceback": traceback.format_exc()
                     }
                 }
                 self.pub_socket.send_json(error_message)
-                self.process_thread = None
-                return
-            
-            # Process transcription
-            if result['text'].strip():
-                transcript = {
-                    "text": result['text'].strip(),
-                    "confidence": result.get('confidence', 0.0),
-                    "language": detected_lang,
-                    "language_confidence": confidence,
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-                # Publish transcription
-                try:
-                    self.pub_socket.send_string(f"TRANSCRIPTION: {json.dumps(transcript)}")
-                    
-                    # Log high confidence transcriptions
-                    if transcript['confidence'] > 0.8:
-                        logger.info(f"High confidence transcription: {transcript['text']} ({transcript['confidence']:.2f})")
-                except Exception as pub_error:
-                    logger.error(f"Error publishing transcription: {str(pub_error)}")
-                    error_message = {
-                        "status": "error",
-                        "error_type": "CommunicationError",
-                        "source_agent": "streaming_speech_recognition.py",
-                        "message": f"Failed to publish transcription: {str(pub_error)}",
-                        "timestamp": datetime.now().isoformat()
-                    }
-                    try:
-                        self.pub_socket.send_json(error_message)
-                    except Exception:
-                        logger.critical("Critical communication failure: Unable to send error message")
-            else:
-                logger.info("Empty transcription result, nothing to publish")
             
             # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
@@ -870,6 +921,7 @@ class StreamingSpeechRecognition(BaseAgent):
             
         except Exception as e:
             logger.error(f"Error processing audio buffer: {str(e)}")
+            logger.error(traceback.format_exc())
             
             # Send standardized error message
             error_message = {
@@ -879,7 +931,7 @@ class StreamingSpeechRecognition(BaseAgent):
                 "message": f"Failed to process audio buffer: {str(e)}",
                 "timestamp": datetime.now().isoformat(),
                 "details": {
-                    "traceback": str(sys.exc_info()[2])
+                    "traceback": traceback.format_exc()
                 }
             }
             
@@ -891,23 +943,6 @@ class StreamingSpeechRecognition(BaseAgent):
                 
         finally:
             self.process_thread = None
-
-    def get_whisper_model(self, model_id):
-        now = time.time()
-        # Unload idle models
-        for mid, last_used in list(model_last_used.items()):
-            if now - last_used > MODEL_IDLE_TIMEOUT:
-                self._cleanup_idle_models(mid)
-                del model_last_used[mid]
-        # Lazy load
-        if model_id not in self.timestamp_last_used:
-            self.stt_manager.get_model(
-                language='en',
-                context=None
-            )
-            self.timestamp_last_used[model_id] = now
-        model_last_used[model_id] = now
-        return self.stt_manager.loaded_models[model_id]
 
 if __name__ == "__main__":
     try:

@@ -40,9 +40,6 @@ config = Config() # Instantiate the global config object
 # Import system_config for per-machine settings
 from config import system_config
 
-# Import the GGUF connector
-from agents.model_manager_agent_gguf_connector import get_instance as get_gguf_connector
-
 # Import PC2 services config module
 from main_pc_code.config.pc2_services_config import load_pc2_services, get_service_connection, list_available_services
 
@@ -1464,11 +1461,15 @@ class ModelManagerAgent(BaseAgent):
             logger.info(f"--- MMA: _unload_zmq_service_model for {model_id} --- END ---")
 
     def _unload_gguf_model(self, model_id):
-        """Unload a GGUF model using the GGUF connector."""
+        """Unload a GGUF model using the GGUF Model Manager."""
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
-            # Unload the model via GGUF connector
-            success = self.gguf_connector.unload_model(model_id)
+            # Import and use the GGUF Model Manager directly
+            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Unload the model via GGUF manager
+            success = gguf_manager.unload_model(model_id)
             if success:
                 self._mark_model_as_unloaded(model_id)
                 logger.info(f"Successfully unloaded GGUF model {model_id}")
@@ -1590,41 +1591,14 @@ class ModelManagerAgent(BaseAgent):
                 return False # Or True if we consider an attempt to load an 'available' ollama model a success conceptually
         elif serving_method == 'gguf_direct':
             # Try connector first, then direct loading if connector fails
-            logger.info(f"Loading GGUF model {model_id} - attempting connector method first")
+            logger.info(f"Loading GGUF model {model_id} - attempting direct loading")
             
-            # First attempt: Use GGUF connector if available
-            if self.gguf_available:
-                try:
-                    logger.info(f"Loading GGUF model {model_id} via connector")
-                    response = self.gguf_connector.load_gguf_model(model_id)
-                    
-                    if response and (response.get('status') == "success" or response.get('status') == "ok"):
-                        # Update model status
-                        self.models[model_id]['status'] = "online"
-                        self.models[model_id]['error'] = None
-                        self._mark_model_as_loaded(model_id, estimated_vram_mb)
-                        self.model_last_used_timestamp[model_id] = time.time()
-                        
-                        # Publish model status update
-                        self._publish_model_status(model_id, "online")
-                        logger.info(f"GGUF model {model_id} successfully loaded via connector")
-                        return True
-                    else:
-                        error_msg = response.get('error', 'Unknown error') if response else 'No response from connector'
-                        logger.warning(f"Connector failed to load GGUF model {model_id}: {error_msg}")
-                        # Continue to direct loading attempt
-                except Exception as e:
-                    logger.warning(f"Exception using connector to load GGUF model {model_id}: {e}")
-                    # Continue to direct loading attempt
-            else:
-                logger.warning("GGUF connector not available, attempting direct loading")
-            
-            # Second attempt: Try direct loading through the GGUF Model Manager
+            # Import and use the GGUF Model Manager directly
             try:
                 from agents.gguf_model_manager import get_instance as get_gguf_manager
                 gguf_manager = get_gguf_manager()
                 
-                logger.info(f"Loading GGUF model {model_id} directly via GGUF Model Manager")
+                logger.info(f"Loading GGUF model {model_id} via GGUF Model Manager")
                 if gguf_manager.load_model(model_id):
                     # Update model status
                     self.models[model_id]['status'] = "online"
@@ -1634,15 +1608,15 @@ class ModelManagerAgent(BaseAgent):
                     
                     # Publish model status update
                     self._publish_model_status(model_id, "online")
-                    logger.info(f"GGUF model {model_id} successfully loaded directly")
+                    logger.info(f"GGUF model {model_id} successfully loaded")
                     return True
                 else:
-                    logger.error(f"Failed to load GGUF model {model_id} directly")
+                    logger.error(f"Failed to load GGUF model {model_id}")
                     self.models[model_id]['status'] = "error"
-                    self.models[model_id]['error'] = "Failed to load model directly"
+                    self.models[model_id]['error'] = "Failed to load model"
                     return False
             except Exception as e:
-                logger.error(f"Error during direct GGUF model loading for {model_id}: {e}")
+                logger.error(f"Error during GGUF model loading for {model_id}: {e}")
                 self.models[model_id]['status'] = "error"
                 self.models[model_id]['error'] = str(e)
                 return False
@@ -2178,34 +2152,39 @@ class ModelManagerAgent(BaseAgent):
 
     def _check_gguf_model(self, model_id, model_info):
         """Check the status of a GGUF model"""
-        if not self.gguf_available:
-            logger.error(f"GGUF connector not available for checking model {model_id}")
-            model_info['status'] = 'error'
-            return
-        
         logger.info(f"Checking GGUF model {model_id}")
-        # Use get_gguf_status method which returns status of all models
-        response = self.gguf_connector.get_gguf_status()
-        
-        if response.get('status') == 'success':
-            # The response contains status of all models
-            models_status = response.get('models', {})
+        try:
+            # Import and use the GGUF Model Manager directly
+            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            if not gguf_manager:
+                logger.error(f"GGUF manager not available for checking model {model_id}")
+                model_info['status'] = 'error'
+                return
+            
+            # Get status of all models
+            models_status = gguf_manager.list_models()
             
             # Check if this specific model is in the response
-            if model_id in models_status:
-                model_status = models_status[model_id]
-                model_info['status'] = 'online' if model_status.get('loaded', False) else 'available_not_loaded'
-                if model_status.get('loaded', False):
-                    # If model is loaded, update VRAM tracking
-                    vram_mb = model_info.get('estimated_vram_mb', 0)
-                    self._mark_model_as_loaded(model_id, vram_mb)
-                model_info['last_check'] = time.time()
-            else:
+            model_found = False
+            for model in models_status:
+                if model.get('model_id') == model_id:
+                    model_found = True
+                    model_info['status'] = 'online' if model.get('loaded', False) else 'available_not_loaded'
+                    if model.get('loaded', False):
+                        # If model is loaded, update VRAM tracking
+                        vram_mb = model_info.get('estimated_vram_mb', 0)
+                        self._mark_model_as_loaded(model_id, vram_mb)
+                    model_info['last_check'] = time.time()
+                    break
+            
+            if not model_found:
                 # Model not found in response
                 model_info['status'] = 'available_not_loaded'
                 model_info['last_check'] = time.time()
-        else:
-            logger.error(f"Failed to check GGUF model {model_id}: {response.get('error')}")
+        except Exception as e:
+            logger.error(f"Failed to check GGUF model {model_id}: {e}")
             model_info['status'] = 'error'
             model_info['last_check'] = time.time()
 
@@ -3362,7 +3341,7 @@ class ModelManagerAgent(BaseAgent):
                 time.sleep(self.memory_check_interval)
 
     def _load_gguf_model(self, model_id):
-        """Load a GGUF model using the GGUF connector."""
+        """Load a GGUF model using the GGUF Model Manager."""
         logger.critical(f"--- [MainMMA _load_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Get model info from config
@@ -3377,8 +3356,12 @@ class ModelManagerAgent(BaseAgent):
                 logger.error(f"Not enough VRAM to load model {model_id}")
                 return False
 
-            # Load the model via GGUF connector
-            success = self.gguf_connector.load_model(model_id)
+            # Import and use the GGUF Model Manager directly
+            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Load the model via GGUF manager
+            success = gguf_manager.load_model(model_id)
             if success:
                 self._mark_model_as_loaded(model_id, required_vram)
                 logger.info(f"Successfully loaded GGUF model {model_id}")
@@ -3391,11 +3374,15 @@ class ModelManagerAgent(BaseAgent):
             return False
 
     def _unload_gguf_model(self, model_id):
-        """Unload a GGUF model using the GGUF connector."""
+        """Unload a GGUF model using the GGUF Model Manager."""
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
-            # Unload the model via GGUF connector
-            success = self.gguf_connector.unload_model(model_id)
+            # Import and use the GGUF Model Manager directly
+            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Unload the model via GGUF manager
+            success = gguf_manager.unload_model(model_id)
             if success:
                 self._mark_model_as_unloaded(model_id)
                 logger.info(f"Successfully unloaded GGUF model {model_id}")
@@ -3411,8 +3398,12 @@ class ModelManagerAgent(BaseAgent):
         """Update the status of a GGUF model."""
         logger.critical(f"--- [MainMMA _update_gguf_status CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
-            # Get current status from GGUF connector
-            status = self.gguf_connector.get_model_status(model_id)
+            # Import and use the GGUF Model Manager directly
+            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Get current status from GGUF manager
+            status = gguf_manager.get_model_status(model_id)
             if status:
                 self.models[model_id]['status'] = status
                 logger.info(f"Updated status for GGUF model {model_id}: {status}")

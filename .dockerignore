@@ -1,0 +1,116 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+.env/
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*
+docker/
+
+# Logs
+logs/
+*.log
+
+# Certificates (will be mounted as volumes)
+certificates/
+
+# Cache
+cache/
+.cache/
+**/cache/
+
+# Temporary files
+.tmp/
+tmp/
+temp/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Large files and directories
+models/
+voice_samples/
+output/
+
+# Documentation
+docs/
+*.md
+LICENSE
+README*
+
+# Test files
+tests/
+test_*/
+*_test.py
+*_tests.py
+
+# Archives
+*.tar
+*.gz
+*.zip
+*.rar
+*.7z
+
+# Data files
+*.csv
+*.json
+*.yaml
+*.yml
+!config/*.yaml
+!config/*.yml
+!docker/config/*.yaml
+!docker/config/*.yml
+
+# Media files
+*.mp3
+*.wav
+*.mp4
+*.avi
+*.mov
+*.flac
+*.ogg
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.ico
+
+# Exclude specific directories
+pc2_code/
+main_pc_code/_DOCUMENTSFINAL/
+main_pc_code/agents/_archive/
+main_pc_code/agents/_referencefolderpc2/
+main_pc_code/agents/_trash_2025-06-13/ 

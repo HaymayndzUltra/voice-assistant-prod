@@ -1,0 +1,174 @@
+version: '3.8'
+
+services:
+  # System Digital Twin - Service Registry
+  system-digital-twin:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/system-digital-twin
+    container_name: system-digital-twin
+    command: python -m main_pc_code.agents.system_digital_twin
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=SystemDigitalTwin
+      - PORT=7120
+    ports:
+      - "7120:7120"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+    networks:
+      - ai-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 7120)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Task Router
+  task-router:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/task-router
+    container_name: task-router
+    command: python -m main_pc_code.src.core.task_router
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=TaskRouter
+      - PORT=8571
+    ports:
+      - "8571:8571"
+      - "8572:8572"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+    networks:
+      - ai-network
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 8572)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Streaming Interrupt Handler
+  streaming-interrupt-handler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/streaming-interrupt-handler
+    container_name: streaming-interrupt-handler
+    command: python -m main_pc_code.agents.streaming_interrupt_handler
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=StreamingInterruptHandler
+      - PORT=5576
+    ports:
+      - "5576:5576"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+    networks:
+      - ai-network
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+
+  # Streaming TTS Agent
+  streaming-tts-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/streaming-tts-agent
+    container_name: streaming-tts-agent
+    command: python -m main_pc_code.agents.streaming_tts_agent
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=StreamingTtsAgent
+      - PORT=5562
+    ports:
+      - "5562:5562"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+      - ../voice_samples:/app/voice_samples
+      - ../models:/app/models
+    networks:
+      - ai-network
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+      streaming-interrupt-handler:
+        condition: service_started
+
+  # TTS Agent
+  tts-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/tts-agent
+    container_name: tts-agent
+    command: python -m main_pc_code.agents.tts_agent
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=TTSAgent
+      - PORT=5563
+    ports:
+      - "5563:5563"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+      - ../voice_samples:/app/voice_samples
+      - ../models:/app/models
+    networks:
+      - ai-network
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+      streaming-interrupt-handler:
+        condition: service_started
+
+  # Responder Agent
+  responder:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.voice_pipeline
+    image: ai-system/responder
+    container_name: responder
+    command: python -m main_pc_code.agents.responder
+    env_file:
+      - ./config/env.template
+    environment:
+      - SERVICE_NAME=ResponderAgent
+      - PORT=5637
+    ports:
+      - "5637:5637"
+    volumes:
+      - ../logs:/app/logs
+      - ../certificates:/app/certificates
+    networks:
+      - ai-network
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+      streaming-tts-agent:
+        condition: service_started
+      tts-agent:
+        condition: service_started
+      streaming-interrupt-handler:
+        condition: service_started
+
+networks:
+  ai-network:
+    driver: bridge 

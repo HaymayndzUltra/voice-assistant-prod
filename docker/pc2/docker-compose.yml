@@ -1,0 +1,139 @@
+version: '3.8'
+
+# PC2 ONLY - Docker Compose for PC2 Components
+
+services:
+  # Advanced Router - Main entry point for PC2
+  advanced-router:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system/pc2-advanced-router
+    container_name: pc2-advanced-router
+    command: python -m pc2_code.agents.advanced_router
+    env_file:
+      - ./config/env.pc2
+    environment:
+      - SERVICE_NAME=AdvancedRouter
+      - PORT=5780
+    ports:
+      - "5780:5780"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../certificates:/app/certificates
+    networks:
+      - pc2-network
+      - ai-shared-network
+    healthcheck:
+      test: ["CMD", "python", "scripts/docker_health_check.py", "--service", "advanced-router", "--host", "localhost", "--port", "5780"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Authentication Agent
+  authentication-agent:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system/pc2-authentication-agent
+    container_name: pc2-authentication-agent
+    command: python -m pc2_code.agents.ForPC2.AuthenticationAgent
+    env_file:
+      - ./config/env.pc2
+    environment:
+      - SERVICE_NAME=AuthenticationAgent
+      - PORT=5790
+    ports:
+      - "5790:5790"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../certificates:/app/certificates
+    networks:
+      - pc2-network
+      - ai-shared-network
+    depends_on:
+      advanced-router:
+        condition: service_healthy
+
+  # Health Monitor
+  health-monitor:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system/pc2-health-monitor
+    container_name: pc2-health-monitor
+    command: python -m pc2_code.agents.ForPC2.health_monitor
+    env_file:
+      - ./config/env.pc2
+    environment:
+      - SERVICE_NAME=HealthMonitor
+      - PORT=5791
+    ports:
+      - "5791:5791"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../certificates:/app/certificates
+    networks:
+      - pc2-network
+      - ai-shared-network
+    depends_on:
+      advanced-router:
+        condition: service_healthy
+
+  # Context Monitor
+  context-monitor:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system/pc2-context-monitor
+    container_name: pc2-context-monitor
+    command: python -m pc2_code.agents.ForPC2.proactive_context_monitor
+    env_file:
+      - ./config/env.pc2
+    environment:
+      - SERVICE_NAME=ProactiveContextMonitor
+      - PORT=5792
+    ports:
+      - "5792:5792"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../certificates:/app/certificates
+    networks:
+      - pc2-network
+      - ai-shared-network
+    depends_on:
+      advanced-router:
+        condition: service_healthy
+
+  # Translator Agent
+  translator-agent:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system/pc2-translator-agent
+    container_name: pc2-translator-agent
+    command: python -m pc2_code.translation_components.nllb_translator
+    env_file:
+      - ./config/env.pc2
+    environment:
+      - SERVICE_NAME=NllbTranslator
+      - PORT=5789
+    ports:
+      - "5789:5789"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../certificates:/app/certificates
+      - ../../translation_models:/app/translation_models
+    networks:
+      - pc2-network
+      - ai-shared-network
+    depends_on:
+      advanced-router:
+        condition: service_healthy
+
+networks:
+  pc2-network:
+    driver: bridge
+  ai-shared-network:
+    external: true 

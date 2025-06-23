@@ -10,12 +10,20 @@ import re
 import time
 import json
 import threading
+import os
 from collections import deque
 from datetime import datetime
 from pathlib import Path
 import requests
 import socket
 from typing import Dict, Optional
+from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import register_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import configure_secure_client, configure_secure_server
+
+# Parse command line arguments
+_agent_args = parse_agent_args()
 
 # Optional fastText language ID
 try:
@@ -28,13 +36,20 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
-# Port configuration
-ZMQ_SUB_PORT = 5576  # From streaming_speech_recognition.py
-ZMQ_PUB_PORT_RANGE = (5570, 5579)  # Range for dynamic port selection
-ZMQ_HEALTH_PORT = 5597  # Shared health port
+# Port configuration from args or defaults
+ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576))  # From streaming_speech_recognition.py
+ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577))  # Default port for this service
+ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597))  # Shared health port
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
 
-# TagaBERTa service connection
-TAGABERT_SERVICE_URL = "tcp://localhost:6010"
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# Secure ZMQ configuration
+SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
+
+# TagaBERTa service configuration - use service discovery
+TAGABERT_SERVICE_NAME = "TagaBERTaService"
 
 TAGALOG_WORDS = {
     'ako', 'ikaw', 'siya', 'kami', 'tayo', 'kayo', 'sila',
@@ -77,43 +92,62 @@ class StreamingLanguageAnalyzer(BaseAgent):
         super().__init__(port=port, name="StreamingLanguageAnalyzer")
         self.context = zmq.Context()
         
-        # Initialize with dynamic port selection
-        self.pub_port = find_available_port(ZMQ_PUB_PORT_RANGE[0], ZMQ_PUB_PORT_RANGE[1])
-        logger.info(f"Selected port {self.pub_port} for publishing")
+        # Use provided port or default
+        self.pub_port = port if port else ZMQ_PUB_PORT
+        logger.info(f"Using port {self.pub_port} for publishing")
         
         # Setup sockets
         self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect(f"tcp://localhost:{ZMQ_SUB_PORT}")
+        if SECURE_ZMQ:
+            self.sub_socket = configure_secure_client(self.sub_socket)
+            
+        # Try to get the speech recognition address from service discovery
+        stt_address = get_service_address("StreamingSpeechRecognition")
+        if not stt_address:
+            # Fall back to configured port
+            stt_address = f"tcp://localhost:{ZMQ_SUB_PORT}"
+            
+        self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
+        logger.info(f"Connected to speech recognition at {stt_address}")
         
         self.pub_socket = self.context.socket(zmq.PUB)
+        if SECURE_ZMQ:
+            self.pub_socket = configure_secure_server(self.pub_socket)
+            
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.pub_port}"
         try:
-            self.pub_socket.bind(f"tcp://*:{self.pub_port}")
-            logger.info(f"Successfully bound to port {self.pub_port}")
+            self.pub_socket.bind(bind_address)
+            logger.info(f"Successfully bound to {bind_address}")
         except Exception as e:
-            logger.error(f"Failed to bind to port {self.pub_port}: {e}")
+            logger.error(f"Failed to bind to {bind_address}: {e}")
             raise
+        
+        # Register with service discovery
+        self._register_service(self.pub_port)
         
         # Setup health reporting
         self.health_socket = self.context.socket(zmq.PUB)
+        if SECURE_ZMQ:
+            self.health_socket = configure_secure_client(self.health_socket)
+            
+        # Try to get the health system address from service discovery
+        health_address = get_service_address("HealthMonitor")
+        if not health_address:
+            # Fall back to configured port
+            health_address = f"tcp://localhost:{ZMQ_HEALTH_PORT}"
+            
         try:
-            self.health_socket.connect(f"tcp://localhost:{ZMQ_HEALTH_PORT}")
-            logger.info(f"Connected to health dashboard on port {ZMQ_HEALTH_PORT}")
+            self.health_socket.connect(health_address)
+            logger.info(f"Connected to health dashboard at {health_address}")
         except Exception as e:
             logger.warning(f"Could not connect to health dashboard: {e}")
         
-        # Setup TagaBERTa connection
+        # Setup TagaBERTa connection using service discovery
         self.tagabert_socket = None
-        try:
-            self.tagabert_socket = self.context.socket(zmq.REQ)
-            self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.tagabert_socket.connect(TAGABERT_SERVICE_URL)
-            logger.info(f"Connected to TagaBERTa service at {TAGABERT_SERVICE_URL}")
-            self.tagabert_available = True
-        except Exception as e:
-            logger.warning(f"Could not connect to TagaBERTa service: {e}")
-            self.tagabert_available = False
+        self.tagabert_available = False
+        self._connect_to_tagabert()
         
         # Optional fastText model
         self.fasttext_available = False
@@ -151,6 +185,56 @@ class StreamingLanguageAnalyzer(BaseAgent):
         self._health_thread = None
         
         logger.info("Language analyzer initialized successfully")
+        
+    def _register_service(self, port):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="StreamingLanguageAnalyzer",
+                port=port,
+                additional_info={
+                    "capabilities": ["language_detection", "sentiment_analysis", "streaming"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+            
+    def _connect_to_tagabert(self):
+        """Connect to TagaBERTa service using service discovery"""
+        try:
+            # Try to get the TagaBERTa address from service discovery
+            tagabert_address = get_service_address(TAGABERT_SERVICE_NAME)
+            
+            if tagabert_address:
+                self.tagabert_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.tagabert_socket = configure_secure_client(self.tagabert_socket)
+                    
+                self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+                self.tagabert_socket.connect(tagabert_address)
+                logger.info(f"Connected to TagaBERTa service at {tagabert_address}")
+                self.tagabert_available = True
+            else:
+                # Fall back to default port if service discovery fails
+                fallback_address = f"tcp://localhost:6010"
+                self.tagabert_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.tagabert_socket = configure_secure_client(self.tagabert_socket)
+                    
+                self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+                self.tagabert_socket.connect(fallback_address)
+                logger.info(f"Connected to TagaBERTa service at fallback address {fallback_address}")
+                self.tagabert_available = True
+        except Exception as e:
+            logger.warning(f"Could not connect to TagaBERTa service: {e}")
+            self.tagabert_available = False
 
     def _contains_potential_taglish_short_words(self, text):
         """
@@ -371,32 +455,48 @@ class StreamingLanguageAnalyzer(BaseAgent):
         logger.info("Language analyzer started successfully")
 
     def shutdown(self):
-        """Shutdown the language analyzer"""
-        if not self._running:
-            return
-            
+        """Gracefully shut down the language analyzer"""
+        logger.info("Shutting down language analyzer...")
         self._running = False
         
-        # Wait for threads to finish
-        if self._thread:
-            self._thread.join(timeout=5)
-        if self._health_thread:
-            self._health_thread.join(timeout=5)
+        # Wait for threads to complete
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+            logger.info("Processing thread joined")
             
-        # Cleanup sockets
+        if self._health_thread and self._health_thread.is_alive():
+            self._health_thread.join(timeout=2.0)
+            logger.info("Health thread joined")
+            
+        # Clean up resources
         self.cleanup()
-        
-        logger.info("Language analyzer shut down successfully")
+        logger.info("Language analyzer shutdown complete")
 
     def cleanup(self):
-        """Cleanup resources"""
+        """Clean up ZMQ resources to prevent leaks"""
+        logger.info("Cleaning up resources")
         try:
-            self.sub_socket.close()
-            self.pub_socket.close()
-            self.health_socket.close()
-            if self.tagabert_socket:
+            if hasattr(self, 'sub_socket') and self.sub_socket:
+                self.sub_socket.close()
+                logger.info("Closed subscription socket")
+                
+            if hasattr(self, 'pub_socket') and self.pub_socket:
+                self.pub_socket.close()
+                logger.info("Closed publisher socket")
+                
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.close()
+                logger.info("Closed health socket")
+                
+            if hasattr(self, 'tagabert_socket') and self.tagabert_socket:
                 self.tagabert_socket.close()
-            self.context.term()
+                logger.info("Closed TagaBERTa socket")
+                
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                logger.info("Terminated ZMQ context")
+                
+            logger.info("All resources cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 

@@ -46,9 +46,20 @@ except ModuleNotFoundError:
         return args
 _agent_args = parse_agent_args()
 
+# Import service discovery client
+try:
+    from utils.service_discovery_client import register_service
+except ImportError:
+    def register_service(*args, **kwargs):
+        logging.warning("Service discovery client not found; service registration disabled")
+        return None
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AudioCapture")
+
+# Check for secure ZMQ configuration
+SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
 
 # Configuration for wake word integration
 WAKE_WORD_ENABLED = False  # Set to False to disable wake word detection
@@ -161,6 +172,11 @@ class StreamingAudioCapture:
         self.last_energy_activation = 0
         self.activation_source = None
 
+        # Error tracking for error propagation
+        self.error_count = 0
+        self.last_error_time = 0
+        self.error_cooldown = 5  # seconds between error messages to avoid flooding
+
         logger.info(f"__init__ complete. Using: device_index={self.device_index}, sample_rate={self.sample_rate}, channels={self.channels}, chunk_samples={self.chunk_samples}, wake_word_enabled={self.wake_word_enabled}")
 
     def __enter__(self):
@@ -191,11 +207,36 @@ class StreamingAudioCapture:
                 self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
 
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    try:
+                        from src.network.secure_zmq import secure_server_socket, start_auth
+                        start_auth()
+                        self.pub_socket = secure_server_socket(self.pub_socket)
+                        self.health_socket = secure_server_socket(self.health_socket)
+                        logger.info("Applied secure ZMQ to publisher and health sockets")
+                    except Exception as e:
+                        logger.error(f"Failed to apply secure ZMQ: {e}")
+
                 self.pub_socket.bind(f"tcp://*:{self.pub_port}")
                 self.health_socket.bind(f"tcp://*:{self.health_port}")
 
                 logger.info(f"DEBUG_ZMQ_BIND_SUCCESS: ZMQ Publisher bound to tcp://*:{self.pub_port}")
                 logger.info(f"DEBUG_ZMQ_BIND_SUCCESS: ZMQ Health Check Responder bound to tcp://*:{self.health_port}")
+                
+                # Register with SystemDigitalTwin
+                try:
+                    register_service(
+                        name="StreamingAudioCapture",
+                        port=self.pub_port,
+                        additional_info={
+                            "health_port": self.health_port,
+                            "description": "Raw audio capture from microphone"
+                        }
+                    )
+                    logger.info("Registered with SystemDigitalTwin")
+                except Exception as e:
+                    logger.error(f"Failed to register with SystemDigitalTwin: {e}")
             except Exception as e_zmq:
                 logger.critical(f"CRITICAL ZMQ SETUP FAILED in __enter__: {e_zmq}", exc_info=True)
                 raise
@@ -269,42 +310,65 @@ class StreamingAudioCapture:
 
         except Exception as e_outer:
             logger.critical(f"CRITICAL EXCEPTION in __enter__ (outer try-block): {e_outer}", exc_info=True)
+            # Ensure cleanup if initialization fails
+            self._cleanup_resources()
             raise
+
+    def _cleanup_resources(self):
+        """Clean up all resources to prevent leaks"""
+        try:
+            if hasattr(self, 'stream') and self.stream:
+                try:
+                    self.stream.stop_stream()
+                    self.stream.close()
+                    logger.info("Audio stream closed during cleanup")
+                except Exception as e:
+                    logger.error(f"Error closing audio stream: {e}")
+
+            if hasattr(self, 'p') and self.p:
+                try:
+                    self.p.terminate()
+                    logger.info("PyAudio terminated during cleanup")
+                except Exception as e:
+                    logger.error(f"Error terminating PyAudio: {e}")
+
+            if hasattr(self, 'pub_socket') and self.pub_socket:
+                try:
+                    self.pub_socket.close()
+                    logger.info("Publisher socket closed during cleanup")
+                except Exception as e:
+                    logger.error(f"Error closing publisher socket: {e}")
+
+            if hasattr(self, 'health_socket') and self.health_socket:
+                try:
+                    self.health_socket.close()
+                    logger.info("Health socket closed during cleanup")
+                except Exception as e:
+                    logger.error(f"Error closing health socket: {e}")
+
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    logger.info("ZMQ context terminated during cleanup")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+
+            if hasattr(self, 'http_server') and self.http_server:
+                try:
+                    self.http_server.stop()
+                    logger.info("HTTP server stopped during cleanup")
+                except Exception as e:
+                    logger.error(f"Error stopping HTTP server: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Error during resource cleanup: {e}")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - cleanup resources"""
         logger.info("DEBUG_EXIT_CALLED: __exit__ method invoked.")
         self.running = False
 
-        try:
-            if self.stream:
-                self.stream.stop_stream()
-                self.stream.close()
-                logger.info("DEBUG_STREAM_CLOSED: Audio stream closed.")
-
-            if self.p:
-                self.p.terminate()
-                logger.info("DEBUG_PYAUDIO_TERMINATED: PyAudio terminated.")
-
-            if self.pub_socket:
-                self.pub_socket.close()
-                logger.info("DEBUG_PUB_SOCKET_CLOSED: ZMQ publisher socket closed.")
-
-            if self.health_socket:
-                self.health_socket.close()
-                logger.info("DEBUG_HEALTH_SOCKET_CLOSED: ZMQ health socket closed.")
-
-            if self.context:
-                self.context.term()
-                logger.info("DEBUG_ZMQ_CONTEXT_TERMINATED: ZMQ context terminated.")
-
-            if self.http_server:
-                self.http_server.stop()
-                logger.info("DEBUG_HTTP_SERVER_STOPPED: HTTP health check server stopped.")
-
-        except Exception as e:
-            logger.error(f"Error during cleanup in __exit__: {e}", exc_info=True)
-
+        self._cleanup_resources()
         logger.info("DEBUG_EXIT_COMPLETE: __exit__ completed.")
 
     def initialize_wake_word_detection(self):
@@ -596,13 +660,29 @@ class StreamingAudioCapture:
             logger.debug(f"DEBUG_CALLBACK: audio_callback entered. Status: {status}, Frame count: {frame_count}")
             if status:
                 logger.warning(f"Audio status: {status}")
+                # Handle PyAudio status flags
+                if status & pyaudio.paInputOverflow:
+                    logger.error("Input overflow detected - audio data may be lost")
+                    self._propagate_error("InputOverflowError", "Audio input buffer overflow detected")
+                if status & pyaudio.paOutputUnderflow:
+                    logger.warning("Output underflow detected")
 
             # Convert in_data (bytes) to numpy array
-            audio_data = np.frombuffer(in_data, dtype=np.float32)
+            try:
+                audio_data = np.frombuffer(in_data, dtype=np.float32)
+            except Exception as e:
+                logger.error(f"Error converting audio data: {e}")
+                self._propagate_error("AudioDataError", f"Failed to convert audio data: {e}")
+                return (None, pyaudio.paContinue)
 
             # Calculate audio levels
-            audio_level = np.max(np.abs(audio_data)) if len(audio_data) > 0 else 0.0
-            rms_level = np.sqrt(np.mean(audio_data ** 2)) if len(audio_data) > 0 else 0.0
+            try:
+                audio_level = np.max(np.abs(audio_data)) if len(audio_data) > 0 else 0.0
+                rms_level = np.sqrt(np.mean(audio_data ** 2)) if len(audio_data) > 0 else 0.0
+            except Exception as e:
+                logger.error(f"Error calculating audio levels: {e}")
+                self._propagate_error("AudioProcessingError", f"Failed to calculate audio levels: {e}")
+                return (None, pyaudio.paContinue)
 
             # Add noise filtering
             if audio_level < 0.01:
@@ -610,20 +690,32 @@ class StreamingAudioCapture:
 
             # Add audio to buffer for wake word detection (regardless of level)
             if self.wake_word_enabled:
-                if audio_level > 0.01:
-                    self.audio_buffer.extend(audio_data)
-                    if audio_level > 0.1 and not hasattr(self, '_last_level_log'):
-                        self._last_level_log = 0
-                    if audio_level > 0.1 and time.time() - getattr(self, '_last_level_log', 0) > 10:
-                        print(f"\n[AUDIO LEVEL] Peak: {audio_level:.5f}, RMS: {rms_level:.5f}")
-                        self._last_level_log = time.time()
+                try:
+                    if audio_level > 0.01:
+                        self.audio_buffer.extend(audio_data)
+                        if audio_level > 0.1 and not hasattr(self, '_last_level_log'):
+                            self._last_level_log = 0
+                        if audio_level > 0.1 and time.time() - getattr(self, '_last_level_log', 0) > 10:
+                            print(f"\n[AUDIO LEVEL] Peak: {audio_level:.5f}, RMS: {rms_level:.5f}")
+                            self._last_level_log = time.time()
+                except Exception as e:
+                    logger.error(f"Error adding audio to wake word buffer: {e}")
+                    # Non-critical error, continue processing
 
             # Check if system is active via wake word detection
-            is_active = self.check_wake_word()
+            try:
+                is_active = self.check_wake_word()
+            except Exception as e:
+                logger.error(f"Error checking wake word status: {e}")
+                is_active = False  # Default to inactive on error
 
             # If not active via wake word, try energy-based detection as fallback
             if not is_active and self.energy_fallback_enabled:
-                is_active = self.check_energy_levels(audio_data, audio_level, rms_level)
+                try:
+                    is_active = self.check_energy_levels(audio_data, audio_level, rms_level)
+                except Exception as e:
+                    logger.error(f"Error in energy-based detection: {e}")
+                    is_active = False  # Default to inactive on error
 
             # Skip processing if not activated through any method
             if not is_active:
@@ -647,11 +739,42 @@ class StreamingAudioCapture:
                 self.pub_socket.send(msg)
             except Exception as e:
                 logger.error(f"Error in audio callback (publishing): {e}")
+                self._propagate_error("CommunicationError", f"Failed to publish audio data: {e}")
 
             return (None, pyaudio.paContinue)
         except Exception as e:
-            logger.error(f"Exception in audio_callback: {e}")
+            logger.error(f"Exception in audio_callback: {e}", exc_info=True)
+            self._propagate_error("AudioCallbackError", f"Unhandled error in audio callback: {e}")
             return (None, pyaudio.paContinue)
+
+    def _propagate_error(self, error_type, message):
+        """Propagate error to downstream components via ZMQ"""
+        # Implement error rate limiting to avoid flooding
+        current_time = time.time()
+        if current_time - self.last_error_time < self.error_cooldown:
+            self.error_count += 1
+            return  # Skip sending too many errors
+        
+        try:
+            error_data = {
+                'error': True,
+                'error_type': error_type,
+                'message': message,
+                'timestamp': current_time,
+                'source': 'StreamingAudioCapture',
+                'suppressed_count': self.error_count
+            }
+            
+            # Reset error tracking
+            self.last_error_time = current_time
+            self.error_count = 0
+            
+            # Send error message
+            if hasattr(self, 'pub_socket') and self.pub_socket:
+                self.pub_socket.send(pickle.dumps(error_data))
+                logger.info(f"Propagated error to downstream components: {error_type}")
+        except Exception as e:
+            logger.error(f"Failed to propagate error: {e}")
 
     def run(self):
         """Main run loop for audio capture."""

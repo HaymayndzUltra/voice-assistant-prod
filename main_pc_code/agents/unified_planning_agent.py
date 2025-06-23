@@ -32,6 +32,9 @@ import threading
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service, register_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -53,16 +56,20 @@ logging.basicConfig(
 logger = logging.getLogger("UnifiedPlanningAgent")
 
 # Get ZMQ ports from config
-PLANNING_AGENT_PORT = config.get('zmq.planning_agent_port', 5601)
-MODEL_MANAGER_PORT = config.get('zmq.model_manager_port', 5556)
-AUTOGEN_FRAMEWORK_PORT = config.get('zmq.autogen_framework_port', 5600)
-HEALTH_CHECK_PORT = config.get('zmq.planning_health_check_port', 5602)
+PLANNING_AGENT_PORT = int(config.get('zmq.planning_agent_port', 5601))
+HEALTH_CHECK_PORT = int(config.get('zmq.planning_health_check_port', 5602))
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
 
 class UnifiedPlanningAgent(BaseAgent):
     """Unified agent for planning, execution, and code generation"""
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="UnifiedPlanningAgent")
-        self.port = port
+        self.port = port if port is not None else PLANNING_AGENT_PORT
         self.running = True
         self.initialization_status = {
             "is_initialized": False,
@@ -81,29 +88,43 @@ class UnifiedPlanningAgent(BaseAgent):
         self.receiver = self.context.socket(zmq.REP)
         self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.receiver.bind(f"tcp://127.0.0.1:{PLANNING_AGENT_PORT}")
-        logger.info(f"Unified Planning Agent bound to port {PLANNING_AGENT_PORT}")
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.receiver = configure_secure_server(self.receiver)
+            logger.info("Secure ZMQ enabled for UnifiedPlanningAgent")
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        self.receiver.bind(bind_address)
+        logger.info(f"Unified Planning Agent bound to {bind_address}")
+        
+        # Register with service discovery
+        self._register_service()
         
         # Health check socket
         self.health_check = self.context.socket(zmq.REP)
         self.health_check.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_check.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_check.bind(f"tcp://127.0.0.1:{HEALTH_CHECK_PORT}")
-        logger.info(f"Health check endpoint bound to port {HEALTH_CHECK_PORT}")
         
-        # Socket to communicate with task router (which replaced model manager)
-        self.task_router = self.context.socket(zmq.REQ)
-        self.task_router.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.task_router.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.task_router.connect(f"tcp://localhost:{_agent_args.task_router_port}")  # Task Router port
-        logger.info(f"Connected to Task Router on port {_agent_args.task_router_port}")
+        # Apply secure ZMQ if enabled for health check socket
+        if SECURE_ZMQ:
+            self.health_check = configure_secure_server(self.health_check)
+        
+        # Bind health check socket
+        health_bind_address = f"tcp://{BIND_ADDRESS}:{HEALTH_CHECK_PORT}"
+        self.health_check.bind(health_bind_address)
+        logger.info(f"Health check endpoint bound to {health_bind_address}")
+        
+        # Socket to communicate with task router
+        self.task_router = self._create_service_socket("TaskRouter")
+        if not self.task_router:
+            logger.error("Failed to connect to TaskRouter")
         
         # Socket to communicate with autogen framework
-        self.framework = self.context.socket(zmq.REQ)
-        self.framework.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.framework.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.framework.connect(f"tcp://localhost:{AUTOGEN_FRAMEWORK_PORT}")
-        logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
+        self.framework = self._create_service_socket("AutoGenFramework")
+        if not self.framework:
+            logger.error("Failed to connect to AutoGenFramework")
         
         # Setup temp directory for code execution
         self.temp_dir = Path(tempfile.gettempdir()) / "unified_planning_agent"
@@ -165,6 +186,62 @@ class UnifiedPlanningAgent(BaseAgent):
         self.health_check_thread.start()
         
         logger.info("Unified Planning Agent initialized")
+    
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="UnifiedPlanningAgent",
+                port=self.port,
+                additional_info={
+                    "health_check_port": HEALTH_CHECK_PORT,
+                    "capabilities": ["planning", "code_execution", "task_breakdown"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+    
+    def _create_service_socket(self, service_name):
+        """Create a socket connected to a service using service discovery"""
+        try:
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                socket = configure_secure_client(socket)
+            
+            # Get service address from service discovery
+            service_address = get_service_address(service_name)
+            if service_address:
+                socket.connect(service_address)
+                logger.info(f"Connected to {service_name} at {service_address}")
+                return socket
+            else:
+                # Fallback to default ports if service discovery fails
+                fallback_ports = {
+                    "TaskRouter": getattr(_agent_args, 'task_router_port', 5557),
+                    "AutoGenFramework": int(config.get('zmq.autogen_framework_port', 5600))
+                }
+                
+                fallback_port = fallback_ports.get(service_name)
+                if fallback_port:
+                    fallback_address = f"tcp://{BIND_ADDRESS}:{fallback_port}"
+                    socket.connect(fallback_address)
+                    logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
+                    return socket
+                else:
+                    logger.error(f"Failed to connect to {service_name}: No service discovery or fallback available")
+                    return None
+        except Exception as e:
+            logger.error(f"Error creating socket for {service_name}: {str(e)}")
+            return None
     
     def _perform_initialization(self):
         """Initialize agent components."""
@@ -759,28 +836,31 @@ Analyze this task and identify its requirements and complexity. Return your anal
     def run(self):
         """Run the unified planning agent"""
         try:
-            # Register with AutoGen framework
-            self.framework.send_string(json.dumps({
-                "request_type": "register_agent",
-                "agent_id": "unified_planning",
-                "endpoint": f"tcp://{_agent_args.host}:{PLANNING_AGENT_PORT}",
-                "capabilities": [
-                    "planning",
-                    "task_decomposition",
-                    "code_generation",
-                    "code_execution",
-                    "chain_of_thought"
-                ]
-            }))
-            
-            # Wait for response
-            response_str = self.framework.recv_string()
-            response = json.loads(response_str)
-            
-            if response["status"] != "success":
-                logger.error(f"Error registering with AutoGen framework: {response.get('error', 'Unknown error')}")
+            # Register with AutoGen framework using service discovery
+            if self.framework:
+                self.framework.send_string(json.dumps({
+                    "request_type": "register_agent",
+                    "agent_id": "unified_planning",
+                    "endpoint": f"tcp://{BIND_ADDRESS}:{self.port}",
+                    "capabilities": [
+                        "planning",
+                        "task_decomposition",
+                        "code_generation",
+                        "code_execution",
+                        "chain_of_thought"
+                    ]
+                }))
+                
+                # Wait for response
+                response_str = self.framework.recv_string()
+                response = json.loads(response_str)
+                
+                if response["status"] != "success":
+                    logger.error(f"Error registering with AutoGen framework: {response.get('error', 'Unknown error')}")
+                else:
+                    logger.info("Registered with AutoGen framework")
             else:
-                logger.info("Registered with AutoGen framework")
+                logger.warning("AutoGen framework connection not available, skipping registration")
             
             # Main request handling loop
             self.handle_requests()
@@ -795,27 +875,52 @@ Analyze this task and identify its requirements and complexity. Return your anal
     
     def cleanup(self):
         """Clean up resources"""
+        logger.info("Cleaning up resources...")
         self.running = False
         
         # Unregister from AutoGen framework
         try:
-            self.framework.send_string(json.dumps({
-                "request_type": "unregister_agent",
-                "agent_id": "unified_planning"
-            }))
+            if self.framework:
+                self.framework.send_string(json.dumps({
+                    "request_type": "unregister_agent",
+                    "agent_id": "unified_planning"
+                }))
+                
+                # Wait for response with timeout
+                try:
+                    response_str = self.framework.recv_string()
+                    logger.info("Successfully unregistered from AutoGen framework")
+                except zmq.Again:
+                    logger.warning("Timeout waiting for unregister response from AutoGen framework")
+        except Exception as e:
+            logger.error(f"Error unregistering from AutoGen framework: {e}")
+        
+        # Close sockets in a try-finally block to ensure they're all closed
+        try:
+            if hasattr(self, 'receiver'):
+                self.receiver.close()
+                logger.debug("Closed receiver socket")
             
-            # Wait for response
-            response_str = self.framework.recv_string()
-        except:
-            pass
+            if hasattr(self, 'health_check'):
+                self.health_check.close()
+                logger.debug("Closed health check socket")
+            
+            if hasattr(self, 'task_router') and self.task_router:
+                self.task_router.close()
+                logger.debug("Closed task router socket")
+            
+            if hasattr(self, 'framework') and self.framework:
+                self.framework.close()
+                logger.debug("Closed framework socket")
+        except Exception as e:
+            logger.error(f"Error during socket cleanup: {e}")
+        finally:
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                logger.debug("Terminated ZMQ context")
         
-        self.receiver.close()
-        self.health_check.close()
-        self.model_manager.close()
-        self.framework.close()
-        self.context.term()
-        
-        logger.info("Unified Planning Agent stopped")
+        logger.info("Unified Planning Agent stopped successfully")
 
 
 # Main entry point

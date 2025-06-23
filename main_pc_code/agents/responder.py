@@ -17,8 +17,9 @@ import logging
 import time
 import pickle
 from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from utils.service_discovery_client import discover_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
 _agent_args = parse_agent_args()
 
 # Get the directory of the current file for the log
@@ -84,6 +85,9 @@ except ImportError:
 # Settings
 ZMQ_RESPONDER_PORT = int(getattr(_agent_args, 'port', 5637))  # Updated to match config
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
@@ -151,6 +155,9 @@ logging.basicConfig(
 
 logger = logging.getLogger("ResponderAgent")
 
+# Get interrupt port from args or use default
+INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+
 class ResponderAgent(BaseAgent):
     def __init__(self, port: int = ZMQ_RESPONDER_PORT, voice: str = VOICE, **kwargs):
         super().__init__(port=port, name="ResponderAgent")
@@ -158,12 +165,32 @@ class ResponderAgent(BaseAgent):
         
         # Set up main socket for receiving TTS requests
         self.socket = self.context.socket(zmq.SUB)
-        # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
-            setup_curve_client(self.socket, server_mode=True)
-        self.socket.bind(f"tcp://*:{port}")
+            self.socket = configure_secure_server(self.socket)
+            
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{port}"
+        self.socket.bind(bind_address)
         self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        logger.info(f"Responder socket bound to port {port}")
+        logger.info(f"Responder socket bound to {bind_address}")
+        
+        # Interrupt SUB socket - use service discovery
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+        if SECURE_ZMQ:
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+            
+        # Try to get the interrupt handler address from service discovery
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+        if not interrupt_address:
+            # Fall back to configured port
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            
+        self.interrupt_socket.connect(interrupt_address)
+        self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+        logger.info(f"Connected to interrupt handler at {interrupt_address}")
+        
+        self.interrupt_flag = threading.Event()
+        self._start_interrupt_thread()
         
         # Connect to services using service discovery
         self._connect_to_services()
@@ -213,6 +240,11 @@ class ResponderAgent(BaseAgent):
         # User voice profiles - can be customized per user
         self.user_voice_profiles = {}
         
+        # Initialize TTS service connections as None
+        self.tts_socket = None
+        self.streaming_tts_socket = None
+        self.tts_connector_socket = None
+        
         logger.info("ResponderAgent initialized")
 
     def _connect_to_services(self):
@@ -222,91 +254,84 @@ class ResponderAgent(BaseAgent):
             face_service = discover_service("FaceRecognitionAgent")
             if face_service and face_service.get("status") == "SUCCESS":
                 face_info = face_service.get("payload", {})
-                face_host = face_info.get("host", "localhost")
+                face_host = face_info.get("ip", "localhost")
                 face_port = face_info.get("port", 5610)  # Default port
                 
                 self.face_socket = self.context.socket(zmq.SUB)
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
-                    setup_curve_client(self.face_socket)
-                self.face_socket.connect(f"tcp://{face_host}:{face_port}")
+                    self.face_socket = configure_secure_client(self.face_socket)
+                    
+                face_address = f"tcp://{face_host}:{face_port}"
+                self.face_socket.connect(face_address)
                 self.face_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-                logger.info(f"Connected to FaceRecognitionAgent at {face_host}:{face_port}")
+                logger.info(f"Connected to FaceRecognitionAgent at {face_address}")
                 self.health_status["connections"]["face_recognition"] = True
+                
+                # Start face recognition listener thread
+                self.face_thread = threading.Thread(target=self.face_recognition_listener, daemon=True)
+                self.face_thread.start()
             else:
-                logger.warning("Failed to discover FaceRecognitionAgent")
-                self.face_socket = None
-                
-            # Connect to StreamingTTSAgent
-            tts_service = discover_service("StreamingTTSAgent")
-            if tts_service and tts_service.get("status") == "SUCCESS":
-                tts_info = tts_service.get("payload", {})
-                tts_host = tts_info.get("host", "localhost")
-                tts_port = tts_info.get("port", 5562)  # Default port
-                
-                self.tts_socket = self.context.socket(zmq.REQ)
-                self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-                self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                # Apply secure ZMQ if enabled
-                if SECURE_ZMQ:
-                    setup_curve_client(self.tts_socket)
-                self.tts_socket.connect(f"tcp://{tts_host}:{tts_port}")
-                logger.info(f"Connected to StreamingTTSAgent at {tts_host}:{tts_port}")
-                self.health_status["connections"]["tts"] = True
-            else:
-                logger.warning("Failed to discover StreamingTTSAgent")
-                self.tts_socket = None
-                
-            # Connect to TTSCache
-            tts_cache_service = discover_service("TTSCache")
-            if tts_cache_service and tts_cache_service.get("status") == "SUCCESS":
-                tts_cache_info = tts_cache_service.get("payload", {})
-                tts_cache_host = tts_cache_info.get("host", "localhost")
-                tts_cache_port = tts_cache_info.get("port", 5628)  # Default port
-                
-                self.tts_cache_socket = self.context.socket(zmq.REQ)
-                self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-                self.tts_cache_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                # Apply secure ZMQ if enabled
-                if SECURE_ZMQ:
-                    setup_curve_client(self.tts_cache_socket)
-                self.tts_cache_socket.connect(f"tcp://{tts_cache_host}:{tts_cache_port}")
-                logger.info(f"Connected to TTSCache at {tts_cache_host}:{tts_cache_port}")
-                self.health_status["connections"]["tts_cache"] = True
-            else:
-                logger.warning("Failed to discover TTSCache")
-                self.tts_cache_socket = None
-                
-            # Connect to TTSConnector
-            tts_connector_service = discover_service("TTSConnector")
-            if tts_connector_service and tts_connector_service.get("status") == "SUCCESS":
-                tts_connector_info = tts_connector_service.get("payload", {})
-                tts_connector_host = tts_connector_info.get("host", "localhost")
-                tts_connector_port = tts_connector_info.get("port", 5582)  # Default port
-                
-                self.tts_connector_socket = self.context.socket(zmq.REQ)
-                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-                self.tts_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                # Apply secure ZMQ if enabled
-                if SECURE_ZMQ:
-                    setup_curve_client(self.tts_connector_socket)
-                self.tts_connector_socket.connect(f"tcp://{tts_connector_host}:{tts_connector_port}")
-                logger.info(f"Connected to TTSConnector at {tts_connector_host}:{tts_connector_port}")
-                self.health_status["connections"]["tts_connector"] = True
-            else:
-                logger.warning("Failed to discover TTSConnector")
-                self.tts_connector_socket = None
-                
+                logger.warning("FaceRecognitionAgent not found in service discovery")
+            
+            # Connect to TTS services
+            self._connect_to_tts_services()
+            
         except Exception as e:
             logger.error(f"Error connecting to services: {e}")
     
+    def _connect_to_tts_services(self):
+        """Connect to TTS-related services using service discovery"""
+        try:
+            # Connect to StreamingTtsAgent
+            streaming_tts_address = get_service_address("StreamingTtsAgent")
+            if streaming_tts_address:
+                self.streaming_tts_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.streaming_tts_socket = configure_secure_client(self.streaming_tts_socket)
+                self.streaming_tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.streaming_tts_socket.connect(streaming_tts_address)
+                logger.info(f"Connected to StreamingTtsAgent at {streaming_tts_address}")
+                self.health_status["connections"]["tts"] = True
+            else:
+                logger.warning("StreamingTtsAgent not found in service discovery")
+            
+            # Connect to TTSCache
+            tts_cache_address = get_service_address("TTSCache")
+            if tts_cache_address:
+                self.tts_cache_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.tts_cache_socket = configure_secure_client(self.tts_cache_socket)
+                self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_cache_socket.connect(tts_cache_address)
+                logger.info(f"Connected to TTSCache at {tts_cache_address}")
+                self.health_status["connections"]["tts_cache"] = True
+            else:
+                logger.warning("TTSCache not found in service discovery")
+            
+            # Connect to TTSConnector
+            tts_connector_address = get_service_address("TTSConnector")
+            if tts_connector_address:
+                self.tts_connector_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.tts_connector_socket = configure_secure_client(self.tts_connector_socket)
+                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_connector_socket.connect(tts_connector_address)
+                logger.info(f"Connected to TTSConnector at {tts_connector_address}")
+                self.health_status["connections"]["tts_connector"] = True
+            else:
+                logger.warning("TTSConnector not found in service discovery")
+                
+        except Exception as e:
+            logger.error(f"Error connecting to TTS services: {e}")
+
     def _refresh_service_connections(self):
-        """Periodically refresh service connections"""
+        """Periodically refresh service connections to handle changes"""
         while self.running:
-            time.sleep(60)  # Check every minute
             try:
+                time.sleep(300)  # Refresh every 5 minutes
+                logger.info("Refreshing service connections")
                 self._connect_to_services()
-                logger.info("Service connections refreshed")
             except Exception as e:
                 logger.error(f"Error refreshing service connections: {e}")
     
@@ -362,6 +387,57 @@ class ResponderAgent(BaseAgent):
             
             time.sleep(0.1)  # Small sleep to prevent CPU hogging
 
+    def _interrupt_listener(self):
+        """Listen for interrupt signals"""
+        logger.info("Starting interrupt listener")
+        while self.running:
+            try:
+                msg = self.interrupt_socket.recv(flags=zmq.NOBLOCK)
+                data = pickle.loads(msg)
+                if data.get('type') == 'interrupt':
+                    logger.info("Received interrupt signal")
+                    self.interrupt_flag.set()
+                    # Stop any ongoing TTS processing
+                    self._send_stop_to_tts_services()
+            except zmq.Again:
+                time.sleep(0.05)  # Small sleep to avoid tight loop
+            except Exception as e:
+                logger.error(f"Error in interrupt listener: {e}")
+                time.sleep(1)  # Longer sleep on error
+
+    def _send_stop_to_tts_services(self):
+        """Send stop command to all TTS services"""
+        stop_command = {"command": "stop"}
+        
+        # Try to stop StreamingTTSAgent
+        if self.streaming_tts_socket:
+            try:
+                self.streaming_tts_socket.send_json(stop_command, flags=zmq.NOBLOCK)
+                logger.info("Sent stop command to StreamingTTSAgent")
+            except Exception as e:
+                logger.error(f"Failed to send stop command to StreamingTTSAgent: {e}")
+                
+        # Try to stop TTSAgent
+        if self.tts_socket:
+            try:
+                self.tts_socket.send_json(stop_command, flags=zmq.NOBLOCK)
+                logger.info("Sent stop command to TTSAgent")
+            except Exception as e:
+                logger.error(f"Failed to send stop command to TTSAgent: {e}")
+                
+        # Try to stop TTSConnector
+        if self.tts_connector_socket:
+            try:
+                self.tts_connector_socket.send_json(stop_command, flags=zmq.NOBLOCK)
+                logger.info("Sent stop command to TTSConnector")
+            except Exception as e:
+                logger.error(f"Failed to send stop command to TTSConnector: {e}")
+
+    def _start_interrupt_thread(self):
+        """Start the interrupt listener thread"""
+        self.interrupt_thread = threading.Thread(target=self._interrupt_listener, daemon=True)
+        self.interrupt_thread.start()
+
     def process_message(self):
         """Process incoming messages with enhanced language handling"""
         try:
@@ -389,6 +465,12 @@ class ResponderAgent(BaseAgent):
             self.last_health_check = time.time()
             self.health_status = "OK"
                 
+            if self.interrupt_flag.is_set():
+                logger.info("Interrupt flag detected. Clearing audio queue.")
+                with self.audio_queue.mutex:
+                    self.audio_queue.queue.clear()
+                self.interrupt_flag.clear()
+                
             return True
             
         except zmq.Again:
@@ -404,102 +486,84 @@ class ResponderAgent(BaseAgent):
             return False
 
     def speak(self, text, emotion=None, language=None, user=None, face_emotion=None, original_language=None):
-        """
-        Enhanced speak method with improved emotion handling, user personalization,
-        visual feedback support, and language-specific voice selection.
-        """
-        logging.info(f"[Responder] Speaking to {user or 'unknown user'}: {text} (Text emotion: {emotion}, Face emotion: {face_emotion}, Language: {language}, Original language: {original_language})")
-        
+        """Generate speech from text using the appropriate TTS service"""
+        if not text:
+            logger.warning("Empty text provided to speak method, ignoring")
+            return False
+            
+        # Check for interrupt flag
+        if self.interrupt_flag.is_set():
+            logger.info("Interrupt flag is set, not speaking")
+            self.interrupt_flag.clear()
+            return False
+            
         try:
-            # Default parameters
-            speed = 1.0
-            pitch = 1.0
-            energy = 1.0
-            vibrato = 0.0
-            breathiness = 0.0
-            color = "#FFFFFF"  # Default color for visual feedback
-            
-            # Determine primary emotion to use (prioritize face emotion if available)
-            primary_emotion = face_emotion if face_emotion and face_emotion != "neutral" else emotion
-            if primary_emotion:
-                # Clean up emotion string to extract the base emotion
-                # Handle formats like "joy (0.85)" or "text: joy, face: neutral"
-                base_emotion = primary_emotion.lower()
-                for emotion_key in EMOTION_VOICE_PARAMS.keys():
-                    if emotion_key in base_emotion:
-                        params = EMOTION_VOICE_PARAMS[emotion_key]
-                        speed = params["speed"]
-                        pitch = params["pitch"]
-                        energy = params["energy"]
-                        vibrato = params.get("vibrato", 0.0)
-                        breathiness = params.get("breathiness", 0.0)
-                        color = params.get("color", "#FFFFFF")
-                        logging.debug(f"[Responder] Using voice parameters for emotion '{emotion_key}': {params}")
-                        break
-            
-            # Apply user-specific voice profile if available
-            if user and user in self.user_voice_profiles:
-                user_profile = self.user_voice_profiles[user]
-                # Adjust parameters based on user preferences
-                speed *= user_profile.get("speed_modifier", 1.0)
-                pitch *= user_profile.get("pitch_modifier", 1.0)
-                energy *= user_profile.get("energy_modifier", 1.0)
-                vibrato *= user_profile.get("vibrato_modifier", 1.0)
-                breathiness *= user_profile.get("breathiness_modifier", 1.0)
+            # Use service discovery to find the best available TTS service
+            if self.streaming_tts_socket:
+                # Prefer streaming TTS for real-time response
+                tts_request = {
+                    "text": text,
+                    "emotion": emotion,
+                    "language": language,
+                    "user": user
+                }
                 
-                # Use custom voice if specified
-                custom_voice = user_profile.get("voice")
-                if custom_voice:
-                    language = custom_voice
-            
-            # Select appropriate voice based on original language if not specified
-            if not language and original_language:
-                language = LANGUAGE_VOICES.get(original_language, self.voice)
-                logging.debug(f"[Responder] Selected {language} voice based on original language {original_language}")
-            
-            # Show visual feedback if enabled
-            if VISUAL_FEEDBACK_ENABLED:
-                self._show_visual_feedback(text, color, VISUAL_FEEDBACK_DURATION)
-            
-            # Generate speech with XTTS – ensure model is ready
-            if not getattr(self, "tts_ready", threading.Event()).is_set() or self.tts is None:
-                logging.warning("[Responder] TTS engine not ready; skipping audio generation.")
-                return
-            wav = self.tts.tts(
-                text=text,
-                speaker_wav=None,  # Could use user-specific reference audio in the future
-                language=language or self.voice)
-            
-            # Post-process: modify speed, pitch, energy, vibrato, and breathiness
-            wav_mod = self._modulate_audio(
-                wav, 
-                speed=speed, 
-                pitch=pitch, 
-                energy=energy,
-                vibrato=vibrato,
-                breathiness=breathiness
-            )
-            
-            # Play the audio
-            sd.play(wav_mod, samplerate=24000)
-            sd.wait()
-            
-            # Record this interaction
-            self.last_text = text
-            self.last_emotion = emotion
-            self.last_language = language
-            self.last_user = user
+                # Send request to streaming TTS
+                logger.info(f"Sending to StreamingTTSAgent: '{text[:50]}...' with emotion {emotion}")
+                self.streaming_tts_socket.send_json(tts_request)
+                
+                # Set up poller for timeout
+                poller = zmq.Poller()
+                poller.register(self.streaming_tts_socket, zmq.POLLIN)
+                
+                # Wait for response with timeout
+                if poller.poll(ZMQ_REQUEST_TIMEOUT):
+                    response = self.streaming_tts_socket.recv_json()
+                    if response.get("status") == "success":
+                        logger.info("StreamingTTSAgent successfully processed request")
+                        return True
+                    else:
+                        logger.warning(f"StreamingTTSAgent error: {response.get('message', 'Unknown error')}")
+                else:
+                    logger.error("Timeout waiting for StreamingTTSAgent response")
+                    
+                # If we get here, streaming TTS failed, try fallback
+                
+            # Try regular TTS agent as fallback
+            if self.tts_socket:
+                tts_request = {
+                    "text": text,
+                    "emotion": emotion,
+                    "language": language,
+                    "user": user
+                }
+                
+                logger.info(f"Falling back to TTSAgent: '{text[:50]}...'")
+                self.tts_socket.send_json(tts_request)
+                
+                # Set up poller for timeout
+                poller = zmq.Poller()
+                poller.register(self.tts_socket, zmq.POLLIN)
+                
+                # Wait for response with timeout
+                if poller.poll(ZMQ_REQUEST_TIMEOUT):
+                    response = self.tts_socket.recv_json()
+                    if response.get("status") == "success":
+                        logger.info("TTSAgent successfully processed request")
+                        return True
+                    else:
+                        logger.warning(f"TTSAgent error: {response.get('message', 'Unknown error')}")
+                else:
+                    logger.error("Timeout waiting for TTSAgent response")
+                    
+            # If all TTS services fail, log the text as last resort
+            logger.warning(f"All TTS services failed. Text was: {text}")
+            return False
             
         except Exception as e:
-            logging.error(f"[Responder] TTS error: {e} -- Falling back to Coqui TTS.")
-            try:
-                from agents.coqui_fallback import coqui_speak
-                coqui_success = coqui_speak(text, language=language or self.voice)
-                if not coqui_success:
-                    logging.error("[Responder] Coqui TTS fallback also failed.")
-            except Exception as e2:
-                logging.error(f"[Responder] Coqui TTS fallback import/use error: {e2}")
-                
+            logger.error(f"Error in speak method: {e}")
+            return False
+
     def _show_visual_feedback(self, text, color, duration):
         """
         Display visual feedback for the spoken text using a transient Tk window.
@@ -620,44 +684,38 @@ class ResponderAgent(BaseAgent):
         return True
 
     def stop(self):
-        """Stop the agent and clean up resources."""
-        if not self.running:
-            return
-        logger.info("Stopping ResponderAgent...")
+        """Stop the agent and clean up resources"""
+        logger.info("Stopping ResponderAgent")
         self.running = False
         
-        try:
-            # Close all sockets properly
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close(0)
-                
-            if hasattr(self, 'face_socket') and self.face_socket:
-                self.face_socket.close(0)
-                
-            if hasattr(self, 'tts_socket') and self.tts_socket:
-                self.tts_socket.close(0)
-                
-            if hasattr(self, 'tts_cache_socket') and self.tts_cache_socket:
-                self.tts_cache_socket.close(0)
-                
-            if hasattr(self, 'tts_connector_socket') and self.tts_connector_socket:
-                self.tts_connector_socket.close(0)
-            
-            # Finally terminate the context
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
-            logger.info("ResponderAgent stopped and resources cleaned up")
-        except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
-            # Even if there's an error, try to terminate the context
+        # Send stop command to TTS services
+        self._send_stop_to_tts_services()
+        
+        # Close all sockets
+        sockets_to_close = [
+            'socket', 'interrupt_socket', 'face_socket', 
+            'streaming_tts_socket', 'tts_socket', 'tts_connector_socket'
+        ]
+        
+        for socket_name in sockets_to_close:
+            if hasattr(self, socket_name):
+                socket = getattr(self, socket_name)
+                if socket:
+                    try:
+                        socket.close()
+                        logger.info(f"Closed {socket_name}")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
+        
+        # Terminate ZMQ context
+        if self.context:
             try:
-                if hasattr(self, 'context') and self.context:
-                    self.context.term()
-            except Exception as term_error:
-                logger.error(f"Error terminating ZMQ context: {str(term_error)}")
-        finally:
-            logger.info("ResponderAgent stopped")
+                self.context.term()
+                logger.info("Terminated ZMQ context")
+            except Exception as e:
+                logger.error(f"Error terminating ZMQ context: {e}")
+        
+        logger.info("ResponderAgent stopped")
 
     def hot_reload_watcher(self):
         last_voice = self.voice

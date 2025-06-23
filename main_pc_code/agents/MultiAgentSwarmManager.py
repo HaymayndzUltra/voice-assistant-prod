@@ -11,6 +11,10 @@ from queue import Queue
 import asyncio
 import traceback
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service, register_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -25,9 +29,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ZMQ Configuration
-SWARM_MANAGER_PORT = 5645  # Main port for SwarmManager
-COORDINATOR_PORT = 5590    # CoordinatorAgent for LLM access
-AUTOGEN_FRAMEWORK_PORT = 5650  # AutoGen Framework for agent communication
+SWARM_MANAGER_PORT = int(getattr(_agent_args, 'port', 5645))  # Main port for SwarmManager
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
 
 class SwarmTask:
     def __init__(self, task_id: str, goal: str, priority: int):
@@ -81,34 +90,43 @@ class MultiAgentSwarmManager(BaseAgent):
     def __init__(self, port: Optional[int] = None, **kwargs):
         """Initialize the Multi-Agent Swarm Manager."""
         self.port = port if port is not None else SWARM_MANAGER_PORT
-        super().__init__(port=self.port, name="Multiagentswarmmanager")
+        super().__init__(port=self.port, name="MultiAgentSwarmManager")
         self.context = zmq.Context()
         
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{self.port}")
-        logger.info(f"MultiAgentSwarmManager bound to port {self.port}")
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.socket = configure_secure_server(self.socket)
+            logger.info("Secure ZMQ enabled for MultiAgentSwarmManager")
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        self.socket.bind(bind_address)
+        logger.info(f"MultiAgentSwarmManager bound to {bind_address}")
+        
+        # Register with service discovery
+        self._register_service()
         
         # REQ socket for CoordinatorAgent (LLM access)
-        self.coordinator_socket = self.context.socket(zmq.REQ)
-        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.coordinator_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{COORDINATOR_PORT}")
-        logger.info(f"Connected to CoordinatorAgent on port {COORDINATOR_PORT}")
+        self.coordinator_socket = self._create_service_socket("CoordinatorAgent")
+        if not self.coordinator_socket:
+            logger.error("Failed to connect to CoordinatorAgent")
         
         # REQ socket for AutoGen Framework
-        self.autogen_socket = self.context.socket(zmq.REQ)
-        self.autogen_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.autogen_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.autogen_socket.connect(f"tcp://{_agent_args.get('host', 'localhost')}:{AUTOGEN_FRAMEWORK_PORT}")
-        logger.info(f"Connected to AutoGen Framework on port {AUTOGEN_FRAMEWORK_PORT}")
+        self.autogen_socket = self._create_service_socket("AutoGenFramework")
+        if not self.autogen_socket:
+            logger.error("Failed to connect to AutoGenFramework")
         
         # Poller for non-blocking socket operations
         self.poller = zmq.Poller()
-        self.poller.register(self.coordinator_socket, zmq.POLLIN)
-        self.poller.register(self.autogen_socket, zmq.POLLIN)
+        if self.coordinator_socket:
+            self.poller.register(self.coordinator_socket, zmq.POLLIN)
+        if self.autogen_socket:
+            self.poller.register(self.autogen_socket, zmq.POLLIN)
         
         # Task management
         self.tasks = {}  # task_id -> SwarmTask
@@ -133,10 +151,70 @@ class MultiAgentSwarmManager(BaseAgent):
         
         logger.info("Multi-Agent Swarm Manager initialized")
     
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="MultiAgentSwarmManager",
+                port=self.port,
+                additional_info={
+                    "capabilities": ["swarm_management", "task_orchestration", "agent_coordination"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+    
+    def _create_service_socket(self, service_name):
+        """Create a socket connected to a service using service discovery"""
+        try:
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                socket = configure_secure_client(socket)
+            
+            # Get service address from service discovery
+            service_address = get_service_address(service_name)
+            if service_address:
+                socket.connect(service_address)
+                logger.info(f"Connected to {service_name} at {service_address}")
+                return socket
+            else:
+                # Fallback to default ports if service discovery fails
+                fallback_ports = {
+                    "CoordinatorAgent": 5590,
+                    "AutoGenFramework": 5650
+                }
+                
+                fallback_port = fallback_ports.get(service_name)
+                if fallback_port:
+                    fallback_address = f"tcp://{BIND_ADDRESS}:{fallback_port}"
+                    socket.connect(fallback_address)
+                    logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
+                    return socket
+                else:
+                    logger.error(f"Failed to connect to {service_name}: No service discovery or fallback available")
+                    return None
+        except Exception as e:
+            logger.error(f"Error creating socket for {service_name}: {str(e)}")
+            return None
+    
     def _discover_agents(self):
         """Periodically discover available agents from AutoGen Framework."""
         while True:
             try:
+                if not self.autogen_socket:
+                    logger.warning("AutoGen socket not available, skipping agent discovery")
+                    time.sleep(60)
+                    continue
+                    
                 # Request agent list from AutoGen Framework
                 self.autogen_socket.send_json({
                     "action": "get_agents"
@@ -271,9 +349,6 @@ class MultiAgentSwarmManager(BaseAgent):
                     
                     # Extract JSON array from the result
                     import re
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                     json_match = re.search(r'\[.*\]', result, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
@@ -638,11 +713,58 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
     def stop(self):
         """Stop the swarm manager and clean up resources."""
         logger.info("Stopping Multi-Agent Swarm Manager")
-        self.socket.close()
-        self.coordinator_socket.close()
-        self.autogen_socket.close()
-        self.context.term()
-        logger.info("Multi-Agent Swarm Manager stopped")
+        
+        # Stop threads
+        try:
+            # Join threads with timeout to avoid hanging
+            if hasattr(self, 'processor_thread') and self.processor_thread.is_alive():
+                self.processor_thread.join(timeout=2.0)
+                if self.processor_thread.is_alive():
+                    logger.warning("Processor thread did not terminate gracefully")
+            
+            if hasattr(self, 'discovery_thread') and self.discovery_thread.is_alive():
+                self.discovery_thread.join(timeout=2.0)
+                if self.discovery_thread.is_alive():
+                    logger.warning("Discovery thread did not terminate gracefully")
+        except Exception as e:
+            logger.error(f"Error stopping threads: {e}")
+        
+        # Close sockets in a try-finally block to ensure they're all closed
+        try:
+            if hasattr(self, 'socket'):
+                self.socket.close()
+                logger.debug("Closed main socket")
+            
+            if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
+                self.coordinator_socket.close()
+                logger.debug("Closed coordinator socket")
+            
+            if hasattr(self, 'autogen_socket') and self.autogen_socket:
+                self.autogen_socket.close()
+                logger.debug("Closed autogen socket")
+            
+            if hasattr(self, 'poller'):
+                # Unregister sockets from poller
+                if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
+                    try:
+                        self.poller.unregister(self.coordinator_socket)
+                    except:
+                        pass
+                
+                if hasattr(self, 'autogen_socket') and self.autogen_socket:
+                    try:
+                        self.poller.unregister(self.autogen_socket)
+                    except:
+                        pass
+        except Exception as e:
+            logger.error(f"Error during socket cleanup: {e}")
+        finally:
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                logger.debug("Terminated ZMQ context")
+        
+        logger.info("Multi-Agent Swarm Manager stopped successfully")
 
 if __name__ == '__main__':
     manager = MultiAgentSwarmManager()

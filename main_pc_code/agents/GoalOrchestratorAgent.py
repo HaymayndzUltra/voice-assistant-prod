@@ -16,6 +16,9 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from threading import Thread
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service, register_service, get_service_address
+from utils.env_loader import get_env
+from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -34,6 +37,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
+
 class GoalOrchestratorAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         """Initialize the GoalOrchestratorAgent with ZMQ sockets."""
@@ -42,25 +51,32 @@ class GoalOrchestratorAgent(BaseAgent):
         if self.port is None:
             raise ValueError("Port must be provided either through constructor or command line arguments")
             
-        super().__init__(port=self.port, name="Goalorchestratoragent")
+        super().__init__(port=self.port, name="GoalOrchestratorAgent")
         
-        # BaseAgent has already created and bound the main REP socket (self.socket)
-        # Reuse the existing ZMQ context from BaseAgent
-        self.context = self.context  # clarity: context inherited from BaseAgent
-
-        # Note: Removed redundant socket binding logic to avoid double-binding conflicts.
+        # Initialize ZMQ context
+        self.context = zmq.Context()
         
-        # REQ socket for UnifiedPlanningAgent
-        self.planning_socket = self.context.socket(zmq.REQ)
-        self.planning_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.planning_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.planning_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5625")  # UnifiedPlanningAgent
+        # Main REP socket for handling requests
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
-        # REQ socket for PerformanceLoggerAgent
-        self.performance_socket = self.context.socket(zmq.REQ)
-        self.performance_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.performance_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.performance_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5632")  # PerformanceLoggerAgent
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.socket = configure_secure_server(self.socket)
+            logger.info("Secure ZMQ enabled for GoalOrchestratorAgent")
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        self.socket.bind(bind_address)
+        logger.info(f"GoalOrchestratorAgent socket bound to {bind_address}")
+        
+        # Register with service discovery
+        self._register_service()
+        
+        # Connect to required services using service discovery
+        self.planning_socket = self._create_service_socket("UnifiedPlanningAgent")
+        self.performance_socket = self._create_service_socket("PerformanceLoggerAgent")
         
         # Store active goals and their tasks
         self.active_goals = {}
@@ -73,9 +89,68 @@ class GoalOrchestratorAgent(BaseAgent):
         
         logger.info(f"GoalOrchestratorAgent initialized on port {self.port}")
     
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="GoalOrchestratorAgent",
+                port=self.port,
+                additional_info={
+                    "capabilities": ["goal_management", "task_orchestration"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+    
+    def _create_service_socket(self, service_name):
+        """Create a socket connected to a service using service discovery"""
+        try:
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                socket = configure_secure_client(socket)
+            
+            # Get service address from service discovery
+            service_address = get_service_address(service_name)
+            if service_address:
+                socket.connect(service_address)
+                logger.info(f"Connected to {service_name} at {service_address}")
+                return socket
+            else:
+                # Fallback to default ports if service discovery fails
+                fallback_ports = {
+                    "UnifiedPlanningAgent": 5625,
+                    "PerformanceLoggerAgent": 5632
+                }
+                
+                fallback_port = fallback_ports.get(service_name)
+                if fallback_port:
+                    fallback_address = f"tcp://localhost:{fallback_port}"
+                    socket.connect(fallback_address)
+                    logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
+                    return socket
+                else:
+                    logger.error(f"Failed to connect to {service_name}: No service discovery or fallback available")
+                    return None
+        except Exception as e:
+            logger.error(f"Error creating socket for {service_name}: {str(e)}")
+            return None
+    
     def _log_performance(self, action: str, duration: float, metadata: Dict[str, Any] = None):
         """Log performance metrics to PerformanceLoggerAgent."""
         try:
+            if not self.performance_socket:
+                logger.warning("Performance socket not available, skipping performance logging")
+                return
+                
             self.performance_socket.send_json({
                 'action': 'log_metric',
                 'agent': 'GoalOrchestratorAgent',
@@ -93,6 +168,10 @@ class GoalOrchestratorAgent(BaseAgent):
     def _break_down_goal(self, goal: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Request task breakdown from UnifiedPlanningAgent."""
         try:
+            if not self.planning_socket:
+                logger.error("Planning socket not available, cannot break down goal")
+                return []
+                
             start_time = time.time()
             
             self.planning_socket.send_json({
@@ -315,13 +394,37 @@ class GoalOrchestratorAgent(BaseAgent):
     
     def stop(self):
         """Stop the agent and clean up resources."""
+        logger.info("Stopping GoalOrchestratorAgent...")
         self.running = False
-        self.monitor_thread.join()
         
-        self.socket.close()
-        self.planning_socket.close()
-        self.performance_socket.close()
-        self.context.term()
+        # Join the monitor thread with timeout to avoid hanging
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=2.0)
+            if self.monitor_thread.is_alive():
+                logger.warning("Monitor thread did not terminate gracefully")
+        
+        # Close sockets in a try-finally block to ensure they're all closed
+        try:
+            if hasattr(self, 'socket'):
+                self.socket.close()
+                logger.debug("Closed main socket")
+            
+            if hasattr(self, 'planning_socket') and self.planning_socket:
+                self.planning_socket.close()
+                logger.debug("Closed planning socket")
+            
+            if hasattr(self, 'performance_socket') and self.performance_socket:
+                self.performance_socket.close()
+                logger.debug("Closed performance socket")
+        except Exception as e:
+            logger.error(f"Error during socket cleanup: {e}")
+        finally:
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                logger.debug("Terminated ZMQ context")
+        
+        logger.info("GoalOrchestratorAgent stopped successfully")
 
 if __name__ == '__main__':
     agent = GoalOrchestratorAgent(port=getattr(args, 'port', 7000))

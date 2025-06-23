@@ -14,7 +14,10 @@ import torch
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service, register_service, get_service_address
+from utils.env_loader import get_env
 from config.agent_ports import default_ports
+from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 import threading
 _agent_args = parse_agent_args()
 
@@ -28,6 +31,15 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
 
 class MetaCognitionAgent(BaseAgent):
     def __init__(self, port: Optional[int] = None, **kwargs):
@@ -66,16 +78,48 @@ class MetaCognitionAgent(BaseAgent):
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{self.port}")
         
-        # SUB sockets for observing other agents
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.socket = configure_secure_server(self.socket)
+            logger.info("Secure ZMQ enabled for MetaCognitionAgent")
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        self.socket.bind(bind_address)
+        logger.info(f"MetaCognitionAgent socket bound to {bind_address}")
+        
+        # Register with service discovery
+        self._register_service()
+        
+        # SUB sockets for observing other agents - use service discovery
         self.cot_sub = self.context.socket(zmq.SUB)
-        self.cot_sub.connect(f"tcp://localhost:{default_ports.chain_of_thought_port}")  # ChainOfThoughtAgent
+        cot_address = get_service_address("ChainOfThoughtAgent")
+        if not cot_address:
+            cot_address = f"tcp://localhost:{default_ports.chain_of_thought_port}"  # Fallback
+            logger.warning(f"Could not discover ChainOfThoughtAgent, using fallback address: {cot_address}")
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.cot_sub = configure_secure_client(self.cot_sub)
+        
+        self.cot_sub.connect(cot_address)
         self.cot_sub.setsockopt_string(zmq.SUBSCRIBE, "reasoning")
+        logger.info(f"Connected to ChainOfThoughtAgent at {cot_address}")
         
         self.voting_sub = self.context.socket(zmq.SUB)
-        self.voting_sub.connect(f"tcp://localhost:{default_ports.voting_port}")  # ModelVotingManager
+        voting_address = get_service_address("ModelVotingManager")
+        if not voting_address:
+            voting_address = f"tcp://localhost:{default_ports.voting_port}"  # Fallback
+            logger.warning(f"Could not discover ModelVotingManager, using fallback address: {voting_address}")
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            self.voting_sub = configure_secure_client(self.voting_sub)
+        
+        self.voting_sub.connect(voting_address)
         self.voting_sub.setsockopt_string(zmq.SUBSCRIBE, "voting")
+        logger.info(f"Connected to ModelVotingManager at {voting_address}")
         
         # Initialize database
         self.db_path = "meta_cognition.db"
@@ -84,16 +128,9 @@ class MetaCognitionAgent(BaseAgent):
         # Start observation threads
         self.observation_threads = []
         
-        # Connect to KnowledgeBase and CoordinatorAgent
-        self.kb_socket = self.context.socket(zmq.REQ)
-        self.kb_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.kb_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.kb_socket.connect(f"tcp://localhost:{default_ports.knowledge_base_port}")  # KnowledgeBase port
-        
-        self.coordinator_socket = self.context.socket(zmq.REQ)
-        self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.coordinator_socket.connect(f"tcp://localhost:{default_ports.coordinator_port}")  # CoordinatorAgent port
+        # Connect to KnowledgeBase and CoordinatorAgent using service discovery
+        self.kb_socket = self._create_service_socket("KnowledgeBase")
+        self.coordinator_socket = self._create_service_socket("CoordinatorAgent")
         
         # Initialize learning analysis components
         self.learning_metrics = defaultdict(list)
@@ -126,6 +163,54 @@ class MetaCognitionAgent(BaseAgent):
         }
         
         logger.info(f"Enhanced MetaCognitionAgent initialized on port {self.port}")
+    
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="MetaCognitionAgent",
+                port=self.port,
+                additional_info={
+                    "capabilities": ["meta_cognition", "learning_analysis", "memory_optimization", "system_monitoring"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+    
+    def _create_service_socket(self, service_name):
+        """Create a socket connected to a service using service discovery"""
+        try:
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                socket = configure_secure_client(socket)
+            
+            # Get service address from service discovery
+            service_address = get_service_address(service_name)
+            if service_address:
+                socket.connect(service_address)
+                logger.info(f"Connected to {service_name} at {service_address}")
+            else:
+                # Fallback to default port if service discovery fails
+                fallback_port = getattr(default_ports, f"{service_name.lower()}_port", None)
+                if fallback_port:
+                    fallback_address = f"tcp://localhost:{fallback_port}"
+                    socket.connect(fallback_address)
+                    logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
+                else:
+                    logger.error(f"Failed to connect to {service_name}: No service discovery or fallback available")
+            return socket
+        except Exception as e:
+            logger.error(f"Error creating socket for {service_name}: {str(e)}")
+            return None
 
     def _init_database(self):
         """Initialize SQLite database with enhanced tables."""
@@ -351,9 +436,6 @@ class MetaCognitionAgent(BaseAgent):
         
         # Clear unused variables
         import gc
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         gc.collect()
 
     def _calculate_response_time(self) -> float:
@@ -545,20 +627,43 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
     def stop(self):
         """Stop the MetaCognitionAgent gracefully."""
+        logger.info("Stopping MetaCognitionAgent...")
         self.running = False
         
         # Stop all threads
         for thread in self.observation_threads:
-            thread.join()
+            thread.join(timeout=2.0)  # Add timeout to avoid hanging
         
-        # Close sockets
-        self.socket.close()
-        self.cot_sub.close()
-        self.voting_sub.close()
-        self.kb_socket.close()
-        self.coordinator_socket.close()
+        # Close sockets in a try-finally block to ensure they're all closed
+        try:
+            if hasattr(self, 'socket'):
+                self.socket.close()
+                logger.debug("Closed main socket")
+            
+            if hasattr(self, 'cot_sub'):
+                self.cot_sub.close()
+                logger.debug("Closed CoT subscription socket")
+            
+            if hasattr(self, 'voting_sub'):
+                self.voting_sub.close()
+                logger.debug("Closed voting subscription socket")
+            
+            if hasattr(self, 'kb_socket'):
+                self.kb_socket.close()
+                logger.debug("Closed knowledge base socket")
+            
+            if hasattr(self, 'coordinator_socket'):
+                self.coordinator_socket.close()
+                logger.debug("Closed coordinator socket")
+        except Exception as e:
+            logger.error(f"Error during socket cleanup: {e}")
+        finally:
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                logger.debug("Terminated ZMQ context")
         
-        logger.info("MetaCognitionAgent stopped")
+        logger.info("MetaCognitionAgent stopped successfully")
 
     def _observe_chain_of_thought(self):
         """Observe and log reasoning steps from ChainOfThoughtAgent."""

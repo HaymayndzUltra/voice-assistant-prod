@@ -27,8 +27,13 @@ if str(project_root) not in sys.path:
 # Import config parser utility with fallback
 try:
     from agents.utils.config_parser import parse_agent_args
+    from utils.service_discovery_client import discover_service, register_service, get_service_address
+    from utils.env_loader import get_env
+    from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
     _agent_args = parse_agent_args()
 except ImportError:
+    logger = logging.getLogger("SystemDigitalTwinAgent")
+    logger.error("Failed to import required modules. Falling back to defaults.")
     class DummyArgs:
         host = '0.0.0.0'  # Use 0.0.0.0 to allow external connections
     _agent_args = DummyArgs()
@@ -47,7 +52,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
-# Port configuration will be supplied by the startup_config.yaml
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Default configuration
 DEFAULT_CONFIG = {
@@ -83,37 +92,36 @@ class SystemDigitalTwin:
         # Use parameter port first, then config, then fall back to default
         self.main_port = port if port is not None else self.config.get('port', 7120)
         self.health_port = self.config.get('health_check_port', 8100)
-        self.host = getattr(_agent_args, 'host', '0.0.0.0')  # Get host from args or use 0.0.0.0
         logger.info(f"Initializing with ZMQ port {self.main_port} and Health port {self.health_port} from configuration.")
         
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
         # Check if secure ZMQ is enabled
-        secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+        secure_zmq = is_secure_zmq_enabled()
         if secure_zmq:
             try:
-                # Import secure ZMQ modules and start the authenticator
-                from main_pc_code.src.network.secure_zmq import configure_secure_server, start_auth
-                
                 # First ensure the authenticator is running
                 start_auth()
                 
                 # Then configure the socket
                 self.socket = configure_secure_server(self.socket)
                 logger.info("Secure ZMQ configured successfully")
-            except ImportError:
-                logger.warning("Secure ZMQ module not found, continuing with standard ZMQ")
-                secure_zmq = False
             except Exception as e:
                 logger.error(f"Failed to configure secure ZMQ: {e}, continuing with standard ZMQ")
                 secure_zmq = False
         
-        socket_address = f"tcp://{self.host}:{self.main_port}"
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        socket_address = f"tcp://{BIND_ADDRESS}:{self.main_port}"
         logger.info(f"Attempting to bind to {socket_address}")
         self.socket.bind(socket_address)
         logger.info(f"Successfully bound to {socket_address}")
+        
+        # Register with service discovery
+        self._register_service()
         
         # Save secure ZMQ flag for future reference
         self.secure_zmq_enabled = secure_zmq
@@ -169,6 +177,25 @@ class SystemDigitalTwin:
         
         logger.info(f"SystemDigitalTwin initialized on port {self.main_port}" + 
                    f" with {'secure' if secure_zmq else 'standard'} ZMQ")
+    
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="SystemDigitalTwin",
+                port=self.main_port,
+                additional_info={
+                    "health_check_port": self.health_port,
+                    "capabilities": ["system_monitoring", "resource_management", "predictive_analytics"],
+                    "status": "running"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
         
     def _register_agent(self, agent_name: str, location: str, status: str, timestamp: str) -> None:
         """
@@ -729,13 +756,30 @@ class SystemDigitalTwin:
         """Clean up resources before shutdown."""
         logger.info("Cleaning up SystemDigitalTwin resources...")
         self.running = False
-        if hasattr(self, 'metrics_thread'):
-            self.metrics_thread.join(timeout=5)
-        if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
-        logger.info("Cleanup complete")
+        
+        # Stop threads
+        try:
+            if hasattr(self, 'metrics_thread') and self.metrics_thread.is_alive():
+                self.metrics_thread.join(timeout=2.0)
+                if self.metrics_thread.is_alive():
+                    logger.warning("Metrics thread did not terminate gracefully")
+        except Exception as e:
+            logger.error(f"Error stopping threads: {e}")
+        
+        # Close sockets in a try-finally block to ensure they're all closed
+        try:
+            if hasattr(self, 'socket'):
+                self.socket.close()
+                logger.debug("Closed main socket")
+        except Exception as e:
+            logger.error(f"Error during socket cleanup: {e}")
+        finally:
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                logger.debug("Terminated ZMQ context")
+        
+        logger.info("SystemDigitalTwin cleanup complete")
     
     def stop(self):
         """Stop the agent gracefully."""

@@ -26,6 +26,10 @@ import hashlib
 import tempfile
 import re
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import register_service, get_service_address
+from utils.env_loader import get_env
+import pickle
+from src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse CLI arguments once
 _agent_args = parse_agent_args()
@@ -57,7 +61,9 @@ if os.path.exists(xtts_path):
 # ZMQ Configuration
 TTS_PORT = int(getattr(_agent_args, 'port', 5562))  # Unified TTS port
 UNIFIED_SYSTEM_PORT = int(getattr(_agent_args, 'unifiedsystemagent_port', 5569))  # Port for UnifiedSystemAgent health monitoring
-UNIFIED_SYSTEM_HOST = getattr(_agent_args, 'unifiedsystemagent_host', 'localhost')
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 # Audio playback settings
 SAMPLE_RATE = 24000  # Default for TTS output
@@ -65,12 +71,14 @@ CHANNELS = 1
 BUFFER_SIZE = 1024
 MAX_CACHE_SIZE = 50  # Maximum number of cached audio samples
 
+INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+
 class UltimateTTSAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="StreamingTtsAgent")
         """Initialize the Ultimate TTS agent with 4-tier fallback system"""
         logger.info("Initializing Ultimate TTS Agent")
-        self.language = language
+        self.language = kwargs.get('language', 'en')
         
         # Voice customization settings
         self.speaker_wav = None
@@ -82,14 +90,29 @@ class UltimateTTSAgent(BaseAgent):
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{TTS_PORT}")
+        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
         
-        # Connect to UnifiedSystemAgent for health monitoring
+        if self.secure_zmq:
+            self.socket = configure_secure_server(self.socket)
+        
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{TTS_PORT}"
+        self.socket.bind(bind_address)
+        logger.info(f"TTS socket bound to {bind_address}")
+        
+        # Connect to UnifiedSystemAgent for health monitoring using service discovery
         self.system_socket = self.context.socket(zmq.PUB)
-        self.system_socket.connect(f"tcp://{UNIFIED_SYSTEM_HOST}:{UNIFIED_SYSTEM_PORT}")
-        logger.info(f"Connected to UnifiedSystemAgent on port {UNIFIED_SYSTEM_PORT}")
+        if self.secure_zmq:
+            self.system_socket = configure_secure_client(self.system_socket)
+        
+        # Try to get the UnifiedSystemAgent address from service discovery
+        usa_address = get_service_address("UnifiedSystemAgent")
+        if not usa_address:
+            # Fall back to configured port
+            usa_address = f"tcp://localhost:{UNIFIED_SYSTEM_PORT}"
+        
+        self.system_socket.connect(usa_address)
+        logger.info(f"Connected to UnifiedSystemAgent at {usa_address}")
         
         # Initialize audio cache (OrderedDict maintains insertion order)
         self.cache = OrderedDict()
@@ -145,8 +168,47 @@ class UltimateTTSAgent(BaseAgent):
         self.health_thread = threading.Thread(target=self._send_health_updates, daemon=True)
         self.health_thread.start()
         
+        # Interrupt SUB socket - use service discovery
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+        if self.secure_zmq:
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+        
+        # Try to get the interrupt handler address from service discovery
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+        if not interrupt_address:
+            # Fall back to configured port
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+        
+        self.interrupt_socket.connect(interrupt_address)
+        self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+        logger.info(f"Connected to interrupt handler at {interrupt_address}")
+        
+        self.interrupt_flag = threading.Event()
+        self._start_interrupt_thread()
+        
+        # Register with service discovery
+        self._register_service()
+        
         logger.info("TTS Agent basic initialization complete")
     
+    def _register_service(self):
+        """Register this agent with the service discovery system"""
+        try:
+            register_result = register_service(
+                name="StreamingTtsAgent",
+                port=TTS_PORT,
+                additional_info={
+                    "capabilities": ["tts", "streaming", "multilingual"],
+                    "status": "initializing"
+                }
+            )
+            if register_result and register_result.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+            else:
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            logger.error(f"Error registering service: {e}")
+
     def _initialize_tts_engines(self):
         """Initialize all TTS engines in order of preference"""
         try:
@@ -286,6 +348,12 @@ class UltimateTTSAgent(BaseAgent):
             self._speak_with_console(text)
             return
             
+        if self.interrupt_flag.is_set():
+            logger.info("Interrupt flag detected. Stopping TTS generation.")
+            self.audio_queue.queue.clear()
+            self.interrupt_flag.clear()
+            return {"status": "error", "message": "Interrupted"}
+            
         # Try engines in order of preference
         if self.initialization_status["engines_ready"]["xtts"]:
             self._speak_with_xtts(text)
@@ -422,9 +490,6 @@ class UltimateTTSAgent(BaseAgent):
             except Exception as e:
                 print(f"XTTS generation failed: {e}")
                 import traceback
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                 traceback.print_exc()
                 # Fall back to SAPI
                 return self._speak_with_sapi(text)
@@ -529,32 +594,210 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                 logger.error(f"Error sending health update: {e}")
                 time.sleep(1)
     
-    def run(self):
-        """Main agent loop."""
-        logger.info("Starting TTS Agent main loop")
-        
+    def _interrupt_listener(self):
+        """Listen for interrupt signals"""
+        logger.info("Starting interrupt listener thread")
         while True:
             try:
-                # Wait for next request
-                message = self.socket.recv_json()
-                logger.info(f"Received request: {message}")
-                
-                # Process request
-                response = self._handle_request(message)
-                
-                # Send response
-                self.socket.send_json(response)
-                
+                msg = self.interrupt_socket.recv(flags=zmq.NOBLOCK)
+                data = pickle.loads(msg)
+                if data.get('type') == 'interrupt':
+                    logger.info("Received interrupt signal")
+                    self.interrupt_flag.set()
+                    self.stop_speaking = True
+                    # Clear audio queue
+                    while not self.audio_queue.empty():
+                        try:
+                            self.audio_queue.get_nowait()
+                        except queue.Empty:
+                            break
+            except zmq.Again:
+                time.sleep(0.05)  # Small sleep to avoid tight loop
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
+                logger.error(f"Error in interrupt listener: {e}")
+                time.sleep(1)  # Longer sleep on error
+
+    def _start_interrupt_thread(self):
+        """Start the interrupt listener thread"""
+        self.interrupt_thread = threading.Thread(target=self._interrupt_listener, daemon=True)
+        self.interrupt_thread.start()
+        logger.info("Interrupt listener thread started")
+
+    def run(self):
+        """Main loop to handle TTS requests"""
+        logger.info("Starting TTS agent main loop")
+        
+        try:
+            # Update service status to running
+            self._update_service_status("running")
+            
+            while True:
                 try:
+                    # Check for interrupt before processing new request
+                    if self.interrupt_flag.is_set():
+                        self.stop_speaking = True
+                        self.interrupt_flag.clear()
+                        logger.info("Cleared interrupt flag")
+                    
+                    # Receive request with timeout to allow checking interrupt flag
+                    poller = zmq.Poller()
+                    poller.register(self.socket, zmq.POLLIN)
+                    
+                    if poller.poll(100):  # 100ms timeout
+                        request = self.socket.recv_json()
+                        logger.info(f"Received request: {request}")
+                        
+                        # Extract request data
+                        text = request.get("text", "")
+                        emotion = request.get("emotion")
+                        language = request.get("language")
+                        command = request.get("command")
+                        
+                        # Check for special commands
+                        if command == "stop":
+                            logger.info("Received stop command")
+                            self.stop_speaking = True
+                            # Clear audio queue
+                            while not self.audio_queue.empty():
+                                try:
+                                    self.audio_queue.get_nowait()
+                                except queue.Empty:
+                                    break
+                            self.socket.send_json({"status": "success", "message": "Speech stopped"})
+                            continue
+                        
+                        # Skip empty text
+                        if not text:
+                            error_msg = "Empty text received"
+                            logger.warning(error_msg)
+                            self.socket.send_json({
+                                "status": "error", 
+                                "message": error_msg,
+                                "error_type": "invalid_input"
+                            })
+                            continue
+                        
+                        # Check if TTS engines are initialized
+                        if not self.initialization_status["is_initialized"]:
+                            if self.initialization_status["error"]:
+                                error_msg = f"TTS initialization failed: {self.initialization_status['error']}"
+                                logger.error(error_msg)
+                                self.socket.send_json({
+                                    "status": "error", 
+                                    "message": error_msg,
+                                    "error_type": "initialization_error",
+                                    "initialization_status": self.initialization_status
+                                })
+                            else:
+                                progress = self.initialization_status["progress"]
+                                logger.info(f"TTS still initializing ({progress*100:.0f}%)")
+                                self.socket.send_json({
+                                    "status": "error", 
+                                    "message": f"TTS still initializing ({progress*100:.0f}%)",
+                                    "error_type": "not_ready",
+                                    "initialization_status": self.initialization_status
+                                })
+                            continue
+                        
+                        # Process the text
+                        try:
+                            success = self.speak(text)
+                            if success:
+                                self.socket.send_json({"status": "success"})
+                            else:
+                                self.socket.send_json({
+                                    "status": "error", 
+                                    "message": "Failed to generate speech",
+                                    "error_type": "generation_failed"
+                                })
+                        except Exception as e:
+                            error_msg = f"Error generating speech: {str(e)}"
+                            logger.error(error_msg)
+                            self.socket.send_json({
+                                "status": "error", 
+                                "message": error_msg,
+                                "error_type": "processing_error"
+                            })
+                    
+                except zmq.Again:
+                    # Timeout on receive, just continue the loop
+                    pass
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON received: {e}")
                     self.socket.send_json({
-                        'status': 'error',
-                        'message': str(e)
+                        "status": "error", 
+                        "message": f"Invalid JSON: {str(e)}",
+                        "error_type": "invalid_request"
                     })
-                except zmq.error.ZMQError as zmq_err:
-                    logger.error(f"ZMQ error while sending error response: {zmq_err}")
-                    time.sleep(1)  # Prevent tight loop on ZMQ errors
+                except Exception as e:
+                    logger.error(f"Error in main loop: {e}")
+                    try:
+                        self.socket.send_json({
+                            "status": "error", 
+                            "message": f"Internal error: {str(e)}",
+                            "error_type": "internal_error"
+                        })
+                    except zmq.ZMQError:
+                        pass  # Socket might be closed
+                        
+        except KeyboardInterrupt:
+            logger.info("Received keyboard interrupt, shutting down")
+        except Exception as e:
+            logger.error(f"Unexpected error in main loop: {e}")
+        finally:
+            self._shutdown()
+    
+    def _update_service_status(self, status):
+        """Update the service status in the service registry"""
+        try:
+            register_service(
+                name="StreamingTtsAgent",
+                port=TTS_PORT,
+                additional_info={
+                    "capabilities": ["tts", "streaming", "multilingual"],
+                    "status": status
+                }
+            )
+            logger.info(f"Updated service status to '{status}'")
+        except Exception as e:
+            logger.error(f"Error updating service status: {e}")
+    
+    def _shutdown(self):
+        """Clean up resources"""
+        logger.info("Shutting down StreamingTtsAgent")
+        
+        # Update service status
+        self._update_service_status("stopping")
+        
+        # Stop flag for threads
+        self.stop_speaking = True
+        
+        # Clear audio queue
+        while not self.audio_queue.empty():
+            try:
+                self.audio_queue.get_nowait()
+            except queue.Empty:
+                break
+        
+        # Close all sockets
+        if hasattr(self, 'socket') and self.socket:
+            self.socket.close()
+            logger.info("Closed main socket")
+            
+        if hasattr(self, 'system_socket') and self.system_socket:
+            self.system_socket.close()
+            logger.info("Closed system socket")
+            
+        if hasattr(self, 'interrupt_socket') and self.interrupt_socket:
+            self.interrupt_socket.close()
+            logger.info("Closed interrupt socket")
+        
+        # Terminate ZMQ context
+        if hasattr(self, 'context') and self.context:
+            self.context.term()
+            logger.info("Terminated ZMQ context")
+        
+        logger.info("StreamingTtsAgent shut down successfully")
 
 if __name__ == "__main__":
     print("=== Ultimate TTS Agent ===")
