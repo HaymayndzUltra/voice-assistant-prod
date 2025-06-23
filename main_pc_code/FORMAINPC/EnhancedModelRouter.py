@@ -40,6 +40,10 @@ from utils.config_parser import parse_agent_args
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
+# Import service discovery and secure ZMQ utilities
+from utils.service_discovery_client import discover_service
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "enhanced_model_router.log"
 LOG_PATH.parent.mkdir(exist_ok=True)
@@ -61,16 +65,13 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 ZMQ_MODEL_ROUTER_PORT = 5598  # Primary port for all model routing
 ZMQ_MODEL_ROUTER_PUB_PORT = 5603  # Publisher port for broadcasting
 
-# Ports for required services
+# Enable secure ZMQ if environment variable is set
+SECURE_ZMQ = is_secure_zmq_enabled()
+
+# Ports are now obtained via service discovery
+# We keep these as fallbacks only
 TASK_ROUTER_PORT = 8570  # Updated to match TaskRouter port
 TASK_ROUTER_HEALTH_PORT = 5571  # Health check port
-MODEL_MANAGER_PORT = 5555
-MODEL_MANAGER_HOST = "192.168.100.17"  # PC2 IP
-CONTEXTUAL_MEMORY_PORT = 5596
-CHAIN_OF_THOUGHT_PORT = 5612
-REMOTE_CONNECTOR_PORT = 5557
-UNIFIED_UTILS_PORT = 5564
-WEB_ASSISTANT_PORT = 5604
 
 # Health monitoring settings
 HEALTH_CHECK_INTERVAL = 30  # seconds
@@ -197,29 +198,65 @@ class EnhancedModelRouter:
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        
+        # Apply CurveZMQ security if enabled
+        if SECURE_ZMQ:
+            setup_curve_client(self.socket, server_mode=True)
+            logger.info("Secure ZMQ enabled for EnhancedModelRouter")
+            
         self.socket.bind(f"tcp://*:{self.zmq_port}")
+        
+        # Initialize publisher socket
+        self.pub_socket = self.context.socket(zmq.PUB)
+        if SECURE_ZMQ:
+            setup_curve_client(self.pub_socket, server_mode=True)
+        self.pub_socket.bind(f"tcp://*:{self.pub_port}")
+        
+        # Initialize service mappings
+        self.service_mappings = {}
+        self._refresh_service_mappings()
+        
+        # Start a periodic service discovery refresh thread
+        self.stop_event = threading.Event()
+        self.refresh_thread = threading.Thread(target=self._service_refresh_loop)
+        self.refresh_thread.daemon = True
+        self.refresh_thread.start()
+        
+        # Initialize other components
+        self._perform_initialization()
 
-        # Health check socket (main_port+1)
-        self.health_check_port = self.zmq_port + 1
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_socket.bind(f"tcp://*:{self.health_check_port}")
-
-        # Start health check thread immediately
-        self.running = True
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-
-        # Start async initialization
-        self.is_initialized = threading.Event()
-        self.initialization_error = None
-        init_thread = threading.Thread(target=self._perform_initialization)
-        init_thread.daemon = True
-        init_thread.start()
-
-        logger.info(f"Enhanced Model Router initialized on port {zmq_port} (health check: {self.health_check_port})")
+    def _refresh_service_mappings(self):
+        """Refresh service mappings using service discovery"""
+        try:
+            # Discover ModelManagerAgent
+            model_manager_info = discover_service("ModelManagerAgent")
+            if model_manager_info:
+                self.service_mappings["ModelManagerAgent"] = {
+                    "host": model_manager_info["host"],
+                    "port": model_manager_info["port"]
+                }
+                logger.info(f"Discovered ModelManagerAgent at {model_manager_info['host']}:{model_manager_info['port']}")
+            
+            # Discover other services
+            for service_name in ["TaskRouter", "ChainOfThoughtAgent", "UnifiedMemoryReasoningAgent", 
+                               "RemoteConnectorAgent", "UnifiedUtilsAgent", "WebAssistant"]:
+                service_info = discover_service(service_name)
+                if service_info:
+                    self.service_mappings[service_name] = {
+                        "host": service_info["host"],
+                        "port": service_info["port"]
+                    }
+                    logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+                else:
+                    logger.warning(f"Failed to discover {service_name}")
+        except Exception as e:
+            logger.error(f"Error refreshing service mappings: {str(e)}")
+    
+    def _service_refresh_loop(self):
+        """Periodically refresh service mappings"""
+        while not self.stop_event.is_set():
+            time.sleep(60)  # Refresh every minute
+            self._refresh_service_mappings()
 
     def _perform_initialization(self):
         try:
@@ -238,37 +275,37 @@ class EnhancedModelRouter:
             self.model_manager_socket = self.context.socket(zmq.REQ)
             self.model_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.model_manager_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
-            logger.info(f"Connected to ModelManagerAgent on {MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}")
+            self.model_manager_socket.connect(f"tcp://{self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}")
+            logger.info(f"Connected to ModelManagerAgent on {self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}")
 
             self.contextual_memory_socket = self.context.socket(zmq.REQ)
             self.contextual_memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.contextual_memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.contextual_memory_socket.connect(f"tcp://localhost:{CONTEXTUAL_MEMORY_PORT}")
+            self.contextual_memory_socket.connect(f"tcp://localhost:{self.service_mappings['UnifiedMemoryReasoningAgent']['port']}")
 
             self.chain_of_thought_socket = self.context.socket(zmq.REQ)
             self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.chain_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.chain_of_thought_socket.connect(f"tcp://localhost:{CHAIN_OF_THOUGHT_PORT}")
+            self.chain_of_thought_socket.connect(f"tcp://localhost:{self.service_mappings['ChainOfThoughtAgent']['port']}")
 
             self.remote_connector_socket = self.context.socket(zmq.REQ)
             self.remote_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.remote_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.remote_connector_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:{REMOTE_CONNECTOR_PORT}")  # Connect to PC2
+            self.remote_connector_socket.connect(f"tcp://{self.service_mappings['RemoteConnectorAgent']['host']}:{self.service_mappings['RemoteConnectorAgent']['port']}")
 
             # Connect to UnifiedUtilsAgent on Main PC
             self.utils_agent_socket = self.context.socket(zmq.REQ)
             self.utils_agent_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.utils_agent_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.utils_agent_socket.connect(f"tcp://localhost:{UNIFIED_UTILS_PORT}")
-            logger.info(f"Connected to UnifiedUtilsAgent on localhost:{UNIFIED_UTILS_PORT}")
+            self.utils_agent_socket.connect(f"tcp://localhost:{self.service_mappings['UnifiedUtilsAgent']['port']}")
+            logger.info(f"Connected to UnifiedUtilsAgent on localhost:{self.service_mappings['UnifiedUtilsAgent']['port']}")
 
             # Connect to Web Assistant for research capabilities
             self.web_assistant_socket = self.context.socket(zmq.REQ)
             self.web_assistant_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.web_assistant_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.web_assistant_socket.connect(f"tcp://localhost:{WEB_ASSISTANT_PORT}")
-            logger.info(f"Connected to Web Assistant on port {WEB_ASSISTANT_PORT}")
+            self.web_assistant_socket.connect(f"tcp://localhost:{self.service_mappings['WebAssistant']['port']}")
+            logger.info(f"Connected to Web Assistant on port {self.service_mappings['WebAssistant']['port']}")
 
             # Initialize state variables
             self.lock = threading.Lock()
@@ -384,8 +421,33 @@ class EnhancedModelRouter:
             self.tokenizer = None
     
     def get_context_summary(self, user_id="default", project=None, max_tokens=500):
-        """Get a context summary from the Contextual Memory Agent"""
+        """Get context summary from the Contextual Memory Agent"""
         try:
+            memory_info = self.service_mappings.get("UnifiedMemoryReasoningAgent")
+            if not memory_info:
+                memory_info = discover_service("UnifiedMemoryReasoningAgent")
+                if memory_info:
+                    self.service_mappings["UnifiedMemoryReasoningAgent"] = {
+                        "host": memory_info["host"],
+                        "port": memory_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover UnifiedMemoryReasoningAgent")
+                    return ""
+            
+            host = memory_info["host"]
+            port = memory_info["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            
             request = {
                 "action": "get_summary",
                 "user_id": user_id,
@@ -393,9 +455,10 @@ class EnhancedModelRouter:
                 "max_tokens": max_tokens
             }
             
-            self.contextual_memory_socket.send_string(json.dumps(request))
-            response = self.contextual_memory_socket.recv_string()
+            request_socket.send_string(json.dumps(request))
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
             
             if result.get("status") == "ok":
                 return result.get("summary", "")
@@ -409,6 +472,31 @@ class EnhancedModelRouter:
     def record_interaction(self, interaction_type, content, user_id="default", project=None, metadata=None):
         """Record an interaction in the Contextual Memory Agent"""
         try:
+            memory_info = self.service_mappings.get("UnifiedMemoryReasoningAgent")
+            if not memory_info:
+                memory_info = discover_service("UnifiedMemoryReasoningAgent")
+                if memory_info:
+                    self.service_mappings["UnifiedMemoryReasoningAgent"] = {
+                        "host": memory_info["host"],
+                        "port": memory_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover UnifiedMemoryReasoningAgent")
+                    return False
+            
+            host = memory_info["host"]
+            port = memory_info["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            
             request = {
                 "action": "add_interaction",
                 "user_id": user_id,
@@ -418,9 +506,10 @@ class EnhancedModelRouter:
                 "metadata": metadata or {}
             }
             
-            self.contextual_memory_socket.send_string(json.dumps(request))
-            response = self.contextual_memory_socket.recv_string()
+            request_socket.send_string(json.dumps(request))
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
             
             if result.get("status") != "ok":
                 logger.warning(f"Failed to record interaction: {result.get('message', 'Unknown error')}")
@@ -433,14 +522,42 @@ class EnhancedModelRouter:
     def use_chain_of_thought(self, prompt, code_context=None):
         """Use Chain of Thought (CoT) for complex reasoning"""
         try:
+            cot_info = self.service_mappings.get("ChainOfThoughtAgent")
+            if not cot_info:
+                cot_info = discover_service("ChainOfThoughtAgent")
+                if cot_info:
+                    self.service_mappings["ChainOfThoughtAgent"] = {
+                        "host": cot_info["host"],
+                        "port": cot_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover ChainOfThoughtAgent")
+                    return None
+            
+            host = cot_info["host"]
+            port = cot_info["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT * 3)  # Longer timeout for COT
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            
             request = {
                 "action": "generate",
                 "request": prompt,
                 "code_context": code_context
             }
-            self.chain_of_thought_socket.send_string(json.dumps(request))
-            response = self.chain_of_thought_socket.recv_string()
+            
+            request_socket.send_string(json.dumps(request))
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
+            
             if result.get("status") == "ok":
                 logger.info("[MODEL ROUTER] Chain of Thought (CoT) solution generated.")
                 return result.get("result", {}).get("solution", "")
@@ -454,21 +571,54 @@ class EnhancedModelRouter:
     def use_tree_of_thought(self, prompt, code_context=None):
         """Use Tree of Thought (ToT) for advanced reasoning"""
         try:
-            # Assume ToT agent is on a dedicated port (e.g., 5613)
-            if not hasattr(self, 'tree_of_thought_socket'):
-                self.tree_of_thought_socket = self.context.socket(zmq.REQ)
-                self.tree_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-                self.tree_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                self.tree_of_thought_socket.connect(f"tcp://{MODEL_MANAGER_HOST}:5613")
-                logger.info(f"Connected to Tree of Thought Agent on {MODEL_MANAGER_HOST}:5613")
+            tot_info = self.service_mappings.get("TreeOfThoughtAgent")
+            if not tot_info:
+                # Try to discover the TOT agent, if not found assume it's on ModelManagerAgent host with port 5613
+                tot_info = discover_service("TreeOfThoughtAgent")
+                if tot_info:
+                    self.service_mappings["TreeOfThoughtAgent"] = {
+                        "host": tot_info["host"],
+                        "port": tot_info["port"]
+                    }
+                else:
+                    # Fall back to ModelManagerAgent host with port 5613
+                    model_manager_info = self.service_mappings.get("ModelManagerAgent")
+                    if not model_manager_info:
+                        model_manager_info = discover_service("ModelManagerAgent")
+                        if not model_manager_info:
+                            logger.error("Could not discover ModelManagerAgent for ToT fallback")
+                            return None
+                    
+                    self.service_mappings["TreeOfThoughtAgent"] = {
+                        "host": model_manager_info["host"],
+                        "port": 5613
+                    }
+                    logger.info(f"Using fallback for Tree of Thought Agent on {model_manager_info['host']}:5613")
+            
+            host = self.service_mappings["TreeOfThoughtAgent"]["host"]
+            port = self.service_mappings["TreeOfThoughtAgent"]["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT * 3)  # Longer timeout for ToT
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            
             request = {
                 "action": "generate",
                 "request": prompt,
                 "code_context": code_context
             }
-            self.tree_of_thought_socket.send_string(json.dumps(request))
-            response = self.tree_of_thought_socket.recv_string()
+            
+            request_socket.send_string(json.dumps(request))
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
+            
             if result.get("status") == "ok":
                 logger.info("[MODEL ROUTER] Tree of Thought (ToT) solution generated.")
                 return result.get("result", {}).get("solution", "")
@@ -484,46 +634,156 @@ class EnhancedModelRouter:
         """Select the most appropriate model for the given task type"""
         try:
             # First, try to get a suggestion from UnifiedUtilsAgent
-            utils_request = {
-                "action": "select_model",
-                "task_type": task_type,
-                "prompt": prompt,
+            utils_agent_info = self.service_mappings.get("UnifiedUtilsAgent")
+            if not utils_agent_info:
+                utils_agent_info = discover_service("UnifiedUtilsAgent")
+                if utils_agent_info:
+                    self.service_mappings["UnifiedUtilsAgent"] = {
+                        "host": utils_agent_info["host"],
+                        "port": utils_agent_info["port"]
+                    }
+                else:
+                    logger.warning("Could not discover UnifiedUtilsAgent, proceeding with local logic")
+            
+            if utils_agent_info:
+                host = utils_agent_info["host"]
+                port = utils_agent_info["port"]
+                
+                # Create a new socket for each request to avoid conflicts
+                request_socket = self.context.socket(zmq.REQ)
+                request_socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2-second timeout
+                request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                
+                if SECURE_ZMQ:
+                    setup_curve_client(request_socket)
+                    
+                request_socket.connect(f"tcp://{host}:{port}")
+                
+                utils_request = {
+                    "action": "select_model",
+                    "task_type": task_type,
+                    "prompt": prompt,
+                    "context_size": context_size
+                }
+                
+                try:
+                    request_socket.send_json(utils_request)
+                    if request_socket.poll(2000):  # 2-second timeout
+                        utils_response = request_socket.recv_json()
+                        request_socket.close()
+                        suggested_model = utils_response.get("model")
+                        if suggested_model:
+                            logger.info(f"Received suggestion from UnifiedUtilsAgent: {suggested_model}")
+                            return suggested_model
+                    else:
+                        logger.warning("Timeout waiting for UnifiedUtilsAgent. Proceeding with local logic.")
+                        request_socket.close()
+                except Exception as e:
+                    logger.error(f"Could not connect to UnifiedUtilsAgent: {e}. Proceeding with local logic.")
+                    try:
+                        request_socket.close()
+                    except:
+                        pass
+            
+            # If UnifiedUtilsAgent is unavailable or times out, proceed with local logic
+            # Map task type to model capabilities
+            if has_advanced_router:
+                capabilities = map_task_to_model_capabilities(task_type)
+            else:
+                # Fallback mapping for basic task types
+                capability_mapping = {
+                    "code": ["code-generation"],
+                    "reasoning": ["reasoning"],
+                    "creative": ["text-generation"],
+                    "factual": ["knowledge"],
+                    "math": ["math"],
+                    "chat": ["chat"],
+                    "general": ["text-generation"]
+                }
+                capabilities = capability_mapping.get(task_type, ["text-generation"])
+            
+            # Request model from ModelManagerAgent
+            model_request = {
+                "action": "get_model",
+                "capabilities": capabilities,
                 "context_size": context_size
             }
             
-            try:
-                self.utils_agent_socket.send_json(utils_request)
-                if self.utils_agent_socket.poll(2000):  # 2-second timeout
-                    utils_response = self.utils_agent_socket.recv_json()
-                    suggested_model = utils_response.get("model")
-                    if suggested_model:
-                        logger.info(f"Received suggestion from UnifiedUtilsAgent: {suggested_model}")
-                        return suggested_model
-                else:
-                    logger.warning("Timeout waiting for UnifiedUtilsAgent. Proceeding with local logic.")
-            except Exception as e:
-                logger.error(f"Could not connect to UnifiedUtilsAgent: {e}. Proceeding with local logic.")
+            response = self.send_to_model_manager(model_request)
+            if "model" in response:
+                return response["model"]
             
-            # If UnifiedUtilsAgent is unavailable or times out, proceed with local logic
-            # ... rest of the existing select_model logic ...
+            # Fallback models if ModelManagerAgent fails
+            fallback_models = {
+                "code": "deepseek-coder-6.7b-instruct",
+                "reasoning": "mistral-7b-instruct",
+                "creative": "llama2-13b-chat",
+                "factual": "mistral-7b-instruct",
+                "math": "deepseek-math-7b",
+                "chat": "llama2-7b-chat",
+                "general": "mistral-7b-instruct"
+            }
+            
+            return fallback_models.get(task_type, "mistral-7b-instruct")
             
         except Exception as e:
             logger.error(f"Error in model selection: {e}")
-            return {"status": "error", "message": str(e)}
+            return "mistral-7b-instruct"  # Default fallback model
     
     def send_to_model_manager(self, request_data):
-        """Send a model selection request to the Model Manager"""
+        """Send a request to the Model Manager Agent"""
         try:
-            self.model_manager_socket.send_string(json.dumps(request_data))
-            response = self.model_manager_socket.recv_string()
-            return json.loads(response)
+            model_manager_info = self.service_mappings.get("ModelManagerAgent")
+            if not model_manager_info:
+                model_manager_info = discover_service("ModelManagerAgent")
+                if model_manager_info:
+                    self.service_mappings["ModelManagerAgent"] = {
+                        "host": model_manager_info["host"],
+                        "port": model_manager_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover ModelManagerAgent")
+                    return {"error": "Model manager service not available"}
+            
+            host = model_manager_info["host"]
+            port = model_manager_info["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            request_socket.send_string(json.dumps(request_data))
+            response = request_socket.recv_string()
+            result = json.loads(response)
+            request_socket.close()
+            return result
         except Exception as e:
-            logger.error(f"Error sending to Model Manager: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"Error sending request to Model Manager: {str(e)}")
+            return {"error": f"Failed to communicate with Model Manager: {str(e)}"}
             
     def send_to_remote_connector(self, request_data):
-        """Send a model inference request to the Remote Connector Agent"""
+        """Send a request to the Remote Connector Agent"""
         try:
+            remote_connector_info = self.service_mappings.get("RemoteConnectorAgent")
+            if not remote_connector_info:
+                remote_connector_info = discover_service("RemoteConnectorAgent")
+                if remote_connector_info:
+                    self.service_mappings["RemoteConnectorAgent"] = {
+                        "host": remote_connector_info["host"],
+                        "port": remote_connector_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover RemoteConnectorAgent")
+                    return {"error": "Remote connector service not available"}
+            
+            host = remote_connector_info["host"]
+            port = remote_connector_info["port"]
+            
             # Format the request for Remote Connector
             rc_request = {
                 "request_type": "generate",
@@ -536,17 +796,29 @@ class EnhancedModelRouter:
             # Add optional parameters if present
             if "max_tokens" in request_data:
                 rc_request["max_tokens"] = request_data["max_tokens"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, 30000)  # 30 second timeout
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
                 
             logger.info(f"Sending inference request to Remote Connector for model {rc_request['model']}")
-            self.remote_connector_socket.send_string(json.dumps(rc_request))
+            request_socket.send_string(json.dumps(rc_request))
             
-            # Wait for response with timeout
-            if self.remote_connector_socket.poll(30000) == 0:  # 30 second timeout
+            # Poll for response
+            if request_socket.poll(30000) == 0:  # 30 second timeout
                 logger.error("Timeout waiting for Remote Connector response")
+                request_socket.close()
                 return {"status": "error", "error": "Timeout waiting for model response"}
             
-            response = self.remote_connector_socket.recv_string()
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
             
             # Format the response to match the expected format
             if result.get("status") == "success":
@@ -596,15 +868,41 @@ class EnhancedModelRouter:
     def _perform_web_research(self, query: str) -> Optional[Dict]:
         """Perform web research using the Web Assistant"""
         try:
+            web_assistant_info = self.service_mappings.get("WebAssistant")
+            if not web_assistant_info:
+                web_assistant_info = discover_service("WebAssistant")
+                if web_assistant_info:
+                    self.service_mappings["WebAssistant"] = {
+                        "host": web_assistant_info["host"],
+                        "port": web_assistant_info["port"]
+                    }
+                else:
+                    logger.error("Could not discover WebAssistant")
+                    return None
+            
+            host = web_assistant_info["host"]
+            port = web_assistant_info["port"]
+            
+            # Create a new socket for each request to avoid conflicts
+            request_socket = self.context.socket(zmq.REQ)
+            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT * 2)  # Longer timeout for web research
+            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            if SECURE_ZMQ:
+                setup_curve_client(request_socket)
+                
+            request_socket.connect(f"tcp://{host}:{port}")
+            
             request = {
                 "action": "research",
                 "query": query,
                 "max_results": 3
             }
             
-            self.web_assistant_socket.send_string(json.dumps(request))
-            response = self.web_assistant_socket.recv_string()
+            request_socket.send_string(json.dumps(request))
+            response = request_socket.recv_string()
             result = json.loads(response)
+            request_socket.close()
             
             if result.get("status") == "ok":
                 return result.get("results", {})
@@ -856,10 +1154,10 @@ class EnhancedModelRouter:
                 "task_type_counts": self.task_type_counts,
                 "model_usage_counts": self.model_usage_counts,
                 "connections": {
-                    "model_manager": f"tcp://{MODEL_MANAGER_HOST}:{MODEL_MANAGER_PORT}",
-                    "contextual_memory": f"tcp://127.0.0.1:{CONTEXTUAL_MEMORY_PORT}",
-                    "chain_of_thought": f"tcp://127.0.0.1:{CHAIN_OF_THOUGHT_PORT}",
-                    "remote_connector": f"tcp://127.0.0.1:{REMOTE_CONNECTOR_PORT}"
+                    "model_manager": f"tcp://{self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}",
+                    "contextual_memory": f"tcp://127.0.0.1:{self.service_mappings['UnifiedMemoryReasoningAgent']['port']}",
+                    "chain_of_thought": f"tcp://127.0.0.1:{self.service_mappings['ChainOfThoughtAgent']['port']}",
+                    "remote_connector": f"tcp://127.0.0.1:{self.service_mappings['RemoteConnectorAgent']['port']}"
                 },
                 "publisher": {
                     "enabled": self.pub_socket is not None,

@@ -4,41 +4,41 @@
 # PC2 Services (Agents)
 pc2_services:
   # Phase 1 - Integration Layer Agents
-  - { name: TieredResponder, script_path: agents/tiered_responder.py, host: localhost, port: 7100, health_check_port: 8100, required: true, dependencies: [] }
-  - { name: AsyncProcessor, script_path: agents/async_processor.py, host: localhost, port: 7101, health_check_port: 8101, required: true, dependencies: [] }
-  - { name: CacheManager, script_path: agents/cache_manager.py, host: localhost, port: 7102, health_check_port: 8102, required: true, dependencies: [] }
-  - { name: PerformanceMonitor, script_path: agents/performance_monitor.py, host: localhost, port: 7103, health_check_port: 8103, required: true, dependencies: [] }
+  - { name: TieredResponder, script_path: agents/tiered_responder.py, host: 0.0.0.0, port: 7100, health_check_port: 8100, required: true, dependencies: [] }
+  - { name: AsyncProcessor, script_path: agents/async_processor.py, host: 0.0.0.0, port: 7101, health_check_port: 8101, required: true, dependencies: [] }
+  - { name: CacheManager, script_path: agents/cache_manager.py, host: 0.0.0.0, port: 7102, health_check_port: 8102, required: true, dependencies: [] }
+  - { name: PerformanceMonitor, script_path: agents/performance_monitor.py, host: 0.0.0.0, port: 7103, health_check_port: 8103, required: true, dependencies: [] }
 
   # Phase 2 - PC2-Specific Core Agents
-  - { name: DreamWorldAgent, script_path: agents/DreamWorldAgent.py, host: localhost, port: 7104, health_check_port: 8104, dependencies: [UnifiedMemoryReasoningAgent], required: true }
-  - { name: UnifiedMemoryReasoningAgent, script_path: agents/UnifiedMemoryReasoningAgent.py, host: localhost, port: 7105, health_check_port: 8105, dependencies: [CacheManager], required: true }
-  - { name: EpisodicMemoryAgent, script_path: agents/EpisodicMemoryAgent.py, host: localhost, port: 7106, health_check_port: 8106, dependencies: [UnifiedMemoryReasoningAgent], required: true }
-  - { name: LearningAgent, script_path: agents/LearningAdjusterAgent.py, host: localhost, port: 7107, health_check_port: 8107, dependencies: [EpisodicMemoryAgent], required: true }
-  - { name: TutoringAgent, script_path: agents/tutoring_agent.py, host: localhost, port: 7108, health_check_port: 8108, required: true, dependencies: [] }
-  - { name: KnowledgeBaseAgent, script_path: agents/knowledge_base_agent.py, host: localhost, port: 7109, health_check_port: 8109, dependencies: [CacheManager], required: true }
-  - { name: MemoryManager, script_path: agents/memory_manager.py, host: localhost, port: 7110, health_check_port: 8110, dependencies: [UnifiedMemoryReasoningAgent], required: true }
-  - { name: ContextManager, script_path: agents/context_manager.py, host: localhost, port: 7111, health_check_port: 8111, dependencies: [MemoryManager], required: true }
-  - { name: ExperienceTracker, script_path: agents/experience_tracker.py, host: localhost, port: 7112, health_check_port: 8112, dependencies: [EpisodicMemoryAgent], required: true }
-  - { name: ResourceManager, script_path: agents/resource_manager.py, host: localhost, port: 7113, health_check_port: 8113, required: true, dependencies: [] }
-  - { name: HealthMonitor, script_path: agents/health_monitor.py, host: localhost, port: 7114, health_check_port: 8114, required: true, dependencies: [] }
-  - { name: TaskScheduler, script_path: agents/task_scheduler.py, host: localhost, port: 7115, health_check_port: 8115, dependencies: [AsyncProcessor], required: true }
+  - { name: DreamWorldAgent, script_path: agents/DreamWorldAgent.py, host: 0.0.0.0, port: 7104, health_check_port: 8104, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  - { name: UnifiedMemoryReasoningAgent, script_path: agents/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 7105, health_check_port: 8105, dependencies: [CacheManager], required: true }
+  - { name: EpisodicMemoryAgent, script_path: agents/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 7106, health_check_port: 8106, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  - { name: LearningAgent, script_path: agents/LearningAdjusterAgent.py, host: 0.0.0.0, port: 7107, health_check_port: 8107, dependencies: [EpisodicMemoryAgent], required: true }
+  - { name: TutoringAgent, script_path: agents/tutoring_agent.py, host: 0.0.0.0, port: 7108, health_check_port: 8108, required: true, dependencies: [] }
+  - { name: KnowledgeBaseAgent, script_path: agents/knowledge_base_agent.py, host: 0.0.0.0, port: 7109, health_check_port: 8109, dependencies: [CacheManager], required: true }
+  - { name: MemoryManager, script_path: agents/memory_manager.py, host: 0.0.0.0, port: 7110, health_check_port: 8110, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  - { name: ContextManager, script_path: agents/context_manager.py, host: 0.0.0.0, port: 7111, health_check_port: 8111, dependencies: [MemoryManager], required: true }
+  - { name: ExperienceTracker, script_path: agents/experience_tracker.py, host: 0.0.0.0, port: 7112, health_check_port: 8112, dependencies: [EpisodicMemoryAgent], required: true }
+  - { name: ResourceManager, script_path: agents/resource_manager.py, host: 0.0.0.0, port: 7113, health_check_port: 8113, required: true, dependencies: [] }
+  - { name: HealthMonitor, script_path: agents/health_monitor.py, host: 0.0.0.0, port: 7114, health_check_port: 8114, required: true, dependencies: [] }
+  - { name: TaskScheduler, script_path: agents/task_scheduler.py, host: 0.0.0.0, port: 7115, health_check_port: 8115, dependencies: [AsyncProcessor], required: true }
 
   # ForPC2 Agents (PC2-Specific Services)
-  - { name: AuthenticationAgent, script_path: agents/ForPC2/AuthenticationAgent.py, host: localhost, port: 7116, health_check_port: 8116, required: true, dependencies: [] }
-  - { name: UnifiedErrorAgent, script_path: agents/ForPC2/unified_error_agent.py, host: localhost, port: 7117, health_check_port: 8117, required: true, dependencies: [] }
-  - { name: UnifiedUtilsAgent, script_path: agents/ForPC2/unified_utils_agent.py, host: localhost, port: 7118, health_check_port: 8118, required: true, dependencies: [] }
-  - { name: ProactiveContextMonitor, script_path: agents/ForPC2/proactive_context_monitor.py, host: localhost, port: 7119, health_check_port: 8119, dependencies: [ContextManager], required: true }
-  - { name: RCAAgent, script_path: agents/ForPC2/rca_agent.py, host: localhost, port: 7121, health_check_port: 8121, dependencies: [HealthMonitor], required: true }
+  - { name: AuthenticationAgent, script_path: agents/ForPC2/AuthenticationAgent.py, host: 0.0.0.0, port: 7116, health_check_port: 8116, required: true, dependencies: [] }
+  - { name: UnifiedErrorAgent, script_path: agents/ForPC2/unified_error_agent.py, host: 0.0.0.0, port: 7117, health_check_port: 8117, required: true, dependencies: [] }
+  - { name: UnifiedUtilsAgent, script_path: agents/ForPC2/unified_utils_agent.py, host: 0.0.0.0, port: 7118, health_check_port: 8118, required: true, dependencies: [] }
+  - { name: ProactiveContextMonitor, script_path: agents/ForPC2/proactive_context_monitor.py, host: 0.0.0.0, port: 7119, health_check_port: 8119, dependencies: [ContextManager], required: true }
+  - { name: RCAAgent, script_path: agents/ForPC2/rca_agent.py, host: 0.0.0.0, port: 7121, health_check_port: 8121, dependencies: [HealthMonitor], required: true }
 
   # Additional PC2 Core Agents
-  - { name: AgentTrustScorer, script_path: agents/AgentTrustScorer.py, host: localhost, port: 7122, health_check_port: 8122, required: true, dependencies: [] }
-  - { name: FileSystemAssistantAgent, script_path: agents/filesystem_assistant_agent.py, host: localhost, port: 7123, health_check_port: 8123, required: true, dependencies: [] }
-  - { name: RemoteConnectorAgent, script_path: agents/remote_connector_agent.py, host: localhost, port: 7124, health_check_port: 8124, required: true, dependencies: [] }
-  - { name: SelfHealingAgent, script_path: agents/self_healing_agent.py, host: localhost, port: 7125, health_check_port: 8125, required: true, dependencies: [] }
-  - { name: UnifiedWebAgent, script_path: agents/unified_web_agent.py, host: localhost, port: 7126, health_check_port: 8126, required: true, dependencies: [] }
-  - { name: DreamingModeAgent, script_path: agents/DreamingModeAgent.py, host: localhost, port: 7127, health_check_port: 8127, dependencies: [DreamWorldAgent], required: true }
-  - { name: PerformanceLoggerAgent, script_path: agents/PerformanceLoggerAgent.py, host: localhost, port: 7128, health_check_port: 8128, required: true, dependencies: [] }
-  - { name: AdvancedRouter, script_path: agents/advanced_router.py, host: localhost, port: 7129, health_check_port: 8129, required: true, dependencies: [] }
+  - { name: AgentTrustScorer, script_path: agents/AgentTrustScorer.py, host: 0.0.0.0, port: 7122, health_check_port: 8122, required: true, dependencies: [] }
+  - { name: FileSystemAssistantAgent, script_path: agents/filesystem_assistant_agent.py, host: 0.0.0.0, port: 7123, health_check_port: 8123, required: true, dependencies: [] }
+  - { name: RemoteConnectorAgent, script_path: agents/remote_connector_agent.py, host: 0.0.0.0, port: 7124, health_check_port: 8124, required: true, dependencies: [] }
+  - { name: SelfHealingAgent, script_path: agents/self_healing_agent.py, host: 0.0.0.0, port: 7125, health_check_port: 8125, required: true, dependencies: [] }
+  - { name: UnifiedWebAgent, script_path: agents/unified_web_agent.py, host: 0.0.0.0, port: 7126, health_check_port: 8126, required: true, dependencies: [] }
+  - { name: DreamingModeAgent, script_path: agents/DreamingModeAgent.py, host: 0.0.0.0, port: 7127, health_check_port: 8127, dependencies: [DreamWorldAgent], required: true }
+  - { name: PerformanceLoggerAgent, script_path: agents/PerformanceLoggerAgent.py, host: 0.0.0.0, port: 7128, health_check_port: 8128, required: true, dependencies: [] }
+  - { name: AdvancedRouter, script_path: agents/advanced_router.py, host: 0.0.0.0, port: 7129, health_check_port: 8129, required: true, dependencies: [] }
 
 # Environment variables for all agents
 environment:
@@ -61,7 +61,7 @@ health_checks:
 
 # PC2 Network Configuration
 pc2_network:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   agent_ports:
     start: 7100
     end: 7199

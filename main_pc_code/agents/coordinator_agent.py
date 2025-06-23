@@ -24,6 +24,8 @@ import threading
 import base64
 from typing import Dict, Any, List, Optional, Tuple, Union
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -42,16 +44,10 @@ logger = logging.getLogger("CoordinatorAgent")
 
 # Constants for agent communication
 COORDINATOR_PORT = 26002
-TASK_ROUTER_PORT = 5571
-TTS_CONNECTOR_PORT = 5562
-PC2_AGENT_PORT = 5560
-HEALTH_MONITOR_PORT = 5584
-VISION_CAPTURE_PORT = 5587
-VISION_PROCESSING_PORT = 5588
 PROACTIVE_SUGGESTION_PORT = 5591
 
-# PC2 address (update as needed)
-PC2_ADDRESS = getattr(_agent_args, 'host', 'localhost')  # Change to PC2's actual IP if needed
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
 
 # Proactive assistance settings
 INACTIVITY_THRESHOLD = 30  # Seconds of inactivity before presenting a suggestion
@@ -97,44 +93,26 @@ class CoordinatorAgent(BaseAgent):
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            setup_curve_client(self.socket, server_mode=True)
+            logger.info("Secure ZMQ enabled for CoordinatorAgent")
+            
         self.socket.bind(f"tcp://*:{self.port}")
         
-        # Create sockets for communicating with other agents
-        self.task_router_socket = self.context.socket(zmq.REQ)
-        self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.task_router_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{TASK_ROUTER_PORT}")
-        
-        self.tts_socket = self.context.socket(zmq.REQ)
-        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{TTS_CONNECTOR_PORT}")
-        
-        self.pc2_socket = self.context.socket(zmq.REQ)
-        self.pc2_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.pc2_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.pc2_socket.connect(f"tcp://{PC2_ADDRESS}:{PC2_AGENT_PORT}")
-        
-        self.health_monitor_socket = self.context.socket(zmq.REQ)
-        self.health_monitor_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_monitor_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_monitor_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{HEALTH_MONITOR_PORT}")
-        
-        # Create sockets for vision pipeline
-        self.vision_capture_socket = self.context.socket(zmq.REQ)
-        self.vision_capture_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.vision_capture_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.vision_capture_socket.connect(f"tcp://{getattr(_agent_args, 'host', 'localhost')}:{VISION_CAPTURE_PORT}")
-        
-        self.vision_processing_socket = self.context.socket(zmq.REQ)
-        self.vision_processing_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.vision_processing_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.vision_processing_socket.connect(f"tcp://{PC2_ADDRESS}:{VISION_PROCESSING_PORT}")
+        # Discover and connect to required services using service discovery
+        self.service_info = {}
+        self._discover_services()
         
         # Create socket for proactive suggestions (with port fallback)
         self.suggestion_socket = self.context.socket(zmq.REP)
         self.suggestion_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.suggestion_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        
+        # Apply secure ZMQ to suggestion socket if enabled
+        if SECURE_ZMQ:
+            setup_curve_client(self.suggestion_socket, server_mode=True)
 
         # Attempt to bind to the preferred port; fall back if it's unavailable.
         self.suggestion_port = PROACTIVE_SUGGESTION_PORT
@@ -156,6 +134,11 @@ class CoordinatorAgent(BaseAgent):
         self.last_interaction_time = time.time()
         self.pending_suggestions = []
         
+        # Start service discovery refresh thread
+        self.discovery_thread = threading.Thread(target=self._service_discovery_refresh_loop)
+        self.discovery_thread.daemon = True
+        self.discovery_thread.start()
+        
         # Start the proactive suggestion handler thread
         self.suggestion_thread = threading.Thread(target=self._handle_proactive_suggestions)
         self.suggestion_thread.daemon = True
@@ -167,6 +150,70 @@ class CoordinatorAgent(BaseAgent):
         self.inactivity_thread.start()
         
         logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
+    
+    def _discover_services(self):
+        """Discover required services using service discovery"""
+        try:
+            # Discover all required services
+            required_services = [
+                "TaskRouter", "TTSConnector", "HealthMonitor", 
+                "VisionCaptureAgent", "VisionProcessingAgent"
+            ]
+            
+            for service_name in required_services:
+                service_info = discover_service(service_name)
+                if service_info:
+                    self.service_info[service_name] = service_info
+                    logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+                else:
+                    logger.warning(f"Failed to discover {service_name}, will retry later")
+                    
+            # Also try to discover PC2 services
+            pc2_services = ["PC2Agent", "VisionProcessingAgent"]
+            for service_name in pc2_services:
+                service_info = discover_service(service_name)
+                if service_info:
+                    self.service_info[service_name] = service_info
+                    logger.info(f"Discovered PC2 service {service_name} at {service_info['host']}:{service_info['port']}")
+                else:
+                    logger.warning(f"Failed to discover PC2 service {service_name}, will retry later")
+        
+        except Exception as e:
+            logger.error(f"Error during service discovery: {str(e)}")
+    
+    def _service_discovery_refresh_loop(self):
+        """Periodically refresh service discovery information"""
+        while self.running:
+            time.sleep(60)  # Refresh every minute
+            self._discover_services()
+    
+    def _get_service_connection(self, service_name):
+        """Get a connection to a service using service discovery"""
+        if service_name not in self.service_info:
+            # Try to discover the service
+            service_info = discover_service(service_name)
+            if service_info:
+                self.service_info[service_name] = service_info
+                logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+            else:
+                logger.error(f"Failed to discover {service_name}")
+                return None
+        
+        # Create a new socket for the request
+        socket = self.context.socket(zmq.REQ)
+        socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            setup_curve_client(socket)
+        
+        # Connect to the service
+        host = self.service_info[service_name]["host"]
+        port = self.service_info[service_name]["port"]
+        socket.connect(f"tcp://{host}:{port}")
+        
+        return socket
     
     def start(self):
         """Start the Coordinator Agent."""
@@ -185,12 +232,6 @@ class CoordinatorAgent(BaseAgent):
         logger.info("Stopping CoordinatorAgent")
         self.running = False
         self.socket.close()
-        self.task_router_socket.close()
-        self.tts_socket.close()
-        self.pc2_socket.close()
-        self.health_monitor_socket.close()
-        self.vision_capture_socket.close()
-        self.vision_processing_socket.close()
         self.suggestion_socket.close()
         self.context.term()
     
@@ -198,173 +239,183 @@ class CoordinatorAgent(BaseAgent):
         """Handle incoming ZMQ requests."""
         while self.running:
             try:
-                # Wait for a request
-                request = self.socket.recv_json()
-                logger.info(f"Received request: {request.get('action', 'unknown')}")
+                # Wait for a request from the client
+                request_str = self.socket.recv_string()
+                request = json.loads(request_str)
                 
-                # Update last interaction time
+                # Update the last interaction time
                 self.last_interaction_time = time.time()
                 
                 # Process the request
                 response = self._process_request(request)
                 
-                # Send the response
-                self.socket.send_json(response)
+                # Send the response back to the client
+                self.socket.send_string(json.dumps(response))
                 
             except zmq.ZMQError as e:
-                logger.error(f"ZMQ error: {e}")
+                if e.errno == zmq.EAGAIN:
+                    # Timeout occurred, continue to next iteration
+                    continue
+                else:
+                    # Other ZMQ error
+                    logger.error(f"ZMQ error in request handling: {e}")
+            
             except Exception as e:
                 logger.error(f"Error handling request: {e}")
                 # Try to send an error response
                 try:
-                    self.socket.send_json({"status": "error", "error": str(e)})
+                    self.socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
                 except:
                     pass
-    
+
     def _handle_proactive_suggestions(self):
-        """Handle incoming proactive suggestions in a separate thread."""
-        logger.info("Starting proactive suggestion handler thread")
-        
+        """Handle incoming proactive suggestions."""
         while self.running:
             try:
-                # Use poll to make this non-blocking so we can check if running flag is still True
-                if self.suggestion_socket.poll(1000) == zmq.POLLIN:
-                    # Receive suggestion
-                    suggestion = self.suggestion_socket.recv_json()
-                    logger.info(f"Received proactive suggestion: {suggestion.get('suggestion_text', '')[:50]}...")
-                    
-                    # Send acknowledgment
-                    self.suggestion_socket.send_json({"status": "ok"})
-                    
-                    # Add to pending suggestions
-                    self._add_pending_suggestion(suggestion)
+                # Wait for a suggestion from the Proactive Agent
+                suggestion_str = self.suggestion_socket.recv_string()
+                suggestion = json.loads(suggestion_str)
+                
+                # Send acknowledgment
+                self.suggestion_socket.send_string(json.dumps({"status": "received"}))
+                
+                # Add the suggestion to the pending list
+                self._add_pending_suggestion(suggestion)
+                
             except zmq.ZMQError as e:
-                logger.error(f"ZMQ error in suggestion handler: {e}")
+                if e.errno == zmq.EAGAIN:
+                    # Timeout occurred, continue to next iteration
+                    continue
+                else:
+                    # Other ZMQ error
+                    logger.error(f"ZMQ error in suggestion handling: {e}")
+            
             except Exception as e:
                 logger.error(f"Error handling suggestion: {e}")
                 # Try to send an error response
                 try:
-                    self.suggestion_socket.send_json({"status": "error", "error": str(e)})
+                    self.suggestion_socket.send_string(json.dumps({
+                        "status": "error",
+                        "message": str(e)
+                    }))
                 except:
                     pass
-            
-            # Sleep briefly to avoid CPU spinning
-            time.sleep(0.1)
-    
+
     def _check_inactivity(self):
-        """Check for user inactivity and present proactive suggestions when appropriate."""
-        logger.info("Starting inactivity checker thread")
-        
+        """Check for user inactivity and present proactive suggestions if available."""
         while self.running:
             try:
-                # Check if there has been no interaction for the threshold period
                 current_time = time.time()
-                inactivity_time = current_time - self.last_interaction_time
+                inactive_time = current_time - self.last_interaction_time
                 
-                if inactivity_time >= INACTIVITY_THRESHOLD and self.pending_suggestions:
-                    # Present the oldest suggestion
+                # If the user has been inactive for a while and we have pending suggestions
+                if inactive_time > INACTIVITY_THRESHOLD and self.pending_suggestions:
+                    # Get the most relevant suggestion (currently just the first one)
                     suggestion = self.pending_suggestions.pop(0)
+                    
+                    # Present the suggestion to the user
                     self._present_suggestion(suggestion)
                     
-                    # Wait a bit before checking again to avoid rapid-fire suggestions
-                    time.sleep(10)
-                else:
-                    # Sleep briefly before checking again
-                    time.sleep(1)
+                    # Reset the inactivity timer to avoid spamming suggestions
+                    self.last_interaction_time = current_time
+                
+                # Sleep for a bit to avoid excessive CPU usage
+                time.sleep(1)
+                
             except Exception as e:
-                logger.error(f"Error in inactivity checker: {e}")
-                time.sleep(5)
-    
+                logger.error(f"Error checking inactivity: {e}")
+                time.sleep(1)
+
     def _add_pending_suggestion(self, suggestion: Dict[str, Any]):
-        """Add a suggestion to the pending suggestions queue."""
-        # Add suggestion with timestamp
-        suggestion["received_time"] = time.time()
-        
-        # Add to pending suggestions
+        """Add a suggestion to the pending list, maintaining a maximum size."""
+        # Add the suggestion to the list
         self.pending_suggestions.append(suggestion)
         
-        # Trim list if needed
+        # Trim the list if it exceeds the maximum size
         if len(self.pending_suggestions) > MAX_PENDING_SUGGESTIONS:
-            # Remove oldest suggestion
-            self.pending_suggestions = self.pending_suggestions[-MAX_PENDING_SUGGESTIONS:]
+            # Remove the oldest suggestion
+            self.pending_suggestions.pop(0)
         
-        logger.info(f"Added suggestion to queue. Now have {len(self.pending_suggestions)} pending suggestions")
-    
+        logger.info(f"Added suggestion to pending list (total: {len(self.pending_suggestions)})")
+
     def _present_suggestion(self, suggestion: Dict[str, Any]):
         """Present a proactive suggestion to the user."""
         try:
-            suggestion_text = suggestion.get("suggestion_text", "")
-            logger.info(f"Presenting proactive suggestion: {suggestion_text}")
+            # Log the suggestion
+            logger.info(f"Presenting proactive suggestion: {suggestion['content']}")
             
-            # Send suggestion to TTS Agent
-            self.tts_socket.send_json({
-                "action": "synthesize",
-                "text": suggestion_text
-            })
-            tts_response = self.tts_socket.recv_json()
-            
-            if tts_response.get("status") != "ok":
-                logger.error(f"TTS error: {tts_response.get('error')}")
-                return
-            
-            # Log that the suggestion was presented
-            logger.info(f"Proactive suggestion presented successfully: {suggestion.get('triggering_context', '')}")
+            # Use TTS to speak the suggestion
+            socket = self._get_service_connection("TTSConnector")
+            if socket:
+                tts_request = {
+                    "text": suggestion["content"],
+                    "voice": suggestion.get("voice", "default"),
+                    "priority": "high"
+                }
+                
+                socket.send_string(json.dumps(tts_request))
+                socket.recv_string()  # Wait for acknowledgment
+                socket.close()
             
         except Exception as e:
             logger.error(f"Error presenting suggestion: {e}")
-    
+
     def _process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a request and return a response."""
-        action = request.get("action", "")
+        """Process an incoming request based on its type."""
+        request_type = request.get("type", "text")
         
-        if action == "process_audio":
+        if request_type == "audio":
             return self._process_audio(request)
-        elif action == "process_text":
+        elif request_type == "text":
             return self._process_text(request)
-        elif action == "process_vision":
+        elif request_type == "vision":
             return self._process_vision(request)
-        elif action == "health_check":
+        elif request_type == "health_check":
             return self._health_check()
-        elif action == "ping":
-            # Simple ping response for health checks
-            return {"status": "ok", "message": "CoordinatorAgent is running"}
         else:
-            return {"status": "error", "error": f"Unknown action: {action}"}
-    
+            return {
+                "status": "error",
+                "message": f"Unknown request type: {request_type}"
+            }
+
     def _process_audio(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process audio input through the pipeline."""
+        """Process an audio request."""
         try:
             # Extract audio data
-            audio_data = request.get("audio_data", "")
+            audio_data = request.get("audio_data")
             if not audio_data:
-                return {"status": "error", "error": "No audio data provided"}
+                return {"status": "error", "message": "No audio data provided"}
             
-            # Step 1: Send audio to Task Router for transcription
-            logger.info("Sending audio to Task Router for transcription")
-            self.task_router_socket.send_json({
-                "action": "route",
-                "target": "transcription",
-                "data": {
-                    "audio_data": audio_data
-                }
-            })
-            stt_response = self.task_router_socket.recv_json()
+            # Decode base64 audio data if needed
+            if isinstance(audio_data, str):
+                audio_data = base64.b64decode(audio_data)
             
-            if stt_response.get("status") != "ok":
-                logger.error(f"STT error: {stt_response.get('error')}")
-                return stt_response
+            # Forward the audio to the TaskRouter for processing
+            socket = self._get_service_connection("TaskRouter")
+            if not socket:
+                return {"status": "error", "message": "TaskRouter service not available"}
+                
+            task_request = {
+                "type": "audio",
+                "audio_data": base64.b64encode(audio_data).decode("ascii") if isinstance(audio_data, bytes) else audio_data,
+                "format": request.get("format", "wav"),
+                "sample_rate": request.get("sample_rate", 16000)
+            }
             
-            # Extract the transcript
-            transcript = stt_response.get("transcript", "")
-            logger.info(f"Transcript: {transcript}")
+            socket.send_string(json.dumps(task_request))
+            response_str = socket.recv_string()
+            socket.close()
             
-            # Continue with text processing
-            return self._process_text({"action": "process_text", "text": transcript})
+            response = json.loads(response_str)
+            return response
             
         except Exception as e:
             logger.error(f"Error processing audio: {e}")
-            return {"status": "error", "error": f"Failed to process audio: {str(e)}"}
-    
+            return {"status": "error", "message": str(e)}
+
     def _process_text(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process text input through the pipeline."""
         try:
@@ -375,14 +426,20 @@ class CoordinatorAgent(BaseAgent):
             
             # Step 1: Send text to Task Router for NLU processing
             logger.info("Sending text to Task Router for NLU processing")
-            self.task_router_socket.send_json({
-                "action": "route",
-                "target": "nlu",
-                "data": {
-                    "text": text
-                }
-            })
-            nlu_response = self.task_router_socket.recv_json()
+            socket = self._get_service_connection("TaskRouter")
+            if not socket:
+                return {"status": "error", "error": "TaskRouter service not available"}
+            
+            task_request = {
+                "type": "text",
+                "text": text
+            }
+            
+            socket.send_string(json.dumps(task_request))
+            nlu_response_str = socket.recv_string()
+            socket.close()
+            
+            nlu_response = json.loads(nlu_response_str)
             
             if nlu_response.get("status") != "ok":
                 logger.error(f"NLU error: {nlu_response.get('error')}")
@@ -403,13 +460,22 @@ class CoordinatorAgent(BaseAgent):
             elif intent.startswith("[PC2]"):
                 # Route to PC2 for processing
                 logger.info("Routing to PC2 Agent")
-                self.pc2_socket.send_json({
-                    "action": "process",
+                socket = self._get_service_connection("PC2Agent")
+                if not socket:
+                    return {"status": "error", "error": "PC2Agent service not available"}
+                
+                pc2_request = {
+                    "type": "process",
                     "text": text,
                     "intent": intent,
                     "entities": entities
-                })
-                pc2_response = self.pc2_socket.recv_json()
+                }
+                
+                socket.send_string(json.dumps(pc2_request))
+                pc2_response_str = socket.recv_string()
+                socket.close()
+                
+                pc2_response = json.loads(pc2_response_str)
                 
                 if pc2_response.get("status") != "ok":
                     logger.error(f"PC2 error: {pc2_response.get('error')}")
@@ -421,16 +487,22 @@ class CoordinatorAgent(BaseAgent):
             else:
                 # Route to Task Router for dialog generation
                 logger.info("Routing to Task Router for dialog generation")
-                self.task_router_socket.send_json({
-                    "action": "route",
-                    "target": "dialog",
-                    "data": {
-                        "text": text,
-                        "intent": intent,
-                        "entities": entities
-                    }
-                })
-                dialog_response = self.task_router_socket.recv_json()
+                socket = self._get_service_connection("TaskRouter")
+                if not socket:
+                    return {"status": "error", "error": "TaskRouter service not available"}
+                
+                dialog_request = {
+                    "type": "dialog",
+                    "text": text,
+                    "intent": intent,
+                    "entities": entities
+                }
+                
+                socket.send_string(json.dumps(dialog_request))
+                dialog_response_str = socket.recv_string()
+                socket.close()
+                
+                dialog_response = json.loads(dialog_response_str)
                 
                 if dialog_response.get("status") != "ok":
                     logger.error(f"Dialog error: {dialog_response.get('error')}")
@@ -441,11 +513,21 @@ class CoordinatorAgent(BaseAgent):
             
             # Step 3: Send response to TTS Agent
             logger.info(f"Sending response to TTS Agent: {response_text}")
-            self.tts_socket.send_json({
-                "action": "synthesize",
-                "text": response_text
-            })
-            tts_response = self.tts_socket.recv_json()
+            socket = self._get_service_connection("TTSConnector")
+            if not socket:
+                return {"status": "error", "error": "TTSConnector service not available"}
+            
+            tts_request = {
+                "text": response_text,
+                "voice": request.get("voice", "default"),
+                "priority": "high"
+            }
+            
+            socket.send_string(json.dumps(tts_request))
+            tts_response_str = socket.recv_string()
+            socket.close()
+            
+            tts_response = json.loads(tts_response_str)
             
             if tts_response.get("status") != "ok":
                 logger.error(f"TTS error: {tts_response.get('error')}")
@@ -464,7 +546,7 @@ class CoordinatorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error processing text: {e}")
             return {"status": "error", "error": f"Failed to process text: {str(e)}"}
-    
+
     def _process_vision(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process vision-related requests through the vision pipeline."""
         try:
@@ -476,10 +558,19 @@ class CoordinatorAgent(BaseAgent):
             
             # Step 1: Capture screenshot using VisionCaptureAgent
             logger.info("Requesting screenshot from VisionCaptureAgent")
-            self.vision_capture_socket.send_json({
-                "action": "capture_screen"
-            })
-            capture_response = self.vision_capture_socket.recv_json()
+            socket = self._get_service_connection("VisionCaptureAgent")
+            if not socket:
+                return {"status": "error", "error": "VisionCaptureAgent service not available"}
+            
+            capture_request = {
+                "type": "capture_screen"
+            }
+            
+            socket.send_string(json.dumps(capture_request))
+            capture_response_str = socket.recv_string()
+            socket.close()
+            
+            capture_response = json.loads(capture_response_str)
             
             if capture_response.get("status") != "ok":
                 logger.error(f"Vision capture error: {capture_response.get('error')}")
@@ -492,12 +583,21 @@ class CoordinatorAgent(BaseAgent):
             
             # Step 2: Process the image using VisionProcessingAgent on PC2
             logger.info("Sending image to VisionProcessingAgent for processing")
-            self.vision_processing_socket.send_json({
-                "action": "describe_image",
+            socket = self._get_service_connection("VisionProcessingAgent")
+            if not socket:
+                return {"status": "error", "error": "VisionProcessingAgent service not available"}
+            
+            processing_request = {
+                "type": "describe_image",
                 "image_base64": image_base64,
                 "prompt": text  # Use the original user text as the prompt
-            })
-            processing_response = self.vision_processing_socket.recv_json()
+            }
+            
+            socket.send_string(json.dumps(processing_request))
+            processing_response_str = socket.recv_string()
+            socket.close()
+            
+            processing_response = json.loads(processing_response_str)
             
             if processing_response.get("status") != "ok":
                 logger.error(f"Vision processing error: {processing_response.get('error')}")
@@ -510,11 +610,21 @@ class CoordinatorAgent(BaseAgent):
             
             # Step 3: Send the description to TTS Agent
             logger.info(f"Sending vision description to TTS Agent: {description[:100]}...")
-            self.tts_socket.send_json({
-                "action": "synthesize",
-                "text": description
-            })
-            tts_response = self.tts_socket.recv_json()
+            socket = self._get_service_connection("TTSConnector")
+            if not socket:
+                return {"status": "error", "error": "TTSConnector service not available"}
+            
+            tts_request = {
+                "text": description,
+                "voice": request.get("voice", "default"),
+                "priority": "high"
+            }
+            
+            socket.send_string(json.dumps(tts_request))
+            tts_response_str = socket.recv_string()
+            socket.close()
+            
+            tts_response = json.loads(tts_response_str)
             
             if tts_response.get("status") != "ok":
                 logger.error(f"TTS error: {tts_response.get('error')}")
@@ -533,7 +643,7 @@ class CoordinatorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error processing vision request: {e}")
             return {"status": "error", "error": f"Failed to process vision request: {str(e)}"}
-    
+
     def _health_check(self) -> Dict[str, Any]:
         """Perform a health check on all connected agents."""
         health_status = {
@@ -548,49 +658,163 @@ class CoordinatorAgent(BaseAgent):
         
         # Check Task Router
         try:
-            self.task_router_socket.send_json({"action": "health_check"})
-            response = self.task_router_socket.recv_json()
-            health_status["task_router"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("TaskRouter")
+            if not socket:
+                health_status["task_router"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["task_router"] = "ok"
+            else:
+                health_status["task_router"] = "error"
         except:
             health_status["task_router"] = "error"
         
         # Check TTS Agent
         try:
-            self.tts_socket.send_json({"action": "health_check"})
-            response = self.tts_socket.recv_json()
-            health_status["tts"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("TTSConnector")
+            if not socket:
+                health_status["tts"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["tts"] = "ok"
+            else:
+                health_status["tts"] = "error"
         except:
             health_status["tts"] = "error"
         
         # Check PC2 Agent
         try:
-            self.pc2_socket.send_json({"action": "health_check"})
-            response = self.pc2_socket.recv_json()
-            health_status["pc2"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("PC2Agent")
+            if not socket:
+                health_status["pc2"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["pc2"] = "ok"
+            else:
+                health_status["pc2"] = "error"
         except:
             health_status["pc2"] = "error"
         
         # Check Health Monitor
         try:
-            self.health_monitor_socket.send_json({"action": "health_check"})
-            response = self.health_monitor_socket.recv_json()
-            health_status["health_monitor"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("HealthMonitor")
+            if not socket:
+                health_status["health_monitor"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["health_monitor"] = "ok"
+            else:
+                health_status["health_monitor"] = "error"
         except:
             health_status["health_monitor"] = "error"
         
         # Check Vision Capture Agent
         try:
-            self.vision_capture_socket.send_json({"action": "health_check"})
-            response = self.vision_capture_socket.recv_json()
-            health_status["vision_capture"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("VisionCaptureAgent")
+            if not socket:
+                health_status["vision_capture"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["vision_capture"] = "ok"
+            else:
+                health_status["vision_capture"] = "error"
         except:
             health_status["vision_capture"] = "error"
         
         # Check Vision Processing Agent
         try:
-            self.vision_processing_socket.send_json({"action": "health_check"})
-            response = self.vision_processing_socket.recv_json()
-            health_status["vision_processing"] = "ok" if response.get("status") == "ok" else "error"
+            socket = self._get_service_connection("VisionProcessingAgent")
+            if not socket:
+                health_status["vision_processing"] = "error"
+                return {
+                    "status": "ok",
+                    "health_status": health_status
+                }
+            
+            health_request = {
+                "type": "health_check"
+            }
+            
+            socket.send_string(json.dumps(health_request))
+            response_str = socket.recv_string()
+            socket.close()
+            
+            response = json.loads(response_str)
+            
+            if response.get("status") == "ok":
+                health_status["vision_processing"] = "ok"
+            else:
+                health_status["vision_processing"] = "error"
         except:
             health_status["vision_processing"] = "error"
         

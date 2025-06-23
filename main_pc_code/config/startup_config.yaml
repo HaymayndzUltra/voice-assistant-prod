@@ -12,19 +12,19 @@ core_services:
       cot_port: 5612
       got_tot_host: "127.0.0.1"
       got_tot_port: 5646
-      emr_host: "localhost"
+      emr_host: "0.0.0.0"
       emr_port: 5598
-      translator_host: "localhost"
+      translator_host: "0.0.0.0"
       translator_port: 5563
       queue_max_size: 100
       batch_max_size: 5
       batch_timeout_ms: 200
-  - { name: ChainOfThoughtAgent, script_path: FORMAINPC/ChainOfThoughtAgent.py, host: localhost, port: 5612, required: true }
-  - { name: GOT_TOTAgent, script_path: FORMAINPC/GOT_TOTAgent.py, host: localhost, port: 5646, required: true }
-  - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: localhost , port: 5570 , required: true, params: { enable_pc2_services: true } }
+  - { name: ChainOfThoughtAgent, script_path: FORMAINPC/ChainOfThoughtAgent.py, host: 0.0.0.0, port: 5612, required: true }
+  - { name: GOT_TOTAgent, script_path: FORMAINPC/GOT_TOTAgent.py, host: 0.0.0.0, port: 5646, required: true }
+  - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: 0.0.0.0 , port: 5570 , required: true, params: { enable_pc2_services: true } }
   - name: VRAMOptimizerAgent
     script_path: agents/vram_optimizer_agent.py
-    host: localhost
+    host: 0.0.0.0
     port: 5572
     dependencies: [ModelManagerAgent, SystemDigitalTwin]
     required: true
@@ -50,97 +50,98 @@ core_services:
       predictive_loading_enabled: true
       lookahead_window: 300           # 5 min lookahead for task prediction
       prediction_window: 3600         # Track usage patterns for 1 hour
-  - { name: CoordinatorAgent  , script_path: agents/coordinator_agent.py      , host: localhost , port: 26002 , required: true }
-  - { name: GoalOrchestratorAgent, script_path: agents/GoalOrchestratorAgent.py  , host: localhost , port: 7001 , dependencies: [TaskRouter] , required: true }
-  - { name: IntentionValidatorAgent, script_path: agents/IntentionValidatorAgent.py, host: localhost , port: 5701 , dependencies: [TaskRouter] , required: true }
-  - { name: DynamicIdentityAgent, script_path: agents/DynamicIdentityAgent.py    , host: localhost , port: 5802 , dependencies: [TaskRouter] , required: true }
-  - { name: EmpathyAgent       , script_path: agents/EmpathyAgent.py            , host: localhost , port: 5703 , dependencies: [EmotionEngine] , required: true }
-  - { name: ProactiveAgent     , script_path: agents/ProactiveAgent.py          , host: localhost , port: 5624 , dependencies: [TaskRouter] , required: true }
-  - { name: PredictiveLoader   , script_path: agents/predictive_loader.py        , host: localhost , port: 5617 , dependencies: [TaskRouter] , required: true }
+  - { name: CoordinatorAgent  , script_path: agents/coordinator_agent.py      , host: 0.0.0.0 , port: 26002 , required: true }
+  - { name: GoalOrchestratorAgent, script_path: agents/GoalOrchestratorAgent.py  , host: 0.0.0.0 , port: 7001 , dependencies: [TaskRouter] , required: true }
+  - { name: IntentionValidatorAgent, script_path: agents/IntentionValidatorAgent.py, host: 0.0.0.0 , port: 5701 , dependencies: [TaskRouter] , required: true }
+  - { name: DynamicIdentityAgent, script_path: agents/DynamicIdentityAgent.py    , host: 0.0.0.0 , port: 5802 , dependencies: [TaskRouter] , required: true }
+  - { name: EmpathyAgent       , script_path: agents/EmpathyAgent.py            , host: 0.0.0.0 , port: 5703 , dependencies: [EmotionEngine] , required: true }
+  - { name: ProactiveAgent     , script_path: agents/ProactiveAgent.py          , host: 0.0.0.0 , port: 5624 , dependencies: [TaskRouter] , required: true }
+  - { name: PredictiveLoader   , script_path: agents/predictive_loader.py        , host: 0.0.0.0 , port: 5617 , dependencies: [TaskRouter] , required: true }
 
 # Main PC GPU Services
 main_pc_gpu_services:
-  - { name: EnhancedModelRouter, script_path: FORMAINPC/EnhancedModelRouter.py     , host: localhost , port: 5598 , required: true }
-  - { name: TinyLlamaService   , script_path: FORMAINPC/TinyLlamaServiceEnhanced.py, host: localhost , port: 5615 , required: true }
-  - { name: NLLBAdapter        , script_path: FORMAINPC/NLLBAdapter.py             , host: localhost , port: 5581 , required: true }
-  - { name: LearningAdjusterAgent, script_path: FORMAINPC/LearningAdjusterAgent.py  , host: localhost , port: 5643 , required: true }
-  - { name: LocalFineTunerAgent, script_path: FORMAINPC/LocalFineTunerAgent.py     , host: localhost , port: 5645 , required: true }
-  - { name: SelfTrainingOrchestrator, script_path: FORMAINPC/SelfTrainingOrchestrator.py, host: localhost , port: 5644 , required: true }
-  - { name: CognitiveModelAgent, script_path: FORMAINPC/CognitiveModelAgent.py     , host: localhost , port: 5641 , required: true }
-  - { name: ConsolidatedTranslator, script_path: FORMAINPC/consolidated_translator.py, host: localhost , port: 5563 , required: true }
+  - { name: EnhancedModelRouter, script_path: FORMAINPC/EnhancedModelRouter.py     , host: 0.0.0.0 , port: 5598 , required: true }
+  - { name: TinyLlamaService   , script_path: FORMAINPC/TinyLlamaServiceEnhanced.py, host: 0.0.0.0 , port: 5615 , required: true }
+  - { name: NLLBAdapter        , script_path: FORMAINPC/NLLBAdapter.py             , host: 0.0.0.0 , port: 5581 , required: true }
+  - { name: LearningAdjusterAgent, script_path: FORMAINPC/LearningAdjusterAgent.py  , host: 0.0.0.0 , port: 5643 , required: true }
+  - { name: LocalFineTunerAgent, script_path: FORMAINPC/LocalFineTunerAgent.py     , host: 0.0.0.0 , port: 5645 , required: true }
+  - { name: SelfTrainingOrchestrator, script_path: FORMAINPC/SelfTrainingOrchestrator.py, host: 0.0.0.0 , port: 5644 , required: true }
+  - { name: CognitiveModelAgent, script_path: FORMAINPC/CognitiveModelAgent.py     , host: 0.0.0.0 , port: 5641 , required: true }
+  - { name: ConsolidatedTranslator, script_path: FORMAINPC/consolidated_translator.py, host: 0.0.0.0 , port: 5563 , required: true }
 
 # Emotion System
 emotion_system:
-  - { name: EmotionEngine      , script_path: agents/emotion_engine.py          , host: localhost , port: 5590 , required: true }
-  - { name: MoodTrackerAgent   , script_path: agents/mood_tracker_agent.py      , host: localhost , port: 5704 , dependencies: [EmotionEngine] , required: true }
-  - { name: HumanAwarenessAgent, script_path: agents/human_awareness_agent.py   , host: localhost , port: 5705 , dependencies: [EmotionEngine] , required: true }
-  - { name: EmotionSynthesisAgent, script_path: agents/emotion_synthesis_agent.py, host: localhost , port: 5706 , dependencies: [CoordinatorAgent, ModelManagerAgent] , required: true }
-  - { name: ToneDetector       , script_path: agents/tone_detector.py          , host: localhost , port: 5625 , dependencies: [EmotionEngine] , required: true }
-  - { name: VoiceProfiler      , script_path: agents/voice_profiling_agent.py   , host: localhost , port: 5708 , dependencies: [EmotionEngine] , required: true }
+  - { name: EmotionEngine      , script_path: agents/emotion_engine.py          , host: 0.0.0.0 , port: 5590 , required: true }
+  - { name: MoodTrackerAgent   , script_path: agents/mood_tracker_agent.py      , host: 0.0.0.0 , port: 5704 , dependencies: [EmotionEngine] , required: true }
+  - { name: HumanAwarenessAgent, script_path: agents/human_awareness_agent.py   , host: 0.0.0.0 , port: 5705 , dependencies: [EmotionEngine] , required: true }
+  - { name: EmotionSynthesisAgent, script_path: agents/emotion_synthesis_agent.py, host: 0.0.0.0 , port: 5706 , dependencies: [CoordinatorAgent, ModelManagerAgent] , required: true }
+  - { name: ToneDetector       , script_path: agents/tone_detector.py          , host: 0.0.0.0 , port: 5625 , dependencies: [EmotionEngine] , required: true }
+  - { name: VoiceProfiler      , script_path: agents/voice_profiling_agent.py   , host: 0.0.0.0 , port: 5708 , dependencies: [EmotionEngine] , required: true }
 
 # Language & Processing
 language_processing:
-  - { name: NLUAgent           , script_path: agents/nlu_agent.py              , host: localhost , port: 5709 , dependencies: [LanguageAndTranslationCoordinator] , required: true }
-  - { name: AdvancedCommandHandler, script_path: agents/advanced_command_handler.py, host: localhost , port: 5710 , dependencies: [NLUAgent, CodeGenerator] , required: true }
-  - { name: ChitchatAgent      , script_path: agents/chitchat_agent.py         , host: localhost , port: 5711 , dependencies: [NLUAgent] , required: true }
-  - { name: FeedbackHandler    , script_path: agents/feedback_handler.py       , host: localhost , port: 5636 , dependencies: [NLUAgent] , required: true }
-  - { name: Responder          , script_path: agents/responder.py              , host: localhost , port: 5637 , dependencies: [NLUAgent, EmotionEngine] , required: true }
+  - { name: NLUAgent           , script_path: agents/nlu_agent.py              , host: 0.0.0.0 , port: 5709 , dependencies: [LanguageAndTranslationCoordinator] , required: true }
+  - { name: AdvancedCommandHandler, script_path: agents/advanced_command_handler.py, host: 0.0.0.0 , port: 5710 , dependencies: [NLUAgent, CodeGenerator] , required: true }
+  - { name: ChitchatAgent      , script_path: agents/chitchat_agent.py         , host: 0.0.0.0 , port: 5711 , dependencies: [NLUAgent] , required: true }
+  - { name: FeedbackHandler    , script_path: agents/feedback_handler.py       , host: 0.0.0.0 , port: 5636 , dependencies: [NLUAgent] , required: true }
+  - { name: Responder          , script_path: agents/responder.py              , host: 0.0.0.0 , port: 5637 , dependencies: [NLUAgent, EmotionEngine] , required: true }
 
 # Memory System
 memory_system:
-  - { name: SessionMemoryAgent , script_path: agents/session_memory_agent.py    , host: localhost , port: 5574 , dependencies: [CoordinatorAgent] , required: true }
-  - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: localhost , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
-  - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: localhost , port: 5576 , required: true }
-  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: localhost , port: 5577 , required: true }
-  - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: localhost, port: 5596, dependencies: [MemoryOrchestrator], required: true }
-  - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: localhost, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  - { name: SessionMemoryAgent , script_path: agents/session_memory_agent.py    , host: 0.0.0.0 , port: 5574 , dependencies: [CoordinatorAgent] , required: true }
+  - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: 0.0.0.0 , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
+  - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5576 , required: true }
+  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5577 , required: true }
+  - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
+  - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
 
 # Learning and Knowledge
 learning_knowledge:
-  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: localhost , port: 5579 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
-  - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: localhost , port: 5578 , dependencies: [MemoryManager] , required: true }
-  - { name: MetaCognitionAgent , script_path: agents/MetaCognitionAgent.py      , host: localhost , port: 5630 , dependencies: [KnowledgeBase, CoordinatorAgent] , required: true }
-  - { name: ActiveLearningMonitor, script_path: agents/active_learning_monitor.py, host: localhost , port: 5638 , dependencies: [LearningManager] , required: true }
+  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5579 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
+  - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: 0.0.0.0 , port: 5578 , dependencies: [MemoryManager] , required: true }
+  - { name: MetaCognitionAgent , script_path: agents/MetaCognitionAgent.py      , host: 0.0.0.0 , port: 5630 , dependencies: [KnowledgeBase, CoordinatorAgent] , required: true }
+  - { name: ActiveLearningMonitor, script_path: agents/active_learning_monitor.py, host: 0.0.0.0 , port: 5638 , dependencies: [LearningManager] , required: true }
 
 # Planning and Execution
 planning_execution:
-  - { name: UnifiedPlanningAgent, script_path: agents/unified_planning_agent.py, host: localhost , port: 5634 , dependencies: [GoalOrchestratorAgent, IntentionValidatorAgent] , required: true }
-  - { name: MultiAgentSwarmManager, script_path: agents/MultiAgentSwarmManager.py, host: localhost , port: 5639 , dependencies: [UnifiedPlanningAgent] , required: true }
-  - { name: UnifiedSystemAgent  , script_path: agents/unified_system_agent.py   , host: localhost , port: 5640 , dependencies: [UnifiedPlanningAgent] , required: true }
+  - { name: UnifiedPlanningAgent, script_path: agents/unified_planning_agent.py, host: 0.0.0.0 , port: 5634 , dependencies: [GoalOrchestratorAgent, IntentionValidatorAgent] , required: true }
+  - { name: MultiAgentSwarmManager, script_path: agents/MultiAgentSwarmManager.py, host: 0.0.0.0 , port: 5639 , dependencies: [UnifiedPlanningAgent] , required: true }
+  - { name: UnifiedSystemAgent  , script_path: agents/unified_system_agent.py   , host: 0.0.0.0 , port: 5640 , dependencies: [UnifiedPlanningAgent] , required: true }
 
 # TTS Services
 tts_services:
-  - { name: TTSConnector, script_path: agents/tts_connector.py, host: localhost, port: 5582, dependencies: [CoordinatorAgent], required: true }
-  - { name: TTSCache, script_path: agents/tts_cache.py, host: localhost, port: 5628, required: true }
-  - { name: StreamingTTSAgent, script_path: agents/streaming_tts_agent.py, host: localhost, port: 5562, dependencies: [CoordinatorAgent], required: true }
+  - { name: TTSConnector, script_path: agents/tts_connector.py, host: 0.0.0.0, port: 5582, dependencies: [CoordinatorAgent], required: true }
+  - { name: TTSCache, script_path: agents/tts_cache.py, host: 0.0.0.0, port: 5628, required: true }
+  - { name: StreamingTTSAgent, script_path: agents/streaming_tts_agent.py, host: 0.0.0.0, port: 5562, dependencies: [CoordinatorAgent], required: true }
 
 # Code Generation Pipeline
 code_generation:
-  - { name: CodeGenerator      , script_path: agents/code_generator_agent.py    , host: localhost , port: 5604 , dependencies: [ModelManagerAgent] , required: true }
-  - { name: Executor           , script_path: agents/executor.py               , host: localhost , port: 5606 , dependencies: [] , required: true }
+  - { name: CodeGenerator      , script_path: agents/code_generator_agent.py    , host: 0.0.0.0 , port: 5604 , dependencies: [ModelManagerAgent] , required: true }
+  - { name: Executor           , script_path: agents/executor.py               , host: 0.0.0.0 , port: 5606 , dependencies: [] , required: true }
 
 # Audio Processing
 audio_processing:
-  - { name: AudioCapture, script_path: agents/streaming_audio_capture.py, host: localhost, port: 6575, required: true, env_vars: { USE_DUMMY_AUDIO: "true" } }
-  - { name: FusedAudioPreprocessor, script_path: src/audio/fused_audio_preprocessor.py, host: localhost , port: 6578 , dependencies: [AudioCapture] , required: true }
-  - { name: WakeWordDetector   , script_path: agents/wake_word_detector.py     , host: localhost , port: 6577 , dependencies: [AudioCapture, FusedAudioPreprocessor] , required: true }
+  - { name: AudioCapture, script_path: agents/streaming_audio_capture.py, host: 0.0.0.0, port: 6575, required: true, env_vars: { USE_DUMMY_AUDIO: "true" } }
+  - { name: FusedAudioPreprocessor, script_path: src/audio/fused_audio_preprocessor.py, host: 0.0.0.0 , port: 6578 , dependencies: [AudioCapture] , required: true }
+  - { name: WakeWordDetector   , script_path: agents/wake_word_detector.py     , host: 0.0.0.0 , port: 6577 , dependencies: [AudioCapture, FusedAudioPreprocessor] , required: true }
   - name: StreamingSpeechRecognition
     script_path: agents/streaming_speech_recognition.py
+    host: 0.0.0.0
     port: 6580
     dependencies: [TaskRouter]
     required: true
     params:
       model_config_path: "config/model_config.json"
-  - { name: LanguageAndTranslationCoordinator, script_path: agents/language_and_translation_coordinator.py, host: localhost , port: 6581 , dependencies: [TaskRouter] , required: true }
+  - { name: LanguageAndTranslationCoordinator, script_path: agents/language_and_translation_coordinator.py, host: 0.0.0.0 , port: 6581 , dependencies: [TaskRouter] , required: true }
 
 # Vision
 vision:
-  - { name: VisionCaptureAgent , script_path: src/vision/vision_capture_agent.py, host: localhost , port: 5592 , required: true }
-  - { name: FaceRecognitionAgent, script_path: agents/face_recognition_agent.py, host: localhost , port: 5610 , dependencies: [TaskRouter, ModelManagerAgent] , required: true }
+  - { name: VisionCaptureAgent , script_path: src/vision/vision_capture_agent.py, host: 0.0.0.0 , port: 5592 , required: true }
+  - { name: FaceRecognitionAgent, script_path: agents/face_recognition_agent.py, host: 0.0.0.0 , port: 5610 , dependencies: [TaskRouter, ModelManagerAgent] , required: true }
 
 # Additional Monitoring and Security
 monitoring_security:
-  - { name: PredictiveHealthMonitor, script_path: agents/predictive_health_monitor.py, host: localhost , port: 5613 , required: true }
+  - { name: PredictiveHealthMonitor, script_path: agents/predictive_health_monitor.py, host: 0.0.0.0 , port: 5613 , required: true }
   - { name: SystemDigitalTwin, script_path: agents/system_digital_twin.py, host: 0.0.0.0, port: 7120, health_check_port: 8100, required: true }
 
 # Environment variables for all agents

@@ -4,8 +4,49 @@
 main_pc_ip: "192.168.100.16"  # MainPC's IP address
 pc2_ip: "192.168.100.17"      # PC2's IP address
 
+# Default binding settings
+bind_address: "0.0.0.0"       # Listen on all interfaces by default
+service_discovery_port: 5990  # Port for the service discovery mechanism
+
+# Security settings
+secure_zmq: true              # Enable ZMQ curve encryption
+zmq_key_directory: "certificates"  # Directory containing ZMQ curve certificates
+
+# Network architecture parameters
+connection_timeout: 5000      # Default connection timeout in milliseconds
+heartbeat_interval: 30        # Heartbeat interval in seconds
+max_retries: 3                # Maximum connection retry attempts
+
 # System-wide service ports
 ports:
   system_digital_twin: 7120
   health_check: 8100
   unified_memory_reasoning: 7230  # Example port for UnifiedMemoryReasoningAgent 
+  
+  # Core services
+  coordinator: 26002
+  task_router: 5571
+  tts_connector: 5562
+  health_monitor: 5584
+  model_manager: 5598
+
+  # Vision system
+  vision_capture: 5587
+  vision_processing: 5588
+
+  # Translation services
+  nllb_adapter: 5581
+  phi_translation: 11434
+  consolidated_translator: 5563
+
+  # Memory system
+  memory_orchestrator: 5575
+  contextual_memory: 5576
+  
+  # Web/external interfaces
+  remote_connector: 5557
+  web_assistant: 5589
+  
+  # PC2 services
+  pc2_agent: 5560
+  unified_web_agent: 7550 

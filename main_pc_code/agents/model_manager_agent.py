@@ -737,7 +737,55 @@ class ModelManagerAgent(BaseAgent):
 
     def _memory_management_loop(self):
         """Background thread for managing VRAM usage"""
+        from utils.service_discovery_client import discover_service
+        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+        
         self.vram_logger.info("Starting memory management loop")
+        
+        # Check if VRAM Optimizer is available
+        vram_optimizer_available = False
+        vram_optimizer_socket = None
+        
+        try:
+            vram_optimizer_info = discover_service("VRAMOptimizerAgent")
+            if vram_optimizer_info:
+                vram_optimizer_available = True
+                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_port = vram_optimizer_info.get("port", 5588)
+                
+                # Create socket for VRAM optimizer
+                vram_optimizer_socket = self.context.socket(zmq.REQ)
+                vram_optimizer_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+                vram_optimizer_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
+                
+                # Apply secure ZMQ if enabled
+                if is_secure_zmq_enabled():
+                    setup_curve_client(vram_optimizer_socket)
+                
+                # Connect to VRAM optimizer
+                vram_optimizer_socket.connect(f"tcp://{vram_optimizer_host}:{vram_optimizer_port}")
+                
+                self.vram_logger.info(f"Connected to VRAMOptimizerAgent at {vram_optimizer_host}:{vram_optimizer_port}")
+                
+                # Notify VRAM optimizer that we're delegating VRAM management
+                request = {
+                    "action": "register_model_manager",
+                    "vram_budget_mb": self.vram_budget_mb,
+                    "idle_timeout": self.idle_timeout
+                }
+                
+                vram_optimizer_socket.send_json(request)
+                response = vram_optimizer_socket.recv_json()
+                
+                if response.get("status") == "ok":
+                    self.vram_logger.info("Successfully registered with VRAMOptimizerAgent")
+                else:
+                    self.vram_logger.warning(f"Failed to register with VRAMOptimizerAgent: {response.get('message', 'Unknown error')}")
+                    vram_optimizer_available = False
+        except Exception as e:
+            self.vram_logger.error(f"Error connecting to VRAMOptimizerAgent: {e}")
+            self.vram_logger.error(traceback.format_exc())
+            vram_optimizer_available = False
         
         while self.running:
             try:
@@ -746,6 +794,45 @@ class ModelManagerAgent(BaseAgent):
                 vram_usage_percent = (current_vram / total_vram) * 100
                 
                 self.vram_logger.debug(f"Current VRAM usage: {current_vram:.1f}MB / {total_vram:.1f}MB ({vram_usage_percent:.1f}%)")
+                
+                # If VRAM Optimizer is available, delegate VRAM management to it
+                if vram_optimizer_available and vram_optimizer_socket:
+                    try:
+                        # Send VRAM status update to optimizer
+                        request = {
+                            "action": "update_vram_status",
+                            "current_vram_mb": current_vram,
+                            "total_vram_mb": total_vram,
+                            "loaded_models": {
+                                model_id: {
+                                    "priority": info.get("priority", "medium"),
+                                    "vram_mb": info.get("vram_mb", 0),
+                                    "last_used": info.get("last_used_timestamp", 0)
+                                }
+                                for model_id, info in self.loaded_models.items()
+                            }
+                        }
+                        
+                        vram_optimizer_socket.send_json(request)
+                        response = vram_optimizer_socket.recv_json()
+                        
+                        # Process instructions from VRAM optimizer
+                        if response.get("status") == "ok":
+                            # Check for unload instructions
+                            models_to_unload = response.get("unload_models", [])
+                            for model_id in models_to_unload:
+                                self.vram_logger.info(f"VRAMOptimizerAgent requested unload of model {model_id}")
+                                self._unload_model_by_type(model_id)
+                        
+                        # Continue to next iteration
+                        time.sleep(self.memory_check_interval)
+                        continue
+                    except Exception as e:
+                        self.vram_logger.error(f"Error communicating with VRAMOptimizerAgent: {e}")
+                        self.vram_logger.error(traceback.format_exc())
+                        # Fall back to local VRAM management
+                
+                # Local VRAM management - only used if VRAM Optimizer is unavailable
                 
                 # Check for VRAM pressure
                 if current_vram > self.vram_budget_mb:
@@ -788,7 +875,7 @@ class ModelManagerAgent(BaseAgent):
                         self.vram_logger.info(f"  - Last Used: {datetime.fromtimestamp(model_to_unload['last_used']).isoformat()}")
                         
                         # Unload the model
-                        self._unload_model(model_id)
+                        self._unload_model_by_type(model_id)
                         
                         # Update VRAM usage
                         current_vram = self._get_current_vram()
@@ -798,7 +885,7 @@ class ModelManagerAgent(BaseAgent):
                 current_time = time.time()
                 for model_id, info in list(self.loaded_models.items()):
                     idle_time = current_time - info['last_used_timestamp']
-                    if idle_time > self.idle_unload_timeout_seconds:
+                    if idle_time > self.idle_timeout:
                         self.vram_logger.info(f"Unloading idle model {model_id}:")
                         self.vram_logger.info(f"  - Priority: {info['priority']}")
                         self.vram_logger.info(f"  - VRAM Usage: {info['vram_mb']}MB")
@@ -806,7 +893,7 @@ class ModelManagerAgent(BaseAgent):
                         self.vram_logger.info(f"  - Idle Time: {idle_time:.1f} seconds")
                         
                         # Unload the model
-                        self._unload_model(model_id)
+                        self._unload_model_by_type(model_id)
                         
                         # Update VRAM usage
                         current_vram = self._get_current_vram()
@@ -929,12 +1016,54 @@ class ModelManagerAgent(BaseAgent):
     def _can_accommodate_model(self, model_vram_mb: float) -> bool:
         """Check if a model can fit within the remaining VRAM budget
         
+        If VRAM optimizer is available, consult it for the decision.
+        Otherwise, make the decision locally.
+        
         Args:
             model_vram_mb: The VRAM requirement of the model in MB
             
         Returns:
             True if the model can be accommodated, False otherwise
         """
+        from utils.service_discovery_client import discover_service
+        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+        
+        # Check if VRAM Optimizer is available
+        try:
+            vram_optimizer_info = discover_service("VRAMOptimizerAgent")
+            if vram_optimizer_info:
+                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_port = vram_optimizer_info.get("port", 5588)
+                
+                # Create socket for VRAM optimizer
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2s timeout (short for blocking operations)
+                socket.setsockopt(zmq.SNDTIMEO, 2000)  # 2s timeout
+                
+                # Apply secure ZMQ if enabled
+                if is_secure_zmq_enabled():
+                    setup_curve_client(socket)
+                
+                # Connect to VRAM optimizer
+                socket.connect(f"tcp://{vram_optimizer_host}:{vram_optimizer_port}")
+                
+                # Ask VRAM optimizer if model can be accommodated
+                request = {
+                    "action": "can_accommodate_model",
+                    "vram_mb": model_vram_mb
+                }
+                
+                socket.send_json(request)
+                response = socket.recv_json()
+                socket.close()
+                
+                if response.get("status") == "ok":
+                    can_accommodate = response.get("can_accommodate", False)
+                    self.vram_logger.info(f"VRAMOptimizerAgent says model requiring {model_vram_mb}MB can{'' if can_accommodate else 'not'} be accommodated")
+                    return can_accommodate
+        except Exception as e:
+            self.vram_logger.warning(f"Error consulting VRAMOptimizerAgent: {e}")
+            # Fall back to local decision
         if self.device != 'cuda':
             return True  # No VRAM constraints on CPU
             
@@ -2340,7 +2469,67 @@ class ModelManagerAgent(BaseAgent):
         return sorted_models[0][0]  # Return the model_id of the first (lowest VRAM) model
 
     def _make_room_for_model(self, required_vram_mb):
-        """Try to free up VRAM by unloading least recently used models"""
+        """Try to free up VRAM by unloading least recently used models
+        
+        If VRAM optimizer is available, delegate the decision to it.
+        Otherwise, make the decision locally.
+        """
+        from utils.service_discovery_client import discover_service
+        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+        
+        # Check if VRAM Optimizer is available
+        try:
+            vram_optimizer_info = discover_service("VRAMOptimizerAgent")
+            if vram_optimizer_info:
+                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_port = vram_optimizer_info.get("port", 5588)
+                
+                # Create socket for VRAM optimizer
+                socket = self.context.socket(zmq.REQ)
+                socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout (longer for this operation)
+                socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
+                
+                # Apply secure ZMQ if enabled
+                if is_secure_zmq_enabled():
+                    setup_curve_client(socket)
+                
+                # Connect to VRAM optimizer
+                socket.connect(f"tcp://{vram_optimizer_host}:{vram_optimizer_port}")
+                
+                # Ask VRAM optimizer to make room for the model
+                request = {
+                    "action": "make_room_for_model",
+                    "vram_mb": required_vram_mb,
+                    "loaded_models": {
+                        model_id: {
+                            "priority": self.models.get(model_id, {}).get("priority", "medium"),
+                            "vram_mb": self.loaded_model_instances.get(model_id, 0),
+                            "last_used": self.model_last_used_timestamp.get(model_id, 0)
+                        }
+                        for model_id in self.loaded_model_instances
+                    }
+                }
+                
+                socket.send_json(request)
+                response = socket.recv_json()
+                
+                if response.get("status") == "ok":
+                    # Unload models as instructed by VRAM optimizer
+                    models_to_unload = response.get("unload_models", [])
+                    for model_id in models_to_unload:
+                        self.vram_logger.info(f"VRAMOptimizerAgent requested unload of model {model_id} to make room")
+                        self._unload_model_by_type(model_id)
+                    
+                    success = response.get("success", False)
+                    socket.close()
+                    return success
+                
+                socket.close()
+        except Exception as e:
+            self.vram_logger.warning(f"Error consulting VRAMOptimizerAgent for making room: {e}")
+            # Fall back to local decision
+            
+        # Local decision logic
         if not self.loaded_model_instances:
             logger.warning("No loaded models to unload for making room")
             return False

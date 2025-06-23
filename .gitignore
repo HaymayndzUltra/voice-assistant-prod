@@ -147,3 +147,9 @@ Thumbs.db
 *.swp
 *.tmp
 *~
+
+# ===================================================================
+# Windows Specific
+# ===================================================================
+# Zone.Identifier files created by Windows when downloading files
+*:Zone.Identifier

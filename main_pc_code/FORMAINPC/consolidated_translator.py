@@ -33,6 +33,8 @@ import argparse
 
 # Import config parser for dynamic port support
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
 # Configure logging
 LOG_LEVEL = 'INFO'
@@ -65,6 +67,9 @@ HEALTH_CHECK_INTERVAL = 30  # seconds
 HEALTH_CHECK_TIMEOUT = 5  # seconds
 MAX_RETRIES = 3
 
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
+
 # Configuration for Main PC
 TRANSLATOR_CONFIG = {
     "engines": {
@@ -79,23 +84,20 @@ TRANSLATOR_CONFIG = {
             "confidence_threshold": 0.85,
             "model": "facebook/nllb-200-distilled-600M",
             "timeout": 30,
-            "port": 5581,
-            "host": "192.168.100.17"  # PC2's IP where NLLB is running
+            "service_name": "NLLBAdapter"  # Use service discovery instead of hardcoded host/port
         },
         "phi": {
             "enabled": True,
             "priority": 3,
             "confidence_threshold": 0.75,
             "timeout": 3,
-            "port": 11434,
-            "host": "192.168.100.17"  # PC2's IP where Phi is running
+            "service_name": "PhiTranslationService"  # Use service discovery instead of hardcoded host/port
         },
         "google": {
             "enabled": True,
             "priority": 4,
             "confidence_threshold": 0.90,
-            "rca_port": 5557,
-            "host": "192.168.100.17"  # PC2's IP for Remote Connector Agent
+            "service_name": "RemoteConnectorAgent"  # Use service discovery instead of hardcoded host/port
         }
     },
     "cache": {
@@ -112,7 +114,8 @@ TRANSLATOR_CONFIG = {
         "check_interval": HEALTH_CHECK_INTERVAL,
         "timeout": HEALTH_CHECK_TIMEOUT,
         "max_retries": MAX_RETRIES
-    }
+    },
+    "secure_zmq": SECURE_ZMQ
 }
 
 # Translation Dictionary
@@ -724,49 +727,13 @@ class TranslationPipeline:
         
         # Initialize ZMQ context and sockets
         self.context = zmq.Context()
-        self.nllb_socket = self.context.socket(zmq.REQ)
-        self.nllb_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.nllb_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.phi_socket = self.context.socket(zmq.REQ)
-        self.phi_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.phi_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.google_socket = self.context.socket(zmq.REQ)
-        self.google_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.google_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
-        # Initialize engine connections with graceful failure handling
-        try:
-            nllb_host = config['engines']['nllb']['host']
-            nllb_port = config['engines']['nllb']['port']
-            self.nllb_socket.connect(f"tcp://{nllb_host}:{nllb_port}")
-            self.engine_status['nllb']['status'] = 'connected'
-            logger.info(f"Connected to NLLB service at {nllb_host}:{nllb_port}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to NLLB service: {str(e)} - continuing without NLLB")
-            self.engine_status['nllb']['status'] = 'disconnected'
-            self.engine_status['nllb']['last_error'] = str(e)
-            
-        try:
-            phi_host = config['engines']['phi']['host']
-            phi_port = config['engines']['phi']['port']
-            self.phi_socket.connect(f"tcp://{phi_host}:{phi_port}")
-            self.engine_status['phi']['status'] = 'connected'
-            logger.info(f"Connected to Phi service at {phi_host}:{phi_port}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to Phi service: {str(e)} - continuing without Phi")
-            self.engine_status['phi']['status'] = 'disconnected'
-            self.engine_status['phi']['last_error'] = str(e)
-            
-        try:
-            google_host = config['engines']['google']['host']
-            google_port = config['engines']['google']['rca_port']
-            self.google_socket.connect(f"tcp://{google_host}:{google_port}")
-            self.engine_status['google']['status'] = 'connected'
-            logger.info(f"Connected to Google service at {google_host}:{google_port}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to Google service: {str(e)} - continuing without Google")
-            self.engine_status['google']['status'] = 'disconnected'
-            self.engine_status['google']['last_error'] = str(e)
+        # Check if secure ZMQ is enabled
+        self.secure_zmq = config.get('secure_zmq', False)
+        
+        # Get service information from service discovery
+        self.service_info = {}
+        self._refresh_service_info()
         
         # Start time for uptime tracking
         self.start_time = time.time()
@@ -841,11 +808,85 @@ class TranslationPipeline:
         self.health_thread = threading.Thread(target=self._monitor_health, daemon=True)
         self.health_thread.start()
         
+        # Start service discovery refresh thread
+        self.service_refresh_thread = threading.Thread(target=self._service_refresh_loop, daemon=True)
+        self.service_refresh_thread.start()
+        
         # Wait a moment for health server to start
         time.sleep(0.5)
         
         self.logger.info("TranslationPipeline initialized successfully")
+    
+    def _refresh_service_info(self):
+        """Refresh service information using service discovery"""
+        try:
+            # Get NLLB service info
+            nllb_service_name = self.config['engines']['nllb']['service_name']
+            nllb_service_info = discover_service(nllb_service_name)
+            if nllb_service_info:
+                self.service_info['nllb'] = nllb_service_info
+                self.engine_status['nllb']['status'] = 'connected'
+                logger.info(f"Discovered NLLB service at {nllb_service_info['host']}:{nllb_service_info['port']}")
+            else:
+                self.engine_status['nllb']['status'] = 'disconnected'
+                self.engine_status['nllb']['last_error'] = "Service not found"
+                logger.warning(f"Failed to discover NLLB service - continuing without NLLB")
+            
+            # Get Phi service info
+            phi_service_name = self.config['engines']['phi']['service_name']
+            phi_service_info = discover_service(phi_service_name)
+            if phi_service_info:
+                self.service_info['phi'] = phi_service_info
+                self.engine_status['phi']['status'] = 'connected'
+                logger.info(f"Discovered Phi service at {phi_service_info['host']}:{phi_service_info['port']}")
+            else:
+                self.engine_status['phi']['status'] = 'disconnected'
+                self.engine_status['phi']['last_error'] = "Service not found"
+                logger.warning(f"Failed to discover Phi service - continuing without Phi")
+            
+            # Get Google service info (via Remote Connector Agent)
+            google_service_name = self.config['engines']['google']['service_name']
+            google_service_info = discover_service(google_service_name)
+            if google_service_info:
+                self.service_info['google'] = google_service_info
+                self.engine_status['google']['status'] = 'connected'
+                logger.info(f"Discovered Google service at {google_service_info['host']}:{google_service_info['port']}")
+            else:
+                self.engine_status['google']['status'] = 'disconnected'
+                self.engine_status['google']['last_error'] = "Service not found"
+                logger.warning(f"Failed to discover Google service - continuing without Google")
+                
+            # Dictionary is always available
+            self.engine_status['dictionary']['status'] = 'connected'
+            
+        except Exception as e:
+            logger.error(f"Error refreshing service information: {str(e)}")
+    
+    def _service_refresh_loop(self):
+        """Periodically refresh service information"""
+        while True:
+            time.sleep(60)  # Refresh every minute
+            self._refresh_service_info()
+    
+    def _get_engine_socket(self, engine_name):
+        """Get a socket for the specified engine"""
+        if engine_name not in self.service_info:
+            return None
+            
+        socket = self.context.socket(zmq.REQ)
+        socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
+        # Apply secure ZMQ if enabled
+        if self.secure_zmq:
+            setup_curve_client(socket)
+            
+        host = self.service_info[engine_name]['host']
+        port = self.service_info[engine_name]['port']
+        socket.connect(f"tcp://{host}:{port}")
+        
+        return socket
+
     def health_check(self) -> Dict[str, Any]:
         """Return health status of the translation pipeline"""
         uptime = time.time() - self.start_time
@@ -908,7 +949,7 @@ class TranslationPipeline:
         # Attempt to reconnect
         try:
             if engine == 'nllb':
-                self.nllb_socket.connect(f"tcp://{self.config['engines']['nllb']['host']}:{self.config['engines']['nllb']['port']}")
+                self._get_engine_socket(engine)
             elif engine == 'phi':
                 # Reinitialize Phi connection
                 pass
@@ -1201,6 +1242,13 @@ class TranslationPipeline:
             if self.engine_status['nllb']['status'] != 'connected':
                 return {'status': 'error', 'message': 'NLLB service not connected'}
                 
+            # Get a socket for NLLB service
+            socket = self._get_engine_socket('nllb')
+            if not socket:
+                self.engine_status['nllb']['status'] = 'error'
+                self.engine_status['nllb']['last_error'] = 'Could not connect to NLLB service'
+                return {'status': 'error', 'message': 'Could not connect to NLLB service'}
+            
             # Prepare request
             request = {
                 "action": "translate",
@@ -1211,9 +1259,10 @@ class TranslationPipeline:
             }
             
             # Send request with timeout
-            self.nllb_socket.send_json(request)
-            if self.nllb_socket.poll(timeout=self.config['engines']['nllb']['timeout'] * 1000):
-                response = self.nllb_socket.recv_json()
+            socket.send_json(request)
+            if socket.poll(timeout=self.config['engines']['nllb']['timeout'] * 1000):
+                response = socket.recv_json()
+                socket.close()
                 if response.get('status') == 'success':
                     self.engine_status['nllb']['status'] = 'connected'
                     return response
@@ -1222,6 +1271,7 @@ class TranslationPipeline:
                     self.engine_status['nllb']['last_error'] = response.get('message', 'Unknown error')
                     return response
             else:
+                socket.close()
                 self.engine_status['nllb']['status'] = 'error'
                 self.engine_status['nllb']['last_error'] = 'Request timed out'
                 return {'status': 'error', 'message': 'Request timed out'}
@@ -1234,12 +1284,9 @@ class TranslationPipeline:
     def _translate_with_phi(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
         """Translate text using Phi LLM via HTTP API"""
         try:
-            # Get Phi LLM service config
-            phi_config = get_config_for_service("phi-llm-service-pc2", "pc2")
-            if not phi_config:
-                self.engine_status['phi']['status'] = 'error'
-                self.engine_status['phi']['last_error'] = 'Phi LLM service not configured'
-                return {'status': 'error', 'message': 'Phi LLM service not configured'}
+            # Check if Phi service is connected
+            if self.engine_status['phi']['status'] != 'connected':
+                return {'status': 'error', 'message': 'Phi service not connected'}
             
             # Check cache first
             cache_key = f"{text}:{source_lang}:{target_lang}"
@@ -1253,11 +1300,20 @@ class TranslationPipeline:
                     'cached': True
                 }
             
-            # Prepare request for Ollama API
+            # Get service info
+            if 'phi' not in self.service_info:
+                self.engine_status['phi']['status'] = 'error'
+                self.engine_status['phi']['last_error'] = 'Phi service info not available'
+                return {'status': 'error', 'message': 'Phi service info not available'}
+            
+            phi_service_info = self.service_info['phi']
+            
+            # Prepare request for Phi API
             request = {
-                "model": phi_config['model_path_or_name'],
-                "prompt": f"Translate from {source_lang} to {target_lang}: {text}",
-                "stream": False,
+                "action": "translate",
+                "text": text,
+                "source_lang": source_lang,
+                "target_lang": target_lang,
                 "options": {
                     "temperature": 0.7,
                     "top_p": 0.9,
@@ -1265,48 +1321,50 @@ class TranslationPipeline:
                 }
             }
             
-            # Send request to Ollama API with timeout
-            response = requests.post(
-                f"http://{phi_config['http_bind_address']}:{phi_config['http_port']}/api/generate",
-                json=request,
-                timeout=self.config['engines']['phi']['timeout']
-            )
+            # Create socket for request
+            socket = self._get_engine_socket('phi')
+            if not socket:
+                self.engine_status['phi']['status'] = 'error'
+                self.engine_status['phi']['last_error'] = 'Could not connect to Phi service'
+                return {'status': 'error', 'message': 'Could not connect to Phi service'}
             
-            if response.status_code == 200:
-                result = response.json()
-                translated_text = result.get("response", "").strip()
+            # Send request with timeout
+            socket.send_json(request)
+            if socket.poll(timeout=self.config['engines']['phi']['timeout'] * 1000):
+                response = socket.recv_json()
+                socket.close()
                 
-                # Clean up the translation
-                translated_text = re.sub(r'^(Translation:|English:|In English:)\s*', '', translated_text, flags=re.IGNORECASE)
-                translated_text = translated_text.strip()
-                
-                if translated_text:
-                    self.engine_status['phi']['status'] = 'connected'
-                    # Cache the translation with engine parameter
-                    self.cache.set(cache_key, translated_text, engine='phi')
-                    return {
-                        'status': 'success',
-                        'translated_text': translated_text,
-                        'engine_used': 'phi',
-                        'cached': False
-                    }
+                if response.get('status') == 'success':
+                    translated_text = response.get('translated_text', '').strip()
+                    
+                    # Clean up the translation
+                    translated_text = re.sub(r'^(Translation:|English:|In English:)\s*', '', translated_text, flags=re.IGNORECASE)
+                    translated_text = translated_text.strip()
+                    
+                    if translated_text:
+                        self.engine_status['phi']['status'] = 'connected'
+                        # Cache the translation with engine parameter
+                        self.cache.set(cache_key, translated_text, engine='phi')
+                        return {
+                            'status': 'success',
+                            'translated_text': translated_text,
+                            'engine_used': 'phi',
+                            'cached': False
+                        }
+                    else:
+                        self.engine_status['phi']['status'] = 'error'
+                        self.engine_status['phi']['last_error'] = 'Empty translation'
+                        return {'status': 'error', 'message': 'Empty translation'}
                 else:
                     self.engine_status['phi']['status'] = 'error'
-                    self.engine_status['phi']['last_error'] = 'Empty translation'
-                    return {'status': 'error', 'message': 'Empty translation'}
+                    self.engine_status['phi']['last_error'] = response.get('message', 'Unknown error')
+                    return response
             else:
+                socket.close()
                 self.engine_status['phi']['status'] = 'error'
-                self.engine_status['phi']['last_error'] = f'HTTP error: {response.status_code}'
-                return {'status': 'error', 'message': f'HTTP error: {response.status_code}'}
+                self.engine_status['phi']['last_error'] = 'Request timed out'
+                return {'status': 'error', 'message': 'Request timed out'}
                 
-        except requests.exceptions.Timeout:
-            self.engine_status['phi']['status'] = 'error'
-            self.engine_status['phi']['last_error'] = 'Request timed out'
-            return {'status': 'error', 'message': 'Request timed out'}
-        except requests.exceptions.ConnectionError:
-            self.engine_status['phi']['status'] = 'error'
-            self.engine_status['phi']['last_error'] = 'Connection error'
-            return {'status': 'error', 'message': 'Connection error'}
         except Exception as e:
             self.engine_status['phi']['status'] = 'error'
             self.engine_status['phi']['last_error'] = str(e)
@@ -1318,6 +1376,13 @@ class TranslationPipeline:
             # Check if Google service is connected
             if self.engine_status['google']['status'] != 'connected':
                 return {'status': 'error', 'message': 'Google service not connected'}
+            
+            # Get a socket for Google service (Remote Connector Agent)
+            socket = self._get_engine_socket('google')
+            if not socket:
+                self.engine_status['google']['status'] = 'error'
+                self.engine_status['google']['last_error'] = 'Could not connect to Google service'
+                return {'status': 'error', 'message': 'Could not connect to Google service'}
                 
             # Prepare request
             request = {
@@ -1329,9 +1394,10 @@ class TranslationPipeline:
             }
             
             # Send request with timeout
-            self.google_socket.send_json(request)
-            if self.google_socket.poll(timeout=self.config['engines']['google']['timeout'] * 1000):
-                response = self.google_socket.recv_json()
+            socket.send_json(request)
+            if socket.poll(timeout=self.config['engines']['google']['timeout'] * 1000):
+                response = socket.recv_json()
+                socket.close()
                 if response.get('status') == 'success':
                     self.engine_status['google']['status'] = 'connected'
                     return response
@@ -1340,6 +1406,7 @@ class TranslationPipeline:
                     self.engine_status['google']['last_error'] = response.get('message', 'Unknown error')
                     return response
             else:
+                socket.close()
                 self.engine_status['google']['status'] = 'error'
                 self.engine_status['google']['last_error'] = 'Request timed out'
                 return {'status': 'error', 'message': 'Request timed out'}
@@ -1474,27 +1541,58 @@ class TranslationPipeline:
         """Monitor health of all translation engines"""
         while True:
             try:
-                # Check NLLB connection
-                self.nllb_socket.send_json({"action": "health_check"})
-                try:
-                    response = self.nllb_socket.recv_json(timeout=self.config["health"]["timeout"])
-                    self.health_status["engines"]["nllb"] = response.get("status") == "ok"
-                except zmq.error.Again:
-                    self.health_status["engines"]["nllb"] = False
-                    logger.warning("NLLB health check timeout")
+                # Check if all services are available via service discovery
+                self._refresh_service_info()
+                
+                # Update engine status based on service discovery results
+                for engine in ['nllb', 'phi', 'google']:
+                    if engine in self.service_info:
+                        try:
+                            # Get a socket for the engine
+                            socket = self._get_engine_socket(engine)
+                            if socket:
+                                # Send health check request
+                                socket.send_json({"action": "health_check"})
+                                if socket.poll(timeout=self.config["health"]["timeout"] * 1000):
+                                    response = socket.recv_json()
+                                    self.health_status["engines"][engine] = response.get("status") == "ok"
+                                else:
+                                    self.health_status["engines"][engine] = False
+                                    logger.warning(f"{engine} health check timeout")
+                                socket.close()
+                            else:
+                                self.health_status["engines"][engine] = False
+                                logger.warning(f"{engine} service not available")
+                        except Exception as e:
+                            self.health_status["engines"][engine] = False
+                            logger.warning(f"Error checking {engine} health: {str(e)}")
+                    else:
+                        self.health_status["engines"][engine] = False
+                        logger.warning(f"{engine} service not discovered")
+                
+                # Dictionary is always available
+                self.health_status["engines"]["dictionary"] = True
                 
                 # Update last check time
                 self.health_status["last_check"] = time.time()
+                
+                # Check overall health status
+                if all(self.health_status["engines"].values()):
+                    self.health_status["status"] = "ok"
+                else:
+                    self.health_status["status"] = "degraded"
                 
                 # Log health status
                 if not all(self.health_status["engines"].values()):
                     logger.warning("Health check failed for some engines")
                     logger.debug(f"Health status: {self.health_status}")
                 
+                # Wait for next check interval
                 time.sleep(self.config["health"]["check_interval"])
                 
             except Exception as e:
                 logger.error(f"Error in health monitoring: {e}")
+                self.health_status["status"] = "error"
                 time.sleep(self.config["health"]["check_interval"])
 
 class TranslatorServer:
@@ -1503,6 +1601,9 @@ class TranslatorServer:
         self.config = config
         self.pipeline = TranslationPipeline(config)
         self.context = zmq.Context()
+        
+        # Check if secure ZMQ is enabled
+        self.secure_zmq = config.get('secure_zmq', False)
         
         # Use provided ports or defaults
         self.main_port = main_port or DEFAULT_ZMQ_PORT
@@ -1513,10 +1614,20 @@ class TranslatorServer:
         self.main_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.main_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
+        # Set up secure ZMQ if enabled
+        if self.secure_zmq:
+            setup_curve_client(self.main_socket, server_mode=True)
+            logger.info("Secure ZMQ enabled for main socket")
+        
         # Health check socket (separate endpoint)
         self.health_socket = self.context.socket(zmq.REP)
         self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        
+        # Set up secure ZMQ for health socket if enabled
+        if self.secure_zmq:
+            setup_curve_client(self.health_socket, server_mode=True)
+            logger.info("Secure ZMQ enabled for health socket")
         
         # Bind sockets
         self._bind_sockets()
