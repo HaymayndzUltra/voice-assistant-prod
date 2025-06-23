@@ -70,6 +70,22 @@ class GoTToTAgent:
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{zmq_port}")
         
+        # Health check socket
+        self.name = "GoTToTAgent"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = zmq_port + 1
+        
+        # Initialize health check socket
+        try:
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            logger.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket: {e}")
+            raise
+        
         # Load reasoning model
         self._load_reasoning_model()
         
@@ -82,12 +98,58 @@ class GoTToTAgent:
         # Record start time for uptime tracking
         self.start_time = time.time()
         
+        # Start health check thread
+        self._start_health_check()
+        
         # Start processing thread
         self.running = True
         self.process_thread = threading.Thread(target=self._process_loop)
         self.process_thread.start()
         
         logger.info(f"GoT/ToT Agent initialized on port {zmq_port}")
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime,
+            "model_loaded": self.model is not None if hasattr(self, "model") else False,
+            "device": str(self.device) if hasattr(self, "device") else "unknown"
+        }
     
     def _load_reasoning_model(self):
         """Load the reasoning model"""
@@ -361,6 +423,17 @@ class GoTToTAgent:
         """Clean up resources"""
         try:
             self.running = False
+            
+            # Wait for threads to finish
+            if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+                self.health_thread.join(timeout=2.0)
+                logger.info("Health thread joined")
+            
+            # Close health socket if it exists
+            if hasattr(self, "health_socket"):
+                self.health_socket.close()
+                logger.info("Health socket closed")
+                
             self.socket.close()
             self.context.term()
             logger.info("GoT/ToT Agent shut down")

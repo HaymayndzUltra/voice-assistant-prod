@@ -454,10 +454,54 @@ class TaskRouter:
     def _setup_health_check(self):
         """Set up the health check server."""
         try:
-            setup_health_check_server(TASK_ROUTER_HEALTH_PORT)
-            logger.info(f"Health check server started on port {TASK_ROUTER_HEALTH_PORT}")
+            # Create health check socket
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{TASK_ROUTER_HEALTH_PORT}")
+            logger.info(f"Health check socket bound to port {TASK_ROUTER_HEALTH_PORT}")
+            
+            # Start health check thread
+            self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+            self.health_thread.start()
+            logger.info("Health check thread started")
         except Exception as e:
             logger.error(f"Failed to start health check server: {e}")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        circuit_status = {name: cb.get_status() for name, cb in self.circuit_breakers.items()}
+        
+        return {
+            "agent": "TaskRouter",
+            "status": "ok",
+            "timestamp": time.time(),
+            "queue_size": len(self.task_queue),
+            "interrupt_active": self.interrupt_flag.is_set(),
+            "circuit_breakers": circuit_status
+        }
 
     def run(self):
         """Main loop to receive and route tasks."""
@@ -517,6 +561,14 @@ class TaskRouter:
             
         if hasattr(self, 'interrupt_socket') and self.interrupt_socket:
             self.interrupt_socket.close()
+            
+        if hasattr(self, 'health_socket') and self.health_socket:
+            self.health_socket.close()
+            
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logger.info("Health thread joined")
         
         # Terminate ZMQ context
         if hasattr(self, 'context') and self.context:

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
 # Health check template for agents that don't inherit from BaseAgent
-HEALTH_CHECK_TEMPLATE = """
+HEALTH_CHECK_TEMPLATE = '''
     def _start_health_check(self):
         """Start health check thread."""
         self.health_thread = threading.Thread(target=self._health_check_loop)
@@ -59,7 +59,7 @@ HEALTH_CHECK_TEMPLATE = """
             "timestamp": datetime.now().isoformat(),
             "uptime": uptime
         }
-"""
+'''
 
 # Imports to add if not already present
 IMPORTS_TO_ADD = [

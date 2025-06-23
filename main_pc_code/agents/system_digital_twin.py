@@ -24,6 +24,11 @@ project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+# Define fallback functions
+def fallback_get_env(key, default=None):
+    """Fallback implementation for get_env"""
+    return os.environ.get(key, default)
+
 # Import config parser utility with fallback
 try:
     from agents.utils.config_parser import parse_agent_args
@@ -37,6 +42,20 @@ except ImportError:
     class DummyArgs:
         host = '0.0.0.0'  # Use 0.0.0.0 to allow external connections
     _agent_args = DummyArgs()
+    # Define fallback functions if imports fail
+    get_env = fallback_get_env
+    
+    def is_secure_zmq_enabled():
+        return False
+    
+    def configure_secure_server(socket):
+        return socket
+    
+    def start_auth():
+        pass
+    
+    def register_service(name, port, additional_info=None):
+        return {"status": "SUCCESS", "message": "Fallback registration"}
 
 # Configure logging
 log_file_path = 'logs/system_digital_twin.log'

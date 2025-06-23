@@ -77,6 +77,17 @@ class SelfTrainingOrchestrator:
             "database_status": "ok"
         }
         
+        # Setup health check socket
+        self.health_port = self.port + 1
+        try:
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            logger.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket: {e}")
+            # Continue even if health check socket fails
+        
         # Database setup
         self.db_path = "data/self_training.db"
         self._init_db()
@@ -97,7 +108,39 @@ class SelfTrainingOrchestrator:
         self.cycle_thread = None
         self.is_running = True
         
+        # Start health check thread
+        self._start_health_check()
+        
         logger.info(f"Self Training Orchestrator initialized on port {self.port}")
+
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.is_running:
+            try:
+                # Check for health check requests with timeout
+                if hasattr(self, 'health_socket') and self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Update health status
+                    self._update_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(self.health_status)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
 
     def _update_health_status(self):
         """Update health status with current information."""
@@ -581,10 +624,31 @@ class SelfTrainingOrchestrator:
         """Stop the orchestrator."""
         logger.info("Stopping Self Training Orchestrator")
         self.is_running = False
+        
+        # Wait for threads to finish
         if self.cycle_thread:
-            self.cycle_thread.join()
-        self.socket.close()
-        self.context.term()
+            self.cycle_thread.join(timeout=2.0)
+            logger.info("Cycle thread joined")
+            
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logger.info("Health thread joined")
+        
+        # Close sockets
+        if hasattr(self, 'socket') and self.socket:
+            self.socket.close()
+            logger.info("Main socket closed")
+            
+        if hasattr(self, 'health_socket') and self.health_socket:
+            self.health_socket.close()
+            logger.info("Health socket closed")
+        
+        # Terminate context
+        if hasattr(self, 'context') and self.context:
+            self.context.term()
+            logger.info("ZMQ context terminated")
+        
+        logger.info("Self Training Orchestrator stopped")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Self Training Orchestrator")

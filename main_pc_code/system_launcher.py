@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from graphlib import TopologicalSorter, CycleError
+import argparse
 
 import yaml  # PyYAML
 import subprocess
@@ -154,14 +155,57 @@ def wait_for_batch_healthy(batch_agents: List[Dict[str, Any]], timeout_seconds: 
 
 # --------------------------- Launching -------------------------------------
 
-def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, logs_dir: Path) -> subprocess.Popen:
+def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, logs_dir: Path, dry_run: bool = False) -> subprocess.Popen:
     """Launch a single agent process and return the `subprocess.Popen` handle.
 
     Stdout and stderr are redirected to a per-agent log file within `logs_dir`.
     The PYTHONPATH for the subprocess includes both the project root and the
     `main_pc_code` directory so that intra-project imports work seamlessly.
+    
+    If dry_run is True, only check if the agent file exists and has health check implementation.
     """
     script_path = agent_cfg["absolute_script_path"]
+    
+    if dry_run:
+        # Check if the file exists
+        if not os.path.exists(script_path):
+            print(f"[WARNING] Agent file not found: {script_path}")
+            return None
+        
+        # Check if the file has health check implementation
+        try:
+            with open(script_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                has_health_check = False
+                
+                # Check for health check patterns
+                health_check_patterns = [
+                    r'def\s+_start_health',
+                    r'def\s+_health_check',
+                    r'health_socket\s*=',
+                    r'\.bind\(.*health_port',
+                    r'\.bind\(.*\+\s*1\)',  # Common pattern where health port is main port + 1
+                ]
+                
+                for pattern in health_check_patterns:
+                    if re.search(pattern, content):
+                        has_health_check = True
+                        break
+                
+                # Check for base class inheritance that might provide health check
+                if "BaseAgent" in content and ("super().__init__" in content or "super()" in content):
+                    has_health_check = True
+                
+                if has_health_check:
+                    print(f"✅ {agent_cfg['name']} has health check implementation")
+                else:
+                    print(f"❌ {agent_cfg['name']} does not have health check implementation")
+                
+                return None
+        except Exception as e:
+            print(f"[ERROR] Failed to check health implementation for {agent_cfg['name']}: {e}")
+            return None
+    
     log_file = logs_dir / f"{agent_cfg['name']}.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_file, "a", buffering=1)  # line-buffered
@@ -270,9 +314,15 @@ def free_up_ports(agents: List[Dict[str, Any]]):
 
 def main() -> None:
     """Main entry point."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Launch and monitor agents from configuration")
+    parser.add_argument("--dry-run", action="store_true", help="Check agents without launching them")
+    parser.add_argument("--config", type=str, default=None, help="Path to configuration file")
+    args = parser.parse_args()
+    
     # Determine the base directory (where this script is located)
     base_dir = Path(__file__).resolve().parent
-    config_path = base_dir / CONFIG_REL_PATH
+    config_path = Path(args.config) if args.config else base_dir / CONFIG_REL_PATH
     project_root = base_dir.parent
 
     # Load configuration
@@ -307,6 +357,26 @@ def main() -> None:
 
     # Create a mapping of agent name to agent config
     agent_map = {agent["name"]: agent for agent in agents}
+    
+    if args.dry_run:
+        print("\nDRY RUN MODE - Checking agent health implementations without launching")
+        missing_health_check = []
+        
+        for batch in batches:
+            for name in batch:
+                agent_cfg = agent_map[name]
+                launch_agent(agent_cfg, base_dir, project_root, base_dir / "logs", dry_run=True)
+        
+        if missing_health_check:
+            print("\nAgents missing health check implementation:")
+            for name in missing_health_check:
+                print(f"❌ {name}")
+            print("\nRecommendation: Add health check implementations to these agents.")
+            print("Use scripts/add_health_check_implementation.py to add health checks.")
+        else:
+            print("\n✅ All agents have health check implementations!")
+        
+        return
 
     # Set up signal handlers for graceful shutdown
     processes: Dict[str, subprocess.Popen] = {}

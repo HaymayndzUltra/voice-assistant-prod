@@ -10,9 +10,13 @@ Usage:
 import argparse, subprocess, sys, time, yaml, os, signal, socket
 from contextlib import closing
 from threading import Thread
+from pathlib import Path
 
 DEFAULT_TIMEOUT = 30            # seconds per agent
 POLL_INTERVAL   = 1.0           # seconds
+
+# Get project root directory
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 def port_open(host: str, port: int) -> bool:
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
@@ -22,7 +26,13 @@ def port_open(host: str, port: int) -> bool:
 def launch_agent(agent_cfg, dry_run=False):
     env = os.environ.copy()
     env.update(agent_cfg.get("env_vars", {}))
-    cmd = [sys.executable, agent_cfg["script_path"]]
+    
+    # Fix script path to use project root if not absolute
+    script_path = agent_cfg["script_path"]
+    if not os.path.isabs(script_path):
+        script_path = os.path.join(PROJECT_ROOT, script_path)
+    
+    cmd = [sys.executable, script_path]
     if dry_run or env.get("DEBUG_MODE", "false").lower() == "true":
         cmd.append("--dry-run")
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE,
@@ -53,6 +63,9 @@ def main(startup_yaml, dry_run=False):
     for section in agent_sections:
         for agent in config[section]:
             if agent.get("required", False):
+                # Ensure host is set if not present
+                if "host" not in agent:
+                    agent["host"] = "0.0.0.0"
                 agents.append(agent)
 
     procs = {}

@@ -93,8 +93,9 @@ memory_system:
   - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: 0.0.0.0 , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
   - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5576 , required: true }
   - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5577 , required: true }
-  - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
-  - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
+  # PC2 agents - commented out as they should be in PC2 config, not MainPC
+  # - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
+  # - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
 
 # Learning and Knowledge
 learning_knowledge:

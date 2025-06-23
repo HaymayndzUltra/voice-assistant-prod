@@ -169,6 +169,20 @@ class NLLBTranslationAdapter:
             else:
                 raise RuntimeError(f"Cannot bind to port {self.service_port} on {self.bind_address}") from e
         
+        # Initialize health check socket
+        self.name = "NLLBTranslationAdapter"
+        self.start_time = time.time()
+        self.health_port = self.service_port + 1
+        
+        try:
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            self.logger.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            self.logger.error(f"Failed to bind health check socket: {e}")
+            # Continue even if health check socket fails
+        
         # Initialize model and tokenizer as None (not loaded initially)
         self.model = None
         self.tokenizer = None
@@ -211,7 +225,56 @@ class NLLBTranslationAdapter:
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
         
+        # Start health check thread
+        self._start_health_check()
+        
         self.logger.info(f"NLLB Translation Adapter initialized on {self.device}")
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        self.logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        self.logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if hasattr(self, 'health_socket') and self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                self.logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> dict:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        # Update health status with latest information
+        self.health_status.update({
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": time.time(),
+            "uptime": uptime,
+            "model_state": "loaded" if self.model is not None else "unloaded",
+            "device": self.device
+        })
+        
+        return self.health_status
     
     def _load_model(self):
         """Load NLLB model and tokenizer"""
@@ -482,27 +545,39 @@ class NLLBTranslationAdapter:
             self.cleanup()
     
     def cleanup(self):
-        """Clean up resources"""
-        self.logger.info("Cleaning up resources")
+        """Clean up resources before exiting"""
+        self.logger.info("Cleaning up resources...")
         self.running = False
         
-        # Unload model if loaded
+        # Unload model to free up GPU memory
         if self.model is not None:
             self._unload_model()
         
-        # Close socket
-        try:
+        # Close ZMQ socket
+        if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-            self.logger.info("Socket closed")
-        except Exception as e:
-            self.logger.error(f"Error closing socket: {e}")
+            self.logger.info("Main socket closed")
         
-        # Close ZMQ context
-        try:
+        # Close health check socket
+        if hasattr(self, 'health_socket') and self.health_socket:
+            self.health_socket.close()
+            self.logger.info("Health socket closed")
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            self.logger.info("Health thread joined")
+        
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=2.0)
+            self.logger.info("Monitor thread joined")
+        
+        # Terminate ZMQ context
+        if hasattr(self, 'context') and self.context:
             self.context.term()
             self.logger.info("ZMQ context terminated")
-        except Exception as e:
-            self.logger.error(f"Error terminating ZMQ context: {e}")
+        
+        self.logger.info("Cleanup completed")
 
 def get_nllb_model():
     global model_last_used

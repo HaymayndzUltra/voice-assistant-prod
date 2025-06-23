@@ -5,6 +5,24 @@ import zmq
 from typing import Dict, Any, Optional
 import os
 from port_config import ENHANCED_MODEL_ROUTER_PORT
+import threading
+from datetime import datetime
+
+# Add project root to Python path for common_utils import
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
+
 
 # Get the absolute path of the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,13 +37,23 @@ logging.basicConfig(
 )
 
 class AdvancedTutoringAgent:
-    def __init__(self, user_profile: Dict[str, Any]):
+    def __init__(self, user_profile:
+
+        self.name = "AdvancedTutoringAgent"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = self.port + 1
+ Dict[str, Any]):
         self.user_profile = user_profile
         self.lesson_history = []
         self.current_topic = user_profile.get('subject', 'General Knowledge')
         self.difficulty_level = user_profile.get('difficulty', 'medium')
         self.lesson_cache = {}  # Simple cache for lessons
         
+        
+        # Start health check thread
+        self._start_health_check()
+
         # Initialize ZMQ connection to EnhancedModelRouter
         try:
             logging.info("[LLM] Initializing ZMQ connection to EnhancedModelRouter")
@@ -41,6 +69,47 @@ class AdvancedTutoringAgent:
             self.llm_available = False
         
         logging.info(f"[LLM] AdvancedTutoringAgent initialized for topic: {self.current_topic}")
+
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logging.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logging.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logging.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime
+        }
 
     def _generate_lesson_with_llm(self, topic: str, difficulty: str) -> Dict[str, Any]:
         """Generate a lesson using the LLM via EnhancedModelRouter"""

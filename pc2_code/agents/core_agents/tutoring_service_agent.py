@@ -15,6 +15,24 @@ if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 from tutoring_agent import AdvancedTutoringAgent
+import threading
+from datetime import datetime
+
+# Add project root to Python path for common_utils import
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
+
 
 # Configure logging
 logging.basicConfig(
@@ -32,9 +50,32 @@ TUTORING_PORT = 5568
 
 class TutoringServiceAgent:
     def __init__(self):
+
+        self.name = "TutoringServiceAgent"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = self.port + 1
+
         logger.info(f"Initializing Tutoring Service Agent on port {TUTORING_PORT}")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
+
+        
+        # Start health check thread
+        self._start_health_check()
+
+        # Initialize health check socket
+        try:
+            if USE_COMMON_UTILS:
+                self.health_socket = create_socket(self.context, zmq.REP, server=True)
+            else:
+                self.health_socket = self.context.socket(zmq.REP)
+                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            logging.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            logging.error(f"Failed to bind health check socket: {e}")
+            raise
         try:
             self.socket.bind(f"tcp://*:{TUTORING_PORT}")
             logger.info(f"Successfully bound to tcp://*:{TUTORING_PORT}")
@@ -46,6 +87,47 @@ class TutoringServiceAgent:
 
         self.sessions = {}  # To store AdvancedTutoringAgent instances per session_id
         self.running = True
+
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logging.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logging.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logging.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime
+        }
 
     def _handle_request(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         action = request_data.get("action")
@@ -137,6 +219,20 @@ class TutoringServiceAgent:
     def stop(self):
         logger.info("Stopping Tutoring Service Agent...")
         self.running = False
+        
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logging.info("Health thread joined")
+        
+        # Close health socket if it exists
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logging.info("Health socket closed")
+
         # It's good practice to close sockets and terminate context explicitly
         # However, ZMQ sockets should ideally be closed from the same thread that created them.
         # If run() is in a different thread, you might need a more sophisticated shutdown.

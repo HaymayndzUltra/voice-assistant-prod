@@ -19,6 +19,26 @@ sys.path.insert(0, str(project_root))
 
 # Import secure ZMQ module
 from src.network.secure_zmq import (
+import threading
+from datetime import datetime
+from typing import Dict, Any
+import time
+
+# Add project root to Python path for common_utils import
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
+
     secure_server_socket,
     secure_client_socket,
     start_auth,
@@ -49,6 +69,10 @@ class SecureAgent:
         self.name = name
         self.port = port
         
+        
+        # Start health check thread
+        self._start_health_check()
+
         # Check if we should use secure ZMQ
         self.use_secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
         
@@ -60,6 +84,47 @@ class SecureAgent:
             logger.info("Initializing standard ZMQ context")
             self.context = zmq.Context()
     
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logging.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logging.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logging.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime
+        }
+
     def create_server_socket(self, socket_type=zmq.REP):
         """
         Create a secure server socket (REP, PUB, etc.).
@@ -129,6 +194,19 @@ class SecureAgent:
 
 
 # Example implementation of a secure server agent
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logging.info("Health thread joined")
+        
+        # Close health socket if it exists
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logging.info("Health socket closed")
+
 class SecureServerAgent(SecureAgent):
     """Example of a secure server agent."""
     

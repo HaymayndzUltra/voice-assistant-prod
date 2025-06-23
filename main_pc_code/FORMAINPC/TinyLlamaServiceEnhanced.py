@@ -34,6 +34,7 @@ from dataclasses import dataclass
 from enum import Enum
 import psutil
 import gc
+from datetime import datetime
 
 ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 
@@ -193,6 +194,21 @@ class TinyLlamaService:
         self.context = zmq.Context()
         self._setup_zmq_socket()
         
+        # Initialize health check socket
+        self.name = "TinyLlamaService"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = ZMQ_PORT + 1
+        
+        try:
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            logger.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket: {e}")
+            raise
+        
         # Initialize managers
         self.resource_manager = ResourceManager()
         self.model_state = ModelState.UNLOADED
@@ -220,18 +236,61 @@ class TinyLlamaService:
             'model_configs.tinylama-service-zmq.idle_timeout_seconds', 30
         )
         
-        # Running flag
-        self.running = True
-        
         # Start monitoring thread
         self.monitor_thread = threading.Thread(target=self._monitor_resources)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
         
+        # Start health check thread
+        self._start_health_check()
+        
         logger.info(f"Enhanced TinyLlama Service initialized on {self.resource_manager.device}")
         logger.info(f"Model name: {self.model_name}")
         logger.info(f"Idle timeout: {self.service_idle_timeout_seconds} seconds")
         logger.info("=" * 80)
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime,
+            "model_state": self.model_state.value,
+            "resource_stats": self.resource_manager.get_stats()
+        }
     
     def _setup_zmq_socket(self):
         """Setup ZMQ socket with proper configuration"""
@@ -458,6 +517,17 @@ class TinyLlamaService:
     def cleanup(self):
         """Cleanup resources"""
         self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logger.info("Health thread joined")
+        
+        # Close health socket if it exists
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logger.info("Health socket closed")
+            
         self._unload_model()
         self.socket.close()
         self.context.term()

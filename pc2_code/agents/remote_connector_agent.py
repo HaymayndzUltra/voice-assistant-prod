@@ -22,6 +22,23 @@ import hashlib
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
+from typing import Dict, Any
+
+# Add project root to Python path for common_utils import
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
+
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -46,10 +63,20 @@ TASK_ROUTER_PORT = config.get('zmq.task_router_port', 5558)
 
 class RemoteConnectorAgent:
     def __init__(self):
+
+        self.name = "RemoteConnectorAgent"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = self.port + 1
+
         logger.info("=" * 80)
         logger.info("Initializing Remote Connector Agent")
         logger.info("=" * 80)
         
+        
+        # Start health check thread
+        self._start_health_check()
+
         # Initialize ZMQ
         self.context = zmq.Context()
         
@@ -116,6 +143,47 @@ class RemoteConnectorAgent:
         logger.info(f"Standalone mode: {self.standalone_mode}")
         logger.info("=" * 80)
     
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logging.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logging.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logging.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime
+        }
+
     def _calculate_cache_key(self, model, prompt, system_prompt=None, temperature=0.7):
         """Calculate a unique cache key for a request"""
         # Create a string representation of the request
@@ -596,3 +664,15 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Error running Remote Connector Agent: {str(e)}")
         traceback.print_exc()
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logging.info("Health thread joined")
+        
+        # Close health socket if it exists
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logging.info("Health socket closed")
