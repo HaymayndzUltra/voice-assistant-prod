@@ -230,23 +230,25 @@ class EnhancedModelRouter:
         try:
             # Discover ModelManagerAgent
             model_manager_info = discover_service("ModelManagerAgent")
-            if model_manager_info:
+            if model_manager_info and model_manager_info.get("status") == "SUCCESS":
+                mm_payload = model_manager_info.get("payload")
                 self.service_mappings["ModelManagerAgent"] = {
-                    "host": model_manager_info["host"],
-                    "port": model_manager_info["port"]
+                    "host": mm_payload["ip"],
+                    "port": mm_payload["port"]
                 }
-                logger.info(f"Discovered ModelManagerAgent at {model_manager_info['host']}:{model_manager_info['port']}")
+                logger.info(f"Discovered ModelManagerAgent at {mm_payload['ip']}:{mm_payload['port']}")
             
             # Discover other services
             for service_name in ["TaskRouter", "ChainOfThoughtAgent", "UnifiedMemoryReasoningAgent", 
-                               "RemoteConnectorAgent", "UnifiedUtilsAgent", "WebAssistant"]:
+                               "RemoteConnectorAgent", "UnifiedUtilsAgent", "WebAssistant", "TreeOfThoughtAgent"]:
                 service_info = discover_service(service_name)
-                if service_info:
+                if service_info and service_info.get("status") == "SUCCESS":
+                    service_payload = service_info.get("payload")
                     self.service_mappings[service_name] = {
-                        "host": service_info["host"],
-                        "port": service_info["port"]
+                        "host": service_payload["ip"],
+                        "port": service_payload["port"]
                     }
-                    logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+                    logger.info(f"Discovered {service_name} at {service_payload['ip']}:{service_payload['port']}")
                 else:
                     logger.warning(f"Failed to discover {service_name}")
         except Exception as e:
@@ -274,10 +276,16 @@ class EnhancedModelRouter:
                 setup_curve_client(self.task_router_socket)
                 
             # Use service mapping instead of hardcoded values
-            task_router_host = self.service_mappings.get('TaskRouter', {}).get('host', 'localhost')
-            task_router_port = self.service_mappings.get('TaskRouter', {}).get('port', TASK_ROUTER_PORT)
-            self.task_router_socket.connect(f"tcp://{task_router_host}:{task_router_port}")
-            logger.info(f"Connected to TaskRouter on {task_router_host}:{task_router_port}")
+            task_router_info = self.service_mappings.get('TaskRouter')
+            if task_router_info:
+                task_router_host = task_router_info.get('host', 'localhost')
+                task_router_port = task_router_info.get('port', TASK_ROUTER_PORT)
+                self.task_router_socket.connect(f"tcp://{task_router_host}:{task_router_port}")
+                logger.info(f"Connected to TaskRouter on {task_router_host}:{task_router_port}")
+            else:
+                logger.warning("TaskRouter service info not available, using fallback")
+                self.task_router_socket.connect(f"tcp://localhost:{TASK_ROUTER_PORT}")
+                logger.info(f"Connected to TaskRouter on localhost:{TASK_ROUTER_PORT} (fallback)")
 
             # Connect to other required services
             self.model_manager_socket = self.context.socket(zmq.REQ)
@@ -288,10 +296,15 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.model_manager_socket)
                 
-            model_manager_host = self.service_mappings.get('ModelManagerAgent', {}).get('host')
-            model_manager_port = self.service_mappings.get('ModelManagerAgent', {}).get('port')
-            self.model_manager_socket.connect(f"tcp://{model_manager_host}:{model_manager_port}")
-            logger.info(f"Connected to ModelManagerAgent on {model_manager_host}:{model_manager_port}")
+            model_manager_info = self.service_mappings.get('ModelManagerAgent')
+            if model_manager_info:
+                model_manager_host = model_manager_info.get('host')
+                model_manager_port = model_manager_info.get('port')
+                self.model_manager_socket.connect(f"tcp://{model_manager_host}:{model_manager_port}")
+                logger.info(f"Connected to ModelManagerAgent on {model_manager_host}:{model_manager_port}")
+            else:
+                logger.error("ModelManagerAgent service info not available")
+                raise RuntimeError("ModelManagerAgent service not found")
 
             self.contextual_memory_socket = self.context.socket(zmq.REQ)
             self.contextual_memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -301,10 +314,14 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.contextual_memory_socket)
                 
-            memory_host = self.service_mappings.get('UnifiedMemoryReasoningAgent', {}).get('host', 'localhost')
-            memory_port = self.service_mappings.get('UnifiedMemoryReasoningAgent', {}).get('port')
-            self.contextual_memory_socket.connect(f"tcp://{memory_host}:{memory_port}")
-            logger.info(f"Connected to UnifiedMemoryReasoningAgent on {memory_host}:{memory_port}")
+            memory_info = self.service_mappings.get('UnifiedMemoryReasoningAgent')
+            if memory_info:
+                memory_host = memory_info.get('host', 'localhost')
+                memory_port = memory_info.get('port')
+                self.contextual_memory_socket.connect(f"tcp://{memory_host}:{memory_port}")
+                logger.info(f"Connected to UnifiedMemoryReasoningAgent on {memory_host}:{memory_port}")
+            else:
+                logger.warning("UnifiedMemoryReasoningAgent service info not available")
 
             self.chain_of_thought_socket = self.context.socket(zmq.REQ)
             self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -314,10 +331,14 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.chain_of_thought_socket)
                 
-            cot_host = self.service_mappings.get('ChainOfThoughtAgent', {}).get('host', 'localhost')
-            cot_port = self.service_mappings.get('ChainOfThoughtAgent', {}).get('port')
-            self.chain_of_thought_socket.connect(f"tcp://{cot_host}:{cot_port}")
-            logger.info(f"Connected to ChainOfThoughtAgent on {cot_host}:{cot_port}")
+            cot_info = self.service_mappings.get('ChainOfThoughtAgent')
+            if cot_info:
+                cot_host = cot_info.get('host', 'localhost')
+                cot_port = cot_info.get('port')
+                self.chain_of_thought_socket.connect(f"tcp://{cot_host}:{cot_port}")
+                logger.info(f"Connected to ChainOfThoughtAgent on {cot_host}:{cot_port}")
+            else:
+                logger.warning("ChainOfThoughtAgent service info not available")
 
             self.remote_connector_socket = self.context.socket(zmq.REQ)
             self.remote_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -327,10 +348,14 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.remote_connector_socket)
                 
-            remote_host = self.service_mappings.get('RemoteConnectorAgent', {}).get('host', 'localhost')
-            remote_port = self.service_mappings.get('RemoteConnectorAgent', {}).get('port')
-            self.remote_connector_socket.connect(f"tcp://{remote_host}:{remote_port}")
-            logger.info(f"Connected to RemoteConnectorAgent on {remote_host}:{remote_port}")
+            remote_info = self.service_mappings.get('RemoteConnectorAgent')
+            if remote_info:
+                remote_host = remote_info.get('host', 'localhost')
+                remote_port = remote_info.get('port')
+                self.remote_connector_socket.connect(f"tcp://{remote_host}:{remote_port}")
+                logger.info(f"Connected to RemoteConnectorAgent on {remote_host}:{remote_port}")
+            else:
+                logger.warning("RemoteConnectorAgent service info not available")
 
             # Connect to UnifiedUtilsAgent on Main PC
             self.utils_agent_socket = self.context.socket(zmq.REQ)
@@ -341,10 +366,14 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.utils_agent_socket)
                 
-            utils_host = self.service_mappings.get('UnifiedUtilsAgent', {}).get('host', 'localhost')
-            utils_port = self.service_mappings.get('UnifiedUtilsAgent', {}).get('port')
-            self.utils_agent_socket.connect(f"tcp://{utils_host}:{utils_port}")
-            logger.info(f"Connected to UnifiedUtilsAgent on {utils_host}:{utils_port}")
+            utils_info = self.service_mappings.get('UnifiedUtilsAgent')
+            if utils_info:
+                utils_host = utils_info.get('host', 'localhost')
+                utils_port = utils_info.get('port')
+                self.utils_agent_socket.connect(f"tcp://{utils_host}:{utils_port}")
+                logger.info(f"Connected to UnifiedUtilsAgent on {utils_host}:{utils_port}")
+            else:
+                logger.warning("UnifiedUtilsAgent service info not available")
 
             # Connect to Web Assistant for research capabilities
             self.web_assistant_socket = self.context.socket(zmq.REQ)
@@ -355,10 +384,32 @@ class EnhancedModelRouter:
             if SECURE_ZMQ:
                 setup_curve_client(self.web_assistant_socket)
                 
-            web_host = self.service_mappings.get('WebAssistant', {}).get('host', 'localhost')
-            web_port = self.service_mappings.get('WebAssistant', {}).get('port')
-            self.web_assistant_socket.connect(f"tcp://{web_host}:{web_port}")
-            logger.info(f"Connected to Web Assistant on {web_host}:{web_port}")
+            web_info = self.service_mappings.get('WebAssistant')
+            if web_info:
+                web_host = web_info.get('host', 'localhost')
+                web_port = web_info.get('port')
+                self.web_assistant_socket.connect(f"tcp://{web_host}:{web_port}")
+                logger.info(f"Connected to Web Assistant on {web_host}:{web_port}")
+            else:
+                logger.warning("WebAssistant service info not available")
+
+            # Connect to Tree of Thought Agent
+            self.tree_of_thought_socket = self.context.socket(zmq.REQ)
+            self.tree_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.tree_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.tree_of_thought_socket)
+                
+            tot_info = self.service_mappings.get('TreeOfThoughtAgent')
+            if tot_info:
+                tot_host = tot_info.get('host', 'localhost')
+                tot_port = tot_info.get('port')
+                self.tree_of_thought_socket.connect(f"tcp://{tot_host}:{tot_port}")
+                logger.info(f"Connected to Tree of Thought Agent on {tot_host}:{tot_port}")
+            else:
+                logger.warning("TreeOfThoughtAgent service info not available")
 
             # Initialize state variables
             self.lock = threading.Lock()
@@ -622,65 +673,60 @@ class EnhancedModelRouter:
             return None
 
     def use_tree_of_thought(self, prompt, code_context=None):
-        """Use Tree of Thought (ToT) for advanced reasoning"""
+        """
+        Use Tree of Thought for complex reasoning tasks
+        """
         try:
-            tot_info = self.service_mappings.get("TreeOfThoughtAgent")
-            if not tot_info:
-                # Try to discover the TOT agent, if not found assume it's on ModelManagerAgent host with port 5613
-                tot_info = discover_service("TreeOfThoughtAgent")
-                if tot_info:
-                    self.service_mappings["TreeOfThoughtAgent"] = {
-                        "host": tot_info["host"],
-                        "port": tot_info["port"]
-                    }
-                else:
-                    # Fall back to ModelManagerAgent host with port 5613
-                    model_manager_info = self.service_mappings.get("ModelManagerAgent")
-                    if not model_manager_info:
-                        model_manager_info = discover_service("ModelManagerAgent")
-                        if not model_manager_info:
-                            logger.error("Could not discover ModelManagerAgent for ToT fallback")
-                            return None
-                    
-                    self.service_mappings["TreeOfThoughtAgent"] = {
-                        "host": model_manager_info["host"],
-                        "port": 5613
-                    }
-                    logger.info(f"Using fallback for Tree of Thought Agent on {model_manager_info['host']}:5613")
-            
-            host = self.service_mappings["TreeOfThoughtAgent"]["host"]
-            port = self.service_mappings["TreeOfThoughtAgent"]["port"]
-            
-            # Create a new socket for each request to avoid conflicts
-            request_socket = self.context.socket(zmq.REQ)
-            request_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT * 3)  # Longer timeout for ToT
-            request_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            
-            if SECURE_ZMQ:
-                setup_curve_client(request_socket)
+            # Get the latest service info
+            tot_info = discover_service("TreeOfThoughtAgent")
+            if tot_info and tot_info.get("status") == "SUCCESS":
+                tot_payload = tot_info.get("payload")
+                host = tot_payload["ip"]
+                port = tot_payload["port"]
                 
-            request_socket.connect(f"tcp://{host}:{port}")
-            
-            request = {
-                "action": "generate",
-                "request": prompt,
-                "code_context": code_context
-            }
-            
-            request_socket.send_string(json.dumps(request))
-            response = request_socket.recv_string()
-            result = json.loads(response)
-            request_socket.close()
-            
-            if result.get("status") == "ok":
-                logger.info("[MODEL ROUTER] Tree of Thought (ToT) solution generated.")
-                return result.get("result", {}).get("solution", "")
+                # Create a new socket for this request
+                tot_socket = self.context.socket(zmq.REQ)
+                tot_socket.setsockopt(zmq.RCVTIMEO, 30000)  # 30 second timeout for ToT
+                tot_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                
+                if SECURE_ZMQ:
+                    setup_curve_client(tot_socket)
+                    
+                tot_socket.connect(f"tcp://{host}:{port}")
+                
+                # Prepare request
+                request = {
+                    "action": "think",
+                    "prompt": prompt,
+                    "code_context": code_context,
+                    "max_steps": 5,
+                    "temperature": 0.7
+                }
+                
+                logger.info(f"Sending Tree of Thought request: {prompt[:100]}...")
+                tot_socket.send_string(json.dumps(request))
+                
+                # Wait for response with timeout
+                if tot_socket.poll(30000) == 0:  # 30 second timeout
+                    logger.error("Timeout waiting for Tree of Thought response")
+                    tot_socket.close()
+                    return {"status": "error", "error": "Timeout waiting for Tree of Thought"}
+                
+                response = tot_socket.recv_string()
+                tot_socket.close()
+                
+                try:
+                    result = json.loads(response)
+                    return result
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid JSON response from Tree of Thought: {response[:100]}...")
+                    return {"status": "error", "error": "Invalid response from Tree of Thought"}
             else:
-                logger.warning(f"Tree of Thought failed: {result.get('message', 'Unknown error')}")
-                return None
+                logger.error("Tree of Thought service not available")
+                return {"status": "error", "error": "Tree of Thought service not available"}
         except Exception as e:
             logger.error(f"Error using Tree of Thought: {str(e)}")
-            return None
+            return {"status": "error", "error": f"Tree of Thought error: {str(e)}"}
 
     
     def select_model(self, task_type, prompt=None, context_size=None):
@@ -786,20 +832,23 @@ class EnhancedModelRouter:
     def send_to_model_manager(self, request_data):
         """Send a request to the Model Manager Agent"""
         try:
-            model_manager_info = self.service_mappings.get("ModelManagerAgent")
-            if not model_manager_info:
-                model_manager_info = discover_service("ModelManagerAgent")
-                if model_manager_info:
-                    self.service_mappings["ModelManagerAgent"] = {
-                        "host": model_manager_info["host"],
-                        "port": model_manager_info["port"]
-                    }
-                else:
-                    logger.error("Could not discover ModelManagerAgent")
-                    return {"error": "Model manager service not available"}
-            
-            host = model_manager_info["host"]
-            port = model_manager_info["port"]
+            # Always try to get the latest service information first
+            model_manager_info = discover_service("ModelManagerAgent")
+            if model_manager_info and model_manager_info.get("status") == "SUCCESS":
+                mm_payload = model_manager_info.get("payload")
+                self.service_mappings["ModelManagerAgent"] = {
+                    "host": mm_payload["ip"],
+                    "port": mm_payload["port"]
+                }
+                host = mm_payload["ip"]
+                port = mm_payload["port"]
+            elif "ModelManagerAgent" in self.service_mappings:
+                # Fallback to cached mapping if available
+                host = self.service_mappings["ModelManagerAgent"]["host"]
+                port = self.service_mappings["ModelManagerAgent"]["port"]
+            else:
+                logger.error("Could not discover ModelManagerAgent")
+                return {"error": "Model manager service not available"}
             
             # Create a new socket for each request to avoid conflicts
             request_socket = self.context.socket(zmq.REQ)

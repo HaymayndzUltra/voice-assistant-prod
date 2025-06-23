@@ -134,6 +134,9 @@ class CoordinatorAgent(BaseAgent):
         self.last_interaction_time = time.time()
         self.pending_suggestions = []
         
+        # Initialize memory connection
+        self._init_memory_connection()
+        
         # Start service discovery refresh thread
         self.discovery_thread = threading.Thread(target=self._service_discovery_refresh_loop)
         self.discovery_thread.daemon = True
@@ -151,20 +154,136 @@ class CoordinatorAgent(BaseAgent):
         
         logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
     
+    def _init_memory_connection(self):
+        """Initialize connection to the MemoryOrchestrator"""
+        try:
+            # Discover MemoryOrchestrator
+            memory_info = discover_service("MemoryOrchestrator")
+            if memory_info and memory_info.get("status") == "SUCCESS":
+                memory_payload = memory_info.get("payload")
+                self.memory_host = memory_payload["ip"]
+                self.memory_port = memory_payload["port"]
+                logger.info(f"Discovered MemoryOrchestrator at {self.memory_host}:{self.memory_port}")
+            else:
+                logger.warning("Failed to discover MemoryOrchestrator, will retry later")
+                self.memory_host = "localhost"
+                self.memory_port = 5576  # Default MemoryOrchestrator port
+        except Exception as e:
+            logger.error(f"Error initializing memory connection: {str(e)}")
+            self.memory_host = "localhost"
+            self.memory_port = 5576  # Default MemoryOrchestrator port
+    
+    def _get_memory_connection(self):
+        """Get a connection to the MemoryOrchestrator"""
+        try:
+            # First try to get the latest service info
+            memory_info = discover_service("MemoryOrchestrator")
+            if memory_info and memory_info.get("status") == "SUCCESS":
+                memory_payload = memory_info.get("payload")
+                host = memory_payload["ip"]
+                port = memory_payload["port"]
+            else:
+                # Fall back to cached values
+                host = self.memory_host
+                port = self.memory_port
+            
+            # Create a new socket for the request
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(socket)
+                
+            socket.connect(f"tcp://{host}:{port}")
+            return socket
+        except Exception as e:
+            logger.error(f"Error getting memory connection: {str(e)}")
+            return None
+    
+    def store_memory(self, memory_type: str, content: str, tags: List[str] = None, priority: int = 5):
+        """Store a memory using the MemoryOrchestrator"""
+        try:
+            socket = self._get_memory_connection()
+            if not socket:
+                logger.error("Failed to connect to MemoryOrchestrator")
+                return None
+            
+            request = {
+                "action": "create",
+                "request_id": f"coord-{int(time.time())}",
+                "payload": {
+                    "memory_type": memory_type,
+                    "content": content,
+                    "tags": tags or [],
+                    "priority": priority
+                }
+            }
+            
+            socket.send_string(json.dumps(request))
+            response = socket.recv_string()
+            socket.close()
+            
+            result = json.loads(response)
+            if result.get("status") == "success":
+                logger.info(f"Memory stored successfully with ID: {result.get('data', {}).get('memory_id')}")
+                return result.get("data", {}).get("memory_id")
+            else:
+                logger.error(f"Failed to store memory: {result.get('error', {}).get('message')}")
+                return None
+        except Exception as e:
+            logger.error(f"Error storing memory: {str(e)}")
+            return None
+    
+    def retrieve_memory(self, memory_id: str):
+        """Retrieve a memory by ID using the MemoryOrchestrator"""
+        try:
+            socket = self._get_memory_connection()
+            if not socket:
+                logger.error("Failed to connect to MemoryOrchestrator")
+                return None
+            
+            request = {
+                "action": "read",
+                "request_id": f"coord-{int(time.time())}",
+                "payload": {
+                    "memory_id": memory_id
+                }
+            }
+            
+            socket.send_string(json.dumps(request))
+            response = socket.recv_string()
+            socket.close()
+            
+            result = json.loads(response)
+            if result.get("status") == "success":
+                return result.get("data", {}).get("memory")
+            else:
+                logger.error(f"Failed to retrieve memory: {result.get('error', {}).get('message')}")
+                return None
+        except Exception as e:
+            logger.error(f"Error retrieving memory: {str(e)}")
+            return None
+    
     def _discover_services(self):
         """Discover required services using service discovery"""
         try:
             # Discover all required services
             required_services = [
                 "TaskRouter", "TTSConnector", "HealthMonitor", 
-                "VisionCaptureAgent", "VisionProcessingAgent"
+                "VisionCaptureAgent", "VisionProcessingAgent", "MemoryOrchestrator"
             ]
             
             for service_name in required_services:
                 service_info = discover_service(service_name)
-                if service_info:
-                    self.service_info[service_name] = service_info
-                    logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+                if service_info and service_info.get("status") == "SUCCESS":
+                    service_payload = service_info.get("payload")
+                    self.service_info[service_name] = {
+                        "host": service_payload["ip"],
+                        "port": service_payload["port"]
+                    }
+                    logger.info(f"Discovered {service_name} at {service_payload['ip']}:{service_payload['port']}")
                 else:
                     logger.warning(f"Failed to discover {service_name}, will retry later")
                     
@@ -172,9 +291,13 @@ class CoordinatorAgent(BaseAgent):
             pc2_services = ["PC2Agent", "VisionProcessingAgent"]
             for service_name in pc2_services:
                 service_info = discover_service(service_name)
-                if service_info:
-                    self.service_info[service_name] = service_info
-                    logger.info(f"Discovered PC2 service {service_name} at {service_info['host']}:{service_info['port']}")
+                if service_info and service_info.get("status") == "SUCCESS":
+                    service_payload = service_info.get("payload")
+                    self.service_info[service_name] = {
+                        "host": service_payload["ip"],
+                        "port": service_payload["port"]
+                    }
+                    logger.info(f"Discovered PC2 service {service_name} at {service_payload['ip']}:{service_payload['port']}")
                 else:
                     logger.warning(f"Failed to discover PC2 service {service_name}, will retry later")
         
@@ -189,32 +312,40 @@ class CoordinatorAgent(BaseAgent):
     
     def _get_service_connection(self, service_name):
         """Get a connection to a service using service discovery"""
-        if service_name not in self.service_info:
-            # Try to discover the service
+        try:
+            # First try to get the latest service info
             service_info = discover_service(service_name)
-            if service_info:
-                self.service_info[service_name] = service_info
-                logger.info(f"Discovered {service_name} at {service_info['host']}:{service_info['port']}")
+            if service_info and service_info.get("status") == "SUCCESS":
+                service_payload = service_info.get("payload")
+                host = service_payload["ip"]
+                port = service_payload["port"]
+                self.service_info[service_name] = {
+                    "host": host,
+                    "port": port
+                }
+            elif service_name in self.service_info:
+                # Fall back to cached service info
+                host = self.service_info[service_name]["host"]
+                port = self.service_info[service_name]["port"]
             else:
                 logger.error(f"Failed to discover {service_name}")
                 return None
-        
-        # Create a new socket for the request
-        socket = self.context.socket(zmq.REQ)
-        socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
-        # Apply secure ZMQ if enabled
-        if SECURE_ZMQ:
-            setup_curve_client(socket)
-        
-        # Connect to the service
-        host = self.service_info[service_name]["host"]
-        port = self.service_info[service_name]["port"]
-        socket.connect(f"tcp://{host}:{port}")
-        
-        return socket
-    
+            
+            # Create a new socket for the request
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(socket)
+                
+            socket.connect(f"tcp://{host}:{port}")
+            return socket
+        except Exception as e:
+            logger.error(f"Error getting service connection for {service_name}: {str(e)}")
+            return None
+
     def start(self):
         """Start the Coordinator Agent."""
         print("Starting CoordinatorAgent...")
@@ -453,6 +584,19 @@ class CoordinatorAgent(BaseAgent):
             logger.info(f"Intent: {intent}, Confidence: {confidence}")
             logger.info(f"Entities: {entities}")
             
+            # Store the interaction in memory
+            self.store_memory(
+                memory_type="user_interaction",
+                content=json.dumps({
+                    "text": text,
+                    "intent": intent,
+                    "entities": entities,
+                    "confidence": confidence
+                }),
+                tags=["interaction", "user_input", intent],
+                priority=7
+            )
+            
             # Step 2: Route based on intent
             if intent.startswith("[Vision]"):
                 # Handle vision-related intents
@@ -484,6 +628,18 @@ class CoordinatorAgent(BaseAgent):
                 # Extract the response text
                 response_text = pc2_response.get("response", "")
                 
+                # Store the response in memory
+                self.store_memory(
+                    memory_type="system_response",
+                    content=json.dumps({
+                        "text": response_text,
+                        "source": "PC2Agent",
+                        "intent": intent
+                    }),
+                    tags=["interaction", "system_response", "pc2"],
+                    priority=6
+                )
+                
             else:
                 # Route to Task Router for dialog generation
                 logger.info("Routing to Task Router for dialog generation")
@@ -510,6 +666,18 @@ class CoordinatorAgent(BaseAgent):
                 
                 # Extract the response text
                 response_text = dialog_response.get("response", "")
+                
+                # Store the response in memory
+                self.store_memory(
+                    memory_type="system_response",
+                    content=json.dumps({
+                        "text": response_text,
+                        "source": "TaskRouter",
+                        "intent": intent
+                    }),
+                    tags=["interaction", "system_response", "task_router"],
+                    priority=6
+                )
             
             # Step 3: Send response to TTS Agent
             logger.info(f"Sending response to TTS Agent: {response_text}")
