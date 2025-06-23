@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import argparse
+import threading
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import networkx as nx
@@ -36,6 +37,10 @@ class CognitiveModelAgent:
         # Get host and port from environment or config
         self.host = "0.0.0.0"  # Listen on all interfaces
         self.port = port
+        self.name = "CognitiveModelAgent"
+        self.running = True
+        self.start_time = time.time()
+        self.health_port = self.port + 1
         
         # Health status
         self.health_status = {
@@ -51,6 +56,16 @@ class CognitiveModelAgent:
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.ROUTER)
         self.socket.bind(f"tcp://{self.host}:{self.port}")
+        
+        # Initialize health check socket
+        try:
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+            logging.info(f"Health check socket bound to port {self.health_port}")
+        except zmq.error.ZMQError as e:
+            logging.error(f"Failed to bind health check socket: {e}")
+            raise
         
         # Connect to Remote Connector on PC2
         self.remote_socket = self.context.socket(zmq.REQ)
@@ -69,6 +84,52 @@ class CognitiveModelAgent:
         self._initialize_belief_system()
         
         logger.info(f"Cognitive Model Agent listening on {self.host}:{self.port}")
+        
+        # Start health check thread
+        self._start_health_check()
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logging.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logging.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logging.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime,
+            "beliefs_count": len(self.belief_system.nodes),
+            "remote_connection": self.health_status["remote_connection"]
+        }
     
     def _update_health_status(self):
         """Update health status with current information."""
@@ -322,6 +383,19 @@ class CognitiveModelAgent:
     
     def stop(self):
         """Stop the agent and clean up resources."""
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logging.info("Health thread joined")
+        
+        # Close health socket if it exists
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logging.info("Health socket closed")
+            
         self.socket.close()
         self.context.term()
         

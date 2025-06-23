@@ -10,6 +10,18 @@ from typing import Dict, Any, List, Optional
 from threading import Thread
 from config.system_config import get_service_host, get_service_port
 
+# Add project root to Python path for common_utils import
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -25,10 +37,12 @@ class LearningAdjusterAgent:
     def __init__(self, port: int = None):
         """Initialize the LearningAdjusterAgent with ZMQ sockets."""
         self.context = zmq.Context()
+        self.name = "LearningAdjusterAgent"
         
         # Get host and port from environment or config
         self.host = get_service_host('learning_adjuster', '0.0.0.0')
         self.port = get_service_port('learning_adjuster', 5643) if port is None else port
+        self.health_port = self.port + 1
         
         # Main REP socket for handling requests
         try:
@@ -37,6 +51,18 @@ class LearningAdjusterAgent:
             logger.info(f"LearningAdjusterAgent listening on {self.host}:{self.port}")
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to bind to port {self.port}: {str(e)}")
+            raise
+        
+        # Health check socket
+        try:
+            if USE_COMMON_UTILS:
+                self.health_socket = create_socket(self.context, zmq.REP, server=True)
+            else:
+                self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.bind(f"tcp://{self.host}:{self.health_port}")
+            logger.info(f"Health check socket listening on {self.host}:{self.health_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket to port {self.health_port}: {str(e)}")
             raise
         
         # REQ socket for PerformanceLoggerAgent
@@ -72,13 +98,65 @@ class LearningAdjusterAgent:
             logger.error(f"Failed to connect to LearningAgent: {str(e)}")
             raise
         
-        # Start analysis thread
+        # Start threads
         self.running = True
+        self.start_time = time.time()
+        
+        # Start analysis thread
         self.analysis_thread = Thread(target=self._analyze_performance)
         self.analysis_thread.daemon = True
         self.analysis_thread.start()
         
+        # Start health check thread
+        self._start_health_check()
+        
         logger.info(f"LearningAdjusterAgent initialized on port {port}")
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        analysis_thread_alive = self.analysis_thread.is_alive() if hasattr(self, 'analysis_thread') else False
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime,
+            "threads": {
+                "analysis_thread": analysis_thread_alive,
+                "health_thread": True  # This thread is running if we're here
+            }
+        }
     
     def _get_performance_metrics(self, agent: str, hours: int = 24) -> List[Dict[str, Any]]:
         """Get performance metrics for an agent from the last N hours."""
@@ -294,75 +372,122 @@ class LearningAdjusterAgent:
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
-        action = request.get('action')
+        action = request.get('action', '')
+        
+        if action == 'health_check' or action == 'ping':
+            return self._get_health_status()
         
         if action == 'analyze_agent':
-            agent = request['agent']
-            
-            analysis = self._analyze_agent_performance(agent)
-            
-            return {
-                'status': 'success',
-                'analysis': analysis
-            }
-            
-        elif action == 'get_suggestions':
-            agent = request['agent']
-            
-            analysis = self._analyze_agent_performance(agent)
-            
-            if analysis['status'] == 'success':
+            agent = request.get('agent')
+            if not agent:
                 return {
-                    'status': 'success',
-                    'suggestions': analysis['suggestions']
+                    'status': 'error',
+                    'message': 'Missing agent parameter'
                 }
-            else:
-                return analysis
             
-        else:
-            return {
-                'status': 'error',
-                'message': f'Unknown action: {action}'
-            }
+            return self._analyze_agent_performance(agent)
+        
+        if action == 'apply_adjustments':
+            agent = request.get('agent')
+            suggestions = request.get('suggestions', [])
+            
+            if not agent:
+                return {
+                    'status': 'error',
+                    'message': 'Missing agent parameter'
+                }
+            
+            if not suggestions:
+                return {
+                    'status': 'error',
+                    'message': 'Missing suggestions parameter'
+                }
+            
+            return self._apply_adjustments(agent, suggestions)
+        
+        return {
+            'status': 'error',
+            'message': f'Unknown action: {action}'
+        }
     
     def run(self):
-        """Main loop for handling requests."""
-        logger.info("LearningAdjusterAgent started")
+        """Main run loop."""
+        logger.info("LearningAdjusterAgent starting main loop")
         
-        while True:
-            try:
-                # Wait for next request
-                message = self.socket.recv_json()
-                logger.debug(f"Received request: {message}")
-                
-                # Process request
-                response = self.handle_request(message)
-                
-                # Send response
-                self.socket.send_json(response)
-                logger.debug(f"Sent response: {response}")
-                
-            except Exception as e:
-                logger.error(f"Error processing request: {str(e)}")
-                self.socket.send_json({
-                    'status': 'error',
-                    'message': str(e)
-                })
+        try:
+            while self.running:
+                try:
+                    # Use poller to avoid blocking indefinitely
+                    poller = zmq.Poller()
+                    poller.register(self.socket, zmq.POLLIN)
+                    
+                    # Poll with timeout to allow for clean shutdown
+                    if dict(poller.poll(1000)):
+                        # Receive and process message
+                        message_data = self.socket.recv()
+                        
+                        try:
+                            request = json.loads(message_data)
+                            logger.debug(f"Received request: {request}")
+                            
+                            response = self.handle_request(request)
+                            
+                            self.socket.send_json(response)
+                            logger.debug(f"Sent response: {response}")
+                        except json.JSONDecodeError:
+                            logger.error(f"Received invalid JSON: {message_data}")
+                            self.socket.send_json({
+                                'status': 'error',
+                                'message': 'Invalid JSON request'
+                            })
+                        except Exception as e:
+                            logger.error(f"Error processing request: {str(e)}")
+                            self.socket.send_json({
+                                'status': 'error',
+                                'message': f'Error processing request: {str(e)}'
+                            })
+                except zmq.error.ZMQError as e:
+                    logger.error(f"ZMQ error in main loop: {str(e)}")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"Error in main loop: {str(e)}")
+                    time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Received keyboard interrupt")
+        finally:
+            self.stop()
     
     def stop(self):
         """Stop the agent and clean up resources."""
-        self.running = False
-        self.analysis_thread.join()
+        logger.info("Stopping LearningAdjusterAgent")
         
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'analysis_thread') and self.analysis_thread.is_alive():
+            self.analysis_thread.join(timeout=2.0)
+            
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+        
+        # Close sockets
         self.socket.close()
+        self.health_socket.close()
         self.performance_socket.close()
         self.trust_socket.close()
         self.learning_socket.close()
+        
+        # Terminate context
         self.context.term()
+        
+        logger.info("LearningAdjusterAgent stopped")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     agent = LearningAdjusterAgent()
     try:
         agent.run()
     except KeyboardInterrupt:
+        logger.info("Interrupted by user")
+    finally:
         agent.stop() 

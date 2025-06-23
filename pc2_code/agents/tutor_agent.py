@@ -20,6 +20,18 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import get_service_host, get_service_port
 
+# Add project root to Python path for common_utils import
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
 # Load configuration
 with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "tutor_config.json"), "r") as f:
     CONFIG = json.load(f)["tutor"]
@@ -34,6 +46,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+logger = logging.getLogger("TutorAgent")
 
 @dataclass
 class StudentProfile:
@@ -342,46 +355,173 @@ class TutorAgent:
     """Main tutor agent that coordinates with PC2's TutoringServiceAgent"""
     def __init__(self):
         self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.ROUTER)
+        self.name = "TutorAgent"
+        self.running = True
+        self.start_time = time.time()
         
         # Get host and port from environment or config
         self.host = get_service_host('tutor', '0.0.0.0')
         self.port = get_service_port('tutor', 5603)
+        self.health_port = self.port + 1
         
-        # Bind to all interfaces
-        self.socket.bind(f"tcp://{self.host}:{self.port}")
-        logging.info(f"Tutor Agent listening on {self.host}:{self.port}")
+        # Initialize main socket
+        try:
+            self.socket = self.context.socket(zmq.ROUTER)
+            # Bind to all interfaces
+            self.socket.bind(f"tcp://{self.host}:{self.port}")
+            logger.info(f"Tutor Agent listening on {self.host}:{self.port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind main socket: {e}")
+            raise
+        
+        # Initialize health check socket
+        try:
+            if USE_COMMON_UTILS:
+                self.health_socket = create_socket(self.context, zmq.REP, server=True)
+            else:
+                self.health_socket = self.context.socket(zmq.REP)
+                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            self.health_socket.bind(f"tcp://{self.host}:{self.health_port}")
+            logger.info(f"Health check socket bound to port {self.host}:{self.health_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket: {e}")
+            raise
         
         # Initialize tutor state
         self.tutor_state = {}
         
+        # Start health check thread
+        self._start_health_check()
+        
+        logger.info(f"TutorAgent fully initialized")
+    
+    def _start_health_check(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        uptime = time.time() - self.start_time
+        
+        return {
+            "agent": self.name,
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": uptime,
+            "active_students": len(self.tutor_state),
+            "threads": {
+                "health_thread": True  # This thread is running if we're here
+            }
+        }
+        
     def start(self):
+        logger.info("Starting main loop")
         try:
-            while True:
-                # Receive message
-                identity, _, message = self.socket.recv_multipart()
-                message = json.loads(message.decode())
-                
-                # Process message
-                response = self.process_message(message)
-                
-                # Send response
-                self.socket.send_multipart([
-                    identity,
-                    b'',
-                    json.dumps(response).encode()
-                ])
-                
+            while self.running:
+                try:
+                    # Use poller to avoid blocking indefinitely
+                    poller = zmq.Poller()
+                    poller.register(self.socket, zmq.POLLIN)
+                    
+                    # Poll with timeout to allow for clean shutdown
+                    if dict(poller.poll(1000)):
+                        # Receive message
+                        identity, _, message = self.socket.recv_multipart()
+                        message = json.loads(message.decode())
+                        logger.debug(f"Received message from {identity}: {message}")
+                        
+                        # Process message
+                        response = self.process_message(message)
+                        
+                        # Send response
+                        self.socket.send_multipart([
+                            identity,
+                            b'',
+                            json.dumps(response).encode()
+                        ])
+                        logger.debug(f"Sent response to {identity}: {response}")
+                except zmq.error.ZMQError as e:
+                    logger.error(f"ZMQ error in main loop: {e}")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"Error in main loop: {e}")
+                    time.sleep(1)
         except KeyboardInterrupt:
-            logging.info("Shutting down Tutor Agent...")
+            logger.info("Shutting down Tutor Agent...")
         finally:
+            self.cleanup()
+    
+    def cleanup(self):
+        """Cleanup resources"""
+        logger.info("Cleaning up resources")
+        
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logger.info("Health thread joined")
+        
+        # Close sockets
+        if hasattr(self, "socket"):
             self.socket.close()
+            logger.info("Main socket closed")
+            
+        if hasattr(self, "health_socket"):
+            self.health_socket.close()
+            logger.info("Health socket closed")
+            
+        # Terminate context
+        if hasattr(self, "context"):
             self.context.term()
+            logger.info("ZMQ context terminated")
+            
+        logger.info("TutorAgent shutdown complete")
             
     def process_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        # Process message and return response
+        """Process incoming messages"""
+        action = message.get("action", "")
+        
+        if action in ["health_check", "health", "ping"]:
+            return self._get_health_status()
+        
+        # Process other message types
+        # ... existing code ...
+        
         return {"status": "success", "message": "Tutor session updated"}
         
 if __name__ == "__main__":
     agent = TutorAgent()
-    agent.start() 
+    try:
+        agent.start()
+    except KeyboardInterrupt:
+        logger.info("Agent stopped by user")
+    finally:
+        agent.cleanup() 

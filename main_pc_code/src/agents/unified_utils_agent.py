@@ -2,12 +2,81 @@ import os
 import platform
 import shutil
 import logging
+import time
+import threading
+import zmq
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 import subprocess
+from typing import Dict, Any
 from src.core.base_agent import BaseAgent
 
+# Add project root to Python path for common_utils import
+import sys
+project_root = Path(__file__).resolve().parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities if available
+try:
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+
 class UnifiedUtilsAgent(BaseAgent):
+    def __init__(self, port=5700, name="UnifiedUtilsAgent"):
+        """Initialize the UnifiedUtilsAgent with proper health check support."""
+        super().__init__(port=port, name=name)
+        self.last_cleanup_time = None
+        logging.info(f"{self.name} initialized with health check on port {self.health_check_port}")
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Override health status to include utility agent specific information."""
+        base_status = super()._get_health_status()
+        
+        # Add utility agent specific health information
+        base_status.update({
+            "agent_type": "utility",
+            "last_cleanup_time": self.last_cleanup_time.isoformat() if self.last_cleanup_time else None,
+            "system_platform": platform.system(),
+            "python_version": platform.python_version()
+        })
+        
+        return base_status
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests with proper health check support."""
+        action = request.get("action", "")
+        
+        # Handle health check requests
+        if action in ["ping", "health", "health_check"]:
+            return self._get_health_status()
+        
+        # Handle utility actions
+        elif action == "cleanup_temp":
+            return {"status": "success", "result": self.cleanup_temp_files()}
+        
+        elif action == "cleanup_logs":
+            days = request.get("days", 7)
+            return {"status": "success", "result": self.cleanup_logs(days_old=days)}
+        
+        elif action == "cleanup_cache":
+            days = request.get("days", 1)
+            return {"status": "success", "result": self.cleanup_cache(days_old=days)}
+        
+        elif action == "cleanup_browser":
+            return {"status": "success", "result": self.cleanup_browser_cache()}
+        
+        elif action == "cleanup_system":
+            result = self.cleanup_system()
+            self.last_cleanup_time = datetime.now()
+            return {"status": "success", "result": result}
+        
+        # Unknown action
+        return {"status": "error", "message": f"Unknown action: {action}"}
+
     def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
         """Clean up temporary files."""
         result = {"files_removed": 0, "errors": []}
@@ -146,4 +215,23 @@ class UnifiedUtilsAgent(BaseAgent):
         }
         if platform.system() == "Windows":
             results["windows_disk_cleanup"] = self.run_windows_disk_cleanup()
-        return results 
+        return results
+
+if __name__ == "__main__":
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler()
+        ]
+    )
+    
+    # Create and run the agent
+    agent = UnifiedUtilsAgent()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        logging.info("Agent stopped by user")
+    finally:
+        agent.cleanup() 
