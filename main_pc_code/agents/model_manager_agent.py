@@ -436,6 +436,10 @@ class ModelManagerAgent(BaseAgent):
         """Background thread for managing VRAM usage and unloading idle models."""
         self.vram_logger.info("Starting memory management loop")
         import time
+        
+        # Counter for reporting to SystemDigitalTwin
+        sdt_report_counter = 0
+        
         while self.running:
             try:
                 # Get current VRAM usage
@@ -464,6 +468,15 @@ class ModelManagerAgent(BaseAgent):
                         self.vram_logger.info(f"Unloading idle model {model_id}: Idle Time: {idle_time:.1f} seconds")
                         self._unload_model(model_id)
                         self.vram_logger.info(f"Updated VRAM usage after idle unload: {self._get_current_vram():.1f}MB")
+                
+                # Report to SystemDigitalTwin every 5 iterations (by default every ~5 minutes)
+                sdt_report_counter += 1
+                if sdt_report_counter >= 5:
+                    try:
+                        self.report_vram_metrics_to_sdt()
+                        sdt_report_counter = 0
+                    except Exception as e:
+                        self.vram_logger.error(f"Error reporting to SystemDigitalTwin: {e}")
 
                 time.sleep(self.memory_check_interval)
             except Exception as e:
@@ -2849,376 +2862,315 @@ class ModelManagerAgent(BaseAgent):
                 pass
     
     def handle_request(self, request):
-        """Handle incoming requests"""
-        try:
-            request_data = json.loads(request)
-            request_type = request_data.get('request_type')
+        """
+        Handle incoming ZMQ requests.
+        
+        This function implements the command pattern to dispatch requests to their handlers.
+        
+        Args:
+            request: The request dictionary
             
-            # Get request_id for logging if available
-            request_id = request_data.get('request_id', 'N/A')
-            logger.info(f"Received request (ID: {request_id}): type='{request_type}'")
-
-            if request_type == 'health_check':
-                logger.info(f"Processing 'health_check' (ID: {request_id}). Sending immediate basic response.")
-                # Send a basic, immediate response for testing
-                basic_response = {
-                    'status': 'success',
-                    'message': 'MMA basic health check OK (full health check temporarily bypassed for this test)',
-                    'request_id': request_id,
-                    'timestamp': time.time()
-                }
-                return json.dumps(basic_response)
+        Returns:
+            Response dictionary
+        """
+        if not isinstance(request, dict):
+            return {"status": "ERROR", "message": "Request must be a dictionary"}
             
-            elif request_type == 'select_model':
-                task_type = request_data.get('task_type', 'chat')
-                context_size = request_data.get('context_size')
-                selected_model, model_info = self.select_model(task_type, context_size)
-                
-                if selected_model:
-                    return json.dumps({
-                        'status': 'success',
-                        'selected_model': selected_model,
-                        'model_info': model_info,
-                        'vram_usage': {
-                            'total_budget_mb': self.vram_budget_mb,
-                            'used_mb': self.current_estimated_vram_used,
-                            'remaining_mb': self.vram_budget_mb - self.current_estimated_vram_used
-                        },
-                        'request_id': request_id
-                    })
-                else:
-                    return json.dumps({
-                        'status': 'error',
-                        'message': f"No suitable model found for task type '{task_type}'",
-                        'request_id': request_id
-                    })
+        command = request.get("command")
+        if not command:
+            return {"status": "ERROR", "message": "Missing 'command' field"}
             
-            elif request_type == 'get_model_status':
-                model_id = request_data.get('model_id') # Corrected from 'model' to 'model_id' for consistency if this is the key used by clients
-                if not model_id:
-                    model_id = request_data.get('model') # Fallback if 'model' is used by some clients
-                
-                logger.info(f"Processing 'get_model_status' for model_id='{model_id}' (ID: {request_id})")
-
-                if model_id in self.models:
-                    # Update timestamp if model is being checked
-                    if model_id in self.loaded_model_instances:
-                        self.model_last_used_timestamp[model_id] = time.time()
-                        
-                    return json.dumps({
-                        'status': 'success',
-                        'model': model_id,
-                        'model_info': self.models[model_id],
-                        'is_loaded': model_id in self.loaded_model_instances,
-                        'last_used': self.model_last_used_timestamp.get(model_id, 0),
-                        'vram_usage': self.loaded_model_instances.get(model_id, 0),
-                        'request_id': request_id
-                    })
-                else:
-                    logger.warning(f"Model '{model_id}' not found during get_model_status (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': f"Model '{model_id}' not found",
-                        'request_id': request_id
-                    })
-            
-            elif request_type == 'get_all_models':
-                logger.info(f"Processing 'get_all_models' (ID: {request_id})")
-                return json.dumps({
-                    'status': 'success',
-                    'models': self.models,
-                    'loaded_models': list(self.loaded_model_instances.keys()),
-                    'vram_usage': {
-                        'total_budget_mb': self.vram_budget_mb,
-                        'used_mb': self.current_estimated_vram_used,
-                        'remaining_mb': self.vram_budget_mb - self.current_estimated_vram_used,
-                        'by_model': self.loaded_model_instances
-                    },
-                    'request_id': request_id
-                })
-                
-            elif request_type == 'load_model':
-                logger.info(f"Processing 'load_model' for model_id='{request_data.get('model_id')}' (ID: {request_id})")
-                if not request_data.get('model_id'):
-                    logger.error(f"Missing model_id parameter for 'load_model' (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': "Missing model_id parameter",
-                        'request_id': request_id
-                    })
-                    
-                if request_data.get('model_id') not in self.models:
-                    logger.warning(f"Unknown model '{request_data.get('model_id')}' for 'load_model' (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': f"Unknown model '{request_data.get('model_id')}'",
-                        'request_id': request_id
-                    })
-                    
-                # Get model info
-                model_info = self.models[request_data.get('model_id')]
-                serving_method = model_info.get('serving_method', '')
-                
-                # Try to load the model if not already loaded
-                if request_data.get('model_id') not in self.loaded_model_instances:
-                    logger.info(f"Model '{request_data.get('model_id')}' not loaded yet, attempting to load")
-                    load_success = self.load_model(request_data.get('model_id'))
-                    
-                    # Re-fetch model info after load attempt
-                    model_info = self.models[request_data.get('model_id')]
-                    
-                    return json.dumps({
-                        'status': 'success' if load_success else 'error',
-                        'message': f"Model '{request_data.get('model_id')}' loading initiated" if load_success else f"Failed to load model '{request_data.get('model_id')}'",
-                        'model_info': model_info,
-                        'request_id': request_id
-                    })
-                
-                # Unload the model
-                if serving_method == 'ollama':
-                    self._unload_ollama_model(request_data.get('model_id'))
-                elif serving_method == 'custom_api':
-                    self._unload_custom_api_model(request_data.get('model_id'))
-                elif serving_method == 'zmq_service':
-                    self._unload_zmq_service_model(request_data.get('model_id'))
-                elif serving_method == 'zmq_service_remote':
-                    # Do not unload remote services
-                    return json.dumps({
-                        'status': 'success',
-                        'message': f"Model '{request_data.get('model_id')}' is a remote service and cannot be unloaded from here",
-                        'model_info': model_info,
-                        'request_id': request_id
-                    })
-                elif serving_method == 'gguf_direct':
-                    self._unload_gguf_model(request_data.get('model_id'))
-                elif serving_method == 'zmq_pub_health_local':
-                    # No unload action needed, but recognized
-                    return True  # Return True since no action needed is considered success
-                else:
-                    # Just mark as unloaded
-                    self._mark_model_as_unloaded(request_data.get('model_id'))
-                    model_info['status'] = 'available_not_loaded'
-            
-                return json.dumps({
-                    'status': 'success',
-                    'message': f"Model '{request_data.get('model_id')}' unloaded",
-                    'model_info': model_info,
-                    'request_id': request_id
-                })
-            
-            elif request_type == 'get_cached_response':
-                # Check if we have a cached response for this request
-                prompt = request_data.get('prompt')
-                model = request_data.get('model')
-                system_prompt = request_data.get('system_prompt', '')
-                
-                # Create a cache key from the request parameters
-                cache_key = f"{model}:{hash(prompt)}:{hash(system_prompt)}"
-                
-                if cache_key in self.cache:
-                    timestamp, response = self.cache[cache_key]
-                    # Check if cache entry is still valid
-                    if datetime.now() - timestamp < timedelta(seconds=self.cache_ttl):
-                        logger.info(f"Cache hit for model {model}")
-                        return json.dumps({
-                            'status': 'success',
-                            'cached': True,
-                            'response': response,
-                            'request_id': request_id
-                        })
-                
-                # Cache miss
-                return json.dumps({
-                    'status': 'success',
-                    'cached': False,
-                    'request_id': request_id
-                })
-            
-            elif request_type == 'cache_response':
-                # Cache a model response for future use
-                prompt = request_data.get('prompt')
-                model = request_data.get('model')
-                system_prompt = request_data.get('system_prompt', '')
-                response = request_data.get('response')
-                
-                # Create a cache key from the request parameters
-                cache_key = f"{model}:{hash(prompt)}:{hash(system_prompt)}"
-                
-                # Store in cache with current timestamp
-                self.cache[cache_key] = (datetime.now(), response)
-                
-                # Periodically clean and save cache
-                if len(self.cache) % 10 == 0:  # Every 10 entries
-                    self._clean_cache()
-                    self._save_cache()
-                
-                return json.dumps({
-                    'status': 'success',
-                    'message': 'Response cached',
-                    'request_id': request_id
-                })
-            
-            elif request_type == 'unload_model':
-                logger.info(f"Processing 'unload_model' for model_id='{request_data.get('model_id')}' (ID: {request_id})")
-                if not request_data.get('model_id'):
-                    logger.error(f"Missing model_id parameter for 'unload_model' (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': "Missing model_id parameter",
-                        'request_id': request_id
-                    })
-                    
-                if request_data.get('model_id') not in self.models:
-                    logger.warning(f"Unknown model '{request_data.get('model_id')}' for 'unload_model' (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': f"Unknown model '{request_data.get('model_id')}'",
-                        'request_id': request_id
-                    })
-                
-                # Attempt to unload the model
-                unload_success = self.unload_model(request_data.get('model_id'))
-                
-                # Get updated model info
-                model_info = self.models[request_data.get('model_id')]
-                
-                return json.dumps({
-                    'status': 'success' if unload_success else 'error',
-                    'message': f"Model '{request_data.get('model_id')}' successfully unloaded" if unload_success else f"Failed to unload model '{request_data.get('model_id')}'",
-                    'model_info': model_info,
-                    'request_id': request_id
-                })
-            
-            # Handle code generation request
-            elif request_type == 'generate_code':
-                logger.info(f"Processing 'generate_code' request (ID: {request_id})")
-                
-                # Check required parameters
-                if not request_data.get('description'):
-                    logger.error(f"Missing 'description' parameter for code generation (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'message': "Missing 'description' parameter for code generation",
-                        'request_id': request_id
-                    })
-                
-                # Generate code with CGA
-                result = self.generate_code_with_cga(request_data)
-                
-                # Return the result (already in dict format)
-                return json.dumps(result)
-            
-            # Handle GGUF connector requests based on 'action' field
-            elif 'action' in request_data:
-                action = request_data.get('action')
-                logger.info(f"Processing GGUF action request: '{action}' (ID: {request_id})")
-                
-                # Handle get_gguf_status action
-                if action == 'get_gguf_status':
-                    try:
-                        # Use the GGUF connector to get status
-                        if hasattr(self, 'gguf_connector') and self.gguf_available:
-                            status_response = self.gguf_connector.get_gguf_status()
-                            return json.dumps(status_response)
-                        else:
-                            logger.warning("GGUF connector not available for get_gguf_status request")
-                            return json.dumps({
-                                'status': 'error',
-                                'error': 'GGUF connector not available',
-                                'request_id': request_id
-                            })
-                    except Exception as e:
-                        logger.error(f"Error getting GGUF status: {e}")
-                        return json.dumps({
-                            'status': 'error',
-                            'error': f"Failed to get GGUF status: {str(e)}",
-                            'request_id': request_id
-                        })
-                
-                # Handle list_gguf_models action
-                elif action == 'list_gguf_models':
-                    try:
-                        # Use the GGUF connector to list models
-                        if hasattr(self, 'gguf_connector') and self.gguf_available:
-                            models_response = self.gguf_connector.list_gguf_models()
-                            return json.dumps(models_response)
-                        else:
-                            logger.warning("GGUF connector not available for list_gguf_models request")
-                            return json.dumps({
-                                'status': 'error',
-                                'error': 'GGUF connector not available',
-                                'request_id': request_id
-                            })
-                    except Exception as e:
-                        logger.error(f"Error listing GGUF models: {e}")
-                        return json.dumps({
-                            'status': 'error',
-                            'error': f"Failed to list GGUF models: {str(e)}",
-                            'request_id': request_id
-                        })
-                
-                # Unknown action
-                else:
-                    logger.warning(f"Unknown GGUF action: '{action}' (ID: {request_id})")
-                    return json.dumps({
-                        'status': 'error',
-                        'error': f"Unknown GGUF action: {action}",
-                        'request_id': request_id
-                    })
-                    
-            else:
-                logger.warning(f"Unknown request_type: '{request_type}' (ID: {request_id})")
-                return json.dumps({
-                    'status': 'error',
-                    'message': f"Unknown request type: {request_type}",
-                    'request_id': request_id
-                })
-
-        except json.JSONDecodeError as e:
-            logger.error(f"JSONDecodeError in handle_request: {e}. Request was: {request[:500]}") # Log part of the problematic request
-            return json.dumps({'status': 'error', 'message': f'Invalid JSON format: {e}'})
-        except Exception as e:
-            # Log the full traceback for unexpected errors
-            logger.error(f"Unexpected error in handle_request (ID: {request_data.get('request_id', 'N/A') if isinstance(request_data, dict) else 'N/A'}): {e}", exc_info=True)
-            return json.dumps({'status': 'error', 'message': f'An unexpected error occurred: {e}'})
-
-    def health_check_loop(self):
-        """Background thread for periodic health checks"""
-        logger.info("Started health check loop")
-        while self.running:
+        logger.info(f"Received command: {command}")
+        
+        # Map commands to their handlers
+        handlers = {
+            "HEALTH_CHECK": self.health_check,
+            "LOAD_MODEL": self._handle_load_model_command,
+            "UNLOAD_MODEL": self._handle_unload_model_command,
+            "GET_LOADED_MODELS_STATUS": self._handle_get_loaded_models_status,
+            "SELECT_MODEL": lambda: self.select_model(
+                request.get("task_type"),
+                request.get("context_size")
+            ),
+            "PROCESS": lambda: self._process_request(request),
+            "VERIFY_SERVICES": self.verify_pc2_services
+        }
+        
+        handler = handlers.get(command)
+        if handler:
             try:
-                self.health_check()
+                if command == "LOAD_MODEL" or command == "UNLOAD_MODEL" or command == "GET_LOADED_MODELS_STATUS":
+                    return handler(request)
+                else:
+                    return handler()
             except Exception as e:
-                logger.error(f"Error in health check: {e}")
-            
-            # Sleep for the health check interval
-            for _ in range(self.health_check_interval):
-                if not self.running:
-                    break
-                time.sleep(1)
+                logger.error(f"Error handling {command}: {e}")
+                logger.error(traceback.format_exc())
+                return {"status": "ERROR", "message": str(e)}
+        else:
+            return {"status": "ERROR", "message": f"Unknown command: {command}"}
 
-    def cache_maintenance_loop(self):
-        """Background thread for periodic cache maintenance"""
-        logger.info("Started cache maintenance loop")
-        # Initial delay to avoid immediate cache cleaning
-        time.sleep(60)
+    def _handle_load_model_command(self, request):
+        """
+        Handle LOAD_MODEL command from VRAMOptimizerAgent.
+        
+        Args:
+            request: Request dictionary containing model_name, device, and quantization_level
+            
+        Returns:
+            Response dictionary with status and message
+        """
+        model_name = request.get("model_name")
+        device = request.get("device", "MainPC")
+        quantization_level = request.get("quantization_level", "FP32")
+        
+        if not model_name:
+            return {"status": "ERROR", "message": "Missing model_name parameter"}
+            
+        logger.info(f"Received request to load model {model_name} on {device} with quantization {quantization_level}")
+        
+        try:
+            # Check if model exists in our registry
+            if model_name not in self.models:
+                return {"status": "ERROR", "message": f"Model {model_name} not found in registry"}
+                
+            # Skip if already loaded
+            if model_name in self.loaded_models:
+                return {"status": "SUCCESS", "message": f"Model {model_name} already loaded"}
+                
+            # Apply quantization level if supported
+            model_info = self.models[model_name]
+            if quantization_level != "FP32" and "quantization" in model_info:
+                # Store original value
+                original_quantization = model_info.get("quantization", {}).get("level", "FP32")
+                # Temporarily override quantization level
+                model_info["quantization"]["level"] = quantization_level
+                # Restore after loading
+                defer_restore = True
+            else:
+                defer_restore = False
+                
+            # Load the model
+            result = self.load_model(model_name)
+            
+            # Restore original quantization setting if modified
+            if defer_restore:
+                model_info["quantization"]["level"] = original_quantization
+                
+            # Report VRAM status to SystemDigitalTwin after loading
+            self._report_vram_status_to_sdt()
+                
+            return result
+        except Exception as e:
+            logger.error(f"Error loading model {model_name}: {e}")
+            logger.error(traceback.format_exc())
+            return {"status": "ERROR", "message": str(e)}
+
+    def _handle_unload_model_command(self, request):
+        """
+        Handle UNLOAD_MODEL command from VRAMOptimizerAgent.
+        
+        Args:
+            request: Request dictionary containing model_name
+            
+        Returns:
+            Response dictionary with status and message
+        """
+        model_name = request.get("model_name")
+        
+        if not model_name:
+            return {"status": "ERROR", "message": "Missing model_name parameter"}
+            
+        logger.info(f"Received request to unload model {model_name}")
+        
+        try:
+            # Skip if not loaded
+            if model_name not in self.loaded_models:
+                return {"status": "SUCCESS", "message": f"Model {model_name} not loaded"}
+                
+            # Unload the model
+            result = self.unload_model(model_name)
+            
+            # Report VRAM status to SystemDigitalTwin after unloading
+            self._report_vram_status_to_sdt()
+                
+            return result
+        except Exception as e:
+            logger.error(f"Error unloading model {model_name}: {e}")
+            logger.error(traceback.format_exc())
+            return {"status": "ERROR", "message": str(e)}
+
+    def _handle_get_loaded_models_status(self, request):
+        """
+        Handle the GET_LOADED_MODELS_STATUS command
+        
+        This command returns information about all loaded models, including
+        their VRAM usage, status, device location, and last used timestamp.
+        
+        Args:
+            request: Command request
+            
+        Returns:
+            Response with loaded models information
+        """
+        try:
+            with self.models_lock:
+                loaded_models_info = {}
+                
+                # Gather info for all loaded models
+                for model_name, model_info in self.loaded_models.items():
+                    # Skip if model is being loaded or unloaded
+                    if model_info.get('status') not in ['LOADED', 'ACTIVE']:
+                        continue
+                        
+                    # Get VRAM usage - either reported or estimated
+                    vram_usage = model_info.get('vram_usage_mb', model_info.get('estimated_vram_mb', 0))
+                    
+                    # Prepare model info
+                    loaded_models_info[model_name] = {
+                        'vram_usage_mb': vram_usage,
+                        'device': model_info.get('device', 'MainPC'),
+                        'last_used': model_info.get('last_used', time.time()),
+                        'is_active': model_info.get('is_active', False),
+                        'quantization': model_info.get('quantization', 'FP16')
+                    }
+                
+                # Return loaded models info
+                return {
+                    'status': 'SUCCESS',
+                    'loaded_models': loaded_models_info,
+                    'total_models': len(loaded_models_info),
+                    'total_vram_used_mb': self.current_vram_used,
+                    'total_vram_mb': self.total_gpu_memory
+                }
+        
+        except Exception as e:
+            self.logger.error(f"Error handling GET_LOADED_MODELS_STATUS: {e}")
+            self.logger.error(traceback.format_exc())
+            return {
+                'status': 'ERROR',
+                'message': f'Failed to get loaded models status: {str(e)}'
+            }
+
+    def _report_vram_status_to_sdt(self):
+        """
+        Report current VRAM usage and loaded models to SystemDigitalTwin.
+        """
+        try:
+            # Create ZMQ socket for SystemDigitalTwin
+            context = zmq.Context.instance()
+            socket = context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+            socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
+            
+            # Check if secure ZMQ is enabled
+            secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+            if secure_zmq:
+                try:
+                    # Import secure ZMQ module and configure socket
+                    from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+                    start_auth()
+                    socket = configure_secure_client(socket)
+                    logger.debug("Secure ZMQ configured for SDT connection")
+                except Exception as e:
+                    logger.warning(f"Failed to configure secure ZMQ for SDT: {e}")
+                    secure_zmq = False
+            
+            # Use service discovery to find SystemDigitalTwin
+            try:
+                from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+                sdt_address = get_service_address("SystemDigitalTwin")
+                if not sdt_address:
+                    # Fallback to hardcoded address
+                    sdt_address = "tcp://localhost:7120"
+            except Exception as e:
+                logger.warning(f"Service discovery failed: {e}, using default address")
+                sdt_address = "tcp://localhost:7120"
+            
+            logger.debug(f"Connecting to SystemDigitalTwin at {sdt_address}")
+            socket.connect(sdt_address)
+            
+            # Prepare model status information
+            model_status = {}
+            for model_id, model_info in self.loaded_models.items():
+                vram_mb = self.model_memory_usage.get(model_id, 0)
+                device = "MainPC"
+                if model_id in self.models:
+                    model_config = self.models[model_id]
+                    if "location" in model_config:
+                        device = model_config["location"]
+                
+                model_status[model_id] = {
+                    "vram_usage_mb": vram_mb,
+                    "device": device
+                }
+            
+            # Build report message
+            report = {
+                "command": "REPORT_MODEL_VRAM",
+                "payload": {
+                    "agent_name": "ModelManagerAgent",
+                    "total_vram_used_mb": self.current_vram_used,
+                    "total_vram_mb": self.total_gpu_memory,
+                    "loaded_models": model_status
+                }
+            }
+            
+            # Send report to SystemDigitalTwin
+            logger.debug(f"Sending VRAM report to SystemDigitalTwin: {report}")
+            socket.send_json(report)
+            
+            # Wait for response with timeout
+            poller = zmq.Poller()
+            poller.register(socket, zmq.POLLIN)
+            if poller.poll(5000):  # 5s timeout
+                response = socket.recv_json()
+                logger.debug(f"Received response from SystemDigitalTwin: {response}")
+            else:
+                logger.warning("Timeout waiting for response from SystemDigitalTwin")
+            
+            # Clean up
+            socket.close()
+            
+        except Exception as e:
+            logger.error(f"Error reporting VRAM status to SystemDigitalTwin: {e}")
+            logger.error(traceback.format_exc())
+            
+    def _memory_management_loop(self):
+        """
+        Background thread for managing memory usage.
+        
+        Monitors VRAM usage and unloads models when needed.
+        Also reports VRAM status to SystemDigitalTwin periodically.
+        """
+        logger.info("Starting memory management loop")
+        report_interval = 30  # Report to SDT every 30 seconds
+        last_report_time = 0
         
         while self.running:
             try:
-                # Clean expired cache entries
-                removed = self._clean_cache()
+                # Update VRAM usage
+                self._update_vram_usage()
                 
-                # Save cache to disk if changes were made
-                if removed > 0:
-                    self._save_cache()
+                # Check if we need to unload models
+                self._unload_idle_models()
+                
+                # Handle VRAM pressure if needed
+                self._handle_vram_pressure()
+                
+                # Report to SystemDigitalTwin periodically
+                current_time = time.time()
+                if current_time - last_report_time >= report_interval:
+                    self._report_vram_status_to_sdt()
+                    last_report_time = current_time
+                
+                # Sleep before next check
+                time.sleep(self.memory_check_interval)
+                
             except Exception as e:
-                logger.error(f"Error in cache maintenance: {e}")
-            
-            # Run cache maintenance every hour
-            for _ in range(3600):  # 1 hour
-                if not self.running:
-                    break
-                time.sleep(1)
+                logger.error(f"Error in memory management loop: {e}")
+                logger.error(traceback.format_exc())
+                time.sleep(self.memory_check_interval)
 
     def _load_gguf_model(self, model_id):
         """Load a GGUF model using the GGUF connector."""
@@ -3787,6 +3739,100 @@ class ModelManagerAgent(BaseAgent):
                 self.logger.error(f"Error in health check loop: {e}")
                 self.logger.error(traceback.format_exc())
                 time.sleep(5)  # Sleep before retrying
+
+    def report_vram_metrics_to_sdt(self):
+        """
+        Report VRAM usage metrics and loaded models to SystemDigitalTwin
+        """
+        try:
+            # Get current system state
+            with self.models_lock:
+                loaded_models_info = {}
+                total_vram_used = 0
+                
+                # Gather info for all loaded models
+                for model_name, model_info in self.loaded_models.items():
+                    # Skip if model is being loaded or unloaded
+                    if model_info.get('status') not in ['LOADED', 'ACTIVE']:
+                        continue
+                        
+                    # Get VRAM usage - either reported or estimated
+                    vram_usage = model_info.get('vram_usage_mb', model_info.get('estimated_vram_mb', 0))
+                    
+                    # Add to total
+                    total_vram_used += vram_usage
+                    
+                    # Prepare model info
+                    loaded_models_info[model_name] = {
+                        'vram_usage_mb': vram_usage,
+                        'device': model_info.get('device', 'MainPC'),
+                        'last_used': model_info.get('last_used', time.time()),
+                        'is_active': model_info.get('is_active', False),
+                        'quantization': model_info.get('quantization', 'FP16')
+                    }
+                
+                # Prepare payload for SystemDigitalTwin
+                payload = {
+                    'agent_name': 'ModelManagerAgent',
+                    'total_vram_mb': 24000,  # Default for RTX 4090
+                    'total_vram_used_mb': total_vram_used,
+                    'loaded_models': loaded_models_info,
+                    'timestamp': time.time()
+                }
+                
+                # Connect to SystemDigitalTwin (with secure ZMQ if enabled)
+                import zmq
+                from main_pc_code.utils.service_discovery_client import get_service_address
+                
+                context = zmq.Context()
+                socket = context.socket(zmq.REQ)
+                
+                # Apply secure ZMQ if enabled
+                secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+                if secure_zmq:
+                    try:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+                        start_auth()
+                        socket = configure_secure_client(socket)
+                        logger.info("Using secure ZMQ for SDT reporting")
+                    except Exception as e:
+                        logger.warning(f"Failed to configure secure ZMQ for SDT reporting: {e}")
+                
+                # Set timeouts
+                socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second receive timeout
+                socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second send timeout
+                
+                # Get SDT address from service discovery
+                sdt_address = get_service_address("SystemDigitalTwin")
+                if not sdt_address:
+                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                
+                # Connect and send the report
+                socket.connect(sdt_address)
+                request = {
+                    'command': 'REPORT_MODEL_VRAM',
+                    'payload': payload
+                }
+                
+                socket.send_json(request)
+                
+                # Wait for response with timeout
+                try:
+                    response = socket.recv_json()
+                    if response.get('status') == 'SUCCESS':
+                        logger.debug("Successfully reported VRAM metrics to SystemDigitalTwin")
+                    else:
+                        logger.warning(f"Error reporting VRAM metrics: {response.get('message', 'Unknown error')}")
+                except zmq.error.Again:
+                    logger.warning("Timeout waiting for SystemDigitalTwin response when reporting VRAM metrics")
+                
+                # Close socket
+                socket.close()
+                
+        except Exception as e:
+            logger.error(f"Error reporting VRAM metrics to SystemDigitalTwin: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
 # --- PATCH: Attach standalone functions to ModelManagerAgent class (ensures methods are available before main is executed) ---
 # --- END PATCH ---

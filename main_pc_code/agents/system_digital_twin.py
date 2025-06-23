@@ -147,6 +147,18 @@ class SystemDigitalTwin:
         # Add self to agent registry
         self._register_agent("SystemDigitalTwin", "MainPC", "HEALTHY", datetime.now().isoformat())
         
+        # Track VRAM usage from ModelManagerAgent
+        self.vram_metrics = {
+            "mainpc_vram_total_mb": self.config.get("vram_capacity_mb", 24000),  # Default 24GB for RTX 4090
+            "mainpc_vram_used_mb": 0,
+            "mainpc_vram_free_mb": self.config.get("vram_capacity_mb", 24000),
+            "pc2_vram_total_mb": 12000,  # Default 12GB for RTX 3060
+            "pc2_vram_used_mb": 0,
+            "pc2_vram_free_mb": 12000,
+            "loaded_models": {},
+            "last_update": datetime.now().isoformat()
+        }
+        
         # Flag to control background threads
         self.running = True
         
@@ -529,6 +541,15 @@ class SystemDigitalTwin:
                 "agents": self.get_all_agent_statuses()
             }
         
+        elif action == "update_vram_metrics":
+            # Update VRAM metrics from ModelManagerAgent reports
+            payload = request.get("payload", {})
+            self._update_vram_metrics(payload)
+            return {
+                "status": "success",
+                "message": "VRAM metrics updated successfully"
+            }
+        
         else:
             return {
                 "status": "error",
@@ -627,6 +648,47 @@ class SystemDigitalTwin:
                                         })
                                     continue
                                 
+                                # Handle special command types
+                                if command == "REPORT_MODEL_VRAM":
+                                    payload = message.get("payload", {})
+                                    self._update_vram_metrics(payload)
+                                    self.socket.send_json({
+                                        "status": "SUCCESS",
+                                        "message": "VRAM metrics updated successfully"
+                                    })
+                                    logger.info("VRAM metrics updated successfully")
+                                    continue
+                                elif command == "GET_METRICS":
+                                    payload = message.get("payload", {})
+                                    metrics_list = payload.get("metrics", [])
+                                    
+                                    # If no specific metrics requested, return all
+                                    if not metrics_list:
+                                        metrics_data = self._get_current_state()
+                                    else:
+                                        # Handle specific metrics requests
+                                        metrics_data = {}
+                                        
+                                        # Handle VRAM usage metrics
+                                        if "vram_usage" in metrics_list:
+                                            # Return VRAM metrics
+                                            for key, value in self.vram_metrics.items():
+                                                if key != "loaded_models":  # Skip the detailed models list
+                                                    metrics_data[key] = value
+                                        
+                                        # Add other metrics as needed
+                                        if "cpu_usage" in metrics_list:
+                                            # Get current CPU metrics
+                                            current_metrics = self._get_current_state()
+                                            metrics_data["cpu_usage"] = current_metrics.get("cpu_usage", 0)
+                                    
+                                    self.socket.send_json({
+                                        "status": "SUCCESS",
+                                        "payload": metrics_data
+                                    })
+                                    logger.info(f"Sent metrics data for requested metrics: {metrics_list if metrics_list else 'all'}")
+                                    continue
+                                
                                 # Proceed with existing message handling
                                 response = self.handle_request(message)
                                 logger.info(f"Sending response: {response}")
@@ -678,6 +740,61 @@ class SystemDigitalTwin:
     def stop(self):
         """Stop the agent gracefully."""
         self.running = False
+
+    def _update_vram_metrics(self, payload: Dict[str, Any]) -> None:
+        """
+        Update VRAM metrics from ModelManagerAgent reports
+        
+        Args:
+            payload: Dictionary containing VRAM metrics from ModelManagerAgent
+        """
+        try:
+            agent_name = payload.get("agent_name", "ModelManagerAgent")
+            total_vram_mb = payload.get("total_vram_mb", self.vram_metrics.get("mainpc_vram_total_mb"))
+            total_vram_used_mb = payload.get("total_vram_used_mb", 0)
+            loaded_models = payload.get("loaded_models", {})
+            
+            # Update MainPC VRAM metrics
+            self.vram_metrics["mainpc_vram_total_mb"] = total_vram_mb
+            self.vram_metrics["mainpc_vram_used_mb"] = total_vram_used_mb
+            self.vram_metrics["mainpc_vram_free_mb"] = total_vram_mb - total_vram_used_mb
+            
+            # Keep track of PC2 model VRAM usage
+            pc2_models_vram = 0
+            
+            # Update loaded models info
+            for model_id, model_info in loaded_models.items():
+                vram_usage = model_info.get("vram_usage_mb", 0)
+                device = model_info.get("device", "MainPC")
+                
+                # Track PC2 VRAM usage
+                if device == "PC2":
+                    pc2_models_vram += vram_usage
+                
+                # Store model info
+                self.vram_metrics["loaded_models"][model_id] = {
+                    "vram_usage_mb": vram_usage,
+                    "device": device,
+                    "reported_by": agent_name
+                }
+            
+            # Update PC2 VRAM metrics if models are reported
+            if pc2_models_vram > 0:
+                self.vram_metrics["pc2_vram_used_mb"] = pc2_models_vram
+                self.vram_metrics["pc2_vram_free_mb"] = self.vram_metrics["pc2_vram_total_mb"] - pc2_models_vram
+            
+            # Update timestamp
+            self.vram_metrics["last_update"] = datetime.now().isoformat()
+            
+            logger.info(f"Updated VRAM metrics from {agent_name}: "
+                       f"MainPC: {total_vram_used_mb}/{total_vram_mb}MB, "
+                       f"PC2: {pc2_models_vram}/{self.vram_metrics['pc2_vram_total_mb']}MB, "
+                       f"{len(loaded_models)} models tracked")
+        
+        except Exception as e:
+            logger.error(f"Error updating VRAM metrics: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
 if __name__ == "__main__":
     agent = SystemDigitalTwin()

@@ -1,0 +1,11 @@
+# Central network configuration for the AI System
+# These are the actual IP addresses of the machines
+
+main_pc_ip: "192.168.100.16"  # MainPC's IP address
+pc2_ip: "192.168.100.17"      # PC2's IP address
+
+# System-wide service ports
+ports:
+  system_digital_twin: 7120
+  health_check: 8100
+  unified_memory_reasoning: 7230  # Example port for UnifiedMemoryReasoningAgent 

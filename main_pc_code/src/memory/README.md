@@ -1,88 +1,96 @@
-# Memory Orchestrator Implementation
+# Memory Module
 
-This directory contains the implementation of the Memory Orchestrator service and client library for the voice assistant system, following the specifications in the design documents.
-
-## Overview
-
-The Memory Orchestrator provides a centralized system for managing all memory operations across the voice assistant. It replaces the previously fragmented memory components with a unified API for storing, retrieving, and searching memories.
+This module provides memory storage, retrieval, and management services for the AI system.
 
 ## Components
 
-### 1. Memory Orchestrator Service (`memory_orchestrator.py`)
+### MemoryOrchestrator
 
-The main service that handles all memory operations. It:
+The `MemoryOrchestrator` is the central service for memory management. It provides:
 
-- Listens for ZMQ REP/REQ messages on port 5570
-- Provides handlers for all API operations defined in the design document
-- Implements an in-memory LRU cache for fast retrieval of frequently accessed memories
-- Contains placeholders for future database integration
-- Supports all required operations: create, read, update, delete, batch read, search, etc.
+- Memory storage and retrieval
+- Session management
+- Memory search capabilities 
+- Cross-machine memory distribution with PC2
 
-### 2. Memory Client Library (`memory_client.py`)
+### ZMQ Encoding Utilities
 
-A client library that other agents can use to interact with the Memory Orchestrator service. It:
+The `zmq_encoding_utils.py` module provides safe encoding and decoding functions for ZMQ communication. These utilities help prevent null byte issues and ensure reliable message transmission.
 
-- Provides a simple, Pythonic interface for all Memory Orchestrator operations
-- Handles request formatting and error handling
-- Supports session management
-- Includes logging and diagnostics
+## Proper ZMQ Message Handling
 
-## Implementation Notes
+When working with ZMQ in this project, follow these guidelines to avoid null byte issues:
 
-1. **Caching**: The implementation includes a full LRU (Least Recently Used) cache with time-based expiration to improve performance.
+### Do's:
 
-2. **Database Integration**: The code includes placeholders (marked with comments like `# DB_WRITE_LOGIC_HERE`) where database integration will be added in a future phase.
+1. **Use explicit encoding/decoding**:
+   ```python
+   # Sending a message
+   message_json = json.dumps(message)
+   socket.send(message_json.encode('utf-8'))
+   
+   # Receiving a message
+   message_bytes = socket.recv()
+   message_str = message_bytes.decode('utf-8')
+   message = json.loads(message_str)
+   ```
 
-3. **Error Handling**: Comprehensive error handling is implemented, with appropriate error codes and messages returned to clients.
+2. **Use the provided utilities**:
+   ```python
+   from main_pc_code.src.memory.zmq_encoding_utils import send_json_safe, recv_json_safe
+   
+   # Sending a message
+   send_json_safe(socket, message)
+   
+   # Receiving a message
+   message = recv_json_safe(socket)
+   ```
 
-4. **ID Generation**: Unique IDs are generated for memories and sessions using a prefix and a random component.
+3. **Handle encoding errors gracefully**:
+   ```python
+   try:
+       message_str = message_bytes.decode('utf-8')
+       message = json.loads(message_str)
+   except UnicodeDecodeError:
+       # Handle encoding error
+   except json.JSONDecodeError:
+       # Handle JSON error
+   ```
 
-5. **Session Management**: Full session lifecycle management is supported, including creation, updates, and ending sessions.
+### Don'ts:
 
-## Usage Example
+1. **Don't use implicit methods without care**:
+   ```python
+   # Avoid these without proper error handling
+   socket.send_json(message)  # Implicit encoding
+   message = socket.recv_json()  # Implicit decoding
+   ```
 
-```python
-from src.memory.memory_client import MemoryClient
+2. **Don't mix bytes and strings**:
+   ```python
+   # Avoid this kind of mixing
+   socket.send(json.dumps(message))  # Missing encoding step
+   message = json.loads(socket.recv())  # Missing decoding step
+   ```
 
-# Create a client and start a session
-client = MemoryClient()
-session_response = client.create_session(
-    session_metadata={
-        "device_info": "Windows PC",
-        "location": "Home"
-    }
-)
+## Database Integration
 
-# Create a memory entry
-memory_response = client.create_memory(
-    memory_type="conversation",
-    content={
-        "text": "User asked about the weather",
-        "source_agent": "language_understanding_agent"
-    },
-    tags=["weather", "query"]
-)
+The `MemoryOrchestrator` connects to a PostgreSQL database for persistent storage of memories. The database schema includes:
 
-# Retrieve a memory entry
-memory_id = memory_response["data"]["memory_id"]
-get_response = client.get_memory(memory_id)
+- `memory_entries`: Stores memory items
+- `memory_tags`: Stores tags associated with memories
+- `memory_access_log`: Tracks access to memories
+- `sessions`: Manages user sessions
 
-# Search for memories
-search_response = client.search(
-    query="weather",
-    memory_types=["conversation"],
-    tags=["weather"]
-)
-```
+## Distributed Memory
 
-## Future Enhancements
+The memory system integrates with PC2 through the `UnifiedMemoryReasoningAgent`. This enables:
 
-1. **Database Integration**: Implement the PostgreSQL database backend as specified in `memory_db_schema.md`.
+1. Cross-machine memory sharing
+2. Memory reinforcement and decay
+3. Synchronized memory operations
 
-2. **Vector Search**: Add vector embeddings for efficient semantic search capabilities.
+## Recent Fixes
 
-3. **Authentication**: Add authentication mechanisms for secure access.
-
-4. **Compression**: Implement compression for large memory entries.
-
-5. **Monitoring**: Add performance metrics and monitoring capabilities.
+The module recently addressed null byte issues in ZMQ communication. See the detailed report at:
+`/main_pc_code/_DOCUMENTSFINAL/implementation/memory_orchestrator_null_byte_fix.md` 

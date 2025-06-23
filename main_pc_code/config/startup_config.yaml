@@ -16,10 +16,40 @@ core_services:
       emr_port: 5598
       translator_host: "localhost"
       translator_port: 5563
+      queue_max_size: 100
+      batch_max_size: 5
+      batch_timeout_ms: 200
   - { name: ChainOfThoughtAgent, script_path: FORMAINPC/ChainOfThoughtAgent.py, host: localhost, port: 5612, required: true }
   - { name: GOT_TOTAgent, script_path: FORMAINPC/GOT_TOTAgent.py, host: localhost, port: 5646, required: true }
   - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: localhost , port: 5570 , required: true, params: { enable_pc2_services: true } }
-  - { name: VRAMOptimizerAgent, script_path: agents/vram_optimizer_agent.py   , host: localhost , port: 5572 , dependencies: [ModelManagerAgent] , required: true }
+  - name: VRAMOptimizerAgent
+    script_path: agents/vram_optimizer_agent.py
+    host: localhost
+    port: 5572
+    dependencies: [ModelManagerAgent, SystemDigitalTwin]
+    required: true
+    params:
+      # VRAM thresholds (as ratio of total VRAM)
+      critical_threshold: 0.85      # 85% VRAM usage - triggers immediate unloading
+      warning_threshold: 0.75       # 75% VRAM usage - triggers idle model unloading
+      safe_threshold: 0.5           # 50% VRAM usage - considered safe
+      
+      # VRAM budgets per device in MB
+      mainpc_vram_budget_mb: 20000  # 20GB for RTX 4090
+      pc2_vram_budget_mb: 10000     # 10GB for RTX 3060
+      
+      # Idle timeouts and intervals
+      idle_timeout: 900             # Unload models after 15 minutes of inactivity
+      idle_check_interval: 60       # Check for idle models every minute
+      
+      # Memory optimization
+      defragmentation_threshold: 0.7  # 70% fragmentation triggers defrag
+      optimization_interval: 300      # Run optimization every 5 minutes
+      
+      # Predictive loading settings
+      predictive_loading_enabled: true
+      lookahead_window: 300           # 5 min lookahead for task prediction
+      prediction_window: 3600         # Track usage patterns for 1 hour
   - { name: CoordinatorAgent  , script_path: agents/coordinator_agent.py      , host: localhost , port: 26002 , required: true }
   - { name: GoalOrchestratorAgent, script_path: agents/GoalOrchestratorAgent.py  , host: localhost , port: 7001 , dependencies: [TaskRouter] , required: true }
   - { name: IntentionValidatorAgent, script_path: agents/IntentionValidatorAgent.py, host: localhost , port: 5701 , dependencies: [TaskRouter] , required: true }

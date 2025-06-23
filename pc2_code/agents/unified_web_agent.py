@@ -2,21 +2,16 @@
 """
 Unified Web Agent
 ----------------
-Combines features from:
-1. Autonomous Web Assistant
-2. Enhanced Web Scraper
-3. Web Scraper Agent
+An enhanced agent capable of proactive web browsing, information gathering,
+and context-aware navigation, designed to run on PC2 and integrate with
+the distributed AI system.
 
 Features:
+- Advanced web browsing with Selenium (headless mode)
 - Proactive information gathering
-- Advanced web scraping with multiple strategies
-- Form filling and navigation
-- Caching and database storage
-- AutoGen framework integration
-- Conversation analysis
-- Dynamic browsing with context awareness
-- Real-time reference provision
-- Autonomous decision-making
+- Context-aware navigation
+- Secure communication with SystemDigitalTwin
+- Integration with the memory system
 """
 
 import zmq
@@ -31,13 +26,29 @@ import requests
 import re
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 import hashlib
 import base64
 from bs4 import BeautifulSoup
 import urllib.parse
 import tempfile
+import socket
+import yaml
+
+# Import Selenium for browser automation
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import (
+    TimeoutException, 
+    NoSuchElementException, 
+    WebDriverException,
+    StaleElementReferenceException
+)
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -45,19 +56,13 @@ project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# Import config parser utility with fallback
-try:
-    from agents.utils.config_parser import parse_agent_args
-    _agent_args = parse_agent_args()
-except ImportError:
-    class DummyArgs:
-        host = 'localhost'
-    _agent_args = DummyArgs()
+# Import service discovery and network utilities
+from main_pc_code.utils.service_discovery_client import register_service, discover_service
+from main_pc_code.utils.network_utils import load_network_config, get_current_machine
 
 # Configure logging
-log_file_path = 'logs/unified_web_agent.log'
-log_directory = os.path.dirname(log_file_path)
-os.makedirs(log_directory, exist_ok=True)
+log_file_path = os.path.join('logs', 'unified_web_agent.log')
+os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,7 +74,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("UnifiedWebAgent")
 
-# ZMQ Configuration
+# Default ZMQ port configuration
 UNIFIED_WEB_PORT = 7126  # Main port
 HEALTH_CHECK_PORT = 7127  # Health check port
 
@@ -79,26 +84,28 @@ MAX_RETRIES = 3
 TIMEOUT = 30  # seconds
 
 class UnifiedWebAgent:
-    """Unified web agent combining autonomous assistance, scraping, and automation"""
+    """Enhanced web agent with proactive information gathering and context-aware browsing"""
     
-    def __init__(self, port=None):
-        """Initialize the unified web agent"""
-        # Set up ports
-        self.main_port = port if port else UNIFIED_WEB_PORT
-        self.health_port = self.main_port + 1
+    def __init__(self):
+        """Initialize the unified web agent with improved capabilities"""
+        # Load configuration from startup_config.yaml
+        self._load_config()
         
         # ZMQ setup
         self.context = zmq.Context()
         
         # Main socket for requests
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
-        logger.info(f"Unified Web Agent bound to port {self.main_port}")
+        self.socket.bind(f"tcp://*:{self.port}")
+        logger.info(f"Unified Web Agent bound to port {self.port}")
         
         # Health check socket
         self.health_socket = self.context.socket(zmq.REP)
         self.health_socket.bind(f"tcp://*:{self.health_port}")
         logger.info(f"Health check bound to port {self.health_port}")
+        
+        # Memory agent connection socket (will be initialized later)
+        self.memory_socket = None
         
         # Setup directories
         self.cache_dir = Path('cache') / "web_agent"
@@ -112,7 +119,11 @@ class UnifiedWebAgent:
         self.conn = sqlite3.connect(str(self.db_path))
         self._create_tables()
         
-        # Session for requests
+        # Initialize web driver
+        self.driver = None
+        self._init_web_driver()
+        
+        # HTTP session for non-browser requests
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -125,8 +136,9 @@ class UnifiedWebAgent:
         self.conversation_context = []
         self.running = True
         
-        # Decision-making parameters
+        # Proactive settings
         self.proactive_mode = True
+        self.proactive_topics = ["ai news", "technology updates", "machine learning breakthroughs"]
         self.confidence_threshold = 0.7
         
         # Statistics
@@ -136,8 +148,51 @@ class UnifiedWebAgent:
         self.health_check_requests = 0
         self.start_time = time.time()
         
-        logger.info(f"Unified Web Agent initialized on port {self.main_port}")
+        # Security settings
+        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+        
+        # Register with SystemDigitalTwin
+        self._register_with_service_discovery()
+        
+        # Initialize connection to memory agent
+        self._init_memory_connection()
+        
+        # Start background threads
+        self._start_proactive_thread()
+        
+        logger.info(f"Unified Web Agent initialized successfully")
     
+    def _load_config(self):
+        """Load configuration from startup_config.yaml"""
+        try:
+            config_path = project_root / "pc2_code" / "config" / "startup_config.yaml"
+            with open(config_path, 'r') as file:
+                config = yaml.safe_load(file)
+                
+            # Find UnifiedWebAgent configuration
+            agent_config = None
+            for service in config.get('pc2_services', []):
+                if service.get('name') == 'UnifiedWebAgent':
+                    agent_config = service
+                    break
+            
+            if agent_config:
+                self.host = agent_config.get('host', 'localhost')
+                self.port = agent_config.get('port', UNIFIED_WEB_PORT)
+                self.health_port = agent_config.get('health_check_port', HEALTH_CHECK_PORT)
+                logger.info(f"Loaded configuration for UnifiedWebAgent: {self.host}:{self.port}")
+            else:
+                logger.warning("UnifiedWebAgent configuration not found in startup_config.yaml")
+                self.host = 'localhost'
+                self.port = UNIFIED_WEB_PORT
+                self.health_port = HEALTH_CHECK_PORT
+                
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}")
+            self.host = 'localhost'
+            self.port = UNIFIED_WEB_PORT
+            self.health_port = HEALTH_CHECK_PORT
+
     def _create_tables(self):
         """Create necessary database tables"""
         cursor = self.conn.cursor()
@@ -158,23 +213,34 @@ class UnifiedWebAgent:
         CREATE TABLE IF NOT EXISTS scraping_history (
             id INTEGER PRIMARY KEY,
             url TEXT,
-            data_type TEXT,
-            output_format TEXT,
+            query TEXT,
             timestamp REAL,
             success BOOLEAN,
-            error TEXT
+            error TEXT,
+            content_hash TEXT
         )
         ''')
         
-        # Form history table
+        # Proactive information table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS form_history (
+        CREATE TABLE IF NOT EXISTS proactive_info (
             id INTEGER PRIMARY KEY,
+            topic TEXT,
             url TEXT,
-            form_data TEXT,
+            title TEXT,
+            summary TEXT,
             timestamp REAL,
-            success BOOLEAN,
-            error TEXT
+            sent_to_memory BOOLEAN
+        )
+        ''')
+        
+        # Context table for storing browsing context
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS browsing_context (
+            id INTEGER PRIMARY KEY,
+            context_key TEXT,
+            context_value TEXT,
+            timestamp REAL
         )
         ''')
         
@@ -183,21 +249,50 @@ class UnifiedWebAgent:
 
     def _health_check(self) -> Dict[str, Any]:
         """Perform health check."""
+        self.health_check_requests += 1
+        
+        # Check database connection
+        db_ok = False
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT 1")
+            db_ok = cursor.fetchone()[0] == 1
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+        
+        # Check web driver
+        driver_ok = self.driver is not None
+        
+        # Check memory connection
+        memory_ok = False
+        if hasattr(self, 'memory_socket') and self.memory_socket is not None:
+            try:
+                # Quick ping
+                self.memory_socket.send_json({"command": "ping"})
+                poller = zmq.Poller()
+                poller.register(self.memory_socket, zmq.POLLIN)
+                if poller.poll(1000):
+                    memory_ok = True
+            except Exception:
+                memory_ok = False
+        
         return {
-            'status': 'success',
-            'agent': 'UnifiedWebAgent',
-            'timestamp': datetime.now().isoformat(),
-            'uptime': time.time() - self.start_time,
-            'total_requests': self.total_requests,
-            'successful_requests': self.successful_requests,
-            'failed_requests': self.failed_requests,
-            'health_check_requests': self.health_check_requests,
-            'cache_size': self._get_cache_size(),
-            'scraping_history_size': self._get_scraping_history_size(),
-            'form_history_size': self._get_form_history_size(),
-            'current_url': self.current_url,
-            'proactive_mode': self.proactive_mode,
-            'port': self.main_port
+            "status": "success",
+            "agent": "UnifiedWebAgent",
+            "timestamp": time.time(),
+            "uptime": time.time() - self.start_time,
+            "health": {
+                "overall": all([db_ok, driver_ok]),
+                "database": db_ok,
+                "web_driver": driver_ok,
+                "memory_connection": memory_ok
+            },
+            "metrics": {
+                "total_requests": self.total_requests,
+                "successful_requests": self.successful_requests,
+                "failed_requests": self.failed_requests,
+                "health_check_requests": self.health_check_requests
+            }
         }
 
     def navigate_to_url(self, url: str) -> Dict[str, Any]:
@@ -223,16 +318,57 @@ class UnifiedWebAgent:
             if time_since_last < MIN_DELAY_BETWEEN_REQUESTS:
                 time.sleep(MIN_DELAY_BETWEEN_REQUESTS - time_since_last)
             
-            # Make request
+            # Decide which method to use: Selenium or requests
+            if self.driver:
+                # Use Selenium for full browser automation
+                try:
+                    logger.info(f"Navigating to {url} with Selenium")
+                    self.driver.get(url)
+                    
+                    # Wait for page to load
+                    WebDriverWait(self.driver, TIMEOUT).until(
+                        EC.presence_of_element_located((By.TAG_NAME, "body"))
+                    )
+                    
+                    # Get page content
+                    content = self.driver.page_source
+                    text_content = self.driver.find_element(By.TAG_NAME, "body").text
+                    
+                    # Extract title
+                    title = self.driver.title
+                    
+                    # Cache the content
+                    self._cache_content(url, text_content, {"title": title}, 200)
+                    
+                    # Update state
+                    self.current_url = url
+                    self.page_content = text_content
+                    self.last_request_time = time.time()
+                    self.successful_requests += 1
+                    
+                    return {
+                        "status": "success",
+                        "url": url,
+                        "content": text_content,
+                        "title": title,
+                        "cached": False,
+                        "method": "selenium"
+                    }
+                except Exception as selenium_error:
+                    logger.warning(f"Selenium navigation failed: {selenium_error}, falling back to requests")
+                    # Fall back to requests
+            
+            # Use requests as fallback or primary method if no driver
             response = self.session.get(url, timeout=TIMEOUT)
             response.raise_for_status()
             
             # Parse content
             soup = BeautifulSoup(response.content, 'html.parser')
             content = soup.get_text()
+            title = soup.title.string if soup.title else "No title"
             
             # Cache the content
-            self._cache_content(url, content, response.headers, response.status_code)
+            self._cache_content(url, content, dict(response.headers), response.status_code)
             
             # Update state
             self.current_url = url
@@ -244,16 +380,18 @@ class UnifiedWebAgent:
                 "status": "success",
                 "url": url,
                 "content": content,
-                "cached": False
+                "title": title,
+                "cached": False,
+                "method": "requests"
             }
             
         except Exception as e:
             self.failed_requests += 1
-            logger.error(f"Error navigating to {url}: {str(e)}")
+            logger.error(f"Error navigating to {url}: {e}")
             return {
                 "status": "error",
                 "url": url,
-                "error": str(e)
+                "message": str(e)
             }
 
     def fill_form(self, url: str, form_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -302,27 +440,48 @@ class UnifiedWebAgent:
             }
 
     def _get_cached_content(self, url: str) -> Optional[str]:
-        """Get cached content for a URL"""
+        """Get cached content for a URL if available and not expired"""
         try:
             cursor = self.conn.cursor()
-            cursor.execute('''
-            SELECT content FROM cache WHERE url = ?
-            ''', (url,))
+            cursor.execute(
+                "SELECT content, timestamp FROM cache WHERE url = ?",
+                (url,)
+            )
             result = cursor.fetchone()
-            return result[0] if result else None
+            
+            if result:
+                content, timestamp = result
+                # Check if cache is expired (older than 1 hour)
+                if time.time() - timestamp < 3600:
+                    logger.info(f"Using cached content for {url}")
+                    return content
+                else:
+                    logger.info(f"Cache expired for {url}")
+            
+            return None
         except Exception as e:
-            logger.error(f"Error getting cached content: {e}")
+            logger.error(f"Error retrieving from cache: {e}")
             return None
 
     def _cache_content(self, url: str, content: str, headers: Dict, status_code: int):
         """Cache content for a URL"""
         try:
             cursor = self.conn.cursor()
-            cursor.execute('''
-            INSERT OR REPLACE INTO cache (url, content, timestamp, headers, status_code)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (url, content, time.time(), json.dumps(dict(headers)), status_code))
+            cursor.execute(
+                '''
+                INSERT OR REPLACE INTO cache (url, content, timestamp, headers, status_code)
+                VALUES (?, ?, ?, ?, ?)
+                ''',
+                (
+                    url,
+                    content,
+                    time.time(),
+                    json.dumps(dict(headers)),
+                    status_code
+                )
+            )
             self.conn.commit()
+            logger.debug(f"Cached content for {url}")
         except Exception as e:
             logger.error(f"Error caching content: {e}")
 
@@ -367,58 +526,9 @@ class UnifiedWebAgent:
         return results
 
     def search_web(self, query: str) -> Dict[str, Any]:
-        """Search the web for information"""
-        try:
-            self.total_requests += 1
-            
-            # Enhance the query
-            enhanced_query = self._enhance_search_query(query)
-            
-            # Perform search (simulated)
-            results = self._perform_search(enhanced_query)
-            
-            # Rank results
-            ranked_results = self._rank_search_results(results, query)
-            
-            # Record in database
-            cursor = self.conn.cursor()
-            cursor.execute('''
-            INSERT INTO scraping_history (url, data_type, output_format, timestamp, success, error)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (f"search:{query}", "search", "json", time.time(), True, None))
-            self.conn.commit()
-            
-            self.successful_requests += 1
-            
-            return {
-                "status": "success",
-                "query": query,
-                "enhanced_query": enhanced_query,
-                "results": ranked_results[:10],  # Top 10 results
-                "total_results": len(ranked_results)
-            }
-            
-        except Exception as e:
-            self.failed_requests += 1
-            logger.error(f"Error searching web: {str(e)}")
-            return {
-                "status": "error",
-                "query": query,
-                "error": str(e)
-            }
-
-    def _perform_search(self, query: str) -> List[Dict[str, Any]]:
-        """Perform actual web search (simulated)"""
-        # In a full implementation, this would use a real search API
-        # For now, return simulated results
-        return [
-            {
-                "title": f"Result for: {query}",
-                "url": f"https://example.com/search?q={query}",
-                "content": f"This is a simulated search result for the query: {query}",
-                "snippet": f"Simulated snippet containing {query}..."
-            }
-        ]
+        """Perform a search using a search engine"""
+        # Alias for the search method to maintain compatibility with both naming conventions
+        return self.search(query)
 
     def analyze_conversation(self, conversation_history: List[Dict[str, str]]) -> Dict[str, Any]:
         """Analyze conversation history for insights"""
@@ -544,7 +654,11 @@ class UnifiedWebAgent:
             "scraping_history_size": self._get_scraping_history_size(),
             "form_history_size": self._get_form_history_size(),
             "current_url": self.current_url,
-            "proactive_mode": self.proactive_mode
+            "proactive_mode": self.proactive_mode,
+            "proactive_topics": self.proactive_topics,
+            "driver_available": self.driver is not None,
+            "memory_connected": hasattr(self, 'memory_socket') and self.memory_socket is not None,
+            "timestamp": time.time()
         }
     
     def _get_cache_size(self) -> int:
@@ -566,135 +680,1082 @@ class UnifiedWebAgent:
         return cursor.fetchone()[0]
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle an incoming request"""
+        """Handle incoming request from other agents"""
         try:
-            action = request.get("action")
+            command = request.get("command", "").lower()
             
-            if action == "health_check":
+            if command == "health_check":
                 return self._health_check()
-            elif action == "navigate":
-                return self.navigate_to_url(request["url"])
-            elif action == "search":
-                return self.search_web(request["query"])
-            elif action == "fill_form":
-                return self.fill_form(request["url"], request["form_data"])
-            elif action == "analyze_conversation":
-                return self.analyze_conversation(request["conversation_history"])
-            elif action == "proactive_gather":
-                return self.proactive_info_gathering(request["message"])
-            elif action == "get_status":
+            
+            elif command == "navigate":
+                url = request.get("url")
+                if not url:
+                    return {"status": "error", "message": "URL is required"}
+                return self.navigate_to_url(url)
+            
+            elif command == "extract_links":
+                url = request.get("url")
+                return self.extract_links(url)
+            
+            elif command == "search":
+                query = request.get("query")
+                if not query:
+                    return {"status": "error", "message": "Query is required"}
+                return self.search(query)
+            
+            elif command == "browse_with_context":
+                context = request.get("context")
+                if not context:
+                    return {"status": "error", "message": "Context is required"}
+                return self.browse_with_context(context)
+            
+            elif command == "send_to_memory":
+                data = request.get("data")
+                if not data:
+                    return {"status": "error", "message": "Data is required"}
+                return self.send_to_memory(data)
+            
+            elif command == "status":
                 return self.get_status()
-            else:
+            
+            elif command == "ping":
                 return {
-                    "status": "error",
-                    "error": f"Unknown action: {action}"
+                    "status": "success",
+                    "message": "pong",
+                    "agent": "UnifiedWebAgent",
+                    "timestamp": time.time()
                 }
             
+            else:
+                logger.warning(f"Unknown command: {command}")
+                return {
+                    "status": "error",
+                    "message": f"Unknown command: {command}"
+                }
+                
         except Exception as e:
-            logger.error(f"Error handling request: {str(e)}")
+            logger.error(f"Error handling request: {e}")
             return {
                 "status": "error",
-                "error": str(e)
+                "message": str(e)
             }
     
     def run(self):
         """Main run loop"""
-        logger.info(f"Starting Unified Web Agent on port {self.main_port}")
-        
-        # Start health check thread
-        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
-        health_thread.start()
-        
-        while self.running:
-            try:
-                # Wait for request with timeout
-                if self.socket.poll(1000) == 0:
+        try:
+            logger.info("Starting UnifiedWebAgent main loop")
+            
+            # Start health check thread
+            health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+            health_thread.start()
+            
+            # Main service loop
+            while self.running:
+                try:
+                    # Wait for a request with a timeout to allow for clean shutdown
+                    poller = zmq.Poller()
+                    poller.register(self.socket, zmq.POLLIN)
+                    
+                    # Poll with a 1 second timeout
+                    if poller.poll(1000):
+                        # Receive and parse the request
+                        request_raw = self.socket.recv()
+                        request = json.loads(request_raw)
+                        
+                        logger.info(f"Received request: {request.get('command', 'unknown')}")
+                        
+                        # Handle the request
+                        response = self.handle_request(request)
+                        
+                        # Send the response
+                        self.socket.send_json(response)
+                    
+                except zmq.error.Again:
+                    # Timeout, continue the loop
                     continue
-                
-                # Receive and process message
-                message = self.socket.recv_json()
-                logger.debug(f"Received request: {message}")
-                response = self.handle_request(message)
-                self.socket.send_json(response)
-                
-            except zmq.error.ZMQError as e:
-                if e.errno == zmq.EAGAIN:
-                    continue
-                logger.error(f"ZMQ error in main loop: {e}")
-            except Exception as e:
-                logger.error(f"Error in main loop: {str(e)}")
-                traceback.print_exc()
+                except json.JSONDecodeError as e:
+                    logger.error(f"Invalid JSON request: {e}")
+                    self.socket.send_json({"status": "error", "message": "Invalid JSON request"})
+                except Exception as e:
+                    logger.error(f"Error in main loop: {e}")
+                    try:
+                        self.socket.send_json({"status": "error", "message": str(e)})
+                    except:
+                        logger.error("Failed to send error response")
+            
+            logger.info("UnifiedWebAgent main loop exited")
+            
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received, shutting down")
+        except Exception as e:
+            logger.error(f"Unhandled exception in main loop: {e}")
+        finally:
+            self.cleanup()
     
     def _health_check_loop(self):
-        """Health check loop"""
+        """Background thread for handling health checks"""
         logger.info("Starting health check loop")
+        
         while self.running:
             try:
-                # Wait for health check request with timeout
-                if self.health_socket.poll(1000) == 0:
-                    continue
+                # Wait for a health check request with a timeout
+                poller = zmq.Poller()
+                poller.register(self.health_socket, zmq.POLLIN)
                 
-                # Receive and process message
-                message = self.health_socket.recv_json()
+                # Poll with a 1 second timeout
+                if poller.poll(1000):
+                    # Receive the request
+                    request_raw = self.health_socket.recv()
+                    
+                    # Perform health check
+                    health_data = self._health_check()
+                    
+                    # Send the response
+                    self.health_socket.send_json(health_data)
                 
-                if message.get("action") == "health_check":
-                    self.health_check_requests += 1
-                    response = self._health_check()
-                else:
-                    response = {
-                        "status": "error",
-                        "error": "Invalid health check request"
-                    }
-                
-                # Send response
-                self.health_socket.send_json(response)
-                
-            except zmq.error.ZMQError as e:
-                if e.errno == zmq.EAGAIN:
-                    continue
-                logger.error(f"ZMQ error in health check loop: {e}")
+            except zmq.error.Again:
+                # Timeout, continue the loop
+                continue
             except Exception as e:
-                logger.error(f"Error in health check loop: {str(e)}")
-                traceback.print_exc()
+                logger.error(f"Error in health check loop: {e}")
+                try:
+                    self.health_socket.send_json({"status": "error", "message": str(e)})
+                except:
+                    logger.error("Failed to send health check error response")
+        
+        logger.info("Health check loop exited")
     
     def cleanup(self):
-        """Cleanup resources"""
-        logger.info("Cleaning up Unified Web Agent")
-        self.running = False
+        """Clean up resources before exit"""
+        logger.info("Cleaning up resources")
         
-        # Close database connection
-        if hasattr(self, 'conn'):
+        # Close the web driver
+        if self.driver:
+            try:
+                self.driver.quit()
+                logger.info("WebDriver closed")
+            except Exception as e:
+                logger.error(f"Error closing WebDriver: {e}")
+        
+        # Close the database connection
+        try:
             self.conn.close()
+            logger.info("Database connection closed")
+        except Exception as e:
+            logger.error(f"Error closing database connection: {e}")
         
         # Close ZMQ sockets
-        if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'health_socket'):
-            self.health_socket.close()
+        try:
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.close()
+            if hasattr(self, 'memory_socket') and self.memory_socket:
+                self.memory_socket.close()
+            logger.info("ZMQ sockets closed")
+        except Exception as e:
+            logger.error(f"Error closing ZMQ sockets: {e}")
         
-        # Close ZMQ context
-        if hasattr(self, 'context'):
-            self.context.term()
-        
-        logger.info("Unified Web Agent cleaned up")
-
+        # Terminate ZMQ context
+        try:
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+            logger.info("ZMQ context terminated")
+        except Exception as e:
+            logger.error(f"Error terminating ZMQ context: {e}")
+    
     def stop(self):
-        """Stop the agent gracefully."""
+        """Stop the agent"""
+        logger.info("Stopping UnifiedWebAgent")
         self.running = False
+
+    def _init_web_driver(self):
+        """Initialize the Selenium WebDriver in headless mode with fallbacks"""
+        try:
+            # Set up Chrome options for headless operation
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-notifications")
+            chrome_options.add_argument("--disable-infobars")
+            chrome_options.add_argument("--mute-audio")
+            
+            # First try with webdriver-manager for automatic driver management
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+                from selenium.webdriver.chrome.service import Service as ChromeService
+                
+                # Initialize with automatic driver management
+                logger.info("Initializing Chrome WebDriver with webdriver-manager")
+                service = ChromeService(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                self.driver.set_page_load_timeout(TIMEOUT)
+                logger.info("WebDriver initialized successfully with webdriver-manager")
+                return
+            except ImportError:
+                logger.warning("webdriver-manager not available, trying fallback methods")
+            except Exception as e:
+                logger.warning(f"Failed to initialize WebDriver with webdriver-manager: {e}")
+            
+            # Second approach: Try the standard approach
+            try:
+                logger.info("Attempting to initialize Chrome WebDriver directly")
+                self.driver = webdriver.Chrome(options=chrome_options)
+                self.driver.set_page_load_timeout(TIMEOUT)
+                logger.info("WebDriver initialized successfully directly")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to initialize Chrome WebDriver directly: {e}")
+            
+            # Third approach: Try Firefox if Chrome fails
+            try:
+                logger.info("Attempting to initialize Firefox WebDriver as fallback")
+                from selenium.webdriver.firefox.options import Options as FirefoxOptions
+                
+                firefox_options = FirefoxOptions()
+                firefox_options.add_argument("--headless")
+                
+                self.driver = webdriver.Firefox(options=firefox_options)
+                self.driver.set_page_load_timeout(TIMEOUT)
+                logger.info("Firefox WebDriver initialized successfully as fallback")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to initialize Firefox WebDriver: {e}")
+            
+            # If all browser attempts fail, log error and continue without browser automation
+            logger.error("All WebDriver initialization attempts failed")
+            self.driver = None
+            logger.warning("Continuing without WebDriver. Only HTTP requests will be available.")
+            
+        except Exception as e:
+            logger.error(f"Unexpected error initializing WebDriver: {e}")
+            self.driver = None
+            logger.warning("Continuing without WebDriver. Only HTTP requests will be available.")
+    
+    def _register_with_service_discovery(self):
+        """Register this agent with the SystemDigitalTwin service registry"""
+        try:
+            # Get this machine's IP address
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))  # Doesn't have to be reachable
+                my_ip = s.getsockname()[0]
+                s.close()
+            except Exception as e:
+                logger.warning(f"Failed to determine IP address: {e}, using configured host")
+                my_ip = self.host if self.host != '0.0.0.0' else 'localhost'
+            
+            # Use network_utils to get PC2 IP from central config if needed
+            if my_ip == 'localhost' or my_ip == '127.0.0.1':
+                network_config = load_network_config()
+                if network_config and 'pc2_ip' in network_config:
+                    my_ip = network_config['pc2_ip']
+                    logger.info(f"Using PC2 IP from network_config.yaml: {my_ip}")
+            
+            # Prepare additional service information
+            additional_info = {
+                "api_version": "1.0",
+                "supports_secure_zmq": self.secure_zmq,
+                "supports_proactive_mode": True,
+                "last_started": time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            logger.info(f"Registering with service discovery as UnifiedWebAgent at {my_ip}:{self.port}")
+            
+            # Register the service with SystemDigitalTwin
+            response = register_service(
+                name="UnifiedWebAgent",
+                location="PC2",
+                ip=my_ip,
+                port=self.port,
+                additional_info=additional_info
+            )
+            
+            # Check response
+            if response.get("status") == "SUCCESS":
+                logger.info("Successfully registered with service discovery")
+                return True
+            else:
+                logger.warning(f"Registration failed: {response.get('message', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error registering with service discovery: {e}")
+            logger.warning("Agent will continue to function locally, but won't be discoverable by other agents")
+            return False
+    
+    def _init_memory_connection(self):
+        """Initialize connection to the UnifiedMemoryReasoningAgent"""
+        try:
+            # Discover the memory agent using service discovery
+            logger.info("Attempting to discover UnifiedMemoryReasoningAgent")
+            
+            response = discover_service("UnifiedMemoryReasoningAgent")
+            
+            if response.get("status") == "SUCCESS" and "payload" in response:
+                # Create a socket to connect to the memory agent
+                self.memory_socket = self.context.socket(zmq.REQ)
+                
+                # Apply ZMQ security if enabled
+                if self.secure_zmq:
+                    try:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+                        start_auth()
+                        self.memory_socket = configure_secure_client(self.memory_socket)
+                        logger.info("Applied secure ZMQ configuration to memory connection")
+                    except Exception as e:
+                        logger.warning(f"Failed to configure secure ZMQ for memory connection: {e}")
+                
+                # Extract connection info from response
+                service_info = response["payload"]
+                memory_ip = service_info.get("ip", "localhost")
+                memory_port = service_info.get("port", 7105)
+                
+                # Connect to the memory agent
+                memory_address = f"tcp://{memory_ip}:{memory_port}"
+                self.memory_socket.connect(memory_address)
+                logger.info(f"Connected to UnifiedMemoryReasoningAgent at {memory_address}")
+                
+                # Test the connection
+                self._send_ping_to_memory()
+                
+                return True
+            else:
+                logger.warning(f"Failed to discover UnifiedMemoryReasoningAgent: {response.get('message', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error connecting to UnifiedMemoryReasoningAgent: {e}")
+            return False
+    
+    def _send_ping_to_memory(self):
+        """Send a ping to the memory agent to test the connection"""
+        if not hasattr(self, 'memory_socket') or self.memory_socket is None:
+            logger.warning("No memory socket available for ping test")
+            return False
+        
+        try:
+            # Create a simple ping message
+            message = {
+                "command": "ping",
+                "source": "UnifiedWebAgent",
+                "timestamp": time.time()
+            }
+            
+            # Send the message
+            self.memory_socket.send_json(message)
+            
+            # Wait for a response with timeout
+            poller = zmq.Poller()
+            poller.register(self.memory_socket, zmq.POLLIN)
+            
+            # Poll for 5 seconds
+            if poller.poll(5000):
+                response = self.memory_socket.recv_json()
+                if response.get("status") == "SUCCESS":
+                    logger.info("Memory agent ping successful")
+                    return True
+                else:
+                    logger.warning(f"Memory agent ping received unexpected response: {response}")
+                    return False
+            else:
+                logger.warning("Memory agent ping timed out")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error pinging memory agent: {e}")
+            return False
+
+    def extract_links(self, url: Optional[str] = None) -> Dict[str, Any]:
+        """Extract all links from the current page or a specified URL"""
+        try:
+            # If URL is provided, navigate to it first
+            if url and url != self.current_url:
+                result = self.navigate_to_url(url)
+                if result["status"] != "success":
+                    return {
+                        "status": "error",
+                        "message": f"Failed to navigate to {url}: {result.get('message', 'Unknown error')}"
+                    }
+            
+            links = []
+            
+            # Use Selenium if available
+            if self.driver and (not url or url == self.current_url):
+                try:
+                    # Wait for links to be available
+                    WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.TAG_NAME, "a"))
+                    )
+                    
+                    # Get all link elements
+                    link_elements = self.driver.find_elements(By.TAG_NAME, "a")
+                    
+                    # Extract href and text
+                    for link in link_elements:
+                        try:
+                            href = link.get_attribute("href")
+                            text = link.text.strip()
+                            if href and text:
+                                links.append({
+                                    "url": href,
+                                    "text": text
+                                })
+                        except StaleElementReferenceException:
+                            continue
+                        except Exception as link_error:
+                            logger.debug(f"Error extracting link: {link_error}")
+                            continue
+                except Exception as selenium_error:
+                    logger.warning(f"Selenium link extraction failed: {selenium_error}, falling back to BeautifulSoup")
+                    # Fall back to BeautifulSoup
+            
+            # Use BeautifulSoup as fallback or primary method
+            if not links and self.page_content:
+                soup = BeautifulSoup(self.page_content, 'html.parser')
+                for a_tag in soup.find_all('a', href=True):
+                    href = a_tag['href']
+                    text = a_tag.get_text().strip()
+                    
+                    # Convert relative URLs to absolute
+                    if href.startswith('/') and self.current_url:
+                        base_url = urllib.parse.urlparse(self.current_url)
+                        href = f"{base_url.scheme}://{base_url.netloc}{href}"
+                    
+                    if href and text:
+                        links.append({
+                            "url": href,
+                            "text": text
+                        })
+            
+            return {
+                "status": "success",
+                "url": self.current_url,
+                "links": links,
+                "count": len(links)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error extracting links: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def search(self, query: str) -> Dict[str, Any]:
+        """Perform a search using a search engine"""
+        try:
+            # Encode the query for URL
+            encoded_query = urllib.parse.quote_plus(query)
+            
+            # Construct search URL (using Google)
+            search_url = f"https://www.google.com/search?q={encoded_query}"
+            
+            # Navigate to the search URL
+            result = self.navigate_to_url(search_url)
+            if result["status"] != "success":
+                return {
+                    "status": "error",
+                    "message": f"Failed to navigate to search engine: {result.get('message', 'Unknown error')}"
+                }
+            
+            # Extract search results
+            search_results = self._extract_search_results()
+            
+            # Record the search in database
+            self._record_search(query, search_url, len(search_results) > 0)
+            
+            return {
+                "status": "success",
+                "query": query,
+                "results": search_results,
+                "count": len(search_results)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error performing search for '{query}': {e}")
+            return {
+                "status": "error",
+                "query": query,
+                "message": str(e)
+            }
+    
+    def _extract_search_results(self) -> List[Dict[str, Any]]:
+        """Extract search results from the current page (assumed to be a search engine results page)"""
+        results = []
+        
+        try:
+            # Use Selenium if available
+            if self.driver:
+                try:
+                    # Wait for results to load
+                    WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div.g"))
+                    )
+                    
+                    # Extract result elements (Google format)
+                    result_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.g")
+                    
+                    for element in result_elements[:10]:  # Limit to top 10 results
+                        try:
+                            # Extract title, link and snippet
+                            title_element = element.find_element(By.CSS_SELECTOR, "h3")
+                            title = title_element.text if title_element else "No title"
+                            
+                            link_element = element.find_element(By.CSS_SELECTOR, "a")
+                            link = link_element.get_attribute("href") if link_element else None
+                            
+                            snippet_element = element.find_element(By.CSS_SELECTOR, "div.VwiC3b")
+                            snippet = snippet_element.text if snippet_element else "No snippet"
+                            
+                            if link:
+                                results.append({
+                                    "title": title,
+                                    "url": link,
+                                    "snippet": snippet
+                                })
+                        except Exception as result_error:
+                            logger.debug(f"Error extracting search result: {result_error}")
+                            continue
+                            
+                except Exception as selenium_error:
+                    logger.warning(f"Selenium search result extraction failed: {selenium_error}, falling back to BeautifulSoup")
+            
+            # Fallback to BeautifulSoup
+            if not results and self.page_content:
+                soup = BeautifulSoup(self.page_content, 'html.parser')
+                
+                # Try to extract results (Google format)
+                for result in soup.select('div.g')[:10]:  # Limit to top 10
+                    title_element = result.select_one('h3')
+                    title = title_element.get_text() if title_element else "No title"
+                    
+                    link_element = result.select_one('a')
+                    link = link_element.get('href') if link_element else None
+                    
+                    snippet_element = result.select_one('div.VwiC3b')
+                    snippet = snippet_element.get_text() if snippet_element else "No snippet"
+                    
+                    if link:
+                        results.append({
+                            "title": title,
+                            "url": link,
+                            "snippet": snippet
+                        })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error extracting search results: {e}")
+            return []
+    
+    def _record_search(self, query: str, url: str, success: bool) -> None:
+        """Record search query and results in the database"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                INSERT INTO scraping_history (query, url, timestamp, success, error, content_hash)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    query,
+                    url,
+                    time.time(),
+                    success,
+                    "" if success else "Failed to get results",
+                    hashlib.md5(query.encode()).hexdigest()
+                )
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error recording search: {e}")
+    
+    def send_to_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Send extracted web information to the memory agent"""
+        if not hasattr(self, 'memory_socket') or self.memory_socket is None:
+            logger.warning("No memory socket available")
+            return {
+                "status": "error",
+                "message": "Memory agent connection not available"
+            }
+        
+        try:
+            # Prepare message
+            message = {
+                "command": "store_web_data",
+                "source": "UnifiedWebAgent",
+                "timestamp": time.time(),
+                "data": data
+            }
+            
+            # Send the message
+            self.memory_socket.send_json(message)
+            
+            # Wait for a response with timeout
+            poller = zmq.Poller()
+            poller.register(self.memory_socket, zmq.POLLIN)
+            
+            # Poll for 5 seconds
+            if poller.poll(5000):
+                response = self.memory_socket.recv_json()
+                logger.info(f"Memory agent response: {response}")
+                return response
+            else:
+                logger.warning("Memory agent request timed out")
+                return {
+                    "status": "error",
+                    "message": "Memory agent request timed out"
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending data to memory agent: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def _start_proactive_thread(self):
+        """Start the background thread for proactive information gathering"""
+        if self.proactive_mode:
+            self.proactive_thread = threading.Thread(
+                target=self._proactive_info_gathering_loop,
+                daemon=True
+            )
+            self.proactive_thread.start()
+            logger.info("Started proactive information gathering thread")
+    
+    def _proactive_info_gathering_loop(self):
+        """Background loop for proactive information gathering"""
+        # Wait for initial startup to complete
+        time.sleep(10)
+        
+        while self.running:
+            try:
+                logger.info("Running proactive information gathering cycle")
+                
+                # Process each predefined topic
+                for topic in self.proactive_topics:
+                    try:
+                        # Skip if we've recently searched this topic
+                        if self._recently_searched(topic):
+                            logger.info(f"Skipping recent topic: {topic}")
+                            continue
+                        
+                        logger.info(f"Proactively searching for: {topic}")
+                        
+                        # Perform search
+                        search_result = self.search(topic)
+                        
+                        if search_result["status"] == "success" and search_result.get("results"):
+                            # Get the top result
+                            top_result = search_result["results"][0]
+                            
+                            # Navigate to the page
+                            page_result = self.navigate_to_url(top_result["url"])
+                            
+                            if page_result["status"] == "success":
+                                # Extract key information
+                                title = top_result.get("title", "No title")
+                                url = top_result.get("url", "")
+                                content = page_result.get("content", "")
+                                
+                                # Create a summary (first 500 chars)
+                                summary = content[:500] + "..." if len(content) > 500 else content
+                                
+                                # Store in database
+                                self._store_proactive_info(topic, url, title, summary)
+                                
+                                # Send to memory
+                                memory_data = {
+                                    "type": "proactive_web_info",
+                                    "topic": topic,
+                                    "title": title,
+                                    "url": url,
+                                    "summary": summary,
+                                    "timestamp": time.time()
+                                }
+                                
+                                memory_result = self.send_to_memory(memory_data)
+                                
+                                # Update database with memory status
+                                self._update_proactive_info_memory_status(
+                                    topic, url, memory_result.get("status") == "SUCCESS"
+                                )
+                                
+                                logger.info(f"Proactively gathered information about: {topic}")
+                    except Exception as topic_error:
+                        logger.error(f"Error gathering information for topic '{topic}': {topic_error}")
+                
+                # Wait before next cycle (30 minutes)
+                logger.info("Proactive gathering cycle complete, sleeping for 30 minutes")
+                time.sleep(1800)
+                
+            except Exception as e:
+                logger.error(f"Error in proactive information gathering loop: {e}")
+                # Wait before retry (1 minute)
+                time.sleep(60)
+    
+    def _recently_searched(self, topic: str) -> bool:
+        """Check if a topic was recently searched (within last 24 hours)"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT timestamp FROM proactive_info WHERE topic = ? ORDER BY timestamp DESC LIMIT 1",
+                (topic,)
+            )
+            result = cursor.fetchone()
+            
+            if result:
+                # Check if search is from last 24 hours
+                return time.time() - result[0] < 86400  # 24 hours in seconds
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error checking recent searches: {e}")
+            return False
+    
+    def _store_proactive_info(self, topic: str, url: str, title: str, summary: str):
+        """Store proactively gathered information in the database"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                INSERT INTO proactive_info (topic, url, title, summary, timestamp, sent_to_memory)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    topic,
+                    url,
+                    title,
+                    summary,
+                    time.time(),
+                    False
+                )
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error storing proactive info: {e}")
+    
+    def _update_proactive_info_memory_status(self, topic: str, url: str, sent_to_memory: bool):
+        """Update the memory status of proactively gathered information"""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                UPDATE proactive_info
+                SET sent_to_memory = ?
+                WHERE topic = ? AND url = ? AND timestamp = (
+                    SELECT MAX(timestamp) FROM proactive_info WHERE topic = ? AND url = ?
+                )
+                ''',
+                (
+                    sent_to_memory,
+                    topic,
+                    url,
+                    topic,
+                    url
+                )
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error updating proactive info memory status: {e}")
+
+    def browse_with_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Context-aware browsing based on a given context object.
+        
+        Args:
+            context: A dictionary containing context information like:
+                    - query: The main search query or task
+                    - user_interests: List of user interests
+                    - recent_topics: Recently discussed topics
+                    - constraints: Any constraints to apply to the browsing
+        
+        Returns:
+            A dictionary with browsing results and extracted information
+        """
+        try:
+            # Extract the main query/topic from context
+            main_query = context.get("query", "")
+            if not main_query:
+                return {
+                    "status": "error",
+                    "message": "No query provided in context"
+                }
+            
+            # Store the context for future reference
+            self._store_browsing_context(context)
+            
+            # Refine the query based on context
+            refined_query = self._refine_query_from_context(context)
+            
+            logger.info(f"Context-aware browsing for: {refined_query}")
+            
+            # Perform search with the refined query
+            search_result = self.search(refined_query)
+            
+            if search_result["status"] != "success" or not search_result.get("results"):
+                return {
+                    "status": "error",
+                    "message": f"Search failed for query: {refined_query}",
+                    "original_query": main_query,
+                    "refined_query": refined_query
+                }
+            
+            # Filter and prioritize results based on context
+            prioritized_results = self._prioritize_results_with_context(
+                search_result["results"], 
+                context
+            )
+            
+            # Gather information from top results
+            browsed_data = []
+            for result in prioritized_results[:3]:  # Limit to top 3 results
+                try:
+                    # Navigate to the page
+                    page_result = self.navigate_to_url(result["url"])
+                    
+                    if page_result["status"] == "success":
+                        # Extract relevant information based on context
+                        extracted_data = self._extract_relevant_data(
+                            page_result["content"],
+                            context,
+                            url=result["url"],
+                            title=result.get("title", "")
+                        )
+                        
+                        browsed_data.append(extracted_data)
+                        
+                        # Send to memory
+                        memory_data = {
+                            "type": "context_aware_browsing",
+                            "query": main_query,
+                            "refined_query": refined_query,
+                            "url": result["url"],
+                            "title": result.get("title", "No title"),
+                            "extracted_data": extracted_data,
+                            "context": context,
+                            "timestamp": time.time()
+                        }
+                        
+                        # Send the data to memory
+                        self.send_to_memory(memory_data)
+                        
+                except Exception as page_error:
+                    logger.error(f"Error processing search result: {page_error}")
+                    continue
+            
+            return {
+                "status": "success",
+                "original_query": main_query,
+                "refined_query": refined_query,
+                "results_count": len(prioritized_results),
+                "browsed_data": browsed_data,
+                "timestamp": time.time()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in context-aware browsing: {e}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "context": context
+            }
+    
+    def _refine_query_from_context(self, context: Dict[str, Any]) -> str:
+        """Refine a search query based on context information"""
+        query = context.get("query", "")
+        
+        # If we have specific refinements from the context, use them
+        if "query_refinements" in context:
+            refinements = context["query_refinements"]
+            if isinstance(refinements, list) and refinements:
+                return f"{query} {' '.join(refinements)}"
+        
+        # Add user interests if available
+        if "user_interests" in context and isinstance(context["user_interests"], list):
+            # Take the first two interests only to avoid overly specific queries
+            interests = context["user_interests"][:2]
+            if interests:
+                query += f" {' '.join(interests)}"
+        
+        # Add recent topics if available for better context
+        if "recent_topics" in context and isinstance(context["recent_topics"], list):
+            recent = context["recent_topics"][:1]  # Just use the most recent topic
+            if recent:
+                query += f" {recent[0]}"
+        
+        # Add constraints if available
+        if "constraints" in context and isinstance(context["constraints"], dict):
+            constraints = []
+            
+            if "time_period" in context["constraints"]:
+                time_period = context["constraints"]["time_period"]
+                if time_period == "recent":
+                    constraints.append("recent")
+                elif time_period == "past_year":
+                    constraints.append("past year")
+                elif time_period == "past_month":
+                    constraints.append("past month")
+            
+            if "content_type" in context["constraints"]:
+                content_type = context["constraints"]["content_type"]
+                if content_type == "news":
+                    constraints.append("news")
+                elif content_type == "research":
+                    constraints.append("research paper")
+                elif content_type == "tutorial":
+                    constraints.append("tutorial guide")
+            
+            if constraints:
+                query += f" {' '.join(constraints)}"
+        
+        return query
+    
+    def _prioritize_results_with_context(self, results: List[Dict[str, Any]], context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Prioritize search results based on the given context"""
+        if not results:
+            return []
+        
+        # Create a copy of results to avoid modifying the original
+        prioritized = results.copy()
+        
+        # If we have user interests, boost results that match them
+        if "user_interests" in context and isinstance(context["user_interests"], list):
+            interests = context["user_interests"]
+            for result in prioritized:
+                # Calculate interest score based on title and snippet matching
+                interest_score = 0
+                for interest in interests:
+                    if interest.lower() in result.get("title", "").lower():
+                        interest_score += 3  # Higher weight for title matches
+                    if interest.lower() in result.get("snippet", "").lower():
+                        interest_score += 1  # Lower weight for snippet matches
+                
+                # Add the score to the result
+                result["interest_score"] = interest_score
+        
+        # If we have constraints on time period, apply them
+        if "constraints" in context and "time_period" in context["constraints"]:
+            time_period = context["constraints"]["time_period"]
+            
+            # This is a simple heuristic, in real-world we'd need more sophisticated time extraction
+            for result in prioritized:
+                # Look for date indicators in the snippet
+                snippet = result.get("snippet", "").lower()
+                recency_score = 0
+                
+                if time_period == "recent":
+                    if any(term in snippet for term in ["today", "yesterday", "this week", "2025"]):
+                        recency_score = 3
+                    elif any(term in snippet for term in ["this month", "last month"]):
+                        recency_score = 2
+                    elif any(term in snippet for term in ["this year", "2024"]):
+                        recency_score = 1
+                elif time_period == "past_year":
+                    if any(term in snippet for term in ["2024", "2025"]):
+                        recency_score = 3
+                elif time_period == "past_month":
+                    if any(term in snippet for term in ["this month", "last month", "weeks ago"]):
+                        recency_score = 3
+                
+                # Add the score to the result
+                result["recency_score"] = recency_score
+        
+        # Calculate total priority score
+        for result in prioritized:
+            total_score = 0
+            if "interest_score" in result:
+                total_score += result["interest_score"]
+            if "recency_score" in result:
+                total_score += result["recency_score"]
+            
+            result["priority_score"] = total_score
+        
+        # Sort by priority score (higher is better)
+        prioritized.sort(key=lambda x: x.get("priority_score", 0), reverse=True)
+        
+        return prioritized
+    
+    def _extract_relevant_data(self, content: str, context: Dict[str, Any], url: str, title: str) -> Dict[str, Any]:
+        """Extract data relevant to the context from page content"""
+        # Extract a summary (first 1000 chars)
+        summary = content[:1000] + "..." if len(content) > 1000 else content
+        
+        # Extract key information based on query context
+        main_query = context.get("query", "").lower()
+        query_terms = set(main_query.split())
+        
+        # Find paragraphs most relevant to the query
+        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+        relevant_paragraphs = []
+        
+        for paragraph in paragraphs:
+            paragraph_lower = paragraph.lower()
+            # Calculate relevance score based on query term matches
+            score = sum(1 for term in query_terms if term in paragraph_lower)
+            if score > 0:
+                relevant_paragraphs.append({
+                    "text": paragraph,
+                    "relevance": score
+                })
+        
+        # Sort by relevance score and take top 3
+        relevant_paragraphs.sort(key=lambda x: x["relevance"], reverse=True)
+        top_paragraphs = [p["text"] for p in relevant_paragraphs[:3]]
+        
+        return {
+            "url": url,
+            "title": title,
+            "summary": summary,
+            "relevant_content": top_paragraphs,
+            "timestamp": time.time()
+        }
+    
+    def _store_browsing_context(self, context: Dict[str, Any]) -> None:
+        """Store the browsing context in the database"""
+        try:
+            cursor = self.conn.cursor()
+            
+            # Store each context key-value pair
+            for key, value in context.items():
+                # Skip complex nested structures
+                if isinstance(value, (dict, list)):
+                    value = json.dumps(value)
+                elif not isinstance(value, str):
+                    value = str(value)
+                
+                cursor.execute(
+                    '''
+                    INSERT INTO browsing_context (context_key, context_value, timestamp)
+                    VALUES (?, ?, ?)
+                    ''',
+                    (key, value, time.time())
+                )
+            
+            self.conn.commit()
+            logger.debug("Stored browsing context in database")
+        except Exception as e:
+            logger.error(f"Error storing browsing context: {e}")
 
 def main():
     """Main entry point"""
     try:
+        logger.info("Initializing UnifiedWebAgent")
         agent = UnifiedWebAgent()
+        
+        logger.info("Starting UnifiedWebAgent")
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt")
+        logger.info("Keyboard interrupt received")
     except Exception as e:
-        logger.error(f"Error in main: {str(e)}")
+        logger.error(f"Error starting UnifiedWebAgent: {e}")
         traceback.print_exc()
-    finally:
-        if 'agent' in locals():
-            agent.cleanup()
+    logger.info("UnifiedWebAgent exited")
 
 if __name__ == "__main__":
     main() 
