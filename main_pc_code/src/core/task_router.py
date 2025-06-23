@@ -260,16 +260,77 @@ class TaskRouter:
             self.task_socket.bind(f"tcp://*:{self.task_port}")
             logger.info(f"Task socket bound to port {self.task_port}")
             
-            # Dynamically connect to downstream services based on provided arguments
-            if COT_HOST and COT_PORT:
-                self.cot_socket = self.context.socket(zmq.REQ)
-                self.cot_socket.connect(f"tcp://{COT_HOST}:{COT_PORT}")
-                logger.info(f"Connected to Chain of Thought service at tcp://{COT_HOST}:{COT_PORT}")
-            
-            if GOT_TOT_HOST and GOT_TOT_PORT:
-                self.got_tot_socket = self.context.socket(zmq.REQ)
-                self.got_tot_socket.connect(f"tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
-                logger.info(f"Connected to Graph/Tree of Thought service at tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+            # Use service discovery for CoT and GoT-ToT services
+            try:
+                # Connect to Chain of Thought service
+                cot_service_info = discover_service("ChainOfThoughtAgent")
+                if cot_service_info and cot_service_info.get("status") == "SUCCESS":
+                    cot_info = cot_service_info.get("payload", {})
+                    cot_host = cot_info.get("host", COT_HOST)
+                    cot_port = cot_info.get("port", COT_PORT)
+                    
+                    if cot_host and cot_port:
+                        self.cot_socket = self.context.socket(zmq.REQ)
+                        # Apply secure ZMQ if enabled
+                        if self.secure_zmq:
+                            from main_pc_code.src.network.secure_zmq import configure_secure_client
+                            self.cot_socket = configure_secure_client(self.cot_socket)
+                        self.cot_socket.connect(f"tcp://{cot_host}:{cot_port}")
+                        logger.info(f"Connected to Chain of Thought service at tcp://{cot_host}:{cot_port}")
+                elif COT_HOST and COT_PORT:
+                    # Fall back to command line arguments if service discovery fails
+                    self.cot_socket = self.context.socket(zmq.REQ)
+                    # Apply secure ZMQ if enabled
+                    if self.secure_zmq:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client
+                        self.cot_socket = configure_secure_client(self.cot_socket)
+                    self.cot_socket.connect(f"tcp://{COT_HOST}:{COT_PORT}")
+                    logger.info(f"Connected to Chain of Thought service using fallback at tcp://{COT_HOST}:{COT_PORT}")
+                
+                # Connect to Graph/Tree of Thought service
+                got_tot_service_info = discover_service("GOT_TOTAgent")
+                if got_tot_service_info and got_tot_service_info.get("status") == "SUCCESS":
+                    got_tot_info = got_tot_service_info.get("payload", {})
+                    got_tot_host = got_tot_info.get("host", GOT_TOT_HOST)
+                    got_tot_port = got_tot_info.get("port", GOT_TOT_PORT)
+                    
+                    if got_tot_host and got_tot_port:
+                        self.got_tot_socket = self.context.socket(zmq.REQ)
+                        # Apply secure ZMQ if enabled
+                        if self.secure_zmq:
+                            from main_pc_code.src.network.secure_zmq import configure_secure_client
+                            self.got_tot_socket = configure_secure_client(self.got_tot_socket)
+                        self.got_tot_socket.connect(f"tcp://{got_tot_host}:{got_tot_port}")
+                        logger.info(f"Connected to Graph/Tree of Thought service at tcp://{got_tot_host}:{got_tot_port}")
+                elif GOT_TOT_HOST and GOT_TOT_PORT:
+                    # Fall back to command line arguments if service discovery fails
+                    self.got_tot_socket = self.context.socket(zmq.REQ)
+                    # Apply secure ZMQ if enabled
+                    if self.secure_zmq:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client
+                        self.got_tot_socket = configure_secure_client(self.got_tot_socket)
+                    self.got_tot_socket.connect(f"tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+                    logger.info(f"Connected to Graph/Tree of Thought service using fallback at tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+            except Exception as discovery_error:
+                logger.warning(f"Error during service discovery for CoT/GoT-ToT services: {discovery_error}")
+                # If service discovery fails, use command line arguments if available
+                if COT_HOST and COT_PORT:
+                    self.cot_socket = self.context.socket(zmq.REQ)
+                    # Apply secure ZMQ if enabled
+                    if self.secure_zmq:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client
+                        self.cot_socket = configure_secure_client(self.cot_socket)
+                    self.cot_socket.connect(f"tcp://{COT_HOST}:{COT_PORT}")
+                    logger.info(f"Connected to Chain of Thought service using fallback at tcp://{COT_HOST}:{COT_PORT}")
+                
+                if GOT_TOT_HOST and GOT_TOT_PORT:
+                    self.got_tot_socket = self.context.socket(zmq.REQ)
+                    # Apply secure ZMQ if enabled
+                    if self.secure_zmq:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client
+                        self.got_tot_socket = configure_secure_client(self.got_tot_socket)
+                    self.got_tot_socket.connect(f"tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
+                    logger.info(f"Connected to Graph/Tree of Thought service using fallback at tcp://{GOT_TOT_HOST}:{GOT_TOT_PORT}")
 
             # Use service discovery to find and connect to EnhancedModelRouter
             self._connect_to_migrated_service("EnhancedModelRouter", "emr_socket")

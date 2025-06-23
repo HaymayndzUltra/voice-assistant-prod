@@ -537,23 +537,72 @@ class StreamingSpeechRecognition(BaseAgent):
                 time.sleep(0.1)  # Sleep on error to prevent tight loop
     
     def _cleanup_idle_models(self, current_model_id):
-        """Clean up idle models to manage memory."""
+        """
+        Instead of directly unloading models, delegate to ModelManagerAgent via VRAMOptimizerAgent.
+        This method now just informs the VRAMOptimizerAgent about the current model being used.
+        """
         try:
-            if len(self.stt_manager.loaded_models) > MAX_CONCURRENT_MODELS:
-                now = time.time()
-                idle_models = [
-                    mid for mid, ts in self.timestamp_last_used.items()
-                    if mid != current_model_id and (now - ts) > MODEL_IDLE_TIMEOUT
-                ]
+            # Connect to ModelManagerAgent/VRAMOptimizerAgent if needed
+            if not hasattr(self, 'vram_optimizer_socket'):
+                # Create socket for VRAMOptimizerAgent
+                self.vram_optimizer_socket = self.zmq_context.socket(zmq.REQ)
+                self.vram_optimizer_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
                 
-                for mid in idle_models:
-                    if mid in self.stt_manager.loaded_models:
-                        del self.stt_manager.loaded_models[mid]
-                        logger.info(f"Unloaded idle STT model '{mid}' due to timeout.")
-                        if mid in self.timestamp_last_used:
-                            del self.timestamp_last_used[mid]
+                # Try to discover VRAMOptimizerAgent
+                try:
+                    from utils.service_discovery_client import discover_service
+                    vram_optimizer_info = discover_service("VRAMOptimizerAgent")
+                    if vram_optimizer_info and vram_optimizer_info.get("status") == "SUCCESS":
+                        vram_info = vram_optimizer_info.get("payload", {})
+                        vram_host = vram_info.get("host", "localhost") 
+                        vram_port = vram_info.get("port", 5572)  # Default port
+                        
+                        # Apply secure ZMQ if enabled
+                        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+                        if is_secure_zmq_enabled():
+                            setup_curve_client(self.vram_optimizer_socket)
+                            
+                        self.vram_optimizer_socket.connect(f"tcp://{vram_host}:{vram_port}")
+                        logger.info(f"Connected to VRAMOptimizerAgent at tcp://{vram_host}:{vram_port}")
+                    else:
+                        logger.warning("Failed to discover VRAMOptimizerAgent, will continue with local model management")
+                        return
+                except Exception as e:
+                    logger.warning(f"Error discovering VRAMOptimizerAgent: {e}")
+                    return
+            
+            # Send update to VRAMOptimizerAgent about the current model being used
+            # This allows VRAMOptimizerAgent to track model usage and make unloading decisions
+            try:
+                request = {
+                    "command": "UPDATE_MODEL_USAGE",
+                    "model_id": current_model_id,
+                    "timestamp": time.time(),
+                    "agent": "StreamingSpeechRecognition",
+                    "model_type": "stt"
+                }
+                self.vram_optimizer_socket.send_json(request)
+                
+                # Try to get response, but don't block if no response
+                try:
+                    response = self.vram_optimizer_socket.recv_json()
+                    logger.debug(f"VRAMOptimizerAgent response: {response}")
+                except zmq.error.Again:
+                    # Timeout is okay for this non-critical operation
+                    pass
+                    
+            except Exception as e:
+                logger.warning(f"Error sending model usage update to VRAMOptimizerAgent: {e}")
+                
+            # Track model usage locally
+            now = time.time()
+            self.timestamp_last_used[current_model_id] = now
+            
         except Exception as e:
-            logger.error(f"Error cleaning up idle models: {str(e)}")
+            logger.error(f"Error in delegated model management: {str(e)}")
+            # Fallback to local tracking only
+            now = time.time()
+            self.timestamp_last_used[current_model_id] = now
     
     def health_broadcast_loop(self):
         """Broadcast health status."""
@@ -617,21 +666,53 @@ class StreamingSpeechRecognition(BaseAgent):
         """Clean up resources."""
         try:
             # Close ZMQ sockets
-            self.sub_socket.close()
-            self.pub_socket.close()
-            self.health_socket.close()
-            self.wake_word_socket.close()
+            if hasattr(self, 'sub_socket'):
+                self.sub_socket.close()
             
-            # Terminate ZMQ context
-            self.zmq_context.term()
+            if hasattr(self, 'pub_socket'):
+                self.pub_socket.close()
+                
+            if hasattr(self, 'health_socket'):
+                self.health_socket.close()
+                
+            if hasattr(self, 'wake_word_socket'):
+                self.wake_word_socket.close()
+                
+            if hasattr(self, 'vad_socket'):
+                self.vad_socket.close()
+                
+            if hasattr(self, 'vram_optimizer_socket'):
+                self.vram_optimizer_socket.close()
             
-            # Clear model cache
-            if hasattr(self, 'stt_manager'):
-                self.stt_manager.clear_cache()
+            # Terminate ZMQ context - do this after all sockets are closed
+            if hasattr(self, 'zmq_context'):
+                self.zmq_context.term()
+            
+            # Clear model cache - now delegated to ModelManagerAgent via VRAMOptimizerAgent
+            if hasattr(self, 'stt_manager') and self.stt_manager:
+                # Send notification to VRAMOptimizerAgent that we're shutting down
+                try:
+                    # Only attempt if we have a VRAM optimizer socket
+                    if hasattr(self, 'vram_optimizer_socket') and not self.vram_optimizer_socket.closed:
+                        request = {
+                            "command": "AGENT_SHUTDOWN",
+                            "agent": "StreamingSpeechRecognition",
+                            "timestamp": time.time()
+                        }
+                        self.vram_optimizer_socket.send_json(request)
+                        # Don't wait for response during shutdown
+                except Exception as e:
+                    logger.warning(f"Error notifying VRAMOptimizerAgent of shutdown: {e}")
             
             logger.info("Resources cleaned up")
         except Exception as e:
             logger.error(f"Error in cleanup: {str(e)}")
+            # Even if there's an error, try to terminate the context
+            try:
+                if hasattr(self, 'zmq_context') and not self.zmq_context.closed:
+                    self.zmq_context.term()
+            except Exception as term_error:
+                logger.error(f"Error terminating ZMQ context: {str(term_error)}")
     
     def run(self):
         """Main run loop."""

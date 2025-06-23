@@ -17,7 +17,17 @@ import logging
 import time
 import pickle
 from utils.config_parser import parse_agent_args
+from utils.service_discovery_client import discover_service
+from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 _agent_args = parse_agent_args()
+
+# Get the directory of the current file for the log
+current_dir = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = os.path.join(current_dir, "../logs/responder.log")
+os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+
+# Ensure appropriate directories exist
+os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
 
 # Import common Tagalog phrases module
 try:
@@ -72,11 +82,14 @@ except ImportError:
 
 
 # Settings
-ZMQ_RESPONDER_PORT = 5637  # Updated to match config
-ZMQ_FACE_PORT = 5556  # Port for face recognition agent
-ZMQ_TTS_PORT = 5562  # Port for StreamingTTSAgent
-ZMQ_TTS_CACHE_PORT = 5628  # Port for TTSCache
-ZMQ_TTS_CONNECTOR_PORT = 5582  # Port for TTSConnector
+ZMQ_RESPONDER_PORT = int(getattr(_agent_args, 'port', 5637))  # Updated to match config
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
+
+# Secure ZMQ configuration
+SECURE_ZMQ = is_secure_zmq_enabled()
+
+# Default voice (will be overridden by config)
+VOICE = "tts_models/en/ljspeech/tacotron2-DDC"
 
 # Health monitoring settings
 HEALTH_CHECK_INTERVAL = 30  # seconds
@@ -136,37 +149,24 @@ logging.basicConfig(
     ]
 )
 
+logger = logging.getLogger("ResponderAgent")
 
 class ResponderAgent(BaseAgent):
     def __init__(self, port: int = ZMQ_RESPONDER_PORT, voice: str = VOICE, **kwargs):
-        super().__init__(port=port, name="Responder")
+        super().__init__(port=port, name="ResponderAgent")
         self.context = zmq.Context()
         
         # Set up main socket for receiving TTS requests
         self.socket = self.context.socket(zmq.SUB)
-        self.socket.bind(f"tcp://127.0.0.1:{port}")
+        # Apply secure ZMQ if enabled
+        if SECURE_ZMQ:
+            setup_curve_client(self.socket, server_mode=True)
+        self.socket.bind(f"tcp://*:{port}")
         self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        logger.info(f"Responder socket bound to port {port}")
         
-        # Set up face recognition socket for emotion data
-        self.face_socket = self.context.socket(zmq.SUB)
-        self.face_socket.connect(f"tcp://127.0.0.1:{ZMQ_FACE_PORT}")
-        self.face_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        
-        # Set up TTS service connections
-        self.tts_socket = self.context.socket(zmq.REQ)
-        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_PORT}")
-        
-        self.tts_cache_socket = self.context.socket(zmq.REQ)
-        self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_cache_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_cache_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_CACHE_PORT}")
-        
-        self.tts_connector_socket = self.context.socket(zmq.REQ)
-        self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_connector_socket.connect(f"tcp://127.0.0.1:{ZMQ_TTS_CONNECTOR_PORT}")
+        # Connect to services using service discovery
+        self._connect_to_services()
         
         # Health monitoring
         self.health_status = {
@@ -184,6 +184,10 @@ class ResponderAgent(BaseAgent):
         # Start health monitoring thread
         self.health_thread = threading.Thread(target=self._monitor_health, daemon=True)
         self.health_thread.start()
+        
+        # Start service discovery refresh thread
+        self.discovery_refresh_thread = threading.Thread(target=self._refresh_service_connections, daemon=True)
+        self.discovery_refresh_thread.start()
         
         # Defer heavy TTS model loading to a background thread
         self.tts = None
@@ -209,8 +213,103 @@ class ResponderAgent(BaseAgent):
         # User voice profiles - can be customized per user
         self.user_voice_profiles = {}
         
-        logging.info(f"[Responder] Ready on port {port}.")
+        logger.info("ResponderAgent initialized")
 
+    def _connect_to_services(self):
+        """Connect to required services using service discovery"""
+        try:
+            # Connect to face recognition for emotion data
+            face_service = discover_service("FaceRecognitionAgent")
+            if face_service and face_service.get("status") == "SUCCESS":
+                face_info = face_service.get("payload", {})
+                face_host = face_info.get("host", "localhost")
+                face_port = face_info.get("port", 5610)  # Default port
+                
+                self.face_socket = self.context.socket(zmq.SUB)
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    setup_curve_client(self.face_socket)
+                self.face_socket.connect(f"tcp://{face_host}:{face_port}")
+                self.face_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+                logger.info(f"Connected to FaceRecognitionAgent at {face_host}:{face_port}")
+                self.health_status["connections"]["face_recognition"] = True
+            else:
+                logger.warning("Failed to discover FaceRecognitionAgent")
+                self.face_socket = None
+                
+            # Connect to StreamingTTSAgent
+            tts_service = discover_service("StreamingTTSAgent")
+            if tts_service and tts_service.get("status") == "SUCCESS":
+                tts_info = tts_service.get("payload", {})
+                tts_host = tts_info.get("host", "localhost")
+                tts_port = tts_info.get("port", 5562)  # Default port
+                
+                self.tts_socket = self.context.socket(zmq.REQ)
+                self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    setup_curve_client(self.tts_socket)
+                self.tts_socket.connect(f"tcp://{tts_host}:{tts_port}")
+                logger.info(f"Connected to StreamingTTSAgent at {tts_host}:{tts_port}")
+                self.health_status["connections"]["tts"] = True
+            else:
+                logger.warning("Failed to discover StreamingTTSAgent")
+                self.tts_socket = None
+                
+            # Connect to TTSCache
+            tts_cache_service = discover_service("TTSCache")
+            if tts_cache_service and tts_cache_service.get("status") == "SUCCESS":
+                tts_cache_info = tts_cache_service.get("payload", {})
+                tts_cache_host = tts_cache_info.get("host", "localhost")
+                tts_cache_port = tts_cache_info.get("port", 5628)  # Default port
+                
+                self.tts_cache_socket = self.context.socket(zmq.REQ)
+                self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_cache_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    setup_curve_client(self.tts_cache_socket)
+                self.tts_cache_socket.connect(f"tcp://{tts_cache_host}:{tts_cache_port}")
+                logger.info(f"Connected to TTSCache at {tts_cache_host}:{tts_cache_port}")
+                self.health_status["connections"]["tts_cache"] = True
+            else:
+                logger.warning("Failed to discover TTSCache")
+                self.tts_cache_socket = None
+                
+            # Connect to TTSConnector
+            tts_connector_service = discover_service("TTSConnector")
+            if tts_connector_service and tts_connector_service.get("status") == "SUCCESS":
+                tts_connector_info = tts_connector_service.get("payload", {})
+                tts_connector_host = tts_connector_info.get("host", "localhost")
+                tts_connector_port = tts_connector_info.get("port", 5582)  # Default port
+                
+                self.tts_connector_socket = self.context.socket(zmq.REQ)
+                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                # Apply secure ZMQ if enabled
+                if SECURE_ZMQ:
+                    setup_curve_client(self.tts_connector_socket)
+                self.tts_connector_socket.connect(f"tcp://{tts_connector_host}:{tts_connector_port}")
+                logger.info(f"Connected to TTSConnector at {tts_connector_host}:{tts_connector_port}")
+                self.health_status["connections"]["tts_connector"] = True
+            else:
+                logger.warning("Failed to discover TTSConnector")
+                self.tts_connector_socket = None
+                
+        except Exception as e:
+            logger.error(f"Error connecting to services: {e}")
+    
+    def _refresh_service_connections(self):
+        """Periodically refresh service connections"""
+        while self.running:
+            time.sleep(60)  # Check every minute
+            try:
+                self._connect_to_services()
+                logger.info("Service connections refreshed")
+            except Exception as e:
+                logger.error(f"Error refreshing service connections: {e}")
+    
     def _load_tts_model(self):
         """Background loader for XTTS model."""
         if not TTS_AVAILABLE:
@@ -521,14 +620,44 @@ class ResponderAgent(BaseAgent):
         return True
 
     def stop(self):
+        """Stop the agent and clean up resources."""
         if not self.running:
             return
+        logger.info("Stopping ResponderAgent...")
         self.running = False
+        
         try:
-            self.socket.close(0)
-            self.context.term()
+            # Close all sockets properly
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close(0)
+                
+            if hasattr(self, 'face_socket') and self.face_socket:
+                self.face_socket.close(0)
+                
+            if hasattr(self, 'tts_socket') and self.tts_socket:
+                self.tts_socket.close(0)
+                
+            if hasattr(self, 'tts_cache_socket') and self.tts_cache_socket:
+                self.tts_cache_socket.close(0)
+                
+            if hasattr(self, 'tts_connector_socket') and self.tts_connector_socket:
+                self.tts_connector_socket.close(0)
+            
+            # Finally terminate the context
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            logger.info("ResponderAgent stopped and resources cleaned up")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}")
+            # Even if there's an error, try to terminate the context
+            try:
+                if hasattr(self, 'context') and self.context:
+                    self.context.term()
+            except Exception as term_error:
+                logger.error(f"Error terminating ZMQ context: {str(term_error)}")
         finally:
-            logging.info("[Responder] Stopped and cleaned up.")
+            logger.info("ResponderAgent stopped")
 
     def hot_reload_watcher(self):
         last_voice = self.voice

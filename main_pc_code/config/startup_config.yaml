@@ -8,9 +8,9 @@ core_services:
     port: 8571
     required: true
     params:
-      cot_host: "127.0.0.1"
+      cot_host: "0.0.0.0"
       cot_port: 5612
-      got_tot_host: "127.0.0.1"
+      got_tot_host: "0.0.0.0"
       got_tot_port: 5646
       emr_host: "0.0.0.0"
       emr_port: 5598

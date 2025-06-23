@@ -268,44 +268,97 @@ class EnhancedModelRouter:
             self.task_router_socket = self.context.socket(zmq.REQ)
             self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.task_router_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.task_router_socket.connect(f"tcp://localhost:{TASK_ROUTER_PORT}")
-            logger.info(f"Connected to TaskRouter on port {TASK_ROUTER_PORT}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.task_router_socket)
+                
+            # Use service mapping instead of hardcoded values
+            task_router_host = self.service_mappings.get('TaskRouter', {}).get('host', 'localhost')
+            task_router_port = self.service_mappings.get('TaskRouter', {}).get('port', TASK_ROUTER_PORT)
+            self.task_router_socket.connect(f"tcp://{task_router_host}:{task_router_port}")
+            logger.info(f"Connected to TaskRouter on {task_router_host}:{task_router_port}")
 
             # Connect to other required services
             self.model_manager_socket = self.context.socket(zmq.REQ)
             self.model_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.model_manager_socket.connect(f"tcp://{self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}")
-            logger.info(f"Connected to ModelManagerAgent on {self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.model_manager_socket)
+                
+            model_manager_host = self.service_mappings.get('ModelManagerAgent', {}).get('host')
+            model_manager_port = self.service_mappings.get('ModelManagerAgent', {}).get('port')
+            self.model_manager_socket.connect(f"tcp://{model_manager_host}:{model_manager_port}")
+            logger.info(f"Connected to ModelManagerAgent on {model_manager_host}:{model_manager_port}")
 
             self.contextual_memory_socket = self.context.socket(zmq.REQ)
             self.contextual_memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.contextual_memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.contextual_memory_socket.connect(f"tcp://localhost:{self.service_mappings['UnifiedMemoryReasoningAgent']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.contextual_memory_socket)
+                
+            memory_host = self.service_mappings.get('UnifiedMemoryReasoningAgent', {}).get('host', 'localhost')
+            memory_port = self.service_mappings.get('UnifiedMemoryReasoningAgent', {}).get('port')
+            self.contextual_memory_socket.connect(f"tcp://{memory_host}:{memory_port}")
+            logger.info(f"Connected to UnifiedMemoryReasoningAgent on {memory_host}:{memory_port}")
 
             self.chain_of_thought_socket = self.context.socket(zmq.REQ)
             self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.chain_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.chain_of_thought_socket.connect(f"tcp://localhost:{self.service_mappings['ChainOfThoughtAgent']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.chain_of_thought_socket)
+                
+            cot_host = self.service_mappings.get('ChainOfThoughtAgent', {}).get('host', 'localhost')
+            cot_port = self.service_mappings.get('ChainOfThoughtAgent', {}).get('port')
+            self.chain_of_thought_socket.connect(f"tcp://{cot_host}:{cot_port}")
+            logger.info(f"Connected to ChainOfThoughtAgent on {cot_host}:{cot_port}")
 
             self.remote_connector_socket = self.context.socket(zmq.REQ)
             self.remote_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.remote_connector_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.remote_connector_socket.connect(f"tcp://{self.service_mappings['RemoteConnectorAgent']['host']}:{self.service_mappings['RemoteConnectorAgent']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.remote_connector_socket)
+                
+            remote_host = self.service_mappings.get('RemoteConnectorAgent', {}).get('host', 'localhost')
+            remote_port = self.service_mappings.get('RemoteConnectorAgent', {}).get('port')
+            self.remote_connector_socket.connect(f"tcp://{remote_host}:{remote_port}")
+            logger.info(f"Connected to RemoteConnectorAgent on {remote_host}:{remote_port}")
 
             # Connect to UnifiedUtilsAgent on Main PC
             self.utils_agent_socket = self.context.socket(zmq.REQ)
             self.utils_agent_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.utils_agent_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.utils_agent_socket.connect(f"tcp://localhost:{self.service_mappings['UnifiedUtilsAgent']['port']}")
-            logger.info(f"Connected to UnifiedUtilsAgent on localhost:{self.service_mappings['UnifiedUtilsAgent']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.utils_agent_socket)
+                
+            utils_host = self.service_mappings.get('UnifiedUtilsAgent', {}).get('host', 'localhost')
+            utils_port = self.service_mappings.get('UnifiedUtilsAgent', {}).get('port')
+            self.utils_agent_socket.connect(f"tcp://{utils_host}:{utils_port}")
+            logger.info(f"Connected to UnifiedUtilsAgent on {utils_host}:{utils_port}")
 
             # Connect to Web Assistant for research capabilities
             self.web_assistant_socket = self.context.socket(zmq.REQ)
             self.web_assistant_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.web_assistant_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.web_assistant_socket.connect(f"tcp://localhost:{self.service_mappings['WebAssistant']['port']}")
-            logger.info(f"Connected to Web Assistant on port {self.service_mappings['WebAssistant']['port']}")
+            
+            # Apply secure ZMQ if enabled
+            if SECURE_ZMQ:
+                setup_curve_client(self.web_assistant_socket)
+                
+            web_host = self.service_mappings.get('WebAssistant', {}).get('host', 'localhost')
+            web_port = self.service_mappings.get('WebAssistant', {}).get('port')
+            self.web_assistant_socket.connect(f"tcp://{web_host}:{web_port}")
+            logger.info(f"Connected to Web Assistant on {web_host}:{web_port}")
 
             # Initialize state variables
             self.lock = threading.Lock()
