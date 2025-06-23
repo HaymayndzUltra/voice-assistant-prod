@@ -16,20 +16,35 @@ Constraints honoured:
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from graphlib import TopologicalSorter, CycleError
 
 import yaml  # PyYAML
 import subprocess
-import os
 import time
 import socket
 import signal
 import re
 
+# Add project root to Python path for common_utils import
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import common utilities
+try:
+    from common_utils.env_loader import get_env, get_ip
+    USE_COMMON_UTILS = True
+except ImportError:
+    USE_COMMON_UTILS = False
+    print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
 
 CONFIG_REL_PATH = Path("config/startup_config.yaml")
+
+# Define active agent directories (exclude archive/reference folders)
+AGENT_DIRS = ["agents", "src", "FORMAINPC"]
 
 
 def load_config(config_path: Path) -> Dict[str, Any]:
@@ -121,7 +136,10 @@ def wait_for_batch_healthy(batch_agents: List[Dict[str, Any]], timeout_seconds: 
 
     while time.time() - start < timeout_seconds and remaining:
         for name, agent in list(remaining.items()):
+            # Use environment variables for host if available
             host = agent.get("host", "localhost")
+            if host == "0.0.0.0" and USE_COMMON_UTILS:
+                host = get_ip("main_pc")
             port = int(agent.get("port"))
             if check_port_is_open(host, port):
                 healthy.add(name)
@@ -151,6 +169,11 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
     env = os.environ.copy()
     pythonpath = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = f"{project_root}:{base_dir}:{pythonpath}" if pythonpath else f"{project_root}:{base_dir}"
+    
+    # Add common_utils to PYTHONPATH
+    common_utils_path = project_root / "common_utils"
+    if common_utils_path.exists():
+        env["PYTHONPATH"] = f"{common_utils_path}:{env['PYTHONPATH']}"
 
     # Add agent-specific environment variables, if any
     if "env_vars" in agent_cfg and isinstance(agent_cfg["env_vars"], dict):
@@ -200,114 +223,140 @@ def print_failed_agent_logs(failed_agents: List[str], logs_dir: Path):
 
 
 def free_up_ports(agents: List[Dict[str, Any]]):
-    """
-    Checks all ports required by agents and their health checks. If a port is
-    in use, it attempts to terminate the owning process using the `ss` command.
-    """
-    print("--- Checking and freeing required ports ---")
-    ports_to_check = set()
-    for agent in agents:
-        port = agent.get("port")
-        if port:
-            ports_to_check.add(int(port))
-            ports_to_check.add(int(port) + 1)  # Health check port
+    """Attempt to free up ports that might be in use by previous runs.
 
+    Uses lsof to find processes using the ports, and kills them.
+    """
+    ports = []
+    for agent in agents:
+        if "port" in agent:
+            ports.append(str(agent["port"]))
+
+    if not ports:
+        return
+
+    print(f"Checking if ports are in use: {', '.join(ports)}")
     try:
-        result = subprocess.run(["ss", "-lntp"], capture_output=True, text=True, check=False)
+        lsof_cmd = ["lsof", "-i", "tcp:" + ",".join(ports)]
+        result = subprocess.run(lsof_cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            print("[WARNING] `ss` command failed. Cannot check/free ports.", file=sys.stderr)
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
+            # No processes found using these ports
             return
 
-        pids_to_kill = set()
-        lines = result.stdout.strip().split('\n')
-        # Regex to find port and pid from ss output
-        line_re = re.compile(r'LISTEN\s+\d+\s+\d+\s+.*?:(\d+)\s+.*users:\(\(.*?,pid=(\d+),.*?\)\)')
-
+        # Parse output to find PIDs
+        lines = result.stdout.strip().split("\n")[1:]  # Skip header
+        pids = set()
         for line in lines:
-            match = line_re.search(line)
-            if match:
-                port, pid = map(int, match.groups())
-                if port in ports_to_check:
-                    pids_to_kill.add((pid, port))
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    pids.add(int(parts[1]))
+                except ValueError:
+                    continue
 
-        for pid, port in pids_to_kill:
-            print(f"Port {port} is in use by PID {pid}. Terminating process...")
-            try:
-                os.kill(pid, signal.SIGKILL)
-                print(f"Process {pid} terminated.")
-            except ProcessLookupError:
-                print(f"Process {pid} not found, likely already terminated.")
-            except Exception as e:
-                print(f"[ERROR] Failed to terminate process {pid}: {e}", file=sys.stderr)
-
+        # Kill processes
+        if pids:
+            print(f"Killing processes using required ports: {pids}")
+            for pid in pids:
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass  # Process already gone
     except FileNotFoundError:
-        print("[WARNING] `ss` command not found. Cannot check/free ports.", file=sys.stderr)
+        print("lsof command not found, skipping port check")
     except Exception as e:
-        print(f"[ERROR] An error occurred while checking ports: {e}", file=sys.stderr)
+        print(f"Error checking ports: {e}")
 
 
 def main() -> None:
+    """Main entry point."""
+    # Determine the base directory (where this script is located)
     base_dir = Path(__file__).resolve().parent
-    project_root = base_dir.parent
     config_path = base_dir / CONFIG_REL_PATH
+    project_root = base_dir.parent
 
-    config: Dict[str, Any] = load_config(config_path)
-    agents: List[Dict[str, Any]] = consolidate_agent_entries(config, base_dir)
+    # Load configuration
+    config = load_config(config_path)
 
-    # Ensure all required ports are free before launching agents.
-    free_up_ports(agents)
+    # Extract and consolidate agent entries from all sections
+    agents = consolidate_agent_entries(config, base_dir)
 
+    # Print summary information
+    print(f"Found {len(agents)} agent entries in configuration.")
+    for i, agent in enumerate(agents, 1):
+        print(f"{i:2d}. {agent.get('name', 'Unknown'):<30} {agent.get('script_path', 'No script path')}")
+
+    # Build dependency graph
     graph = build_dependency_graph(agents)
+    print("\nDependency Graph:")
+    for agent, deps in graph.items():
+        if deps:
+            print(f"{agent:<30} depends on: {', '.join(deps)}")
+        else:
+            print(f"{agent:<30} has no dependencies")
 
+    # Calculate startup batches
     try:
         batches = calculate_startup_batches(graph)
-    except CycleError as ce:
-        # ce.args[1] contains the list of nodes involved in the cycle
-        cycle_nodes = ", ".join(ce.args[1]) if len(ce.args) > 1 else str(ce)
-        print(f"[ERROR] Circular dependency detected among: {cycle_nodes}", file=sys.stderr)
+        print("\nStartup Batches:")
+        for i, batch in enumerate(batches, 1):
+            print(f"Batch {i}: {', '.join(batch)}")
+    except CycleError as e:
+        print(f"\nERROR: Dependency cycle detected: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # --- Launch Agents --------------------------------------------------------
-    logs_dir = base_dir / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
+    # Create a mapping of agent name to agent config
+    agent_map = {agent["name"]: agent for agent in agents}
 
-    agent_lookup = {a["name"]: a for a in agents}
+    # Set up signal handlers for graceful shutdown
     processes: Dict[str, subprocess.Popen] = {}
 
-    total_batches = len(batches)
-    for idx, batch in enumerate(batches, start=1):
-        print(f"--- Launching Batch {idx} of {total_batches} ---")
-        for name in batch:
-            agent_cfg = agent_lookup[name]
+    def signal_handler(sig, frame):
+        print(f"\nReceived signal {sig}, shutting down...")
+        shutdown_processes(processes)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Create logs directory
+    logs_dir = base_dir / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    # Free up ports
+    free_up_ports(agents)
+
+    # Launch agents in batches
+    for i, batch in enumerate(batches, 1):
+        print(f"\nLaunching Batch {i}: {', '.join(batch)}")
+        batch_agents = [agent_map[name] for name in batch]
+
+        # Launch all agents in this batch
+        for agent_cfg in batch_agents:
+            name = agent_cfg["name"]
+            print(f"Starting {name}...")
             proc = launch_agent(agent_cfg, base_dir, project_root, logs_dir)
             processes[name] = proc
-            print(f"Started {name} (pid {proc.pid}) -> log: {logs_dir / (name + '.log')}")
 
-        batch_agents = [agent_lookup[name] for name in batch]
-        success, failed_agents = wait_for_batch_healthy(batch_agents)
+        # Wait for all agents in this batch to become healthy
+        print(f"Waiting for Batch {i} agents to become healthy...")
+        success, failed = wait_for_batch_healthy(batch_agents)
         if not success:
-            print(f"[ERROR] Batch {idx} failed to become healthy. Failed agents: {', '.join(failed_agents)}", file=sys.stderr)
-            print_failed_agent_logs(failed_agents, logs_dir)
+            print(f"ERROR: Failed to start agents: {', '.join(failed)}", file=sys.stderr)
+            print_failed_agent_logs(failed, logs_dir)
             shutdown_processes(processes)
             sys.exit(1)
 
-        print(f"Batch {idx} healthy.")
+    print("\nAll agents started successfully!")
+    print("Press Ctrl+C to shut down all agents.")
 
-        if idx < total_batches:
-            print("Proceeding to next batch...")
-
-    print("All batches launched. Launcher will remain running. Press Ctrl+C to terminate.")
-
+    # Keep the main process running
     try:
         while True:
-            time.sleep(60)
+            time.sleep(1)
     except KeyboardInterrupt:
-        print("Terminating child processes...")
-        for proc in processes.values():
-            proc.terminate()
-        print("Shutdown complete.")
+        print("\nShutting down...")
+        shutdown_processes(processes)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import socket
 import copy
+import pickle
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -24,10 +25,11 @@ from pc2_code.config.system_config import get_service_host, get_service_port
 # Import the new service discovery client
 from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
 from main_pc_code.utils.network_utils import get_current_machine
+from main_pc_code.utils.env_loader import get_env
 
 # Import secure ZMQ utilities if available
 try:
-    from main_pc_code.src.network.secure_zmq import configure_secure_server, start_auth
+    from main_pc_code.src.network.secure_zmq import configure_secure_server, configure_secure_client, start_auth
     SECURE_ZMQ_AVAILABLE = True
 except ImportError:
     SECURE_ZMQ_AVAILABLE = False
@@ -54,14 +56,19 @@ MIN_MEMORY_STRENGTH = 0.1  # Minimum strength before memory is forgotten
 REINFORCEMENT_FACTOR = 1.2  # Increase strength by 20% on reinforcement
 MAX_MEMORY_STRENGTH = 5.0  # Maximum strength a memory can have
 
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576))  # Interrupt handler port
+
 class UnifiedMemoryReasoningAgent:
     def __init__(self):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.ROUTER)
         
         # Get host and port from environment or config
-        self.host = get_service_host('unified_memory', '0.0.0.0')
-        self.port = get_service_port('unified_memory', 5596)
+        self.host = get_env('MEMORY_HOST', get_service_host('unified_memory', BIND_ADDRESS))
+        self.port = int(get_env('MEMORY_PORT', get_service_port('unified_memory', 5596)))
+        self.health_port = int(get_env('MEMORY_HEALTH_PORT', get_service_port('unified_memory_health', 5597)))
         
         # Apply ZMQ security if enabled
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -75,13 +82,45 @@ class UnifiedMemoryReasoningAgent:
                 logger.error(f"Failed to configure secure ZMQ: {e}")
                 self.secure_zmq = False
         
-        # Bind to all interfaces
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{self.host}:{self.port}"
         try:
-            self.socket.bind(f"tcp://{self.host}:{self.port}")
-            logger.info(f"Unified Memory Reasoning Agent listening on {self.host}:{self.port}")
+            self.socket.bind(bind_address)
+            logger.info(f"Unified Memory Reasoning Agent listening on {bind_address}")
         except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind to port {self.port}: {str(e)}")
+            logger.error(f"Failed to bind to {bind_address}: {str(e)}")
             raise
+        
+        # Setup health check socket
+        self.health_socket = self.context.socket(zmq.REP)
+        if self.secure_zmq and SECURE_ZMQ_AVAILABLE:
+            self.health_socket = configure_secure_server(self.health_socket)
+            
+        health_bind_address = f"tcp://{BIND_ADDRESS}:{self.health_port}"
+        try:
+            self.health_socket.bind(health_bind_address)
+            logger.info(f"Health check socket bound to {health_bind_address}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind health check socket to {health_bind_address}: {e}")
+            # Continue even if health check socket fails
+        
+        # Setup interrupt subscription
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+        if self.secure_zmq and SECURE_ZMQ_AVAILABLE:
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+            
+        # Try to get the interrupt handler address from service discovery
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+        if not interrupt_address:
+            # Fall back to configured port
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            
+        try:
+            self.interrupt_socket.connect(interrupt_address)
+            self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+            logger.info(f"Connected to interrupt handler at {interrupt_address}")
+        except Exception as e:
+            logger.warning(f"Could not connect to interrupt handler: {e}")
         
         # Initialize memory storage (key: memory_id, value: memory_item)
         self.memory_store = {}
@@ -98,7 +137,17 @@ class UnifiedMemoryReasoningAgent:
         
         # Thread control
         self.running = True
+        self.interrupted = False
         self.decay_thread = None
+        self.interrupt_thread = None
+        self.health_thread = None
+        
+        # Statistics for health monitoring
+        self.start_time = time.time()
+        self.total_requests = 0
+        self.successful_requests = 0
+        self.failed_requests = 0
+        self.health_check_requests = 0
         
         # Command handlers
         self.command_handlers = {
@@ -108,7 +157,8 @@ class UnifiedMemoryReasoningAgent:
             "REINFORCE_MEMORY": self._handle_reinforce_memory,
             "GET_MEMORY_STATUS": self._handle_get_memory_status,
             "SYNC_MEMORIES": self._handle_sync_memories,
-            "DELETE_MEMORY": self._handle_delete_memory
+            "DELETE_MEMORY": self._handle_delete_memory,
+            "HEALTH_CHECK": self._handle_health_check
         }
         
         # Register with SystemDigitalTwin using service discovery
@@ -140,14 +190,9 @@ class UnifiedMemoryReasoningAgent:
                 "supports_secure_zmq": self.secure_zmq,
                 "supports_batching": True,
                 "last_started": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "memory_capabilities": ["decay", "reinforcement", "cross-reference"]
+                "memory_capabilities": ["decay", "reinforcement", "cross-reference"],
+                "health_check_port": self.health_port
             }
-            
-            # Check if we should use localhost for SystemDigitalTwin
-            manual_sdt_address = None
-            if os.environ.get("FORCE_LOCAL_SDT", "0") == "1":
-                manual_sdt_address = "tcp://localhost:7120"
-                logger.info(f"Using forced local SDT address: {manual_sdt_address}")
             
             # Attempt to register with retries
             for attempt in range(1, max_retries + 1):
@@ -158,8 +203,7 @@ class UnifiedMemoryReasoningAgent:
                         location="PC2",
                         ip=my_ip,
                         port=self.port,
-                        additional_info=additional_info,
-                        manual_sdt_address=manual_sdt_address
+                        additional_info=additional_info
                     )
                     
                     # Check response
@@ -193,6 +237,56 @@ class UnifiedMemoryReasoningAgent:
             logger.error(f"Error registering with service discovery: {e}")
             logger.warning("Agent will continue to function locally, but won't be discoverable by other agents")
             return False
+    
+    def _start_interrupt_thread(self):
+        """Start a thread to monitor for interrupt signals"""
+        self.interrupt_thread = threading.Thread(target=self._interrupt_monitor_loop, daemon=True)
+        self.interrupt_thread.start()
+        logger.info("Started interrupt monitoring thread")
+    
+    def _interrupt_monitor_loop(self):
+        """Background loop to monitor for interrupt signals"""
+        logger.info("Interrupt monitor loop started")
+        
+        poller = zmq.Poller()
+        poller.register(self.interrupt_socket, zmq.POLLIN)
+        
+        while self.running:
+            try:
+                # Check for interrupt signals with timeout
+                if poller.poll(100):  # 100ms timeout
+                    msg = self.interrupt_socket.recv()
+                    data = pickle.loads(msg)
+                    
+                    if data.get('type') == 'interrupt':
+                        logger.info("Received interrupt signal")
+                        self.interrupted = True
+                        
+                        # Handle the interrupt
+                        self._handle_interrupt()
+                
+                # Reset interrupt flag after a short delay
+                if self.interrupted:
+                    time.sleep(0.5)
+                    self.interrupted = False
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in interrupt monitor loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _handle_interrupt(self):
+        """Handle interrupt signal by stopping current operations"""
+        try:
+            logger.info("Handling interrupt signal")
+            
+            # Cancel any ongoing memory operations
+            # For example, clear any pending memory operations
+            
+            logger.info("Interrupt handling completed")
+        except Exception as e:
+            logger.error(f"Error handling interrupt: {e}")
     
     def _start_decay_thread(self):
         """Start the memory decay background thread"""
@@ -740,82 +834,198 @@ class UnifiedMemoryReasoningAgent:
             }
         }
     
+    def _handle_health_check(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle health check request
+        
+        Args:
+            message: The command message
+            
+        Returns:
+            Response message with health status
+        """
+        self.health_check_requests += 1
+        logger.debug("Received health check request")
+        
+        return self._health_check()
+    
+    def _health_check(self) -> Dict[str, Any]:
+        """
+        Perform health check and return status
+        
+        Returns:
+            Dict with health status information
+        """
+        uptime = time.time() - self.start_time
+        
+        # Check if decay thread is alive
+        decay_thread_alive = self.decay_thread is not None and self.decay_thread.is_alive()
+        
+        # Check if interrupt thread is alive
+        interrupt_thread_alive = self.interrupt_thread is not None and self.interrupt_thread.is_alive()
+        
+        return {
+            "status": "success",
+            "agent": "UnifiedMemoryReasoningAgent",
+            "timestamp": datetime.now().isoformat(),
+            "uptime_seconds": uptime,
+            "health": {
+                "overall": True,  # Overall health status
+                "decay_thread": decay_thread_alive,
+                "interrupt_thread": interrupt_thread_alive,
+                "memory_store_size": len(self.memory_store)
+            },
+            "metrics": {
+                "total_requests": self.total_requests,
+                "successful_requests": self.successful_requests,
+                "failed_requests": self.failed_requests,
+                "health_check_requests": self.health_check_requests,
+                "total_memories": self.memory_stats["total_memories"],
+                "total_reinforcements": self.memory_stats["total_reinforcements"],
+                "total_decays": self.memory_stats["total_decays"],
+                "memories_forgotten": self.memory_stats["memories_forgotten"]
+            },
+            "version": "1.0"
+        }
+    
+    def _start_health_check_thread(self):
+        """Start a thread to handle health check requests"""
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+        logger.info("Started health check thread")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests"""
+        logger.info("Health check loop started")
+        
+        poller = zmq.Poller()
+        poller.register(self.health_socket, zmq.POLLIN)
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if poller.poll(100):  # 100ms timeout
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._health_check()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
     def start(self):
-        """Start the UnifiedMemoryReasoningAgent"""
+        """Start the agent and its background threads"""
+        logger.info("Starting UnifiedMemoryReasoningAgent")
+        
+        # Start background threads
+        self._start_decay_thread()
+        self._start_interrupt_thread()
+        self._start_health_check_thread()
+        
         try:
-            logger.info("Starting Unified Memory Reasoning Agent...")
-            
-            # Start the decay thread
-            self._start_decay_thread()
-            
             # Main processing loop
             while self.running:
                 try:
-                    # Receive message
-                    identity, _, message_data = self.socket.recv_multipart()
+                    # Poll for incoming messages with timeout
+                    poller = zmq.Poller()
+                    poller.register(self.socket, zmq.POLLIN)
                     
-                    # Parse the message
-                    try:
-                        message = json.loads(message_data.decode())
-                        logger.info(f"Received message: {message.get('command', 'unknown')}")
-                    except json.JSONDecodeError:
-                        logger.error("Received invalid JSON")
-                        response = {
-                            "status": "ERROR",
-                            "message": "Invalid JSON in message"
-                        }
-                        self.socket.send_multipart([
-                            identity,
-                            b'',
-                            json.dumps(response).encode()
-                        ])
-                        continue
-                    
-                    # Process message based on command
-                    command = message.get("command")
-                    if command in self.command_handlers:
-                        response = self.command_handlers[command](message)
-                    else:
-                        logger.warning(f"Unknown command: {command}")
-                        response = {
-                            "status": "ERROR",
-                            "message": f"Unknown command: {command}"
-                        }
-                    
-                    # Send response
-                    self.socket.send_multipart([
-                        identity,
-                        b'',
-                        json.dumps(response).encode()
-                    ])
-                    
-                except zmq.error.Again:
-                    # Socket timeout, continue loop
-                    continue
+                    # Poll with timeout to allow checking for interrupts
+                    if poller.poll(100):  # 100ms timeout
+                        # Receive multipart message (ROUTER socket)
+                        identity, message_data = self.socket.recv_multipart()
+                        
+                        # Parse the message
+                        try:
+                            message = json.loads(message_data)
+                            logger.debug(f"Received message from {identity}: {message.get('command', 'unknown')}")
+                            
+                            # Update request counter
+                            self.total_requests += 1
+                            
+                            # Process the message if not interrupted
+                            if not self.interrupted:
+                                response = self.process_message(message)
+                                if response.get("status") == "SUCCESS" or response.get("status") == "success":
+                                    self.successful_requests += 1
+                                else:
+                                    self.failed_requests += 1
+                            else:
+                                response = {
+                                    "status": "error", 
+                                    "message": "Operation interrupted by user",
+                                    "command": message.get("command")
+                                }
+                                self.interrupted = False
+                                self.failed_requests += 1
+                            
+                            # Send the response back to the correct client
+                            self.socket.send_multipart([identity, json.dumps(response).encode()])
+                            
+                        except json.JSONDecodeError:
+                            logger.error(f"Received invalid JSON from {identity}")
+                            error_response = {
+                                "status": "error",
+                                "message": "Invalid JSON message"
+                            }
+                            self.socket.send_multipart([identity, json.dumps(error_response).encode()])
+                            self.failed_requests += 1
+                            
+                except zmq.ZMQError as e:
+                    logger.error(f"ZMQ error: {e}")
+                    time.sleep(0.5)
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
-                    # Continue the loop rather than exiting
-                    continue
-                
+                    time.sleep(1)
+                    
         except KeyboardInterrupt:
-            logger.info("Shutting down Unified Memory Reasoning Agent...")
+            logger.info("Keyboard interrupt received")
         finally:
-            self.running = False
-            if self.decay_thread and self.decay_thread.is_alive():
-                self.decay_thread.join(timeout=1.0)
             self._cleanup()
             
     def _cleanup(self):
-        """Clean up resources before exit"""
-        logger.info("Cleaning up resources...")
-        # Close main socket
-        if hasattr(self, 'socket') and self.socket:
-            self.socket.close()
+        """Clean up resources"""
+        logger.info("Cleaning up resources")
+        
+        # Set running flag to false to stop all threads
+        self.running = False
+        
+        # Wait for threads to finish
+        if self.decay_thread and self.decay_thread.is_alive():
+            self.decay_thread.join(timeout=2.0)
+            
+        if self.interrupt_thread and self.interrupt_thread.is_alive():
+            self.interrupt_thread.join(timeout=2.0)
+            
+        if self.health_thread and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+        
+        # Close all ZMQ sockets
+        try:
+            for socket_attr in ['socket', 'interrupt_socket', 'health_socket']:
+                if hasattr(self, socket_attr) and getattr(self, socket_attr):
+                    getattr(self, socket_attr).close()
+                    logger.info(f"Closed {socket_attr}")
+        except Exception as e:
+            logger.error(f"Error closing ZMQ sockets: {e}")
         
         # Terminate ZMQ context
-        if hasattr(self, 'context') and self.context:
-            self.context.term()
-    
+        try:
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                logger.info("ZMQ context terminated")
+        except Exception as e:
+            logger.error(f"Error terminating ZMQ context: {e}")
+            
+        logger.info("Cleanup completed")
+
     def process_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process message and return response - Legacy method kept for compatibility
@@ -840,5 +1050,16 @@ class UnifiedMemoryReasoningAgent:
             }
         
 if __name__ == "__main__":
-    agent = UnifiedMemoryReasoningAgent()
-    agent.start() 
+    try:
+        agent = UnifiedMemoryReasoningAgent()
+        agent.start()
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user")
+    except Exception as e:
+        logger.error(f"Error in main: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+    finally:
+        # Make sure we clean up even if there's an error
+        if 'agent' in locals():
+            agent._cleanup() 

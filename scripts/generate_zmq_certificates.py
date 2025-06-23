@@ -1,88 +1,94 @@
 #!/usr/bin/env python3
 """
-ZMQ CURVE Certificate Generator
+Generate ZMQ CURVE Certificates
 ------------------------------
-Generates CURVE certificate keypairs for ZMQ secure authentication
-between client and server components.
+This script generates ZMQ CURVE certificates for secure communication.
 """
 
 import os
 import sys
-import zmq.auth
-from pathlib import Path
-import logging
 import argparse
+import logging
+from pathlib import Path
+
+# Add project root to Python path
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()]
 )
-logger = logging.getLogger("ZMQCertGenerator")
+logger = logging.getLogger("CertGenerator")
 
-def generate_certificates(certificates_dir: Path, force: bool = False) -> None:
+def generate_certificates(cert_dir: str, server_name: str = "server", client_name: str = "client") -> bool:
     """
-    Generate server and client CURVE certificate files.
+    Generate ZMQ CURVE certificates.
     
     Args:
-        certificates_dir: Directory to store certificates
-        force: If True, will overwrite existing certificates
+        cert_dir: Directory to store certificates
+        server_name: Name for server certificate
+        client_name: Name for client certificate
+        
+    Returns:
+        bool: True if successful, False otherwise
     """
-    # Create certificates directory
-    certificates_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Check if certificates already exist
-    server_public_key_file = certificates_dir / "server.key"
-    client_public_key_file = certificates_dir / "client.key"
-    
-    if not force and (server_public_key_file.exists() or client_public_key_file.exists()):
-        logger.warning(f"Certificates already exist in {certificates_dir}.")
-        logger.warning("Use --force to overwrite existing certificates.")
-        return
-    
-    logger.info(f"Generating new certificates in {certificates_dir}")
-    
-    # Generate server key pair
-    server_public_file, server_secret_file = zmq.auth.create_certificates(
-        str(certificates_dir), "server"
-    )
-    logger.info(f"Created server certificates: {server_public_file}, {server_secret_file}")
-    
-    # Generate client key pair
-    client_public_file, client_secret_file = zmq.auth.create_certificates(
-        str(certificates_dir), "client"
-    )
-    logger.info(f"Created client certificates: {client_public_file}, {client_secret_file}")
-    
-    # Set appropriate permissions - secret keys should be readable only by owner
-    os.chmod(server_secret_file, 0o600)
-    os.chmod(client_secret_file, 0o600)
-    
-    logger.info("Certificate generation complete.")
-    
-if __name__ == "__main__":
+    try:
+        import zmq.auth
+        
+        # Create directory if it doesn't exist
+        cert_dir_path = Path(cert_dir)
+        cert_dir_path.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"Generating certificates in {cert_dir_path.absolute()}")
+        
+        # Generate server certificates
+        server_public_file, server_secret_file = zmq.auth.create_certificates(
+            cert_dir, server_name
+        )
+        logger.info(f"Server certificates generated: {server_public_file}, {server_secret_file}")
+        
+        # Generate client certificates
+        client_public_file, client_secret_file = zmq.auth.create_certificates(
+            cert_dir, client_name
+        )
+        logger.info(f"Client certificates generated: {client_public_file}, {client_secret_file}")
+        
+        # Set permissions
+        try:
+            os.chmod(server_secret_file, 0o600)
+            os.chmod(client_secret_file, 0o600)
+            logger.info("Certificate permissions set to 0600")
+        except Exception as e:
+            logger.warning(f"Failed to set certificate permissions: {e}")
+        
+        return True
+        
+    except ImportError:
+        logger.error("PyZMQ not installed or doesn't support auth. Install with 'pip install pyzmq'")
+        return False
+    except Exception as e:
+        logger.error(f"Error generating certificates: {e}")
+        return False
+
+def main():
+    """Main entry point"""
     parser = argparse.ArgumentParser(description="Generate ZMQ CURVE certificates")
-    parser.add_argument(
-        "--dir", 
-        type=Path, 
-        default=Path(__file__).resolve().parent.parent / "certificates",
-        help="Directory to store certificates (default: project_root/certificates)"
-    )
-    parser.add_argument(
-        "--force", 
-        action="store_true",
-        help="Overwrite existing certificates"
-    )
-    
+    parser.add_argument("--dir", "-d", default="certificates", help="Directory to store certificates")
+    parser.add_argument("--server", "-s", default="server", help="Server certificate name")
+    parser.add_argument("--client", "-c", default="client", help="Client certificate name")
     args = parser.parse_args()
     
-    print(f"Generating ZMQ certificates in: {args.dir}")
-    generate_certificates(args.dir, args.force)
-    print(f"Certificate generation {'completed' if args.dir.exists() else 'failed'}")
-    
-    # Display next steps
-    print("\n--- Next Steps ---")
-    print("1. Set environment variable to enable secure ZMQ:")
-    print("   export SECURE_ZMQ=1")
-    print("2. Make sure both client and server have access to these certificates")
-    print("3. Restart all agents and services") 
+    if generate_certificates(args.dir, args.server, args.client):
+        logger.info("Certificate generation successful")
+        return 0
+    else:
+        logger.error("Certificate generation failed")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main()) 

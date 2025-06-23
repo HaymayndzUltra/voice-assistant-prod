@@ -85,6 +85,7 @@ language_processing:
   - { name: ChitchatAgent      , script_path: agents/chitchat_agent.py         , host: 0.0.0.0 , port: 5711 , dependencies: [NLUAgent] , required: true }
   - { name: FeedbackHandler    , script_path: agents/feedback_handler.py       , host: 0.0.0.0 , port: 5636 , dependencies: [NLUAgent] , required: true }
   - { name: Responder          , script_path: agents/responder.py              , host: 0.0.0.0 , port: 5637 , dependencies: [NLUAgent, EmotionEngine] , required: true }
+  - { name: StreamingLanguageAnalyzer, script_path: agents/streaming_language_analyzer.py, host: 0.0.0.0, port: 5577, dependencies: [StreamingSpeechRecognition], required: true }
 
 # Memory System
 memory_system:
@@ -113,6 +114,8 @@ tts_services:
   - { name: TTSConnector, script_path: agents/tts_connector.py, host: 0.0.0.0, port: 5582, dependencies: [CoordinatorAgent], required: true }
   - { name: TTSCache, script_path: agents/tts_cache.py, host: 0.0.0.0, port: 5628, required: true }
   - { name: StreamingTTSAgent, script_path: agents/streaming_tts_agent.py, host: 0.0.0.0, port: 5562, dependencies: [CoordinatorAgent], required: true }
+  - { name: TTSAgent, script_path: agents/tts_agent.py, host: 0.0.0.0, port: 5563, dependencies: [StreamingInterruptHandler], required: true }
+  - { name: StreamingInterruptHandler, script_path: agents/streaming_interrupt_handler.py, host: 0.0.0.0, port: 5576, dependencies: [StreamingSpeechRecognition], required: true }
 
 # Code Generation Pipeline
 code_generation:

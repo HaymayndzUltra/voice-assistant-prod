@@ -35,6 +35,7 @@ import urllib.parse
 import tempfile
 import socket
 import yaml
+import pickle
 
 # Import Selenium for browser automation
 from selenium import webdriver
@@ -57,8 +58,10 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import service discovery and network utilities
-from main_pc_code.utils.service_discovery_client import register_service, discover_service
+from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Configure logging
 log_file_path = os.path.join('logs', 'unified_web_agent.log')
@@ -77,11 +80,15 @@ logger = logging.getLogger("UnifiedWebAgent")
 # Default ZMQ port configuration
 UNIFIED_WEB_PORT = 7126  # Main port
 HEALTH_CHECK_PORT = 7127  # Health check port
+INTERRUPT_PORT = int(os.environ.get('INTERRUPT_PORT', 5576))  # Interrupt handler port
 
 # Browser automation settings
 MIN_DELAY_BETWEEN_REQUESTS = 2  # seconds
 MAX_RETRIES = 3
 TIMEOUT = 30  # seconds
+
+# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 class UnifiedWebAgent:
     """Enhanced web agent with proactive information gathering and context-aware browsing"""
@@ -96,16 +103,54 @@ class UnifiedWebAgent:
         
         # Main socket for requests
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.port}")
-        logger.info(f"Unified Web Agent bound to port {self.port}")
+        
+        # Secure ZMQ configuration
+        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+        if self.secure_zmq:
+            self.socket = configure_secure_server(self.socket)
+            
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        try:
+            self.socket.bind(bind_address)
+            logger.info(f"Unified Web Agent bound to {bind_address}")
+        except Exception as e:
+            logger.error(f"Failed to bind to {bind_address}: {e}")
+            raise
         
         # Health check socket
         self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://*:{self.health_port}")
-        logger.info(f"Health check bound to port {self.health_port}")
+        if self.secure_zmq:
+            self.health_socket = configure_secure_server(self.health_socket)
+            
+        health_bind_address = f"tcp://{BIND_ADDRESS}:{self.health_port}"
+        try:
+            self.health_socket.bind(health_bind_address)
+            logger.info(f"Health check bound to {health_bind_address}")
+        except Exception as e:
+            logger.error(f"Failed to bind health check to {health_bind_address}: {e}")
+            raise
         
         # Memory agent connection socket (will be initialized later)
         self.memory_socket = None
+        
+        # Setup interrupt subscription
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+        if self.secure_zmq:
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+            
+        # Try to get the interrupt handler address from service discovery
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+        if not interrupt_address:
+            # Fall back to configured port
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            
+        try:
+            self.interrupt_socket.connect(interrupt_address)
+            self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+            logger.info(f"Connected to interrupt handler at {interrupt_address}")
+        except Exception as e:
+            logger.warning(f"Could not connect to interrupt handler: {e}")
         
         # Setup directories
         self.cache_dir = Path('cache') / "web_agent"
@@ -135,6 +180,7 @@ class UnifiedWebAgent:
         self.last_request_time = 0
         self.conversation_context = []
         self.running = True
+        self.interrupted = False
         
         # Proactive settings
         self.proactive_mode = True
@@ -148,9 +194,6 @@ class UnifiedWebAgent:
         self.health_check_requests = 0
         self.start_time = time.time()
         
-        # Security settings
-        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
-        
         # Register with SystemDigitalTwin
         self._register_with_service_discovery()
         
@@ -159,6 +202,7 @@ class UnifiedWebAgent:
         
         # Start background threads
         self._start_proactive_thread()
+        self._start_interrupt_thread()
         
         logger.info(f"Unified Web Agent initialized successfully")
     
@@ -177,19 +221,19 @@ class UnifiedWebAgent:
                     break
             
             if agent_config:
-                self.host = agent_config.get('host', 'localhost')
+                self.host = agent_config.get('host', BIND_ADDRESS)
                 self.port = agent_config.get('port', UNIFIED_WEB_PORT)
                 self.health_port = agent_config.get('health_check_port', HEALTH_CHECK_PORT)
                 logger.info(f"Loaded configuration for UnifiedWebAgent: {self.host}:{self.port}")
             else:
                 logger.warning("UnifiedWebAgent configuration not found in startup_config.yaml")
-                self.host = 'localhost'
+                self.host = BIND_ADDRESS
                 self.port = UNIFIED_WEB_PORT
                 self.health_port = HEALTH_CHECK_PORT
                 
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
-            self.host = 'localhost'
+            self.host = BIND_ADDRESS
             self.port = UNIFIED_WEB_PORT
             self.health_port = HEALTH_CHECK_PORT
 
@@ -246,6 +290,65 @@ class UnifiedWebAgent:
         
         self.conn.commit()
         logger.info("Database tables created")
+
+    def _start_interrupt_thread(self):
+        """Start a thread to monitor for interrupt signals"""
+        interrupt_thread = threading.Thread(target=self._interrupt_monitor_loop, daemon=True)
+        interrupt_thread.start()
+        logger.info("Started interrupt monitoring thread")
+    
+    def _interrupt_monitor_loop(self):
+        """Background loop to monitor for interrupt signals"""
+        logger.info("Interrupt monitor loop started")
+        
+        poller = zmq.Poller()
+        poller.register(self.interrupt_socket, zmq.POLLIN)
+        
+        while self.running:
+            try:
+                # Check for interrupt signals with timeout
+                if poller.poll(100):  # 100ms timeout
+                    msg = self.interrupt_socket.recv()
+                    data = pickle.loads(msg)
+                    
+                    if data.get('type') == 'interrupt':
+                        logger.info("Received interrupt signal")
+                        self.interrupted = True
+                        
+                        # Cancel any ongoing web operations
+                        self._handle_interrupt()
+                
+                # Reset interrupt flag after a short delay
+                if self.interrupted:
+                    time.sleep(0.5)
+                    self.interrupted = False
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in interrupt monitor loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def _handle_interrupt(self):
+        """Handle interrupt signal by stopping current operations"""
+        try:
+            logger.info("Handling interrupt signal")
+            
+            # Stop any ongoing browser automation
+            if self.driver:
+                try:
+                    # Stop loading page
+                    self.driver.execute_script("window.stop();")
+                    logger.info("Stopped current page loading")
+                except Exception as e:
+                    logger.error(f"Error stopping browser: {e}")
+            
+            # Clear any ongoing operations or queues
+            # Add any additional cleanup needed for interruption
+            
+            logger.info("Interrupt handling completed")
+        except Exception as e:
+            logger.error(f"Error handling interrupt: {e}")
 
     def _health_check(self) -> Dict[str, Any]:
         """Perform health check."""
@@ -742,56 +845,55 @@ class UnifiedWebAgent:
     
     def run(self):
         """Main run loop"""
+        logger.info("Starting UnifiedWebAgent main loop")
+        
+        # Start health check thread
+        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        health_thread.start()
+        
         try:
-            logger.info("Starting UnifiedWebAgent main loop")
-            
-            # Start health check thread
-            health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
-            health_thread.start()
-            
-            # Main service loop
             while self.running:
                 try:
-                    # Wait for a request with a timeout to allow for clean shutdown
+                    # Poll for requests with timeout
                     poller = zmq.Poller()
                     poller.register(self.socket, zmq.POLLIN)
                     
-                    # Poll with a 1 second timeout
-                    if poller.poll(1000):
-                        # Receive and parse the request
-                        request_raw = self.socket.recv()
-                        request = json.loads(request_raw)
+                    # Poll with timeout to allow checking for interrupts
+                    if poller.poll(100):  # 100ms timeout
+                        # Receive request
+                        request_data = self.socket.recv_json()
+                        logger.info(f"Received request: {request_data.get('action', 'unknown')}")
                         
-                        logger.info(f"Received request: {request.get('command', 'unknown')}")
-                        
-                        # Handle the request
-                        response = self.handle_request(request)
-                        
-                        # Send the response
+                        # Handle request
+                        if not self.interrupted:
+                            response = self.handle_request(request_data)
+                        else:
+                            response = {"status": "error", "message": "Operation interrupted by user"}
+                            self.interrupted = False
+                            
+                        # Send response
                         self.socket.send_json(response)
                     
-                except zmq.error.Again:
-                    # Timeout, continue the loop
-                    continue
-                except json.JSONDecodeError as e:
-                    logger.error(f"Invalid JSON request: {e}")
-                    self.socket.send_json({"status": "error", "message": "Invalid JSON request"})
+                except zmq.ZMQError as e:
+                    logger.error(f"ZMQ error in main loop: {e}")
+                    time.sleep(0.5)  # Short sleep before retry
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
+                    logger.error(traceback.format_exc())
+                    
+                    # Try to send error response if possible
                     try:
                         self.socket.send_json({"status": "error", "message": str(e)})
                     except:
-                        logger.error("Failed to send error response")
-            
-            logger.info("UnifiedWebAgent main loop exited")
-            
+                        pass
+                        
+                    time.sleep(1)  # Longer sleep on error
+                    
         except KeyboardInterrupt:
-            logger.info("Keyboard interrupt received, shutting down")
-        except Exception as e:
-            logger.error(f"Unhandled exception in main loop: {e}")
+            logger.info("Received keyboard interrupt, shutting down")
         finally:
-            self.cleanup()
-    
+            self.stop()
+
     def _health_check_loop(self):
         """Background thread for handling health checks"""
         logger.info("Starting health check loop")
@@ -829,30 +931,31 @@ class UnifiedWebAgent:
         """Clean up resources before exit"""
         logger.info("Cleaning up resources")
         
-        # Close the web driver
-        if self.driver:
-            try:
-                self.driver.quit()
-                logger.info("WebDriver closed")
-            except Exception as e:
-                logger.error(f"Error closing WebDriver: {e}")
+        # Set running flag to false to stop all threads
+        self.running = False
         
-        # Close the database connection
+        # Close database connection
         try:
-            self.conn.close()
-            logger.info("Database connection closed")
+            if hasattr(self, 'conn') and self.conn:
+                self.conn.close()
+                logger.info("Database connection closed")
         except Exception as e:
             logger.error(f"Error closing database connection: {e}")
         
-        # Close ZMQ sockets
+        # Close web driver
         try:
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_socket.close()
-            if hasattr(self, 'memory_socket') and self.memory_socket:
-                self.memory_socket.close()
-            logger.info("ZMQ sockets closed")
+            if hasattr(self, 'driver') and self.driver:
+                self.driver.quit()
+                logger.info("Web driver closed")
+        except Exception as e:
+            logger.error(f"Error closing web driver: {e}")
+        
+        # Close all ZMQ sockets
+        try:
+            for socket_attr in ['socket', 'health_socket', 'memory_socket', 'interrupt_socket']:
+                if hasattr(self, socket_attr) and getattr(self, socket_attr):
+                    getattr(self, socket_attr).close()
+                    logger.info(f"Closed {socket_attr}")
         except Exception as e:
             logger.error(f"Error closing ZMQ sockets: {e}")
         
@@ -860,14 +963,17 @@ class UnifiedWebAgent:
         try:
             if hasattr(self, 'context') and self.context:
                 self.context.term()
-            logger.info("ZMQ context terminated")
+                logger.info("ZMQ context terminated")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}")
-    
+            
+        logger.info("Cleanup completed")
+
     def stop(self):
         """Stop the agent"""
         logger.info("Stopping UnifiedWebAgent")
         self.running = False
+        self.cleanup()
 
     def _init_web_driver(self):
         """Initialize the Selenium WebDriver in headless mode with fallbacks"""
@@ -936,9 +1042,9 @@ class UnifiedWebAgent:
             logger.warning("Continuing without WebDriver. Only HTTP requests will be available.")
     
     def _register_with_service_discovery(self):
-        """Register this agent with the SystemDigitalTwin service registry"""
+        """Register this agent with the service discovery system"""
         try:
-            # Get this machine's IP address
+            # Get IP address for registration
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 s.connect(("8.8.8.8", 80))  # Doesn't have to be reachable
@@ -948,25 +1054,16 @@ class UnifiedWebAgent:
                 logger.warning(f"Failed to determine IP address: {e}, using configured host")
                 my_ip = self.host if self.host != '0.0.0.0' else 'localhost'
             
-            # Use network_utils to get PC2 IP from central config if needed
-            if my_ip == 'localhost' or my_ip == '127.0.0.1':
-                network_config = load_network_config()
-                if network_config and 'pc2_ip' in network_config:
-                    my_ip = network_config['pc2_ip']
-                    logger.info(f"Using PC2 IP from network_config.yaml: {my_ip}")
-            
-            # Prepare additional service information
+            # Prepare extra service information
             additional_info = {
                 "api_version": "1.0",
                 "supports_secure_zmq": self.secure_zmq,
-                "supports_proactive_mode": True,
+                "capabilities": ["web_browsing", "information_gathering", "context_aware_navigation"],
                 "last_started": time.strftime("%Y-%m-%d %H:%M:%S")
             }
             
-            logger.info(f"Registering with service discovery as UnifiedWebAgent at {my_ip}:{self.port}")
-            
-            # Register the service with SystemDigitalTwin
-            response = register_service(
+            # Register with service discovery
+            register_result = register_service(
                 name="UnifiedWebAgent",
                 location="PC2",
                 ip=my_ip,
@@ -974,62 +1071,42 @@ class UnifiedWebAgent:
                 additional_info=additional_info
             )
             
-            # Check response
-            if response.get("status") == "SUCCESS":
+            if register_result and register_result.get("status") == "SUCCESS":
                 logger.info("Successfully registered with service discovery")
-                return True
             else:
-                logger.warning(f"Registration failed: {response.get('message', 'Unknown error')}")
-                return False
+                logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
                 
         except Exception as e:
             logger.error(f"Error registering with service discovery: {e}")
             logger.warning("Agent will continue to function locally, but won't be discoverable by other agents")
-            return False
-    
+
     def _init_memory_connection(self):
-        """Initialize connection to the UnifiedMemoryReasoningAgent"""
+        """Initialize connection to the memory system using service discovery"""
         try:
-            # Discover the memory agent using service discovery
-            logger.info("Attempting to discover UnifiedMemoryReasoningAgent")
+            # Create memory socket
+            self.memory_socket = self.context.socket(zmq.REQ)
+            if self.secure_zmq:
+                self.memory_socket = configure_secure_client(self.memory_socket)
+                
+            self.memory_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
+            self.memory_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second timeout
             
-            response = discover_service("UnifiedMemoryReasoningAgent")
+            # Try to get memory agent address from service discovery
+            memory_address = get_service_address("UnifiedMemoryReasoningAgent")
+            if not memory_address:
+                # Fall back to configured port
+                memory_address = f"tcp://localhost:5596"
+                
+            self.memory_socket.connect(memory_address)
+            logger.info(f"Connected to memory agent at {memory_address}")
             
-            if response.get("status") == "SUCCESS" and "payload" in response:
-                # Create a socket to connect to the memory agent
-                self.memory_socket = self.context.socket(zmq.REQ)
-                
-                # Apply ZMQ security if enabled
-                if self.secure_zmq:
-                    try:
-                        from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
-                        start_auth()
-                        self.memory_socket = configure_secure_client(self.memory_socket)
-                        logger.info("Applied secure ZMQ configuration to memory connection")
-                    except Exception as e:
-                        logger.warning(f"Failed to configure secure ZMQ for memory connection: {e}")
-                
-                # Extract connection info from response
-                service_info = response["payload"]
-                memory_ip = service_info.get("ip", "localhost")
-                memory_port = service_info.get("port", 7105)
-                
-                # Connect to the memory agent
-                memory_address = f"tcp://{memory_ip}:{memory_port}"
-                self.memory_socket.connect(memory_address)
-                logger.info(f"Connected to UnifiedMemoryReasoningAgent at {memory_address}")
-                
-                # Test the connection
-                self._send_ping_to_memory()
-                
-                return True
-            else:
-                logger.warning(f"Failed to discover UnifiedMemoryReasoningAgent: {response.get('message', 'Unknown error')}")
-                return False
-                
+            # Test connection
+            self._send_ping_to_memory()
+            
         except Exception as e:
-            logger.error(f"Error connecting to UnifiedMemoryReasoningAgent: {e}")
-            return False
+            logger.error(f"Error initializing memory connection: {e}")
+            logger.warning("Agent will continue to function without memory integration")
+            self.memory_socket = None
     
     def _send_ping_to_memory(self):
         """Send a ping to the memory agent to test the connection"""
@@ -1751,11 +1828,14 @@ def main():
         logger.info("Starting UnifiedWebAgent")
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received")
+        logger.info("Interrupted by user")
     except Exception as e:
-        logger.error(f"Error starting UnifiedWebAgent: {e}")
-        traceback.print_exc()
-    logger.info("UnifiedWebAgent exited")
+        logger.error(f"Error in main: {e}")
+        logger.error(traceback.format_exc())
+    finally:
+        # Make sure we clean up even if there's an error
+        if 'agent' in locals():
+            agent.cleanup()
 
 if __name__ == "__main__":
     main() 
