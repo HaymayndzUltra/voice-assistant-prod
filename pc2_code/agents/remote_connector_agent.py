@@ -65,8 +65,11 @@ class RemoteConnectorAgent:
     def __init__(self):
 
         self.name = "RemoteConnectorAgent"
+        # Port on which this agent will listen
+        self.port = REMOTE_CONNECTOR_PORT
         self.running = True
         self.start_time = time.time()
+        # Health check port is agent port + 1
         self.health_port = self.port + 1
 
         logger.info("=" * 80)
