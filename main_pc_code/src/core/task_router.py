@@ -24,7 +24,7 @@ import heapq  # For priority queue
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Tuple
 from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
@@ -32,7 +32,7 @@ from src.network.secure_zmq import configure_secure_client, configure_secure_ser
 import pickle
 from main_pc_code.src.memory.zmq_encoding_utils import safe_encode_json, safe_decode_json
 
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 # Configure logging
 log_dir = 'logs'
@@ -47,19 +47,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger('TaskRouter')
 
-# Port and Host configuration from command line arguments
-TASK_ROUTER_PORT = args.port if args.port else 8571
+# === ALL CONFIGURATION FROM _agent_args ===
+TASK_ROUTER_PORT = getattr(_agent_args, 'port', 8571)
 TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1
-
-# Remove hardcoded downstream service connection parameters
-# These will be determined dynamically through service discovery
-
-# Circuit breaker configuration
-CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3
-CIRCUIT_BREAKER_RESET_TIMEOUT = 30
-CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT = 5
-
-INTERRUPT_PORT = 5576  # Default interrupt port
+CRIT_BREAK_FAIL = getattr(_agent_args, 'circuit_breaker_failure_threshold', 3)
+CRIT_BREAK_RESET = getattr(_agent_args, 'circuit_breaker_reset_timeout', 30)
+CRIT_BREAK_HALF_OPEN = getattr(_agent_args, 'circuit_breaker_half_open_timeout', 5)
+INTERRUPT_PORT = getattr(_agent_args, 'interrupt_port', 5576)
 
 class CircuitBreaker:
     """
@@ -76,9 +70,9 @@ class CircuitBreaker:
     OPEN = 'open'
     HALF_OPEN = 'half_open'
     
-    def __init__(self, name: str, failure_threshold: int = CIRCUIT_BREAKER_FAILURE_THRESHOLD, 
-                 reset_timeout: int = CIRCUIT_BREAKER_RESET_TIMEOUT,
-                 half_open_timeout: int = CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT):
+    def __init__(self, name: str, failure_threshold: int = CRIT_BREAK_FAIL, 
+                 reset_timeout: int = CRIT_BREAK_RESET,
+                 half_open_timeout: int = CRIT_BREAK_HALF_OPEN):
         """Initialize the circuit breaker.
         
         Args:
@@ -193,8 +187,12 @@ class CircuitBreaker:
 class TaskRouter:
     """Routes tasks between different services and handles circuit breaking."""
 
-    def __init__(self, test_ports: Optional[Tuple[int]] = None):
-        """Initialize the Task Router Agent."""
+    def __init__(self, port: int = None, name: str = None, **kwargs):
+        # === CONFIGURATION FROM _agent_args ===
+        agent_port = port if port is not None else getattr(_agent_args, 'port', 8571)
+        agent_name = name if name is not None else getattr(_agent_args, 'name', 'TaskRouter')
+        self.port = agent_port
+        self.name = agent_name
         self.circuit_breakers = {}
         self.service_status = {}
         self.running = True
@@ -214,7 +212,7 @@ class TaskRouter:
         self.got_tot_socket = None
         self.interrupt_socket = None
 
-        self._init_zmq(test_ports)
+        self._init_zmq(kwargs.get('test_ports'))
         self._init_circuit_breakers()
 
         self.dispatcher_thread = None
@@ -227,7 +225,7 @@ class TaskRouter:
     def _load_configuration(self):
         """Load configuration from command-line arguments."""
         try:
-            self.config = vars(args)
+            self.config = vars(_agent_args)
             logger.info("Configuration loaded successfully")
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
@@ -236,7 +234,7 @@ class TaskRouter:
     def _init_zmq(self, test_ports: Optional[Tuple[int]] = None):
         """Initialize ZMQ sockets."""
         # REP socket for incoming tasks
-        self.task_port = test_ports[0] if test_ports else TASK_ROUTER_PORT
+        self.task_port = test_ports[0] if test_ports else self.port
         self.task_socket = self.context.socket(zmq.REP)
         
         if self.secure_zmq:
@@ -495,7 +493,7 @@ class TaskRouter:
         circuit_status = {name: cb.get_status() for name, cb in self.circuit_breakers.items()}
         
         return {
-            "agent": "TaskRouter",
+            "agent": self.name,
             "status": "ok",
             "timestamp": time.time(),
             "queue_size": len(self.task_queue),
@@ -577,6 +575,9 @@ class TaskRouter:
         logger.info("Task Router shut down successfully")
 
 if __name__ == "__main__":
-    # Create and run the task router agent
-    router = TaskRouter()
-    router.run() 
+    # === STANDARDIZED MAIN BLOCK ===
+    port = getattr(_agent_args, 'port', 8571)
+    name = getattr(_agent_args, 'name', 'TaskRouter')
+    logger.info(f"Starting TaskRouter on port {port}")
+    agent = TaskRouter(port=port, name=name)
+    agent.run() 
