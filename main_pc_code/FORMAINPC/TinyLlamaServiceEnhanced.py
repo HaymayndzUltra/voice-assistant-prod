@@ -36,6 +36,12 @@ import psutil
 import gc
 from datetime import datetime
 
+# Add project root to Python path for common_utils import
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
+# Import BaseAgent for standardized agent implementation
+from main_pc_code.src.core.base_agent import BaseAgent
+
 ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 
 # Add the parent directory to sys.path to import the config module
@@ -182,32 +188,20 @@ class ResourceManager:
     def use_tensorrt(self):
         return TENSORRT_ENABLED
 
-class TinyLlamaService:
+class TinyLlamaService(BaseAgent):
     """Enhanced TinyLlama Service with resource management"""
     
-    def __init__(self):
+    def __init__(self, port: int = None):
+        # Set default port if not provided
+        if port is None:
+            port = int(ZMQ_PORT)
+            
+        # Call BaseAgent initialization first
+        super().__init__(port=port, name="TinyLlamaService")
+        
         logger.info("=" * 80)
         logger.info("Initializing Enhanced TinyLlama Service")
         logger.info("=" * 80)
-        
-        # Initialize ZMQ
-        self.context = zmq.Context()
-        self._setup_zmq_socket()
-        
-        # Initialize health check socket
-        self.name = "TinyLlamaService"
-        self.running = True
-        self.start_time = time.time()
-        self.health_port = ZMQ_PORT + 1
-        
-        try:
-            self.health_socket = self.context.socket(zmq.REP)
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            logger.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind health check socket: {e}")
-            raise
         
         # Initialize managers
         self.resource_manager = ResourceManager()
@@ -221,15 +215,6 @@ class TinyLlamaService:
         # Generation configuration
         self.default_config = GenerationConfig()
         
-        # Health monitoring
-        self.health_status = {
-            "status": "ok",
-            "service": "tinyllama_service",
-            "model_state": self.model_state.value,
-            "last_check": time.time(),
-            "resource_stats": self.resource_manager.get_stats()
-        }
-        
         # Idle timeout settings
         self.last_request_time = time.time()
         self.service_idle_timeout_seconds = config.get(
@@ -241,68 +226,26 @@ class TinyLlamaService:
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
         
-        # Start health check thread
-        self._start_health_check()
-        
         logger.info(f"Enhanced TinyLlama Service initialized on {self.resource_manager.device}")
         logger.info(f"Model name: {self.model_name}")
         logger.info(f"Idle timeout: {self.service_idle_timeout_seconds} seconds")
         logger.info("=" * 80)
-    
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        uptime = time.time() - self.start_time
-        
-        return {
-            "agent": self.name,
-            "status": "ok",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": uptime,
+        """Override BaseAgent's health status to include TinyLlamaService-specific info."""
+        base_status = super()._get_health_status()
+        base_status.update({
+            "service": "tinyllama_service",
             "model_state": self.model_state.value,
             "resource_stats": self.resource_manager.get_stats()
-        }
+        })
+        return base_status
     
     def _setup_zmq_socket(self):
         """Setup ZMQ socket with proper configuration"""
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        try:
-            self.socket.bind(f"tcp://{ZMQ_BIND_ADDRESS}:{ZMQ_PORT}")
-            logger.info(f"Bound to {ZMQ_BIND_ADDRESS}:{ZMQ_PORT}")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind socket: {e}")
-            raise
+        # BaseAgent already initialized the main socket in super().__init__()
+        # This method is kept for compatibility but doesn't need to do anything
+        pass
     
     def _load_model(self) -> bool:
         """Load the TinyLlama model with resource checks"""
@@ -341,7 +284,6 @@ class TinyLlamaService:
         except Exception as e:
             logger.error(f"Error loading TinyLlama model: {e}")
             self.model_state = ModelState.ERROR
-            self._cleanup_resources()
             return False
     
     def _unload_model(self) -> bool:
@@ -425,22 +367,11 @@ class TinyLlamaService:
         """Monitor system resources and model state"""
         while self.running:
             try:
-                # Update health status
-                self.health_status.update({
-                    "model_state": self.model_state.value,
-                    "last_check": time.time(),
-                    "resource_stats": self.resource_manager.get_stats()
-                })
-                
                 # Check if model should be unloaded due to idle timeout
                 if (self.model_state == ModelState.LOADED and 
                     time.time() - self.last_request_time > self.service_idle_timeout_seconds):
                     logger.info("Model idle timeout reached, unloading model")
                     self._unload_model()
-                
-                # Log resource stats periodically
-                if self.health_status["resource_stats"]["timestamp"] % 60 < 1:  # Log every minute
-                    logger.info(f"Resource stats: {self.health_status['resource_stats']}")
                 
                 time.sleep(1)  # Check every second
                 
@@ -455,7 +386,11 @@ class TinyLlamaService:
             if not action:
                 return {'error': 'No action specified'}
             
-            if action == 'generate':
+            # Handle health check using BaseAgent's implementation
+            if action in ['health', 'health_check', 'ping']:
+                return self._get_health_status()
+            
+            elif action == 'generate':
                 return self.generate_text(
                     request['prompt'],
                     GenerationConfig(
@@ -475,13 +410,6 @@ class TinyLlamaService:
                 return {
                     'status': 'success' if success else 'error',
                     'message': 'Model unloaded' if success else 'Failed to unload model'
-                }
-            elif action in ('health', 'health_check'):
-                return {
-                    'status': 'ok',
-                    'service': 'tinyllama_service',
-                    'model_status': self.model_state.value,
-                    'timestamp': time.time()
                 }
             elif action == 'resource_stats':
                 return {
@@ -518,19 +446,18 @@ class TinyLlamaService:
         """Cleanup resources"""
         self.running = False
         
-        # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            logger.info("Health thread joined")
+        # Wait for monitoring thread to finish
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=2.0)
+            logger.info("Monitor thread joined")
         
-        # Close health socket if it exists
-        if hasattr(self, "health_socket"):
-            self.health_socket.close()
-            logger.info("Health socket closed")
-            
+        # Unload model if loaded
         self._unload_model()
-        self.socket.close()
-        self.context.term()
+        
+        # Call BaseAgent's cleanup to handle the main socket and health socket
+        super().cleanup()
+        
+        logger.info("TinyLlama Service cleanup completed")
 
 def main():
     """Main entry point"""
@@ -539,16 +466,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-MODEL_IDLE_TIMEOUT = 600  # seconds
-model_last_used = 0
-
-def get_tinyllama_model():
-    global model_last_used
-    now = time.time()
-    if model is not None and now - model_last_used > MODEL_IDLE_TIMEOUT:
-        unload_tinyllama_model()
-    if model is None:
-        load_tinyllama_model()
-    model_last_used = now
-    return model

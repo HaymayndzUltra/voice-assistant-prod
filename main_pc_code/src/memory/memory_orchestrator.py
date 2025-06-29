@@ -15,6 +15,8 @@ import os
 import threading
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from main_pc_code.src.core.base_agent import BaseAgent
+from utils.config_parser import parse_agent_args
 
 # Configure logging
 logging.basicConfig(
@@ -27,16 +29,19 @@ logger = logging.getLogger("MemoryOrchestrator")
 ZMQ_PORT = 5576
 HEALTH_PORT = ZMQ_PORT + 1
 
-class MemoryOrchestrator:
+class MemoryOrchestrator(BaseAgent):
     """
     Minimal Memory Orchestrator implementation focusing on proper encoding/decoding.
     """
     
-    def __init__(self):
+    def __init__(self, port: int = None):
         """Initialize the Memory Orchestrator service."""
+        args = parse_agent_args()
+        port = port or getattr(args, 'port', None) or ZMQ_PORT
+        super().__init__(name="MemoryOrchestrator", port=port)
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{ZMQ_PORT}")
+        self.socket.bind(f"tcp://*:{port}")
         
         # Setup health check socket
         try:
@@ -56,59 +61,21 @@ class MemoryOrchestrator:
         
         # Health status
         self.start_time = time.time()
-        self.health_status = {
-            "status": "ok",
-            "service": "memory_orchestrator",
-            "port": ZMQ_PORT,
-            "start_time": self.start_time,
-            "last_check": time.time(),
-            "memory_count": 0
+        self.memory_backends_connected = 1  # Placeholder for demo
+        self.total_memory_entries = 0
+        
+        logger.info(f"Memory Orchestrator initialized, listening on port {port}")
+    
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "orchestrator_status": "active",
+            "memory_backends_connected": getattr(self, 'memory_backends_connected', 0),
+            "total_memory_entries": len(self.memories)
         }
-        
-        logger.info(f"Memory Orchestrator initialized, listening on port {ZMQ_PORT}")
-    
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self._running:
-            try:
-                # Check for health check requests with timeout
-                if hasattr(self, 'health_socket') and self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Update health status
-                    self._update_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(self.health_status)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
-    def _update_health_status(self):
-        """Update health status with current information."""
-        try:
-            # Update memory count
-            memory_count = len(self.memories)
-            self.health_status.update({
-                "last_check": time.time(),
-                "memory_count": memory_count,
-                "uptime": time.time() - self.start_time
-            })
-        except Exception as e:
-            logger.error(f"Error updating health status: {e}")
+        base_status.update(specific_metrics)
+        return base_status
     
     def start(self):
         """Start the Memory Orchestrator service."""
@@ -117,9 +84,6 @@ class MemoryOrchestrator:
             return
         
         self._running = True
-        
-        # Start health check thread
-        self._start_health_check()
         
         logger.info("Memory Orchestrator service started")
         
@@ -155,11 +119,6 @@ class MemoryOrchestrator:
         logger.info("Stopping Memory Orchestrator service")
         self._running = False
         
-        # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            logger.info("Health thread joined")
-        
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
@@ -174,6 +133,7 @@ class MemoryOrchestrator:
             self.context.term()
             logger.info("ZMQ context terminated")
         
+        super().cleanup()
         logger.info("Memory Orchestrator service stopped")
     
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:

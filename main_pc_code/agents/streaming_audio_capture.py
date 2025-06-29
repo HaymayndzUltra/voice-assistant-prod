@@ -101,9 +101,15 @@ def find_available_port(start_port, max_attempts=10):
             continue
     raise RuntimeError(f"Could not find available port after {max_attempts} attempts")
 
-class StreamingAudioCapture:
+from main_pc_code.src.core.base_agent import BaseAgent
+
+class StreamingAudioCapture(BaseAgent):
     def __init__(self):
-        """Initialize the audio capture component with hardcoded audio parameters for debugging."""
+        # Use parse_agent_args for config
+        _agent_args = parse_agent_args()
+        port = getattr(_agent_args, 'port', None)
+        name = "StreamingAudioCapture"
+        super().__init__(name=name, port=port)
         logger.info("Initializing StreamingAudioCapture with direct audio parameters...")
         # Detect dummy mode via env var
         self.dummy_mode = os.getenv("USE_DUMMY_AUDIO", "false").lower() == "true"
@@ -132,9 +138,7 @@ class StreamingAudioCapture:
         self.running = False
         self.context = None
         self.pub_socket = None
-        self.health_socket = None
         self.stream = None  # Correctly None initially, will be set in __enter__
-        self.health_thread = None
         self.whisper_model = None # For wake word if used
         self.device = None # Might store device info later
         self.http_server = None # HTTP health check server
@@ -219,10 +223,8 @@ class StreamingAudioCapture:
                         logger.error(f"Failed to apply secure ZMQ: {e}")
 
                 self.pub_socket.bind(f"tcp://*:{self.pub_port}")
-                self.health_socket.bind(f"tcp://*:{self.health_port}")
 
                 logger.info(f"DEBUG_ZMQ_BIND_SUCCESS: ZMQ Publisher bound to tcp://*:{self.pub_port}")
-                logger.info(f"DEBUG_ZMQ_BIND_SUCCESS: ZMQ Health Check Responder bound to tcp://*:{self.health_port}")
                 
                 # Register with SystemDigitalTwin
                 try:
@@ -246,9 +248,6 @@ class StreamingAudioCapture:
             # If in dummy mode, skip all audio device initialization
             if getattr(self, "dummy_mode", False):
                 logger.info("Dummy audio mode enabled; skipping PyAudio and audio stream setup.")
-                # Start health check thread even in dummy mode
-                self.health_thread = threading.Thread(target=self.health_check_loop, daemon=True)
-                self.health_thread.start()
                 return self
 
             if self.p is None:
@@ -257,12 +256,12 @@ class StreamingAudioCapture:
 
             # Device index check and fallback
             try:
-                device_info = self.p.get_device_info_by_index(self.device_index)
+                device_info = self.p.get_device_info_by_index(int(self.device_index))
                 logger.info(f"DEBUG_DEVICE_INFO_SUCCESS: Using audio device (index {self.device_index}): {device_info.get('name')}")
             except Exception as e_device:
                 logger.error(f"Device index {self.device_index} not found. Falling back to default input device. Error: {e_device}")
-                self.device_index = self.p.get_default_input_device_info()['index']
-                device_info = self.p.get_device_info_by_index(self.device_index)
+                self.device_index = int(self.p.get_default_input_device_info()['index'])
+                device_info = self.p.get_device_info_by_index(int(self.device_index))
                 logger.info(f"Fell back to default input device (index {self.device_index}): {device_info.get('name')}")
 
             logger.info(f"DEBUG_PYAUDIO_PARAMS_CHECK: Using params: device_index={self.device_index}, rate={self.sample_rate}, channels={self.channels}, frames_per_buffer={self.chunk_samples}")
@@ -274,7 +273,7 @@ class StreamingAudioCapture:
                     channels=self.channels,
                     rate=self.sample_rate,
                     input=True,
-                    input_device_index=self.device_index,
+                    input_device_index=int(self.device_index),
                     frames_per_buffer=self.chunk_samples,
                     stream_callback=self.audio_callback
                 )
@@ -294,10 +293,6 @@ class StreamingAudioCapture:
             except Exception as e_http:
                 logger.error(f"Failed to start HTTP health check server: {e_http}")
                 # Don't raise here, as the agent can still function without HTTP health checks
-
-            # Start health check thread
-            self.health_thread = threading.Thread(target=self.health_check_loop, daemon=True)
-            self.health_thread.start()
 
             if self.wake_word_enabled:
                 self.initialize_wake_word_detection()
@@ -339,13 +334,6 @@ class StreamingAudioCapture:
                 except Exception as e:
                     logger.error(f"Error closing publisher socket: {e}")
 
-            if hasattr(self, 'health_socket') and self.health_socket:
-                try:
-                    self.health_socket.close()
-                    logger.info("Health socket closed during cleanup")
-                except Exception as e:
-                    logger.error(f"Error closing health socket: {e}")
-
             if hasattr(self, 'context') and self.context:
                 try:
                     self.context.term()
@@ -362,6 +350,7 @@ class StreamingAudioCapture:
                     
         except Exception as e:
             logger.error(f"Error during resource cleanup: {e}")
+        super().cleanup()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - cleanup resources"""
@@ -811,8 +800,6 @@ class StreamingAudioCapture:
             )
             # Attempt to gracefully shut down if ZMQ components were initialized
             if hasattr(self, 'pub_socket') and self.pub_socket: self.pub_socket.close()
-            if hasattr(self, 'health_socket') and self.health_socket: self.health_socket.close()
-            if hasattr(self, 'context') and self.context: self.context.term()
             return
 
         logger.info(f"Using device {self.device_index} with {self.channels} channels at {self.sample_rate} Hz, chunk_samples: {self.chunk_samples}")
@@ -854,16 +841,16 @@ class StreamingAudioCapture:
             # self.running should be primarily controlled by __exit__ or an explicit stop method.
             # Stream stopping/closing and PyAudio termination are handled in __exit__.
 
-    def health_check_loop(self):
-        """Background thread for health check"""
-        while self.running:
-            try:
-                message = self.health_socket.recv_json()
-                if message.get("action") == "health_check":
-                    self.health_socket.send_json({"status": "healthy", "service": "StreamingAudioCapture"})
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Prevent tight loop on error
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "capture_status": "active" if getattr(self, 'running', False) else "inactive",
+            "audio_device": getattr(self, 'device', 'N/A'),
+            "buffer_size": len(self.audio_buffer) if hasattr(self, 'audio_buffer') else 'N/A'
+        }
+        base_status.update(specific_metrics)
+        return base_status
 
 if __name__ == "__main__":
     import logging

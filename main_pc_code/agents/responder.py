@@ -776,6 +776,17 @@ class ResponderAgent(BaseAgent):
                 logging.error(f"[Responder] Health monitoring error: {e}")
                 time.sleep(HEALTH_CHECK_INTERVAL)
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "responder_status": "active",
+            "responses_generated": getattr(self, 'responses_generated', 0),
+            "last_response_time": getattr(self, 'last_response_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 # ------------------------------------------------------------------------- #
 #                         SCRIPT ENTRY POINT                                #
 # ------------------------------------------------------------------------- #

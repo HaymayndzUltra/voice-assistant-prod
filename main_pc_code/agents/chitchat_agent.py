@@ -350,6 +350,17 @@ class ChitchatAgent(BaseAgent):
         
         logger.info("Chitchat agent stopped")
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "chitchat_status": "active",
+            "conversations_handled": getattr(self, 'conversations_handled', 0),
+            "last_interaction_time": getattr(self, 'last_interaction_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

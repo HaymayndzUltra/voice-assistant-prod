@@ -23,6 +23,8 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import psutil
+from datetime import datetime
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Timeout for ZeroMQ send/recv operations (milliseconds)
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
@@ -30,29 +32,30 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-try:
-    from config.system_config import get_config_for_service, get_config_for_machine
-    SERVICE_ID = "nllb-translation-adapter-pc2"
-    service_config = get_config_for_service(SERVICE_ID)
-    pc2_general_config = get_config_for_machine("pc2")
+# Configuration settings - use hardcoded defaults for simplicity
+LOG_LEVEL = 'INFO'
+LOGS_DIR = Path('logs')
+CONFIG_ZMQ_PORT = 5581
+CONFIG_ZMQ_BIND_ADDRESS = "0.0.0.0"
+CONFIG_MODEL_PATH_OR_NAME = "facebook/nllb-200-distilled-600M"
+CONFIG_DEVICE = 'auto'
+CONFIG_IDLE_TIMEOUT = 3600
 
-    LOG_LEVEL = pc2_general_config.get('log_level', 'INFO')
-    LOGS_DIR = Path(pc2_general_config.get('logs_dir', 'logs'))
-    CONFIG_ZMQ_PORT = service_config.get('zmq_port', 5581)
-    CONFIG_ZMQ_BIND_ADDRESS = service_config.get('zmq_bind_address', "0.0.0.0")
-    CONFIG_MODEL_PATH_OR_NAME = service_config.get('model_path_or_name', "facebook/nllb-200-distilled-600M")
-    CONFIG_DEVICE = service_config.get('device', 'auto') # auto, cuda, cpu
-    CONFIG_IDLE_TIMEOUT = 3600  # 1 hour
-
-except ImportError:
-    print("WARNING: Could not import system_config. Using default/hardcoded settings for NLLBTranslationAdapter.")
-    LOG_LEVEL = 'INFO'
-    LOGS_DIR = Path('logs')
-    CONFIG_ZMQ_PORT = 5581
-    CONFIG_ZMQ_BIND_ADDRESS = "0.0.0.0"
-    CONFIG_MODEL_PATH_OR_NAME = "facebook/nllb-200-distilled-600M"
-    CONFIG_DEVICE = 'auto'
-    CONFIG_IDLE_TIMEOUT = 3600
+# Try to load config from environment variables if available
+if 'LOG_LEVEL' in os.environ:
+    LOG_LEVEL = os.environ['LOG_LEVEL']
+if 'LOGS_DIR' in os.environ:
+    LOGS_DIR = Path(os.environ['LOGS_DIR'])
+if 'NLLB_ZMQ_PORT' in os.environ:
+    CONFIG_ZMQ_PORT = int(os.environ['NLLB_ZMQ_PORT'])
+if 'NLLB_ZMQ_BIND_ADDRESS' in os.environ:
+    CONFIG_ZMQ_BIND_ADDRESS = os.environ['NLLB_ZMQ_BIND_ADDRESS']
+if 'NLLB_MODEL_PATH' in os.environ:
+    CONFIG_MODEL_PATH_OR_NAME = os.environ['NLLB_MODEL_PATH']
+if 'NLLB_DEVICE' in os.environ:
+    CONFIG_DEVICE = os.environ['NLLB_DEVICE']
+if 'NLLB_IDLE_TIMEOUT' in os.environ:
+    CONFIG_IDLE_TIMEOUT = int(os.environ['NLLB_IDLE_TIMEOUT'])
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file_path = LOGS_DIR / "nllb_translation_adapter.log"
@@ -67,7 +70,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("NLLBTranslationAdapter")
 
-logger.info(f"Imported config: Port={CONFIG_ZMQ_PORT}, Bind={CONFIG_ZMQ_BIND_ADDRESS}, Model={CONFIG_MODEL_PATH_OR_NAME}, Device={CONFIG_DEVICE}, IdleTimeout={CONFIG_IDLE_TIMEOUT}")
+logger.info(f"Configuration: Port={CONFIG_ZMQ_PORT}, Bind={CONFIG_ZMQ_BIND_ADDRESS}, Model={CONFIG_MODEL_PATH_OR_NAME}, Device={CONFIG_DEVICE}, IdleTimeout={CONFIG_IDLE_TIMEOUT}")
 
 MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = 0
@@ -115,10 +118,13 @@ class ResourceManager:
     def use_tensorrt(self):
         return TENSORRT_ENABLED
 
-class NLLBTranslationAdapter:
+class NLLBTranslationAdapter(BaseAgent):
     """Service for NLLB translation model with self-managed on-demand loading/unloading"""
     
     def __init__(self):
+        # Call BaseAgent's __init__ first
+        super().__init__(name="NLLBTranslationAdapter", port=CONFIG_ZMQ_PORT)
+        
         # Initialize logger
         self.logger = logging.getLogger("NLLBTranslationAdapter")
         
@@ -133,19 +139,6 @@ class NLLBTranslationAdapter:
         self.bind_address = CONFIG_ZMQ_BIND_ADDRESS
 
         # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
-        
-        # Health monitoring
-        self.health_status = {
-            "status": "ok",
-            "service": "nllb_translation_adapter",
-            "model_state": "unloaded",
-            "last_check": time.time(),
-            "resource_stats": {
-                "device": None,
-                "memory_usage": None,
-                "gpu_memory": None
-            }
-        }
         
         # Language code mapping
         self.language_code_mapping = {
@@ -169,20 +162,6 @@ class NLLBTranslationAdapter:
             else:
                 raise RuntimeError(f"Cannot bind to port {self.service_port} on {self.bind_address}") from e
         
-        # Initialize health check socket
-        self.name = "NLLBTranslationAdapter"
-        self.start_time = time.time()
-        self.health_port = self.service_port + 1
-        
-        try:
-            self.health_socket = self.context.socket(zmq.REP)
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            self.logger.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            self.logger.error(f"Failed to bind health check socket: {e}")
-            # Continue even if health check socket fails
-        
         # Initialize model and tokenizer as None (not loaded initially)
         self.model = None
         self.tokenizer = None
@@ -195,86 +174,49 @@ class NLLBTranslationAdapter:
             self.device = CONFIG_DEVICE
         
         # Update health status with device info
-        self.health_status["resource_stats"]["device"] = self.device
+        self.health_status = {
+            "model_state": "unloaded",
+            "resource_stats": {
+                "device": self.device,
+                "memory_usage": None,
+                "gpu_memory": None
+            }
+        }
         
-        # Idle timeout settings
+        # Initialize other attributes
+        self.model_loaded = False
         self.last_request_time = time.time()
         self.service_idle_timeout_seconds = CONFIG_IDLE_TIMEOUT
+        self.running = True
         
-        # Request timeout settings
-        self.request_timeout_seconds = 30  # Increased from default 10 seconds
-        
-        # Supported languages
+        # Initialize language support
         self.supported_languages = {
             "eng_Latn": "English",
             "tgl_Latn": "Tagalog",
-            "ceb_Latn": "Cebuano",
-            "ilo_Latn": "Ilocano",
-            "hil_Latn": "Hiligaynon",
-            "war_Latn": "Waray",
-            "bik_Latn": "Bikol",
-            "pam_Latn": "Kapampangan",
-            "pag_Latn": "Pangasinan"
+            "spa_Latn": "Spanish",
+            "fra_Latn": "French",
+            "deu_Latn": "German",
+            "zho_Hans": "Chinese (Simplified)",
+            "jpn_Jpan": "Japanese",
+            "kor_Hang": "Korean",
+            "rus_Cyrl": "Russian",
+            "arb_Arab": "Arabic",
+            "hin_Deva": "Hindi",
+            "por_Latn": "Portuguese",
+            "ind_Latn": "Indonesian",
+            "vie_Latn": "Vietnamese",
+            "tha_Thai": "Thai",
+            "msa_Latn": "Malay",
+            "ita_Latn": "Italian",
+            "nld_Latn": "Dutch",
+            "tur_Latn": "Turkish",
+            "pol_Latn": "Polish"
         }
         
-        # Running flag
-        self.running = True
-        
-        # Start monitoring thread
-        self.monitor_thread = threading.Thread(target=self._monitor_resources, daemon=True)
+        # Start monitoring thread for resource usage and idle timeout
+        self.monitor_thread = threading.Thread(target=self._monitor_resources)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
-        
-        # Start health check thread
-        self._start_health_check()
-        
-        self.logger.info(f"NLLB Translation Adapter initialized on {self.device}")
-    
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        self.logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        self.logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if hasattr(self, 'health_socket') and self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                self.logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
-    def _get_health_status(self) -> dict:
-        """Get the current health status of the agent."""
-        uptime = time.time() - self.start_time
-        
-        # Update health status with latest information
-        self.health_status.update({
-            "agent": self.name,
-            "status": "ok",
-            "timestamp": time.time(),
-            "uptime": uptime,
-            "model_state": "loaded" if self.model is not None else "unloaded",
-            "device": self.device
-        })
-        
-        return self.health_status
     
     def _load_model(self):
         """Load NLLB model and tokenizer"""
@@ -383,6 +325,13 @@ class NLLBTranslationAdapter:
             # Update last request time
             self.last_request_time = time.time()
             
+            # Ensure model and tokenizer are loaded
+            if self.model is None or self.tokenizer is None:
+                return {
+                    'status': 'error',
+                    'message': 'Model or tokenizer failed to load'
+                }
+                
             # Tokenize input
             inputs = self.tokenizer(text, return_tensors="pt", padding=True)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
@@ -424,9 +373,10 @@ class NLLBTranslationAdapter:
         while self.running:
             try:
                 # Update health status
+                current_time = time.time()
                 self.health_status.update({
                     "model_state": "loaded" if self.model is not None else "unloaded",
-                    "last_check": time.time(),
+                    "last_check": current_time,
                     "resource_stats": {
                         "device": self.device,
                         "memory_usage": psutil.virtual_memory().percent,
@@ -441,7 +391,7 @@ class NLLBTranslationAdapter:
                     self._unload_model()
                 
                 # Log resource stats periodically
-                if self.health_status["last_check"] % 60 < 1:  # Log every minute
+                if int(current_time) % 60 < 1:  # Log every minute
                     self.logger.info(f"Resource stats: {self.health_status['resource_stats']}")
                 
                 time.sleep(1)  # Check every second
@@ -459,22 +409,26 @@ class NLLBTranslationAdapter:
                 self.last_request_time = time.time()
                 
                 # Handle health check request
-                if message.get("action") == "health_check":
-                    response = {
-                        "status": "ok",
-                        "service": "nllb_translation_adapter",
-                        "model_state": "loaded" if self.model is not None else "unloaded",
-                        "timestamp": time.time()
-                    }
+                if isinstance(message, dict) and "action" in message and message["action"] == "health_check":
+                    response = self._get_health_status()
                     self.socket.send_json(response)
                     continue
                 
                 # Handle translation request
-                if message.get("action") == "translate":
+                if isinstance(message, dict) and "action" in message and message["action"] == "translate":
                     try:
-                        text = message.get("text", "")
-                        source_lang = message.get("source_lang", "")
-                        target_lang = message.get("target_lang", "")
+                        # Extract text and language parameters safely
+                        text = ""
+                        source_lang = ""
+                        target_lang = ""
+                        
+                        if isinstance(message, dict):
+                            if "text" in message and isinstance(message["text"], str):
+                                text = message["text"]
+                            if "source_lang" in message and isinstance(message["source_lang"], str):
+                                source_lang = message["source_lang"]
+                            if "target_lang" in message and isinstance(message["target_lang"], str):
+                                target_lang = message["target_lang"]
                         
                         # Map Filipino to Tagalog if needed
                         source_lang = self.language_code_mapping.get(source_lang, source_lang)
@@ -509,9 +463,15 @@ class NLLBTranslationAdapter:
                     continue
                 
                 # Unknown action
+                action = "unknown"
+                if isinstance(message, dict) and "action" in message:
+                    action = message["action"]
+                else:
+                    action = "Invalid request format"
+                    
                 self.socket.send_json({
                     "status": "error",
-                    "message": f"Unknown action: {message.get('action')}"
+                    "message": f"Unknown action: {action}"
                 })
                 
             except zmq.error.Again:
@@ -544,6 +504,24 @@ class NLLBTranslationAdapter:
         finally:
             self.cleanup()
     
+    def _get_health_status(self) -> dict:
+        """Get the current health status of the agent."""
+        # Get base status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add NLLB-specific metrics
+        base_status.update({
+            "model_state": "loaded" if self.model is not None else "unloaded",
+            "device": self.device,
+            "resource_stats": {
+                "device": self.device,
+                "memory_usage": psutil.virtual_memory().percent,
+                "gpu_memory": torch.cuda.memory_allocated() if self.device == "cuda" else None
+            }
+        })
+        
+        return base_status
+    
     def cleanup(self):
         """Clean up resources before exiting"""
         self.logger.info("Cleaning up resources...")
@@ -558,36 +536,15 @@ class NLLBTranslationAdapter:
             self.socket.close()
             self.logger.info("Main socket closed")
         
-        # Close health check socket
-        if hasattr(self, 'health_socket') and self.health_socket:
-            self.health_socket.close()
-            self.logger.info("Health socket closed")
-        
         # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            self.logger.info("Health thread joined")
-        
         if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
             self.monitor_thread.join(timeout=2.0)
             self.logger.info("Monitor thread joined")
         
-        # Terminate ZMQ context
-        if hasattr(self, 'context') and self.context:
-            self.context.term()
-            self.logger.info("ZMQ context terminated")
+        # Call parent cleanup to handle BaseAgent resources
+        super().cleanup()
         
         self.logger.info("Cleanup completed")
-
-def get_nllb_model():
-    global model_last_used
-    now = time.time()
-    if model is not None and now - model_last_used > MODEL_IDLE_TIMEOUT:
-        unload_nllb_model()
-    if model is None:
-        load_nllb_model()
-    model_last_used = now
-    return model
 
 if __name__ == "__main__":
     try:
@@ -606,7 +563,7 @@ if __name__ == "__main__":
         )
         logger = logging.getLogger("NLLBTranslationAdapter")
         
-        logger.info(f"Imported config: Port={CONFIG_ZMQ_PORT}, Bind={CONFIG_ZMQ_BIND_ADDRESS}, Model={CONFIG_MODEL_PATH_OR_NAME}, Device={CONFIG_DEVICE}, IdleTimeout={CONFIG_IDLE_TIMEOUT}")
+        logger.info(f"Configuration: Port={CONFIG_ZMQ_PORT}, Bind={CONFIG_ZMQ_BIND_ADDRESS}, Model={CONFIG_MODEL_PATH_OR_NAME}, Device={CONFIG_DEVICE}, IdleTimeout={CONFIG_IDLE_TIMEOUT}")
         
         # Start the service
         service = NLLBTranslationAdapter()

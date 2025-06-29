@@ -24,6 +24,7 @@ import torch
 from datasets import load_dataset, Dataset
 import numpy as np
 from typing import Dict, Any
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Add project root to Python path for common_utils import
 import sys
@@ -77,129 +78,40 @@ class TuningJob:
     end_time: Optional[datetime] = None
     error: Optional[str] = None
 
-class LocalFineTunerAgent:
-    def __init__(self, port:
-
-        self.name = "LocalFineTunerAgent"
-        self.running = True
-        self.start_time = time.time()
-        self.health_port = self.port + 1
- int = 5645):
-        """Initialize the Local Fine Tuner Agent."""
-        
-        # Start health check thread
-        self._start_health_check()
-
+class LocalFineTunerAgent(BaseAgent):
+    def __init__(self, port: int = 5645):
+        # Call BaseAgent's __init__ first
+        super().__init__(name="LocalFineTunerAgent", port=port)
         # ZMQ setup
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-
-        # Initialize health check socket
-        try:
-            if USE_COMMON_UTILS:
-                self.health_socket = create_socket(self.context, zmq.REP, server=True)
-            else:
-                self.health_socket = self.context.socket(zmq.REP)
-                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            logging.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logging.error(f"Failed to bind health check socket: {e}")
-            raise
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.port = port
-        self.socket.bind(f"tcp://*:{self.port}")
-        
         # Health status
         self.health_status = {
             "status": "ok",
             "service": "local_fine_tuner_agent",
             "port": self.port,
-            "start_time": time.time(),
-            "last_check": time.time(),
             "active_jobs": 0,
             "database_status": "ok"
         }
-        
         # Database setup
         self.db_path = "data/local_fine_tuner.db"
         self._init_db()
-        
         # Job management
         self.active_jobs = {}
         self.job_queue = Queue()
         self.artifact_dir = "artifacts"
         self._init_artifact_dir()
-        
         # Thread management
         self.job_thread = None
         self.is_running = True
-        
         # Create output directory for models
         self.output_dir = "fine_tuned_models"
         os.makedirs(self.output_dir, exist_ok=True)
-        
         # Initialize Phi-3-mini model for few-shot learning
         self.few_shot_model = None
         self.few_shot_tokenizer = None
-        
         logger.info(f"Local Fine Tuner Agent initialized on port {self.port}")
     
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        logging.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logging.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logging.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
-    def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        uptime = time.time() - self.start_time
-        
-        return {
-            "agent": self.name,
-            "status": "ok",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": uptime
-        }
-
-    def _update_health_status(self):
-        """Update health status with current information."""
-        try:
-            # Update active jobs count
-            active_jobs_count = len(self.active_jobs)
-            self.health_status.update({
-                "last_check": time.time(),
-                "active_jobs": active_jobs_count,
-                "uptime": time.time() - self.health_status["start_time"]
-            })
-        except Exception as e:
-            logger.error(f"Error updating health status: {e}")
-
     def _init_db(self):
         """Initialize the SQLite database."""
         try:
@@ -788,6 +700,21 @@ class LocalFineTunerAgent:
                 'status': 'error',
                 'message': str(e)
             }
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        base_status = super()._get_health_status()
+        self._update_health_status()
+        base_status.update({
+            "service": "local_fine_tuner_agent",
+            "active_jobs": self.health_status["active_jobs"],
+            "database_status": self.health_status["database_status"]
+        })
+        return base_status
+
+    def cleanup(self):
+        logger.info("Stopping Local Fine Tuner Agent")
+        super().cleanup()
+        logger.info("Local Fine Tuner Agent stopped")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Local Fine Tuner Agent")

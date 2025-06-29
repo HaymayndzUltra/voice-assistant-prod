@@ -1,0 +1,16 @@
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/CognitiveModelAgent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tone_detector.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_command_handler.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_manager.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_manager.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/active_learning_monitor.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py
+/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py 

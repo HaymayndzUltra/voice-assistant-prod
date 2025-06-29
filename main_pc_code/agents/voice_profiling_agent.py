@@ -262,6 +262,17 @@ class VoiceProfilingAgent(BaseAgent):
         logger.info("Shutting down Voice Profiling Agent")
         super().stop()
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "profiler_status": "active",
+            "profiles_processed": getattr(self, 'profiles_processed', 0),
+            "last_profile_time": getattr(self, 'last_profile_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

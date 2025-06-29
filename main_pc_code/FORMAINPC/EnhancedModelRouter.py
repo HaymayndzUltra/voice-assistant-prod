@@ -22,27 +22,7 @@ import sys
 import traceback
 from pathlib import Path
 from datetime import datetime
-# Attempt to import the lightweight web_automation stub (present in main_pc_code/web_automation).
-# If it is not yet importable, prepend the parent directory (main_pc_code) to sys.path and retry.
-try:
-    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
-except ModuleNotFoundError:
-    parent_main_pc = Path(__file__).resolve().parent.parent  # main_pc_code
-    if str(parent_main_pc) not in sys.path:
-        sys.path.insert(0, str(parent_main_pc))
-    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
-from typing import Dict, Tuple, Optional, List
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import functools
-from utils.config_parser import parse_agent_args
-
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
-
-# Import service discovery and secure ZMQ utilities
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from typing import Dict, Tuple, Optional, List, Any
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "enhanced_model_router.log"
@@ -57,6 +37,38 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("EnhancedModelRouter")
+
+# Attempt to import the lightweight web_automation stub (present in main_pc_code/web_automation).
+# If it is not yet importable, prepend the parent directory (main_pc_code) to sys.path and retry.
+try:
+    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
+except ModuleNotFoundError:
+    parent_main_pc = Path(__file__).resolve().parent.parent  # main_pc_code
+    if str(parent_main_pc) not in sys.path:
+        sys.path.insert(0, str(parent_main_pc))
+    from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
+
+from utils.config_parser import parse_agent_args
+
+# Add parent directory to path
+sys.path.append(str(Path(__file__).parent.parent))
+
+# Import service discovery and secure ZMQ utilities
+try:
+    from utils.service_discovery_client import discover_service
+    from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+except ImportError:
+    # Fallback if imports fail
+    logger.warning("Failed to import service_discovery_client or secure_zmq. Using dummy implementations.")
+    def discover_service(service_name: str) -> Optional[Dict[str, Any]]:
+        return None
+    def is_secure_zmq_enabled() -> bool:
+        return False
+    def setup_curve_client(socket: Any, server_mode: bool = False) -> None:
+        pass
+
+# Import BaseAgent for standardized agent implementation
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Default ZMQ request/response timeout in milliseconds
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
@@ -118,20 +130,14 @@ def cache_router_result(func):
 try:
     # Try importing from local directory first
     sys.path.insert(0, str(Path(__file__).parent))
-    from advanced_router import detect_task_type, map_task_to_model_capabilities
-    has_advanced_router = True
-    logger.info("Advanced router module loaded successfully from local path")
-    # Restore original path
-    sys.path.pop(0)
-except ImportError:
     try:
-        # Try regular import
         from advanced_router import detect_task_type, map_task_to_model_capabilities
         has_advanced_router = True
-        logger.info("Advanced router module loaded successfully")
+        logger.info("Advanced router module loaded successfully from local path")
     except ImportError:
+        # Define fallback implementations
         has_advanced_router = False
-        logger.warning("Advanced router module not available, using fallback")
+        logger.warning("Advanced router module not available in local path, using fallback")
         
         # Fallback implementation of detect_task_type
         def detect_task_type(prompt):
@@ -167,9 +173,50 @@ except ImportError:
                 "general": ["text-generation"]
             }
             return capability_mapping.get(task_type, ["text-generation"])
+    # Restore original path
+    sys.path.pop(0)
+except Exception as e:
+    # Final fallback if all else fails
+    has_advanced_router = False
+    logger.warning(f"Error loading advanced_router: {e}. Using fallback implementations.")
+    
+    # Fallback implementation of detect_task_type
+    def detect_task_type(prompt):
+        """Fallback task type detection when advanced_router is not available"""
+        if not prompt:
+            return "general"
+            
+        prompt_lower = prompt.lower()
+        if any(k in prompt_lower for k in ["code", "python", "function", "class", "script", "bug", "debug", "deepseek", "javascript", "java", "programming"]):
+            return "code"
+        if any(k in prompt_lower for k in ["why", "how", "explain", "reason", "analyze", "compare", "contrast", "llama"]):
+            return "reasoning"
+        if any(k in prompt_lower for k in ["create", "generate", "story", "poem", "song", "creative"]):
+            return "creative"
+        if any(k in prompt_lower for k in ["what is", "who is", "when", "where", "fact", "information"]):
+            return "factual"
+        if any(k in prompt_lower for k in ["calculate", "compute", "solve", "equation", "math"]):
+            return "math"
+        if any(k in prompt_lower for k in ["hello", "hi", "hey", "how are you", "chat"]):
+            return "chat"
+        return "general"
+    
+    # Fallback implementation of map_task_to_model_capabilities
+    def map_task_to_model_capabilities(task_type):
+        """Fallback capability mapping when advanced_router is not available"""
+        capability_mapping = {
+            "code": ["code-generation", "code-completion"],
+            "reasoning": ["reasoning"],
+            "chat": ["chat", "conversation"],
+            "creative": ["text-generation", "creative-writing"],
+            "factual": ["knowledge", "fact-checking"],
+            "math": ["math", "calculation"],
+            "general": ["text-generation"]
+        }
+        return capability_mapping.get(task_type, ["text-generation"])
 # --- ADVANCED ROUTER INTEGRATION END ---
 
-class EnhancedModelRouter:
+class EnhancedModelRouter(BaseAgent):
     """
     Enhanced Model Router - Consolidated central intelligence hub for model routing
     
@@ -191,6 +238,10 @@ class EnhancedModelRouter:
                 zmq_port = ZMQ_MODEL_ROUTER_PORT
         if pub_port is None:
             pub_port = ZMQ_MODEL_ROUTER_PUB_PORT
+        
+        # Call BaseAgent initialization first
+        super().__init__(port=zmq_port, name="EnhancedModelRouter")
+        
         self.zmq_port = zmq_port
         self.pub_port = pub_port
 
@@ -262,10 +313,6 @@ class EnhancedModelRouter:
 
     def _perform_initialization(self):
         try:
-            # Publisher socket for broadcasting
-            self.pub_socket = self.context.socket(zmq.PUB)
-            self.pub_socket.bind(f"tcp://*:{self.pub_port}")
-
             # Connect to TaskRouter
             self.task_router_socket = self.context.socket(zmq.REQ)
             self.task_router_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -453,57 +500,6 @@ class EnhancedModelRouter:
             self.initialization_error = str(e)
             logger.error(f"Initialization error: {e}")
             self.is_initialized.set()
-
-    def _health_check_loop(self):
-        logger.info("EnhancedModelRouter health check loop started")
-        while self.running:
-            try:
-                if self.health_socket.poll(timeout=1000) != 0:
-                    message = self.health_socket.recv()
-                    try:
-                        request = json.loads(message.decode())
-                        logger.debug(f"Received health check request: {request}")
-                        response = self._get_health_status()
-                        self.health_socket.send_json(response)
-                        logger.debug(f"Sent health check response: {response}")
-                    except Exception as e:
-                        logger.error(f"Invalid health check request: {e}")
-                        self.health_socket.send_json({
-                            "status": "error",
-                            "error": str(e)
-                        })
-            except zmq.error.ZMQError as e:
-                logger.error(f"ZMQ error in health check loop: {e}")
-                time.sleep(1)
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)
-
-    def _get_health_status(self):
-        status = {
-            "status": "ok" if self.is_initialized.is_set() and not self.initialization_error else "error",
-            "ready": self.is_initialized.is_set() and not self.initialization_error,
-            "initialized": self.is_initialized.is_set(),
-            "message": "EnhancedModelRouter is healthy" if self.is_initialized.is_set() and not self.initialization_error else f"Initialization error: {self.initialization_error}",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": time.time() - getattr(self, 'start_time', time.time()),
-            "active_threads": threading.active_count()
-        }
-        return status
-
-    def stop(self):
-        self.running = False
-        if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
-        if hasattr(self, 'process_thread'):
-            self.process_thread.join(timeout=5)
-        if hasattr(self, 'health_thread'):
-            self.health_thread.join(timeout=5)
-        logger.info("EnhancedModelRouter stopped.")
 
     def _load_model(self):
         """Load the model"""
@@ -1241,6 +1237,31 @@ class EnhancedModelRouter:
         """Get the current status of the Enhanced Model Router"""
         with self.lock:
             uptime = time.time() - self.start_time
+            connections = {}
+            
+            # Safely handle service mappings that might be None
+            if hasattr(self, 'service_mappings'):
+                mm_info = self.service_mappings.get('ModelManagerAgent', {})
+                if mm_info and isinstance(mm_info, dict):
+                    host = mm_info.get('host', '127.0.0.1')
+                    port = mm_info.get('port', 'unknown')
+                    connections["model_manager"] = f"tcp://{host}:{port}"
+                
+                memory_info = self.service_mappings.get('UnifiedMemoryReasoningAgent', {})
+                if memory_info and isinstance(memory_info, dict):
+                    port = memory_info.get('port', 'unknown')
+                    connections["contextual_memory"] = f"tcp://127.0.0.1:{port}"
+                
+                cot_info = self.service_mappings.get('ChainOfThoughtAgent', {})
+                if cot_info and isinstance(cot_info, dict):
+                    port = cot_info.get('port', 'unknown')
+                    connections["chain_of_thought"] = f"tcp://127.0.0.1:{port}"
+                
+                remote_info = self.service_mappings.get('RemoteConnectorAgent', {})
+                if remote_info and isinstance(remote_info, dict):
+                    port = remote_info.get('port', 'unknown')
+                    connections["remote_connector"] = f"tcp://127.0.0.1:{port}"
+            
             return {
                 "status": "ok",
                 "service": "enhanced_model_router",
@@ -1255,15 +1276,10 @@ class EnhancedModelRouter:
                 "failed_routes": self.failed_routes,
                 "task_type_counts": self.task_type_counts,
                 "model_usage_counts": self.model_usage_counts,
-                "connections": {
-                    "model_manager": f"tcp://{self.service_mappings['ModelManagerAgent']['host']}:{self.service_mappings['ModelManagerAgent']['port']}",
-                    "contextual_memory": f"tcp://127.0.0.1:{self.service_mappings['UnifiedMemoryReasoningAgent']['port']}",
-                    "chain_of_thought": f"tcp://127.0.0.1:{self.service_mappings['ChainOfThoughtAgent']['port']}",
-                    "remote_connector": f"tcp://127.0.0.1:{self.service_mappings['RemoteConnectorAgent']['port']}"
-                },
+                "connections": connections,
                 "publisher": {
-                    "enabled": self.pub_socket is not None,
-                    "port": self.pub_socket.last_endpoint
+                    "enabled": hasattr(self, 'pub_socket') and self.pub_socket is not None,
+                    "port": getattr(self.pub_socket, 'last_endpoint', 'unknown') if hasattr(self, 'pub_socket') else 'unknown'
                 }
             }
     
@@ -1365,13 +1381,59 @@ class EnhancedModelRouter:
                 logger.error(f"Error in health monitoring: {e}")
                 time.sleep(HEALTH_CHECK_INTERVAL)
 
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Override BaseAgent's health status to include EnhancedModelRouter-specific info."""
+        base_status = super()._get_health_status()
+        base_status.update({
+            "service": "enhanced_model_router",
+            "connections": {
+                "task_router": True,
+                "model_manager": True,
+                "contextual_memory": True,
+                "chain_of_thought": True,
+                "remote_connector": True,
+                "utils_agent": True,
+                "web_assistant": True
+            },
+            "request_count": getattr(self, 'request_count', 0),
+            "route_count": getattr(self, 'route_count', 0),
+            "successful_routes": getattr(self, 'successful_routes', 0),
+            "failed_routes": getattr(self, 'failed_routes', 0)
+        })
+        return base_status
+
+    def stop(self):
+        """Clean up resources before shutting down."""
+        self.running = False
+        
+        # Close publisher socket
+        if hasattr(self, 'pub_socket'):
+            self.pub_socket.close()
+            
+        # Close all other service sockets
+        for socket_name in ['task_router_socket', 'model_manager_socket', 'contextual_memory_socket',
+                          'chain_of_thought_socket', 'remote_connector_socket', 'utils_agent_socket',
+                          'web_assistant_socket', 'tree_of_thought_socket']:
+            if hasattr(self, socket_name):
+                getattr(self, socket_name).close()
+                
+        # Call BaseAgent's cleanup to handle the main socket and health socket
+        super().cleanup()
+            
+        logger.info("EnhancedModelRouter stopped.")
+
+    # Rename stop to cleanup for consistency with BaseAgent
+    def cleanup(self):
+        """Alias for stop() to maintain compatibility with BaseAgent."""
+        self.stop()
+
 def main():
     """Main entry point for the Enhanced Model Router"""
     router = EnhancedModelRouter(zmq_port=args.port)
     try:
         router.run()
     except KeyboardInterrupt:
-        router.stop()
+        router.cleanup()
 
 if __name__ == "__main__":
     main()

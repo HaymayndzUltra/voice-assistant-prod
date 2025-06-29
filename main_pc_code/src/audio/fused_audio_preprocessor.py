@@ -28,6 +28,7 @@ import librosa
 from src.core.http_server import setup_health_check_server
 from utils.config_parser import parse_agent_args
 from utils.service_discovery_client import discover_service
+from main_pc_code.src.core.base_agent import BaseAgent
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -83,12 +84,15 @@ AGC_ATTACK_TIME = 0.01  # Attack time in seconds
 AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
-class FusedAudioPreprocessor:
+class FusedAudioPreprocessor(BaseAgent):
     def __init__(self):
         """Initialize the fused audio preprocessor."""
+        _agent_args = parse_agent_args()
+        port = getattr(_agent_args, 'port', None)
+        name = "FusedAudioPreprocessor"
+        super().__init__(name=name, port=port)
         self._running = False
         self._thread = None
-        self.health_thread = None
         
         # Initialize ZMQ context
         self.zmq_context = zmq.Context()
@@ -259,21 +263,6 @@ class FusedAudioPreprocessor:
             self.vad_pub_socket.bind(f"tcp://*:{ZMQ_VAD_PUB_PORT}")
             logger.info(f"Publishing VAD events on port {ZMQ_VAD_PUB_PORT}")
             
-            # Health status
-            self.health_socket = self.zmq_context.socket(zmq.PUB)
-            
-            # Apply secure ZMQ if enabled
-            if SECURE_ZMQ:
-                try:
-                    from src.network.secure_zmq import secure_server_socket
-                    self.health_socket = secure_server_socket(self.health_socket)
-                    logger.info("Applied secure ZMQ to health publisher socket")
-                except Exception as e:
-                    logger.error(f"Failed to apply secure ZMQ to health publisher socket: {e}")
-            
-            self.health_socket.bind(f"tcp://*:{ZMQ_HEALTH_PORT}")
-            logger.info(f"Publishing health status on port {ZMQ_HEALTH_PORT}")
-            
             # Register with SystemDigitalTwin
             try:
                 from utils.service_discovery_client import register_service
@@ -290,7 +279,7 @@ class FusedAudioPreprocessor:
             except Exception as e:
                 logger.error(f"Failed to register with SystemDigitalTwin: {e}")
             
-            logger.info(f"ZMQ sockets initialized - Raw Audio SUB: {audio_capture_port}, Clean Audio PUB: {ZMQ_CLEAN_AUDIO_PUB_PORT}, VAD Events PUB: {ZMQ_VAD_PUB_PORT}, Health: {ZMQ_HEALTH_PORT}")
+            logger.info(f"ZMQ sockets initialized - Raw Audio SUB: {audio_capture_port}, Clean Audio PUB: {ZMQ_CLEAN_AUDIO_PUB_PORT}, VAD Events PUB: {ZMQ_VAD_PUB_PORT}")
         except Exception as e:
             logger.error(f"Error initializing ZMQ sockets: {str(e)}")
             raise
@@ -351,7 +340,7 @@ class FusedAudioPreprocessor:
                 
                 if self.noise_sample_count >= self.noise_sample_target:
                     # Create noise profile from collected samples
-                    self.noise_profile = np.concatenate(self.noise_samples)
+                    self.noise_profile = np.concatenate(list(self.noise_samples))
                     self.is_collecting_noise = False
                     logger.info(f"Noise profile created from {self.noise_sample_count} samples")
                 
@@ -434,11 +423,11 @@ class FusedAudioPreprocessor:
         
         # Calculate statistics
         if len(self.speech_prob_history) > 10:
-            mean_prob = np.mean(self.speech_prob_history)
-            std_prob = np.std(self.speech_prob_history)
+            mean = np.mean(list(self.speech_prob_history))
+            std = np.std(list(self.speech_prob_history))
             
             # Adjust threshold - higher when noisy, lower when quiet
-            noise_level = mean_prob
+            noise_level = mean
             if noise_level < 0.1:
                 # Very quiet environment
                 self.adaptive_threshold = max(0.3, VAD_THRESHOLD - 0.1)
@@ -737,7 +726,7 @@ class FusedAudioPreprocessor:
                     
                     if self.noise_sample_count >= self.noise_sample_target:
                         # Concatenate noise samples to create profile
-                        self.noise_profile = np.concatenate(self.noise_samples)
+                        self.noise_profile = np.concatenate(list(self.noise_samples))
                         logger.info(f"Noise profile collected: {len(self.noise_profile)} samples")
                         self.is_collecting_noise = False
                     
@@ -800,35 +789,16 @@ class FusedAudioPreprocessor:
                 logger.error(f"Error in audio processing loop: {str(e)}")
                 time.sleep(0.1)  # Sleep briefly on error to avoid tight loop
     
-    def health_broadcast_loop(self):
-        """Send health status updates periodically."""
-        logger.info("Starting health broadcast loop")
-        
-        while self._running:
-            try:
-                # Create health status message
-                health_status = {
-                    'timestamp': datetime.now().isoformat(),
-                    'component': 'FusedAudioPreprocessor',
-                    'status': 'healthy',
-                    'metrics': {
-                        'noise_profile_samples': self.noise_sample_count,
-                        'is_collecting_noise': self.is_collecting_noise,
-                        'speech_active': self.speech_active,
-                        'vad_threshold': self.adaptive_threshold if VAD_USE_ADAPTIVE_THRESHOLD else VAD_THRESHOLD,
-                        'device': str(self.device) if hasattr(self, 'device') else 'unknown'
-                    }
-                }
-                
-                # Send health status
-                self.health_socket.send_json(health_status)
-                
-                # Sleep for 1 second
-                time.sleep(1)
-                
-            except Exception as e:
-                logger.error(f"Error in health broadcast loop: {str(e)}")
-                time.sleep(1)
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "processor_status": "active" if getattr(self, '_running', False) else "inactive",
+            "input_buffer_fill": getattr(self, 'input_buffer_fill_rate', 'N/A'),
+            "output_buffer_fill": getattr(self, 'output_buffer_fill_rate', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
     
     def start(self):
         """Start the fused audio preprocessor."""
@@ -843,11 +813,6 @@ class FusedAudioPreprocessor:
         self._thread = threading.Thread(target=self.process_audio_loop)
         self._thread.daemon = True
         self._thread.start()
-        
-        # Start health broadcast thread
-        self.health_thread = threading.Thread(target=self.health_broadcast_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
         
         logger.info("Fused Audio Preprocessor started")
     
@@ -864,9 +829,6 @@ class FusedAudioPreprocessor:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2.0)
         
-        if self.health_thread and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-        
         # Close ZMQ sockets
         try:
             if hasattr(self, 'sub_socket'):
@@ -875,8 +837,6 @@ class FusedAudioPreprocessor:
                 self.clean_audio_pub_socket.close()
             if hasattr(self, 'vad_pub_socket'):
                 self.vad_pub_socket.close()
-            if hasattr(self, 'health_socket'):
-                self.health_socket.close()
             
             # Terminate ZMQ context
             if hasattr(self, 'zmq_context'):
@@ -885,6 +845,9 @@ class FusedAudioPreprocessor:
             logger.info("All ZMQ sockets closed and context terminated")
         except Exception as e:
             logger.error(f"Error closing ZMQ sockets: {e}")
+        
+        # At the end of this method, call super().cleanup()
+        super().cleanup()
         
         logger.info("Fused Audio Preprocessor stopped")
     

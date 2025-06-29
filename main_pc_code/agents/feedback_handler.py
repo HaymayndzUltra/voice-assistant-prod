@@ -329,6 +329,7 @@ class FeedbackHandler(BaseAgent):
             logger.info("Feedback handler shutdown complete")
         except Exception as e:
             logger.error(f"Error during feedback handler shutdown: {e}")
+    
     def _perform_initialization(self):
         """Initialize agent components."""
         try:
@@ -337,3 +338,14 @@ class FeedbackHandler(BaseAgent):
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
+
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "handler_status": "active",
+            "feedback_received_count": getattr(self, 'feedback_received_count', 0),
+            "last_feedback_time": getattr(self, 'last_feedback_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status

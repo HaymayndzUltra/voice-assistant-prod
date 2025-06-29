@@ -235,6 +235,17 @@ class MemoryManager(BaseAgent):
         self.context.term()
         logger.info("Memory Manager stopped")
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "status_detail": "active",
+            "processed_items": getattr(self, 'processed_items', 0),
+            "memory_operations": getattr(self, 'memory_operations', 0)
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == '__main__':
     agent = MemoryManager()
     try:

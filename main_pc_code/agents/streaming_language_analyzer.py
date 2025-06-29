@@ -530,6 +530,17 @@ class StreamingLanguageAnalyzer(BaseAgent):
             except zmq.Again:
                 time.sleep(0.05)
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "analyzer_status": "streaming",
+            "processed_streams_count": getattr(self, 'processed_streams_count', 0),
+            "last_stream_time": getattr(self, 'last_stream_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == "__main__":
     analyzer = StreamingLanguageAnalyzer()
     analyzer.start()

@@ -8,7 +8,7 @@ Provides multi-step, branching, and backtracking reasoning capabilities.
 import logging
 import json
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 import zmq
 import threading
@@ -41,6 +41,8 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
+# Import BaseAgent for standardized agent implementation
+from main_pc_code.src.core.base_agent import BaseAgent
 from utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
@@ -54,37 +56,42 @@ class Node:
         self.parent = parent
         self.children = []
         self.step = step
-        self.score = 0
+        self.score: float = 0.0
         
     def add_child(self, child):
         self.children.append(child)
 
-class GoTToTAgent:
+class GoTToTAgent(BaseAgent):
     """Graph/Tree-of-Thought Agent for advanced reasoning"""
     
-    def __init__(self, zmq_port=GOT_TOT_PORT):
+    def __init__(self, zmq_port=None):
         """Initialize the GoT/ToT Agent"""
+        # Ensure port is properly set with a default value
+        port_value = GOT_TOT_PORT  # Default port
+        if zmq_port is not None:
+            port_value = int(zmq_port)
+        elif hasattr(args, 'port') and args.port is not None:
+            try:
+                port_value = int(args.port)
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid port value from args: {args.port}, using default")
+                port_value = GOT_TOT_PORT
+                
+        # Initialize BaseAgent with proper parameters
+        super().__init__(name="GoTToTAgent", port=port_value)
+        
+        # Store instance variables
+        self.name = "GoTToTAgent"
+        self.port = port_value
         self.context = zmq.Context()
+        self.running = True
+        self.start_time = time.time()
+        
+        # Initialize main socket
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{zmq_port}")
-        
-        # Health check socket
-        self.name = "GoTToTAgent"
-        self.running = True
-        self.start_time = time.time()
-        self.health_port = zmq_port + 1
-        
-        # Initialize health check socket
-        try:
-            self.health_socket = self.context.socket(zmq.REP)
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            logger.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind health check socket: {e}")
-            raise
+        self.socket.bind(f"tcp://*:{self.port}")
         
         # Load reasoning model
         self._load_reasoning_model()
@@ -95,48 +102,12 @@ class GoTToTAgent:
         self.temperature = 0.7
         self.top_p = 0.9
         
-        # Record start time for uptime tracking
-        self.start_time = time.time()
-        
-        # Start health check thread
-        self._start_health_check()
-        
         # Start processing thread
         self.running = True
         self.process_thread = threading.Thread(target=self._process_loop)
         self.process_thread.start()
         
-        logger.info(f"GoT/ToT Agent initialized on port {zmq_port}")
-    
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
+        logger.info(f"GoT/ToT Agent initialized on port {self.port}")
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -144,7 +115,7 @@ class GoTToTAgent:
         
         return {
             "agent": self.name,
-            "status": "ok",
+            "status": "healthy",
             "timestamp": datetime.now().isoformat(),
             "uptime": uptime,
             "model_loaded": self.model is not None if hasattr(self, "model") else False,
@@ -221,20 +192,10 @@ class GoTToTAgent:
         try:
             action = request.get("action")
             
-            if action in ["health_check", "health", "ping"]:
-                return {
-                    "status": "ok",
-                    "ready": True,
-                    "initialized": True,
-                    "message": "GoT/ToT Agent is healthy",
-                    "timestamp": datetime.now().isoformat(),
-                    "uptime": time.time() - self.start_time,
-                    "model_loaded": self.model is not None,
-                    "device": str(self.device) if hasattr(self, "device") else "unknown"
-                }
-            
-            elif action == "reason":
-                prompt = request.get("prompt")
+            if action == "reason":
+                prompt = request.get("prompt", "")  # Default to empty string if prompt is missing
+                if prompt is None:
+                    prompt = ""
                 context = request.get("context", [])
                 
                 # Generate reasoning paths
@@ -261,6 +222,8 @@ class GoTToTAgent:
     
     def reason(self, prompt: str, context: Optional[List] = None) -> Tuple[List[Node], List[List[Node]]]:
         """Build a tree/graph of reasoning steps and return the best path"""
+        if prompt is None:
+            prompt = ""  # Default to empty string if prompt is None
         logger.info(f"GoT/ToT reasoning started for prompt: {prompt}")
         
         # Create root node
@@ -419,26 +382,22 @@ class GoTToTAgent:
             node = node.parent
         return list(reversed(path))
     
-    def shutdown(self):
+    def cleanup(self):
         """Clean up resources"""
         try:
             self.running = False
             
-            # Wait for threads to finish
-            if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-                self.health_thread.join(timeout=2.0)
-                logger.info("Health thread joined")
+            # Close main socket
+            if hasattr(self, "socket"):
+                self.socket.close()
+                logger.info("Main socket closed")
             
-            # Close health socket if it exists
-            if hasattr(self, "health_socket"):
-                self.health_socket.close()
-                logger.info("Health socket closed")
-                
-            self.socket.close()
-            self.context.term()
+            # Call parent cleanup to handle health check socket and other resources
+            super().cleanup()
+            
             logger.info("GoT/ToT Agent shut down")
         except Exception as e:
-            logger.error(f"Error during shutdown: {str(e)}")
+            logger.error(f"Error during cleanup: {str(e)}")
 
 if __name__ == "__main__":
     agent = GoTToTAgent()
@@ -448,4 +407,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt")
     finally:
-        agent.shutdown()
+        agent.cleanup()

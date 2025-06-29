@@ -17,6 +17,8 @@ import zmq
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union, cast
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -31,7 +33,6 @@ def fallback_get_env(key, default=None):
 
 # Import config parser utility with fallback
 try:
-    from agents.utils.config_parser import parse_agent_args
     from utils.service_discovery_client import discover_service, register_service, get_service_address
     from utils.env_loader import get_env
     from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
@@ -88,7 +89,7 @@ DEFAULT_CONFIG = {
     "network_baseline_ms": 50,  # Default expected network latency
 }
 
-class SystemDigitalTwin:
+class SystemDigitalTwin(BaseAgent):
     """
     A digital twin of the voice assistant system that monitors real-time metrics
     and provides predictive analytics for resource management.
@@ -102,6 +103,13 @@ class SystemDigitalTwin:
             config: Configuration dictionary that can override defaults
             port: Optional port override for testing
         """
+        _agent_args = parse_agent_args()
+        port = port or getattr(_agent_args, 'port', None)
+        if port is None:
+            port = 7120
+        port = int(port)
+        name = "SystemDigitalTwin"
+        super().__init__(name=name, port=port)
         # Merge provided config with defaults
         self.config = DEFAULT_CONFIG.copy()
         if config:
@@ -109,7 +117,7 @@ class SystemDigitalTwin:
             
         # Set up ports and host from configuration
         # Use parameter port first, then config, then fall back to default
-        self.main_port = port if port is not None else self.config.get('port', 7120)
+        self.main_port = port
         self.health_port = self.config.get('health_check_port', 8100)
         logger.info(f"Initializing with ZMQ port {self.main_port} and Health port {self.health_port} from configuration.")
         
@@ -488,20 +496,16 @@ class SystemDigitalTwin:
         
         return response
     
-    def _health_check(self) -> Dict[str, Any]:
-        """Perform health check."""
-        # Don't check Prometheus connection for health checks to avoid long timeouts
-        # when Prometheus is not available
-        return {
-            'status': 'success',
-            'agent': 'SystemDigitalTwin',
-            'timestamp': datetime.now().isoformat(),
-            'metrics_thread_alive': self.metrics_thread.is_alive() if hasattr(self, 'metrics_thread') else False,
-            'metrics_history_length': len(self.metrics_history["timestamps"]),
-            'last_metrics_update': self.metrics_history["timestamps"][-1].isoformat() if self.metrics_history["timestamps"] else None,
-            'prometheus_connected': self.prom is not None,  # Fast check without actual connection attempt
-            'port': self.main_port
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "twin_status": "active" if getattr(self, 'running', False) else "inactive",
+            "registered_agents_count": len(getattr(self, 'registered_agents', {})),
+            "last_update_time": getattr(self, 'last_update_time', 'N/A')
         }
+        base_status.update(specific_metrics)
+        return base_status
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -515,7 +519,7 @@ class SystemDigitalTwin:
         """
         # First check if it's a health check request
         if request.get("action") in ["ping", "health", "health_check"]:
-            return self._health_check()
+            return self._get_health_status()
             
         action = request.get("action", "")
         
@@ -775,8 +779,6 @@ class SystemDigitalTwin:
         """Clean up resources before shutdown."""
         logger.info("Cleaning up SystemDigitalTwin resources...")
         self.running = False
-        
-        # Stop threads
         try:
             if hasattr(self, 'metrics_thread') and self.metrics_thread.is_alive():
                 self.metrics_thread.join(timeout=2.0)
@@ -784,8 +786,6 @@ class SystemDigitalTwin:
                     logger.warning("Metrics thread did not terminate gracefully")
         except Exception as e:
             logger.error(f"Error stopping threads: {e}")
-        
-        # Close sockets in a try-finally block to ensure they're all closed
         try:
             if hasattr(self, 'socket'):
                 self.socket.close()
@@ -793,11 +793,10 @@ class SystemDigitalTwin:
         except Exception as e:
             logger.error(f"Error during socket cleanup: {e}")
         finally:
-            # Terminate ZMQ context
             if hasattr(self, 'context'):
                 self.context.term()
                 logger.debug("Terminated ZMQ context")
-        
+        super().cleanup()
         logger.info("SystemDigitalTwin cleanup complete")
     
     def stop(self):

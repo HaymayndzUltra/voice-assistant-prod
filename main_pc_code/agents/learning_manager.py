@@ -474,6 +474,17 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         self.context.term()
         logger.info("Learning Manager stopped")
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "status_detail": "active",
+            "processed_items": getattr(self, 'processed_items', 0),
+            "learning_cycles": getattr(self, 'learning_cycles', 0)
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == '__main__':
     agent = LearningManager()
     try:

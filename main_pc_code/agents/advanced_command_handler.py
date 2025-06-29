@@ -44,14 +44,13 @@ SCRIPT_TYPES = {
     ".js": "node"
 }
 
-class AdvancedCommandHandler(CustomCommandHandler):
+class AdvancedCommandHandler(BaseAgent):
     """
     Extends the custom command handler with advanced features for Phase 4
     """
     
     def __init__(self, port: int = None, **kwargs):
-        # Call parent initializer (CustomCommandHandler -> BaseAgent)
-        super().__init__(port=port, **kwargs)
+        super().__init__(name="AdvancedCommandHandler", port=port)
         """
         Initialize the advanced command handler
         
@@ -93,6 +92,7 @@ class AdvancedCommandHandler(CustomCommandHandler):
         self.load_domain_modules()
         
         # Command registration patterns - extend with new patterns for sequences and scripts
+        self.registration_patterns = getattr(self, 'registration_patterns', [])
         self.registration_patterns.extend([
             # Sequence: "Create a sequence X to run Y then Z then A"
             re.compile(r'create\s+(?:a\s+)?sequence\s+(?:called\s+)?["\']?([^"\']+)["\']?\s+to\s+run\s+(.*)', re.IGNORECASE),
@@ -103,6 +103,7 @@ class AdvancedCommandHandler(CustomCommandHandler):
             # Tagalog sequence: "Gumawa ng sequence na X para i-run Y tapos Z"
             re.compile(r'gumawa\s+ng\s+sequence\s+na\s+["\']?([^"\']+)["\']?\s+para\s+i-run\s+(.*)', re.IGNORECASE),
         ])
+        self.commands_processed = 0
     
     def load_domain_modules(self):
         """Load domain-specific command modules"""
@@ -717,6 +718,20 @@ class AdvancedCommandHandler(CustomCommandHandler):
                 return f"I've created the command '{trigger_phrase}' that will do: {action_value}"
         else:
             return f"I couldn't create the {action_type} command. Please try again."
+
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "handler_status": "active",
+            "commands_processed_session": getattr(self, 'commands_processed', 0)
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
+    def cleanup(self):
+        # Custom cleanup logic if any
+        super().cleanup()
 
 
 # Example usage

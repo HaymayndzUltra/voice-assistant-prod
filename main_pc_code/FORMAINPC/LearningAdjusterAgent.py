@@ -17,6 +17,7 @@ import argparse
 import time
 import threading
 from typing import Dict, Any
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Add project root to Python path for common_utils import
 import sys
@@ -31,8 +32,6 @@ try:
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False
-
-
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -63,47 +62,21 @@ class ParameterConfig:
     description: str
     metadata: Optional[Dict] = None
 
-class LearningAdjusterAgent:
-    def __init__(self, port:
-
-        self.name = "LearningAdjusterAgent"
-        self.running = True
-        self.start_time = time.time()
-        self.health_port = self.port + 1
- int = 5643):
+class LearningAdjusterAgent(BaseAgent):
+    def __init__(self, port: int = 5643):
         """Initialize the Learning Adjuster Agent."""
+        # Call BaseAgent's __init__ first
+        super().__init__(name="LearningAdjusterAgent", port=port)
         
-        # Start health check thread
-        self._start_health_check()
-
         # ZMQ setup
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-
-        # Initialize health check socket
-        try:
-            if USE_COMMON_UTILS:
-                self.health_socket = create_socket(self.context, zmq.REP, server=True)
-            else:
-                self.health_socket = self.context.socket(zmq.REP)
-                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            logging.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logging.error(f"Failed to bind health check socket: {e}")
-            raise
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.port = port
-        self.socket.bind(f"tcp://*:{self.port}")
         
         # Health status
         self.health_status = {
             "status": "ok",
             "service": "learning_adjuster_agent",
             "port": self.port,
-            "start_time": time.time(),
-            "last_check": time.time(),
             "active_parameters": 0,
             "database_status": "ok"
         }
@@ -120,51 +93,7 @@ class LearningAdjusterAgent:
         self.optimization_window = 100  # Number of iterations to consider
         self.improvement_threshold = 0.01  # Minimum improvement to consider
         
-        # Running flag
-        self.running = True
-        
         logger.info(f"Learning Adjuster Agent initialized on port {self.port}")
-
-    def _start_health_check(self):
-        """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop)
-        self.health_thread.daemon = True
-        self.health_thread.start()
-        logging.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logging.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logging.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
-    def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        uptime = time.time() - self.start_time
-        
-        return {
-            "agent": self.name,
-            "status": "ok",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": uptime
-        }
 
     def _init_db(self):
         """Initialize the SQLite database."""
@@ -224,7 +153,7 @@ class LearningAdjusterAgent:
             self.health_status.update({
                 "last_check": time.time(),
                 "active_parameters": active_params,
-                "uptime": time.time() - self.health_status["start_time"]
+                "uptime": time.time() - self.start_time
             })
         except Exception as e:
             logger.error(f"Error updating health status: {e}")
@@ -434,6 +363,23 @@ class LearningAdjusterAgent:
             logger.error(f"Error analyzing parameter trend: {e}")
             return None
 
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        # Get base status from parent class
+        base_status = super()._get_health_status()
+        
+        # Update health status with current information
+        self._update_health_status()
+        
+        # Add LearningAdjuster-specific metrics
+        base_status.update({
+            "service": "learning_adjuster_agent",
+            "active_parameters": self.health_status["active_parameters"],
+            "database_status": self.health_status["database_status"]
+        })
+        
+        return base_status
+
     def handle_request(self, request: Dict) -> Dict:
         """Handle incoming requests."""
         try:
@@ -443,17 +389,7 @@ class LearningAdjusterAgent:
             self._update_health_status()
             
             if action == "health_check":
-                return {
-                    "status": "ok",
-                    "service": "learning_adjuster_agent",
-                    "ready": True,
-                    "initialized": True,
-                    "message": "LearningAdjusterAgent is healthy",
-                    "timestamp": datetime.now().isoformat(),
-                    "uptime": self.health_status["uptime"],
-                    "active_parameters": self.health_status["active_parameters"],
-                    "database_status": self.health_status["database_status"]
-                }
+                return self._get_health_status()
             
             elif action == "register_parameter":
                 config = ParameterConfig(**request["config"])
@@ -534,12 +470,14 @@ class LearningAdjusterAgent:
                 except Exception:
                     pass
 
-    def stop(self):
-        """Stop the agent."""
+    def cleanup(self):
+        """Stop the agent and clean up resources."""
         logger.info("Stopping Learning Adjuster Agent")
-        self.running = False
-        self.socket.close()
-        self.context.term()
+        
+        # Call parent cleanup to handle BaseAgent resources
+        super().cleanup()
+        
+        logger.info("Learning Adjuster Agent stopped")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Learning Adjuster Agent")
@@ -550,16 +488,4 @@ if __name__ == "__main__":
     try:
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
-        # Set running flag to false to stop all threads
-        self.running = False
-        
-        # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            logging.info("Health thread joined")
-        
-        # Close health socket if it exists
-        if hasattr(self, "health_socket"):
-            self.health_socket.close()
-            logging.info("Health socket closed")
+        agent.cleanup() 

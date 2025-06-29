@@ -273,6 +273,17 @@ class NLUAgent(BaseAgent):
         
         return entities
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "nlu_status": "active",
+            "processed_utterances": getattr(self, 'processed_utterances', 0),
+            "last_utterance_time": getattr(self, 'last_utterance_time', 'N/A')
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == "__main__":
     import argparse
 

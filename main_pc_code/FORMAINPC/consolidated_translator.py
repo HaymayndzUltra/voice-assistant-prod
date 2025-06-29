@@ -1581,47 +1581,27 @@ class TranslationPipeline:
                 'engine_used': 'dictionary'
             }
 
-class TranslatorServer:
-    """ZMQ server for translation service with dynamic port support and separate health check endpoint"""
+from main_pc_code.src.core.base_agent import BaseAgent
+
+class TranslatorServer(BaseAgent):
+    """ZMQ server for translation service with dynamic port support and standardized health check"""
     def __init__(self, config: Dict[str, Any], main_port: int = None, health_port: int = None):
+        super().__init__(name="ConsolidatedTranslator", port=main_port or DEFAULT_ZMQ_PORT)
         self.config = config
         self.pipeline = TranslationPipeline(config)
         self.context = zmq.Context()
-        
-        # Check if secure ZMQ is enabled
         self.secure_zmq = config.get('secure_zmq', False)
-        
-        # Use provided ports or defaults
         self.main_port = main_port or DEFAULT_ZMQ_PORT
         self.health_port = health_port or DEFAULT_HEALTH_PORT
-        
-        # Main service socket
         self.main_socket = self.context.socket(zmq.REP)
         self.main_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.main_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
-        # Set up secure ZMQ if enabled
         if self.secure_zmq:
             setup_curve_client(self.main_socket, server_mode=True)
             logger.info("Secure ZMQ enabled for main socket")
-        
-        # Health check socket (separate endpoint)
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
-        # Set up secure ZMQ for health socket if enabled
-        if self.secure_zmq:
-            setup_curve_client(self.health_socket, server_mode=True)
-            logger.info("Secure ZMQ enabled for health socket")
-        
-        # Bind sockets
         self._bind_sockets()
-        
         self.start_time = time.time()
         logger.info(f"Server started on main port {self.main_port} and health port {self.health_port}")
-        
-        # Add API version and capabilities
         self.api_version = "2.0"
         self.capabilities = {
             'languages': ['en', 'tl', 'fil_Latn'],
@@ -1635,12 +1615,35 @@ class TranslatorServer:
                 'error_recovery'
             ]
         }
-        
-        # Start health check thread
-        self.health_thread = threading.Thread(target=self._run_health_server, daemon=True)
-        self.health_thread.start()
-        logger.info("Health check server thread started")
-        
+        # Remove custom health thread/socket logic
+        # Health check is now handled by BaseAgent
+
+    # Remove _run_health_server and health_socket logic
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        base_status = super()._get_health_status()
+        base_status.update({
+            'status': 'ok',
+            'api_version': self.api_version,
+            'uptime': time.time() - self.start_time,
+            'memory_stats': getattr(self.pipeline, 'memory_stats', {}),
+            'active_sessions': len(self.pipeline.session_manager.get_active_sessions()),
+            'cache_stats': self.pipeline.cache.get_stats(),
+            'initialization_status': 'complete',
+            'main_port': self.main_port,
+            'health_port': self.health_port
+        })
+        return base_status
+
+    def cleanup(self):
+        try:
+            self.main_socket.close()
+            self.context.term()
+            logger.info("Server stopped and resources cleaned up")
+        except Exception as e:
+            logger.error(f"Error stopping server: {e}")
+        super().cleanup()
+
     def _bind_sockets(self):
         """Bind both main and health check sockets with fallback ports"""
         # Bind main socket
@@ -1688,34 +1691,6 @@ class TranslatorServer:
             else:
                 logger.error(f"Error binding health socket: {e}")
                 raise RuntimeError(f"Cannot bind health service to port {self.health_port}")
-        
-    def _run_health_server(self):
-        """Run health check server on separate thread"""
-        logger.info("Health check server thread started and listening for requests")
-        while True:
-            try:
-                # Wait for health-check request (blocking with timeout)
-                logger.debug("Health server waiting for request…")
-                message = self.health_socket.recv_json()
-                logger.info(f"Received health check request: {message}")
-
-                # Build and send the response
-                response = self._handle_health_check()
-                self.health_socket.send_json(response)
-                logger.info("Health check response sent successfully")
-
-            except zmq.error.Again:
-                # Timeout expired – no request arrived within the timeframe.
-                # Just continue waiting instead of treating it as an error.
-                continue
-            except Exception as e:
-                logger.error(f"Error processing health check request: {e}")
-                # Best effort attempt to reply **only** if a request was actually received.
-                try:
-                    self.health_socket.send_json({'status': 'error', 'error': str(e)})
-                except zmq.ZMQError:
-                    # Socket not in a state that allows replying (e.g. no pending request).
-                    pass
         
     def run(self):
         """Run the main translation server"""
@@ -1844,11 +1819,11 @@ class TranslatorServer:
         """Stop the server and cleanup resources"""
         try:
             self.main_socket.close()
-            self.health_socket.close()
             self.context.term()
             logger.info("Server stopped and resources cleaned up")
         except Exception as e:
             logger.error(f"Error stopping server: {e}")
+        super().cleanup()
 
     def _request_model_loading(self, model_id: str, priority: str = "medium") -> bool:
         """

@@ -22,6 +22,9 @@ project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -29,126 +32,113 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryClient")
 
-class MemoryClient:
+class MemoryClient(BaseAgent):
     """Client for interacting with the Memory Orchestrator"""
     
-    def __init__(self, port: int = 5577, orchestrator_port: int = 5576, host: str = "0.0.0.0"):
-        self.port = port
+    def __init__(self, **kwargs):
+        args = parse_agent_args()
+        port = args.port if hasattr(args, 'port') and args.port is not None else 5577
+        orchestrator_port = args.orchestrator_port if hasattr(args, 'orchestrator_port') else 5576
+        host = args.host if hasattr(args, 'host') else "0.0.0.0"
+        super().__init__(name="MemoryClient", port=port)
         self.host = host
         self.orchestrator_port = orchestrator_port
         self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://{host}:{port}")
-        logger.info(f"Memory Client initialized on port {port}")
-        
-        # Setup connection to Memory Orchestrator
         self.orchestrator_socket = self.context.socket(zmq.REQ)
         self.orchestrator_socket.connect(f"tcp://localhost:{orchestrator_port}")
         logger.info(f"Connected to Memory Orchestrator on port {orchestrator_port}")
-        
-        # Setup health check socket
-        self.health_port = port + 1
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://{host}:{self.health_port}")
-        logger.info(f"Health check endpoint initialized on port {self.health_port}")
-        
-        # Start health check thread
-        self._start_health_check()
-    
-    def _start_health_check(self):
-        """Start a separate thread for health checks"""
-        import threading
-        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
-        self.health_thread.start()
-    
-    def _health_check_loop(self):
-        """Health check loop running in a separate thread"""
-        poller = zmq.Poller()
-        poller.register(self.health_socket, zmq.POLLIN)
-        
-        while True:
-            try:
-                socks = dict(poller.poll(1000))  # 1 second timeout
-                if self.health_socket in socks:
-                    message = self.health_socket.recv_json()
-                    self.health_socket.send_json({
-                        "status": "HEALTHY",
-                        "agent": "MemoryClient",
-                        "uptime": time.time() - self.start_time,
-                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-                    })
-            except Exception as e:
-                logger.error(f"Health check error: {e}")
-            time.sleep(0.1)
-    
+        self.requests_sent = 0
+        self.orchestrator_connection_status = "connected"
+
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "client_status": "active",
+            "orchestrator_connection": getattr(self, 'orchestrator_connection_status', 'unknown'),
+            "requests_sent": getattr(self, 'requests_sent', 0)
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
     def start(self):
         """Start the memory client service"""
         self.start_time = time.time()
         logger.info("Memory Client starting")
-        
         try:
             while True:
-                # Wait for requests
                 message = self.socket.recv_json()
+                if not isinstance(message, dict):
+                    if isinstance(message, str):
+                        try:
+                            message = json.loads(message)
+                        except Exception:
+                            logger.error(f"Received non-dict, non-JSON message: {message}")
+                            self.socket.send_json({"status": "error", "message": "Invalid request format"})
+                            continue
+                    else:
+                        logger.error(f"Received non-dict, non-str message: {message}")
+                        self.socket.send_json({"status": "error", "message": "Invalid request format"})
+                        continue
                 logger.info(f"Received request: {message}")
-                
                 action = message.get("action")
                 if action == "store_memory":
                     response = self._handle_store_memory(message)
                 elif action == "retrieve_memory":
                     response = self._handle_retrieve_memory(message)
                 elif action == "health_check":
-                    response = self._handle_health_check()
+                    response = self._get_health_status()
                 else:
                     response = {"status": "error", "message": f"Unknown action: {action}"}
-                
+                if not isinstance(response, dict):
+                    response = {"status": "error", "message": "Invalid response format"}
                 self.socket.send_json(response)
         except KeyboardInterrupt:
             logger.info("Shutting down Memory Client")
         except Exception as e:
             logger.error(f"Error in Memory Client: {e}")
         finally:
-            self.socket.close()
-            self.orchestrator_socket.close()
-            self.context.term()
-    
+            self.cleanup()
+
     def _handle_store_memory(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Forward store memory request to the orchestrator"""
         try:
             self.orchestrator_socket.send_json(message)
+            self.requests_sent = getattr(self, 'requests_sent', 0) + 1
             response = self.orchestrator_socket.recv_json()
+            if not isinstance(response, dict):
+                return {"status": "error", "message": "Invalid response from orchestrator"}
             return response
         except Exception as e:
             logger.error(f"Error storing memory: {e}")
             return {"status": "error", "message": str(e)}
-    
+
     def _handle_retrieve_memory(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Forward retrieve memory request to the orchestrator"""
         try:
             self.orchestrator_socket.send_json(message)
+            self.requests_sent = getattr(self, 'requests_sent', 0) + 1
             response = self.orchestrator_socket.recv_json()
+            if not isinstance(response, dict):
+                return {"status": "error", "message": "Invalid response from orchestrator"}
             return response
         except Exception as e:
             logger.error(f"Error retrieving memory: {e}")
             return {"status": "error", "message": str(e)}
-    
-    def _handle_health_check(self) -> Dict[str, Any]:
-        """Handle health check request"""
-        return {
-            "status": "HEALTHY",
-            "agent": "MemoryClient",
-            "uptime": time.time() - self.start_time,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-        }
+
+    def cleanup(self):
+        """Cleanup resources and call parent cleanup."""
+        try:
+            self.socket.close()
+            self.orchestrator_socket.close()
+            self.context.term()
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        super().cleanup()
 
 def main():
-    parser = argparse.ArgumentParser(description="Memory Client")
-    parser.add_argument("--port", type=int, default=5577, help="Port to listen on")
-    parser.add_argument("--orchestrator_port", type=int, default=5576, help="Memory Orchestrator port")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind to")
-    args = parser.parse_args()
-    
-    client = MemoryClient(port=args.port, orchestrator_port=args.orchestrator_port, host=args.host)
+    args = parse_agent_args()
+    client = MemoryClient()
     client.start()
 
 if __name__ == "__main__":

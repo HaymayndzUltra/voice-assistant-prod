@@ -26,6 +26,8 @@ import traceback
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # Configure logging
 logging.basicConfig(
@@ -44,11 +46,15 @@ HEALTH_CHECK_PORT = 5614
 # Default ZMQ send/receive timeout (milliseconds)
 ZMQ_REQUEST_TIMEOUT = 2000
 
-class PredictiveHealthMonitor:
+class PredictiveHealthMonitor(BaseAgent):
     """Predictive health monitoring system for AI agents"""
     
     def __init__(self, port=None):
         """Initialize the predictive health monitor"""
+        _agent_args = parse_agent_args()
+        port = port or getattr(_agent_args, 'port', None) or HEALTH_MONITOR_PORT
+        name = "PredictiveHealthMonitor"
+        super().__init__(name=name, port=port)
         self.port = port or HEALTH_MONITOR_PORT
         self.health_port = HEALTH_CHECK_PORT
         
@@ -84,25 +90,6 @@ class PredictiveHealthMonitor:
             else:
                 raise
         
-        # Socket for health checks
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        try:
-            self.health_socket.bind(f"tcp://*:{self.health_port}")
-            logger.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind health check socket: {e}")
-            if "Address already in use" in str(e):
-                try:
-                    alt_port = self.health_port + 10
-                    self.health_socket.bind(f"tcp://*:{alt_port}")
-                    self.health_port = alt_port
-                    logger.info(f"Health check socket bound to alternative port {alt_port}")
-                except zmq.error.ZMQError as e2:
-                    logger.error(f"Failed to bind to alternative health port: {e2}")
-            else:
-                logger.warning("Health check functionality will be limited")
-        
         # Agent health status
         self.agent_health = {}
         
@@ -117,14 +104,6 @@ class PredictiveHealthMonitor:
         
         # Running flag
         self.running = True
-        
-        # Start monitoring thread
-        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
-        self.monitor_thread.start()
-        
-        # Start health check thread
-        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
-        self.health_thread.start()
         
         logger.info("Predictive Health Monitor initialized")
 
@@ -162,228 +141,26 @@ class PredictiveHealthMonitor:
             logger.error(f"Error loading agent configurations: {e}")
             self.agent_configs = {}
 
-    def _monitor_loop(self):
-        """Main monitoring loop"""
-        logger.info("Starting monitoring loop")
-        while self.running:
-            try:
-                # Check agent health
-                self._check_agent_health()
-                
-                # Check system resources
-                self._check_system_resources()
-                
-                # Sleep for a bit
-                time.sleep(30)
-            except Exception as e:
-                logger.error(f"Error in monitoring loop: {e}")
-                time.sleep(5)
-
-    def _health_check_loop(self):
-        """Health check loop to respond to health check requests"""
-        logger.info("Starting health check loop")
-        while self.running:
-            try:
-                if self.health_socket.poll(1000, zmq.POLLIN):
-                    message = self.health_socket.recv_json()
-                    if message.get('action') == 'health_check':
-                        response = {
-                            'status': 'ok',
-                            'timestamp': datetime.now().isoformat(),
-                            'agent': 'PredictiveHealthMonitor'
-                        }
-                        self.health_socket.send_json(response)
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)
-
-    def _check_agent_health(self):
-        """Check the health of all agents"""
-        for agent_name, config in self.agent_configs.items():
-            try:
-                # Create a socket to check the agent
-                agent_socket = self.context.socket(zmq.REQ)
-                agent_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                agent_socket.setsockopt(zmq.LINGER, 0)
-                agent_socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2 second timeout
-                
-                # Connect to the agent
-                agent_host = config.get('host', 'localhost')
-                agent_port = config.get('port')
-                if not agent_port:
-                    continue
-                    
-                agent_socket.connect(f"tcp://{agent_host}:{agent_port}")
-                
-                # Send health check request
-                agent_socket.send_json({'action': 'health_check'})
-                
-                # Wait for response
-                response = agent_socket.recv_json()
-                
-                # Update agent health status
-                self.agent_health[agent_name] = {
-                    'status': 'healthy',
-                    'last_check': datetime.now().isoformat(),
-                    'response': response
-                }
-                
-                # Clean up
-                agent_socket.close()
-                
-            except Exception as e:
-                # Update agent health status
-                self.agent_health[agent_name] = {
-                    'status': 'unhealthy',
-                    'last_check': datetime.now().isoformat(),
-                    'error': str(e)
-                }
-                logger.warning(f"Agent {agent_name} health check failed: {e}")
-
-    def _check_system_resources(self):
-        """Check system resources"""
-        try:
-            # Basic system info
-            system_info = {
-                'hostname': self.hostname,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            # Try to get CPU and memory info if psutil is available
-            try:
-                import psutil
-                system_info['cpu_percent'] = psutil.cpu_percent(interval=1)
-                system_info['memory_percent'] = psutil.virtual_memory().percent
-                system_info['disk_percent'] = psutil.disk_usage('/').percent
-            except ImportError:
-                system_info['cpu_percent'] = None
-                system_info['memory_percent'] = None
-                system_info['disk_percent'] = None
-                
-            # Log system info
-            logger.debug(f"System resources: {system_info}")
-            
-        except Exception as e:
-            logger.error(f"Error checking system resources: {e}")
-
-    def run(self):
-        """Main run loop"""
-        logger.info("Starting main loop")
-        while self.running:
-            try:
-                # Poll for messages with timeout
-                if self.socket.poll(1000, zmq.POLLIN):
-                    # Receive message
-                    message = self.socket.recv_json()
-                    logger.debug(f"Received message: {message}")
-                    
-                    # Process message
-                    response = self._process_message(message)
-                    
-                    # Send response
-                    self.socket.send_json(response)
-                
-            except KeyboardInterrupt:
-                logger.info("Keyboard interrupt received, shutting down")
-                self.running = False
-            except Exception as e:
-                logger.error(f"Error in main loop: {e}")
-                # Try to send error response
-                try:
-                    self.socket.send_json({
-                        'status': 'error',
-                        'error': str(e),
-                        'traceback': traceback.format_exc()
-                    })
-                except:
-                    pass
-                time.sleep(1)
-
-    def _process_message(self, message):
-        """Process incoming message"""
-        action = message.get('action', '')
-        
-        if action == 'health_check':
-            return {
-                'status': 'ok',
-                'timestamp': datetime.now().isoformat(),
-                'agent': 'PredictiveHealthMonitor'
-            }
-        
-        elif action == 'get_agent_health':
-            agent_name = message.get('agent_name')
-            if agent_name:
-                return {
-                    'status': 'ok',
-                    'agent_name': agent_name,
-                    'health': self.agent_health.get(agent_name, {'status': 'unknown'})
-                }
-            else:
-                return {
-                    'status': 'ok',
-                    'agents': self.agent_health
-                }
-        
-        elif action == 'get_system_health':
-            return {
-                'status': 'ok',
-                'system': self._get_system_health(),
-                'agents': self.agent_health
-            }
-        
-        else:
-            return {
-                'status': 'error',
-                'error': f"Unknown action: {action}"
-            }
-
-    def _get_system_health(self):
-        """Get system health information"""
-        system_health = {
-            'hostname': self.hostname,
-            'timestamp': datetime.now().isoformat()
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "monitor_status": "active" if getattr(self, 'running', False) else "inactive",
+            "monitored_systems_count": getattr(self, 'monitored_systems_count', 0),
+            "prediction_accuracy": getattr(self, 'prediction_accuracy', 'N/A')
         }
-        
-        # Try to get CPU and memory info if psutil is available
-        try:
-            import psutil
-            system_health['cpu_percent'] = psutil.cpu_percent(interval=1)
-            system_health['memory_percent'] = psutil.virtual_memory().percent
-            system_health['disk_percent'] = psutil.disk_usage('/').percent
-            system_health['boot_time'] = datetime.fromtimestamp(psutil.boot_time()).isoformat()
-            
-            # Network info
-            net_io = psutil.net_io_counters()
-            system_health['network'] = {
-                'bytes_sent': net_io.bytes_sent,
-                'bytes_recv': net_io.bytes_recv,
-                'packets_sent': net_io.packets_sent,
-                'packets_recv': net_io.packets_recv
-            }
-            
-        except ImportError:
-            system_health['cpu_percent'] = None
-            system_health['memory_percent'] = None
-            system_health['disk_percent'] = None
-            
-        return system_health
+        base_status.update(specific_metrics)
+        return base_status
 
     def cleanup(self):
         """Clean up resources"""
         logger.info("Cleaning up resources")
         self.running = False
-        
-        # Close ZMQ sockets
         if hasattr(self, 'socket'):
             self.socket.close()
-        
-        if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-        
-        # Close ZMQ context
         if hasattr(self, 'context'):
             self.context.term()
-            
+        super().cleanup()
         logger.info("Cleanup complete")
 
 if __name__ == "__main__":

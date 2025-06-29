@@ -145,6 +145,17 @@ class EmotionSynthesisAgent(BaseAgent):
         # No call to super().stop() since BaseAgent does not have it
         # Add any additional cleanup here if needed
 
+    def _get_health_status(self):
+        """Overrides the base method to add agent-specific health metrics."""
+        base_status = super()._get_health_status()
+        specific_metrics = {
+            "synthesis_status": "active",
+            "last_synthesis_time": getattr(self, 'last_synthesis_time', 'N/A'),
+            "processed_emotions_count": getattr(self, 'processed_emotions_count', 0)
+        }
+        base_status.update(specific_metrics)
+        return base_status
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
