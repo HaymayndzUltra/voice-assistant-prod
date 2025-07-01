@@ -31,6 +31,9 @@ import psutil
 import functools
 import argparse
 
+# Import BaseAgent for agent implementation
+from main_pc_code.src.core.base_agent import BaseAgent
+
 # Import config parser for dynamic port support
 from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
@@ -956,21 +959,24 @@ class SessionManager:
                                     'created_at': current_time,
                                     'updated_at': current_time
                                 }
-                logger.warning(f"BLEU score calculation failed: {str(e)}")
+            except Exception as e:
+                logger.warning(f"Failed to retrieve session from MemoryOrchestrator: {str(e)}")
+                # Create new session as fallback
+                self.sessions[session_id] = {
+                    'history': [],
+                    'created_at': current_time,
+                    'updated_at': current_time
+                }
         
-        # Calculate length ratio
-        try:
-            orig_len = len(original.split())
-            trans_len = len(translated.split())
-            metrics['length_ratio'] = min(orig_len, trans_len) / max(orig_len, trans_len)
-        except Exception as e:
-            logger.warning(f"Length ratio calculation failed: {str(e)}")
-        
-        # Check for common translation errors
-        metrics['error_checks'] = self._check_translation_errors(original, translated)
-        
-        return metrics
-        
+        # Update session with new entry if provided
+        if entry and session_id in self.sessions:
+            if 'history' not in self.sessions[session_id]:
+                self.sessions[session_id]['history'] = []
+            
+            self.sessions[session_id]['history'].append(entry)
+            self.sessions[session_id]['updated_at'] = current_time
+            self.session_last_accessed[session_id] = current_time
+
     def _check_translation_errors(self, original: str, translated: str) -> Dict[str, Any]:
         """
         Check for common translation errors.
@@ -1582,19 +1588,21 @@ class TranslationPipeline:
                 'engine_used': 'dictionary'
             }
 
-from main_pc_code.src.core.base_agent import BaseAgent
 
+# === AGENT ENTRYPOINT: TranslatorServer(BaseAgent) ===
 class TranslatorServer(BaseAgent):
     """ZMQ server for translation service with dynamic port support and standardized health check"""
-    def __init__(self, config: Dict[str, Any], main_port: int = None, health_port: int = None):
+    def __init__(self, main_port: int = None, health_port: int = None):
         # Derive port and name from _agent_args, with fallbacks
-        agent_port = getattr(_agent_args, 'port', main_port or DEFAULT_ZMQ_PORT)
-        agent_name = getattr(_agent_args, 'name', "ConsolidatedTranslator")
-        super().__init__(name=agent_name, port=int(agent_port))
-        self.config = config
-        self.pipeline = TranslationPipeline(config)
+        self.config = _agent_args
+        # Standard BaseAgent initialization at the beginning
+        super().__init__(
+            name=self.config.get('consolidated_translator.name', "ConsolidatedTranslator"),
+            port=self.config.getint('consolidated_translator.port', main_port or DEFAULT_ZMQ_PORT)
+        )
+        self.pipeline = TranslationPipeline(self.config)
         self.context = zmq.Context()
-        self.secure_zmq = config.get('secure_zmq', False)
+        self.secure_zmq = self.config.get('secure_zmq', False)
         self.main_port = main_port or DEFAULT_ZMQ_PORT
         self.health_port = health_port or DEFAULT_HEALTH_PORT
         self.main_socket = self.context.socket(zmq.REP)
@@ -1625,19 +1633,22 @@ class TranslatorServer(BaseAgent):
     # Remove _run_health_server and health_socket logic
 
     def _get_health_status(self) -> Dict[str, Any]:
-        base_status = super()._get_health_status()
-        base_status.update({
-            'status': 'ok',
-            'api_version': self.api_version,
-            'uptime': time.time() - self.start_time,
-            'memory_stats': getattr(self.pipeline, 'memory_stats', {}),
-            'active_sessions': len(self.pipeline.session_manager.get_active_sessions()),
-            'cache_stats': self.pipeline.cache.get_stats(),
-            'initialization_status': 'complete',
-            'main_port': self.main_port,
-            'health_port': self.health_port
-        })
-        return base_status
+        """Get the current health status of the translator service.
+        
+        Returns:
+            Dict containing health status information
+        """
+        status = {
+            "status": self.health_status["status"],
+            "ready": True,
+            "initialized": True,
+            "message": f"{self.name} is {self.health_status['status']}",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": time.time() - self.start_time,
+            "engines": self.health_status["engines"],
+            "last_check": self.health_status["last_check"]
+        }
+        return status
 
     def cleanup(self):
         try:
@@ -1888,9 +1899,8 @@ if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        # Instantiate the agent, passing the required config parameter
-        agent = TranslatorServer(TRANSLATOR_CONFIG)
-        agent.run() # Assuming a standard run() method exists
+        agent = TranslatorServer()
+        agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
@@ -1900,4 +1910,4 @@ if __name__ == "__main__":
     finally:
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
-            agent.cleanup() 
+            agent.cleanup()
