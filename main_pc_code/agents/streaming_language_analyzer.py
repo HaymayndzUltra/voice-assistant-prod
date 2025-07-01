@@ -1,8 +1,8 @@
-from src.core.base_agent import BaseAgent
 """
 Streaming Language Analyzer Module
 Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
 """
+
 import zmq
 import pickle
 import logging
@@ -11,16 +11,19 @@ import time
 import json
 import threading
 import os
+import psutil
 from collections import deque
 from datetime import datetime
 from pathlib import Path
 import requests
 import socket
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
+
+from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_parser import parse_agent_args
-from utils.service_discovery_client import register_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse command line arguments
 _agent_args = parse_agent_args()
@@ -28,8 +31,6 @@ _agent_args = parse_agent_args()
 # Optional fastText language ID
 try:
     import fasttext
-import psutil
-from datetime import datetime
     FASTTEXT_AVAILABLE = True
 except ImportError:
     FASTTEXT_AVAILABLE = False
@@ -39,13 +40,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
 # Port configuration from args or defaults
-ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576))
-ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577))
-ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597))
-ZMQ_REQUEST_TIMEOUT = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
+ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576) or 5576)
+ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577) or 5577)
+ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597) or 5597)
+ZMQ_REQUEST_TIMEOUT = int(getattr(_agent_args, 'zmq_request_timeout', 5000) or 5000)
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -90,10 +91,21 @@ def find_available_port(start_port: int, end_port: int, max_attempts: int = 10) 
     raise RuntimeError(f"Could not find available port in range {start_port}-{end_port}")
 
 class StreamingLanguageAnalyzer(BaseAgent):
+    """Streaming Language Analyzer Agent for real-time language detection"""
+    
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
-        self.context = zmq.Context()
+        """Initialize the language analyzer agent"""
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=getattr(self.config, 'name', 'StreamingLanguageAnalyzer'),
+            port=getattr(self.config, 'port', None)
+        )
+        
+        # Initialize state
+        self.start_time = time.time()
+        self.processed_streams_count = 0
+        self.last_stream_time = 'N/A'
         
         # Use provided port or default
         self.pub_port = self.port if self.port else ZMQ_PUB_PORT
@@ -455,6 +467,9 @@ class StreamingLanguageAnalyzer(BaseAgent):
         self._health_thread.daemon = True
         self._health_thread.start()
         
+        # Call parent's run method to ensure health check thread works
+        super().run()
+        
         logger.info("Language analyzer started successfully")
 
     def shutdown(self):
@@ -500,10 +515,14 @@ class StreamingLanguageAnalyzer(BaseAgent):
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")
+            
+            # Call parent cleanup
+            super().cleanup()
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 
     def _process_loop(self):
+        """Main processing loop for language analysis"""
         logger.info("Processing loop started")
         
         while self._running:
@@ -528,70 +547,49 @@ class StreamingLanguageAnalyzer(BaseAgent):
                     }
                     self.pub_socket.send(pickle.dumps(out))
                     
-                    # Update total request count
+                    # Update metrics
                     self.stats["total_requests"] += 1
+                    self.processed_streams_count += 1
+                    self.last_stream_time = datetime.now().isoformat()
             except zmq.Again:
                 time.sleep(0.05)
 
-    def _get_health_status(self):
+    def _get_health_status(self) -> Dict[str, Any]:
         """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "analyzer_status": "streaming",
-            "processed_streams_count": getattr(self, 'processed_streams_count', 0),
-            "last_stream_time": getattr(self, 'last_stream_time', 'N/A')
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'language_analyzer',
+            'components': {
+                'tagabert_available': self.tagabert_available,
+                'fasttext_available': self.fasttext_available
+            },
+            'analyzer_status': "streaming",
+            'processed_streams_count': self.processed_streams_count,
+            'last_stream_time': self.last_stream_time,
+            'language_stats': {
+                'english_count': self.stats.get('english_count', 0),
+                'tagalog_count': self.stats.get('tagalog_count', 0),
+                'taglish_count': self.stats.get('taglish_count', 0)
+            },
+            'uptime': time.time() - self.start_time
         }
-        base_status.update(specific_metrics)
-        return base_status
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
+# Example usage
 if __name__ == "__main__":
-    analyzer = StreamingLanguageAnalyzer()
-    analyzer.start()
+    # Standardized main execution block
+    agent = None
     try:
-        while True:
-            time.sleep(1)
+        agent = StreamingLanguageAnalyzer()
+        agent.run()
     except KeyboardInterrupt:
-        analyzer.shutdown()
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

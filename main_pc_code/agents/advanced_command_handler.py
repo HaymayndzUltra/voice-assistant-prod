@@ -1,4 +1,3 @@
-from src.core.base_agent import BaseAgent
 """
 Advanced Command Handler for Voice Assistant
 --------------------------------------------
@@ -21,10 +20,14 @@ import subprocess
 import threading
 import importlib.util
 from typing import Dict, List, Any, Optional, Tuple, Union
+from datetime import datetime
+import psutil
 
+from main_pc_code.src.core.base_agent import BaseAgent
 # Import existing command handler as base
 from agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
 from main_pc_code.utils.config_parser import parse_agent_args
+
 _agent_args = parse_agent_args()
 
 # Setup logging
@@ -34,6 +37,7 @@ logger = logging.getLogger("AdvancedCommandHandler")
 # ZMQ Configuration
 ZMQ_EXECUTOR_PORT = 6001  # Port for Executor Agent on Main PC
 ZMQ_COORDINATOR_PORT = 5590  # Port for Coordinator Agent
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Supported script types and their execution commands
 SCRIPT_TYPES = {
@@ -50,8 +54,6 @@ class AdvancedCommandHandler(BaseAgent):
     """
     
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
         """
         Initialize the advanced command handler
         
@@ -60,13 +62,21 @@ class AdvancedCommandHandler(BaseAgent):
             executor_port: Port for Executor Agent
             coordinator_port: Port for Coordinator Agent
         """
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=self.config.get('name', 'AdvancedCommandHandler'),
+            port=self.config.getint('port', None)
+        )
+        
+        # Initialize running state
+        self.running = True
+        self.start_time = time.time()
+        
         # Determine ports and host
-        executor_port = _agent_args.get('executor_port', ZMQ_EXECUTOR_PORT)
-        coordinator_port = _agent_args.get('coordinator_port', ZMQ_COORDINATOR_PORT)
-        if isinstance(_agent_args, dict):
-            _host = _agent_args.get('host', 'localhost')
-        else:
-            _host = getattr(_agent_args, 'host', 'localhost')
+        executor_port = self.config.getint('executor_port', ZMQ_EXECUTOR_PORT)
+        coordinator_port = self.config.getint('coordinator_port', ZMQ_COORDINATOR_PORT)
+        _host = self.config.get('host', 'localhost')
 
         # Base class initialization done; self.context is ready
         
@@ -497,40 +507,38 @@ class AdvancedCommandHandler(BaseAgent):
                 "message": f"Script not found: {script_path}"
             }
         
-        # Get script type
-        _, ext = os.path.splitext(script_path)
-        if ext not in SCRIPT_TYPES:
+        # Determine script type and execution command
+        script_ext = os.path.splitext(script_path)[1].lower()
+        if script_ext not in SCRIPT_TYPES:
             return {
                 "status": "error",
-                "message": f"Unsupported script type: {ext}"
+                "message": f"Unsupported script type: {script_ext}"
             }
         
-        # Create a process ID
+        # Prepare request for Executor
         process_id = str(uuid.uuid4())
-        
-        # Prepare request for Executor Agent
         request = {
             "action": "execute_script",
             "script_path": script_path,
-            "script_type": ext,
+            "script_type": script_ext,
             "process_id": process_id,
             "background": background
         }
         
         try:
-            # Send request to Executor Agent
+            # Send request to Executor
             self.executor_socket.send_string(json.dumps(request))
             response = self.executor_socket.recv_string()
             result = json.loads(response)
             
             if result.get("status") == "started":
-                # Track the process if running in background
-                if background:
-                    self.running_processes[process_id] = {
-                        "type": "script",
-                        "path": script_path,
-                        "start_time": time.time()
-                    }
+                # Track the process
+                self.running_processes[process_id] = {
+                    "type": "script",
+                    "path": script_path,
+                    "started_at": time.time(),
+                    "background": background
+                }
                 
                 return {
                     "status": "success",
@@ -552,29 +560,29 @@ class AdvancedCommandHandler(BaseAgent):
     
     def get_running_processes(self) -> List[Dict[str, Any]]:
         """
-        Get list of running background processes
+        Get list of running processes
         
         Returns:
-            List of process information dictionaries
+            List of running process information
         """
-        # Update process status by querying Executor/Coordinator
+        # Update process status first
         self._update_process_status()
         
-        # Convert processes dict to list
+        # Convert to list with process IDs
         processes = []
-        for process_id, process_info in self.running_processes.items():
-            processes.append({
-                "process_id": process_id,
-                "type": process_info.get("type"),
-                "name": process_info.get("path", process_info.get("commands", ["Unknown"])[0]),
-                "start_time": process_info.get("start_time"),
-                "runtime": time.time() - process_info.get("start_time", time.time())
-            })
-        
+        for process_id, info in self.running_processes.items():
+            process_info = info.copy()
+            process_info["process_id"] = process_id
+            process_info["running_time"] = time.time() - info.get("started_at", time.time())
+            processes.append(process_info)
+            
         return processes
     
     def _update_process_status(self):
         """Update status of running processes"""
+        if not self.running_processes:
+            return
+            
         # Check with Executor Agent for script processes
         script_processes = [pid for pid, info in self.running_processes.items() 
                            if info.get("type") == "script"]
@@ -720,81 +728,68 @@ class AdvancedCommandHandler(BaseAgent):
         else:
             return f"I couldn't create the {action_type} command. Please try again."
 
-    def _get_health_status(self):
+    def _get_health_status(self) -> Dict[str, Any]:
         """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "handler_status": "active",
-            "commands_processed_session": getattr(self, 'commands_processed', 0)
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'command_handler',
+            'components': {
+                'executor_connected': hasattr(self, 'executor_socket'),
+                'coordinator_connected': hasattr(self, 'coordinator_socket')
+            },
+            'handler_status': 'active',
+            'commands_processed': getattr(self, 'commands_processed', 0),
+            'running_processes': len(getattr(self, 'running_processes', {})),
+            'uptime': time.time() - self.start_time
         }
-        base_status.update(specific_metrics)
-        return base_status
 
     def cleanup(self):
-        # Custom cleanup logic if any
-        super().cleanup()
-
-
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+        """Gracefully shutdown the agent"""
+        logger.info("Shutting down AdvancedCommandHandler")
+        self.running = False
+        
+        # Close sockets
+        if hasattr(self, 'executor_socket'):
+            self.executor_socket.close()
+        if hasattr(self, 'coordinator_socket'):
+            self.coordinator_socket.close()
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+        # Call parent cleanup
+        super().cleanup()
+        logger.info("AdvancedCommandHandler shutdown complete")
 
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+    def run(self):
+        """Run the main agent loop."""
+        logger.info("Starting AdvancedCommandHandler main loop")
+        
+        # Call parent's run method to ensure health check thread works
+        super().run()
+        
+        # Main agent loop
+        while self.running:
+            try:
+                # Process requests
+                # ... agent-specific processing logic ...
+                time.sleep(0.1)  # Prevent tight loop
+            except Exception as e:
+                logger.error(f"Error in main loop: {e}")
 
 # Example usage
 if __name__ == "__main__":
-        parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5710)
-    args = parser.parse_args()
+    # Standardized main execution block
+    agent = None
     try:
-        handler = AdvancedCommandHandler(port=args.port)
-        print(f"AdvancedCommandHandler started on port {args.port}")
-        logging.info(f"AdvancedCommandHandler started on port {args.port}")
-        handler.run()
+        agent = AdvancedCommandHandler()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        print(f"Failed to start AdvancedCommandHandler: {e}")
-        logging.exception("Failed to start AdvancedCommandHandler")
-
-# --- Parameter Extractor Integration (from parameter_extractor.py) ---
-from src.core.base_agent import BaseAgent
-import re
-import datetime
-from typing import Dict, List, Any, Optional, Tuple, Union
-import zmq
-import psutil
-from datetime import datetime
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-
-class ParameterExtractor(BaseAgent):
-    # (Insert parameter_extractor.py's ParameterExtractor class and supporting methods here, refactored for utility use)
-    pass
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

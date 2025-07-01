@@ -16,10 +16,12 @@ import threading
 import os
 import sys
 import uuid
+import psutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from src.core.base_agent import BaseAgent
+
+from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_parser import parse_agent_args
 
 _agent_args = parse_agent_args()
@@ -40,6 +42,7 @@ ZMQ_CHITCHAT_PORT = 5573  # Port for receiving chitchat requests
 ZMQ_HEALTH_PORT = 6582  # Health status
 PC2_IP = "192.168.100.17"  # PC2 IP address
 PC2_LLM_PORT = 5557  # Remote LLM on PC2
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Conversation settings
 MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
@@ -53,20 +56,28 @@ class ChitchatAgent(BaseAgent):
         return 5711  # Using the new port we configured
         
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
         """Initialize the chitchat agent."""
-        self.chitchat_port = self.port
-        self.health_port = self.port + 1
-        
-        # Initialize ZMQ
-        self.context = zmq.Context()
-        self._setup_sockets()
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=getattr(self.config, 'name', 'ChitchatAgent'),
+            port=getattr(self.config, 'port', None)
+        )
         
         # Initialize state
+        self.start_time = time.time()
         self.running = True
         self.conversation_history = {}  # User ID -> conversation history
         self.health_thread = None
+        self.conversations_handled = 0
+        self.last_interaction_time = 'N/A'
+        
+        # Determine ports
+        self.chitchat_port = self.port
+        self.health_port = self.port + 1
+        
+        # Setup ZMQ sockets
+        self._setup_sockets()
         
         logger.info("Chitchat Agent initialized")
     
@@ -229,12 +240,16 @@ class ChitchatAgent(BaseAgent):
         # Add assistant response to history
         self._add_to_history(user_id, "assistant", response)
         
+        # Update metrics
+        self.conversations_handled += 1
+        self.last_interaction_time = datetime.now().isoformat()
+        
         return response
     
     def handle_request(self, request):
         """Handle a request from the coordinator."""
         try:
-            action = request.get("action", "")
+            action = request.get("action", "") if isinstance(request, dict) else ""
             
             if action == "health_check":
                 return {
@@ -243,18 +258,18 @@ class ChitchatAgent(BaseAgent):
                     "initialization_status": {"is_initialized": True}
                 }
             if action == "chitchat":
-                text = request.get("text", "")
-                user_id = request.get("user_id", "default")
+                text = request.get("text", "") if isinstance(request, dict) else ""
+                user_id = request.get("user_id", "default") if isinstance(request, dict) else "default"
                 
                 response = self.process_chitchat(text, user_id)
                 
                 return {
                     "status": "success",
                     "response": response,
-                    "request_id": request.get("request_id", "")
+                    "request_id": request.get("request_id", "") if isinstance(request, dict) else ""
                 }
             elif action == "clear_history":
-                user_id = request.get("user_id", "default")
+                user_id = request.get("user_id", "default") if isinstance(request, dict) else "default"
                 
                 if user_id in self.conversation_history:
                     self.conversation_history[user_id] = []
@@ -262,20 +277,20 @@ class ChitchatAgent(BaseAgent):
                 return {
                     "status": "success",
                     "message": f"Conversation history cleared for user {user_id}",
-                    "request_id": request.get("request_id", "")
+                    "request_id": request.get("request_id", "") if isinstance(request, dict) else ""
                 }
             else:
                 return {
                     "status": "error",
                     "message": f"Unknown action: {action}",
-                    "request_id": request.get("request_id", "")
+                    "request_id": request.get("request_id", "") if isinstance(request, dict) else ""
                 }
         except Exception as e:
             logger.error(f"Error handling request: {str(e)}")
             return {
                 "status": "error",
                 "message": f"Error: {str(e)}",
-                "request_id": request.get("request_id", "")
+                "request_id": request.get("request_id", "") if isinstance(request, dict) and "request_id" in request else ""
             }
     
     def health_broadcast_loop(self):
@@ -310,6 +325,9 @@ class ChitchatAgent(BaseAgent):
         self.health_thread = threading.Thread(target=self.health_broadcast_loop)
         self.health_thread.daemon = True
         self.health_thread.start()
+        
+        # Call parent's run method to ensure health check thread works
+        super().run()
         
         # Main loop
         while self.running:
@@ -351,65 +369,59 @@ class ChitchatAgent(BaseAgent):
         
         logger.info("Chitchat agent stopped")
 
-    def _get_health_status(self):
+    def _get_health_status(self) -> Dict[str, Any]:
         """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "chitchat_status": "active",
-            "conversations_handled": getattr(self, 'conversations_handled', 0),
-            "last_interaction_time": getattr(self, 'last_interaction_time', 'N/A')
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'chitchat',
+            'components': {
+                'llm_connected': hasattr(self, 'llm_socket'),
+                'health_broadcast': self.health_thread is not None and self.health_thread.is_alive() if self.health_thread else False
+            },
+            'chitchat_status': 'active',
+            'conversations_handled': self.conversations_handled,
+            'last_interaction_time': self.last_interaction_time,
+            'active_users': len(self.conversation_history),
+            'uptime': time.time() - self.start_time
         }
-        base_status.update(specific_metrics)
-        return base_status
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+    def cleanup(self):
+        """Gracefully shutdown the agent"""
+        logger.info("Cleaning up ChitchatAgent")
+        self.running = False
+        
+        # Close sockets
+        if hasattr(self, 'socket'):
+            self.socket.close()
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
+        if hasattr(self, 'llm_socket'):
+            self.llm_socket.close()
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+        # Wait for threads to finish
+        if self.health_thread:
+            self.health_thread.join(timeout=1.0)
+            
+        # Call parent cleanup
+        super().cleanup()
+        logger.info("ChitchatAgent cleanup complete")
 
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
+# Example usage
 if __name__ == "__main__":
-    import psutil
-from datetime import datetime
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5711)
-    args = parser.parse_args()
-    agent = ChitchatAgent()
-    agent.run()
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = ChitchatAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
