@@ -1,4 +1,3 @@
-from src.core.base_agent import BaseAgent
 """
 Enhanced Streaming Speech Recognition Module
 Combines features from both streaming_speech_recognition.py and streaming_whisper_asr.py
@@ -33,14 +32,18 @@ from pathlib import Path
 from queue import Queue
 import psutil
 import traceback
-from utils.config_loader import parse_agent_args
 
-# Add project root to sys.path
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
+# Add project root to the Python path to allow for absolute imports
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-# Import dynamic model management
-from utils.service_discovery_client import discover_service, register_service
+# Import with canonical paths
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, register_service
+
+# Parse agent arguments at module level with canonical import
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -49,7 +52,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(f"{project_root}/logs/streaming_speech_recognition.log")
+        logging.FileHandler(f"{PROJECT_ROOT}/logs/streaming_speech_recognition.log")
     ])
 logger = logging.getLogger("StreamingSpeechRecognition")
 
@@ -127,15 +130,20 @@ class ResourceManager:
 
 class StreamingSpeechRecognitionAgent(BaseAgent):
     def __init__(self):
-        self.port = int(_agent_args.get('port', 5707))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
         """Initialize the enhanced speech recognition system."""
+        # Call BaseAgent's __init__ first with proper arguments
+        super().__init__(name="StreamingSpeechRecognition")
+        
+        # Get configuration from agent args
+        self.port = int(getattr(_agent_args, 'port', 5707))
+        self.bind_address = getattr(_agent_args, 'bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
+        
         self._running = False
         self._thread = None
         self.health_thread = None
         self.process_thread = None
+        self.start_time = time.time()  # Track start time for health reporting
         
         # Initialize ZMQ context
         self.zmq_context = zmq.Context()
@@ -315,18 +323,6 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
                 if SECURE_ZMQ:
                     try:
                         from src.network.secure_zmq import secure_client_socket
-
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
-
-from datetime import datetime
                         self.model_manager_socket = secure_client_socket(self.model_manager_socket)
                         logger.info("Applied secure ZMQ to model manager socket")
                     except Exception as e:
@@ -959,44 +955,49 @@ from datetime import datetime
         finally:
             self.process_thread = None
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+    def _get_health_status(self):
+        """Get the current health status of the agent.
+        
+        Returns:
+            dict: A dictionary containing health status information
+        """
+        # Basic health check logic
+        is_healthy = self._running
+        
+        # Check ZMQ socket health
+        zmq_healthy = hasattr(self, 'sub_socket') and self.sub_socket is not None
+        if not zmq_healthy:
+            is_healthy = False
+        
+        status_report = {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "agent_name": "StreamingSpeechRecognition",
+            "timestamp": datetime.utcnow().isoformat(),
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+            "details": {
+                "running": self._running,
+                "zmq_socket_healthy": zmq_healthy,
+                "wake_word_detected": getattr(self, 'wake_word_detected', False),
+                "current_language": getattr(self, 'current_language', 'en'),
+                "vad_speech_active": getattr(self, 'vad_speech_active', False),
+                "vad_confidence": getattr(self, 'vad_confidence', 0.0)
             }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+        }
+        
+        return status_report
 
+# Add standardized __main__ block
 if __name__ == "__main__":
+    agent = None
     try:
-        asr = StreamingSpeechRecognitionAgent()
-        asr.run()
+        agent = StreamingSpeechRecognitionAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print("Interrupted by user")
     except Exception as e:
-        logger.error(f"Speech recognition failed: {e}")
-        sys.exit(1)
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()

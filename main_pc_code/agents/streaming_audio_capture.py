@@ -18,37 +18,36 @@ import wave
 import os
 from pathlib import Path
 from collections import deque
+from datetime import datetime
 try:
     import pyaudio
 except ImportError:
     pyaudio = None  # PyAudio may not be installed; handled via dummy mode
 import socket
+
+# Add project root to the Python path to allow for absolute imports
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# Import with canonical path
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+
+# Parse agent arguments at module level with canonical import
+_agent_args = parse_agent_args()
+
 # Attempt to import health check server utility, fallback to no-op if unavailable
 try:
-    from core.http_server import setup_health_check_server  # Updated import path
+    from main_pc_code.core.http_server import setup_health_check_server
 except ModuleNotFoundError:
-    try:
-        from agents.base_agent import BaseAgent  # to avoid circular but ensure path exists
-    except ModuleNotFoundError:
-        pass
     def setup_health_check_server(*args, **kwargs):
         logging.warning("setup_health_check_server not found; HTTP health checks disabled for AudioCapture")
         return None
-try:
-    from utils.config_loader import parse_agent_args
-except ModuleNotFoundError:
-    import argparse
-    def parse_agent_args():
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--port')
-        # Parse only known args to avoid errors from unknown ones
-        args, _ = parser.parse_known_args()
-        return args
-_agent_args = parse_agent_args()
 
 # Import service discovery client
 try:
-    from utils.service_discovery_client import register_service
+    from main_pc_code.utils.service_discovery_client import register_service
 except ImportError:
     def register_service(*args, **kwargs):
         logging.warning("Service discovery client not found; service registration disabled")
@@ -101,18 +100,21 @@ def find_available_port(start_port, max_attempts=10):
             continue
     raise RuntimeError(f"Could not find available port after {max_attempts} attempts")
 
-from main_pc_code.src.core.base_agent import BaseAgent
-
 class StreamingAudioCaptureAgent(BaseAgent):
     def __init__(self):
-        self.port = int(_agent_args.get('port', 5701))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+        """Initialize the StreamingAudioCapture agent with audio processing capabilities."""
+        # Call BaseAgent's __init__ first with proper arguments
+        super().__init__(name="StreamingAudioCapture")
+        
+        # Get configuration from agent args
+        self.port = int(getattr(_agent_args, 'port', 5701))
+        self.bind_address = getattr(_agent_args, 'bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
+        
         logger.info("Initializing StreamingAudioCapture with direct audio parameters...")
         # Detect dummy mode via env var
         self.dummy_mode = os.getenv("USE_DUMMY_AUDIO", "false").lower() == "true"
-        from collections import deque  # still used regardless of mode
+        
         if self.dummy_mode:
             logger.warning("USE_DUMMY_AUDIO=true -> Running in dummy audio mode; skipping PyAudio initialization")
             self.p = None
@@ -141,13 +143,9 @@ class StreamingAudioCaptureAgent(BaseAgent):
         self.whisper_model = None # For wake word if used
         self.device = None # Might store device info later
         self.http_server = None # HTTP health check server
+        self.start_time = time.time()  # Track start time for health reporting
 
-        # Wake word related (ensure these globals are accessible)
-        # These globals should be defined at the module level or imported
-        # e.g., WAKE_WORD_ENABLED = False
-        # WAKE_WORD_LIST = ["highminds"]
-        # WAKE_WORD_BUFFER_SECONDS = 2.0
-        # WAKE_WORD_TIMEOUT_DURATION = 10 # Example duration in seconds
+        # Wake word related
         self.wake_word_enabled = WAKE_WORD_ENABLED
         self.wake_words = WAKE_WORD_LIST
         self.wake_word_timeout_end_time = 0 # Stores the timestamp when current activation expires
@@ -158,11 +156,7 @@ class StreamingAudioCaptureAgent(BaseAgent):
             logger.warning("Sample rate or WAKE_WORD_BUFFER_SECONDS not set for audio_buffer init.")
             self.audio_buffer = deque()
 
-        # Energy fallback related (ensure these globals are accessible or define sensible defaults)
-        # e.g., ENERGY_FALLBACK_ENABLED = False
-        # ENERGY_THRESHOLD = 0.01
-        # ENERGY_MIN_SAMPLES_DURATION = 0.5
-        # ENERGY_COOLDOWN_SECONDS = 5
+        # Energy fallback related
         self.energy_fallback_enabled = ENERGY_FALLBACK_ENABLED
         self.energy_threshold = ENERGY_THRESHOLD
         self.energy_min_samples = int(ENERGY_MIN_DURATION * self.sample_rate) if self.sample_rate else 0
@@ -841,16 +835,43 @@ class StreamingAudioCaptureAgent(BaseAgent):
             # Stream stopping/closing and PyAudio termination are handled in __exit__.
 
     def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "capture_status": "active" if getattr(self, 'running', False) else "inactive",
-            "audio_device": getattr(self, 'device', 'N/A'),
-            "buffer_size": len(self.audio_buffer) if hasattr(self, 'audio_buffer') else 'N/A'
+        """Get the current health status of the agent.
+        
+        Returns:
+            dict: A dictionary containing health status information
+        """
+        # Basic health check logic
+        is_healthy = True # Assume healthy unless a check fails
+        
+        # Check if audio stream is active
+        if hasattr(self, 'stream') and self.stream:
+            stream_active = self.stream.is_active() if hasattr(self.stream, 'is_active') else False
+        else:
+            stream_active = False
+            # Only mark as unhealthy if we're not in dummy mode and expected to have a stream
+            if not self.dummy_mode:
+                is_healthy = False
+        
+        # Check ZMQ socket health
+        zmq_healthy = hasattr(self, 'pub_socket') and self.pub_socket is not None
+        if not zmq_healthy:
+            is_healthy = False
+        
+        status_report = {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "agent_name": "StreamingAudioCapture",
+            "timestamp": datetime.utcnow().isoformat(),
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+            "details": {
+                "audio_stream_active": stream_active,
+                "zmq_socket_healthy": zmq_healthy,
+                "dummy_mode": self.dummy_mode,
+                "wake_word_enabled": self.wake_word_enabled,
+                "activation_count": self.activation_count
+            }
         }
-        base_status.update(specific_metrics)
-        return base_status
-
+        
+        return status_report
 
     def health_check(self):
         '''
@@ -885,44 +906,18 @@ class StreamingAudioCaptureAgent(BaseAgent):
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
+# Add standardized __main__ block
 if __name__ == "__main__":
-    import logging
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    import sys
-    # The WAKE_WORD_MODE global doesn't seem directly used by the class if WAKE_WORD_ENABLED is the primary control.
-    if len(sys.argv) > 1 and sys.argv[1] == "--wake-word-mode":
-        logger.info("CLI arg --wake-word-mode detected. Note: Class uses WAKE_WORD_ENABLED global for actual behavior.")
-        # WAKE_WORD_MODE = True # This variable isn't used by the class as per current code.
-    
-    logger.info("Streaming Audio Capture Module starting (main block)...")
-    audio_capture_instance = None # Define for visibility in finally if needed, though __exit__ handles cleanup
+    agent = None
     try:
-        with StreamingAudioCaptureAgent() as audio_capture_instance:
-            # __enter__ is called here. It should set up self.stream.
-            # The instance returned by __enter__ is audio_capture_instance.
-            if audio_capture_instance is None:
-                logger.critical("Failed to initialize StreamingAudioCapture. Exiting main loop.")
-            else:
-                logger.info("Context manager initialized. Starting run() loop...")
-                try:
-                    audio_capture_instance.run()
-                except Exception as e:
-                    logger.critical(f"run() loop exited with error: {e}", exc_info=True)
-
-            # Safeguard: if run() returns for any reason, keep process alive to satisfy launcher expectations
-            logger.warning("run() has exited; entering idle loop to keep process alive as a safeguard.")
-            import time as _time_idle
-import psutil
-from datetime import datetime
-            while True:
-                _time_idle.sleep(10)
-        # __exit__ is automatically called here, upon exiting the 'with' block (normally or via exception)
+        agent = StreamingAudioCaptureAgent()
+        agent.run()
     except KeyboardInterrupt:
-        logger.info("Streaming Audio Capture stopped by user (KeyboardInterrupt in main). Graceful shutdown should occur via __exit__.")
-        # if audio_capture_instance: audio_capture_instance.running = False # __exit__ should handle this
-    except RuntimeError as r_err:
-        logger.critical(f"RuntimeError in main execution: {r_err}", exc_info=True)
+        print("Interrupted by user")
     except Exception as e:
-        logger.critical(f"Unhandled generic exception in main execution: {e}", exc_info=True)
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
-        logger.info("Streaming Audio Capture Module finished (main block).")
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
