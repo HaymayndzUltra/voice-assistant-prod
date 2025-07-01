@@ -1,26 +1,21 @@
-import sys
-import os
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
-
-from src.core.base_agent import BaseAgent
 """
 Emotion Engine Agent
 Manages and processes emotional states and responses
 """
 
+import sys
+import os
 import zmq
 import json
 import logging
 import threading
 import time
+import psutil
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.src.core.base_agent import BaseAgent
+
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -37,10 +32,15 @@ logger = logging.getLogger('EmotionEngine')
 class EmotionEngine(BaseAgent):
     def __init__(self):
         """Initialize the Emotion Engine (refactored for compliance)."""
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=self.config.get('name', 'EmotionEngine'),
+            port=self.config.getint('port', None)
+        )
+
         # All config values are loaded from _agent_args
-        # Use dict-style access for maximum compatibility
-        self.port = _agent_args.get('port')
-        self.pub_port = _agent_args.get('pub_port', self.port + 2)
+        self.pub_port = self.config.getint('pub_port', self.port + 2)
 
         # Initialize ZMQ in background
         self.initialization_status = {
@@ -48,9 +48,6 @@ class EmotionEngine(BaseAgent):
             "error": None,
             "progress": 0.0
         }
-
-        # Pass the entire _agent_args to the base class for compliance
-        super().__init__(_agent_args)
 
         # Initialize basic state
         self.current_emotional_state = {
@@ -94,12 +91,6 @@ class EmotionEngine(BaseAgent):
 
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
-
-        # Start health check thread
-        self.health_check_thread = threading.Thread(target=self._health_check_loop)
-        self.health_check_thread.daemon = True
-        self.health_check_thread.start()
-        logger.info(f"Health check thread started on port {self.port + 1}")
 
         logger.info(f"Emotion Engine basic initialization complete")
         
@@ -152,25 +143,13 @@ class EmotionEngine(BaseAgent):
                 time.sleep(5)  # Check every 5 seconds
             except Exception as e:
                 logger.error(f"Error in health check loop: {e}")
-                
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        return {
-            'status': 'success',
-            'uptime': time.time() - self.start_time,
-            'components': {
-                'emotion_detection': True,
-                'emotion_processing': True,
-                'emotion_broadcast': self.initialization_status["is_initialized"]
-            },
-            'current_emotional_state': self.current_emotional_state,
-            'initialization_status': self.initialization_status
-        }
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Override BaseAgent's health status to include EmotionEngine-specific info."""
-        base_status = super()._get_health_status()
-        base_status.update({
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': self.initialization_status["is_initialized"],
             'service': 'emotion_engine',
             'components': {
                 'emotion_detection': True,
@@ -178,9 +157,9 @@ class EmotionEngine(BaseAgent):
                 'emotion_broadcast': self.initialization_status["is_initialized"]
             },
             'current_emotional_state': self.current_emotional_state,
-            'initialization_status': self.initialization_status
-        })
-        return base_status
+            'initialization_status': self.initialization_status,
+            'uptime': time.time() - self.start_time
+        }
     
     def update_emotional_state(self, emotional_cues: Dict[str, Any]) -> Dict[str, Any]:
         """Update the current emotional state based on new cues.
@@ -304,7 +283,7 @@ class EmotionEngine(BaseAgent):
             return {'status': 'success', 'message': 'pong'}
             
         elif action == 'get_health':
-            return self.get_health_status()
+            return self._get_health_status()
             
         elif action == 'update_emotional_state':
             emotional_cues = request.get('emotional_cues', {})
@@ -335,73 +314,22 @@ class EmotionEngine(BaseAgent):
         if hasattr(self, 'init_thread') and self.init_thread.is_alive():
             self.init_thread.join(timeout=2)
 
-        if hasattr(self, 'health_check_thread') and self.health_check_thread.is_alive():
-            self.health_check_thread.join(timeout=2)
-
         super().cleanup()
         logger.info("Emotion Engine stopped")
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
 if __name__ == '__main__':
-    import argparse
-    import atexit
-    import signal
-import psutil
-from datetime import datetime
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=None)
-    args = parser.parse_args()
-    
-    agent = EmotionEngine()
-
-    def graceful_exit(*args):
-        agent.stop()
-        exit(0)
-
-    # Handle Ctrl+C and termination signals
-    signal.signal(signal.SIGINT, graceful_exit)
-    signal.signal(signal.SIGTERM, graceful_exit)
-
-    # Make sure cleanup runs on normal exit
-    atexit.register(graceful_exit)
-
+    # Standardized main execution block
+    agent = None
     try:
+        agent = EmotionEngine()
         agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.stop() 
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 
