@@ -1,11 +1,12 @@
-from src.core.base_agent import BaseAgent
 """
 Code Generator Agent
+------------------
 - Generates code based on natural language descriptions
 - Supports multiple programming languages
 - Integrates with the AutoGen framework
 - Uses local LLMs for code generation
 """
+
 import os
 import uuid
 import time
@@ -15,38 +16,24 @@ import logging
 import traceback
 import sys
 import gc
-# from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory (commented out for PC1)
 from typing import Dict, List, Optional, Any, Union, Tuple
 from pathlib import Path
 import tempfile
 import re
 import threading
-from utils.config_loader import parse_agent_args
+
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.env_loader import get_env
+
+# Parse command line arguments
 _agent_args = parse_agent_args()
 
-# Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
-
-# Import the GGUF Model Manager
-from agents.gguf_model_manager import get_instance as get_gguf_manager
-
-# Check for GGUF support
-try:
-    import llama_cpp
-    LLAMA_CPP_AVAILABLE = True
-except ImportError:
-    LLAMA_CPP_AVAILABLE = False
-    logger = logging.getLogger("CodeGeneratorAgent")
-    logger.warning("llama-cpp-python not installed. GGUF models will not be available.")
-
 # Configure logging
-log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "code_generator_agent.log"
+log_file = Path("logs/code_generator_agent.log")
 log_file.parent.mkdir(exist_ok=True)
-
 logging.basicConfig(
-    level=getattr(logging, log_level),
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file),
@@ -55,50 +42,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger("CodeGeneratorAgent")
 
-# Get ZMQ ports from config
-CODE_GENERATOR_PORT = config.get('zmq.code_generator_port', 5604)
-MODEL_MANAGER_PORT = config.get('zmq.model_manager_port', 5556)
-AUTOGEN_FRAMEWORK_PORT = config.get('zmq.autogen_framework_port', 5600)
-EXECUTOR_PORT = config.get('zmq.executor_port', 5613)
-
 MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = {}
 
 class CodeGeneratorAgent(BaseAgent):
+    """Agent for generating code from natural language prompts."""
     def __init__(self):
-        self.port = int(_agent_args.get('port', 5708))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
-        # Initialize the Code Generator Agent
-        import logging
-        import json
-        import time
-        import zmq
-        import sys
-        import os
-        
-        # Configure logging
-        logging.basicConfig(
-            level=logging.DEBUG if self.debug else logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler("logs/code_generator.log"),
-                logging.StreamHandler(sys.stdout)
-            ]
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=getattr(self.config, 'name', 'CodeGeneratorAgent'),
+            port=getattr(self.config, 'port', 5708)
         )
-        self.logger = logging.getLogger("CodeGeneratorAgent")
-        
-        # Set up ZMQ socket
+        self.start_time = time.time()
+        self.port = getattr(self.config, 'port', 5708)
+        self.bind_address = getattr(self.config, 'bind_address', get_env('BIND_ADDRESS', '0.0.0.0'))
+        self.zmq_timeout = int(getattr(self.config, 'zmq_request_timeout', 5000))
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
-        
-        # Initialize model manager connection
-        self.model_manager_address = f"tcp://{_agent_args.get('model_manager_host', 'localhost')}:{_agent_args.get('model_manager_port', 5570)}"
-        
-        # VRAM management now handled by VRAMOptimizerAgent
-
+        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.logger = logger
+        self.gguf_manager = None
+        self.running = True
         # Initialize GGUF support if available
         try:
             from agents.gguf_model_manager import GGUFModelManager
@@ -107,68 +73,48 @@ class CodeGeneratorAgent(BaseAgent):
         except Exception as e:
             self.logger.warning(f"GGUF Model Manager not available: {e}")
             self.gguf_manager = None
-        
         self.logger.info(f"Code Generator Agent initialized on port {self.port}")
-    
-    def start(self):
-        """Start the agent and bind to the port"""
+
+    def run(self):
         try:
-            self.socket.bind(f"tcp://*:{self.port}")
+            self.socket.bind(f"tcp://{self.bind_address}:{self.port}")
             self.logger.info(f"Code Generator Agent listening on port {self.port}")
             self.handle_requests()
         except Exception as e:
             self.logger.error(f"Failed to start Code Generator Agent: {e}")
-    
+
     def handle_requests(self):
-        """Handle incoming requests"""
-        import json
-        import time
-        
         self.logger.info("Ready to handle requests...")
-        
-        while True:
+        while self.running:
             try:
-                # Wait for request
                 message = self.socket.recv_string()
                 self.logger.debug(f"Received message: {message[:100]}...")
-                
-                # Parse request
                 request = json.loads(message)
                 action = request.get('action')
-                
-                # Default response
                 response = {"status": "error", "error": "Unknown action"}
-                
                 self.logger.info(f"Handling action: {action}")
-                
-                # Handle different actions
                 if action == 'ping':
                     response = {"status": "success", "message": "pong", "timestamp": time.time()}
-                
                 elif action == 'health_check':
-                    response = {"status": "healthy", "service": "CodeGeneratorAgent"}
-                
+                    response = self._get_health_status()
                 elif action == 'load_gguf_model':
                     model_id = request.get('model_id')
                     if not model_id:
                         response = {"status": "error", "error": "Missing model_id parameter"}
                     else:
                         response = self.load_gguf_model(model_id)
-                
                 elif action == 'unload_gguf_model':
                     model_id = request.get('model_id')
                     if not model_id:
                         response = {"status": "error", "error": "Missing model_id parameter"}
                     else:
                         response = self.unload_gguf_model(model_id)
-                
                 elif action == 'generate_with_gguf':
                     model_id = request.get('model_id')
                     prompt = request.get('prompt')
                     system_prompt = request.get('system_prompt')
                     max_tokens = request.get('max_tokens', 1024)
                     temperature = request.get('temperature', 0.7)
-                    
                     if not model_id or not prompt:
                         response = {"status": "error", "error": "Missing required parameters"}
                     else:
@@ -179,23 +125,16 @@ class CodeGeneratorAgent(BaseAgent):
                             max_tokens=max_tokens,
                             temperature=temperature
                         )
-                
                 elif action == 'get_gguf_status':
-                    # Get status of all GGUF models
                     if self.gguf_manager:
                         try:
                             models = self.gguf_manager.list_models()
                             status = {}
                             for model in models:
                                 model_id = model.get('model_id')
-                                # Map 'loaded' boolean to 'loaded'/'unloaded' status string
-                                if model.get('loaded', False):
-                                    status[model_id] = 'loaded'
-                                else:
-                                    status[model_id] = 'unloaded'
-                                
+                                status[model_id] = 'loaded' if model.get('loaded', False) else 'unloaded'
                             response = {
-                                "status": "success", 
+                                "status": "success",
                                 "models": status,
                                 "timestamp": time.time()
                             }
@@ -204,18 +143,16 @@ class CodeGeneratorAgent(BaseAgent):
                             response = {"status": "error", "error": str(e)}
                     else:
                         response = {
-                            "status": "error", 
+                            "status": "error",
                             "error": "GGUF manager not available",
                             "timestamp": time.time()
                         }
-                
                 elif action == 'list_gguf_models':
-                    # List all available GGUF models
                     if self.gguf_manager:
                         try:
                             models = self.gguf_manager.list_models()
                             response = {
-                                "status": "success", 
+                                "status": "success",
                                 "models": models,
                                 "timestamp": time.time()
                             }
@@ -224,44 +161,32 @@ class CodeGeneratorAgent(BaseAgent):
                             response = {"status": "error", "error": str(e)}
                     else:
                         response = {
-                            "status": "error", 
+                            "status": "error",
                             "error": "GGUF manager not available",
                             "timestamp": time.time()
                         }
-                
                 elif action == 'generate':
-                    # Generate code with Ollama model
                     model = request.get('model')
                     prompt = request.get('prompt')
                     request_id = request.get('request_id', f"gen_{int(time.time())}")
-                    
                     self.logger.info(f"Ollama generation request (ID: {request_id}): model={model}, prompt_len={len(prompt) if prompt else 0}")
-                    
                     if not model or not prompt:
                         response = {"status": "error", "error": "Missing model or prompt parameter"}
                     else:
                         try:
-                            # Call Ollama API to generate code
                             import requests
                             ollama_url = "http://localhost:11434/api/generate"
-                            
                             ollama_request = {
                                 "model": model,
                                 "prompt": prompt,
-                                "stream": False
                             }
-                            
                             self.logger.info(f"Sending request to Ollama API: {model}")
                             ollama_response = requests.post(ollama_url, json=ollama_request)
-                            
                             if ollama_response.status_code == 200:
                                 result = ollama_response.json()
                                 generated_text = result.get('response', '')
-                                
-                                # Extract code blocks if present
                                 code_blocks = re.findall(r'```(?:\w+)?\n([\s\S]*?)```', generated_text)
                                 code = code_blocks[0] if code_blocks else generated_text
-                                
                                 response = {
                                     "status": "success",
                                     "code": code,
@@ -278,22 +203,17 @@ class CodeGeneratorAgent(BaseAgent):
                         except Exception as e:
                             self.logger.error(f"Error generating with Ollama: {e}")
                             response = {"status": "error", "error": f"Error: {str(e)}"}
-                
                 elif action == 'generate_code':
-                    # Generate code based on the description
                     description = request.get('description', '')
                     language = request.get('language')
                     use_voting = request.get("use_voting", False)
                     save_to_file = request.get("save_to_file", True)
-                    model_id = request.get('model_id')  # Optional specific GGUF model to load
+                    model_id = request.get('model_id')
                     request_id = request.get('request_id', f"gen_{int(time.time())}")
-                    
                     self.logger.info(f"Code generation request (ID: {request_id}): desc len={len(description)}, lang={language}, model_id={model_id}")
-                    
                     if not description:
                         response = {"status": "error", "error": "Missing description parameter"}
                     else:
-                        # Forward to model manager
                         response = self.forward_to_model_manager({
                             "request_type": "generate_code",
                             "description": description,
@@ -303,70 +223,50 @@ class CodeGeneratorAgent(BaseAgent):
                             "model_id": model_id,
                             "request_id": request_id
                         })
-                
-                # Send response
                 self.logger.debug(f"Sending response: {response}")
                 self.socket.send_string(json.dumps(response))
-                
             except Exception as e:
                 self.logger.error(f"Error handling request: {e}")
                 try:
-                    # Try to send error response
                     self.socket.send_string(json.dumps({"status": "error", "error": str(e)}))
                 except:
                     pass
-    
+
     def load_gguf_model(self, model_id):
-        """Load a GGUF model"""
         if not self.gguf_manager:
             return {"status": "error", "error": "GGUF manager not available"}
-        
         try:
             result = self.gguf_manager.load_model(model_id)
             return result
         except Exception as e:
             self.logger.error(f"Error loading GGUF model {model_id}: {e}")
             return {"status": "error", "error": str(e)}
-    
-    # Model unloading now handled by VRAMOptimizerAgent and ModelManagerAgent
 
     def unload_gguf_model(self, model_id):
-        """Unload a GGUF model"""
         if not self.gguf_manager:
             return {"status": "error", "error": "GGUF manager not available"}
-        
         try:
             result = self.gguf_manager.unload_model(model_id)
             return result
         except Exception as e:
             self.logger.error(f"Error unloading GGUF model {model_id}: {e}")
             return {"status": "error", "error": str(e)}
-    
+
     def generate_with_gguf(self, model_id, prompt, system_prompt=None, max_tokens=1024, temperature=0.7):
-        """Generate text with a GGUF model"""
         if not self.gguf_manager:
             return {"status": "error", "error": "GGUF manager not available"}
-        
         try:
-            # Inform the VRAM manager that this model is being used
             self._update_model_usage(model_id)
-            
-            # Check if model is loaded
             models = self.gguf_manager.list_models()
             model_loaded = False
-            
             for model in models:
                 if model.get('model_id') == model_id and model.get('loaded', False):
                     model_loaded = True
                     break
-            
-            # Load model if not loaded
             if not model_loaded:
                 load_success = self.gguf_manager.load_model(model_id)
                 if not load_success:
                     return {"status": "error", "error": f"Failed to load model {model_id}"}
-            
-            # Generate text
             result = self.gguf_manager.generate_text(
                 model_id=model_id,
                 prompt=prompt,
@@ -374,36 +274,28 @@ class CodeGeneratorAgent(BaseAgent):
                 max_tokens=max_tokens,
                 temperature=temperature
             )
-            
             return result
         except Exception as e:
             self.logger.error(f"Error generating with GGUF model {model_id}: {e}")
             return {"status": "error", "error": str(e)}
-    
+
     def forward_to_model_manager(self, request):
-        """Forward a request to the Model Manager Agent"""
         import zmq
-import psutil
-from datetime import datetime
-        
+        import psutil
+        from datetime import datetime
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
-        socket.setsockopt(zmq.RCVTIMEO, 60000)  # 60 second timeout
-        
+        socket.setsockopt(zmq.RCVTIMEO, 60000)
         try:
             self.logger.info(f"Connecting to Model Manager at {self.model_manager_address}")
-            # Connect to task router instead of model manager
             task_router_address = self.model_manager_address.replace("5556", "8570")
             socket.connect(task_router_address)
-            
             self.logger.info(f"Forwarding request to Model Manager: {request}")
             socket.send_string(json.dumps(request))
-            
             self.logger.info("Waiting for response from Model Manager...")
             response_str = socket.recv_string()
             response = json.loads(response_str)
-            
             self.logger.info(f"Received response from Model Manager: {response}")
             return response
         except Exception as e:
@@ -413,39 +305,45 @@ from datetime import datetime
             socket.close()
             context.term()
 
-    def get_model(self, model_id):
-        now = time.time()
-        # Unload idle models
-        for mid, last_used in list(model_last_used.items()):
-            if now - last_used > MODEL_IDLE_TIMEOUT:
-                self.unload_gguf_model(mid)
-                del model_last_used[mid]
-        # Lazy load
-        if model_id not in model_last_used:
-            self.load_gguf_model(model_id)
-        model_last_used[model_id] = now
-        return True
-
-
-    def health_check(self):
-        """Health check endpoint for the agent"""
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Overrides the base method to add agent-specific health metrics."""
         return {
-            "status": "healthy",
-            "service": "CodeGeneratorAgent",
-            "timestamp": time.time()
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'code_generator',
+            'components': {
+                'gguf_manager': self.gguf_manager is not None,
+                'socket_bound': hasattr(self, 'socket'),
+            },
+            'status_detail': 'active',
+            'uptime': time.time() - self.start_time
         }
-    
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
 
-# Run the agent if executed directly
+    def cleanup(self):
+        """Gracefully shutdown the agent"""
+        self.running = False
+        if hasattr(self, 'socket'):
+            self.socket.close()
+        if hasattr(self, 'context'):
+            self.context.term()
+        super().cleanup()
+        self.logger.info("CodeGeneratorAgent cleanup complete")
+
+# Example usage
 if __name__ == "__main__":
-    agent = CodeGeneratorAgent()
-    agent.run()
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = CodeGeneratorAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

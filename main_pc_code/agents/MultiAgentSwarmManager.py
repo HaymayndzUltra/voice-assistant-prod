@@ -1,4 +1,13 @@
-from src.core.base_agent import BaseAgent
+"""
+Multi-Agent Swarm Manager
+------------------
+Manages a swarm of specialized agents to accomplish complex tasks:
+- Decomposes high-level goals into specific tasks
+- Coordinates execution across multiple agents
+- Synthesizes results from different agents
+- Handles task prioritization and scheduling
+"""
+
 import zmq
 import json
 import logging
@@ -10,11 +19,14 @@ import threading
 from queue import Queue
 import asyncio
 import traceback
-from utils.config_loader import parse_agent_args
-from utils.service_discovery_client import discover_service, register_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+
+# Parse command line arguments
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -29,11 +41,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ZMQ Configuration
-SWARM_MANAGER_PORT = int(getattr(_agent_args, 'port', 5645))  # Main port for SwarmManager
+SWARM_MANAGER_PORT = 5645  # Main port for SwarmManager
+if hasattr(_agent_args, 'port'):
+    SWARM_MANAGER_PORT = int(_agent_args.port)
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
+BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
@@ -87,11 +101,22 @@ class SwarmTask:
         }
 
 class MultiAgentSwarmManager(BaseAgent):
+    """Agent for managing and coordinating a swarm of specialized agents."""
+    
     def __init__(self):
-        self.port = int(_agent_args.get('port', 5701))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+        """Initialize the multi-agent swarm manager."""
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=getattr(self.config, 'name', 'MultiAgentSwarmManager'),
+            port=getattr(self.config, 'port', SWARM_MANAGER_PORT)
+        )
+        
+        # Initialize state
+        self.start_time = time.time()
+        self.port = SWARM_MANAGER_PORT
+        self.bind_address = get_env('BIND_ADDRESS', '0.0.0.0')
+        self.zmq_timeout = int(getattr(self.config, 'zmq_request_timeout', 5000))
         self.context = zmq.Context()
         
         # REP socket for handling requests
@@ -147,8 +172,10 @@ class MultiAgentSwarmManager(BaseAgent):
         self.discovery_thread.daemon = True
         self.discovery_thread.start()
         
-        # Track uptime
-        self.start_time = time.time()
+        # Track metrics for health status
+        self.processed_tasks = 0
+        self.active_tasks = 0
+        self.failed_tasks = 0
         
         logger.info("Multi-Agent Swarm Manager initialized")
     
@@ -350,8 +377,6 @@ class MultiAgentSwarmManager(BaseAgent):
                     
                     # Extract JSON array from the result
                     import re
-import psutil
-from datetime import datetime
                     json_match = re.search(r'\[.*\]', result, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
@@ -769,7 +794,6 @@ from datetime import datetime
         
         logger.info("Multi-Agent Swarm Manager stopped successfully")
 
-
     def health_check(self):
         '''
         Performs a health check on the agent, returning a dictionary with its status.
@@ -803,19 +827,61 @@ from datetime import datetime
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Overrides the base method to add agent-specific health metrics."""
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'multi_agent_swarm_manager',
+            'components': {
+                'coordinator_connected': self.coordinator_socket is not None,
+                'autogen_connected': self.autogen_socket is not None,
+                'task_processor': hasattr(self, 'processor_thread') and self.processor_thread.is_alive(),
+                'agent_discovery': hasattr(self, 'discovery_thread') and self.discovery_thread.is_alive()
+            },
+            'status_detail': 'active',
+            'processed_tasks': getattr(self, 'processed_tasks', 0),
+            'active_tasks': len(self.tasks) if hasattr(self, 'tasks') else 0,
+            'failed_tasks': getattr(self, 'failed_tasks', 0),
+            'available_agents': len(self.available_agents) if hasattr(self, 'available_agents') else 0,
+            'uptime': time.time() - self.start_time
         }
-        return {"status": status, "details": details}
 
-if __name__ == '__main__':
-    agent = MultiAgentSwarmManager()
+    def cleanup(self):
+        """Gracefully shutdown the agent"""
+        logger.info("Cleaning up MultiAgentSwarmManager")
+        
+        # Close sockets
+        if hasattr(self, 'socket'):
+            self.socket.close()
+        if hasattr(self, 'coordinator_socket'):
+            self.coordinator_socket.close()
+        if hasattr(self, 'autogen_socket'):
+            self.autogen_socket.close()
+            
+        # Clean up ZMQ context
+        if hasattr(self, 'context'):
+            self.context.term()
+            
+        # Call parent cleanup
+        super().cleanup()
+        logger.info("MultiAgentSwarmManager cleanup complete")
+
+# Example usage
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
+        agent = MultiAgentSwarmManager()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop()
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
