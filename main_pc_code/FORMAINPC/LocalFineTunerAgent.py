@@ -33,18 +33,17 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import common utilities if available
-try:
-    from common_utils.zmq_helper import create_socket
 import psutil
 from datetime import datetime
 from main_pc_code.utils.config_parser import parse_agent_args
+
 _agent_args = parse_agent_args()
 
+try:
+    from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False
-
-
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -82,13 +81,11 @@ class TuningJob:
     end_time: Optional[datetime] = None
     error: Optional[str] = None
 
-def __init__(self, port: int = None, name: str = None, **kwargs):
-    agent_port = _agent_args.get('port', 5000) if port is None else port
-    agent_name = _agent_args.get('name', 'LocalFineTunerAgent') if name is None else name
-    super().__init__(port=agent_port, name=agent_name)
-    def __init__(self, port: int = 5645):
-        # Call BaseAgent's __init__ first
-        super().__init__(name="LocalFineTunerAgent", port=port)
+class LocalFineTunerAgent(BaseAgent):
+    def __init__(self, port: int = None, name: str = None, **kwargs):
+        agent_port = _agent_args.get('port', 5000) if port is None else port
+        agent_name = _agent_args.get('name', 'LocalFineTunerAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
         # ZMQ setup
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -758,12 +755,18 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
             }
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Local Fine Tuner Agent")
-    parser.add_argument("--port", type=int, default=5645, help="Port to listen on")
-    args = parser.parse_args()
-
-    agent = LocalFineTunerAgent(args.port)
+    # Standardized main execution block
+    agent = None
     try:
+        agent = LocalFineTunerAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 
