@@ -25,12 +25,18 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import psutil
 from datetime import datetime
 from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+
+# Step 1: ADD Standard Config Parser
+_agent_args = parse_agent_args()
 
 # Timeout for ZeroMQ send/recv operations (milliseconds)
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+# Step 2: REMOVE Old Config Logic
 
 # Configuration settings - use hardcoded defaults for simplicity
 LOG_LEVEL = 'INFO'
@@ -81,55 +87,12 @@ MAX_BATCH_SIZE = 16
 ENABLE_DYNAMIC_QUANTIZATION = True
 TENSORRT_ENABLED = False  # Placeholder for future TensorRT integration
 
-def __init__(self, port: int = None, name: str = None, **kwargs):
-    agent_port = _agent_args.get('port', 5000) if port is None else port
-    agent_name = _agent_args.get('name', 'NLLBTranslationAdapter') if name is None else name
-    super().__init__(port=agent_port, name=agent_name)
-    def __init__(self):
-        self.default_batch_size = DEFAULT_BATCH_SIZE
-        self.max_batch_size = MAX_BATCH_SIZE
-        self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
-
-    def get_system_load(self):
-        cpu = psutil.cpu_percent()
-        mem = psutil.virtual_memory().percent
-        try:
-            import torch
-from main_pc_code.utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
-
-            gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
-        except Exception:
-            gpu = 0
-        return cpu, mem, gpu
-
-    def get_batch_size(self):
-        cpu, mem, gpu = self.get_system_load()
-        if max(cpu, mem, gpu) > 80:
-            return max(1, self.default_batch_size // 2)
-        elif max(cpu, mem, gpu) < 40:
-            return min(self.max_batch_size, self.default_batch_size * 2)
-        else:
-            return self.default_batch_size
-
-    def get_quantization(self):
-        if not self.enable_dynamic_quantization:
-            return 'float16'
-        cpu, mem, gpu = self.get_system_load()
-        if max(cpu, mem, gpu) > 80:
-            return 'int8'
-        else:
-            return 'float16'
-
-    def use_tensorrt(self):
-        return TENSORRT_ENABLED
-
 class NLLBTranslationAdapter(BaseAgent):
     """Service for NLLB translation model with self-managed on-demand loading/unloading"""
     
     def __init__(self):
         # Call BaseAgent's __init__ first
-        super().__init__(name="NLLBTranslationAdapter", port=CONFIG_ZMQ_PORT)
+        super().__init__()
         
         # Initialize logger
         self.logger = logging.getLogger("NLLBTranslationAdapter")
@@ -141,8 +104,8 @@ class NLLBTranslationAdapter(BaseAgent):
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.service_port = CONFIG_ZMQ_PORT
-        self.bind_address = CONFIG_ZMQ_BIND_ADDRESS
+        self.service_port = _agent_args.getint('nllb_adapter.port', 5581)
+        self.bind_address = _agent_args.get('network.bind_address', '0.0.0.0')
 
         # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
         
@@ -173,11 +136,11 @@ class NLLBTranslationAdapter(BaseAgent):
         self.tokenizer = None
         
         # Model configuration
-        self.model_name = CONFIG_MODEL_PATH_OR_NAME
-        if CONFIG_DEVICE == 'auto':
+        self.model_name = _agent_args.get('models.nllb.model_path_or_name', 'facebook/nllb-200-distilled-600M')
+        if _agent_args.get('models.nllb.device', 'auto') == 'auto':
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
-            self.device = CONFIG_DEVICE
+            self.device = _agent_args.get('models.nllb.device', 'cpu')
         
         # Update health status with device info
         self.health_status = {
@@ -192,7 +155,7 @@ class NLLBTranslationAdapter(BaseAgent):
         # Initialize other attributes
         self.model_loaded = False
         self.last_request_time = time.time()
-        self.service_idle_timeout_seconds = CONFIG_IDLE_TIMEOUT
+        self.service_idle_timeout_seconds = _agent_args.getint('models.nllb.idle_timeout_seconds', 3600)
         self.running = True
         
         # Initialize language support
@@ -553,30 +516,18 @@ class NLLBTranslationAdapter(BaseAgent):
         self.logger.info("Cleanup completed")
 
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
-        # Create necessary directories
-        log_file_path = LOGS_DIR / "nllb_translation_adapter.log"
-        os.makedirs(LOGS_DIR, exist_ok=True)
-        
-        # Configure logging
-        logging.basicConfig(
-            level=getattr(logging, LOG_LEVEL),
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file_path),
-                logging.StreamHandler()
-            ]
-        )
-        logger = logging.getLogger("NLLBTranslationAdapter")
-        
-        logger.info(f"Configuration: Port={CONFIG_ZMQ_PORT}, Bind={CONFIG_ZMQ_BIND_ADDRESS}, Model={CONFIG_MODEL_PATH_OR_NAME}, Device={CONFIG_DEVICE}, IdleTimeout={CONFIG_IDLE_TIMEOUT}")
-        
-        # Start the service
-        service = NLLBTranslationAdapter()
-        service.run()
+        agent = NLLBTranslationAdapter()
+        agent.run()
     except KeyboardInterrupt:
-        logger.info("Service interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.error(f"Error starting service: {e}")
-        logger.error(traceback.format_exc())
-        sys.exit(1)
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
