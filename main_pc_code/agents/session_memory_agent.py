@@ -1,4 +1,3 @@
-from src.core.base_agent import BaseAgent
 """
 Session Memory Agent
 ------------------
@@ -18,19 +17,19 @@ import os
 import sys
 import sqlite3
 import uuid
+import psutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
-from utils.config_loader import parse_agent_args
+
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # Import the MemoryClient for new orchestrator
 try:
-    from src.memory.memory_client import MemoryClient
+    from main_pc_code.src.memory.memory_client import MemoryClient
 except Exception as import_error:
-    import logging, uuid, time
-import psutil
-from datetime import datetime
     logging.warning(f"[SessionMemoryAgent] Falling back to stub MemoryClient due to import error: {import_error}")
     class MemoryClient:  # type: ignore
         """Lightweight stub when full MemoryClient cannot be imported."""
@@ -50,6 +49,9 @@ from datetime import datetime
         def batch_read(self, memory_type, limit=50, sort_field="created_at", sort_order="desc"):
             return {"status": "success", "data": {"memories": []}}
 
+# Parse command line arguments
+_agent_args = parse_agent_args()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -64,6 +66,7 @@ logger = logging.getLogger(__name__)
 # ZMQ Configuration
 ZMQ_MEMORY_PORT = 5574  # Port for session memory requests
 ZMQ_HEALTH_PORT = 6583  # Health status
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Memory settings
 MAX_CONTEXT_TOKENS = 2000  # Maximum tokens for context
@@ -71,12 +74,20 @@ MAX_SESSIONS = 100  # Maximum number of active sessions
 SESSION_TIMEOUT = 3600  # Session timeout in seconds (1 hour)
 DB_PATH = "data/session_memory.db"  # SQLite database path
 
-_agent_args = parse_agent_args()
-
 class SessionMemoryAgent(BaseAgent):
+    """Agent for handling session memory and context management."""
+    
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+        """Initialize the session memory agent."""
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=getattr(self.config, 'name', 'SessionMemoryAgent'),
+            port=getattr(self.config, 'port', None)
+        )
+        
+        # Initialize state
+        self.start_time = time.time()
         self.health_port = ZMQ_HEALTH_PORT
         self.running = True
         self.initialization_status = {
@@ -86,6 +97,10 @@ class SessionMemoryAgent(BaseAgent):
             "components": {"core": False}
         }
         self.sessions = {}
+        self.sessions_managed = 0
+        self.processed_items = 0
+        
+        # Initialize threads
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
         logger.info("SessionMemoryAgent basic init complete, async init started")
@@ -204,6 +219,7 @@ class SessionMemoryAgent(BaseAgent):
                 "interactions": []
             }
             
+            self.sessions_managed += 1
             logger.info(f"Created new session {session_id} for user {user_id}")
             return session_id
         except Exception as e:
@@ -326,6 +342,7 @@ class SessionMemoryAgent(BaseAgent):
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"PERF_METRIC: [SessionMemoryAgent] - [DatabaseWrite] - Duration: {duration_ms:.2f}ms")
             
+            self.processed_items += 1
             return True
         except Exception as e:
             logger.error(f"Error adding interaction: {str(e)}")
@@ -652,7 +669,12 @@ class SessionMemoryAgent(BaseAgent):
             time.sleep(5)
     
     def run(self):
+        """Run the session memory agent."""
         logger.info("Starting SessionMemoryAgent main loop")
+        
+        # Call parent's run method to ensure health check thread works
+        super().run()
+        
         while self.running:
             try:
                 if hasattr(self, 'socket'):
@@ -707,56 +729,63 @@ class SessionMemoryAgent(BaseAgent):
         
         logger.info("Session memory agent stopped")
 
-    def _get_health_status(self):
+    def _get_health_status(self) -> Dict[str, Any]:
         """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "status_detail": "active",
-            "processed_items": getattr(self, 'processed_items', 0),
-            "sessions_managed": getattr(self, 'sessions_managed', 0)
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'session_memory',
+            'components': {
+                'database_connected': hasattr(self, 'conn'),
+                'health_broadcast': self.health_thread is not None and self.health_thread.is_alive() if self.health_thread else False
+            },
+            'status_detail': 'active',
+            'processed_items': self.processed_items,
+            'sessions_managed': self.sessions_managed,
+            'active_sessions': len(self.sessions),
+            'uptime': time.time() - self.start_time
         }
-        base_status.update(specific_metrics)
-        return base_status
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+    def cleanup(self):
+        """Gracefully shutdown the agent"""
+        logger.info("Cleaning up SessionMemoryAgent")
+        self.running = False
+        
+        # Close sockets
+        if hasattr(self, 'socket'):
+            self.socket.close()
+        if hasattr(self, 'health_pub_socket'):
+            self.health_pub_socket.close()
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+        # Close database connection
+        if hasattr(self, 'conn'):
+            self.conn.close()
+            
+        # Wait for threads to finish
+        if self.health_thread:
+            self.health_thread.join(timeout=1.0)
+        if self.cleanup_thread:
+            self.cleanup_thread.join(timeout=1.0)
+            
+        # Call parent cleanup
+        super().cleanup()
+        logger.info("SessionMemoryAgent cleanup complete")
 
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
+# Example usage
 if __name__ == "__main__":
-    agent = SessionMemoryAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        agent = SessionMemoryAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.stop()
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
