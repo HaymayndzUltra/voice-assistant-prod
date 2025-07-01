@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import threading
 from main_pc_code.utils.config_parser import parse_agent_args
+import psutil
+import traceback
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -33,69 +35,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ProactiveAgent(BaseAgent):
-    def __init__(self, port: int = None, name: str = None, **kwargs):
-        """Initialize the ProactiveAgent with ZMQ sockets."""
-        config_port = None
-        # Try to load from config if needed
-        try:
-            config_path = os.path.join('config', 'system_config.json')
-            if os.path.exists(config_path):
-                with open(config_path, 'r', encoding='utf-8-sig') as f:
-                    config = json.load(f)
-                if 'agents' in config and 'proactive_agent' in config['agents']:
-                    config_port = config['agents']['proactive_agent'].get('port')
-                elif 'agents' in config and 'memory_decay' in config['agents']:
-                    # fallback: use memory_decay port if that's the intended mapping
-                    config_port = config['agents']['memory_decay'].get('port')
-        except Exception as e:
-            logger.warning(f"Could not load port from config: {e}")
-        # Port selection logic
-        if port is not None:
-            self.port = port
-        elif hasattr(args, 'port') and args.port is not None:
-            self.port = int(args.port)
-        elif config_port is not None:
-            self.port = int(config_port)
-        else:
-            self.port = 5624  # fallback default
-            
-        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'ProactiveAgent') if name is None else name
-        super().__init__(port=agent_port, name=agent_name)
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.port = self.config.getint('proactive_agent.port', 5624)
+        self.coordinator_address = self.config.get('dependencies.coordinator_address', 'tcp://localhost:26002')
+        self.suggestion_interval = self.config.getint('proactive_agent.suggestion_interval_seconds', 60)
         
         self.context = zmq.Context()
-        
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
-        
         # Store tasks and reminders
         self.tasks_file = "tasks.json"
         self.tasks = self._load_tasks()
-        
         # Initialize coordinator socket (will be set up in async initialization)
         self.coordinator_socket = None
-        
         # Start monitoring thread
         self.running = True
         self.start_time = time.time()
         self.monitor_thread = threading.Thread(target=self._monitor_tasks)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
-        
         logger.info(f"ProactiveAgent initialized on port {self.port}")
     
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
+        # Standard health check.
+        return {'status': 'ok', 'running': self.running}
     
     def _perform_initialization(self):
         """Initialize agent components asynchronously."""
@@ -356,19 +323,15 @@ class ProactiveAgent(BaseAgent):
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        # Replace 'ClassName' with the actual agent class from the file.
         agent = ProactiveAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        import traceback
-import psutil
-from datetime import datetime
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
