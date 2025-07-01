@@ -17,6 +17,7 @@ import time
 import threading
 from typing import Dict, Any
 from main_pc_code.src.core.base_agent import BaseAgent
+import argparse
 
 # Add project root to Python path for common_utils import
 import sys
@@ -28,14 +29,12 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
-import psutil
-from datetime import datetime
-from main_pc_code.utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
-
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False
+import psutil
+from main_pc_code.utils.config_parser import parse_agent_args
+_agent_args = parse_agent_args()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -66,14 +65,11 @@ class ParameterConfig:
     description: str
     metadata: Optional[Dict] = None
 
-def __init__(self, port: int = None, name: str = None, **kwargs):
-    agent_port = _agent_args.get('port', 5000) if port is None else port
-    agent_name = _agent_args.get('name', 'LearningAdjusterAgent') if name is None else name
-    super().__init__(port=agent_port, name=agent_name)
+class LearningAdjusterAgent(BaseAgent):
     def __init__(self, port: int = 5643):
         """Initialize the Learning Adjuster Agent."""
         # Call BaseAgent's __init__ first
-        super().__init__(name="LearningAdjusterAgent", port=port)
+        super().__init__()
         
         # ZMQ setup
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -521,12 +517,18 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
             }
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Learning Adjuster Agent")
-    parser.add_argument("--port", type=int, default=5643, help="Port to bind to")
-    args = parser.parse_args()
-    
-    agent = LearningAdjusterAgent(port=args.port)
+    # Standardized main execution block
+    agent = None
     try:
+        agent = LearningAdjusterAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.cleanup() 
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 
