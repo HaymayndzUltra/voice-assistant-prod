@@ -24,7 +24,7 @@ from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_clien
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Remove argparse and use dynamic argument parser
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -43,26 +43,25 @@ BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
 
-def __init__(self, port: int = None, name: str = None, **kwargs):
-    agent_port = _agent_args.get('port', 5000) if port is None else port
-    agent_name = _agent_args.get('name', 'GoalOrchestratorAgent') if name is None else name
-    super().__init__(port=agent_port, name=agent_name)
-    def __init__(self, port: int = None, **kwargs):
+class GoalOrchestratorAgent(BaseAgent):
+    def __init__(self, **kwargs):
         """Initialize the GoalOrchestratorAgent with ZMQ sockets."""
-        # Use port from command line args if not provided
-        self.port = port if port is not None else getattr(args, 'port', 7000)
-        if self.port is None:
-            raise ValueError("Port must be provided either through constructor or command line arguments")
-            
-        super().__init__(port=self.port, name="GoalOrchestratorAgent")
+        super().__init__()
+        self.zmq_timeout = self.config.getint('goal_orchestrator.zmq_timeout_ms', 5000)
+        bind_address_ip = self.config.get('network.bind_address', '0.0.0.0')
+        self.fallback_ports = {
+            "UnifiedPlanningAgent": self.config.getint('dependencies.unified_planning_agent_port', 5625),
+            "PerformanceLoggerAgent": self.config.getint('dependencies.performance_logger_agent_port', 5632)
+        }
+        self.port = self.config.getint('goal_orchestrator.port', 7000)
         
         # Initialize ZMQ context
         self.context = zmq.Context()
         
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
@@ -70,7 +69,7 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
             logger.info("Secure ZMQ enabled for GoalOrchestratorAgent")
         
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        bind_address = f"tcp://{bind_address_ip}:{self.port}"
         self.socket.bind(bind_address)
         logger.info(f"GoalOrchestratorAgent socket bound to {bind_address}")
         
@@ -94,14 +93,8 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
         logger.info(f"GoalOrchestratorAgent initialized on port {self.port}")
     
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
+        # Basic health check.
+        return {'status': 'ok', 'active_goals': len(self.active_goals)}
     
     def _register_service(self):
         """Register this agent with the service discovery system"""
@@ -125,8 +118,8 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
         """Create a socket connected to a service using service discovery"""
         try:
             socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+            socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
@@ -140,14 +133,9 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
                 return socket
             else:
                 # Fallback to default ports if service discovery fails
-                fallback_ports = {
-                    "UnifiedPlanningAgent": 5625,
-                    "PerformanceLoggerAgent": 5632
-                }
-                
-                fallback_port = fallback_ports.get(service_name)
+                fallback_port = self.fallback_ports.get(service_name)
                 if fallback_port:
-                    fallback_address = f"tcp://localhost:{fallback_port}"
+                    fallback_address = f"tcp://{bind_address_ip}:{fallback_port}"
                     socket.connect(fallback_address)
                     logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
                     return socket
@@ -440,55 +428,16 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
         
         logger.info("GoalOrchestratorAgent stopped successfully")
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        # Replace 'ClassName' with the actual agent class from the file.
         agent = GoalOrchestratorAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-import psutil
-from datetime import datetime
-_agent_args = parse_agent_args()
-
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
