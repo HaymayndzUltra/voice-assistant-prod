@@ -16,6 +16,7 @@ import argparse
 import threading
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
+from src.core.base_agent import BaseAgent
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -36,27 +37,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("PredictiveLoader")
 
-class PredictiveLoader:
+class PredictiveLoader(BaseAgent):
     """Predictive Loader Agent for preloading models based on usage patterns"""
     
-    def __init__(self, port: int = 5617, task_router_port: int = 8571, host: str = "0.0.0.0"):
-        self.port = port
-        self.host = host
-        self.task_router_port = task_router_port
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.port = self.config.getint('predictive_loader.port', 5617)
+        self.task_router_port = self.config.getint('dependencies.task_router_port', 8571)
+        self.host = self.config.get('network.bind_address', '0.0.0.0')
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://{host}:{port}")
-        logger.info(f"Predictive Loader initialized on port {port}")
+        self.socket.bind(f"tcp://{self.host}:{self.port}")
+        logger.info(f"Predictive Loader initialized on port {self.port}")
         
         # Setup connection to Task Router
         self.task_router_socket = self.context.socket(zmq.REQ)
-        self.task_router_socket.connect(f"tcp://localhost:{task_router_port}")
-        logger.info(f"Connected to Task Router on port {task_router_port}")
+        self.task_router_socket.connect(f"tcp://localhost:{self.task_router_port}")
+        logger.info(f"Connected to Task Router on port {self.task_router_port}")
         
         # Setup health check socket
-        self.health_port = port + 1
+        self.health_port = self.port + 1
         self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://{host}:{self.health_port}")
+        self.health_socket.bind(f"tcp://{self.host}:{self.health_port}")
         logger.info(f"Health check endpoint initialized on port {self.health_port}")
         
         # Initialize model usage patterns
@@ -73,14 +75,8 @@ class PredictiveLoader:
         self._start_health_check()
     
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
+        # Standard health check.
+        return {'status': 'ok', 'running': self.running}
     
     def _start_health_check(self):
         """Start a separate thread for health checks"""
@@ -107,8 +103,8 @@ class PredictiveLoader:
                 logger.error(f"Health check error: {e}")
             time.sleep(0.1)
     
-    def start(self):
-        """Start the predictive loader service"""
+    def run(self):
+        """Run the predictive loader service (standard entrypoint)"""
         self.start_time = time.time()
         logger.info("Predictive Loader starting")
         
@@ -254,13 +250,8 @@ if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        # Instantiate the agent using _agent_args for configuration
-        agent = PredictiveLoader(
-            port=getattr(_agent_args, 'port', 5617),
-            task_router_port=getattr(_agent_args, 'task_router_port', 8571),
-            host=getattr(_agent_args, 'host', '0.0.0.0')
-        )
-        agent.start() # Use .start() as per original logic, assuming it's the main loop entry
+        agent = PredictiveLoader()
+        agent.run() # Use .run() for standardization
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
