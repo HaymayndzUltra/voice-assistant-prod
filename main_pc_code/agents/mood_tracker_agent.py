@@ -1,21 +1,22 @@
-# ✅ Path patch fix for src/ and utils/ imports
+"""
+MoodTrackerAgent
+Tracks and analyzes user mood over time based on emotional state updates
+"""
+
 import sys
 import os
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
-from src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
 import threading
 import time
+import psutil
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List, Optional, Tuple
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.src.core.base_agent import BaseAgent
+
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -31,19 +32,25 @@ logger = logging.getLogger(__name__)
 
 class MoodTrackerAgent(BaseAgent):
     def __init__(self):
-        # All config values are loaded from _agent_args
-        self.port = _agent_args.get('port')
-        self.emotion_engine_port = _agent_args.get('emotionengine_port')
-        self.history_size = _agent_args.get('history_size')
-        super().__init__(_agent_args)
         """Initialize the MoodTrackerAgent (refactored for compliance)."""
+        # Standard BaseAgent initialization at the beginning
+        self.config = _agent_args
+        super().__init__(
+            name=self.config.get('name', 'MoodTrackerAgent'),
+            port=self.config.getint('port', None)
+        )
+        
+        # All config values are loaded from _agent_args
+        self.emotion_engine_port = self.config.getint('emotionengine_port')
+        self.history_size = self.config.getint('history_size', 100)
+        
+        # Initialize running state
+        self.running = True
+        self.start_time = time.time()
         
         # SUB socket for subscribing to EmotionEngine broadcasts
         self.emotion_sub_socket = self.context.socket(zmq.SUB)
-        if isinstance(_agent_args, dict):
-            _host = _agent_args.get('host', 'localhost')
-        else:
-            _host = getattr(_agent_args, 'host', 'localhost')
+        _host = self.config.get('host', 'localhost')
         self.emotion_sub_socket.connect(f"tcp://{_host}:{self.emotion_engine_port}")
         self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
         
@@ -96,9 +103,12 @@ class MoodTrackerAgent(BaseAgent):
                     message = self.emotion_sub_socket.recv_json()
                     
                     # Check if this is an emotional state update
-                    if message.get('type') == 'emotional_state_update':
+                    if isinstance(message, dict) and message.get('type') == 'emotional_state_update':
                         emotional_state = message.get('data', {})
-                        self._update_mood(emotional_state)
+                        if isinstance(emotional_state, dict):
+                            self._update_mood(emotional_state)
+                        else:
+                            logger.warning(f"Received invalid emotional state data (not a dict): {emotional_state}")
                 
             except Exception as e:
                 logger.error(f"Error in emotion monitoring thread: {e}")
@@ -151,7 +161,10 @@ class MoodTrackerAgent(BaseAgent):
                     logger.debug(f"Received query: {message}")
                     
                     # Process request
-                    response = self._process_request(message)
+                    if isinstance(message, dict):
+                        response = self._process_request(message)
+                    else:
+                        response = {'status': 'error', 'message': 'Invalid request format, expected a dictionary'}
                     
                     # Send response
                     self.socket.send_json(response)
@@ -316,17 +329,32 @@ class MoodTrackerAgent(BaseAgent):
                 'average_intensity': 0.5
             }
     
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Override BaseAgent's health status to include MoodTrackerAgent-specific info."""
+        return {
+            'status': 'ok',
+            'ready': True,
+            'initialized': True,
+            'service': 'mood_tracker',
+            'components': {
+                'emotion_monitoring': self.emotion_thread.is_alive(),
+                'mood_history': len(self.mood_history) > 0
+            },
+            'current_mood': self.current_mood,
+            'uptime': time.time() - self.start_time
         }
-        return {"status": status, "details": details}
     
-    def shutdown(self):
+    def run(self):
+        """Run the main agent loop."""
+        logger.info("Starting MoodTrackerAgent main loop")
+        
+        # Call parent's run method to ensure health check thread works
+        super().run()
+        
+        # Start handling queries
+        self._handle_queries()
+
+    def cleanup(self):
         """Gracefully shutdown the agent"""
         logger.info("Shutting down MoodTrackerAgent")
         self.running = False
@@ -337,60 +365,19 @@ class MoodTrackerAgent(BaseAgent):
         super().cleanup()
         logger.info("MoodTrackerAgent shutdown complete")
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
 if __name__ == "__main__":
-    import argparse
-import psutil
-from datetime import datetime
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5704)
-    args = parser.parse_args()
-    agent = MoodTrackerAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        agent = MoodTrackerAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.shutdown()
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
