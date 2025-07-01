@@ -11,7 +11,9 @@ import time
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple, Union
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
+import psutil
+from datetime import datetime
 _agent_args = parse_agent_args()
 
 logger = logging.getLogger("FeedbackHandler")
@@ -48,8 +50,9 @@ FEEDBACK_STYLES = {
 class FeedbackHandler(BaseAgent):
     """Handles visual and voice feedback for command execution"""
     
-    def __init__(self, gui_port: int = 5578, voice_port: int = 5574, **kwargs):
-        super().__init__(port=gui_port, name="FeedbackHandler")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         """Initialize the feedback handler
         
         Args:
@@ -61,11 +64,11 @@ class FeedbackHandler(BaseAgent):
         # Socket for GUI feedback (visual)
         self.gui_socket = self.context.socket(zmq.PUB)
         try:
-            self.gui_socket.bind(f"tcp://*:{gui_port}")
+            self.gui_socket.bind(f"tcp://*:{self.port}")
         except zmq.ZMQError as e:
             if e.errno == zmq.EADDRINUSE:
-                gui_port = self.gui_socket.bind_to_random_port("tcp://*")
-                logger.warning(f"Port {gui_port} in use. Bound GUI socket to random port {gui_port}")
+                self.port = self.gui_socket.bind_to_random_port("tcp://*")
+                logger.warning(f"Port {self.port} in use. Bound GUI socket to random port {self.port}")
             else:
                 raise
         
@@ -349,3 +352,36 @@ class FeedbackHandler(BaseAgent):
         }
         base_status.update(specific_metrics)
         return base_status
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }

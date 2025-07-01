@@ -47,9 +47,12 @@ ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
+from main_pc_code.utils.config_parser import parse_agent_args
+
+# Parse agent arguments for standardized configuration
+_agent_args = parse_agent_args()
 
 # ZMQ Configuration
-ZMQ_PORT = 5615  # TinyLlama port
 ZMQ_BIND_ADDRESS = "0.0.0.0"  # Listen on all interfaces
 PC2_IP = "192.168.100.17"  # PC2's IP address
 MAIN_PC_IP = "192.168.100.16"  # Main PC's IP address
@@ -94,8 +97,6 @@ ENABLE_DYNAMIC_QUANTIZATION = True
 TENSORRT_ENABLED = False  # Placeholder for future TensorRT integration
 
 class ResourceManager:
-    """Manages system resources"""
-    
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.memory_threshold = 0.9  # 90% memory usage threshold
@@ -191,13 +192,11 @@ class ResourceManager:
 class TinyLlamaService(BaseAgent):
     """Enhanced TinyLlama Service with resource management"""
     
-    def __init__(self, port: int = None):
-        # Set default port if not provided
-        if port is None:
-            port = int(ZMQ_PORT)
-            
-        # Call BaseAgent initialization first
-        super().__init__(port=port, name="TinyLlamaService")
+    def __init__(self, port: int = None, name: str = None, **kwargs):
+        # Standardized port and name handling with fallback to 5615 for port
+        agent_port = getattr(_agent_args, 'port', 5615) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'TinyLlamaService') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
         
         logger.info("=" * 80)
         logger.info("Initializing Enhanced TinyLlama Service")
@@ -262,7 +261,7 @@ class TinyLlamaService(BaseAgent):
             
             # Import here to avoid loading transformers at startup
             from transformers import AutoModelForCausalLM, AutoTokenizer
-            
+
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             
@@ -459,10 +458,20 @@ class TinyLlamaService(BaseAgent):
         
         logger.info("TinyLlama Service cleanup completed")
 
-def main():
-    """Main entry point"""
-    service = TinyLlamaService()
-    service.run()
-
 if __name__ == "__main__":
-    main()
+    # Standardized main execution block
+    agent = None
+    try:
+        # Instantiate the agent. Its __init__ will now use _agent_args.
+        agent = TinyLlamaService()
+        agent.run() # Assuming a standard run() method exists
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

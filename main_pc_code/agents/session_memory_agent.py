@@ -22,12 +22,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
+from utils.config_loader import parse_agent_args
 
 # Import the MemoryClient for new orchestrator
 try:
     from src.memory.memory_client import MemoryClient
 except Exception as import_error:
     import logging, uuid, time
+import psutil
+from datetime import datetime
     logging.warning(f"[SessionMemoryAgent] Falling back to stub MemoryClient due to import error: {import_error}")
     class MemoryClient:  # type: ignore
         """Lightweight stub when full MemoryClient cannot be imported."""
@@ -46,8 +49,6 @@ except Exception as import_error:
             return {"status": "success"}
         def batch_read(self, memory_type, limit=50, sort_field="created_at", sort_order="desc"):
             return {"status": "success", "data": {"memories": []}}
-from utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -70,16 +71,12 @@ MAX_SESSIONS = 100  # Maximum number of active sessions
 SESSION_TIMEOUT = 3600  # Session timeout in seconds (1 hour)
 DB_PATH = "data/session_memory.db"  # SQLite database path
 
+_agent_args = parse_agent_args()
+
 class SessionMemoryAgent(BaseAgent):
-    def _get_default_port(self) -> int:
-        """Return default port for SessionMemoryAgent."""
-        return ZMQ_MEMORY_PORT
-    """Agent for maintaining context memory and session awareness."""
-    
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="SessionMemoryAgent")
-        self.port = port or ZMQ_MEMORY_PORT
-        # Define health broadcast port
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         self.health_port = ZMQ_HEALTH_PORT
         self.running = True
         self.initialization_status = {
@@ -88,27 +85,22 @@ class SessionMemoryAgent(BaseAgent):
             "progress": 0.0,
             "components": {"core": False}
         }
-        # Ensure sessions dict exists before any background thread starts
         self.sessions = {}
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
         logger.info("SessionMemoryAgent basic init complete, async init started")
         
-        # Initialize state
         self.sessions = {}  # Session ID -> session data
         self.health_thread = None
         self.cleanup_thread = None
         
-        # Initialize Memory Orchestrator client
         self.memory_client = MemoryClient()
         self.memory_client.set_agent_id("session_memory_agent")
         
-        # Initialize database for dual-write during migration
         self._init_database()
     
     def _perform_initialization(self):
         try:
-            # Initialize core components (sockets, threads, etc.)
             self._init_components()
             self.initialization_status["components"]["core"] = True
             self.initialization_status["progress"] = 1.0
@@ -121,13 +113,10 @@ class SessionMemoryAgent(BaseAgent):
 
     def _init_components(self):
         """Initialize core runtime components (runs in background thread)."""
-        # Start cleanup loop thread
         self.cleanup_thread = threading.Thread(target=self.cleanup_loop, daemon=True)
         self.cleanup_thread.start()
         logger.info("SessionMemoryAgent cleanup loop started")
-        # Initialize custom sockets for memory and health broadcast
         self._setup_sockets()
-        # Start health broadcast loop
         self.health_thread = threading.Thread(target=self.health_broadcast_loop, daemon=True)
         self.health_thread.start()
         logger.info("SessionMemoryAgent health broadcast loop started")
@@ -135,8 +124,6 @@ class SessionMemoryAgent(BaseAgent):
     def _setup_sockets(self):
         """Set up ZMQ sockets."""
         try:
-            # Main REP socket already created by BaseAgent; only create PUB health socket here.
-            # Create dedicated PUB socket for broadcast (separate from BaseAgent REP)
             if not hasattr(self, 'health_pub_socket'):
                 self.health_pub_socket = self.context.socket(zmq.PUB)
                 self.health_pub_socket.bind(f"tcp://*:{self.health_port}")
@@ -148,14 +135,11 @@ class SessionMemoryAgent(BaseAgent):
     def _init_database(self):
         """Initialize the SQLite database."""
         try:
-            # Create data directory if it doesn't exist
             os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
             
-            # Connect to database
             self.conn = sqlite3.connect(DB_PATH, check_same_thread=False)
             self.cursor = self.conn.cursor()
             
-            # Create tables if they don't exist
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id TEXT PRIMARY KEY,
@@ -189,20 +173,16 @@ class SessionMemoryAgent(BaseAgent):
         try:
             now = datetime.now().isoformat()
             
-            # Use Memory Orchestrator
             try:
-                # If we already have a session ID, set it for the client
                 if session_id:
                     self.memory_client.set_session_id(session_id)
                 
-                # Create session in orchestrator (will create a new one if no session_id)
                 response = self.memory_client.create_session(
                     user_id=user_id,
                     session_metadata=metadata or {},
                     session_type="conversation"
                 )
                 
-                # If no session_id was provided, get the one from the response
                 if not session_id and response.get("status") == "success":
                     session_id = response.get("data", {}).get("session_id")
                     self.memory_client.set_session_id(session_id)
@@ -210,14 +190,12 @@ class SessionMemoryAgent(BaseAgent):
                 logger.error(f"Error creating session in orchestrator: {str(orch_e)}")
                 # Continue with local storage as fallback
             
-            # DUAL-WRITE: Also insert into database during migration
             self.cursor.execute(
                 "INSERT INTO sessions VALUES (?, ?, ?, ?, ?)",
                 (session_id, user_id, now, now, json.dumps(metadata or {}))
             )
             self.conn.commit()
             
-            # Add to in-memory cache
             self.sessions[session_id] = {
                 "user_id": user_id,
                 "created_at": now,
@@ -234,13 +212,10 @@ class SessionMemoryAgent(BaseAgent):
     
     def _get_session(self, session_id):
         """Get a session by ID."""
-        # Check in-memory cache first
         if session_id in self.sessions:
-            # Update last active time
             now = datetime.now().isoformat()
             self.sessions[session_id]["last_active"] = now
             
-            # Update database
             self.cursor.execute(
                 "UPDATE sessions SET last_active = ? WHERE session_id = ?",
                 (now, session_id)
@@ -249,7 +224,6 @@ class SessionMemoryAgent(BaseAgent):
             
             return self.sessions[session_id]
         
-        # Try to load from database
         try:
             self.cursor.execute(
                 "SELECT user_id, created_at, last_active, metadata FROM sessions WHERE session_id = ?",
@@ -260,7 +234,6 @@ class SessionMemoryAgent(BaseAgent):
             if row:
                 user_id, created_at, last_active, metadata_json = row
                 
-                # Update last active time
                 now = datetime.now().isoformat()
                 self.cursor.execute(
                     "UPDATE sessions SET last_active = ? WHERE session_id = ?",
@@ -268,7 +241,6 @@ class SessionMemoryAgent(BaseAgent):
                 )
                 self.conn.commit()
                 
-                # Load interactions
                 self.cursor.execute(
                     "SELECT timestamp, role, content, metadata FROM interactions WHERE session_id = ? ORDER BY timestamp",
                     (session_id,)
@@ -283,7 +255,6 @@ class SessionMemoryAgent(BaseAgent):
                         "metadata": json.loads(interaction_metadata_json)
                     })
                 
-                # Add to in-memory cache
                 self.sessions[session_id] = {
                     "user_id": user_id,
                     "created_at": created_at,
@@ -302,24 +273,18 @@ class SessionMemoryAgent(BaseAgent):
     def _add_interaction(self, session_id, role, content, metadata=None):
         """Add an interaction to a session."""
         try:
-            # Start timing for performance metrics
             start_time = time.time()
             
-            # Validate session
             if session_id not in self.sessions:
                 session = self._get_session(session_id)
                 if not session:
                     raise ValueError(f"Session {session_id} not found")
             
-            # Get current time
             now = datetime.now().isoformat()
             
-            # Use Memory Orchestrator
             try:
-                # Ensure client has the correct session ID
                 self.memory_client.set_session_id(session_id)
                 
-                # Create memory in orchestrator
                 memory_content = {
                     "text": content,
                     "role": role,
@@ -344,14 +309,12 @@ class SessionMemoryAgent(BaseAgent):
                 logger.error(f"Error adding interaction to orchestrator: {str(orch_e)}")
                 # Continue with local storage as fallback
             
-            # DUAL-WRITE: Also insert into database during migration
             self.cursor.execute(
                 "INSERT INTO interactions (session_id, timestamp, role, content, metadata) VALUES (?, ?, ?, ?, ?)",
                 (session_id, now, role, content, json.dumps(metadata or {}))
             )
             self.conn.commit()
             
-            # Add to in-memory cache
             interaction = {
                 "timestamp": now,
                 "role": role,
@@ -360,7 +323,6 @@ class SessionMemoryAgent(BaseAgent):
             }
             self.sessions[session_id]["interactions"].append(interaction)
             
-            # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"PERF_METRIC: [SessionMemoryAgent] - [DatabaseWrite] - Duration: {duration_ms:.2f}ms")
             
@@ -372,18 +334,14 @@ class SessionMemoryAgent(BaseAgent):
     def _get_context(self, session_id, max_tokens=MAX_CONTEXT_TOKENS):
         """Get conversation context for a session."""
         try:
-            # Start timing for performance metrics
             start_time = time.time()
             
-            # Try to get context from the Memory Orchestrator first
             try:
-                # Ensure client has the correct session ID
                 self.memory_client.set_session_id(session_id)
                 
-                # Search for recent conversations in this session
                 response = self.memory_client.batch_read(
                     memory_type="conversation",
-                    limit=50,  # Get enough interactions to cover our token limit
+                    limit=50,
                     sort_field="created_at",
                     sort_order="desc"
                 )
@@ -391,14 +349,12 @@ class SessionMemoryAgent(BaseAgent):
                 if response.get("status") == "success":
                     memories = response.get("data", {}).get("memories", [])
                     
-                    # Transform to our expected format
                     context = []
                     token_count = 0
                     
                     for memory in memories:
                         content = memory.get("content", {})
                         if "text" in content and "role" in content:
-                            # Estimate tokens (rough approximation: 4 chars ~ 1 token)
                             interaction_tokens = len(content["text"]) // 4
                             
                             if token_count + interaction_tokens > max_tokens:
@@ -411,10 +367,8 @@ class SessionMemoryAgent(BaseAgent):
                             })
                             token_count += interaction_tokens
                     
-                    # Reverse to get chronological order (since we sorted desc)
                     context.reverse()
                     
-                    # If we got data from the orchestrator, return it
                     if context:
                         duration_ms = (time.time() - start_time) * 1000
                         logger.info(f"PERF_METRIC: [SessionMemoryAgent] - [OrchestratorRead] - Duration: {duration_ms:.2f}ms")
@@ -424,23 +378,17 @@ class SessionMemoryAgent(BaseAgent):
                 logger.error(f"Error getting context from orchestrator: {str(orch_e)}")
                 # Fall back to local storage
             
-            # FALLBACK: If orchestrator fails or returns no data, use local storage
-            
-            # Validate session
             if session_id not in self.sessions:
                 session = self._get_session(session_id)
                 if not session:
                     return []
             
-            # Get interactions from most recent to oldest
             interactions = list(reversed(self.sessions[session_id]["interactions"]))
             
-            # Simple token counting (approximate)
             context = []
             token_count = 0
             
             for interaction in interactions:
-                # Estimate tokens (rough approximation: 4 chars ~ 1 token)
                 interaction_tokens = len(interaction["content"]) // 4
                 
                 if token_count + interaction_tokens > max_tokens:
@@ -453,10 +401,8 @@ class SessionMemoryAgent(BaseAgent):
                 })
                 token_count += interaction_tokens
             
-            # Reverse back to chronological order
             context.reverse()
             
-            # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"PERF_METRIC: [SessionMemoryAgent] - [DatabaseRead] - Duration: {duration_ms:.2f}ms")
             
@@ -468,12 +414,9 @@ class SessionMemoryAgent(BaseAgent):
     def _clear_session(self, session_id):
         """Clear a session's interactions."""
         try:
-            # Try to clear interactions in Memory Orchestrator
             try:
-                # Ensure client has the correct session ID
                 self.memory_client.set_session_id(session_id)
                 
-                # Use bulk_delete to remove all memories for this session
                 response = self.memory_client.bulk_delete(
                     memory_type="conversation"
                 )
@@ -484,14 +427,12 @@ class SessionMemoryAgent(BaseAgent):
                 logger.error(f"Error clearing session in orchestrator: {str(orch_e)}")
                 # Continue with local storage as fallback
             
-            # DUAL-WRITE: Also clear from local database during migration
             self.cursor.execute(
                 "DELETE FROM interactions WHERE session_id = ?",
                 (session_id,)
             )
             self.conn.commit()
             
-            # Clear in-memory cache
             if session_id in self.sessions:
                 self.sessions[session_id]["interactions"] = []
             
@@ -503,12 +444,9 @@ class SessionMemoryAgent(BaseAgent):
     def _delete_session(self, session_id):
         """Delete a session."""
         try:
-            # Try to delete session in Memory Orchestrator
             try:
-                # Ensure client has the correct session ID
                 self.memory_client.set_session_id(session_id)
                 
-                # End the session in the orchestrator
                 response = self.memory_client._send_request(
                     "end_session",
                     {
@@ -521,7 +459,6 @@ class SessionMemoryAgent(BaseAgent):
                 if response.get("status") != "success":
                     logger.warning(f"Failed to end session in orchestrator: {response}")
                     
-                # Also delete all memories for this session
                 delete_response = self.memory_client.bulk_delete(memory_type="conversation")
                 if delete_response.get("status") != "success":
                     logger.warning(f"Failed to delete session memories in orchestrator: {delete_response}")
@@ -530,8 +467,6 @@ class SessionMemoryAgent(BaseAgent):
                 logger.error(f"Error deleting session in orchestrator: {str(orch_e)}")
                 # Continue with local storage as fallback
             
-            # DUAL-WRITE: Also delete from local database during migration
-            # Delete from database
             self.cursor.execute(
                 "DELETE FROM interactions WHERE session_id = ?",
                 (session_id,)
@@ -542,7 +477,6 @@ class SessionMemoryAgent(BaseAgent):
             )
             self.conn.commit()
             
-            # Remove from in-memory cache
             if session_id in self.sessions:
                 del self.sessions[session_id]
             
@@ -556,27 +490,22 @@ class SessionMemoryAgent(BaseAgent):
         try:
             now = datetime.now()
             
-            # Get expired sessions
             self.cursor.execute(
                 "SELECT session_id FROM sessions WHERE datetime(last_active) < datetime('now', '-1 hour')"
             )
             
             expired_sessions = [row[0] for row in self.cursor.fetchall()]
             
-            # Delete expired sessions
             for session_id in expired_sessions:
                 self._delete_session(session_id)
                 logger.info(f"Deleted expired session {session_id}")
             
-            # Limit number of sessions
             if len(self.sessions) > MAX_SESSIONS:
-                # Get oldest sessions
                 oldest_sessions = sorted(
                     self.sessions.items(),
                     key=lambda x: x[1]["last_active"]
                 )[:len(self.sessions) - MAX_SESSIONS]
                 
-                # Delete oldest sessions
                 for session_id, _ in oldest_sessions:
                     self._delete_session(session_id)
                     logger.info(f"Deleted oldest session {session_id}")
@@ -691,7 +620,6 @@ class SessionMemoryAgent(BaseAgent):
     def cleanup_loop(self):
         """Loop for cleaning up expired sessions."""
         while self.running:
-            # Ensure cursor exists before cleanup
             if not hasattr(self, 'cursor'):
                 time.sleep(1)
                 continue
@@ -700,14 +628,12 @@ class SessionMemoryAgent(BaseAgent):
             except Exception as e:
                 logger.error(f"Error in cleanup loop: {str(e)}")
             
-            # Sleep for a while
-            time.sleep(60)  # Check every minute
+            time.sleep(60)
     
     def health_broadcast_loop(self):
         """Loop for broadcasting health status."""
         while self.running:
             try:
-                # Prepare health status
                 status = {
                     "component": "session_memory_agent",
                     "status": "running",
@@ -718,13 +644,11 @@ class SessionMemoryAgent(BaseAgent):
                     }
                 }
                 
-                # Publish health status via PUB socket
                 self.health_pub_socket.send_json(status)
                 
             except Exception as e:
                 logger.error(f"Error broadcasting health status: {str(e)}")
             
-            # Sleep for a while
             time.sleep(5)
     
     def run(self):
@@ -767,17 +691,14 @@ class SessionMemoryAgent(BaseAgent):
         logger.info("Stopping session memory agent")
         self.running = False
         
-        # Close sockets
         if hasattr(self, 'socket'):
             self.socket.close()
         if hasattr(self, 'health_pub_socket'):
             self.health_pub_socket.close()
         
-        # Close database connection
         if hasattr(self, 'conn'):
             self.conn.close()
         
-        # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
         
@@ -797,9 +718,42 @@ class SessionMemoryAgent(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
-    # Ensure agent binds REP on 5574
-    agent = SessionMemoryAgent(port=ZMQ_MEMORY_PORT)
+    agent = SessionMemoryAgent()
     try:
         agent.run()
     except KeyboardInterrupt:

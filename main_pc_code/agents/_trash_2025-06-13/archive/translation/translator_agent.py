@@ -395,6 +395,8 @@ class TranslatorAgent(BaseAgent):
     def translate_command(self, text: str) -> str:
         """Translate Filipino command to English, with Taglish detection."""
         from agents.taglish_detector import detect_taglish
+import psutil
+from datetime import datetime
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[TranslatorAgent] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")
@@ -513,6 +515,40 @@ class TranslatorAgent(BaseAgent):
     def _llm_translation(self, text: str) -> str:
         """Use LLM for more complex translations"""
         prompt = f"""Translate the following Filipino command to English. 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 Keep it concise and focused on the command intent.
 Only return the translated command, nothing else.
 

@@ -11,7 +11,7 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Union
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -26,8 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger('LearningManager')
 
 class LearningManager(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="LearningManager")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         """Initialize the Learning Manager.
         
         Args:
@@ -36,10 +37,9 @@ class LearningManager(BaseAgent):
             knowledge_base_port: Port for the KnowledgeBase agent
             coordinator_port: Port for the CoordinatorAgent (for LLM access)
         """
-        self.port = port
-        self.memory_manager_port = memory_manager_port
-        self.knowledge_base_port = knowledge_base_port
-        self.coordinator_port = coordinator_port
+        self.memory_manager_port = _agent_args.get('memory_manager_port')
+        self.knowledge_base_port = _agent_args.get('knowledge_base_port')
+        self.coordinator_port = _agent_args.get('coordinator_port')
         
         # Initialize ZMQ context and sockets
         self.context = zmq.Context()
@@ -48,23 +48,23 @@ class LearningManager(BaseAgent):
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{port}")
+        self.socket.bind(f"tcp://*:{self.port}")
         
         # REQ sockets for connecting to other agents
         self.memory_manager_socket = self.context.socket(zmq.REQ)
         self.memory_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.memory_manager_socket.connect(f"tcp://{_agent_args.host}:{memory_manager_port}")
+        self.memory_manager_socket.connect(f"tcp://{_agent_args.host}:{self.memory_manager_port}")
         
         self.knowledge_base_socket = self.context.socket(zmq.REQ)
         self.knowledge_base_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.knowledge_base_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.knowledge_base_socket.connect(f"tcp://{_agent_args.host}:{knowledge_base_port}")
+        self.knowledge_base_socket.connect(f"tcp://{_agent_args.host}:{self.knowledge_base_port}")
         
         self.coordinator_socket = self.context.socket(zmq.REQ)
         self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.coordinator_socket.connect(f"tcp://{_agent_args.host}:{coordinator_port}")
+        self.coordinator_socket.connect(f"tcp://{_agent_args.host}:{self.coordinator_port}")
         
         # Initialize socket poller for timeouts
         self.poller = zmq.Poller()
@@ -83,10 +83,10 @@ class LearningManager(BaseAgent):
         self.health_check_thread.daemon = True
         self.health_check_thread.start()
         
-        logger.info(f"Learning Manager initialized on port {port}")
-        logger.info(f"Connected to MemoryManager on port {memory_manager_port}")
-        logger.info(f"Connected to KnowledgeBase on port {knowledge_base_port}")
-        logger.info(f"Connected to CoordinatorAgent on port {coordinator_port}")
+        logger.info(f"Learning Manager initialized on port {self.port}")
+        logger.info(f"Connected to MemoryManager on port {self.memory_manager_port}")
+        logger.info(f"Connected to KnowledgeBase on port {self.knowledge_base_port}")
+        logger.info(f"Connected to CoordinatorAgent on port {self.coordinator_port}")
         
         self.running = True
         self.initialization_status = {
@@ -232,9 +232,8 @@ class LearningManager(BaseAgent):
                 try:
                     # Find JSON in the response (in case LLM added extra text)
                     import re
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+import psutil
+from datetime import datetime
                     json_match = re.search(r'\{.*\}', analysis_text, re.DOTALL)
                     if json_match:
                         analysis_json = json.loads(json_match.group(0))
@@ -263,13 +262,19 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                         'long_term_knowledge': long_term_results,
                         'short_term_context': short_term_results
                     }
-                    
                 except json.JSONDecodeError as e:
                     logger.error(f"Error parsing LLM response as JSON: {e}")
                     logger.error(f"Raw response: {analysis_text}")
                     return {
                         'status': 'error',
                         'message': f"Failed to parse LLM response: {str(e)}"
+                    }
+                except Exception as e:
+                    logger.error(f"Unexpected error parsing LLM response: {e}")
+                    logger.error(f"Raw response: {analysis_text}")
+                    return {
+                        'status': 'error',
+                        'message': f"Unexpected error parsing LLM response: {str(e)}"
                     }
             else:
                 # Socket timed out
@@ -484,6 +489,40 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         }
         base_status.update(specific_metrics)
         return base_status
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
 
 if __name__ == '__main__':
     agent = LearningManager()

@@ -21,6 +21,8 @@ from pathlib import Path
 import tempfile
 import re
 import threading
+from utils.config_loader import parse_agent_args
+_agent_args = parse_agent_args()
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
@@ -28,8 +30,6 @@ from config.system_config import config
 
 # Import the GGUF Model Manager
 from agents.gguf_model_manager import get_instance as get_gguf_manager
-from utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
 
 # Check for GGUF support
 try:
@@ -65,8 +65,11 @@ MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = {}
 
 class CodeGeneratorAgent(BaseAgent):
-    def __init__(self, port: int = None, debug: bool = False, **kwargs):
-        super().__init__(port=port, name="CodeGeneratorAgent")
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5708))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         # Initialize the Code Generator Agent
         import logging
         import json
@@ -77,7 +80,7 @@ class CodeGeneratorAgent(BaseAgent):
         
         # Configure logging
         logging.basicConfig(
-            level=logging.DEBUG if debug else logging.INFO,
+            level=logging.DEBUG if self.debug else logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.FileHandler("logs/code_generator.log"),
@@ -89,9 +92,7 @@ class CodeGeneratorAgent(BaseAgent):
         # Set up ZMQ socket
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.port = port
-        self.debug = debug
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Initialize model manager connection
         self.model_manager_address = f"tcp://{_agent_args.get('model_manager_host', 'localhost')}:{_agent_args.get('model_manager_port', 5570)}"
@@ -107,7 +108,7 @@ class CodeGeneratorAgent(BaseAgent):
             self.logger.warning(f"GGUF Model Manager not available: {e}")
             self.gguf_manager = None
         
-        self.logger.info(f"Code Generator Agent initialized on port {port}")
+        self.logger.info(f"Code Generator Agent initialized on port {self.port}")
     
     def start(self):
         """Start the agent and bind to the port"""
@@ -382,10 +383,12 @@ class CodeGeneratorAgent(BaseAgent):
     def forward_to_model_manager(self, request):
         """Forward a request to the Model Manager Agent"""
         import zmq
+import psutil
+from datetime import datetime
         
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         socket.setsockopt(zmq.RCVTIMEO, 60000)  # 60 second timeout
         
         try:
@@ -423,25 +426,26 @@ class CodeGeneratorAgent(BaseAgent):
         model_last_used[model_id] = now
         return True
 
+
+    def health_check(self):
+        """Health check endpoint for the agent"""
+        return {
+            "status": "healthy",
+            "service": "CodeGeneratorAgent",
+            "timestamp": time.time()
+        }
+    
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
 # Run the agent if executed directly
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='Code Generator Agent')
-    parser.add_argument('--port', type=int, default=5604, help='Port to run the agent on')
-    parser.add_argument("--ollama_base_url", type=str, default="http://localhost:11434", help="Base URL for the Ollama API")
-    parser.add_argument('--simple-debug', action='store_true', help='Enable simple debug mode')
-    
-    args = parser.parse_args()
-    
-    agent = CodeGeneratorAgent(port=args.port, debug=args.simple_debug)
-    agent.start()
- 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+    agent = CodeGeneratorAgent()
+    agent.run()

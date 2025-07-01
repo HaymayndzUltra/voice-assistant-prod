@@ -25,7 +25,7 @@ from pathlib import Path
 import hashlib
 import tempfile
 import re
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import register_service, get_service_address
 from utils.env_loader import get_env
 import pickle
@@ -59,26 +59,27 @@ if os.path.exists(xtts_path):
     logger.info(f"Added custom XTTS path: {xtts_path}")
 
 # ZMQ Configuration
-TTS_PORT = int(getattr(_agent_args, 'port', 5562))  # Unified TTS port
-UNIFIED_SYSTEM_PORT = int(getattr(_agent_args, 'unifiedsystemagent_port', 5569))  # Port for UnifiedSystemAgent health monitoring
-
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
-
-# Audio playback settings
-SAMPLE_RATE = 24000  # Default for TTS output
-CHANNELS = 1
-BUFFER_SIZE = 1024
-MAX_CACHE_SIZE = 50  # Maximum number of cached audio samples
+SAMPLE_RATE = int(getattr(_agent_args, 'sample_rate', 24000))
+CHANNELS = int(getattr(_agent_args, 'channels', 1))
+BUFFER_SIZE = int(getattr(_agent_args, 'buffer_size', 1024))
+MAX_CACHE_SIZE = int(getattr(_agent_args, 'max_cache_size', 50))
 
 INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
 
 class UltimateTTSAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="StreamingTtsAgent")
+    def __init__(self):
+        self.port = int(getattr(_agent_args, 'port', 5562))
+        self.unified_system_port = int(getattr(_agent_args, 'unifiedsystemagent_port', 5569))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.interrupt_port = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+        self.sample_rate = int(getattr(_agent_args, 'sample_rate', 24000))
+        self.channels = int(getattr(_agent_args, 'channels', 1))
+        self.buffer_size = int(getattr(_agent_args, 'buffer_size', 1024))
+        self.max_cache_size = int(getattr(_agent_args, 'max_cache_size', 50))
+        super().__init__(_agent_args)
         """Initialize the Ultimate TTS agent with 4-tier fallback system"""
         logger.info("Initializing Ultimate TTS Agent")
-        self.language = kwargs.get('language', 'en')
+        self.language = getattr(_agent_args, 'language', 'en')
         
         # Voice customization settings
         self.speaker_wav = None
@@ -95,8 +96,8 @@ class UltimateTTSAgent(BaseAgent):
         if self.secure_zmq:
             self.socket = configure_secure_server(self.socket)
         
-        # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{TTS_PORT}"
+        # Bind to address using self.bind_address for Docker compatibility
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.socket.bind(bind_address)
         logger.info(f"TTS socket bound to {bind_address}")
         
@@ -109,7 +110,7 @@ class UltimateTTSAgent(BaseAgent):
         usa_address = get_service_address("UnifiedSystemAgent")
         if not usa_address:
             # Fall back to configured port
-            usa_address = f"tcp://localhost:{UNIFIED_SYSTEM_PORT}"
+            usa_address = f"tcp://localhost:{self.unified_system_port}"
         
         self.system_socket.connect(usa_address)
         logger.info(f"Connected to UnifiedSystemAgent at {usa_address}")
@@ -177,7 +178,7 @@ class UltimateTTSAgent(BaseAgent):
         interrupt_address = get_service_address("StreamingInterruptHandler")
         if not interrupt_address:
             # Fall back to configured port
-            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            interrupt_address = f"tcp://localhost:{self.interrupt_port}"
         
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -196,7 +197,7 @@ class UltimateTTSAgent(BaseAgent):
         try:
             register_result = register_service(
                 name="StreamingTtsAgent",
-                port=TTS_PORT,
+                port=self.port,
                 additional_info={
                     "capabilities": ["tts", "streaming", "multilingual"],
                     "status": "initializing"
@@ -623,6 +624,16 @@ class UltimateTTSAgent(BaseAgent):
         self.interrupt_thread.start()
         logger.info("Interrupt listener thread started")
 
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
     def run(self):
         """Main loop to handle TTS requests"""
         logger.info("Starting TTS agent main loop")
@@ -752,7 +763,7 @@ class UltimateTTSAgent(BaseAgent):
         try:
             register_service(
                 name="StreamingTtsAgent",
-                port=TTS_PORT,
+                port=self.port,
                 additional_info={
                     "capabilities": ["tts", "streaming", "multilingual"],
                     "status": status
@@ -799,9 +810,43 @@ class UltimateTTSAgent(BaseAgent):
         
         logger.info("StreamingTtsAgent shut down successfully")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     print("=== Ultimate TTS Agent ===")
-    print(f"Listening on ZMQ port {TTS_PORT}")  # dynamically parsed
+    print(f"Listening on ZMQ port {self.port}")  # dynamically parsed
     print("4-tier TTS system:")
     print("1. XTTS v2 (Primary)")
     print("2. Windows SAPI (Secondary)")

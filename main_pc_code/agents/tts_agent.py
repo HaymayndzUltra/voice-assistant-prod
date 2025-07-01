@@ -8,8 +8,10 @@ import time
 import os
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
 from utils.service_discovery_client import register_service, get_service_address
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.env_loader import get_env
+import psutil
+from datetime import datetime
 
 # Parse CLI arguments
 _agent_args = parse_agent_args()
@@ -21,12 +23,15 @@ logger = logging.getLogger("TTSAgent")
 # Get configuration from args or fallback to defaults
 INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+# BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
 
 class TTSAgent(BaseAgent):
-    def __init__(self, port: int = 5562, **kwargs):
-        super().__init__(port=port, name="TTSAgent")
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5706))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -35,7 +40,7 @@ class TTSAgent(BaseAgent):
             self.socket = configure_secure_server(self.socket)
         
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{port}"
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.socket.bind(bind_address)
         logger.info(f"TTS agent listening on {bind_address}")
         
@@ -58,7 +63,7 @@ class TTSAgent(BaseAgent):
         self._start_interrupt_thread()
         
         # Register with service discovery
-        self._register_service(port)
+        self._register_service(self.port)
         
         # Running flag
         self.running = True
@@ -204,6 +209,51 @@ class TTSAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
 
 if __name__ == "__main__":
     agent = TTSAgent()

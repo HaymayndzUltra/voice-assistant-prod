@@ -16,7 +16,7 @@ import threading
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from main_pc_code.src.core.base_agent import BaseAgent
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 
 # Configure logging
 logging.basicConfig(
@@ -26,28 +26,29 @@ logging.basicConfig(
 logger = logging.getLogger("MemoryOrchestrator")
 
 # Configuration
-ZMQ_PORT = 5576
-HEALTH_PORT = ZMQ_PORT + 1
+# ZMQ_PORT = 5576
+HEALTH_PORT = int(_agent_args.get('health_port', ZMQ_PORT + 1))
+
+_agent_args = parse_agent_args()
 
 class MemoryOrchestrator(BaseAgent):
     """
     Minimal Memory Orchestrator implementation focusing on proper encoding/decoding.
     """
     
-    def __init__(self, port: int = None):
+    def __init__(self):
         """Initialize the Memory Orchestrator service."""
-        args = parse_agent_args()
-        port = port or getattr(args, 'port', None) or ZMQ_PORT
-        super().__init__(name="MemoryOrchestrator", port=port)
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{port}")
+        self.socket.bind(f"tcp://*:{self.port}")
         
         # Setup health check socket
         try:
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{HEALTH_PORT}")
+            self.health_socket.bind(f"tcp://<BIND_ADDR>:{HEALTH_PORT}")
             logger.info(f"Health check socket bound to port {HEALTH_PORT}")
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to bind health check socket: {e}")
@@ -64,7 +65,7 @@ class MemoryOrchestrator(BaseAgent):
         self.memory_backends_connected = 1  # Placeholder for demo
         self.total_memory_entries = 0
         
-        logger.info(f"Memory Orchestrator initialized, listening on port {port}")
+        logger.info(f"Memory Orchestrator initialized, listening on port {self.port}")
     
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""

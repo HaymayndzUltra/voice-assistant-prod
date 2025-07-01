@@ -16,7 +16,7 @@ import torch
 import logging
 import time
 import pickle
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 from utils.service_discovery_client import discover_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
@@ -24,8 +24,6 @@ _agent_args = parse_agent_args()
 
 # Get the directory of the current file for the log
 current_dir = os.path.dirname(os.path.abspath(__file__))
-LOG_PATH = os.path.join(current_dir, "../logs/responder.log")
-os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 # Ensure appropriate directories exist
 os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
@@ -83,66 +81,66 @@ except ImportError:
 
 
 # Settings
-ZMQ_RESPONDER_PORT = int(getattr(_agent_args, 'port', 5637))  # Updated to match config
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
+# ZMQ_RESPONDER_PORT = int(getattr(_agent_args, 'port', 5637))  # Updated to match config
+# ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+# BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
 
 # Secure ZMQ configuration
-SECURE_ZMQ = is_secure_zmq_enabled()
+# SECURE_ZMQ = is_secure_zmq_enabled()
 
 # Default voice (will be overridden by config)
-VOICE = "tts_models/en/ljspeech/tacotron2-DDC"
+# VOICE = "tts_models/en/ljspeech/tacotron2-DDC"
 
 # Health monitoring settings
-HEALTH_CHECK_INTERVAL = 30  # seconds
-HEALTH_CHECK_TIMEOUT = 5  # seconds
-MAX_RETRIES = 3
+# HEALTH_CHECK_INTERVAL = 30  # seconds
+# HEALTH_CHECK_TIMEOUT = 5  # seconds
+# MAX_RETRIES = 3
 
 # Language-specific voice configurations
-LANGUAGE_VOICES = {
-    "en": "en",       # Default English voice
-    "tl": "tl",       # Tagalog voice
-    "mixed": "tl",    # For mixed language (Taglish), prefer Tagalog voice
-    "unknown": "en"   # Default to English for unknown
-}
+# LANGUAGE_VOICES = {
+#     "en": "en",       # Default English voice
+#     "tl": "tl",       # Tagalog voice
+#     "mixed": "tl",    # For mixed language (Taglish), prefer Tagalog voice
+#     "unknown": "en"   # Default to English for unknown
+# }
 
 # Use pre-translated responses for common phrases
-USE_PRETRANSLATED_PHRASES = True
+# USE_PRETRANSLATED_PHRASES = True
 
 # Emotion to voice parameter mapping with enhanced expressiveness
-EMOTION_VOICE_PARAMS = {
-    # Basic emotions with enhanced parameters
-    "joy": {"speed": 1.15, "pitch": 1.15, "energy": 1.2, "vibrato": 0.1, "breathiness": 0.1, "color": "#FFD700"},
-    "sadness": {"speed": 0.85, "pitch": 0.9, "energy": 0.8, "vibrato": 0.0, "breathiness": 0.3, "color": "#4682B4"},
-    "anger": {"speed": 1.2, "pitch": 0.85, "energy": 1.3, "vibrato": 0.2, "breathiness": 0.0, "color": "#FF4500"},
-    "fear": {"speed": 1.15, "pitch": 1.1, "energy": 0.9, "vibrato": 0.3, "breathiness": 0.2, "color": "#800080"},
-    "surprise": {"speed": 1.25, "pitch": 1.2, "energy": 1.2, "vibrato": 0.1, "breathiness": 0.1, "color": "#FF69B4"},
-    "neutral": {"speed": 1.0, "pitch": 1.0, "energy": 1.0, "vibrato": 0.0, "breathiness": 0.0, "color": "#FFFFFF"},
-    "disgust": {"speed": 1.05, "pitch": 0.9, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.0, "color": "#556B2F"},
-    
-    # Nuanced emotions
-    "excitement": {"speed": 1.3, "pitch": 1.25, "energy": 1.3, "vibrato": 0.2, "breathiness": 0.1, "color": "#FFA500"},
-    "contentment": {"speed": 0.95, "pitch": 1.05, "energy": 0.95, "vibrato": 0.0, "breathiness": 0.1, "color": "#98FB98"},
-    "amusement": {"speed": 1.1, "pitch": 1.15, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.0, "color": "#FFFF00"},
-    "pride": {"speed": 1.05, "pitch": 1.1, "energy": 1.15, "vibrato": 0.0, "breathiness": 0.0, "color": "#B8860B"},
-    "embarrassment": {"speed": 1.0, "pitch": 0.95, "energy": 0.85, "vibrato": 0.1, "breathiness": 0.2, "color": "#FF6347"},
-    "guilt": {"speed": 0.9, "pitch": 0.9, "energy": 0.8, "vibrato": 0.0, "breathiness": 0.2, "color": "#2F4F4F"},
-    "shame": {"speed": 0.85, "pitch": 0.85, "energy": 0.75, "vibrato": 0.0, "breathiness": 0.3, "color": "#8B4513"},
-    
-    # General sentiment categories
-    "positive": {"speed": 1.1, "pitch": 1.1, "energy": 1.15, "vibrato": 0.05, "breathiness": 0.05, "color": "#7CFC00"},
-    "negative": {"speed": 0.9, "pitch": 0.9, "energy": 0.85, "vibrato": 0.05, "breathiness": 0.15, "color": "#DC143C"},
-    "calm": {"speed": 0.85, "pitch": 1.0, "energy": 0.9, "vibrato": 0.0, "breathiness": 0.1, "color": "#87CEEB"},
-    "energetic": {"speed": 1.2, "pitch": 1.15, "energy": 1.25, "vibrato": 0.1, "breathiness": 0.0, "color": "#FF8C00"},
-    "serious": {"speed": 0.95, "pitch": 0.95, "energy": 1.0, "vibrato": 0.0, "breathiness": 0.0, "color": "#708090"},
-    "playful": {"speed": 1.15, "pitch": 1.2, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.05, "color": "#FF69B4"},
-}
+# EMOTION_VOICE_PARAMS = {
+#     # Basic emotions with enhanced parameters
+#     "joy": {"speed": 1.15, "pitch": 1.15, "energy": 1.2, "vibrato": 0.1, "breathiness": 0.1, "color": "#FFD700"},
+#     "sadness": {"speed": 0.85, "pitch": 0.9, "energy": 0.8, "vibrato": 0.0, "breathiness": 0.3, "color": "#4682B4"},
+#     "anger": {"speed": 1.2, "pitch": 0.85, "energy": 1.3, "vibrato": 0.2, "breathiness": 0.0, "color": "#FF4500"},
+#     "fear": {"speed": 1.15, "pitch": 1.1, "energy": 0.9, "vibrato": 0.3, "breathiness": 0.2, "color": "#800080"},
+#     "surprise": {"speed": 1.25, "pitch": 1.2, "energy": 1.2, "vibrato": 0.1, "breathiness": 0.1, "color": "#FF69B4"},
+#     "neutral": {"speed": 1.0, "pitch": 1.0, "energy": 1.0, "vibrato": 0.0, "breathiness": 0.0, "color": "#FFFFFF"},
+#     "disgust": {"speed": 1.05, "pitch": 0.9, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.0, "color": "#556B2F"},
+#     
+#     # Nuanced emotions
+#     "excitement": {"speed": 1.3, "pitch": 1.25, "energy": 1.3, "vibrato": 0.2, "breathiness": 0.1, "color": "#FFA500"},
+#     "contentment": {"speed": 0.95, "pitch": 1.05, "energy": 0.95, "vibrato": 0.0, "breathiness": 0.1, "color": "#98FB98"},
+#     "amusement": {"speed": 1.1, "pitch": 1.15, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.0, "color": "#FFFF00"},
+#     "pride": {"speed": 1.05, "pitch": 1.1, "energy": 1.15, "vibrato": 0.0, "breathiness": 0.0, "color": "#B8860B"},
+#     "embarrassment": {"speed": 1.0, "pitch": 0.95, "energy": 0.85, "vibrato": 0.1, "breathiness": 0.2, "color": "#FF6347"},
+#     "guilt": {"speed": 0.9, "pitch": 0.9, "energy": 0.8, "vibrato": 0.0, "breathiness": 0.2, "color": "#2F4F4F"},
+#     "shame": {"speed": 0.85, "pitch": 0.85, "energy": 0.75, "vibrato": 0.0, "breathiness": 0.3, "color": "#8B4513"},
+#     
+#     # General sentiment categories
+#     "positive": {"speed": 1.1, "pitch": 1.1, "energy": 1.15, "vibrato": 0.05, "breathiness": 0.05, "color": "#7CFC00"},
+#     "negative": {"speed": 0.9, "pitch": 0.9, "energy": 0.85, "vibrato": 0.05, "breathiness": 0.15, "color": "#DC143C"},
+#     "calm": {"speed": 0.85, "pitch": 1.0, "energy": 0.9, "vibrato": 0.0, "breathiness": 0.1, "color": "#87CEEB"},
+#     "energetic": {"speed": 1.2, "pitch": 1.15, "energy": 1.25, "vibrato": 0.1, "breathiness": 0.0, "color": "#FF8C00"},
+#     "serious": {"speed": 0.95, "pitch": 0.95, "energy": 1.0, "vibrato": 0.0, "breathiness": 0.0, "color": "#708090"},
+#     "playful": {"speed": 1.15, "pitch": 1.2, "energy": 1.1, "vibrato": 0.1, "breathiness": 0.05, "color": "#FF69B4"},
+# }
 
 # Visual feedback settings
-VISUAL_FEEDBACK_ENABLED = False  # Set to True to enable visual feedback
-VISUAL_FEEDBACK_DURATION = 3.0  # How long to show visual feedback in seconds
+# VISUAL_FEEDBACK_ENABLED = False  # Set to True to enable visual feedback
+# VISUAL_FEEDBACK_DURATION = 3.0  # How long to show visual feedback in seconds
 
 logging.basicConfig(
     level=logging.INFO,
@@ -156,35 +154,38 @@ logging.basicConfig(
 logger = logging.getLogger("ResponderAgent")
 
 # Get interrupt port from args or use default
-INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+# INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
 
 class ResponderAgent(BaseAgent):
-    def __init__(self, port: int = ZMQ_RESPONDER_PORT, voice: str = VOICE, **kwargs):
-        super().__init__(port=port, name="ResponderAgent")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        self.voice = _agent_args.get('voice')
+        self.bind_address = _agent_args.get('bind_address')
+        self.ZMQ_REQUEST_TIMEOUT = int(_agent_args.get('zmq_request_timeout', 5000))
+        self.VISUAL_FEEDBACK_ENABLED = bool(_agent_args.get('visual_feedback_enabled', False))
+        super().__init__(_agent_args)
         self.context = zmq.Context()
         
         # Set up main socket for receiving TTS requests
         self.socket = self.context.socket(zmq.SUB)
-        if SECURE_ZMQ:
+        if is_secure_zmq_enabled():
             self.socket = configure_secure_server(self.socket)
             
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{port}"
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.socket.bind(bind_address)
         self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
         logger.info(f"Responder socket bound to {bind_address}")
         
         # Interrupt SUB socket - use service discovery
         self.interrupt_socket = self.context.socket(zmq.SUB)
-        if SECURE_ZMQ:
+        if is_secure_zmq_enabled():
             self.interrupt_socket = configure_secure_client(self.interrupt_socket)
             
         # Try to get the interrupt handler address from service discovery
-        interrupt_address = get_service_address("StreamingInterruptHandler")
-        if not interrupt_address:
-            # Fall back to configured port
-            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
-            
+        interrupt_host = _agent_args.get('interrupt_host', 'localhost')
+        interrupt_port = _agent_args.get('streaming_interrupt_handler_port')
+        interrupt_address = f"tcp://{interrupt_host}:{interrupt_port}"
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
         logger.info(f"Connected to interrupt handler at {interrupt_address}")
@@ -220,7 +221,6 @@ class ResponderAgent(BaseAgent):
         self.tts = None
         self.tts_ready = threading.Event()
         threading.Thread(target=self._load_tts_model, daemon=True).start()
-        self.voice = voice
         
         # Queue for audio processing
         self.audio_queue = queue.Queue()
@@ -250,16 +250,29 @@ class ResponderAgent(BaseAgent):
     def _connect_to_services(self):
         """Connect to required services using service discovery"""
         try:
+            # Defensive: ensure health_status is a dict with 'connections' dict
+            if not isinstance(self.health_status, dict) or 'connections' not in self.health_status:
+                self.health_status = {
+                    "status": "ok",
+                    "service": "responder",
+                    "last_check": time.time(),
+                    "connections": {
+                        "tts": False,
+                        "tts_cache": False,
+                        "tts_connector": False,
+                        "face_recognition": False
+                    }
+                }
             # Connect to face recognition for emotion data
             face_service = discover_service("FaceRecognitionAgent")
             if face_service and face_service.get("status") == "SUCCESS":
                 face_info = face_service.get("payload", {})
-                face_host = face_info.get("ip", "localhost")
+                face_host = face_info.get("ip", _agent_args.get('face_host', 'localhost'))
                 face_port = face_info.get("port", 5610)  # Default port
                 
                 self.face_socket = self.context.socket(zmq.SUB)
                 # Apply secure ZMQ if enabled
-                if SECURE_ZMQ:
+                if is_secure_zmq_enabled():
                     self.face_socket = configure_secure_client(self.face_socket)
                     
                 face_address = f"tcp://{face_host}:{face_port}"
@@ -283,13 +296,26 @@ class ResponderAgent(BaseAgent):
     def _connect_to_tts_services(self):
         """Connect to TTS-related services using service discovery"""
         try:
+            # Defensive: ensure health_status is a dict with 'connections' dict
+            if not isinstance(self.health_status, dict) or 'connections' not in self.health_status:
+                self.health_status = {
+                    "status": "ok",
+                    "service": "responder",
+                    "last_check": time.time(),
+                    "connections": {
+                        "tts": False,
+                        "tts_cache": False,
+                        "tts_connector": False,
+                        "face_recognition": False
+                    }
+                }
             # Connect to StreamingTtsAgent
             streaming_tts_address = get_service_address("StreamingTtsAgent")
             if streaming_tts_address:
                 self.streaming_tts_socket = self.context.socket(zmq.REQ)
-                if SECURE_ZMQ:
+                if is_secure_zmq_enabled():
                     self.streaming_tts_socket = configure_secure_client(self.streaming_tts_socket)
-                self.streaming_tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.streaming_tts_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
                 self.streaming_tts_socket.connect(streaming_tts_address)
                 logger.info(f"Connected to StreamingTtsAgent at {streaming_tts_address}")
                 self.health_status["connections"]["tts"] = True
@@ -300,9 +326,9 @@ class ResponderAgent(BaseAgent):
             tts_cache_address = get_service_address("TTSCache")
             if tts_cache_address:
                 self.tts_cache_socket = self.context.socket(zmq.REQ)
-                if SECURE_ZMQ:
+                if is_secure_zmq_enabled():
                     self.tts_cache_socket = configure_secure_client(self.tts_cache_socket)
-                self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_cache_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
                 self.tts_cache_socket.connect(tts_cache_address)
                 logger.info(f"Connected to TTSCache at {tts_cache_address}")
                 self.health_status["connections"]["tts_cache"] = True
@@ -313,9 +339,9 @@ class ResponderAgent(BaseAgent):
             tts_connector_address = get_service_address("TTSConnector")
             if tts_connector_address:
                 self.tts_connector_socket = self.context.socket(zmq.REQ)
-                if SECURE_ZMQ:
+                if is_secure_zmq_enabled():
                     self.tts_connector_socket = configure_secure_client(self.tts_connector_socket)
-                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
                 self.tts_connector_socket.connect(tts_connector_address)
                 logger.info(f"Connected to TTSConnector at {tts_connector_address}")
                 self.health_status["connections"]["tts_connector"] = True
@@ -517,13 +543,16 @@ class ResponderAgent(BaseAgent):
                 poller.register(self.streaming_tts_socket, zmq.POLLIN)
                 
                 # Wait for response with timeout
-                if poller.poll(ZMQ_REQUEST_TIMEOUT):
+                if poller.poll(self.ZMQ_REQUEST_TIMEOUT):
                     response = self.streaming_tts_socket.recv_json()
-                    if response.get("status") == "success":
-                        logger.info("StreamingTTSAgent successfully processed request")
-                        return True
+                    if isinstance(response, dict):
+                        if response.get("status") == "success":
+                            logger.info("StreamingTTSAgent successfully processed request")
+                            return True
+                        else:
+                            logger.warning(f"StreamingTTSAgent error: {response.get('message', 'Unknown error')}")
                     else:
-                        logger.warning(f"StreamingTTSAgent error: {response.get('message', 'Unknown error')}")
+                        logger.error(f"StreamingTTSAgent response is not a dict: {response}")
                 else:
                     logger.error("Timeout waiting for StreamingTTSAgent response")
                     
@@ -546,13 +575,16 @@ class ResponderAgent(BaseAgent):
                 poller.register(self.tts_socket, zmq.POLLIN)
                 
                 # Wait for response with timeout
-                if poller.poll(ZMQ_REQUEST_TIMEOUT):
+                if poller.poll(self.ZMQ_REQUEST_TIMEOUT):
                     response = self.tts_socket.recv_json()
-                    if response.get("status") == "success":
-                        logger.info("TTSAgent successfully processed request")
-                        return True
+                    if isinstance(response, dict):
+                        if response.get("status") == "success":
+                            logger.info("TTSAgent successfully processed request")
+                            return True
+                        else:
+                            logger.warning(f"TTSAgent error: {response.get('message', 'Unknown error')}")
                     else:
-                        logger.warning(f"TTSAgent error: {response.get('message', 'Unknown error')}")
+                        logger.error(f"TTSAgent response is not a dict: {response}")
                 else:
                     logger.error("Timeout waiting for TTSAgent response")
                     
@@ -570,7 +602,7 @@ class ResponderAgent(BaseAgent):
         Falls back gracefully if tkinter is not available or a display is not
         present (e.g. running headless).
         """
-        if not VISUAL_FEEDBACK_ENABLED:
+        if not self.VISUAL_FEEDBACK_ENABLED:
             return
         try:
             import tkinter as tk
@@ -584,7 +616,7 @@ class ResponderAgent(BaseAgent):
                 screen_width = root.winfo_screenwidth()
                 screen_height = root.winfo_screenheight()
                 window_width = min(screen_width - 100, len(text) * 10 + 100)
-                window_height = 100
+                window_height = int(_agent_args.get('window_height', 100))
                 x = (screen_width - window_width) // 2
                 y = screen_height - window_height - 50
                 root.geometry(f"{window_width}x{window_height}+{x}+{y}")
@@ -617,16 +649,28 @@ class ResponderAgent(BaseAgent):
     def _modulate_audio(
         self,
         audio,
-        speed: float = 1.0,
-        pitch: float = 1.0,
-        energy: float = 1.0,
-        vibrato: float = 0.0,
-        breathiness: float = 0.0,
+        speed=None,
+        pitch=None,
+        energy=None,
+        vibrato=None,
+        breathiness=None,
     ):
         """Simple audio post-processing placeholder.
 
         For now only applies a volume (energy) adjustment and clips the output.
         """
+        # Use config or _agent_args for defaults if not provided
+        if speed is None:
+            speed = float(getattr(self, 'speed', _agent_args.get('speed', 1.0)))
+        if pitch is None:
+            pitch = float(getattr(self, 'pitch', _agent_args.get('pitch', 1.0)))
+        if energy is None:
+            energy = float(getattr(self, 'energy', _agent_args.get('energy', 1.0)))
+        if vibrato is None:
+            vibrato = float(getattr(self, 'vibrato', _agent_args.get('vibrato', 0.0)))
+        if breathiness is None:
+            breathiness = float(getattr(self, 'breathiness', _agent_args.get('breathiness', 0.0)))
+
         # TODO: re-implement full DSP chain (speed, pitch, etc.) if necessary.
         audio = audio * energy
         return np.clip(audio, -1.0, 1.0)

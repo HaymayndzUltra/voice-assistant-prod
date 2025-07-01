@@ -33,13 +33,13 @@ from pathlib import Path
 from queue import Queue
 import psutil
 import traceback
+from utils.config_loader import parse_agent_args
 
 # Add project root to sys.path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import dynamic model management
-from utils.config_parser import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service
 _agent_args = parse_agent_args()
 
@@ -125,9 +125,12 @@ class ResourceManager:
     def use_tensorrt(self):
         return TENSORRT_ENABLED
 
-class StreamingSpeechRecognition(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="StreamingSpeechRecognition")
+class StreamingSpeechRecognitionAgent(BaseAgent):
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5707))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         """Initialize the enhanced speech recognition system."""
         self._running = False
         self._thread = None
@@ -312,6 +315,18 @@ class StreamingSpeechRecognition(BaseAgent):
                 if SECURE_ZMQ:
                     try:
                         from src.network.secure_zmq import secure_client_socket
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
+from datetime import datetime
                         self.model_manager_socket = secure_client_socket(self.model_manager_socket)
                         logger.info("Applied secure ZMQ to model manager socket")
                     except Exception as e:
@@ -944,9 +959,43 @@ class StreamingSpeechRecognition(BaseAgent):
         finally:
             self.process_thread = None
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     try:
-        asr = StreamingSpeechRecognition()
+        asr = StreamingSpeechRecognitionAgent()
         asr.run()
     except Exception as e:
         logger.error(f"Speech recognition failed: {e}")

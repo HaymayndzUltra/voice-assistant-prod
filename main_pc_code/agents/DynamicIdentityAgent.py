@@ -14,12 +14,12 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, Any, List
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 import threading
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -33,45 +33,36 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class DynamicIdentityAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        # Load config just to get the port
-        config_path = os.path.join(MAIN_PC_CODE, 'config', 'system_config.json')
-        try:
-            with open(config_path, 'r', encoding='utf-8-sig') as f:
-                config = json.load(f)
-        except UnicodeDecodeError:
-            with open(config_path, 'r', encoding='utf-16') as f:
-                config = json.load(f)
-        except FileNotFoundError:
-            logger.warning(f"Config file not found at {config_path}, using defaults")
-            config = {}
-        agent_config = None
-        if 'agents' in config and 'dynamic_identity' in config['agents']:
-            agent_config = config['agents']['dynamic_identity']
-        elif 'personality_pipeline' in config and 'dynamic_identity' in config['personality_pipeline']:
-            agent_config = config['personality_pipeline']['dynamic_identity']
-        else:
-            agent_config = {}
-        agent_config.setdefault('port', 5802)
-        # Determine port priority: explicit __init__ arg > CLI --port arg > config
-        cmd_port = getattr(args, 'port', None)
-        if port is not None:
-            self.port = port
-        elif cmd_port is not None:
-            self.port = int(cmd_port)
-        else:
-            self.port = agent_config['port']
+    def __init__(self, port: int = None, name: str = None, **kwargs):
+        # Get port and name from _agent_args with fallbacks
+        agent_port = getattr(_agent_args, 'port', 5802) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'DynamicIdentityAgent') if name is None else name
         # Use strict_port=True to ensure bind failure surfaces instead of silent port change
-        super().__init__(port=self.port, name="Dynamicidentityagent", strict_port=True)
+        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'DynamicIdentityAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
+        
         self.initialization_status = {
             "is_initialized": False,
             "error": None,
             "progress": 0.0
         }
         self.current_persona = 'teacher'
+        self.start_time = time.time()
+        self.running = True
         # Perform remaining initialization asynchronously so that health checks can succeed quickly
         threading.Thread(target=self._perform_initialization, daemon=True).start()
         logger.info("Dynamic Identity Agent initialized (async init started)")
+    
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
     
     def _perform_initialization(self):
         try:
@@ -103,7 +94,7 @@ class DynamicIdentityAgent(BaseAgent):
             self.model_socket = self.context.socket(zmq.REQ)
             self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            _host = getattr(args, 'host', 'localhost')
+            _host = getattr(_agent_args, 'host', 'localhost')
             self.model_socket.connect(f"tcp://{_host}:{self.emr_port}")
             # REQ socket for EmpathyAgent
             self.empathy_socket = self.context.socket(zmq.REQ)
@@ -260,9 +251,54 @@ class DynamicIdentityAgent(BaseAgent):
         
         logger.info("Dynamic Identity Agent stopped")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == '__main__':
-    agent = DynamicIdentityAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        # Replace 'ClassName' with the actual agent class from the file.
+        agent = DynamicIdentityAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop()
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

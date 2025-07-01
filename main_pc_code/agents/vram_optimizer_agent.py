@@ -1,4 +1,3 @@
-from src.core.base_agent import BaseAgent
 """
 VRAM Optimizer Agent
 Handles VRAM monitoring, optimization, and model management
@@ -20,74 +19,93 @@ import psutil
 import GPUtil
 from collections import defaultdict
 
+from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+
+# Parse agent arguments
+_agent_args = parse_agent_args()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("VRAMOptimizerAgent")
 
 class VRAMOptimizerAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="VRAMOptimizerAgent")
-        """Initialize VRAM Optimizer Agent"""
-        # Load configuration
+    def __init__(self, port: int = None, name: str = None, **kwargs):
+        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'VRAMOptimizerAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
+
+        # Load configuration from startup_config.yaml
         self._load_configuration()
-        
+
         # Initialize ZMQ context
         self.context = zmq.Context.instance()
-        
+
         # Initialize service connections
         self._init_service_connections()
-        
+
         # Set up VRAM thresholds from config
         self.vram_thresholds = {
-            'critical': self.config.get('critical_threshold', 0.9),  # 90% VRAM usage
-            'warning': self.config.get('warning_threshold', 0.75),   # 75% usage triggers warning
-            'safe': self.config.get('safe_threshold', 0.5)           # 50% VRAM usage
+            'critical': self.config.get('vram_optimizer.critical_threshold', 0.9),
+            'warning': self.config.get('vram_optimizer.warning_threshold', 0.75),
+            'safe': self.config.get('vram_optimizer.safe_threshold', 0.5)
         }
-        
+
         # Model VRAM requirements (will be updated from model manager)
         self.model_vram_requirements = {}
-        
+
         # Track loaded models
         self.loaded_models = {}
         self.lock = threading.Lock()
         self.running = True
-        
+        self.start_time = time.time()
+
         # Advanced management
         self.memory_pool = {}
-        self.defragmentation_threshold = self.config.get('defragmentation_threshold', 0.70)
+        self.defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
         self.usage_patterns = defaultdict(list)
-        self.prediction_window = self.config.get('prediction_window', 3600)  # 1 hour window for predictions
-        self.optimization_interval = self.config.get('optimization_interval', 300)  # 5 minutes between optimizations
-        
+        self.prediction_window = self.config.get('vram_optimizer.prediction_window', 3600)
+        self.optimization_interval = self.config.get('vram_optimizer.optimization_interval', 300)
+
         # Idle timeout configuration
-        self.idle_timeout = self.config.get('idle_timeout', 900)  # 15 minutes default timeout
-        self.idle_check_interval = self.config.get('idle_check_interval', 60)  # Check for idle models every minute
-        
+        self.idle_timeout = self.config.get('vram_optimizer.idle_timeout', 900)
+        self.idle_check_interval = self.config.get('vram_optimizer.idle_check_interval', 60)
+
         # Predictive loading settings
-        self.predictive_loading_enabled = self.config.get('predictive_loading_enabled', True)
-        self.lookahead_window = self.config.get('lookahead_window', 300)  # 5 min lookahead
-        
+        self.predictive_loading_enabled = self.config.get('vram_optimizer.predictive_loading_enabled', True)
+        self.lookahead_window = self.config.get('vram_optimizer.lookahead_window', 300)
+
         # VRAM budget per device
-        self.mainpc_vram_budget = self.config.get('mainpc_vram_budget_mb', 20000)  # Default: 20GB for RTX 4090
-        self.pc2_vram_budget = self.config.get('pc2_vram_budget_mb', 10000)  # Default: 10GB for RTX 3060
-        
+        self.mainpc_vram_budget = self.config.get('vram_optimizer.mainpc_vram_budget_mb', 20000)
+        self.pc2_vram_budget = self.config.get('vram_optimizer.pc2_vram_budget_mb', 10000)
+
         # Start monitoring threads
         self.monitor_thread = threading.Thread(target=self._monitor_vram, daemon=True)
         self.optimization_thread = threading.Thread(target=self._optimize_memory, daemon=True)
         self.prediction_thread = threading.Thread(target=self._predict_usage, daemon=True)
         self.idle_monitor_thread = threading.Thread(target=self._monitor_idle_models, daemon=True)
-        
+
         logger.info("VRAMOptimizerAgent initialized with configuration:")
         logger.info(f"  - VRAM thresholds: {self.vram_thresholds}")
         logger.info(f"  - Idle timeout: {self.idle_timeout}s")
         logger.info(f"  - Predictive loading: {'enabled' if self.predictive_loading_enabled else 'disabled'}")
         logger.info(f"  - VRAM budgets: MainPC={self.mainpc_vram_budget}MB, PC2={self.pc2_vram_budget}MB")
-        
+
         # Start the threads
         self.monitor_thread.start()
         self.optimization_thread.start()
         self.prediction_thread.start()
         self.idle_monitor_thread.start()
+
+    def _get_health_status(self):
+        status = "ok" if self.running else "unhealthy"
+        vram_stats = self.get_vram_usage() if hasattr(self, 'get_vram_usage') else {}
+        details = {
+            "status_message": "Agent is operational." if self.running else "Agent is not running.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+            "vram_stats": vram_stats
+        }
+        return {"status": status, "details": details}
     
     def _load_configuration(self):
         """
@@ -132,7 +150,9 @@ class VRAMOptimizerAgent(BaseAgent):
                 logger.info(f"Found SystemDigitalTwin at {sdt_address}")
             else:
                 logger.warning("SystemDigitalTwin not found via service discovery, using default")
-                sdt_address = "tcp://localhost:7120"
+                sdt_port = getattr(_agent_args, 'sdt_port', 7000)
+                sdt_host = getattr(_agent_args, 'sdt_host', 'localhost')
+                sdt_address = f"tcp://{sdt_host}:{sdt_port}"
             
             # Connect to SystemDigitalTwin
             self.sdt_socket = self.context.socket(zmq.REQ)
@@ -155,7 +175,9 @@ class VRAMOptimizerAgent(BaseAgent):
                 logger.info(f"Found ModelManagerAgent at {mma_address}")
             else:
                 logger.warning("ModelManagerAgent not found via service discovery, using default")
-                mma_address = "tcp://localhost:5570"
+                mma_port = getattr(_agent_args, 'mma_port', 5000)
+                mma_host = getattr(_agent_args, 'mma_host', 'localhost')
+                mma_address = f"tcp://{mma_host}:{mma_port}"
             
             # Connect to ModelManagerAgent
             self.mma_socket = self.context.socket(zmq.REQ)
@@ -198,33 +220,45 @@ class VRAMOptimizerAgent(BaseAgent):
             logger.error(f"ImportError during service discovery: {e}")
             self._init_fallback_connections()
         except Exception as e:
-            logger.error(f"Error during service discovery: {e}")
+            logger.error(f"Error initializing service connections: {e}")
             self._init_fallback_connections()
     
     def _init_fallback_connections(self):
         """
         Initialize fallback connections if service discovery fails
         """
-        self.context = zmq.Context.instance()
+        logger.warning("Using fallback connections")
         
-        # Fallback SystemDigitalTwin connection
-        self.sdt_socket = self.context.socket(zmq.REQ)
-        self.sdt_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
-        self.sdt_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
-        self.sdt_socket.connect("tcp://localhost:7120")
-        logger.info("Using fallback connection to SystemDigitalTwin")
+        # Get fallback connection details from _agent_args
+        sdt_port = getattr(_agent_args, 'sdt_port', 7000)
+        sdt_host = getattr(_agent_args, 'sdt_host', 'localhost')
+        mma_port = getattr(_agent_args, 'mma_port', 5000)
+        mma_host = getattr(_agent_args, 'mma_host', 'localhost')
         
-        # Fallback ModelManagerAgent connection
-        self.mma_socket = self.context.socket(zmq.REQ)
-        self.mma_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
-        self.mma_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
-        self.mma_socket.connect("tcp://localhost:5570")
-        logger.info("Using fallback connection to ModelManagerAgent")
+        # Connect to SystemDigitalTwin
+        try:
+            self.sdt_socket = self.context.socket(zmq.REQ)
+            self.sdt_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+            self.sdt_socket.connect(f"tcp://{sdt_host}:{sdt_port}")
+            logger.info(f"Connected to SystemDigitalTwin at tcp://{sdt_host}:{sdt_port} (fallback)")
+        except Exception as e:
+            logger.error(f"Failed to connect to SystemDigitalTwin: {e}")
+            self.sdt_socket = None
         
-        # No fallback for TaskRouter - predictive loading will be limited
+        # Connect to ModelManagerAgent
+        try:
+            self.mma_socket = self.context.socket(zmq.REQ)
+            self.mma_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+            self.mma_socket.connect(f"tcp://{mma_host}:{mma_port}")
+            logger.info(f"Connected to ModelManagerAgent at tcp://{mma_host}:{mma_port} (fallback)")
+        except Exception as e:
+            logger.error(f"Failed to connect to ModelManagerAgent: {e}")
+            self.mma_socket = None
+        
+        # No TaskRouter in fallback mode
         self.tr_socket = None
         self.task_router_available = False
-        
+    
     def start_monitoring(self):
         """Start VRAM monitoring thread"""
         self.running = True
@@ -1303,24 +1337,54 @@ class VRAMOptimizerAgent(BaseAgent):
             }
         }
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 # Main entry point
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
-        # Parse command-line arguments
-        import argparse
-        parser = argparse.ArgumentParser(description='VRAM Optimizer Agent')
-        parser.add_argument('--port', type=int, default=5572, help='Port to listen on')
-        args = parser.parse_args()
-        
-        # Initialize and run the agent
-        logger.info(f"Starting VRAMOptimizerAgent on port {args.port}")
-        agent = VRAMOptimizerAgent(port=args.port)
+        agent = VRAMOptimizerAgent()
         agent.run()
-        
     except KeyboardInterrupt:
-        logger.info("VRAMOptimizerAgent interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.error(f"Fatal error in VRAMOptimizerAgent: {e}")
         import traceback
-        logger.error(traceback.format_exc())
-        sys.exit(1)
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

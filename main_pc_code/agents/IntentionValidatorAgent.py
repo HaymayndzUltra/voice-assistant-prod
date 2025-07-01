@@ -22,13 +22,12 @@ import sqlite3
 import threading
 from datetime import datetime
 from typing import Dict, Any, List, Set, Tuple
-import argparse
 
 from src.core.base_agent import BaseAgent
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # Parse command line arguments
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 # Configure logging
 log_dir = os.path.join(MAIN_PC_CODE, 'logs')
@@ -44,11 +43,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class IntentionValidatorAgent(BaseAgent):
-    def __init__(self, port=5572, host="localhost", taskrouter_host=None, taskrouter_port=None):
+    def __init__(self, port: int = None, name: str = None, host="localhost", taskrouter_host=None, taskrouter_port=None, **kwargs):
         """Initialize the IntentionValidatorAgent.
         
         Args:
-            port: Port to bind to (default: 5572)
+            port: Port to bind to (default from _agent_args or 5572)
+            name: Agent name (default from _agent_args or "IntentionValidator")
             host: Host to bind to (default: localhost)
             taskrouter_host: Task router host (default: localhost)
             taskrouter_port: Task router port (default: 5570)
@@ -59,21 +59,22 @@ class IntentionValidatorAgent(BaseAgent):
             "progress": 0.0
         }
         
-        # Get port from command line arguments if provided
-        if hasattr(args, 'port') and args.port is not None:
-            port = int(args.port)
-            
-        super().__init__(port=port, name="IntentionValidator")
+        # Get port and name from _agent_args with fallbacks
+        agent_port = getattr(_agent_args, 'port', 5572) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'IntentionValidator') if name is None else name
+        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'IntentionValidatorAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
         
         # Get TaskRouter connection details from command line args (lowercase)
-        self.taskrouter_host = taskrouter_host or getattr(args, 'taskrouter_host', None) or "localhost"
-        self.taskrouter_port = taskrouter_port or getattr(args, 'taskrouter_port', None) or 5570
+        self.taskrouter_host = taskrouter_host or getattr(_agent_args, 'taskrouter_host', None) or "localhost"
+        self.taskrouter_port = taskrouter_port or getattr(_agent_args, 'taskrouter_port', None) or 5570
         
         # Also check for uppercase variant for backward compatibility
-        if hasattr(args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
-            self.taskrouter_host = args.TaskRouter_host
-        if hasattr(args, 'TaskRouter_port') and self.taskrouter_port == 5570:
-            self.taskrouter_port = args.TaskRouter_port
+        if hasattr(_agent_args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
+            self.taskrouter_host = _agent_args.TaskRouter_host
+        if hasattr(_agent_args, 'TaskRouter_port') and self.taskrouter_port == 5570:
+            self.taskrouter_port = _agent_args.TaskRouter_port
             
         self.db_path = os.path.join(MAIN_PC_CODE, "data", "intention_validation.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -86,6 +87,11 @@ class IntentionValidatorAgent(BaseAgent):
             'modify_permissions': ['user', 'permission'],
             'access_sensitive_data': ['data_type', 'purpose']
         }
+        
+        # Set start time for health status
+        self.start_time = time.time()
+        self.running = True
+        
         # Start initialization in background
         threading.Thread(target=self._perform_initialization, daemon=True).start()
         logger.info(f"IntentionValidatorAgent initialized on port {self.port}")
@@ -378,17 +384,54 @@ class IntentionValidatorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error logging validation: {e}")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5572)
-    parser.add_argument("--host", type=str, default="localhost")
-    parser.add_argument("--taskrouter_host", type=str, default="localhost")
-    parser.add_argument("--taskrouter_port", type=int, default=5570)
-    args = parser.parse_args()
-    agent = IntentionValidatorAgent(
-        port=args.port,
-        host=args.host,
-        taskrouter_host=args.taskrouter_host,
-        taskrouter_port=args.taskrouter_port
-    )
-    agent.run() 
+    # Standardized main execution block
+    agent = None
+    try:
+        # Replace 'ClassName' with the actual agent class from the file.
+        agent = IntentionValidatorAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

@@ -32,7 +32,8 @@ import functools
 import argparse
 
 # Import config parser for dynamic port support
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
+_agent_args = parse_agent_args()
 from utils.service_discovery_client import discover_service
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
@@ -1586,7 +1587,10 @@ from main_pc_code.src.core.base_agent import BaseAgent
 class TranslatorServer(BaseAgent):
     """ZMQ server for translation service with dynamic port support and standardized health check"""
     def __init__(self, config: Dict[str, Any], main_port: int = None, health_port: int = None):
-        super().__init__(name="ConsolidatedTranslator", port=main_port or DEFAULT_ZMQ_PORT)
+        # Derive port and name from _agent_args, with fallbacks
+        agent_port = getattr(_agent_args, 'port', main_port or DEFAULT_ZMQ_PORT)
+        agent_name = getattr(_agent_args, 'name', "ConsolidatedTranslator")
+        super().__init__(name=agent_name, port=int(agent_port))
         self.config = config
         self.pipeline = TranslationPipeline(config)
         self.context = zmq.Context()
@@ -1880,27 +1884,20 @@ class TranslatorServer(BaseAgent):
             logger.error(f"Error requesting model loading: {str(e)}")
             return False
 
-def main():
-    """Main entry point with dynamic port support"""
-    try:
-        # Parse command line arguments
-        args = parse_agent_args()
-        
-        # Use provided ports or defaults
-        main_port = args.port or DEFAULT_ZMQ_PORT
-        health_port = getattr(args, 'health_port', None) or DEFAULT_HEALTH_PORT
-        
-        logger.info(f"Starting Consolidated Translator with main port {main_port} and health port {health_port}")
-        
-        # Create and run server
-        server = TranslatorServer(TRANSLATOR_CONFIG, main_port=main_port, health_port=health_port)
-        server.run()
-        
-    except KeyboardInterrupt:
-        logger.info("Server stopped by user")
-    except Exception as e:
-        logger.error(f"Server error: {str(e)}")
-        sys.exit(1)
-
 if __name__ == "__main__":
-    main() 
+    # Standardized main execution block
+    agent = None
+    try:
+        # Instantiate the agent, passing the required config parameter
+        agent = TranslatorServer(TRANSLATOR_CONFIG)
+        agent.run() # Assuming a standard run() method exists
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

@@ -43,11 +43,11 @@ if MAIN_PC_CODE not in sys.path:
 
 # Import BaseAgent for standardized agent implementation
 from main_pc_code.src.core.base_agent import BaseAgent
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 class Node:
     """Node in the reasoning tree/graph"""
@@ -63,64 +63,46 @@ class Node:
 
 class GoTToTAgent(BaseAgent):
     """Graph/Tree-of-Thought Agent for advanced reasoning"""
-    
-    def __init__(self, zmq_port=None):
-        """Initialize the GoT/ToT Agent"""
-        # Ensure port is properly set with a default value
-        port_value = GOT_TOT_PORT  # Default port
-        if zmq_port is not None:
-            port_value = int(zmq_port)
-        elif hasattr(args, 'port') and args.port is not None:
-            try:
-                port_value = int(args.port)
-            except (ValueError, TypeError):
-                logger.warning(f"Invalid port value from args: {args.port}, using default")
-                port_value = GOT_TOT_PORT
-                
-        # Initialize BaseAgent with proper parameters
-        super().__init__(name="GoTToTAgent", port=port_value)
-        
-        # Store instance variables
-        self.name = "GoTToTAgent"
-        self.port = port_value
+    def __init__(self, port: int = 5646, name: str = "GoTToTAgent", **kwargs):
+        # Standardized config loading
+        agent_port = port if port is not None else getattr(_agent_args, 'port', 5646)
+        agent_name = name if name is not None else getattr(_agent_args, 'name', 'GoTToTAgent')
+        super().__init__(name=agent_name, port=int(agent_port))
+
         self.context = zmq.Context()
         self.running = True
         self.start_time = time.time()
-        
+
         # Initialize main socket
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{self.port}")
-        
+        self.socket.bind(f"tcp://*:{agent_port}")
+
         # Load reasoning model
         self._load_reasoning_model()
-        
+
         # Initialize parameters
         self.max_steps = 5
         self.max_branches = 3
         self.temperature = 0.7
         self.top_p = 0.9
-        
+
         # Start processing thread
-        self.running = True
         self.process_thread = threading.Thread(target=self._process_loop)
         self.process_thread.start()
-        
-        logger.info(f"GoT/ToT Agent initialized on port {self.port}")
+
+        logger.info(f"GoT/ToT Agent initialized on port {agent_port}")
     
-    def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        uptime = time.time() - self.start_time
-        
-        return {
-            "agent": self.name,
-            "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": uptime,
-            "model_loaded": self.model is not None if hasattr(self, "model") else False,
-            "device": str(self.device) if hasattr(self, "device") else "unknown"
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
+        return {"status": status, "details": details}
     
     def _load_reasoning_model(self):
         """Load the reasoning model"""
@@ -400,11 +382,22 @@ class GoTToTAgent(BaseAgent):
             logger.error(f"Error during cleanup: {str(e)}")
 
 if __name__ == "__main__":
-    agent = GoTToTAgent()
+    # Standardized main execution block
+    agent = None
     try:
-        # Keep the main thread alive while background thread handles requests
-        agent.process_thread.join()
+        agent = GoTToTAgent()
+        agent.run()  # If a run() method is added in the future, this will be used
+        if hasattr(agent, 'process_thread') and agent.process_thread:
+            agent.process_thread.join()
+        else:
+            print("Error: Processing thread not found. Exiting.")
     except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.cleanup()
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

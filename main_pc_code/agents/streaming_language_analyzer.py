@@ -17,7 +17,7 @@ from pathlib import Path
 import requests
 import socket
 from typing import Dict, Optional
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 from utils.service_discovery_client import register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
@@ -28,6 +28,8 @@ _agent_args = parse_agent_args()
 # Optional fastText language ID
 try:
     import fasttext
+import psutil
+from datetime import datetime
     FASTTEXT_AVAILABLE = True
 except ImportError:
     FASTTEXT_AVAILABLE = False
@@ -37,13 +39,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
 # Port configuration from args or defaults
-ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576))  # From streaming_speech_recognition.py
-ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577))  # Default port for this service
-ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597))  # Shared health port
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
+ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576))
+ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577))
+ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597))
+ZMQ_REQUEST_TIMEOUT = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -88,12 +90,13 @@ def find_available_port(start_port: int, end_port: int, max_attempts: int = 10) 
     raise RuntimeError(f"Could not find available port in range {start_port}-{end_port}")
 
 class StreamingLanguageAnalyzer(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="StreamingLanguageAnalyzer")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         self.context = zmq.Context()
         
         # Use provided port or default
-        self.pub_port = port if port else ZMQ_PUB_PORT
+        self.pub_port = self.port if self.port else ZMQ_PUB_PORT
         logger.info(f"Using port {self.pub_port} for publishing")
         
         # Setup sockets
@@ -540,6 +543,40 @@ class StreamingLanguageAnalyzer(BaseAgent):
         }
         base_status.update(specific_metrics)
         return base_status
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
 
 if __name__ == "__main__":
     analyzer = StreamingLanguageAnalyzer()

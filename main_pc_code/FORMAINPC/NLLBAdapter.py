@@ -81,7 +81,10 @@ MAX_BATCH_SIZE = 16
 ENABLE_DYNAMIC_QUANTIZATION = True
 TENSORRT_ENABLED = False  # Placeholder for future TensorRT integration
 
-class ResourceManager:
+def __init__(self, port: int = None, name: str = None, **kwargs):
+    agent_port = _agent_args.get('port', 5000) if port is None else port
+    agent_name = _agent_args.get('name', 'NLLBTranslationAdapter') if name is None else name
+    super().__init__(port=agent_port, name=agent_name)
     def __init__(self):
         self.default_batch_size = DEFAULT_BATCH_SIZE
         self.max_batch_size = MAX_BATCH_SIZE
@@ -92,6 +95,9 @@ class ResourceManager:
         mem = psutil.virtual_memory().percent
         try:
             import torch
+from main_pc_code.utils.config_parser import parse_agent_args
+_agent_args = parse_agent_args()
+
             gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
         except Exception:
             gpu = 0

@@ -1,3 +1,10 @@
+import sys
+import os
+# Add true project root to Python path to resolve imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 #!/usr/bin/env python3
 """
 System Digital Twin Agent
@@ -7,8 +14,6 @@ a simulation endpoint to predict the impact of future actions on system resource
 It serves as a predictive analytics layer for resource management decisions.
 """
 
-import os
-import sys
 import time
 import json
 import logging
@@ -19,44 +24,9 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union, cast
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_parser import parse_agent_args
-
-# Add project root to Python path
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-# Define fallback functions
-def fallback_get_env(key, default=None):
-    """Fallback implementation for get_env"""
-    return os.environ.get(key, default)
-
-# Import config parser utility with fallback
-try:
-    from utils.service_discovery_client import discover_service, register_service, get_service_address
-    from utils.env_loader import get_env
-    from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
-    _agent_args = parse_agent_args()
-except ImportError:
-    logger = logging.getLogger("SystemDigitalTwinAgent")
-    logger.error("Failed to import required modules. Falling back to defaults.")
-    class DummyArgs:
-        host = '0.0.0.0'  # Use 0.0.0.0 to allow external connections
-    _agent_args = DummyArgs()
-    # Define fallback functions if imports fail
-    get_env = fallback_get_env
-    
-    def is_secure_zmq_enabled():
-        return False
-    
-    def configure_secure_server(socket):
-        return socket
-    
-    def start_auth():
-        pass
-    
-    def register_service(name, port, additional_info=None):
-        return {"status": "SUCCESS", "message": "Fallback registration"}
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
 
 # Configure logging
 log_file_path = 'logs/system_digital_twin.log'
@@ -72,11 +42,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', 'localhost')
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+
+# Default port settings
+DEFAULT_PORT = 5717
+DEFAULT_HEALTH_PORT = 8100
 
 # Default configuration
 DEFAULT_CONFIG = {
@@ -89,43 +63,46 @@ DEFAULT_CONFIG = {
     "network_baseline_ms": 50,  # Default expected network latency
 }
 
-class SystemDigitalTwin(BaseAgent):
+# Parse agent arguments
+_agent_args = parse_agent_args()
+
+class SystemDigitalTwinAgent(BaseAgent):
     """
     A digital twin of the voice assistant system that monitors real-time metrics
     and provides predictive analytics for resource management.
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None, port: int = None):
-        """
-        Initialize the System Digital Twin agent.
+    def __init__(self):
+        # Initialize with BaseAgent
+        super().__init__(_agent_args)
         
-        Args:
-            config: Configuration dictionary that can override defaults
-            port: Optional port override for testing
-        """
-        _agent_args = parse_agent_args()
-        port = port or getattr(_agent_args, 'port', None)
-        if port is None:
-            port = 7120
-        port = int(port)
-        name = "SystemDigitalTwin"
-        super().__init__(name=name, port=port)
+        # Get configuration from _agent_args
+        self.port = getattr(_agent_args, 'port', DEFAULT_PORT)
+        if self.port is None:
+            self.port = DEFAULT_PORT
+            logger.warning(f"Port was None, using default port {DEFAULT_PORT}")
+            
+        self.bind_address = getattr(_agent_args, 'bind_address', BIND_ADDRESS)
+        self.zmq_timeout = getattr(_agent_args, 'zmq_request_timeout', ZMQ_REQUEST_TIMEOUT)
+        
         # Merge provided config with defaults
         self.config = DEFAULT_CONFIG.copy()
-        if config:
-            self.config.update(config)
-            
+        
         # Set up ports and host from configuration
         # Use parameter port first, then config, then fall back to default
-        self.main_port = port
-        self.health_port = self.config.get('health_check_port', 8100)
+        self.main_port = self.port
+        self.health_port = getattr(_agent_args, 'health_check_port', DEFAULT_HEALTH_PORT)
+        if self.health_port is None:
+            self.health_port = DEFAULT_HEALTH_PORT
+            logger.warning(f"Health port was None, using default health port {DEFAULT_HEALTH_PORT}")
+            
         logger.info(f"Initializing with ZMQ port {self.main_port} and Health port {self.health_port} from configuration.")
         
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Check if secure ZMQ is enabled
         secure_zmq = is_secure_zmq_enabled()
@@ -142,7 +119,7 @@ class SystemDigitalTwin(BaseAgent):
                 secure_zmq = False
         
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        socket_address = f"tcp://{BIND_ADDRESS}:{self.main_port}"
+        socket_address = f"tcp://{self.bind_address}:{self.main_port}"
         logger.info(f"Attempting to bind to {socket_address}")
         self.socket.bind(socket_address)
         logger.info(f"Successfully bound to {socket_address}")
@@ -157,7 +134,8 @@ class SystemDigitalTwin(BaseAgent):
         self.prom = None
         try:
             from prometheus_api_client import PrometheusConnect
-            self.prom = PrometheusConnect(url=self.config["prometheus_url"], disable_ssl=True)
+            prometheus_url = getattr(_agent_args, 'prometheus_url', self.config["prometheus_url"])
+            self.prom = PrometheusConnect(url=prometheus_url, disable_ssl=True)
             logger.info("Prometheus client initialized successfully")
         except ImportError:
             logger.warning("Prometheus client not available, using mock metrics")
@@ -183,13 +161,16 @@ class SystemDigitalTwin(BaseAgent):
         self._register_agent("SystemDigitalTwin", "MainPC", "HEALTHY", datetime.now().isoformat())
         
         # Track VRAM usage from ModelManagerAgent
+        vram_capacity = getattr(_agent_args, 'vram_capacity_mb', self.config.get("vram_capacity_mb", 24000))
+        pc2_vram_capacity = getattr(_agent_args, 'pc2_vram_capacity_mb', 12000)
+        
         self.vram_metrics = {
-            "mainpc_vram_total_mb": self.config.get("vram_capacity_mb", 24000),  # Default 24GB for RTX 4090
+            "mainpc_vram_total_mb": vram_capacity,
             "mainpc_vram_used_mb": 0,
-            "mainpc_vram_free_mb": self.config.get("vram_capacity_mb", 24000),
-            "pc2_vram_total_mb": 12000,  # Default 12GB for RTX 3060
+            "mainpc_vram_free_mb": vram_capacity,
+            "pc2_vram_total_mb": pc2_vram_capacity,
             "pc2_vram_used_mb": 0,
-            "pc2_vram_free_mb": 12000,
+            "pc2_vram_free_mb": pc2_vram_capacity,
             "loaded_models": {},
             "last_update": datetime.now().isoformat()
         }
@@ -241,7 +222,7 @@ class SystemDigitalTwin(BaseAgent):
         }
         logger.info(f"Registered agent {agent_name} at {location} with status {status}")
         
-    def update_agent_status(self, agent_name: str, status: str, location: str = None) -> Dict[str, Any]:
+    def update_agent_status(self, agent_name: str, status: str, location: Optional[str] = None) -> Dict[str, Any]:
         """
         Update the status of a registered agent or register a new agent.
         
@@ -856,10 +837,46 @@ class SystemDigitalTwin(BaseAgent):
         except Exception as e:
             logger.error(f"Error updating VRAM metrics: {e}")
             import traceback
+import psutil
+from datetime import datetime
             logger.error(traceback.format_exc())
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
-    agent = SystemDigitalTwin()
+    agent = SystemDigitalTwinAgent()
     try:
         agent.run()
     except KeyboardInterrupt:

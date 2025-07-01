@@ -23,7 +23,7 @@ import logging
 import threading
 import base64
 from typing import Dict, Any, List, Optional, Tuple, Union
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
@@ -85,18 +85,21 @@ def find_available_port(start_port: int, max_attempts: int = 20) -> int:
 
 
 class CoordinatorAgent(BaseAgent):
-    """Central coordinator that manages the flow of information between all agents."""
-    
-    def __init__(self, port: int = COORDINATOR_PORT, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the Coordinator Agent."""
-        self.port = port
-        super().__init__(port=self.port, name="CoordinatorAgent")
+        super().__init__()
+        self._agent_args = self.parse_agent_args()
+        self.zmq_timeout = self.config.getint('coordinator.zmq_timeout_ms', 5000)
+        self.inactivity_threshold = self.config.getint('coordinator.inactivity_threshold_seconds', 30)
+        self.max_pending_suggestions = self.config.getint('coordinator.max_pending_suggestions', 5)
+        bind_address_ip = self.config.get('network.bind_address', '0.0.0.0')
+        self.port = self.config.getint('coordinator.port', 26002)
         
         # Create ZMQ context and socket for the coordinator
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
@@ -104,7 +107,7 @@ class CoordinatorAgent(BaseAgent):
             logger.info("Secure ZMQ enabled for CoordinatorAgent")
         
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        bind_address = f"tcp://{bind_address_ip}:{self.port}"
         self.socket.bind(bind_address)
         logger.info(f"Coordinator socket bound to {bind_address}")
         
@@ -117,17 +120,17 @@ class CoordinatorAgent(BaseAgent):
         
         # Create socket for proactive suggestions (with port fallback)
         self.suggestion_socket = self.context.socket(zmq.REP)
-        self.suggestion_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.suggestion_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.suggestion_socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.suggestion_socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ to suggestion socket if enabled
         if SECURE_ZMQ:
             self.suggestion_socket = configure_secure_server(self.suggestion_socket)
 
         # Attempt to bind to the preferred port; fall back if it's unavailable.
-        self.suggestion_port = PROACTIVE_SUGGESTION_PORT
+        self.suggestion_port = self.config.getint('coordinator.proactive_suggestion_port', 5591)
         try:
-            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+            suggestion_bind_address = f"tcp://{bind_address_ip}:{self.suggestion_port}"
             self.suggestion_socket.bind(suggestion_bind_address)
             logger.info(f"Proactive suggestion socket bound to {suggestion_bind_address}")
         except zmq.ZMQError as e:
@@ -136,12 +139,13 @@ class CoordinatorAgent(BaseAgent):
                 "Searching for the next available port."
             )
             self.suggestion_port = find_available_port(self.suggestion_port + 1)
-            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+            suggestion_bind_address = f"tcp://{bind_address_ip}:{self.suggestion_port}"
             self.suggestion_socket.bind(suggestion_bind_address)
             logger.info(f"Proactive suggestion socket bound to fallback port {suggestion_bind_address}")
         
         # Flag to control the agent
         self.running = True
+        self.start_time = time.time()
         
         # Proactive assistance state
         self.last_interaction_time = time.time()
@@ -166,6 +170,10 @@ class CoordinatorAgent(BaseAgent):
         self.inactivity_thread.start()
         
         logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
+        
+    def _get_health_status(self):
+        # Basic health check.
+        return {'status': 'ok', 'running': self.running, 'pending_suggestions': len(self.pending_suggestions)}
     
     def _register_service(self):
         """Register this agent with the service discovery system"""
@@ -200,12 +208,12 @@ class CoordinatorAgent(BaseAgent):
                 logger.info(f"Discovered MemoryOrchestrator at {self.memory_host}:{self.memory_port}")
             else:
                 logger.warning("Failed to discover MemoryOrchestrator, will retry later")
-                self.memory_host = "localhost"
-                self.memory_port = 5576  # Default MemoryOrchestrator port
+                self.memory_host = self.config.get('dependencies.memory_orchestrator_host', 'localhost')
+                self.memory_port = self.config.getint('dependencies.memory_orchestrator_port', 5576)
         except Exception as e:
             logger.error(f"Error initializing memory connection: {str(e)}")
-            self.memory_host = "localhost"
-            self.memory_port = 5576  # Default MemoryOrchestrator port
+            self.memory_host = self.config.get('dependencies.memory_orchestrator_host', 'localhost')
+            self.memory_port = self.config.getint('dependencies.memory_orchestrator_port', 5576)
     
     def _get_memory_connection(self):
         """Get a connection to the MemoryOrchestrator"""
@@ -1037,9 +1045,53 @@ class CoordinatorAgent(BaseAgent):
             "health_status": health_status
         }
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
-    # Create and start the Coordinator Agent
-    agent = CoordinatorAgent()
-    print("Agent created, starting...")
-    agent.start()
-    print("Agent started.")
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = CoordinatorAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

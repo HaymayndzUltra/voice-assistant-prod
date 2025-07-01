@@ -21,7 +21,9 @@ import time
 import pickle
 from datetime import datetime
 from typing import Optional, Dict, Any
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
+import psutil
+from datetime import datetime
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -41,9 +43,12 @@ ZMQ_HEALTH_PORT = 6579
 ZMQ_AUDIO_PORT = 6575  # Port for receiving audio from streaming_audio_capture.py
 ZMQ_VAD_PORT = 6579    # Port for receiving VAD events
 
-class WakeWordDetector(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="WakeWordDetector")
+class WakeWordDetectorAgent(BaseAgent):
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5705))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         """
         Initialize the wake word detector.
         
@@ -95,23 +100,23 @@ class WakeWordDetector(BaseAgent):
             
             # Create SUB socket for audio
             self.audio_socket = self.zmq_context.socket(zmq.SUB)
-            self.audio_socket.connect(f"tcp://{_agent_args.host}:{ZMQ_AUDIO_PORT}")
+            self.audio_socket.connect(f"tcp://{self.bind_address}:{ZMQ_AUDIO_PORT}")
             self.audio_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             
             # Create SUB socket for VAD events
             self.vad_socket = self.zmq_context.socket(zmq.SUB)
-            self.vad_socket.connect(f"tcp://{_agent_args.host}:{ZMQ_VAD_PORT}")
+            self.vad_socket.connect(f"tcp://{self.bind_address}:{ZMQ_VAD_PORT}")
             self.vad_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             
             # Create PUB socket for wake word events
             self.pub_socket = self.zmq_context.socket(zmq.PUB)
-            self.pub_socket.bind(f"tcp://*:{ZMQ_PUB_PORT}")
+            self.pub_socket.bind(f"tcp://*:{self.port}")
             
             # Create PUB socket for health status
             self.health_socket = self.zmq_context.socket(zmq.PUB)
             self.health_socket.bind(f"tcp://*:{ZMQ_HEALTH_PORT}")
             
-            logger.info(f"ZMQ sockets initialized - Audio SUB: {ZMQ_AUDIO_PORT}, VAD SUB: {ZMQ_VAD_PORT}, Event PUB: {ZMQ_PUB_PORT}, Health: {ZMQ_HEALTH_PORT}")
+            logger.info(f"ZMQ sockets initialized - Audio SUB: {ZMQ_AUDIO_PORT}, VAD SUB: {ZMQ_VAD_PORT}, Event PUB: {self.port}, Health: {ZMQ_HEALTH_PORT}")
         except Exception as e:
             logger.error(f"Error initializing ZMQ: {str(e)}")
             raise
@@ -331,8 +336,62 @@ class WakeWordDetector(BaseAgent):
         """Context manager exit."""
         self.stop()
 
+    def _perform_initialization(self):
+        """Initialize agent components."""
+        try:
+            # Add your initialization code here
+            pass
+        except Exception as e:
+            logger.error(f"Initialization error: {e}")
+            raise
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
 if __name__ == "__main__":
-    detector = WakeWordDetector()
+    detector = WakeWordDetectorAgent()
     
     try:
         detector.start()
@@ -343,11 +402,3 @@ if __name__ == "__main__":
         print("\nStopping wake word detector...")
     finally:
         detector.stop() 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise

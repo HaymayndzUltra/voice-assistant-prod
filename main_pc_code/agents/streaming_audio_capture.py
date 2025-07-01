@@ -35,7 +35,7 @@ except ModuleNotFoundError:
         logging.warning("setup_health_check_server not found; HTTP health checks disabled for AudioCapture")
         return None
 try:
-    from utils.config_parser import parse_agent_args
+    from utils.config_loader import parse_agent_args
 except ModuleNotFoundError:
     import argparse
     def parse_agent_args():
@@ -103,13 +103,12 @@ def find_available_port(start_port, max_attempts=10):
 
 from main_pc_code.src.core.base_agent import BaseAgent
 
-class StreamingAudioCapture(BaseAgent):
+class StreamingAudioCaptureAgent(BaseAgent):
     def __init__(self):
-        # Use parse_agent_args for config
-        _agent_args = parse_agent_args()
-        port = getattr(_agent_args, 'port', None)
-        name = "StreamingAudioCapture"
-        super().__init__(name=name, port=port)
+        self.port = int(_agent_args.get('port', 5701))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         logger.info("Initializing StreamingAudioCapture with direct audio parameters...")
         # Detect dummy mode via env var
         self.dummy_mode = os.getenv("USE_DUMMY_AUDIO", "false").lower() == "true"
@@ -852,6 +851,40 @@ class StreamingAudioCapture(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -864,7 +897,7 @@ if __name__ == "__main__":
     logger.info("Streaming Audio Capture Module starting (main block)...")
     audio_capture_instance = None # Define for visibility in finally if needed, though __exit__ handles cleanup
     try:
-        with StreamingAudioCapture() as audio_capture_instance:
+        with StreamingAudioCaptureAgent() as audio_capture_instance:
             # __enter__ is called here. It should set up self.stream.
             # The instance returned by __enter__ is audio_capture_instance.
             if audio_capture_instance is None:
@@ -879,6 +912,8 @@ if __name__ == "__main__":
             # Safeguard: if run() returns for any reason, keep process alive to satisfy launcher expectations
             logger.warning("run() has exited; entering idle loop to keep process alive as a safeguard.")
             import time as _time_idle
+import psutil
+from datetime import datetime
             while True:
                 _time_idle.sleep(10)
         # __exit__ is automatically called here, upon exiting the 'with' block (normally or via exception)

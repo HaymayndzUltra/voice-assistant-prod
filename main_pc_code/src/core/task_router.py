@@ -23,14 +23,17 @@ import msgpack  # For efficient message serialization
 import heapq  # For priority queue
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Tuple
+from src.core.base_agent import BaseAgent
 from src.core.http_server import setup_health_check_server
-from main_pc_code.utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
 import pickle
 from main_pc_code.src.memory.zmq_encoding_utils import safe_encode_json, safe_decode_json
+import psutil
+from datetime import datetime
 
 _agent_args = parse_agent_args()
 
@@ -48,7 +51,8 @@ logging.basicConfig(
 logger = logging.getLogger('TaskRouter')
 
 # === ALL CONFIGURATION FROM _agent_args ===
-TASK_ROUTER_PORT = getattr(_agent_args, 'port', 8571)
+DEFAULT_PORT = int(os.environ.get("TASK_ROUTER_PORT", "7000"))  # Default port if not specified in _agent_args
+TASK_ROUTER_PORT = getattr(_agent_args, 'port', DEFAULT_PORT)
 TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1
 CRIT_BREAK_FAIL = getattr(_agent_args, 'circuit_breaker_failure_threshold', 3)
 CRIT_BREAK_RESET = getattr(_agent_args, 'circuit_breaker_reset_timeout', 30)
@@ -184,15 +188,14 @@ class CircuitBreaker:
                 'half_open_timeout': self.half_open_timeout
             }
 
-class TaskRouter:
+class TaskRouter(BaseAgent):
     """Routes tasks between different services and handles circuit breaking."""
 
-    def __init__(self, port: int = None, name: str = None, **kwargs):
+    def __init__(self, **kwargs):
         # === CONFIGURATION FROM _agent_args ===
-        agent_port = port if port is not None else getattr(_agent_args, 'port', 8571)
-        agent_name = name if name is not None else getattr(_agent_args, 'name', 'TaskRouter')
-        self.port = agent_port
-        self.name = agent_name
+        super().__init__(_agent_args)
+        self.port = getattr(_agent_args, 'port', DEFAULT_PORT)
+        self.name = getattr(_agent_args, 'name', 'TaskRouter')
         self.circuit_breakers = {}
         self.service_status = {}
         self.running = True
@@ -455,7 +458,8 @@ class TaskRouter:
             # Create health check socket
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://0.0.0.0:{TASK_ROUTER_HEALTH_PORT}")
+            bind_address = getattr(_agent_args, 'bind_address', 'localhost')
+            self.health_socket.bind(f"tcp://{bind_address}:{TASK_ROUTER_HEALTH_PORT}")
             logger.info(f"Health check socket bound to port {TASK_ROUTER_HEALTH_PORT}")
             
             # Start health check thread
@@ -574,10 +578,44 @@ class TaskRouter:
             
         logger.info("Task Router shut down successfully")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     # === STANDARDIZED MAIN BLOCK ===
-    port = getattr(_agent_args, 'port', 8571)
+    port = getattr(_agent_args, 'port', DEFAULT_PORT)
     name = getattr(_agent_args, 'name', 'TaskRouter')
     logger.info(f"Starting TaskRouter on port {port}")
-    agent = TaskRouter(port=port, name=name)
+    agent = TaskRouter()
     agent.run() 

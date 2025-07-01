@@ -13,6 +13,8 @@ import threading
 import logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
+from utils.config_loader import parse_agent_args
+_agent_args = parse_agent_args()
 
 # Logging setup
 LOG_PATH = "executor_agent.log"
@@ -86,55 +88,12 @@ USER_PERMISSIONS = {
 
 
 class ExecutorAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        # Default ports if none provided
-        if port is None:
-            port = 5606  # Base REP port to receive privileged commands (if any)
-        self.port = port
-
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5709))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         # Initialize BaseAgent (this allocates main REP and a health port, which may shift if ports are occupied)
-        super().__init__(port=self.port, name="Executor")
-
-        # Determine ports for command SUB and feedback PUB that do not clash with the chosen health port
-        sub_port_start = self.health_port + 1
-        pub_port_start = sub_port_start + 1
-
-        # Create additional sockets using existing context (do NOT overwrite BaseAgent sockets)
-        max_attempts = 10
-        self.command_socket = self.context.socket(zmq.SUB)
-        bound = False
-        for i in range(max_attempts):
-            candidate_sub_port = sub_port_start + i
-            try:
-                self.command_socket.bind(f"tcp://127.0.0.1:{candidate_sub_port}")
-                sub_port_start = candidate_sub_port
-                bound = True
-                break
-            except zmq.error.ZMQError:
-                logging.warning(f"[Executor] SUB port {candidate_sub_port} in use, trying next...")
-                continue
-        if not bound:
-            raise RuntimeError("[Executor] Unable to bind SUB socket after multiple attempts")
-        self.command_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
-        # Bind PUB socket for feedback; retry on conflict
-        self.feedback_socket = self.context.socket(zmq.PUB)
-        pub_bound = False
-        for i in range(max_attempts):
-            candidate_pub_port = pub_port_start + i
-            try:
-                self.feedback_socket.bind(f"tcp://127.0.0.1:{candidate_pub_port}")
-                pub_port_start = candidate_pub_port
-                pub_bound = True
-                break
-            except zmq.error.ZMQError:
-                logging.warning(f"[Executor] PUB port {candidate_pub_port} in use, trying next...")
-                continue
-        if not pub_bound:
-            raise RuntimeError("[Executor] Unable to bind PUB socket after multiple attempts")
-
-        logging.info(
-            f"[Executor] main REP {self.port}, health REP {self.health_port}, SUB {sub_port_start}, PUB {pub_port_start}.")
         self.running = True
         self.last_command = None
         self.command_history = []
@@ -274,18 +233,17 @@ class ExecutorAgent(BaseAgent):
         return {"status": self.health_status}
 
 
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
 if __name__ == "__main__":
     agent = ExecutorAgent()
-    try:
-        agent.start()
-    except KeyboardInterrupt:
-        logging.info("[Executor] KeyboardInterrupt received. Stopping...")
-        agent.stop()
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logging.error(f"Initialization error: {e}")
-            raise
+    agent.run()

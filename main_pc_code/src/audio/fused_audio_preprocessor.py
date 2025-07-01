@@ -26,7 +26,7 @@ import noisereduce as nr
 from scipy import signal
 import librosa
 from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import discover_service
 from main_pc_code.src.core.base_agent import BaseAgent
 _agent_args = parse_agent_args()
@@ -84,13 +84,12 @@ AGC_ATTACK_TIME = 0.01  # Attack time in seconds
 AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
-class FusedAudioPreprocessor(BaseAgent):
+class FusedAudioPreprocessorAgent(BaseAgent):
     def __init__(self):
-        """Initialize the fused audio preprocessor."""
-        _agent_args = parse_agent_args()
-        port = getattr(_agent_args, 'port', None)
-        name = "FusedAudioPreprocessor"
-        super().__init__(name=name, port=port)
+        self.port = int(_agent_args.get('port', 5703))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self._running = False
         self._thread = None
         
@@ -873,7 +872,7 @@ class FusedAudioPreprocessor(BaseAgent):
 if __name__ == "__main__":
     try:
         # Create and run the fused audio preprocessor
-        preprocessor = FusedAudioPreprocessor()
+        preprocessor = FusedAudioPreprocessorAgent()
         preprocessor.run()
     except Exception as e:
         logger.error(f"Error running fused audio preprocessor: {str(e)}")

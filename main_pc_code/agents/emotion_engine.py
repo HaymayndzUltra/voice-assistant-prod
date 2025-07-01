@@ -20,7 +20,7 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -35,37 +35,23 @@ logging.basicConfig(
 logger = logging.getLogger('EmotionEngine')
 
 class EmotionEngine(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        """Initialize the Emotion Engine.
-        
-        Args:
-            port: Port for receiving requests
-            pub_port: Port for publishing emotional state updates
-        """
-        # Determine listening port
-        if port is not None:
-            self.port = int(port)
-        elif getattr(_agent_args, 'port', None):
-            self.port = int(_agent_args.port)
-        else:
-            # Default fallback used when agent is launched by external orchestrator without CLI args
-            self.port = 5590
+    def __init__(self):
+        """Initialize the Emotion Engine (refactored for compliance)."""
+        # All config values are loaded from _agent_args
+        # Use dict-style access for maximum compatibility
+        self.port = _agent_args.get('port')
+        self.pub_port = _agent_args.get('pub_port', self.port + 2)
 
-        # Determine pub_port (defaults to port + 2)
-        if 'pub_port' in kwargs and kwargs['pub_port'] is not None:
-            self.pub_port = int(kwargs['pub_port'])
-        else:
-            self.pub_port = self.port + 2  # Use port + 2 to avoid conflict with health check port
-            
         # Initialize ZMQ in background
         self.initialization_status = {
             "is_initialized": False,
             "error": None,
             "progress": 0.0
         }
-        
-        super().__init__(port=self.port, name="EmotionEngine")
-        
+
+        # Pass the entire _agent_args to the base class for compliance
+        super().__init__(_agent_args)
+
         # Initialize basic state
         self.current_emotional_state = {
             'tone': 'neutral',
@@ -74,7 +60,7 @@ class EmotionEngine(BaseAgent):
             'dominant_emotion': 'neutral',
             'timestamp': time.time()
         }
-        
+
         # Define emotional state thresholds and mappings
         self.emotion_thresholds = {
             'sentiment': {
@@ -89,7 +75,7 @@ class EmotionEngine(BaseAgent):
                 'high': 1.0
             }
         }
-        
+
         # Emotion combination mappings
         self.emotion_combinations = {
             ('angry', 'high'): 'furious',
@@ -102,19 +88,19 @@ class EmotionEngine(BaseAgent):
             ('happy', 'medium'): 'pleased',
             ('happy', 'low'): 'content'
         }
-        
+
         self.start_time = time.time()
         self.last_broadcast_time = time.time()
-        
+
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
-        
+
         # Start health check thread
         self.health_check_thread = threading.Thread(target=self._health_check_loop)
         self.health_check_thread.daemon = True
         self.health_check_thread.start()
         logger.info(f"Health check thread started on port {self.port + 1}")
-        
+
         logger.info(f"Emotion Engine basic initialization complete")
         
     def _perform_initialization(self):
@@ -355,16 +341,52 @@ class EmotionEngine(BaseAgent):
         super().cleanup()
         logger.info("Emotion Engine stopped")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == '__main__':
     import argparse
     import atexit
     import signal
+import psutil
+from datetime import datetime
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=None)
     args = parser.parse_args()
     
-    agent = EmotionEngine(port=args.port)
+    agent = EmotionEngine()
 
     def graceful_exit(*args):
         agent.stop()

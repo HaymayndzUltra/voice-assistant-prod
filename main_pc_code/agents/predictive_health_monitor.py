@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 
 # Configure logging
 logging.basicConfig(
@@ -46,16 +46,16 @@ HEALTH_CHECK_PORT = 5614
 # Default ZMQ send/receive timeout (milliseconds)
 ZMQ_REQUEST_TIMEOUT = 2000
 
-class PredictiveHealthMonitor(BaseAgent):
+class PredictiveHealthMonitorAgent(BaseAgent):
     """Predictive health monitoring system for AI agents"""
     
-    def __init__(self, port=None):
+    def __init__(self):
         """Initialize the predictive health monitor"""
         _agent_args = parse_agent_args()
-        port = port or getattr(_agent_args, 'port', None) or HEALTH_MONITOR_PORT
-        name = "PredictiveHealthMonitor"
-        super().__init__(name=name, port=port)
-        self.port = port or HEALTH_MONITOR_PORT
+        self.port = int(_agent_args.get('port', 5715))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self.health_port = HEALTH_CHECK_PORT
         
         # Get machine information
@@ -71,7 +71,7 @@ class PredictiveHealthMonitor(BaseAgent):
         
         # Socket to receive requests
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         try:
             self.socket.bind(f"tcp://*:{self.port}")
             logger.info(f"Predictive Health Monitor bound to port {self.port}")
@@ -163,15 +163,51 @@ class PredictiveHealthMonitor(BaseAgent):
         super().cleanup()
         logger.info("Cleanup complete")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     # Parse command line arguments
     import argparse
+import psutil
+from datetime import datetime
     parser = argparse.ArgumentParser(description='Predictive Health Monitor')
     parser.add_argument('--port', type=int, default=HEALTH_MONITOR_PORT, help='Port to bind to')
     args = parser.parse_args()
     
     # Create and run the monitor
-    monitor = PredictiveHealthMonitor(port=args.port)
+    monitor = PredictiveHealthMonitorAgent()
     
     try:
         monitor.run()

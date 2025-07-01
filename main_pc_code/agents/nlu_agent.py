@@ -14,7 +14,8 @@ import logging
 import re
 import threading
 from typing import Dict, Any, List, Tuple
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
+
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -29,15 +30,17 @@ logging.basicConfig(
 logger = logging.getLogger("NLUAgent")
 
 # Constants
-NLU_PORT = 5558
+ZMQ_REQUEST_TIMEOUT = 5000  # ms
 
 class NLUAgent(BaseAgent):
     """Natural Language Understanding agent that analyzes user input and extracts intents and entities."""
     
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="NluAgent")
+    def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the NLU Agent."""
-        self.port = port
+        # Get port and name from _agent_args with fallbacks
+        agent_port = getattr(_agent_args, 'port', 5558) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'NLUAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
         
         # Initialize basic state
         self.running = True
@@ -284,13 +287,48 @@ class NLUAgent(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
-    import argparse
+    import psutil
+from datetime import datetime
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5709)
-    args = parser.parse_args()
-    agent = NLUAgent(port=args.port)
-    agent.start()
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", type=int, default=5709)
+args = parser.parse_args()
+agent = NLUAgent()
+agent.start()

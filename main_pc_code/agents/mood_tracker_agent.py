@@ -15,7 +15,7 @@ import time
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List, Optional, Tuple
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -30,23 +30,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class MoodTrackerAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        # Get configuration values before calling super()
-        emotion_engine_port = getattr(_agent_args, 'emotionengine_port', 5582)
-        history_size = getattr(_agent_args, 'history_size', 100)
-        
-        # Call BaseAgent init first (this sets up health check thread)
-        super().__init__(port=port, name="MoodTrackerAgent")
-        
-        """Initialize the MoodTrackerAgent.
-        
-        Args:
-            port: Port for receiving requests
-            emotion_engine_port: Port for subscribing to EmotionEngine broadcasts
-            history_size: Maximum number of emotional states to store in history
-        """
-        self.emotion_engine_port = emotion_engine_port
-        self.history_size = history_size
+    def __init__(self):
+        # All config values are loaded from _agent_args
+        self.port = _agent_args.get('port')
+        self.emotion_engine_port = _agent_args.get('emotionengine_port')
+        self.history_size = _agent_args.get('history_size')
+        super().__init__(_agent_args)
+        """Initialize the MoodTrackerAgent (refactored for compliance)."""
         
         # SUB socket for subscribing to EmotionEngine broadcasts
         self.emotion_sub_socket = self.context.socket(zmq.SUB)
@@ -54,7 +44,7 @@ class MoodTrackerAgent(BaseAgent):
             _host = _agent_args.get('host', 'localhost')
         else:
             _host = getattr(_agent_args, 'host', 'localhost')
-        self.emotion_sub_socket.connect(f"tcp://{_host}:{emotion_engine_port}")
+        self.emotion_sub_socket.connect(f"tcp://{_host}:{self.emotion_engine_port}")
         self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
         
         # Initialize poller for non-blocking socket operations
@@ -71,7 +61,7 @@ class MoodTrackerAgent(BaseAgent):
         }
         
         # Mood history using deque with fixed size
-        self.mood_history = deque(maxlen=history_size)
+        self.mood_history = deque(maxlen=self.history_size)
         
         # Emotion mapping (user emotion to AI response emotion)
         self.emotion_mapping = {
@@ -91,8 +81,8 @@ class MoodTrackerAgent(BaseAgent):
         self.emotion_thread.start()
         
         logger.info(f"MoodTrackerAgent initialized on port {self.port}")
-        logger.info(f"Subscribed to EmotionEngine on port {emotion_engine_port}")
-        logger.info(f"Mood history size: {history_size}")
+        logger.info(f"Subscribed to EmotionEngine on port {self.emotion_engine_port}")
+        logger.info(f"Mood history size: {self.history_size}")
     
     def _monitor_emotions(self):
         """Monitor emotional state updates from EmotionEngine."""
@@ -193,7 +183,7 @@ class MoodTrackerAgent(BaseAgent):
             return {'status': 'success', 'message': 'pong'}
             
         elif action == 'get_health':
-            return self.get_health_status()
+            return self._get_health_status()
             
         elif action == 'get_current_mood':
             return {
@@ -326,23 +316,15 @@ class MoodTrackerAgent(BaseAgent):
                 'average_intensity': 0.5
             }
     
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent.
-        
-        Returns:
-            Dictionary with health status information
-        """
-        return {
-            'status': 'success',
-            'uptime': time.time() - self.start_time,
-            'components': {
-                'emotion_subscription': True,
-                'mood_tracking': True,
-                'history_size': len(self.mood_history),
-                'max_history': self.history_size
-            },
-            'current_mood': self.current_mood
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
+        return {"status": status, "details": details}
     
     def shutdown(self):
         """Gracefully shutdown the agent"""
@@ -355,12 +337,48 @@ class MoodTrackerAgent(BaseAgent):
         super().cleanup()
         logger.info("MoodTrackerAgent shutdown complete")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     import argparse
+import psutil
+from datetime import datetime
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5704)
     args = parser.parse_args()
-    agent = MoodTrackerAgent(port=args.port)
+    agent = MoodTrackerAgent()
     try:
         agent.run()
     except KeyboardInterrupt:

@@ -12,7 +12,9 @@ import time
 import collections
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Deque, Union
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
+import psutil
+from datetime import datetime
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -31,25 +33,26 @@ class MemoryManager(BaseAgent):
         """Override default port to use the configured port."""
         return 5712  # Using a new port that's not in use
         
-    def __init__(self, port: int = 5712, memory_size: int = 1000, **kwargs):
-        super().__init__(port=port, name="MemoryManager")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         """Initialize the Memory Manager.
         
         Args:
             port: Port to listen on
             memory_size: Maximum number of interactions to store in short-term memory
         """
-        self.memory_size = memory_size
+        self.memory_size = _agent_args.get('memory_size', 1000)
         
         # Initialize short-term memory as a fixed-size deque
-        self.memory: Deque[Dict[str, Any]] = collections.deque(maxlen=memory_size)
+        self.memory: Deque[Dict[str, Any]] = collections.deque(maxlen=self.memory_size)
         
         # Start health check thread
         self.health_check_thread = threading.Thread(target=self._health_check_loop)
         self.health_check_thread.daemon = True
         self.health_check_thread.start()
         
-        logger.info(f"Memory Manager initialized on port {self.port} with memory size {memory_size}")
+        logger.info(f"Memory Manager initialized on port {self.port} with memory size {self.memory_size}")
         
     def _health_check_loop(self):
         """Continuously check the health of the agent."""
@@ -246,12 +249,6 @@ class MemoryManager(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
-if __name__ == '__main__':
-    agent = MemoryManager()
-    try:
-        agent.run()
-    except KeyboardInterrupt:
-        agent.stop() 
     def _perform_initialization(self):
         """Initialize agent components."""
         try:
@@ -260,3 +257,44 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+if __name__ == '__main__':
+    agent = MemoryManager()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        agent.stop() 

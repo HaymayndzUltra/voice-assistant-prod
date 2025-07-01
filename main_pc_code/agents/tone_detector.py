@@ -21,7 +21,7 @@ import re
 import numpy as np
 import wave
 from typing import Dict, Any, Optional
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Try to import audio processing libraries
@@ -69,11 +69,12 @@ TONE_CATEGORIES = {
 }
 
 class ToneDetectorAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="ToneDetectorAgent")
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         
         # Initialize tone detection components
-        self.dev_mode = kwargs.get('dev_mode', True)
+        self.dev_mode = _agent_args.get('dev_mode', True)
         self.whisper_socket = None
         self.tagalog_analyzer = None
         self.whisper_model = None
@@ -497,18 +498,54 @@ class ToneDetectorAgent(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == "__main__":
     import argparse
+import psutil
+from datetime import datetime
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5625)
-    args = parser.parse_args()
-    agent = ToneDetectorAgent(port=args.port)
-    try:
-        agent.run()
-    except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
-    finally:
-        agent.shutdown()
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", type=int, default=5625)
+args = parser.parse_args()
+agent = ToneDetectorAgent(port=args.port)
+try:
+    agent.run()
+except KeyboardInterrupt:
+    logger.info("Received shutdown signal")
+finally:
+    agent.shutdown()

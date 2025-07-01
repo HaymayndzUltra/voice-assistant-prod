@@ -23,6 +23,12 @@ project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+# Import config parser
+from main_pc_code.utils.config_parser import parse_agent_args
+
+# Parse agent arguments
+_agent_args = parse_agent_args()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -58,8 +64,23 @@ class PredictiveLoader:
         self.prediction_window = 3600  # 1 hour
         self.lookahead_window = 300    # 5 minutes
         
+        # Add name attribute for standardized main block
+        self.name = "PredictiveLoader"
+        self.running = True
+        self.start_time = time.time()
+        
         # Start health check thread
         self._start_health_check()
+    
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
     
     def _start_health_check(self):
         """Start a separate thread for health checks"""
@@ -204,16 +225,49 @@ class PredictiveLoader:
             "uptime": time.time() - self.start_time,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         }
-
-def main():
-    parser = argparse.ArgumentParser(description="Predictive Loader")
-    parser.add_argument("--port", type=int, default=5617, help="Port to listen on")
-    parser.add_argument("--task_router_port", type=int, default=8571, help="Task Router port")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind to")
-    args = parser.parse_args()
-    
-    loader = PredictiveLoader(port=args.port, task_router_port=args.task_router_port, host=args.host)
-    loader.start()
+        
+    def cleanup(self):
+        """Clean up resources"""
+        logger.info("Cleaning up PredictiveLoader resources...")
+        
+        # Close sockets
+        if hasattr(self, 'socket'):
+            self.socket.close()
+            logger.info("Main socket closed")
+            
+        if hasattr(self, 'task_router_socket'):
+            self.task_router_socket.close()
+            logger.info("Task router socket closed")
+            
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
+            logger.info("Health socket closed")
+            
+        # Terminate ZMQ context
+        if hasattr(self, 'context'):
+            self.context.term()
+            logger.info("ZMQ context terminated")
+            
+        logger.info("PredictiveLoader cleanup complete")
 
 if __name__ == "__main__":
-    main() 
+    # Standardized main execution block
+    agent = None
+    try:
+        # Instantiate the agent using _agent_args for configuration
+        agent = PredictiveLoader(
+            port=getattr(_agent_args, 'port', 5617),
+            task_router_port=getattr(_agent_args, 'task_router_port', 8571),
+            host=getattr(_agent_args, 'host', '0.0.0.0')
+        )
+        agent.start() # Use .start() as per original logic, assuming it's the main loop entry
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

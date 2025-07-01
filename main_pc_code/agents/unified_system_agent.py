@@ -23,7 +23,8 @@ import signal
 import socket
 import platform
 import traceback
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
+from datetime import datetime
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -59,8 +60,11 @@ def start_unified_system_agent():
 class UnifiedSystemAgent(BaseAgent):
     """Unified system management agent that handles orchestration, service discovery, and maintenance."""
     
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="UnifiedSystemAgent")
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5702))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         """Initialize the unified system agent."""
         try:
             logger.info("Starting UnifiedSystemAgent initialization...")
@@ -82,8 +86,8 @@ class UnifiedSystemAgent(BaseAgent):
             self.router_socket.setsockopt(zmq.LINGER, 0)
             self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
             self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
-            self.router_socket.bind(f"tcp://*:{SYSTEM_AGENT_PORT}")
-            logger.info(f"Successfully bound ROUTER socket to port {SYSTEM_AGENT_PORT}")
+            self.router_socket.bind(f"tcp://{self.bind_address}:{self.port}")
+            logger.info(f"Successfully bound ROUTER socket to port {self.port}")
             
             # REP socket for health checks
             logger.info(f"Binding REP socket to port {HEALTH_CHECK_PORT}...")
@@ -91,7 +95,7 @@ class UnifiedSystemAgent(BaseAgent):
             self.health_socket.setsockopt(zmq.LINGER, 0)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
             self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
-            self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
+            self.health_socket.bind(f"tcp://{self.bind_address}:{HEALTH_CHECK_PORT}")
             logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
             
             # Start background initialization thread
@@ -396,6 +400,51 @@ class UnifiedSystemAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error connecting to agents: {e}")
             raise
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
 
 if __name__ == "__main__":
     try:

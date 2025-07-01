@@ -13,7 +13,7 @@ import psutil
 import torch
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from config.agent_ports import default_ports
@@ -33,25 +33,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+ZMQ_REQUEST_TIMEOUT = int(_agent_args.get('zmq_request_timeout', 5000))
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
 
 class MetaCognitionAgent(BaseAgent):
-    def __init__(self, port: Optional[int] = None, **kwargs):
+    def __init__(self):
         self.initialization_status = {
             "is_initialized": False,
             "error": None,
             "progress": 0.0,
             "components": {"core": False}
         }
-        # Use configured port or default
-        self.port = port if port is not None else default_ports.meta_cognition_port
-        super().__init__(port=self.port, name="MetaCognitionAgent")
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         self.running = True
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
@@ -436,6 +435,7 @@ class MetaCognitionAgent(BaseAgent):
         
         # Clear unused variables
         import gc
+from datetime import datetime
         gc.collect()
 
     def _calculate_response_time(self) -> float:
@@ -836,6 +836,40 @@ class MetaCognitionAgent(BaseAgent):
         }
         base_status.update(specific_metrics)
         return base_status
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
 
 def main():
     """Main entry point for the MetaCognitionAgent."""

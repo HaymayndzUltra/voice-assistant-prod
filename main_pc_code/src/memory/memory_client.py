@@ -23,7 +23,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 
 # Configure logging
 logging.basicConfig(
@@ -32,21 +32,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryClient")
 
+_agent_args = parse_agent_args()
+
 class MemoryClient(BaseAgent):
     """Client for interacting with the Memory Orchestrator"""
     
-    def __init__(self, **kwargs):
-        args = parse_agent_args()
-        port = args.port if hasattr(args, 'port') and args.port is not None else 5577
-        orchestrator_port = args.orchestrator_port if hasattr(args, 'orchestrator_port') else 5576
-        host = args.host if hasattr(args, 'host') else "0.0.0.0"
-        super().__init__(name="MemoryClient", port=port)
-        self.host = host
-        self.orchestrator_port = orchestrator_port
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
+        self.host = _agent_args.get('host', "<BIND_ADDR>")
+        self.orchestrator_port = int(_agent_args.get('orchestrator_port', 12345))
         self.context = zmq.Context()
         self.orchestrator_socket = self.context.socket(zmq.REQ)
-        self.orchestrator_socket.connect(f"tcp://localhost:{orchestrator_port}")
-        logger.info(f"Connected to Memory Orchestrator on port {orchestrator_port}")
+        self.orchestrator_socket.connect(f"tcp://localhost:{self.orchestrator_port}")
+        logger.info(f"Connected to Memory Orchestrator on port {self.orchestrator_port}")
         self.requests_sent = 0
         self.orchestrator_connection_status = "connected"
 
@@ -137,7 +136,6 @@ class MemoryClient(BaseAgent):
         super().cleanup()
 
 def main():
-    args = parse_agent_args()
     client = MemoryClient()
     client.start()
 

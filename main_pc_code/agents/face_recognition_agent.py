@@ -32,7 +32,9 @@ from scipy.spatial.distance import cosine
 import sounddevice as sd
 import librosa
 import soundfile as sf
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
+import psutil
+from datetime import datetime
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -106,6 +108,51 @@ class KalmanTracker(BaseAgent):
         x = self.kf.x[0] - width/2
         y = self.kf.x[1] - height/2
         return (int(x), int(y), int(x + width), int(y + height))
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
 
 class EmotionAnalyzer(BaseAgent):
     """Advanced emotion analysis with multi-label support and temporal tracking"""
@@ -341,11 +388,13 @@ class PrivacyManager(BaseAgent):
             if current_time - v < retention_period
         }
 
-class InsightFaceAgent(BaseAgent):
+class FaceRecognitionAgent(BaseAgent):
     """Main face recognition agent using InsightFace"""
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="FaceRecognitionAgent")
-        self.port = port
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5713))
+        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self.running = True
         self.tracked_persons = {}
         self.known_faces = {}
@@ -397,8 +446,8 @@ class InsightFaceAgent(BaseAgent):
         try:
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REP)
-            self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+            self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             self.socket.bind(f"tcp://*:{self.port}")
             
             # Initialize publisher socket for events
@@ -589,7 +638,7 @@ class InsightFaceAgent(BaseAgent):
 
 if __name__ == "__main__":
     # Create and start the agent
-    agent = InsightFaceAgent()
+    agent = FaceRecognitionAgent()
     try:
         agent.run()
     except KeyboardInterrupt:

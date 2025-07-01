@@ -10,7 +10,7 @@ import threading
 from queue import Queue
 import asyncio
 import traceback
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 SWARM_MANAGER_PORT = int(getattr(_agent_args, 'port', 5645))  # Main port for SwarmManager
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
+# Get bind address from environment variables with default to a safe value for Docker compatibility
+BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
 
 # Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
@@ -87,16 +87,17 @@ class SwarmTask:
         }
 
 class MultiAgentSwarmManager(BaseAgent):
-    def __init__(self, port: Optional[int] = None, **kwargs):
-        """Initialize the Multi-Agent Swarm Manager."""
-        self.port = port if port is not None else SWARM_MANAGER_PORT
-        super().__init__(port=self.port, name="MultiAgentSwarmManager")
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5701))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self.context = zmq.Context()
         
         # REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
@@ -104,7 +105,7 @@ class MultiAgentSwarmManager(BaseAgent):
             logger.info("Secure ZMQ enabled for MultiAgentSwarmManager")
         
         # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.socket.bind(bind_address)
         logger.info(f"MultiAgentSwarmManager bound to {bind_address}")
         
@@ -173,8 +174,8 @@ class MultiAgentSwarmManager(BaseAgent):
         """Create a socket connected to a service using service discovery"""
         try:
             socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+            socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
@@ -195,7 +196,7 @@ class MultiAgentSwarmManager(BaseAgent):
                 
                 fallback_port = fallback_ports.get(service_name)
                 if fallback_port:
-                    fallback_address = f"tcp://{BIND_ADDRESS}:{fallback_port}"
+                    fallback_address = f"tcp://{self.bind_address}:{fallback_port}"
                     socket.connect(fallback_address)
                     logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
                     return socket
@@ -349,6 +350,8 @@ class MultiAgentSwarmManager(BaseAgent):
                     
                     # Extract JSON array from the result
                     import re
+import psutil
+from datetime import datetime
                     json_match = re.search(r'\[.*\]', result, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
@@ -766,17 +769,53 @@ class MultiAgentSwarmManager(BaseAgent):
         
         logger.info("Multi-Agent Swarm Manager stopped successfully")
 
-if __name__ == '__main__':
-    manager = MultiAgentSwarmManager()
-    try:
-        manager.run()
-    except KeyboardInterrupt:
-        manager.stop() 
-    def _perform_initialization(self):
-        """Initialize agent components."""
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
         try:
-            # Add your initialization code here
-            pass
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
         except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
+if __name__ == '__main__':
+    agent = MultiAgentSwarmManager()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        agent.stop()

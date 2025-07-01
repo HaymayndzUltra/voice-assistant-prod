@@ -6,7 +6,10 @@ import numpy as np
 import sounddevice as sd
 import logging
 import time
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
+from utils.env import get_env
+import psutil
+from datetime import datetime
 _agent_args = parse_agent_args()
 
 # Cache directory
@@ -18,11 +21,14 @@ if not os.path.exists(CACHE_DIR):
 
 # Cache management
 class TTSCache(BaseAgent):
-    def __init__(self, port: int | None = None, *, max_size: int = 1000, cache_dir: str = CACHE_DIR, **kwargs):
-        super().__init__(port=port, name="TtsCache")
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5704))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         # Cache configuration
-        self.max_size: int = max_size
-        self.cache_dir: str = cache_dir
+        self.max_size: int = int(_agent_args.get('max_cache_size', 1000))
+        self.cache_dir: str = CACHE_DIR
         self.cache_index = {}
         self.load_cache_index()
         
@@ -151,12 +157,57 @@ class TTSCache(BaseAgent):
             logging.error(f"[TTS Cache] Error clearing cache: {e}")
             return False
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+
 # Global cache instance created with CLI-provided arguments if available
 # This allows external modules to import helper functions without running the agent loop.
 _port_arg = getattr(_agent_args, "port", None)
 _max_size_arg = getattr(_agent_args, "max_cache_size", 1000)
 
-tts_cache = TTSCache(port=_port_arg, max_size=_max_size_arg)
+tts_cache = TTSCache()
 
 # -------------------- Helper API --------------------
 def get_cached_audio(text, emotion=None):

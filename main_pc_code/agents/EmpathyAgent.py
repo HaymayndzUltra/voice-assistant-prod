@@ -16,7 +16,7 @@ import time
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from datetime import datetime
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -34,16 +34,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class EmpathyAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="Empathyagent")
+    def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the EmpathyAgent with ZMQ sockets.
         
         Args:
             port: Port for receiving requests
+            name: Name of the agent
             emotion_engine_port: Port for subscribing to EmotionEngine broadcasts
             tts_connector_port: Port for sending voice settings to TTSConnector
         """
-        self.port = port if port is not None else getattr(_agent_args, 'port', 5585)
+        # Get port and name from _agent_args with fallbacks
+        agent_port = getattr(_agent_args, 'port', 5585) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'EmpathyAgent') if name is None else name
+        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'EmpathyAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
+        
         # Retrieve ports from command-line/args or default values
         emotion_engine_port = getattr(_agent_args, 'emotionengine_port', 5582)
         tts_connector_port = getattr(_agent_args, 'ttsconnector_port', 5582)
@@ -174,8 +180,9 @@ class EmpathyAgent(BaseAgent):
         
         # Track agent start time
         self.start_time = time.time()
+        self.running = True
         
-        logger.info(f"EmpathyAgent initialized on port {port}")
+        logger.info(f"EmpathyAgent initialized on port {self.port}")
         logger.info(f"Subscribed to EmotionEngine on port {emotion_engine_port}")
         logger.info(f"Connected to TTSConnector on port {tts_connector_port}")
     
@@ -305,22 +312,15 @@ class EmpathyAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error sending voice settings to TTSConnector: {e}")
     
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent.
-        
-        Returns:
-            Dictionary with health status information
-        """
-        return {
-            'status': 'success',
-            'uptime': time.time() - self.start_time,
-            'components': {
-                'emotion_subscription': True,
-                'tts_connection': True,
-                'voice_settings': True
-            },
-            'current_emotional_state': self.current_emotional_state
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
+        return {"status": status, "details": details}
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests.
@@ -345,7 +345,7 @@ class EmpathyAgent(BaseAgent):
             return {'status': 'success', 'message': 'pong'}
             
         elif action == 'get_health':
-            return self.get_health_status()
+            return self._get_health_status()
         
         elif action == 'get_voice_settings':
             # Get voice settings for specific text if provided
@@ -417,17 +417,63 @@ class EmpathyAgent(BaseAgent):
         self.context.term()
         logger.info("EmpathyAgent stopped")
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == '__main__':
-    agent = EmpathyAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        # Replace 'ClassName' with the actual agent class from the file.
+        agent = EmpathyAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
+            
+def _perform_initialization(self):
+    """Initialize agent components."""
+    try:
+        # Add your initialization code here
+        pass
+    except Exception as e:
+        logger.error(f"Initialization error: {e}")
+        raise

@@ -10,13 +10,15 @@ import logging
 import sqlite3
 import threading
 import time
-import argparse
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any
 from dataclasses import dataclass
 from enum import Enum
 from queue import PriorityQueue
 from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
+
+_agent_args = parse_agent_args()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -56,7 +58,10 @@ class TrainingCycle:
     progress: float = 0.0
     error: Optional[str] = None
 
-class SelfTrainingOrchestrator(BaseAgent):
+def __init__(self, port: int = None, name: str = None, **kwargs):
+    agent_port = _agent_args.get('port', 5000) if port is None else port
+    agent_name = _agent_args.get('name', 'SelfTrainingOrchestrator') if name is None else name
+    super().__init__(port=agent_port, name=agent_name)
     def __init__(self, port: int = 5644):
         """Initialize the Self Training Orchestrator."""
         # Call BaseAgent's __init__ first

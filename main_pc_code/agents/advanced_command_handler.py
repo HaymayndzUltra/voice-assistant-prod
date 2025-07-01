@@ -24,7 +24,7 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 
 # Import existing command handler as base
 from agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Setup logging
@@ -49,8 +49,9 @@ class AdvancedCommandHandler(BaseAgent):
     Extends the custom command handler with advanced features for Phase 4
     """
     
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(name="AdvancedCommandHandler", port=port)
+    def __init__(self):
+        self.port = _agent_args.get('port')
+        super().__init__(_agent_args)
         """
         Initialize the advanced command handler
         
@@ -60,8 +61,8 @@ class AdvancedCommandHandler(BaseAgent):
             coordinator_port: Port for Coordinator Agent
         """
         # Determine ports and host
-        executor_port = kwargs.get('executor_port', ZMQ_EXECUTOR_PORT)
-        coordinator_port = kwargs.get('coordinator_port', ZMQ_COORDINATOR_PORT)
+        executor_port = _agent_args.get('executor_port', ZMQ_EXECUTOR_PORT)
+        coordinator_port = _agent_args.get('coordinator_port', ZMQ_COORDINATOR_PORT)
         if isinstance(_agent_args, dict):
             _host = _agent_args.get('host', 'localhost')
         else:
@@ -734,10 +735,43 @@ class AdvancedCommandHandler(BaseAgent):
         super().cleanup()
 
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 # Example usage
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5710)
     args = parser.parse_args()
     try:
@@ -755,6 +789,8 @@ import re
 import datetime
 from typing import Dict, List, Any, Optional, Tuple, Union
 import zmq
+import psutil
+from datetime import datetime
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

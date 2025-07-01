@@ -15,11 +15,11 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import threading
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-args = parse_agent_args()
+_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ProactiveAgent(BaseAgent):
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the ProactiveAgent with ZMQ sockets."""
         config_port = None
         # Try to load from config if needed
@@ -59,7 +59,9 @@ class ProactiveAgent(BaseAgent):
         else:
             self.port = 5624  # fallback default
             
-        super().__init__(port=self.port, name="Proactiveagent", strict_port=True)
+        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
+        agent_name = getattr(_agent_args, 'name', 'ProactiveAgent') if name is None else name
+        super().__init__(port=agent_port, name=agent_name)
         
         self.context = zmq.Context()
         
@@ -78,11 +80,22 @@ class ProactiveAgent(BaseAgent):
         
         # Start monitoring thread
         self.running = True
+        self.start_time = time.time()
         self.monitor_thread = threading.Thread(target=self._monitor_tasks)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
         
         logger.info(f"ProactiveAgent initialized on port {self.port}")
+    
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
     
     def _perform_initialization(self):
         """Initialize agent components asynchronously."""
@@ -309,9 +322,56 @@ class ProactiveAgent(BaseAgent):
         
         super().cleanup()
 
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 if __name__ == '__main__':
-    agent = ProactiveAgent(port=args.port)
+    # Standardized main execution block
+    agent = None
     try:
+        # Replace 'ClassName' with the actual agent class from the file.
+        agent = ProactiveAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop()
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+import psutil
+from datetime import datetime
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

@@ -30,47 +30,38 @@ import threading
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
-from utils.config_parser import parse_agent_args
+from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+import psutil
+from datetime import datetime
+from datetime import datetime
 
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
-
-# Configure logging
-log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "unified_planning_agent.log"
-log_file.parent.mkdir(exist_ok=True)
-
+# Configure logging (keep as is, or optionally source log level/path from _agent_args)
 logging.basicConfig(
-    level=getattr(logging, log_level),
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger("UnifiedPlanningAgent")
 
-# Get ZMQ ports from config
-PLANNING_AGENT_PORT = int(config.get('zmq.planning_agent_port', 5601))
-HEALTH_CHECK_PORT = int(config.get('zmq.planning_health_check_port', 5602))
-
-# Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
-BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
-
-# Secure ZMQ configuration
 SECURE_ZMQ = is_secure_zmq_enabled()
+
+_agent_args = parse_agent_args()
 
 class UnifiedPlanningAgent(BaseAgent):
     """Unified agent for planning, execution, and code generation"""
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="UnifiedPlanningAgent")
-        self.port = port if port is not None else PLANNING_AGENT_PORT
+    def __init__(self):
+        self.port = int(_agent_args.get('port', 5601))
+        self.health_port = int(_agent_args.get('health_port', 5602))
+        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
+        super().__init__(_agent_args)
         self.running = True
+        self.start_time = time.time()
         self.initialization_status = {
             "is_initialized": False,
             "error": None,
@@ -86,16 +77,16 @@ class UnifiedPlanningAgent(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
-        self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.receiver.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.receiver.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
             self.receiver = configure_secure_server(self.receiver)
             logger.info("Secure ZMQ enabled for UnifiedPlanningAgent")
         
-        # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+        # Bind to address using self.bind_address for Docker compatibility
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.receiver.bind(bind_address)
         logger.info(f"Unified Planning Agent bound to {bind_address}")
         
@@ -104,15 +95,15 @@ class UnifiedPlanningAgent(BaseAgent):
         
         # Health check socket
         self.health_check = self.context.socket(zmq.REP)
-        self.health_check.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.health_check.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.health_check.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+        self.health_check.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
         
         # Apply secure ZMQ if enabled for health check socket
         if SECURE_ZMQ:
             self.health_check = configure_secure_server(self.health_check)
         
         # Bind health check socket
-        health_bind_address = f"tcp://{BIND_ADDRESS}:{HEALTH_CHECK_PORT}"
+        health_bind_address = f"tcp://{self.bind_address}:{self.health_port}"
         self.health_check.bind(health_bind_address)
         logger.info(f"Health check endpoint bound to {health_bind_address}")
         
@@ -187,6 +178,16 @@ class UnifiedPlanningAgent(BaseAgent):
         
         logger.info("Unified Planning Agent initialized")
     
+    def _get_health_status(self):
+        # Default health status: Agent is running if its main loop is active.
+        # This can be expanded with more specific checks later.
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational.",
+            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        }
+        return {"status": status, "details": details}
+    
     def _register_service(self):
         """Register this agent with the service discovery system"""
         try:
@@ -194,7 +195,7 @@ class UnifiedPlanningAgent(BaseAgent):
                 name="UnifiedPlanningAgent",
                 port=self.port,
                 additional_info={
-                    "health_check_port": HEALTH_CHECK_PORT,
+                    "health_check_port": self.health_port,
                     "capabilities": ["planning", "code_execution", "task_breakdown"],
                     "status": "running"
                 }
@@ -210,8 +211,8 @@ class UnifiedPlanningAgent(BaseAgent):
         """Create a socket connected to a service using service discovery"""
         try:
             socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
+            socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
@@ -232,7 +233,7 @@ class UnifiedPlanningAgent(BaseAgent):
                 
                 fallback_port = fallback_ports.get(service_name)
                 if fallback_port:
-                    fallback_address = f"tcp://{BIND_ADDRESS}:{fallback_port}"
+                    fallback_address = f"tcp://{self.bind_address}:{fallback_port}"
                     socket.connect(fallback_address)
                     logger.warning(f"Could not discover {service_name}, using fallback address: {fallback_address}")
                     return socket
@@ -511,6 +512,74 @@ class UnifiedPlanningAgent(BaseAgent):
         
         # System prompt for the planning LLM
         system_prompt = """You are a task planning AI. Your job is to break down a complex task into a series of steps that can be executed by specialized agents. For each step, you need to specify:
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
 1. The agent type that should handle the step
 2. A description of what needs to be done
 3. Any parameters needed for the step
@@ -841,7 +910,7 @@ Analyze this task and identify its requirements and complexity. Return your anal
                 self.framework.send_string(json.dumps({
                     "request_type": "register_agent",
                     "agent_id": "unified_planning",
-                    "endpoint": f"tcp://{BIND_ADDRESS}:{self.port}",
+                    "endpoint": f"tcp://{self.bind_address}:{self.port}",
                     "capabilities": [
                         "planning",
                         "task_decomposition",
@@ -925,12 +994,5 @@ Analyze this task and identify its requirements and complexity. Return your anal
 
 # Main entry point
 if __name__ == "__main__":
-    try:
-        logger.info("Starting Unified Planning Agent...")
-        agent = UnifiedPlanningAgent()
-        agent.run()
-    except KeyboardInterrupt:
-        logger.info("Unified Planning Agent interrupted by user")
-    except Exception as e:
-        logger.error(f"Error running Unified Planning Agent: {str(e)}")
-        traceback.print_exc()
+    agent = UnifiedPlanningAgent()
+    agent.run()
