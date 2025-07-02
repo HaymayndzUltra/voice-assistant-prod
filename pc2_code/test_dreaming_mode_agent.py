@@ -24,7 +24,7 @@ def test_dreaming_mode_agent():
     try:
         # Import the agent
         print("1. Importing DreamingModeAgent...")
-        from agents.DreamingModeAgent import DreamingModeAgent
+from pc2_code.agents.DreamingModeAgent import DreamingModeAgent
         print("   ✓ Import successful")
         
         # Create agent instance

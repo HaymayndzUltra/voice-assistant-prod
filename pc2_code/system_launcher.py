@@ -17,6 +17,8 @@ if PROJECT_ROOT not in sys.path:
 # Import common utilities
 try:
     from common_utils.env_loader import get_env, get_ip
+    except ImportError as e:
+        print(f"Import error: {e}")
     from common_utils.zmq_helper import check_zmq_port
     USE_COMMON_UTILS = True
 except ImportError:

@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Emotion Engine Agent
 Manages and processes emotional states and responses
@@ -20,7 +20,7 @@ import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

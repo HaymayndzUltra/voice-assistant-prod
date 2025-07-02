@@ -18,7 +18,7 @@ import psutil
 
 # Add the parent directory to sys.path to import the config
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_parser import parse_agent_args
 

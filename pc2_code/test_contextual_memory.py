@@ -16,7 +16,7 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # We'll import the functions directly from the agent module
-from agents.contextual_memory_agent import (
+from pc2_code.agents.contextual_memory_agent import (
     record_code, record_user_query, record_system_response,
     record_error, get_context_summary, send_context_request,
     ZMQ_CONTEXTUAL_MEMORY_PORT
@@ -158,7 +158,7 @@ class ContextualMemoryTester:
             send_context_request(test_record)  # Clear existing session if any
             
             # Add both code samples to a fresh test session
-            from agents.contextual_memory_agent import send_context_request
+from pc2_code.agents.contextual_memory_agent import send_context_request
             test_record = {
                 "action": "add_interaction",
                 "user_id": "test_domains",
@@ -364,7 +364,9 @@ if __name__ == "__main__":
     
     # Check if agent is still responsive
     try:
-        from agents.contextual_memory_agent import send_context_request
+from pc2_code.agents.contextual_memory_agent import send_context_request
+    except ImportError as e:
+        print(f"Import error: {e}")
         response = send_context_request({"action": "get_session_id", "user_id": "diagnostic"})
         print(f"Agent communication check: {response.get('status', 'failed')}")
     except Exception as e:

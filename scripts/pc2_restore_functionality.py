@@ -55,8 +55,18 @@ def load_target_agents():
         logger.error(f"Error loading agents from config: {e}")
         return []
 
-# List of target agents to process
-TARGET_AGENTS = load_target_agents()
+# List of target agents to process - override with specific agents
+TARGET_AGENTS = [
+    {'name': 'UnifiedWebAgent', 'script_path': 'agents/unified_web_agent.py'},
+    {'name': 'SelfHealingAgent', 'script_path': 'agents/self_healing_agent.py'},
+    {'name': 'RCAAgent', 'script_path': 'agents/ForPC2/rca_agent.py'},
+    {'name': 'UnifiedUtilsAgent', 'script_path': 'agents/ForPC2/unified_utils_agent.py'},
+    {'name': 'UnifiedErrorAgent', 'script_path': 'agents/ForPC2/UnifiedErrorAgent.py'},
+    {'name': 'AuthenticationAgent', 'script_path': 'agents/ForPC2/AuthenticationAgent.py'},
+    {'name': 'TutoringServiceAgent', 'script_path': 'agents/tutoring_service_agent.py'},
+    {'name': 'TutorAgent', 'script_path': 'agents/tutor_agent.py'},
+    {'name': 'LearningAgent', 'script_path': 'agents/LearningAdjusterAgent.py'}
+]
 
 def create_backup(file_path: Path) -> Path:
     """Create a backup of a file before modifying it."""

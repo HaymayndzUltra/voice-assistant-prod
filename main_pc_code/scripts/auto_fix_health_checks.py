@@ -269,6 +269,8 @@ def main():
         # Check agent health
         try:
             import zmq
+    except ImportError as e:
+        print(f"Import error: {e}")
             healthy_count = 0
             for agent_name, port in AGENT_PORTS.items():
                 if check_agent_health(agent_name, port):

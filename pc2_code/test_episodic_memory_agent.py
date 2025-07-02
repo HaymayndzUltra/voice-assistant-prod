@@ -15,7 +15,7 @@ os.environ['EPISODIC_MEMORY_PORT'] = '7206'
 
 try:
     print("Testing EpisodicMemoryAgent import...")
-    from agents.EpisodicMemoryAgent import EpisodicMemoryAgent
+from pc2_code.agents.EpisodicMemoryAgent import EpisodicMemoryAgent
     
     print("Creating EpisodicMemoryAgent instance...")
     agent = EpisodicMemoryAgent(port=7206, health_port=7207)

@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
@@ -34,11 +34,11 @@ import GPUtil
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import config module
-from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
 config = Config() # Instantiate the global config object
 
 # Import system_config for per-machine settings
-from config import system_config
+from main_pc_code.config import system_config
 
 # Import PC2 services config module
 from main_pc_code.config.pc2_services_config import load_pc2_services, get_service_connection, list_available_services
@@ -734,8 +734,8 @@ class ModelManagerAgent(BaseAgent):
 
     def _memory_management_loop(self):
         """Background thread for managing VRAM usage"""
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
         
         self.vram_logger.info("Starting memory management loop")
         
@@ -1022,8 +1022,8 @@ class ModelManagerAgent(BaseAgent):
         Returns:
             True if the model can be accommodated, False otherwise
         """
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
         
         # Check if VRAM Optimizer is available
         try:
@@ -1121,7 +1121,7 @@ class ModelManagerAgent(BaseAgent):
         """Load model configurations from the central config"""
         try:
             # Determine active PC settings key based on environment variable
-            from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
             cfg = Config()
             active_pc_settings_key = cfg.active_pc_settings_key
             logger.info(f"Active PC settings key: {active_pc_settings_key}")
@@ -1465,7 +1465,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Unload the model via GGUF manager
@@ -1595,7 +1595,9 @@ class ModelManagerAgent(BaseAgent):
             
             # Import and use the GGUF Model Manager directly
             try:
-                from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+    except ImportError as e:
+        print(f"Import error: {e}")
                 gguf_manager = get_gguf_manager()
                 
                 logger.info(f"Loading GGUF model {model_id} via GGUF Model Manager")
@@ -2155,7 +2157,7 @@ class ModelManagerAgent(BaseAgent):
         logger.info(f"Checking GGUF model {model_id}")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             if not gguf_manager:
@@ -2453,8 +2455,8 @@ class ModelManagerAgent(BaseAgent):
         If VRAM optimizer is available, delegate the decision to it.
         Otherwise, make the decision locally.
         """
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
         
         # Check if VRAM Optimizer is available
         try:
@@ -3247,6 +3249,8 @@ class ModelManagerAgent(BaseAgent):
             # Use service discovery to find SystemDigitalTwin
             try:
                 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+    except ImportError as e:
+        print(f"Import error: {e}")
                 sdt_address = get_service_address("SystemDigitalTwin")
                 if not sdt_address:
                     # Fallback to hardcoded address
@@ -3357,7 +3361,7 @@ class ModelManagerAgent(BaseAgent):
                 return False
 
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Load the model via GGUF manager
@@ -3378,7 +3382,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Unload the model via GGUF manager
@@ -3399,7 +3403,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _update_gguf_status CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Get current status from GGUF manager
@@ -3972,6 +3976,8 @@ class ModelManagerAgent(BaseAgent):
                 if secure_zmq:
                     try:
                         from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
                         start_auth()
                         socket = configure_secure_client(socket)
                         logger.info("Using secure ZMQ for SDT reporting")
@@ -4025,7 +4031,7 @@ if __name__ == "__main__":
         Path("cache").mkdir(exist_ok=True)
         
         # Parse command-line arguments
-        from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
         args = parse_agent_args()
         port = getattr(args, 'port', 5570)
         

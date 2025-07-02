@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Translator Agent
 - Translates commands from Filipino to English
@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -303,6 +303,8 @@ class TranslatorAgent(BaseAgent):
         """Initialize the NLLB translation model for Filipino to English"""
         try:
             from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    except ImportError as e:
+        print(f"Import error: {e}")
             import torch
             logger.info("Loading NLLB translation model: facebook/nllb-200-distilled-600M ...")
             model_name = "facebook/nllb-200-distilled-600M"

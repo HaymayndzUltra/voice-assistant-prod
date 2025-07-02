@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Knowledge Base Agent implementation
 Manages and provides access to the system's knowledge base
 """
@@ -13,7 +22,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union
 from main_pc_code.utils.config_loader import load_config
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import psutil
 
 # Load configuration at module level

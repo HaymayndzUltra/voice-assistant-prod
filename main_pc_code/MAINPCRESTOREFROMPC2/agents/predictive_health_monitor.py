@@ -252,6 +252,8 @@ class PredictiveHealthMonitor:
             # Try to get CPU and memory info if psutil is available
             try:
                 import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
                 system_info['cpu_percent'] = psutil.cpu_percent(interval=1)
                 system_info['memory_percent'] = psutil.virtual_memory().percent
                 system_info['disk_percent'] = psutil.disk_usage('/').percent
@@ -347,6 +349,8 @@ class PredictiveHealthMonitor:
         # Try to get CPU and memory info if psutil is available
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             system_health['cpu_percent'] = psutil.cpu_percent(interval=1)
             system_health['memory_percent'] = psutil.virtual_memory().percent
             system_health['disk_percent'] = psutil.disk_usage('/').percent

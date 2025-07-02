@@ -13,7 +13,7 @@ import os
 from typing import Any, Dict, List, Union, cast, TypedDict
 from pathlib import Path
 
-from .base_agent import BaseAgent
+from main_pc_code.MAINPCRESTOREFROMPC2.src.core.base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 

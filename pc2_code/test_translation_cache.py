@@ -3,7 +3,7 @@ Test script to demonstrate the translation cache functionality
 """
 import sys
 import time
-from agents.translator_agent import TranslatorAgent
+from pc2_code.agents.translator_agent import TranslatorAgent
 
 def main():
     print("Translation Cache Test")

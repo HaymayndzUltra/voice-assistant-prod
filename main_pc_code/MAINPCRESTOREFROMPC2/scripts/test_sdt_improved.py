@@ -22,6 +22,8 @@ DEBUG = True
 def create_temporary_certificates():
     try:
         import zmq.auth
+    except ImportError as e:
+        print(f"Import error: {e}")
         certs_dir = project_root / "certificates"
         certs_dir.mkdir(exist_ok=True)
 

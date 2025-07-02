@@ -5,7 +5,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import subprocess
@@ -14,7 +14,7 @@ import logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
 from main_pc_code.utils.config_loader import load_config
-from utils.env_loader import get_env
+from main_pc_code.utils.env_loader import get_env
 from datetime import datetime
 
 # Load configuration at module level
@@ -311,7 +311,8 @@ class ExecutorAgent(BaseAgent):
                     import psutil
                     cpu_percent = psutil.cpu_percent()
                     memory_percent = psutil.virtual_memory().percent
-                except ImportError:
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     logging.warning("[Executor] psutil not available for system metrics")
                 
                 return {

@@ -28,8 +28,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
-from src.core.base_agent import BaseAgent, logger
-from config.system_config import DEFAULT_CONFIG as config
+from main_pc_code.src.core.base_agent import BaseAgent, logger
+from main_pc_code.config.system_config import DEFAULT_CONFIG as config
 
 # Load distributed config
 with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
@@ -806,6 +806,8 @@ class PredictiveHealthMonitor(BaseAgent):
         """Ensure all required dependencies are installed"""
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             logger.info("All required dependencies are installed")
             self.psutil_available = True
         except ImportError:
@@ -1296,7 +1298,7 @@ class PredictiveHealthMonitor(BaseAgent):
             logger.info("Cleanup complete")
 
 # --- Orchestrator Logic Integration (from orchestrator.py) ---
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import signal
 import psutil
 from pathlib import Path

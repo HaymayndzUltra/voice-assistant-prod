@@ -1,7 +1,18 @@
-from src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader i
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+mport load_config
 
 """
+
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
 Tier 1: XTTS v2 (Primary) - High-quality multilingual speech synthesis
@@ -27,17 +38,16 @@ from pathlib import Path
 import hashlib
 import tempfile
 import re
-from utils.service_discovery_client import register_service, get_service_address
-from utils.env_loader import get_env
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
 import pickle
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from collections import OrderedDict
 
 # Load configuration at module level
 config = load_config()
 
 # Add the parent directory to sys.path
-sys.path.append(str(Path(__file__).parent.parent))
 
 # Configure logging
 log_dir = os.path.join(os.path.dirname(__file__), '../../logs')
@@ -56,7 +66,6 @@ logger = logging.getLogger("UltimateTTSAgent")
 # Add custom XTTS path
 xtts_path = r'C:\Users\haymayndz\Desktop\xtts-local'
 if os.path.exists(xtts_path):
-    sys.path.append(xtts_path)
     logger.info(f"Added custom XTTS path: {xtts_path}")
 
 # ZMQ Configuration
@@ -290,7 +299,8 @@ class UltimateTTSAgent(BaseAgent):
                 logger.info("Tier 1: XTTS v2 model loaded successfully.")
                 print("XTTS initialization complete. Model is ready to use.")
                 
-            except Exception as e:
+            except ImportError as e:
+                print(f"Import error: {e}")
                 logger.error(f"Tier 1 (XTTS) failed during initialization: {e}")
                 print(f"CRITICAL ERROR in XTTS initialization: {e}")
                 import traceback
@@ -307,6 +317,9 @@ class UltimateTTSAgent(BaseAgent):
                 self.tts_engines["sapi"] = win32com.client.Dispatch("SAPI.SpVoice")
                 self.initialization_status["engines_ready"]["sapi"] = True
                 logger.info("Tier 2: Windows SAPI initialized")
+            except ImportError as e:
+                print(f"Import error: {e}")
+                logger.warning("Windows SAPI not available")
             except Exception as e:
                 logger.warning(f"Tier 2: Windows SAPI initialization failed: {e}")
             
@@ -316,6 +329,9 @@ class UltimateTTSAgent(BaseAgent):
                 self.tts_engines["pyttsx3"] = pyttsx3.init()
                 self.initialization_status["engines_ready"]["pyttsx3"] = True
                 logger.info("Tier 3: pyttsx3 initialized")
+            except ImportError as e:
+                print(f"Import error: {e}")
+                logger.warning("pyttsx3 not available")
             except Exception as e:
                 logger.warning(f"Tier 3: pyttsx3 initialization failed: {e}")
             
@@ -418,6 +434,9 @@ class UltimateTTSAgent(BaseAgent):
                     print(f"  - Duration: {info.duration:.2f} seconds")
                     print(f"  - Sample rate: {info.samplerate} Hz")
                     print(f"  - Channels: {info.channels}")
+                except ImportError as e:
+                    print(f"Import error: {e}")
+                    print(f"  - Cannot verify voice sample details: soundfile not available")
                 except Exception as e:
                     print(f"  - Error reading voice sample: {e}")
             else:

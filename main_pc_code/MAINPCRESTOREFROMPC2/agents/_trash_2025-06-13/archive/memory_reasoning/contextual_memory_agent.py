@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import os
@@ -12,7 +12,7 @@ from typing import List, Dict, Any
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from agents.proactive_agent_interface import send_proactive_event
+from main_pc_code.agents.proactive_agent_interface import send_proactive_event
 except ImportError:
     def send_proactive_event(event_type, data):
         logging.warning(f"[ContextualMemory] Could not import send_proactive_event, using fallback. Event: {event_type}")

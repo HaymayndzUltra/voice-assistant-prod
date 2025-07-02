@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 LLM Runtime Tools Module
 Manages dynamic loading and unloading of quantized LLMs for the distributed voice assistant system.

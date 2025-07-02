@@ -1,6 +1,8 @@
 print("Starting GPU check...")
 try:
     import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
     print("PyTorch imported successfully")
     print("CUDA Available:", torch.cuda.is_available())
     if torch.cuda.is_available():

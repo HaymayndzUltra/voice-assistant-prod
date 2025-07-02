@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 def _load_models_from_config(self):
     """
     Load model configurations from the central config
@@ -6,7 +6,7 @@ def _load_models_from_config(self):
     """
     try:
         # Determine active PC settings key based on environment variable
-        from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
         cfg = Config()
         active_pc_settings_key = cfg.active_pc_settings_key
         logger.info(f"Active PC settings key: {active_pc_settings_key}")

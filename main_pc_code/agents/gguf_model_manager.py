@@ -1,5 +1,14 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 GGUF Model Manager
 -----------------
 Handles loading, unloading, and managing GGUF models using llama-cpp-python
@@ -20,6 +29,8 @@ import torch
 
 try:
     from llama_cpp import Llama
+    except ImportError as e:
+        print(f"Import error: {e}")
     LLAMA_CPP_AVAILABLE = True
 except ImportError:
     LLAMA_CPP_AVAILABLE = False
@@ -69,8 +80,7 @@ class GGUFModelManager(BaseAgent):
         """Load model metadata from config files"""
         try:
             # Add the parent directory to sys.path to import the config module
-            sys.path.append(str(Path(__file__).parent.parent))
-            from config.system_config import Config
+from main_pc_code.config.system_config import Config
             
             config = Config()
             machine_config = config.get_all().get('main_pc_settings', {})

@@ -22,7 +22,7 @@ import re
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from pc2_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -92,6 +92,8 @@ class WebScraperAgent:
         """Ensure all required dependencies are installed"""
         try:
             import requests
+    except ImportError as e:
+        print(f"Import error: {e}")
             import bs4
             import pandas as pd
             import selenium

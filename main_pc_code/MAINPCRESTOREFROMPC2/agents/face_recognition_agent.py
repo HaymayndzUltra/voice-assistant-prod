@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 import time
@@ -11,7 +11,7 @@ from pathlib import Path
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from config.system_config import CONFIG as SYS_CONFIG
+from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 
 import cv2
 import numpy as np
@@ -32,7 +32,7 @@ from scipy.spatial.distance import cosine
 import sounddevice as sd
 import librosa
 import soundfile as sf
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

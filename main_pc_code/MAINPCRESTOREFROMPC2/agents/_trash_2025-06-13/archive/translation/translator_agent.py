@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Translator Agent
 - Translates commands from Filipino to English
@@ -25,7 +25,7 @@ except Exception as e:
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -394,7 +394,7 @@ class TranslatorAgent(BaseAgent):
     
     def translate_command(self, text: str) -> str:
         """Translate Filipino command to English, with Taglish detection."""
-        from agents.taglish_detector import detect_taglish
+from main_pc_code.agents.taglish_detector import detect_taglish
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[TranslatorAgent] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

@@ -24,7 +24,9 @@ if str(project_root) not in sys.path:
 
 # Import config module
 try:
-    from agents.utils.config_loader import Config
+from pc2_code.agents.utils.config_loader import Config
+    except ImportError as e:
+        print(f"Import error: {e}")
     config = Config()  # Instantiate the global config object
 except ImportError:
     # Fallback if config not available
@@ -32,12 +34,14 @@ except ImportError:
 
 # Import system_config for per-machine settings
 try:
-    from config import system_config
+from pc2_code.config import system_config
 except ImportError:
     system_config = {}
 
 try:
-    from agents.utils.config_parser import parse_agent_args
+from pc2_code.agents.utils.config_parser import parse_agent_args
+    except ImportError as e:
+        print(f"Import error: {e}")
     _agent_args 
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config

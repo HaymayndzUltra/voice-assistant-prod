@@ -19,15 +19,16 @@ if str(project_root) not in sys.path:
 
 # Import config parser utility
 try:
-    from agents.utils.config_parser import parse_agent_args
-    _agent_args 
-from main_pc_code.src.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
+    from pc2_code.utils.config_loader import parse_agent_args
+    _agent_args = parse_agent_args()
+    from main_pc_code.src.core.base_agent import BaseAgent
+    from pc2_code.agents.utils.config_loader import Config
 
-# Load configuration at the module level
-config = Config().get_config()
-except ImportError:
-    class DummyArgs(BaseAgent):
+    # Load configuration at the module level
+    config = Config().get_config()
+except ImportError as e:
+    print(f"Import error: {e}")
+    class DummyArgs:
         host = 'localhost'
     _agent_args = DummyArgs()
 
@@ -49,98 +50,28 @@ logger = logging.getLogger('UnifiedErrorAgent')
 ERROR_AGENT_PORT = 7117  # Default, will be overridden by configuration
 ERROR_AGENT_HEALTH_PORT = 8117  # Default health check port
 
-
-
-        def connect_to_main_pc_service(self, service_name: str):
-
-            """
-
-            Connect to a service on the main PC using the network configuration.
-
-            
-
-            Args:
-
-                service_name: Name of the service in the network config ports section
-
-            
-
-            Returns:
-
-                ZMQ socket connected to the service
-
-            """
-
-            if not hasattr(self, 'main_pc_connections'):
-
-                self.main_pc_connections = {}
-
-                
-
-            if service_name not in network_config.get("ports", {}):
-
-                logger.error(f"Service {service_name} not found in network configuration")
-
-                return None
-
-                
-
-            port = network_config["ports"][service_name]
-
-            
-
-            # Create a new socket for this connection
-
-            socket = self.context.socket(zmq.REQ)
-
-            
-
-            # Connect to the service
-
-            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-            
-
-            # Store the connection
-
-            self.main_pc_connections[service_name] = socket
-
-            
-
-            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-            return socket
-class UnifiedErrorAgent:
+class UnifiedErrorAgent(BaseAgent):
     """Unified Error Agent for system-wide error handling and analysis."""
     
     def __init__(self, port=None, health_check_port=None, host="0.0.0.0"):
-         super().__init__(name="DummyArgs", port=None)
+        # Call BaseAgent's constructor first
+        super().__init__(name="UnifiedErrorAgent", port=port if port else ERROR_AGENT_PORT)
 
-         # Record start time for uptime calculation
+        # Record start time for uptime calculation
+        self.start_time = time.time()
 
-         self.start_time = time.time()
+        # Initialize agent state
+        self.running = True
+        self.request_count = 0
 
-         
+        # Set up connection to main PC if needed
+        self.main_pc_connections = {}
 
-         # Initialize agent state
-
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-self.main_port = port if port is not None else ERROR_AGENT_PORT
+        # Set up ports - use self.port from BaseAgent
+        self.main_port = self.port
         self.health_port = health_check_port if health_check_port is not None else ERROR_AGENT_HEALTH_PORT
-        self.context = zmq.Context()
+        
+        # Set up ZMQ socket - use BaseAgent's context
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.main_port}")
         
@@ -153,13 +84,11 @@ self.main_port = port if port is not None else ERROR_AGENT_PORT
             'medium': 5,
             'low': 10
         }
-        
         # Start error analysis thread
         self.running = True
         self.analysis_thread = threading.Thread(target=self._analyze_errors_loop)
         self.analysis_thread.daemon = True
         self.analysis_thread.start()
-        
         logger.info(f"Unified Error Agent initialized on port {self.main_port}")
     
     def _analyze_errors_loop(self):
@@ -265,16 +194,25 @@ self.main_port = port if port is not None else ERROR_AGENT_PORT
             'recent_errors': self.error_history[-10:] if self.error_history else []
         }
     
-    def _health_check(self) -> Dict[str, Any]:
-        """Perform health check."""
-        return {
-            'status': 'success',
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Return health status information. Overrides BaseAgent's _get_health_status."""
+        # Get base status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add UnifiedErrorAgent specific health info
+        base_status.update({
             'agent': 'UnifiedErrorAgent',
             'timestamp': datetime.now().isoformat(),
             'error_count': len(self.error_history),
             'analysis_thread_alive': self.analysis_thread.is_alive(),
             'port': self.main_port
-        }
+        })
+        
+        return base_status
+
+    def _health_check(self) -> Dict[str, Any]:
+        """Legacy health check method for backward compatibility."""
+        return self._get_health_status()
     
     def run(self):
         logger.info(f"Unified Error Agent starting on port {self.main_port}")
@@ -313,45 +251,22 @@ self.main_port = port if port is not None else ERROR_AGENT_PORT
             self.context.term()
         logger.info("Cleanup complete")
 
-
-    
-    def _get_health_status(self) -> dict:
-
-    
-        """Return health status information."""
-
-    
-        base_status = super()._get_health_status()
-
-    
-        # Add any additional health information specific to DummyArgs
-
-    
-        base_status.update({
-
-    
-            'service': 'DummyArgs',
-
-    
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-    
-            'additional_info': {}
-
-    
-        })
-
-    
-        return base_status
-    
     def stop(self):
         self.running = False
 
-
-
-
-
-
+    def connect_to_main_pc_service(self, service_name: str):
+        if not hasattr(self, 'main_pc_connections'):
+            self.main_pc_connections = {}
+        ports = network_config.get("ports") if network_config and isinstance(network_config.get("ports"), dict) else {}
+        if service_name not in ports:
+            logger.error(f"Service {service_name} not found in network configuration")
+            return None
+        port = ports[service_name]
+        socket = self.context.socket(zmq.REQ)
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+        self.main_pc_connections[service_name] = socket
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+        return socket
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -394,9 +309,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()

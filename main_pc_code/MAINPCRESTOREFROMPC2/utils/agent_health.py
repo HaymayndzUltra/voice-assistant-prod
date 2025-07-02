@@ -2,7 +2,7 @@
 
 Usage::
 
-    from utils.agent_health import start_health_probe, set_ready
+from main_pc_code.utils.agent_health import start_health_probe, set_ready
     start_health_probe(port)   # call ASAP, returns immediately
     ... heavy initialisation ...
     set_ready(True)            # when agent fully ready (optional)

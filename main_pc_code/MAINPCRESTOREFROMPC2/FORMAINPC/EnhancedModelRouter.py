@@ -35,14 +35,14 @@ from typing import Dict, Tuple, Optional, List
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import functools
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import service discovery and secure ZMQ utilities
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "enhanced_model_router.log"

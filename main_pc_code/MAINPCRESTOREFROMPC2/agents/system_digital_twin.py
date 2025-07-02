@@ -31,10 +31,12 @@ def fallback_get_env(key, default=None):
 
 # Import config parser utility with fallback
 try:
-    from agents.utils.config_parser import parse_agent_args
-    from utils.service_discovery_client import discover_service, register_service, get_service_address
-    from utils.env_loader import get_env
-    from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
+from main_pc_code.agents.utils.config_parser import parse_agent_args
+    except ImportError as e:
+        print(f"Import error: {e}")
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
     _agent_args = parse_agent_args()
 except ImportError:
     logger = logging.getLogger("SystemDigitalTwinAgent")
@@ -149,6 +151,8 @@ class SystemDigitalTwin:
         self.prom = None
         try:
             from prometheus_api_client import PrometheusConnect
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.prom = PrometheusConnect(url=self.config["prometheus_url"], disable_ssl=True)
             logger.info("Prometheus client initialized successfully")
         except ImportError:

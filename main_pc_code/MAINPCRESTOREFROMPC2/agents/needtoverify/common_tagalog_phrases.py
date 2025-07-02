@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Common Tagalog Phrases Module
 Pre-translated common phrases for Tagalog to English and English to Tagalog

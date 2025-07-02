@@ -9,7 +9,7 @@ if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
 try:
-    from agents.ForPC2.rca_agent import RCA_Agent
+    from pc2_code.agents.ForPC2.rca_agent import RCA_Agent
     print("SUCCESS: RCA_Agent imported successfully")
     
     # Test instantiation

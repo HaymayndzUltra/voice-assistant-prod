@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 import subprocess
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import time
 import psutil
 from datetime import datetime

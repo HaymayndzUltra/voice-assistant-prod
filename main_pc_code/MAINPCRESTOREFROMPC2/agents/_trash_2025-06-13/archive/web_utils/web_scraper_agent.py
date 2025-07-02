@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Web Scraper Agent
 - Handles web scraping and data extraction
@@ -23,7 +23,7 @@ import re
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -101,6 +101,8 @@ class WebScraperAgent(BaseAgent):
         """Ensure all required dependencies are installed"""
         try:
             import requests
+    except ImportError as e:
+        print(f"Import error: {e}")
             import bs4
             import pandas as pd
             import selenium

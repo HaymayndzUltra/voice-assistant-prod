@@ -15,7 +15,8 @@ from typing import Dict, Any, Optional
 try:
     import torch
     TORCH_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     TORCH_AVAILABLE = False
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,54 +34,42 @@ class ResourceManager(BaseAgent):
          super().__init__(name="ResourceManager", port=7113)
 
          # Record start time for uptime calculation
-
          self.start_time = time.time()
 
-         
-
          # Initialize agent state
-
          self.running = True
-
          self.request_count = 0
 
-         
-
          # Set up connection to main PC if needed
-
          self.main_pc_connections = {}
-
-         
-
          logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-self.port = port
-        self.health_port = health_port
-        self.context = zmq.Context()
-        self.initialized = False
-        self.initialization_error = None
-        
-        # Resource thresholds
-        self.cpu_threshold = 80  # percentage
-        self.memory_threshold = 80  # percentage
-        self.gpu_threshold = 80  # percentage if available
-        
-        # Resource allocation tracking
-        self.allocated_resources = {}
-        self.resource_locks = {}
-        self.stats_history = deque(maxlen=100)
-        
-        # Setup sockets first for immediate health check availability
-        self._setup_sockets()
-        
-        # Start health check endpoint immediately
-        self._start_health_check()
-        
-        # Start initialization in background thread
-        self._init_thread = threading.Thread(target=self._initialize_background, daemon=True)
-        self._init_thread.start()
-        
-        logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
+         self.port = port
+         self.health_port = health_port
+         self.context = zmq.Context()
+         self.initialized = False
+         self.initialization_error = None
+         
+         # Resource thresholds
+         self.cpu_threshold = 80  # percentage
+         self.memory_threshold = 80  # percentage
+         self.gpu_threshold = 80  # percentage if available
+         
+         # Resource allocation tracking
+         self.allocated_resources = {}
+         self.resource_locks = {}
+         self.stats_history = deque(maxlen=100)
+         
+         # Setup sockets first for immediate health check availability
+         self._setup_sockets()
+         
+         # Start health check endpoint immediately
+         self._start_health_check()
+         
+         # Start initialization in background thread
+         self._init_thread = threading.Thread(target=self._initialize_background, daemon=True)
+         self._init_thread.start()
+         
+         logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
     
     def _setup_sockets(self):
         """Setup ZMQ sockets."""
@@ -411,6 +400,20 @@ self.port = port
         self.context.term()
         logger.info("ResourceManager shutdown complete")
 
+    def connect_to_main_pc_service(self, service_name: str):
+        if not hasattr(self, 'main_pc_connections'):
+            self.main_pc_connections = {}
+        ports = network_config.get("ports") if network_config and isinstance(network_config.get("ports"), dict) else {}
+        if service_name not in ports:
+            logger.error(f"Service {service_name} not found in network configuration")
+            return None
+        port = ports[service_name]
+        socket = self.context.socket(zmq.REQ)
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+        self.main_pc_connections[service_name] = socket
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+        return socket
+
 
 
 
@@ -458,70 +461,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config["ports"][service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket

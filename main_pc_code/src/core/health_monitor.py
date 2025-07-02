@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Health Monitor Agent
 - Monitors the health of all system agents and services
 - Reports health status to other agents
@@ -20,7 +29,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Tuple
 import concurrent.futures
-from src.core.http_server import setup_health_check_server
+from main_pc_code.src.core.http_server import setup_health_check_server
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
 import requests
 import subprocess
@@ -29,15 +38,14 @@ import subprocess
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 # Import config module
-from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
 config = Config()  # Instantiate the global config object
 
 # Import system_config for per-machine settings
-from config import system_config
-from utils.config_parser import parse_agent_args
+from main_pc_code.config import system_config
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

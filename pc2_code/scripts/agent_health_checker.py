@@ -5,21 +5,7 @@ import json
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.system_config import pc2_settings
-
-def start_agent(script_path, args=None):
-    """Start an agent process"""
-    try:
-        cmd = ["python", script_path]
-        if args:
-            cmd.extend(args)
-        print(f"Starting {script_path}...")
-        subprocess.Popen(cmd, cwd="agents")
-        time.sleep(2)  # Give some time to start
-        return True
-    except Exception as e:
-        print(f"Failed to start {script_path}: {e}")
-        return False
+from pc2_code.config.system_config import pc2_settings
 
 def check_agent_health(port, timeout=2):
     """Check agent health using ZMQ"""
@@ -42,21 +28,41 @@ def check_agent_health(port, timeout=2):
 def main():
     # List of agents to check with their ports
     agents = [
-        {"name": "Consolidated Translator", "script": "consolidated_translator.py", "port": 5563},
-        {"name": "NLLB Adapter", "script": "llm_translation_adapter.py", "port": 5581},
-        {"name": "TinyLlama Service", "script": "tinyllama_service_enhanced.py", "port": 5615},
-        {"name": "Unified Memory Reasoning", "script": "unified_memory_reasoning_agent.py", "port": 5596},
-        {"name": "DreamWorld Agent", "script": "DreamWorldAgent.py", "port": 5642},
-        {"name": "Learning Adjuster", "script": "learning_adjuster_agent.py", "port": 5643},
-        {"name": "Cognitive Model", "script": "CognitiveModelAgent.py", "port": 5644},
-        {"name": "GOT/TOT Agent", "script": "got_tot_agent.py", "port": 5645}
+        {"name": "Consolidated Translator", "port": 5563},
+        {"name": "NLLB Adapter", "port": 5581},
+        {"name": "TinyLlama Service", "port": 5615},
+        {"name": "Unified Memory Reasoning", "port": 5596},
+        {"name": "DreamWorld Agent", "port": 5642},
+        {"name": "Learning Adjuster", "port": 5643},
+        {"name": "Cognitive Model", "port": 5644},
+        {"name": "GOT/TOT Agent", "port": 5645}
     ]
     
-    print("\n=== Starting Agent Health Check ===\n")
+    print("\n=== Running Agent Health Check ===\n")
+    
+    healthy_count = 0
+    total_agents = len(agents)
     
     for agent in agents:
         print(f"\n=== Checking {agent['name']} ===")
         
+        # Check health
+        is_healthy, response = check_agent_health(agent['port'])
+        if is_healthy:
+            healthy_count += 1
+            print(f"✓ {agent['name']} is healthy")
+            print("Health check response:", response)
+        else:
+            print(f"✗ {agent['name']} health check failed")
+    
+    print(f"\n=== Health Check Summary ===")
+    print(f"Healthy agents: {healthy_count}/{total_agents} ({healthy_count/total_agents*100:.1f}%)")
+    
+    if healthy_count == total_agents:
+        print("All agents are healthy and communicating properly!")
+    else:
+        print(f"{total_agents - healthy_count} agents are not responding properly.")
+
         # Start the agent
         if start_agent(agent['script']):
             print(f"✓ {agent['name']} started successfully")

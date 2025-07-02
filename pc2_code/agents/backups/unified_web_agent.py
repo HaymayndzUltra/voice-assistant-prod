@@ -1002,6 +1002,8 @@ class UnifiedWebAgent(BaseAgent):
             # First try with webdriver-manager for automatic driver management
             try:
                 from webdriver_manager.chrome import ChromeDriverManager
+    except ImportError as e:
+        print(f"Import error: {e}")
                 from selenium.webdriver.chrome.service import Service as ChromeService
                 
                 # Initialize with automatic driver management

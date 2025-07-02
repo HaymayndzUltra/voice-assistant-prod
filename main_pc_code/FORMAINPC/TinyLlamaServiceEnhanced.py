@@ -46,7 +46,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments for standardized configuration
@@ -164,6 +164,9 @@ class ResourceManager:
         try:
             import torch
             gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
+        except ImportError as e:
+            print(f"Import error: {e}")
+            gpu = 0
         except Exception:
             gpu = 0
         return cpu, mem, gpu

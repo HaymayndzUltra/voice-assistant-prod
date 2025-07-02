@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import pickle
 import json
@@ -6,10 +6,10 @@ import logging
 import threading
 import time
 import os
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
-from utils.service_discovery_client import register_service, get_service_address
-from utils.config_parser import parse_agent_args
-from utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.env_loader import get_env
 
 # Parse CLI arguments
 _agent_args = parse_agent_args()

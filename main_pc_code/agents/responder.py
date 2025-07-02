@@ -1,8 +1,17 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 # Auto-accept Coqui CPML terms for non-commercial use.
 # Set the env var only if user hasn't explicitly provided one.
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
 import zmq
 import json
@@ -17,9 +26,9 @@ import logging
 import time
 import pickle
 from main_pc_code.utils.config_loader import load_config
-from utils.service_discovery_client import discover_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
+from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
 config = load_config()
 
 # Get the directory of the current file for the log
@@ -30,7 +39,7 @@ os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
 
 # Import common Tagalog phrases module
 try:
-    from agents.common_tagalog_phrases import (
+    from main_pc_code.agents.common_tagalog_phrases import (
         translate_common_phrase,
         check_and_replace_common_phrases,
         TAGALOG_TO_ENGLISH,
@@ -38,7 +47,8 @@ try:
     )
     COMMON_PHRASES_AVAILABLE = True
     logging.info("[Responder] Common Tagalog phrases module loaded successfully")
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     COMMON_PHRASES_AVAILABLE = False
     logging.warning("[Responder] Common Tagalog phrases module not available")
 
@@ -68,7 +78,8 @@ add_all_safe_globals()
 try:
     from TTS.api import TTS  # only import, do not instantiate
     TTS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     TTS_AVAILABLE = False
 
 
@@ -636,6 +647,8 @@ class ResponderAgent(BaseAgent):
                 root.mainloop()
 
             threading.Thread(target=show_overlay, daemon=True).start()
+        except ImportError as e:
+            print(f"Import error: {e}")
         except Exception as e:
             logging.error(f"[Responder] Visual feedback error: {e}")
 

@@ -39,7 +39,9 @@ if str(project_root) not in sys.path:
 
 # Import config parser utility with fallback
 try:
-    from agents.utils.config_parser import parse_agent_args
+from pc2_code.agents.utils.config_parser import parse_agent_args
+    except ImportError as e:
+        print(f"Import error: {e}")
     _agent_args = parse_agent_args()
 except ImportError:
     class DummyArgs:

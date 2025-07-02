@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Auto-Fixer Agent
 - Orchestrates auto-code correction and debugging loop
@@ -18,7 +18,7 @@ from pathlib import Path
 
 # Ensure project root is in PYTHONPATH so we can import config
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Configurable parameters sourced from centralized configuration
 CODE_GENERATOR_PORT = config.get('zmq.code_generator_port', 5604)

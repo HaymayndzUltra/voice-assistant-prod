@@ -1,7 +1,17 @@
 """
 Code Generator Agent
 ------------------
-- Generates code based on natural language descriptions
+- Generates code based on natural langua
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+ge descriptions
 - Supports multiple programming languages
 - Integrates with the AutoGen framework
 - Uses local LLMs for code generation
@@ -25,6 +35,7 @@ import threading
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
+from main_pc_code.agents.gguf_model_manager import GGUFModelManager
 
 # Parse command line arguments
 config = load_config()
@@ -67,7 +78,6 @@ class CodeGeneratorAgent(BaseAgent):
         self.running = True
         # Initialize GGUF support if available
         try:
-            from agents.gguf_model_manager import GGUFModelManager
             self.gguf_manager = GGUFModelManager()
             self.logger.info("GGUF Model Manager initialized")
         except Exception as e:
@@ -200,6 +210,9 @@ class CodeGeneratorAgent(BaseAgent):
                                     "error": f"Ollama API error: {ollama_response.status_code} {ollama_response.text}",
                                     "request_id": request_id
                                 }
+                        except ImportError as e:
+                            self.logger.error(f"Import error: {e}")
+                            response = {"status": "error", "error": f"Import error: {str(e)}"}
                         except Exception as e:
                             self.logger.error(f"Error generating with Ollama: {e}")
                             response = {"status": "error", "error": f"Error: {str(e)}"}

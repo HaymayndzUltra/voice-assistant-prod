@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Model Manager Agent GGUF Connector
 ---------------------------------
@@ -39,7 +39,7 @@ class GGUFConnector(BaseAgent):
             try:
                 # Add parent directory to path to import config
                 sys.path.append(str(Path(__file__).parent.parent))
-                from config.system_config import Config
+from main_pc_code.config.system_config import Config
 import psutil
 from datetime import datetime
                 config = Config()

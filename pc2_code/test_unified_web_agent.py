@@ -24,7 +24,7 @@ def test_unified_web_agent():
     try:
         # Import the agent
         print("1. Importing UnifiedWebAgent...")
-        from agents.unified_web_agent import UnifiedWebAgent
+from pc2_code.agents.unified_web_agent import UnifiedWebAgent
         print("   ✓ Import successful")
         
         # Create agent instance

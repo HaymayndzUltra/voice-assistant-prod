@@ -8,7 +8,8 @@ import json
 import time
 import logging
 import threading
-from typing import Dict, Any
+from typing import Dict, Any, cast
+from datetime import datetime
 from abc import ABC, abstractmethod
 
 # Add the project root to the Python path to allow for absolute imports
@@ -17,7 +18,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 # Now that the path is set, we can use absolute imports
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import parse_agent_args
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Simple Whisper test script
 Records audio from the microphone and transcribes it using Whisper

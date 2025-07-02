@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 # Bark TTS Agent - Enhanced version with GPU optimizations
 # Usage: python agents/bark_tts.py "Your text here." [voice_preset]
 

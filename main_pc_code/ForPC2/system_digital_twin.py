@@ -27,8 +27,8 @@ project_root = str(Path(__file__).resolve().parent.parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.core.base_agent import BaseAgent
-from utils.config_parser import parse_agent_args
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -91,7 +91,9 @@ class SystemDigitalTwin(BaseAgent):
         secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
         if secure_zmq:
             try:
-                from src.network.secure_zmq import configure_secure_server
+from main_pc_code.src.network.secure_zmq import configure_secure_server
+    except ImportError as e:
+        print(f"Import error: {e}")
                 self.socket = configure_secure_server(self.socket)
                 logger.info("Secure ZMQ configured successfully")
             except ImportError:
@@ -408,7 +410,7 @@ class SystemDigitalTwin(BaseAgent):
 
 if __name__ == "__main__":
     # Use dynamic argument parser
-    from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
     args = parse_agent_args()
     # Convert Namespace to dict for config
     config = vars(args)

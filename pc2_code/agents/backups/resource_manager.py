@@ -13,6 +13,8 @@ from typing import Dict, Any, Optional
 # Try to import torch for GPU monitoring
 try:
     import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False

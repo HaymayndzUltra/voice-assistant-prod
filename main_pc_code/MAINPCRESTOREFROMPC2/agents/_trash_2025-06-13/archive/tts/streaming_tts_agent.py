@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
@@ -110,6 +110,8 @@ class UltimateTTSAgent(BaseAgent):
         # Tier 1: XTTS v2
         try:
             from TTS.api import TTS
+    except ImportError as e:
+        print(f"Import error: {e}")
             import torch
             device = "cuda" if torch.cuda.is_available() else "cpu"
             self.tts_engines["xtts"] = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
@@ -120,6 +122,8 @@ class UltimateTTSAgent(BaseAgent):
         # Tier 2: Windows SAPI
         try:
             import win32com.client
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.tts_engines["sapi"] = win32com.client.Dispatch("SAPI.SpVoice")
             logger.info("Tier 2: Windows SAPI initialized")
         except Exception as e:
@@ -128,6 +132,8 @@ class UltimateTTSAgent(BaseAgent):
         # Tier 3: pyttsx3
         try:
             import pyttsx3
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.tts_engines["pyttsx3"] = pyttsx3.init()
             logger.info("Tier 3: pyttsx3 initialized")
         except Exception as e:

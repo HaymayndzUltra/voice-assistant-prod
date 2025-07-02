@@ -4,6 +4,16 @@ import yaml
 import sys
 import os
 import json
+
+
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
 import time
 import logging
 import sqlite3
@@ -19,7 +29,8 @@ try:
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
     SKLEARN_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     SKLEARN_AVAILABLE = False
     print("Warning: sklearn not available, text similarity features will be disabled")
 
@@ -849,7 +860,7 @@ def connect_to_main_pc_service(self, service_name: str):
         logger.error(f"Service {service_name} not found in network configuration")
         return None
         
-    port = network_config["ports"][service_name]
+    port = network_config.get("ports")[service_name]
     
     # Create a new socket for this connection
     socket = self.context.socket(zmq.REQ)

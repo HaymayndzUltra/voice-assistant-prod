@@ -28,14 +28,14 @@ try:
     from core.http_server import setup_health_check_server  # Updated import path
 except ModuleNotFoundError:
     try:
-        from agents.base_agent import BaseAgent  # to avoid circular but ensure path exists
+from main_pc_code.agents.base_agent import BaseAgent  # to avoid circular but ensure path exists
     except ModuleNotFoundError:
         pass
     def setup_health_check_server(*args, **kwargs):
         logging.warning("setup_health_check_server not found; HTTP health checks disabled for AudioCapture")
         return None
 try:
-    from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 except ModuleNotFoundError:
     import argparse
     def parse_agent_args():
@@ -48,7 +48,7 @@ _agent_args = parse_agent_args()
 
 # Import service discovery client
 try:
-    from utils.service_discovery_client import register_service
+from main_pc_code.utils.service_discovery_client import register_service
 except ImportError:
     def register_service(*args, **kwargs):
         logging.warning("Service discovery client not found; service registration disabled")
@@ -210,7 +210,9 @@ class StreamingAudioCapture:
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     try:
-                        from src.network.secure_zmq import secure_server_socket, start_auth
+from main_pc_code.src.network.secure_zmq import secure_server_socket, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
                         start_auth()
                         self.pub_socket = secure_server_socket(self.pub_socket)
                         self.health_socket = secure_server_socket(self.health_socket)
@@ -375,6 +377,8 @@ class StreamingAudioCapture:
         """Initialize Whisper model for wake word detection"""
         try:
             import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
             import whisper
             
             logger.info("Initializing Whisper model for wake word detection...")
@@ -420,6 +424,8 @@ class StreamingAudioCapture:
             # Try again after installation
             try:
                 import whisper
+    except ImportError as e:
+        print(f"Import error: {e}")
                 self.whisper_model = whisper.load_model("tiny")
                 self.whisper_model.eval()
                 logger.info(f"✓ Whisper model successfully installed and initialized")

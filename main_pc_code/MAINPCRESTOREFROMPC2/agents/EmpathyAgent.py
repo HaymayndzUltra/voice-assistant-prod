@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -16,7 +16,7 @@ import time
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from datetime import datetime
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

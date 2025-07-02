@@ -31,7 +31,7 @@ import urllib.parse
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from config.pc2_connections import get_connection_string
+from pc2_code.config.pc2_connections import get_connection_string
 
 # Setup logging
 LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "autonomous_web_assistant.log")

@@ -1,7 +1,17 @@
 """
 Fused Audio Preprocessor
 -----------------------
-Optimized audio preprocessing agent that combines noise reduction and voice activity detection:
+Optimized audio preprocessing agent tha
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+t combines noise reduction and voice activity detection:
 - Subscribes to raw audio stream from streaming_audio_capture
 - Applies noise reduction algorithms to clean the audio
 - Performs voice activity detection on the cleaned audio
@@ -25,9 +35,9 @@ from collections import deque
 import noisereduce as nr
 from scipy import signal
 import librosa
-from src.core.http_server import setup_health_check_server
+from main_pc_code.src.core.http_server import setup_health_check_server
 from main_pc_code.utils.config_loader import load_config
-from utils.service_discovery_client import discover_service
+from main_pc_code.utils.service_discovery_client import discover_service
 from main_pc_code.src.core.base_agent import BaseAgent
 
 # Load configuration at module level
@@ -233,10 +243,12 @@ class FusedAudioPreprocessorAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket, start_auth
+                    from main_pc_code.src.network.secure_zmq import secure_client_socket, start_auth
                     start_auth()
                     self.sub_socket = secure_client_socket(self.sub_socket)
                     logger.info("Applied secure ZMQ to subscriber socket")
+                except ImportError as e:
+                    print(f"Import error: {e}")
                 except Exception as e:
                     logger.error(f"Failed to apply secure ZMQ to subscriber socket: {e}")
             
@@ -250,9 +262,11 @@ class FusedAudioPreprocessorAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+                    from main_pc_code.src.network.secure_zmq import secure_server_socket
                     self.clean_audio_pub_socket = secure_server_socket(self.clean_audio_pub_socket)
                     logger.info("Applied secure ZMQ to clean audio publisher socket")
+                except ImportError as e:
+                    print(f"Import error: {e}")
                 except Exception as e:
                     logger.error(f"Failed to apply secure ZMQ to clean audio publisher socket: {e}")
             
@@ -265,9 +279,11 @@ class FusedAudioPreprocessorAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+                    from main_pc_code.src.network.secure_zmq import secure_server_socket
                     self.vad_pub_socket = secure_server_socket(self.vad_pub_socket)
                     logger.info("Applied secure ZMQ to VAD publisher socket")
+                except ImportError as e:
+                    print(f"Import error: {e}")
                 except Exception as e:
                     logger.error(f"Failed to apply secure ZMQ to VAD publisher socket: {e}")
             
@@ -276,7 +292,7 @@ class FusedAudioPreprocessorAgent(BaseAgent):
             
             # Register with SystemDigitalTwin
             try:
-                from utils.service_discovery_client import register_service
+                from main_pc_code.utils.service_discovery_client import register_service
                 register_service(
                     name="FusedAudioPreprocessor",
                     port=ZMQ_CLEAN_AUDIO_PUB_PORT,
@@ -287,6 +303,8 @@ class FusedAudioPreprocessorAgent(BaseAgent):
                     }
                 )
                 logger.info("Registered with SystemDigitalTwin")
+            except ImportError as e:
+                print(f"Import error: {e}")
             except Exception as e:
                 logger.error(f"Failed to register with SystemDigitalTwin: {e}")
             

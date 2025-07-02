@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
-from config.system_config import get_service_host, get_service_port
+from pc2_code.config.system_config import get_service_host, get_service_port
 
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -18,6 +18,8 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

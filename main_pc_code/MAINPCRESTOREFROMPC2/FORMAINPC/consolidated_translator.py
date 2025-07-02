@@ -32,15 +32,15 @@ import functools
 import argparse
 
 # Import config parser for dynamic port support
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
 # Import MemoryOrchestrator client functions
-from src.memory.zmq_encoding_utils import encode_for_zmq, decode_from_zmq
+from main_pc_code.src.memory.zmq_encoding_utils import encode_for_zmq, decode_from_zmq
 
 # Import data optimizer
-from utils.data_optimizer import optimize_zmq_message
+from main_pc_code.utils.data_optimizer import optimize_zmq_message
 
 # Configure logging
 LOG_LEVEL = 'INFO'
@@ -1181,6 +1181,8 @@ class TranslationPipeline:
         # Initialize language detection
         try:
             from langdetect import detect, DetectorFactory
+    except ImportError as e:
+        print(f"Import error: {e}")
             DetectorFactory.seed = 0  # For consistent results
             self.has_langdetect = True
         except ImportError:
@@ -1190,6 +1192,8 @@ class TranslationPipeline:
         # Initialize quality metrics
         try:
             from nltk.translate.bleu_score import sentence_bleu
+    except ImportError as e:
+        print(f"Import error: {e}")
             from nltk.tokenize import word_tokenize
             import nltk
             nltk.download('punkt', quiet=True)

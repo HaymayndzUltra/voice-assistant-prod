@@ -1,11 +1,11 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
 import os
-from agents.proactive_agent_interface import send_proactive_event
+from main_pc_code.agents.proactive_agent_interface import send_proactive_event
 
 import threading
 import time

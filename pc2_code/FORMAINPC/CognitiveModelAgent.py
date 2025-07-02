@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import networkx as nx
-from config.system_config import get_service_host, get_service_port
+from pc2_code.config.system_config import get_service_host, get_service_port
 
 # Configure logging
 logging.basicConfig(

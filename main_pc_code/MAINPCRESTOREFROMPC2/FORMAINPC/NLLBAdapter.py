@@ -31,7 +31,9 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 try:
-    from config.system_config import get_config_for_service, get_config_for_machine
+from main_pc_code.config.system_config import get_config_for_service, get_config_for_machine
+    except ImportError as e:
+        print(f"Import error: {e}")
     SERVICE_ID = "nllb-translation-adapter-pc2"
     service_config = get_config_for_service(SERVICE_ID)
     pc2_general_config = get_config_for_machine("pc2")
@@ -89,6 +91,8 @@ class ResourceManager:
         mem = psutil.virtual_memory().percent
         try:
             import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
             gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
         except Exception:
             gpu = 0

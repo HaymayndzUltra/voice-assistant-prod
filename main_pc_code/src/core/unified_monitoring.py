@@ -13,7 +13,7 @@ import os
 from typing import Any, Dict, List, Union, cast, TypedDict
 from pathlib import Path
 
-from .base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,8 @@ class UnifiedMonitor(BaseAgent):
         self.psutil_available = True
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
 import time
 from datetime import datetime
         except ImportError:

@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import time
@@ -11,7 +11,7 @@ import socket
 
 # Add parent directory to path to import system_config
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import DEFAULT_CONFIG
+from main_pc_code.config.system_config import DEFAULT_CONFIG
 
 # Setup logging
 log_dir = Path(__file__).parent.parent / "logs"

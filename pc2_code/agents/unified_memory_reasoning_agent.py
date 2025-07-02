@@ -25,7 +25,7 @@ import sys
 
 # Add parent directory to path for config import
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from pc2_code.config.system_config import config
 
 # Constants
 LOG_PATH = "logs/unified_memory_reasoning_agent.log"

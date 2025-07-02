@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 # Auto-accept Coqui CPML terms for non-commercial use.
@@ -16,10 +16,10 @@ import torch
 import logging
 import time
 import pickle
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
 _agent_args = parse_agent_args()
 
 # Get the directory of the current file for the log
@@ -32,7 +32,9 @@ os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
 
 # Import common Tagalog phrases module
 try:
-    from agents.common_tagalog_phrases import (
+from main_pc_code.agents.common_tagalog_phrases import (
+    except ImportError as e:
+        print(f"Import error: {e}")
         translate_common_phrase,
         check_and_replace_common_phrases,
         TAGALOG_TO_ENGLISH,
@@ -69,6 +71,8 @@ add_all_safe_globals()
 # Lazy-load TTS at runtime to avoid blocking import time
 try:
     from TTS.api import TTS  # only import, do not instantiate
+    except ImportError as e:
+        print(f"Import error: {e}")
     TTS_AVAILABLE = True
 except ImportError:
     TTS_AVAILABLE = False
@@ -574,6 +578,8 @@ class ResponderAgent(BaseAgent):
             return
         try:
             import tkinter as tk
+    except ImportError as e:
+        print(f"Import error: {e}")
             import threading
 
             def show_overlay():

@@ -13,11 +13,11 @@ import psutil
 import torch
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service, register_service, get_service_address
-from utils.env_loader import get_env
-from config.agent_ports import default_ports
-from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.config.agent_ports import default_ports
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 import threading
 _agent_args = parse_agent_args()
 

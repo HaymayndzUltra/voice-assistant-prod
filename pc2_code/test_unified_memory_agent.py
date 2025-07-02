@@ -15,7 +15,7 @@ os.environ['UNIFIED_MEMORY_PORT'] = '7205'
 
 try:
     print("Testing UnifiedMemoryReasoningAgent import...")
-    from agents.unified_memory_reasoning_agent import UnifiedMemoryReasoningAgent
+from pc2_code.agents.unified_memory_reasoning_agent import UnifiedMemoryReasoningAgent
     
     print("Creating UnifiedMemoryReasoningAgent instance...")
     agent = UnifiedMemoryReasoningAgent(zmq_port=7205, health_check_port=7206)

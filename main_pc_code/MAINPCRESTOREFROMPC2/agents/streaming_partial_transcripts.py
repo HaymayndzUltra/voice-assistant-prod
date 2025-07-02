@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Streaming Partial Transcripts Module
 Processes audio chunks and provides partial transcripts before full processing

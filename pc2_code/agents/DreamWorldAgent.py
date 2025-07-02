@@ -18,7 +18,7 @@ from enum import Enum
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import get_service_host, get_service_port
+from pc2_code.config.system_config import get_service_host, get_service_port
 from main_pc_code.src.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -41,67 +41,6 @@ class ScenarioType(BaseAgent):
     CUSTOM = "custom"
 
 @dataclass
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config["ports"][service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket
 class ScenarioTemplate:
     name: str
     type: ScenarioType
@@ -114,31 +53,16 @@ class ScenarioTemplate:
 
 class MCTSNode:
     def __init__(self, state: Dict[str, Any], parent=None, action=None):
-         super().__init__(name="ScenarioType", port=None)
-
-         # Record start time for uptime calculation
-
-         self.start_time = time.time()
-
-         
-
-         # Initialize agent state
-
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-"""Initialize a node in the Monte Carlo Tree."""
+        super().__init__(name="ScenarioType", port=None)
+        # Record start time for uptime calculation
+        self.start_time = time.time()
+        # Initialize agent state
+        self.running = True
+        self.request_count = 0
+        # Set up connection to main PC if needed
+        self.main_pc_connections = {}
+        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+        # MCTSNode-specific attributes
         self.state = state
         self.parent = parent
         self.action = action

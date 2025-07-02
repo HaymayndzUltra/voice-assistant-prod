@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -17,6 +17,15 @@ import socket
 import platform
 
 # Configure logging
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -90,7 +99,6 @@ class UnifiedSystemAgent(BaseAgent):
                 return {}
             
             # Import the configuration module
-            sys.path.append(str(config_path.parent))
             import system_config
 
 # ZMQ timeout settings

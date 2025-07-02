@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Secure Agent Template
 --------------------
 This is a template for implementing secure ZMQ communication in agents.
@@ -15,10 +24,9 @@ from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(project_root))
 
 # Import secure ZMQ module
-from src.network.secure_zmq import (
+from main_pc_code.src.network.secure_zmq import (
 import threading
 from datetime import datetime
 from typing import Dict, Any
@@ -29,11 +37,12 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

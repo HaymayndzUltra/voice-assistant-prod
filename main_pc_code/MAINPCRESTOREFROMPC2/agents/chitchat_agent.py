@@ -19,8 +19,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from src.core.base_agent import BaseAgent
-from utils.config_parser import parse_agent_args
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_parser import parse_agent_args
 
 _agent_args = parse_agent_args()
 

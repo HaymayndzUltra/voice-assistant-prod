@@ -22,14 +22,14 @@ import concurrent.futures
 import requests
 import subprocess
 
-from agents.core_agents.http_server import setup_health_check_server
-from agents.utils.config_loader import Config
+from pc2_code.agents.core_agents.http_server import setup_health_check_server
+from pc2_code.agents.utils.config_loader import Config
 config = Config()  # Instantiate the global config object
-from agents.utils.config_parser import parse_agent_args
+from pc2_code.agents.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Import system_config for per-machine settings
-from config import system_config
+from pc2_code.config import system_config
 
 # Configure logging
 log_file_path = 'logs/health_monitor.log'
@@ -51,7 +51,7 @@ STATUS_PORT = 6584  # Port for status updates
 TASK_ROUTER_PORT = 5571  # Port for task router agent
 
 # --- Orchestrator Logic Integration (from orchestrator.py) ---
-from src.core.base_agent import BaseAgent
+from pc2_code.src.core.base_agent import BaseAgent
 import signal
 import psutil
 from pathlib import Path

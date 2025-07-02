@@ -25,7 +25,7 @@ import requests
 from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 from collections import deque
-from config.system_config import get_config_for_service
+from pc2_code.config.system_config import get_config_for_service
 import threading
 import psutil
 
@@ -656,6 +656,8 @@ class TranslationPipeline:
         # Initialize language detection
         try:
             from langdetect import detect, DetectorFactory
+    except ImportError as e:
+        print(f"Import error: {e}")
             DetectorFactory.seed = 0  # For consistent results
             self.has_langdetect = True
         except ImportError:
@@ -665,6 +667,8 @@ class TranslationPipeline:
         # Initialize quality metrics
         try:
             from nltk.translate.bleu_score import sentence_bleu
+    except ImportError as e:
+        print(f"Import error: {e}")
             from nltk.tokenize import word_tokenize
             import nltk
             nltk.download('punkt', quiet=True)
@@ -1279,6 +1283,8 @@ class TranslationPipeline:
             
         try:
             from langdetect import detect_langs
+    except ImportError as e:
+        print(f"Import error: {e}")
             detections = detect_langs(text)
             if detections:
                 best_match = detections[0]
@@ -1335,6 +1341,8 @@ class TranslationPipeline:
         if self.has_bleu:
             try:
                 from nltk.translate.bleu_score import sentence_bleu
+    except ImportError as e:
+        print(f"Import error: {e}")
                 from nltk.tokenize import word_tokenize
                 
                 reference = [word_tokenize(original.lower())]

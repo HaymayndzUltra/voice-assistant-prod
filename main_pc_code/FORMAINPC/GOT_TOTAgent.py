@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 GoT/ToT Agent
 ------------
 A ZMQ-based agent that implements Graph/Tree-of-Thought reasoning for complex problem-solving.
@@ -37,9 +46,9 @@ GOT_TOT_PORT = 5646
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+    sys.path.insert(0, PROJECT_ROOT)  # Insert project root to path
 if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
+    sys.path.insert(0, MAIN_PC_CODE)  # Insert main_pc_code to path
 
 # Import BaseAgent for standardized agent implementation
 from main_pc_code.src.core.base_agent import BaseAgent

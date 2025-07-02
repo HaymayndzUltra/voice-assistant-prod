@@ -1,5 +1,14 @@
 import sys
 import os
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -7,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -54,15 +63,15 @@ class ProactiveAgent(BaseAgent):
 
                     config = json.load(f)
 
-                if 'agents' in config and 'proactive_agent' in config['agents']:
+                if 'agents' in config and 'proactive_agent' in config.get('agents'):
 
-                    config_port = config['agents']['proactive_agent'].get('port')
+                    config_port = config.get('agents')['proactive_agent'].get('port')
 
-                elif 'agents' in config and 'memory_decay' in config['agents']:
+                elif 'agents' in config and 'memory_decay' in config.get('agents'):
 
                     # fallback: use memory_decay port if that's the intended mapping
 
-                    config_port = config['agents']['memory_decay'].get('port')
+                    config_port = config.get('agents')['memory_decay'].get('port')
 
         except Exception as e:
 

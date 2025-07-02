@@ -9,7 +9,7 @@ if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
 try:
-    from agents.ForPC2.UnifiedErrorAgent import UnifiedErrorAgent
+from pc2_code.agents.ForPC2.UnifiedErrorAgent import UnifiedErrorAgent
     print("SUCCESS: UnifiedErrorAgent imported successfully")
     
     # Test instantiation

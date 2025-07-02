@@ -24,7 +24,7 @@ def test_self_healing_agent():
     try:
         # Import the agent
         print("1. Importing SelfHealingAgent...")
-        from agents.self_healing_agent import SelfHealingAgent
+from pc2_code.agents.self_healing_agent import SelfHealingAgent
         print("   ✓ Import successful")
         
         # Create agent instance

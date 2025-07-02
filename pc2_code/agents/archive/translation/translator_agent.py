@@ -73,7 +73,9 @@ except Exception as e:
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 try:
-    from config.system_config import get_config_for_service, get_config_for_machine
+from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
+    except ImportError as e:
+        print(f"Import error: {e}")
     AGENT_SERVICE_ID = "translator-agent-pc2"
     agent_config = get_config_for_service(AGENT_SERVICE_ID)
     pc2_general_config = get_config_for_machine("pc2")
@@ -915,6 +917,8 @@ class TranslatorAgent:
         def process_memory_usage():
             try:
                 import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
                 process = psutil.Process(os.getpid())
                 mem_info = process.memory_info()
                 return mem_info.rss / (1024 * 1024)

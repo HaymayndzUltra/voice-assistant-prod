@@ -27,8 +27,8 @@ import datetime
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
-from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
+from pc2_code.src.core.http_server import setup_health_check_server
+from pc2_code.utils.config_parser import parse_agent_args
 from datetime import datetime
 from typing import Dict, Any
 
@@ -42,6 +42,8 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

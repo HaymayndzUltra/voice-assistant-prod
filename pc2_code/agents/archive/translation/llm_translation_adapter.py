@@ -14,6 +14,8 @@ from collections import OrderedDict
 # Optional PyTorch import with fallback and detailed error handling
 try:
     import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
     HAS_TORCH = True
     TORCH_ERROR = None

@@ -30,6 +30,8 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

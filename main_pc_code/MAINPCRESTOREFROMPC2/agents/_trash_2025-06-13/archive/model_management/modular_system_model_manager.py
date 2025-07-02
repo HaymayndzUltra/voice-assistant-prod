@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Model Manager Agent (MMA) for monitoring and managing pipeline components.
@@ -17,7 +17,7 @@ import threading
 project_root = Path(__file__).parent.absolute()
 sys.path.append(str(project_root))
 
-from config.system_config import Config
+from main_pc_code.config.system_config import Config
 
 class ModelManagerAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
@@ -183,6 +183,8 @@ class DynamicSTTModelManager(BaseAgent):
             return self.loaded_models[model_id]
         try:
             import whisper
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.logger.info(f"Loading STT model '{model_id}'...")
             model = whisper.load_model(model_id)
             self.loaded_models[model_id] = model

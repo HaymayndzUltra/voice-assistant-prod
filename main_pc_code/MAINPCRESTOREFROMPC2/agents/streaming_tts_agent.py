@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
@@ -25,11 +25,11 @@ from pathlib import Path
 import hashlib
 import tempfile
 import re
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import register_service, get_service_address
-from utils.env_loader import get_env
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
 import pickle
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse CLI arguments once
 _agent_args = parse_agent_args()
@@ -246,6 +246,8 @@ class UltimateTTSAgent(BaseAgent):
             
             try:
                 from TTS.api import TTS
+    except ImportError as e:
+        print(f"Import error: {e}")
                 import torch
                 
                 # Check for CUDA
@@ -286,6 +288,8 @@ class UltimateTTSAgent(BaseAgent):
             # Tier 2: Windows SAPI
             try:
                 import win32com.client
+    except ImportError as e:
+        print(f"Import error: {e}")
                 self.tts_engines["sapi"] = win32com.client.Dispatch("SAPI.SpVoice")
                 self.initialization_status["engines_ready"]["sapi"] = True
                 logger.info("Tier 2: Windows SAPI initialized")
@@ -295,6 +299,8 @@ class UltimateTTSAgent(BaseAgent):
             # Tier 3: pyttsx3
             try:
                 import pyttsx3
+    except ImportError as e:
+        print(f"Import error: {e}")
                 self.tts_engines["pyttsx3"] = pyttsx3.init()
                 self.initialization_status["engines_ready"]["pyttsx3"] = True
                 logger.info("Tier 3: pyttsx3 initialized")
@@ -394,6 +400,8 @@ class UltimateTTSAgent(BaseAgent):
             if os.path.exists(voice_sample):
                 try:
                     import soundfile as sf
+    except ImportError as e:
+        print(f"Import error: {e}")
                     info = sf.info(voice_sample)
                     print(f"VOICE SAMPLE VERIFIED: {voice_sample}")
                     print(f"  - File exists: YES")

@@ -1,11 +1,11 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
 import threading
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from agents.memory_client import MemoryClient
+from main_pc_code.agents.memory_client import MemoryClient
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

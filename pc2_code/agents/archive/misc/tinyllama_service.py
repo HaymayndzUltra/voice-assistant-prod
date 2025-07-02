@@ -31,7 +31,9 @@ import torch
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 try:
-    from config.system_config import get_config_for_service, get_config_for_machine
+from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
+    except ImportError as e:
+        print(f"Import error: {e}")
     SERVICE_ID = "tinyllama-service-pc2"
     service_config = get_config_for_service(SERVICE_ID)
     pc2_general_config = get_config_for_machine("pc2")

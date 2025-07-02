@@ -21,7 +21,7 @@ import argparse
 from typing import Dict, Any
 
 # Import config parser for dynamic port support
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

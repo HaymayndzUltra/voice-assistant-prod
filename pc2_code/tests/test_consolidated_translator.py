@@ -9,7 +9,9 @@ import unittest
 import zmq
 import json
 import time
-from agents.consolidated_translator import TranslationPipeline, TranslationCache, SessionManager
+import threading
+from main_pc_code.FORMAINPC.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
+from pc2_code.config.system_config import get_config_for_service
 
 class TestConsolidatedTranslator(unittest.TestCase):
     @classmethod

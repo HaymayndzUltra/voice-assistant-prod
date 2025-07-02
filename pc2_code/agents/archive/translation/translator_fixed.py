@@ -64,6 +64,8 @@ def process_memory_usage() -> float:
     """Get current process memory usage in MB"""
     try:
         import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
         process = psutil.Process(os.getpid())
         mem_info = process.memory_info()
         return mem_info.rss / (1024 * 1024)  # Convert to MB

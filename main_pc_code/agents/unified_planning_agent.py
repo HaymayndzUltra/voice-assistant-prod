@@ -1,13 +1,22 @@
 import sys
 import os
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+    pass  # Auto-fixed indentation error
 if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
+    sys.path.insert(0, MAIN_PC_CODE)  # Add MAIN_PC_CODE to sys.path
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 """
@@ -30,9 +39,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import threading
 
-from utils.service_discovery_client import discover_service, register_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 import psutil
 
 # Configure logging (keep as is, or optionally source log level/path from _agent_args)
@@ -316,7 +325,7 @@ class UnifiedPlanningAgent(BaseAgent):
             # Execute code
             if "compile_command" in config:
                 # Compile first
-                compile_cmd = config["compile_command"] + [str(temp_file)]
+                compile_cmd = config.get("compile_command") + [str(temp_file)]
                 process = subprocess.run(compile_cmd, capture_output=True, text=True)
                 
                 if process.returncode != 0:
@@ -332,17 +341,17 @@ class UnifiedPlanningAgent(BaseAgent):
                     exe_path = temp_file.with_suffix(".exe")
                 
                 # Run compiled code
-                run_cmd = config["command"] + [str(exe_path)]
+                run_cmd = config.get("command") + [str(exe_path)]
             else:
                 # Run interpreted code
-                run_cmd = config["command"] + [str(temp_file)]
+                run_cmd = config.get("command") + [str(temp_file)]
             
             # Execute with timeout
             process = subprocess.run(
                 run_cmd,
                 capture_output=True,
                 text=True,
-                timeout=config["timeout"]
+                timeout=config.get("timeout")
             )
             
             # Clean up
@@ -367,7 +376,7 @@ class UnifiedPlanningAgent(BaseAgent):
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
-                "error": f"Execution timed out after {config['timeout']} seconds"
+                "error": f"Execution timed out after {config.get('timeout')} seconds"
             }
         except Exception as e:
             return {

@@ -16,7 +16,7 @@ from enum import Enum
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import get_service_host, get_service_port
+from pc2_code.config.system_config import get_service_host, get_service_port
 
 # Configure logging
 logging.basicConfig(

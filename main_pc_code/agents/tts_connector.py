@@ -2,15 +2,23 @@ import sys
 import os
 # Ensure project root is on PYTHONPATH so 'src' can be imported when the agent
 # is launched as a standalone subprocess.
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 PROJECT_SRC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 for _p in (PROJECT_SRC_ROOT, PROJECT_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
-    sys.path.insert(0, PROJECT_ROOT)
 
 try:
-    from src.core.base_agent import BaseAgent
+    from main_pc_code.src.core.base_agent import BaseAgent
 except ImportError:
     # Fallback when running from project root already containing 'main_pc_code'
     from main_pc_code.src.core.base_agent import BaseAgent
@@ -33,7 +41,7 @@ from collections import deque, OrderedDict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 import os
-from utils.env_loader import get_env
+from main_pc_code.utils.env_loader import get_env
 
 # Load configuration at module level
 config = load_config()

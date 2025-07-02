@@ -26,29 +26,31 @@ if str(project_root) not in sys.path:
 
 # Import config module
 try:
-    from agents.utils.config_loader import Config
+    from pc2_code.agents.utils.config_loader import Config
     config = Config()  # Instantiate the global config object
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     # Fallback if config not available
     config = None
 
 # Import system_config for per-machine settings
 try:
-    from config import system_config
+    from pc2_code.config import system_config
 except ImportError:
     system_config = {}
 
 try:
-    from agents.utils.config_parser import parse_agent_args
-    _agent_args 
-from main_pc_code.src.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
+    from pc2_code.utils.config_loader import parse_agent_args
+    _agent_args = parse_agent_args() 
+    from main_pc_code.src.core.base_agent import BaseAgent
+    from pc2_code.agents.utils.config_loader import Config
 
-# Load configuration at the module level
-config = Config().get_config()
-except ImportError:
+    # Load configuration at the module level
+    config = Config().get_config()
+except ImportError as e:
+    print(f"Import error: {e}")
     # Fallback if config parser not available
-    class DummyArgs(BaseAgent):
+    class DummyArgs:
         host = 'localhost'
     _agent_args = DummyArgs()
 
@@ -70,122 +72,34 @@ logger = logging.getLogger('AuthenticationAgent')
 AUTH_PORT = 7116  # Default, will be overridden by configuration
 AUTH_HEALTH_PORT = 8116  # Default health check port
 
-
-
-        def connect_to_main_pc_service(self, service_name: str):
-
-            """
-
-            Connect to a service on the main PC using the network configuration.
-
-            
-
-            Args:
-
-                service_name: Name of the service in the network config ports section
-
-            
-
-            Returns:
-
-                ZMQ socket connected to the service
-
-            """
-
-            if not hasattr(self, 'main_pc_connections'):
-
-                self.main_pc_connections = {}
-
-                
-
-            if service_name not in network_config.get("ports", {}):
-
-                logger.error(f"Service {service_name} not found in network configuration")
-
-                return None
-
-                
-
-            port = network_config["ports"][service_name]
-
-            
-
-            # Create a new socket for this connection
-
-            socket = self.context.socket(zmq.REQ)
-
-            
-
-            # Connect to the service
-
-            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-            
-
-            # Store the connection
-
-            self.main_pc_connections[service_name] = socket
-
-            
-
-            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-            return socket
-class AuthenticationAgent:
+class AuthenticationAgent(BaseAgent):
     """Authentication Agent for system-wide authentication and authorization."""
     
     def __init__(self, port: int = None, health_check_port: int = None, **kwargs):
-         super().__init__(name="DummyArgs", port=None)
+        # Initialize BaseAgent with proper name and port
+        super().__init__(name="AuthenticationAgent", port=port if port is not None else AUTH_PORT, **kwargs)
 
-         # Record start time for uptime calculation
+        # Record start time for uptime calculation
+        self.start_time = time.time()
 
-         self.start_time = time.time()
-
-         
-
-         # Initialize agent state
-
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-"""Initialize the Authentication Agent.
+        # Initialize agent state
+        self.running = True
+        self.request_count = 0
         
-        Args:
-            port: Optional port override for testing
-            health_check_port: Optional health check port override
-        """
+        # Set up connection to main PC if needed
+        self.main_pc_connections = {}
+        
+        logger.info(f"{self.__class__.__name__} initialized on PC2 port {self.port}")
         # Initialize authentication data
         self.users = {}
         self.sessions = {}
         self.token_expiry = timedelta(hours=24)
         
-        # Set up ports
-        self.main_port = port if port is not None else AUTH_PORT
-        self.health_port = health_check_port if health_check_port is not None else AUTH_HEALTH_PORT
-        
-        # Initialize ZMQ context and sockets
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
-        
         # Start session cleanup thread
-        self.running = True
         self.cleanup_thread = threading.Thread(target=self._cleanup_sessions_loop)
         self.cleanup_thread.daemon = True
         self.cleanup_thread.start()
-        
-        logger.info(f"Authentication Agent initialized on port {self.main_port}")
+        logger.info(f"Authentication Agent initialized on port {self.port}")
     
     def _cleanup_sessions_loop(self):
         """Background thread for cleaning up expired sessions."""
@@ -340,133 +254,142 @@ class AuthenticationAgent:
             if not token:
                 return {'status': 'error', 'message': 'Missing token'}
             
-            is_valid = self._validate_token(token)
+            valid = self._validate_token(token)
             
-            return {
-                'status': 'success',
-                'valid': is_valid,
-                'message': 'Token is valid' if is_valid else 'Token is invalid'
-            }
+            if valid:
+                return {'status': 'success', 'valid': True}
+            else:
+                return {'status': 'success', 'valid': False}
         except Exception as e:
             logger.error(f"Error handling token validation: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def _health_check(self) -> Dict[str, Any]:
-        """Perform health check."""
-        return {
-            'status': 'success',
-            'agent': 'AuthenticationAgent',
-            'timestamp': datetime.now().isoformat(),
-            'active_sessions': len(self.sessions),
-            'registered_users': len(self.users),
-            'cleanup_thread_alive': self.cleanup_thread.is_alive(),
-            'port': self.main_port
-        }
+        """Legacy health check method."""
+        return self._get_health_status()
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        # Call the parent class implementation first
+        status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        status.update({
+            "agent_type": "authentication",
+            "active_sessions": len(self.sessions),
+            "registered_users": len(self.users),
+            "cleanup_thread_alive": self.cleanup_thread.is_alive() if hasattr(self, 'cleanup_thread') else False
+        })
+        
+        return status
     
     def run(self):
-        """Main run loop for the agent."""
-        logger.info(f"Authentication Agent starting on port {self.main_port}")
+        """Main run loop."""
+        logger.info(f"Authentication Agent starting on port {self.port}")
         
         try:
             while self.running:
                 try:
-                    # Receive request
-                    request = self.socket.recv_json()
-                    logger.debug(f"Received request: {request}")
-                    
-                    # Process request
-                    response = self.handle_request(request)
-                    
-                    # Send response
-                    self.socket.send_json(response)
-                    
+                    # Use non-blocking recv with timeout
+                    if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                        message = self.socket.recv_json()
+                        logger.debug(f"Received message: {message}")
+                        
+                        # Process message
+                        response = self.handle_request(message)
+                        
+                        # Send response
+                        self.socket.send_json(response)
+                        self.request_count += 1
+                        
                 except zmq.error.ZMQError as e:
-                    logger.error(f"ZMQ error in run loop: {e}")
-                    # Try to send an error response
-                    try:
-                        self.socket.send_json({
-                            'status': 'error',
-                            'error': str(e)
-                        })
-                    except:
-                        pass
-                    
+                    logger.error(f"ZMQ error: {e}")
+                    time.sleep(1)  # Sleep to avoid tight loop on error
                 except Exception as e:
-                    logger.error(f"Error in run loop: {e}")
-                    # Try to send an error response
+                    logger.error(f"Error processing message: {e}")
+                    # Try to send error response
                     try:
                         self.socket.send_json({
                             'status': 'error',
-                            'error': str(e)
+                            'message': f'Internal server error: {str(e)}'
                         })
                     except:
                         pass
+                    time.sleep(1)
                     
         except KeyboardInterrupt:
-            logger.info("Keyboard interrupt received, shutting down...")
-            
+            logger.info("Authentication Agent interrupted")
         finally:
             self.cleanup()
     
     def cleanup(self):
         """Clean up resources."""
-        logger.info("Cleaning up resources...")
-        
-        # Stop background threads
+        logger.info("Cleaning up Authentication Agent resources")
         self.running = False
-        if self.cleanup_thread.is_alive():
-            self.cleanup_thread.join(timeout=5)
         
-        # Close ZMQ socket
+        # Close ZMQ sockets
         if hasattr(self, 'socket'):
             self.socket.close()
         
-        # Close ZMQ context
-        if hasattr(self, 'context'):
-            self.context.term()
-            
-        logger.info("Cleanup complete")
-
-
-    
-    def _get_health_status(self) -> dict:
-
-    
-        """Return health status information."""
-
-    
-        base_status = super()._get_health_status()
-
-    
-        # Add any additional health information specific to DummyArgs
-
-    
-        base_status.update({
-
-    
-            'service': 'DummyArgs',
-
-    
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-    
-            'additional_info': {}
-
-    
-        })
-
-    
-        return base_status
+        # Join threads
+        if hasattr(self, 'cleanup_thread'):
+            self.cleanup_thread.join(timeout=2.0)
+        
+        # Call parent cleanup
+        super().cleanup()
+        
+        logger.info("Authentication Agent cleanup complete")
     
     def stop(self):
-        """Stop the agent gracefully."""
+        """Stop the agent."""
         self.running = False
+        
+    def connect_to_main_pc_service(self, service_name: str):
+        """Connect to a service on the main PC."""
+        try:
+            # Load network configuration
+            network_config = load_network_config()
+            
+            if not network_config:
+                logger.error("Failed to load network configuration")
+                return False
+            
+            # Get service details
+            service_config = network_config.get('services', {}).get(service_name)
+            if not service_config:
+                logger.error(f"Service '{service_name}' not found in network configuration")
+                return False
+            
+            # Create socket
+            socket = self.context.socket(zmq.REQ)
+            
+            # Connect to service
+            host = service_config.get('host', 'localhost')
+            port = service_config.get('port')
+            if not port:
+                logger.error(f"No port specified for service '{service_name}'")
+                return False
+            
+            socket.connect(f"tcp://{host}:{port}")
+            logger.info(f"Connected to {service_name} at {host}:{port}")
+            
+            # Store socket
+            self.main_pc_connections[service_name] = socket
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error connecting to service '{service_name}': {e}")
+            return False
 
-
-
-
-
-
+def load_network_config():
+    """Load network configuration from file."""
+    try:
+        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'network_config.yaml')
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network configuration: {e}")
+        return None
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -509,9 +432,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()

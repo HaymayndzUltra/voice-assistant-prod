@@ -6,7 +6,9 @@ import re
 
 # Import sounddevice configuration module to ensure correct device settings
 try:
-    from agents.sd_config import DEVICE_INDEX, SAMPLE_RATE
+from main_pc_code.agents.sd_config import DEVICE_INDEX, SAMPLE_RATE
+    except ImportError as e:
+        print(f"Import error: {e}")
     print(f'[DEBUG] Imported sounddevice config: Device {DEVICE_INDEX} at {SAMPLE_RATE} Hz')
 except ImportError:
     print('[DEBUG] Could not import sd_config module, using default sounddevice settings')
@@ -14,6 +16,8 @@ except ImportError:
 # Monkey-patch torch.load to default weights_only=False for Bark TTS compatibility
 try:
     import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
     _orig_torch_load = torch.load
     def patched_torch_load(*args, **kwargs):
         if 'weights_only' not in kwargs:
@@ -27,6 +31,8 @@ except Exception as e:
 # Patch for Bark TTS + PyTorch 2.6+ weights_only error
 try:
     import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
     import numpy
     torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
     torch.serialization.add_safe_globals([numpy.dtype])
@@ -51,6 +57,8 @@ from scipy.io.wavfile import write as write_wav
 import time
 try:
     from TTS.api import TTS
+    except ImportError as e:
+        print(f"Import error: {e}")
     print(f"[DEBUG] Imported TTS from: {TTS.__module__}")
     try:
         print(f"[DEBUG] TTS file: {TTS.__file__}")
@@ -128,6 +136,8 @@ def xtts_speak(text, voice_sample_path=None, language="en"):
 # pyttsx3 fallback
 try:
     import pyttsx3
+    except ImportError as e:
+        print(f"Import error: {e}")
     def pyttsx3_speak(text):
         engine = pyttsx3.init()
         engine.setProperty('rate', 175)
@@ -189,11 +199,13 @@ try:
     # Try to import from current directory first
     try:
         from tts_cache import get_cached_audio, add_to_cache, play_cached_audio, clear_cache
+    except ImportError as e:
+        print(f"Import error: {e}")
         has_cache_system = True
         print("[TTS] Audio caching system loaded successfully from current directory")
     except ImportError:
         # Then try from agents package
-        from agents.tts_cache import get_cached_audio, add_to_cache, play_cached_audio, clear_cache
+from main_pc_code.agents.tts_cache import get_cached_audio, add_to_cache, play_cached_audio, clear_cache
         has_cache_system = True
         print("[TTS] Audio caching system loaded successfully from agents package")
 except ImportError as e:
@@ -276,6 +288,8 @@ def speak(text, emotion=None, voice_sample_path=None, language="en"):
         if pyttsx3_speak:
             try:
                 import pyttsx3
+    except ImportError as e:
+        print(f"Import error: {e}")
                 engine = pyttsx3.init()
                 engine.setProperty('rate', int(engine.getProperty('rate') * params["rate"]))
                 engine.setProperty('volume', params["volume"])

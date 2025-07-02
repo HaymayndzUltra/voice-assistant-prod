@@ -1,5 +1,14 @@
 import sys
 import os
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -7,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -75,19 +84,19 @@ class DynamicIdentityAgent(BaseAgent):
                 with open(config_path, 'r', encoding='utf-16') as f:
                     config = json.load(f)
             agent_config = None
-            if 'agents' in config and 'dynamic_identity' in config['agents']:
-                agent_config = config['agents']['dynamic_identity']
-            elif 'personality_pipeline' in config and 'dynamic_identity' in config['personality_pipeline']:
-                agent_config = config['personality_pipeline']['dynamic_identity']
+            if 'agents' in config and 'dynamic_identity' in config.get('agents'):
+                agent_config = config.get('agents')['dynamic_identity']
+            elif 'personality_pipeline' in config and 'dynamic_identity' in config.get('personality_pipeline'):
+                agent_config = config.get('personality_pipeline')['dynamic_identity']
             else:
                 agent_config = {}
             agent_config.setdefault('port', 5802)
             agent_config.setdefault('emr_port', 5803)
             agent_config.setdefault('empathy_port', 5804)
             agent_config.setdefault('personas_path', os.path.join('data', 'personas.json'))
-            self.emr_port = agent_config['emr_port']
-            self.empathy_port = agent_config['empathy_port']
-            personas_path = agent_config['personas_path']
+            self.emr_port = agent_config.get('emr_port')
+            self.empathy_port = agent_config.get('empathy_port')
+            personas_path = agent_config.get('personas_path')
             with open(personas_path, 'r', encoding='utf-8-sig') as f:
                 self.personas = json.load(f)
             # REQ socket for EnhancedModelRouter

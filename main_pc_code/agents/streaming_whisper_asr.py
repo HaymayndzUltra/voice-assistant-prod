@@ -1,5 +1,14 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Streaming Whisper ASR Module (CTranslate2, Real-Time)
 Subscribes to audio chunks from streaming_audio_capture.py via ZMQ and transcribes in near real-time.
 """
@@ -19,7 +28,6 @@ import sys
 
 # Add project root to sys.path to allow for modular imports
 project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
 
 # --- Dynamic Model Management Imports ---
 from modular_system.model_manager.model_manager_agent import DynamicSTTModelManager

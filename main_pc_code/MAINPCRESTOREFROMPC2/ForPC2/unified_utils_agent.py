@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 import subprocess
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 
 class UnifiedUtilsAgent(BaseAgent):
     def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:

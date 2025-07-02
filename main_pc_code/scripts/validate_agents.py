@@ -99,6 +99,8 @@ class AgentValidator:
         """
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             process = psutil.Process(pid)
             return process.is_running() and process.status() == psutil.STATUS_RUNNING
         except (psutil.NoSuchProcess, psutil.AccessDenied):

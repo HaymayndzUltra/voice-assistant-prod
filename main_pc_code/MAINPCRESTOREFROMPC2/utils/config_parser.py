@@ -2,7 +2,7 @@
 """Dynamic command-line configuration parser for agents.
 
 Usage inside an agent:
-    from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
     args = parse_agent_args()
 
 The parser always provides:

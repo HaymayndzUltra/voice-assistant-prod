@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Unified Web Agent
 - Combines web scraping, search, and browser automation
@@ -29,7 +29,7 @@ from playwright.sync_api import sync_playwright
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Import from web_automation package
 from web_automation import (
@@ -164,6 +164,8 @@ class UnifiedWebAgent(BaseAgent):
         """Ensure all required dependencies are installed"""
         try:
             import requests
+    except ImportError as e:
+        print(f"Import error: {e}")
             import bs4
             import pandas as pd
             import selenium

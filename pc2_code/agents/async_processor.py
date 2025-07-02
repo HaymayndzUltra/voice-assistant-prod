@@ -3,7 +3,17 @@ from typing import Dict, Any, Optional
 import yaml
 import sys
 import os
-import threading
+import threa
+
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
+ding
 from typing import Callable, Any, Dict, List, Optional
 from functools import wraps
 import time
@@ -196,7 +206,7 @@ class ResourceManager(BaseAgent):
             
 
 
-        port = network_config["ports"][service_name]
+        port = network_config.get("ports")[service_name]
 
 
         

@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import system config
 try:
-    from config.system_config import config
+from pc2_code.config.system_config import config
 except ImportError:
     config = {
         'memory.proactive_reminder_broadcast': True  # Default to enabled if config can't be loaded
@@ -22,7 +22,7 @@ except ImportError:
 
 # Import proactive event broadcasting
 try:
-    from agents.proactive_agent_interface import send_proactive_event
+from pc2_code.agents.proactive_agent_interface import send_proactive_event
 except ImportError:
     # Define a fallback function if the import fails
     def send_proactive_event(event_type, text="", user=None, emotion="neutral", **kwargs):

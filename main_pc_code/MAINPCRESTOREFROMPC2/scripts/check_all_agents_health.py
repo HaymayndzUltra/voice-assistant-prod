@@ -61,7 +61,9 @@ def connect_to_sdt() -> Optional[zmq.Socket]:
         # Configure secure ZMQ if enabled
         if SECURE_ZMQ:
             try:
-                from src.network.secure_zmq import configure_secure_client
+from main_pc_code.src.network.secure_zmq import configure_secure_client
+    except ImportError as e:
+        print(f"Import error: {e}")
                 socket = configure_secure_client(socket)
                 print(f"{COLORS['BLUE']}Using secure ZMQ connection{COLORS['END']}")
             except ImportError:

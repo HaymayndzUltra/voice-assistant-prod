@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Session Memory Agent
 ------------------
@@ -25,7 +25,7 @@ import numpy as np
 
 # Import the MemoryClient for new orchestrator
 try:
-    from src.memory.memory_client import MemoryClient
+from main_pc_code.src.memory.memory_client import MemoryClient
 except Exception as import_error:
     import logging, uuid, time
     logging.warning(f"[SessionMemoryAgent] Falling back to stub MemoryClient due to import error: {import_error}")
@@ -46,7 +46,7 @@ except Exception as import_error:
             return {"status": "success"}
         def batch_read(self, memory_type, limit=50, sort_field="created_at", sort_order="desc"):
             return {"status": "success", "data": {"memories": []}}
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

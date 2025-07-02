@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 System Digital Twin Agent
 
 This agent monitors real-time system metrics through Prometheus and provides
@@ -137,7 +146,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.prom = None
         try:
             from prometheus_api_client import PrometheusConnect
-            prometheus_url = config.get("prometheus_url", self.config["prometheus_url"])
+            prometheus_url = config.get("prometheus_url", self.config.get("prometheus_url"))
             self.prom = PrometheusConnect(url=prometheus_url, disable_ssl=True)
             logger.info("Prometheus client initialized successfully")
         except ImportError:
@@ -295,7 +304,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                 self.metrics_history["network_latency_ms"].append(metrics["network_latency_ms"])
                 
                 # Trim history to configured length
-                max_len = self.config["metrics_history_length"]
+                max_len = self.config.get("metrics_history_length")
                 if len(self.metrics_history["timestamps"]) > max_len:
                     for key in self.metrics_history:
                         self.metrics_history[key] = self.metrics_history[key][-max_len:]
@@ -306,7 +315,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                 logger.error(f"Error collecting metrics: {e}")
             
             # Wait for next collection interval
-            time.sleep(self.config["metrics_poll_interval"])
+            time.sleep(self.config.get("metrics_poll_interval"))
     
     def _fetch_current_metrics(self) -> Dict[str, float]:
         """
@@ -332,7 +341,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                     "cpu_usage": float(cpu_usage) if cpu_usage is not None else 0.0,
                     "vram_usage_mb": vram_mb,
                     "ram_usage_mb": ram_mb,
-                    "network_latency_ms": float(network_latency) if network_latency is not None else self.config["network_baseline_ms"]
+                    "network_latency_ms": float(network_latency) if network_latency is not None else self.config.get("network_baseline_ms")
                 }
             else:
                 # Return mock metrics
@@ -340,7 +349,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                     "cpu_usage": 25.0,  # Mock 25% CPU usage
                     "vram_usage_mb": 8000.0,  # Mock 8GB VRAM usage
                     "ram_usage_mb": 16000.0,  # Mock 16GB RAM usage
-                    "network_latency_ms": self.config["network_baseline_ms"]
+                    "network_latency_ms": self.config.get("network_baseline_ms")
                 }
         except Exception as e:
             logger.error(f"Error fetching metrics: {e}")
@@ -349,7 +358,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                 "cpu_usage": 0.0,
                 "vram_usage_mb": 0.0,
                 "ram_usage_mb": 0.0,
-                "network_latency_ms": self.config["network_baseline_ms"]
+                "network_latency_ms": self.config.get("network_baseline_ms")
             }
     
     def _get_prometheus_value(self, metric_name: str) -> Optional[float]:
@@ -420,7 +429,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         if load_type == "vram":
             current_vram = current_state["vram_usage_mb"]
             projected_vram = current_vram + value
-            vram_capacity = self.config["vram_capacity_mb"]
+            vram_capacity = self.config.get("vram_capacity_mb")
             
             response["current_vram_mb"] = current_vram
             response["requested_vram_mb"] = value
@@ -448,7 +457,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         elif load_type == "ram":
             current_ram = current_state["ram_usage_mb"]
             projected_ram = current_ram + value
-            ram_capacity = self.config["ram_capacity_mb"]
+            ram_capacity = self.config.get("ram_capacity_mb")
             
             response["current_ram_mb"] = current_ram
             response["requested_ram_mb"] = value

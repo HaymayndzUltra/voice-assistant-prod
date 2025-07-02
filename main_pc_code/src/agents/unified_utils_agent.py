@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import subprocess
 from typing import Dict, Any
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Add project root to Python path for common_utils import
 import sys
@@ -21,6 +21,8 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
 import psutil
 from datetime import datetime
     USE_COMMON_UTILS = True

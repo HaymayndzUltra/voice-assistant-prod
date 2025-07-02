@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Custom Command Handler for Voice Assistant
 ------------------------------------------
@@ -15,7 +15,7 @@ import uuid
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 # Import CLI/agent args parser
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

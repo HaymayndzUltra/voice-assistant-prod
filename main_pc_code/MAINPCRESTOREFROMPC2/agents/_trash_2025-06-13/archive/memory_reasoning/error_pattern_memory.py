@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 # Error Pattern Memory - For tracking, learning, and suggesting fixes for common errors
 # Maintains a database of encountered errors and their successful fixes

@@ -2,7 +2,7 @@ import subprocess
 import json
 import zmq
 import time
-from config.system_config import pc2_settings
+from pc2_code.config.system_config import pc2_settings
 
 def check_agent_health(agent_name, port):
     """Check agent health using ZMQ"""

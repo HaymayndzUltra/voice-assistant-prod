@@ -1,0 +1,793 @@
+================================================================================
+SYSTEM REMEDIATION - PHASE 3.1: TEST-FIX CYCLE (ITERATION 1)
+================================================================================
+
+Test Execution Date: 2025-07-02 21:45:12
+Total Execution Time: 34.69 seconds
+
+SUMMARY
+--------------------------------------------------------------------------------
+Total Tests: 66
+Passed: 41
+Failed: 24
+Timeout: 1
+Error: 0
+
+DETAILED RESULTS
+--------------------------------------------------------------------------------
+main_pc_code/agents/test_meta_cognition.py - [STATUS: PASSED]
+main_pc_code/scripts/test_pc2_sdt_connection.py - [STATUS: PASSED]
+main_pc_code/scripts/test_script.py - [STATUS: PASSED]
+main_pc_code/scripts/test_sdt_improved.py - [STATUS: PASSED]
+main_pc_code/scripts/test_sdt_local_connection.py - [STATUS: PASSED]
+main_pc_code/scripts/test_task_router_health.py - [STATUS: PASSED]
+main_pc_code/test_base_agent_health.py - [STATUS: PASSED]
+main_pc_code/test_emotion_engine_minimal.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/test_emotion_engine_minimal.py", line 10, in <module>
+    from main_pc_code.agents.emotion_engine import EmotionEngine
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py", line 16, in <module>
+    s
+NameError: name 's' is not defined. Did you mean: 'os'?
+
+----------------------------------------
+
+main_pc_code/test_health.py - [STATUS: PASSED]
+main_pc_code/test_health_check.py - [STATUS: PASSED]
+main_pc_code/test_health_monitor.py - [STATUS: PASSED]
+main_pc_code/test_health_simple.py - [STATUS: PASSED]
+main_pc_code/test_imports.py - [STATUS: PASSED]
+main_pc_code/test_mood_tracker_health.py - [STATUS: PASSED]
+main_pc_code/test_port_connection.py - [STATUS: PASSED]
+main_pc_code/test_single_agent.py - [STATUS: PASSED]
+main_pc_code/tests/test_cross_machine_registration.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+usage: python3 -m unittest [--host HOST] [--port PORT]
+python3 -m unittest: error: unrecognized arguments: main_pc_code/tests/test_cross_machine_registration.py
+Traceback (most recent call last):
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/utils/config_parser.py", line 58, in parse_agent_args
+    parsed = parser.parse_args(argv)
+  File "/usr/lib/python3.10/argparse.py", line 1848, in parse_args
+    self.error(msg % ' '.join(argv))
+  File "/usr/lib/python3.10/argparse.py", line 2606, in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+  File "/usr/lib/python3.10/argparse.py", line 2593, in exit
+    _sys.exit(status)
+SystemExit: 2
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/tests/test_cross_machine_registration.py", line 40, in <module>
+    from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/network/secure_zmq.py", line 20, in <module>
+    _agent_args = parse_agent_args()
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/utils/config_parser.py", line 60, in parse_agent_args
+    raise ValueError(f"Argument parsing failed: {e}")
+ValueError: Argument parsing failed: 2
+
+----------------------------------------
+
+main_pc_code/tests/test_unified_planning_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/tests/test_unified_planning_agent.py", line 19, in <module>
+    from main_pc_code.agents.unified_planning_agent import UnifiedPlanningAgent
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_planning_agent.py", line 18
+    from main_pc_code.src.core.base_agent import BaseAgent
+    ^
+IndentationError: expected an indented block after 'if' statement on line 16
+
+----------------------------------------
+
+main_pc_code/tests/test_voice_command_flow.py - [STATUS: TIMEOUT]
+
+Error Details:
+----------------------------------------
+Test execution timed out after 20 seconds
+----------------------------------------
+
+main_pc_code/tests/test_vram_optimizer_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/tests/test_vram_optimizer_agent.py", line 19, in <module>
+    from main_pc_code.agents.vram_optimizer_agent import VRAMOptimizerAgent
+  File "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py", line 150
+    except ImportError as e:
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/agents/ForPC2/test_task_router_health.py - [STATUS: PASSED]
+pc2_code/agents/test_compliant_agent.py - [STATUS: PASSED]
+pc2_code/agents/test_dreamworld_updates.py - [STATUS: PASSED]
+pc2_code/agents/test_model_management.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+E
+======================================================================
+ERROR: test_model_management (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_model_management
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/test_model_management.py", line 21, in <module>
+    from enhanced_model_router import EnhancedModelRouter
+ModuleNotFoundError: No module named 'enhanced_model_router'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+----------------------------------------
+
+pc2_code/agents/test_translator.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+E
+======================================================================
+ERROR: test_translator (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_translator
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/test_translator.py", line 6, in <module>
+    from pc2_code.translation_components.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
+ModuleNotFoundError: No module named 'pc2_code.translation_components.consolidated_translator'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+----------------------------------------
+
+pc2_code/agents/test_tutoring_feature.py - [STATUS: PASSED]
+pc2_code/agents/test_web_connections.py - [STATUS: PASSED]
+pc2_code/test_adapter.py - [STATUS: PASSED]
+pc2_code/test_agent_health.py - [STATUS: PASSED]
+pc2_code/test_agent_integration.py - [STATUS: PASSED]
+pc2_code/test_all_health_checks.py - [STATUS: PASSED]
+pc2_code/test_async_processor.py - [STATUS: PASSED]
+pc2_code/test_auth_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_auth_agent.py", line 12
+    from pc2_code.agents.ForPC2.AuthenticationAgent import AuthenticationAgent
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_cache_manager.py - [STATUS: PASSED]
+pc2_code/test_cache_standalone.py - [STATUS: PASSED]
+pc2_code/test_contextual_memory.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_contextual_memory.py", line 161
+    from pc2_code.agents.contextual_memory_agent import send_context_request
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_contextual_translation.py - [STATUS: PASSED]
+pc2_code/test_dreaming_mode_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_dreaming_mode_agent.py", line 27
+    from pc2_code.agents.DreamingModeAgent import DreamingModeAgent
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_dreamworld_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_dreamworld_agent.py", line 17
+    from pc2_code.agents.DreamWorldAgent import DreamWorldAgent
+    ^^^^
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_episodic_memory_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_episodic_memory_agent.py", line 18
+    from pc2_code.agents.EpisodicMemoryAgent import EpisodicMemoryAgent
+    ^^^^
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_health_rep.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_health_rep.py", line 8, in <module>
+    print(s.recv_json())
+  File "/home/haymayndz/.local/lib/python3.10/site-packages/zmq/sugar/socket.py", line 1031, in recv_json
+    msg = self.recv(flags)
+  File "zmq/backend/cython/_zmq.py", line 1203, in zmq.backend.cython._zmq.Socket.recv
+  File "zmq/backend/cython/_zmq.py", line 1238, in zmq.backend.cython._zmq.Socket.recv
+  File "zmq/backend/cython/_zmq.py", line 1398, in zmq.backend.cython._zmq._recv_copy
+  File "zmq/backend/cython/_zmq.py", line 1393, in zmq.backend.cython._zmq._recv_copy
+  File "zmq/backend/cython/_zmq.py", line 183, in zmq.backend.cython._zmq._check_rc
+zmq.error.Again: Resource temporarily unavailable
+
+----------------------------------------
+
+pc2_code/test_health_rep_alert.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_health_rep_alert.py", line 8, in <module>
+    print(s.recv_json())
+  File "/home/haymayndz/.local/lib/python3.10/site-packages/zmq/sugar/socket.py", line 1031, in recv_json
+    msg = self.recv(flags)
+  File "zmq/backend/cython/_zmq.py", line 1203, in zmq.backend.cython._zmq.Socket.recv
+  File "zmq/backend/cython/_zmq.py", line 1238, in zmq.backend.cython._zmq.Socket.recv
+  File "zmq/backend/cython/_zmq.py", line 1398, in zmq.backend.cython._zmq._recv_copy
+  File "zmq/backend/cython/_zmq.py", line 1393, in zmq.backend.cython._zmq._recv_copy
+  File "zmq/backend/cython/_zmq.py", line 183, in zmq.backend.cython._zmq._check_rc
+zmq.error.Again: Resource temporarily unavailable
+
+----------------------------------------
+
+pc2_code/test_nllb_translation.py - [STATUS: PASSED]
+pc2_code/test_ollama.py - [STATUS: PASSED]
+pc2_code/test_performance_monitor.py - [STATUS: PASSED]
+pc2_code/test_performance_monitor_health.py - [STATUS: PASSED]
+pc2_code/test_phi_adapter_advanced.py - [STATUS: PASSED]
+pc2_code/test_proactive_context_monitor.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_proactive_context_monitor.py", line 12
+    from pc2_code.agents.ForPC2.proactive_context_monitor import ProactiveContextMonitor
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_rca_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_rca_agent.py", line 12
+    from pc2_code.agents.ForPC2.rca_agent import RCA_Agent
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_scripts/test_translator_health.py - [STATUS: PASSED]
+pc2_code/test_self_healing_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_self_healing_agent.py", line 27
+    from pc2_code.agents.self_healing_agent import SelfHealingAgent
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_simple_agent.py - [STATUS: PASSED]
+pc2_code/test_system_digital_twin.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_system_digital_twin.py", line 12
+    from pc2_code.agents.ForPC2.system_digital_twin import SystemDigitalTwin
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_taglish.py - [STATUS: PASSED]
+pc2_code/test_tiered_responder.py - [STATUS: PASSED]
+pc2_code/test_translation_cache.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+E
+======================================================================
+ERROR: test_translation_cache (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_translation_cache
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_translation_cache.py", line 6, in <module>
+    from pc2_code.agents.translator_agent import TranslatorAgent
+ModuleNotFoundError: No module named 'pc2_code.agents.translator_agent'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+----------------------------------------
+
+pc2_code/test_translation_pipeline.py - [STATUS: PASSED]
+pc2_code/test_translator_client.py - [STATUS: PASSED]
+pc2_code/test_translator_messages.py - [STATUS: PASSED]
+pc2_code/test_unified_error_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_unified_error_agent.py", line 12
+    from pc2_code.agents.ForPC2.UnifiedErrorAgent import UnifiedErrorAgent
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_unified_memory_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_unified_memory_agent.py", line 18
+    from pc2_code.agents.unified_memory_reasoning_agent import UnifiedMemoryReasoningAgent
+    ^^^^
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_unified_utils_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_unified_utils_agent.py", line 12
+    from pc2_code.agents.ForPC2.unified_utils_agent import UnifiedUtilsAgent
+    ^
+IndentationError: expected an indented block after 'try' statement on line 11
+
+----------------------------------------
+
+pc2_code/test_unified_web_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/test_unified_web_agent.py", line 27
+    from pc2_code.agents.unified_web_agent import UnifiedWebAgent
+SyntaxError: expected 'except' or 'finally' block
+
+----------------------------------------
+
+pc2_code/test_voice_pipeline.py - [STATUS: PASSED]
+pc2_code/tests/test_consolidated_translator.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+E
+======================================================================
+ERROR: test_consolidated_translator (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_consolidated_translator
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/tests/test_consolidated_translator.py", line 12, in <module>
+    from pc2_code.translation_components.consolidated_translator import TranslationPipeline, TranslationCache, SessionManager
+ModuleNotFoundError: No module named 'pc2_code.translation_components.consolidated_translator'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+
+----------------------------------------
+
+pc2_code/tests/test_unified_memory_reasoning_agent.py - [STATUS: FAILED]
+
+Error Details:
+----------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/usr/lib/python3.10/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+  File "/usr/lib/python3.10/unittest/main.py", line 100, in __init__
+    self.parseArgs(argv)
+  File "/usr/lib/python3.10/unittest/main.py", line 147, in parseArgs
+    self.createTests()
+  File "/usr/lib/python3.10/unittest/main.py", line 158, in createTests
+    self.test = self.testLoader.loadTestsFromNames(self.testNames,
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in loadTestsFromNames
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 220, in <listcomp>
+    suites = [self.loadTestsFromName(name, module) for name in names]
+  File "/usr/lib/python3.10/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/tests/test_unified_memory_reasoning_agent.py", line 19, in <module>
+    from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAgent
+  File "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/UnifiedMemoryReasoningAgent.py", line 28
+    except ImportError as e:
+    ^^^^^^
+SyntaxError: invalid syntax
+
+----------------------------------------
+

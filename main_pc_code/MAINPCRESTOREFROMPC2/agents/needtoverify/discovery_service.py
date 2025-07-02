@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Discovery Service Agent
 Provides service discovery for distributed agents across the network.

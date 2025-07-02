@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Basic Audio Test - Simplified version of listener.py for debugging
 This script focuses only on audio capture and basic processing.

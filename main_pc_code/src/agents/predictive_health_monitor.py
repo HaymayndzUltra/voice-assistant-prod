@@ -1,7 +1,17 @@
 """
 Predictive Health Monitor
 - Uses machine learning to predict potential agent failures
-- Monitors system resources and agent performance
+- Mo
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+nitors system resources and agent performance
 - Implements tiered recovery strategies
 - Provides proactive health management
 - Coordinates agent lifecycle and dependencies
@@ -28,7 +38,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
-from src.core.base_agent import BaseAgent, logger
+from main_pc_code.src.core.base_agent import BaseAgent, logger
 from main_pc_code.utils.config_loader import load_config
 
 # Configure logging
@@ -296,8 +306,8 @@ class PredictiveHealthMonitor(BaseAgent):
         
         # Initialize discovery service if enabled
         self.discovery_socket = None
-        if distributed_config["discovery_service"]["enabled"]:
-            self.discovery_port = distributed_config["discovery_service"]["port"]
+        if distributed_config.get("discovery_service")["enabled"]:
+            self.discovery_port = distributed_config.get("discovery_service")["port"]
             
             if self.machine_id == "main_pc":
                 # Main PC hosts the discovery service
@@ -309,7 +319,7 @@ class PredictiveHealthMonitor(BaseAgent):
                 self.discovery_socket = self.context.socket(zmq.REQ)
                 self.discovery_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
                 self.discovery_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                main_pc_ip = distributed_config["machines"]["main_pc"]["ip"]
+                main_pc_ip = distributed_config.get("machines")["main_pc"]["ip"]
                 self.discovery_socket.connect(f"tcp://{main_pc_ip}:{self.discovery_port}")
                 logger.info(f"Connected to discovery service at {main_pc_ip}:{self.discovery_port}")
         
@@ -470,12 +480,12 @@ class PredictiveHealthMonitor(BaseAgent):
             Optional[str]: Machine ID if found, None otherwise
         """
         # Check by IP address
-        for machine_id, machine_info in distributed_config["machines"].items():
+        for machine_id, machine_info in distributed_config.get("machines").items():
             if machine_info["ip"] == self.ip_address:
                 return machine_id
         
         # If IP doesn't match, try hostname
-        for machine_id, machine_info in distributed_config["machines"].items():
+        for machine_id, machine_info in distributed_config.get("machines").items():
             if machine_id.lower() in self.hostname.lower():
                 return machine_id
         
@@ -541,7 +551,7 @@ class PredictiveHealthMonitor(BaseAgent):
         while attempt < max_retries:
             try:
                 python_executable = sys.executable
-                cmd = [python_executable, config["script"]]
+                cmd = [python_executable, config.get("script")]
                 process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
@@ -1019,7 +1029,8 @@ class PredictiveHealthMonitor(BaseAgent):
             import psutil
             logger.info("All required dependencies are installed")
             self.psutil_available = True
-        except ImportError:
+        except ImportError as e:
+            print(f"Import error: {e}")
             logger.warning("psutil is not installed. Some functionality will be limited.")
             logger.warning("Install psutil with: pip install psutil")
             self.psutil_available = False
@@ -1054,7 +1065,7 @@ class PredictiveHealthMonitor(BaseAgent):
                         continue
                     
                     # Add high memory processes to the list
-                    if proc.info['memory_percent'] > self.optimization_config["process_memory_limit"]:
+                    if proc.info['memory_percent'] > self.optimization_config.get("process_memory_limit"):
                         high_memory_processes.append(proc)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     pass
@@ -1110,7 +1121,7 @@ class PredictiveHealthMonitor(BaseAgent):
                     logger.info(f"Optimization completed: {memory_result}")
                 
                 # Sleep until next check
-                time.sleep(self.optimization_config["optimization_interval"])
+                time.sleep(self.optimization_config.get("optimization_interval"))
                 
             except Exception as e:
                 logger.error(f"Error in optimization loop: {str(e)}")
@@ -1120,16 +1131,16 @@ class PredictiveHealthMonitor(BaseAgent):
         """Check if system needs optimization"""
         try:
             # Check memory usage
-            if metrics.get("memory", {}).get("percent", 0) > self.optimization_config["memory_threshold"]:
+            if metrics.get("memory", {}).get("percent", 0) > self.optimization_config.get("memory_threshold"):
                 return True
             
             # Check CPU usage
-            if metrics.get("cpu_percent", 0) > self.optimization_config["cpu_threshold"]:
+            if metrics.get("cpu_percent", 0) > self.optimization_config.get("cpu_threshold"):
                 return True
             
             # Check disk usage
             for mount, usage in metrics.get("disk", {}).items():
-                if usage.get("percent", 0) > self.optimization_config["disk_threshold"]:
+                if usage.get("percent", 0) > self.optimization_config.get("disk_threshold"):
                     return True
             
             return False

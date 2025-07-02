@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Streaming Language to LLM Connector
 Connects the language analyzer to the LLM translation connector.

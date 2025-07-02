@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import os
 import hashlib
 import pickle
@@ -7,11 +7,20 @@ import sounddevice as sd
 import logging
 import time
 from main_pc_code.utils.config_loader import load_config
-from utils.env_loader import get_env
+from main_pc_code.utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
 # Load configuration at module level
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 config = load_config()
 
 # Cache directory

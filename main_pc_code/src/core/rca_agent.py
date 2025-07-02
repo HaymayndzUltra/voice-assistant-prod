@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Root Cause Analysis (RCA) Agent
 -------------------------------
 Analyzes log files for error patterns and provides proactive recommendations to the Self-Healing Agent.
@@ -27,8 +36,8 @@ import datetime
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
-from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
+from main_pc_code.src.core.http_server import setup_health_check_server
+from main_pc_code.utils.config_parser import parse_agent_args
 from datetime import datetime
 from typing import Dict, Any
 
@@ -37,11 +46,12 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

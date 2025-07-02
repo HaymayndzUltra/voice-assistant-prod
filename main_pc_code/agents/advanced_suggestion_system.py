@@ -1,5 +1,14 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Advanced Command Suggestion System
 ----------------------------------
 Enhanced suggestion system with deep learning integration,
@@ -28,7 +37,6 @@ from typing import Dict, List, Any, Optional, Tuple, Set
 from collections import defaultdict, Counter
 
 # Add parent directory to path to import modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import optimized suggestion system as base
 from command_suggestion_optimized import CommandSuggestionOptimized
@@ -36,6 +44,8 @@ from command_suggestion_optimized import CommandSuggestionOptimized
 # Import clustering if available
 try:
     from command_clustering import CommandClusteringEngine
+    except ImportError as e:
+        print(f"Import error: {e}")
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

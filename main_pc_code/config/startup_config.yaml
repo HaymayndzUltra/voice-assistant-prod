@@ -7,6 +7,7 @@ core_services:
     script_path: src/core/task_router.py
     port: 8571
     required: true
+    dependencies: [StreamingTTSAgent, DynamicIdentityAgent, StreamingSpeechRecognition]
     params:
       cot_host: "0.0.0.0"
       cot_port: 5612
@@ -67,7 +68,7 @@ main_pc_gpu_services:
   - { name: LocalFineTunerAgent, script_path: FORMAINPC/LocalFineTunerAgent.py     , host: 0.0.0.0 , port: 5645 , required: true }
   - { name: SelfTrainingOrchestrator, script_path: FORMAINPC/SelfTrainingOrchestrator.py, host: 0.0.0.0 , port: 5644 , required: true }
   - { name: CognitiveModelAgent, script_path: FORMAINPC/CognitiveModelAgent.py     , host: 0.0.0.0 , port: 5641 , required: true }
-  - { name: ConsolidatedTranslator, script_path: FORMAINPC/consolidated_translator.py, host: 0.0.0.0 , port: 5563 , required: true }
+  - { name: ConsolidatedTranslator, script_path: FORMAINPC/consolidated_translator.py, host: 0.0.0.0 , port: 5564 , required: true }
 
 # Emotion System
 emotion_system:
@@ -85,21 +86,21 @@ language_processing:
   - { name: ChitchatAgent      , script_path: agents/chitchat_agent.py         , host: 0.0.0.0 , port: 5711 , dependencies: [NLUAgent] , required: true }
   - { name: FeedbackHandler    , script_path: agents/feedback_handler.py       , host: 0.0.0.0 , port: 5636 , dependencies: [NLUAgent] , required: true }
   - { name: Responder          , script_path: agents/responder.py              , host: 0.0.0.0 , port: 5637 , dependencies: [NLUAgent, EmotionEngine] , required: true }
-  - { name: StreamingLanguageAnalyzer, script_path: agents/streaming_language_analyzer.py, host: 0.0.0.0, port: 5577, dependencies: [StreamingSpeechRecognition], required: true }
+  - { name: StreamingLanguageAnalyzer, script_path: agents/streaming_language_analyzer.py, host: 0.0.0.0, port: 5579, dependencies: [StreamingSpeechRecognition], required: true }
 
 # Memory System
 memory_system:
   - { name: SessionMemoryAgent , script_path: agents/session_memory_agent.py    , host: 0.0.0.0 , port: 5574 , dependencies: [CoordinatorAgent] , required: true }
   - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: 0.0.0.0 , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
-  - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5576 , required: true }
-  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5577 , required: true }
+  - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5575 , dependencies: [TaskRouter], required: true }
+  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5583 , required: true }
   # PC2 agents - commented out as they should be in PC2 config, not MainPC
   # - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
   # - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
 
 # Learning and Knowledge
 learning_knowledge:
-  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5579 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
+  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5580 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
   - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: 0.0.0.0 , port: 5578 , dependencies: [MemoryManager] , required: true }
   - { name: MetaCognitionAgent , script_path: agents/MetaCognitionAgent.py      , host: 0.0.0.0 , port: 5630 , dependencies: [KnowledgeBase, CoordinatorAgent] , required: true }
   - { name: ActiveLearningMonitor, script_path: agents/active_learning_monitor.py, host: 0.0.0.0 , port: 5638 , dependencies: [LearningManager] , required: true }
@@ -146,7 +147,7 @@ vision:
 # Additional Monitoring and Security
 monitoring_security:
   - { name: PredictiveHealthMonitor, script_path: src/agents/predictive_health_monitor.py, host: 0.0.0.0 , port: 5613 , required: true }
-  - { name: SystemDigitalTwin, script_path: agents/system_digital_twin.py, host: 0.0.0.0, port: 7120, health_check_port: 8100, required: true }
+  - { name: SystemDigitalTwin, script_path: agents/system_digital_twin.py, host: 0.0.0.0, port: 7120, health_check_port: 8120, required: true }
 
 # Environment variables for all agents
 environment:

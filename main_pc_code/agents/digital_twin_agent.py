@@ -1,5 +1,14 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Digital Twin Agent
 -----------------
 Manages user expertise profiles and enables progressive disclosure of features
@@ -670,6 +679,8 @@ Expert features for power users:
         """Get current memory usage in MB"""
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             process = psutil.Process(os.getpid())
             return process.memory_info().rss / 1024 / 1024
         except ImportError:

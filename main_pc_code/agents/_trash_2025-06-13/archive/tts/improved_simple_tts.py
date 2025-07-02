@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Improved Simple TTS Agent
 Enhanced version with better resource handling for multiple responses
@@ -55,6 +55,8 @@ class SimpleTTSAgent(BaseAgent):
         """Initialize Windows TTS"""
         try:
             import win32com.client
+    except ImportError as e:
+        print(f"Import error: {e}")
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

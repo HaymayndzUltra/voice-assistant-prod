@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import os
 import sys
 import importlib
@@ -6,6 +6,15 @@ import threading
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 PLUGINS_DIR = os.path.join(os.path.dirname(__file__), '..', 'plugins')
 LOADED_PLUGINS = {}
@@ -32,7 +41,6 @@ def load_plugin(plugin_name):
         print(f"[PluginManager] Plugin '{plugin_name}' already loaded.")
         return
     try:
-        sys.path.insert(0, PLUGINS_DIR)
         module = importlib.import_module(plugin_name)
         LOADED_PLUGINS[plugin_name] = module
         print(f"[PluginManager] Loaded plugin: {plugin_name}")

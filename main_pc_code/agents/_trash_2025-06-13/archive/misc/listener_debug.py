@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import os
 import sys
 import time
@@ -35,6 +35,8 @@ print(f"[DEBUG] LOG_DIR: {LOG_DIR}")
 # Try to import noisereduce, but continue if not available
 try:
     import noisereduce as nr
+    except ImportError as e:
+        print(f"Import error: {e}")
     print("[DEBUG] noisereduce imported successfully")
 except ImportError:
     print("[Listener] noisereduce not installed, noise reduction will be skipped.")
@@ -44,6 +46,8 @@ except ImportError:
 # Try to import whisper, but continue if not available
 try:
     import whisper
+    except ImportError as e:
+        print(f"Import error: {e}")
     print("[DEBUG] whisper imported successfully")
 except ImportError:
     print("[ERROR] whisper not installed. Please install it with 'pip install openai-whisper'")
@@ -54,6 +58,8 @@ except ImportError:
 # Try to import googletrans, but continue if not available
 try:
     from googletrans import Translator
+    except ImportError as e:
+        print(f"Import error: {e}")
     print("[DEBUG] googletrans imported successfully")
 except ImportError:
     print("[WARNING] googletrans not installed, translation will be skipped.")

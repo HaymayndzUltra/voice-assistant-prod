@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Agent Utilities
 - Shared utilities for all agents
@@ -21,7 +21,7 @@ import uuid
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -505,6 +505,8 @@ def get_system_info() -> Dict[str, Any]:
     # Add psutil information if available
     try:
         import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

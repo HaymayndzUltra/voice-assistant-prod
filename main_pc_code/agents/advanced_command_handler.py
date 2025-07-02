@@ -1,6 +1,16 @@
 """
 Advanced Command Handler for Voice Assistant
 --------------------------------------------
+
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Extends the custom command handler with advanced features:
 1. Command Sequences - Execute multiple commands in sequence
 2. Script Execution - Run local Python/Bash scripts
@@ -25,7 +35,7 @@ import psutil
 
 from main_pc_code.src.core.base_agent import BaseAgent
 # Import existing command handler as base
-from agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
+from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
 from main_pc_code.utils.config_loader import load_config
 
 config = load_config()

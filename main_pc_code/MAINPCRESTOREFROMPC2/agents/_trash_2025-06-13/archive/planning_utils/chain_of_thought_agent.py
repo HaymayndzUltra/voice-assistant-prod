@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps

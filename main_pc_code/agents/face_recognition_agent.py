@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 import sys
 import os
@@ -11,8 +11,7 @@ import threading
 from pathlib import Path
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from config.system_config import CONFIG as SYS_CONFIG
+from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 
 import cv2
 import numpy as np
@@ -33,10 +32,19 @@ from scipy.spatial.distance import cosine
 import sounddevice as sd
 import librosa
 import soundfile as sf
-from utils.env_loader import get_env
+from main_pc_code.utils.env_loader import get_env
 import psutil
 
 # Load configuration at module level
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 config = load_config()
 
 # ZMQ timeout settings
@@ -158,7 +166,7 @@ class EmotionAnalyzer(BaseAgent):
         logging.info("FaceRecognitionAgent basic init complete, async init started")
         self.config = config
         self.emotion_model = self._load_emotion_model()
-        self.voice_model = self._load_voice_model() if config["voice_integration"]["enabled"] else None
+        self.voice_model = self._load_voice_model() if config.get("voice_integration")["enabled"] else None
         self.emotion_history: Dict[int, List[EmotionState]] = {}
         self.voice_buffer = []
         self.voice_thread = None
@@ -168,7 +176,7 @@ class EmotionAnalyzer(BaseAgent):
     def _load_emotion_model(self) -> Any:
         """Load emotion recognition model"""
         try:
-            return ort.InferenceSession(self.config["model_path"])
+            return ort.InferenceSession(self.config.get("model_path"))
         except Exception as e:
             logging.error(f"Error loading emotion model: {e}")
             return None
@@ -206,8 +214,8 @@ class EmotionAnalyzer(BaseAgent):
         
         # Get top emotions
         top_indices = np.argsort(probs)[-2:][::-1]
-        primary_emotion = self.config["labels"][top_indices[0]]
-        secondary_emotion = self.config["labels"][top_indices[1]] if probs[top_indices[1]] > 0.3 else None
+        primary_emotion = self.config.get("labels")[top_indices[0]]
+        secondary_emotion = self.config.get("labels")[top_indices[1]] if probs[top_indices[1]] > 0.3 else None
         
         # Calculate intensity
         intensity = float(probs[top_indices[0]])
@@ -227,8 +235,8 @@ class EmotionAnalyzer(BaseAgent):
         self.emotion_history[track_id].append(state)
         
         # Trim history
-        if len(self.emotion_history[track_id]) > self.config["temporal_tracking"]["history_length"]:
-            self.emotion_history[track_id] = self.emotion_history[track_id][-self.config["temporal_tracking"]["history_length"]:]
+        if len(self.emotion_history[track_id]) > self.config.get("temporal_tracking")["history_length"]:
+            self.emotion_history[track_id] = self.emotion_history[track_id][-self.config.get("temporal_tracking")["history_length"]:]
         
         return state
 
@@ -267,7 +275,7 @@ class LivenessDetector(BaseAgent):
 
     def detect_blink(self, face_img: np.ndarray, track_id: int) -> bool:
         """Detect blink using eye aspect ratio"""
-        if not self.config["methods"]["blink"]["enabled"]:
+        if not self.config.get("methods")["blink"]["enabled"]:
             return True
             
         # TODO: Implement blink detection using eye landmarks
@@ -275,7 +283,7 @@ class LivenessDetector(BaseAgent):
 
     def detect_motion(self, face_img: np.ndarray, track_id: int) -> bool:
         """Detect motion using optical flow"""
-        if not self.config["methods"]["motion"]["enabled"]:
+        if not self.config.get("methods")["motion"]["enabled"]:
             return True
             
         if track_id not in self.prev_frames:
@@ -297,17 +305,17 @@ class LivenessDetector(BaseAgent):
         self.motion_history[track_id].append(motion_score)
         
         # Trim history
-        if len(self.motion_history[track_id]) > self.config["methods"]["motion"]["history_length"]:
-            self.motion_history[track_id] = self.motion_history[track_id][-self.config["methods"]["motion"]["history_length"]:]
+        if len(self.motion_history[track_id]) > self.config.get("methods")["motion"]["history_length"]:
+            self.motion_history[track_id] = self.motion_history[track_id][-self.config.get("methods")["motion"]["history_length"]:]
         
         # Update previous frame
         self.prev_frames[track_id] = face_img
         
-        return motion_score > self.config["methods"]["motion"]["threshold"]
+        return motion_score > self.config.get("methods")["motion"]["threshold"]
 
     def detect_anti_spoofing(self, face_img: np.ndarray) -> bool:
         """Detect anti-spoofing using texture analysis"""
-        if not self.config["methods"]["anti_spoofing"]["enabled"]:
+        if not self.config.get("methods")["anti_spoofing"]["enabled"]:
             return True
             
         # TODO: Implement anti-spoofing detection
@@ -317,13 +325,13 @@ class LivenessDetector(BaseAgent):
         """Check if face is live using all enabled methods"""
         results = []
         
-        if self.config["methods"]["blink"]["enabled"]:
+        if self.config.get("methods")["blink"]["enabled"]:
             results.append(self.detect_blink(face_img, track_id))
             
-        if self.config["methods"]["motion"]["enabled"]:
+        if self.config.get("methods")["motion"]["enabled"]:
             results.append(self.detect_motion(face_img, track_id))
             
-        if self.config["methods"]["anti_spoofing"]["enabled"]:
+        if self.config.get("methods")["anti_spoofing"]["enabled"]:
             results.append(self.detect_anti_spoofing(face_img))
             
         return all(results)
@@ -339,13 +347,13 @@ class PrivacyManager(BaseAgent):
 
     def load_privacy_zones(self):
         """Load privacy zones from configuration"""
-        for zone in self.config["privacy_zones"]["zones"]:
+        for zone in self.config.get("privacy_zones")["zones"]:
             self.privacy_zones.append(PrivacyZone(**zone))
 
     def apply_privacy(self, frame: np.ndarray, bbox: Tuple[int, int, int, int], 
                      is_known: bool) -> np.ndarray:
         """Apply privacy measures to face region"""
-        if not is_known and self.config["blur_unknown"]:
+        if not is_known and self.config.get("blur_unknown"):
             return self.apply_blur(frame, bbox)
             
         # Check privacy zones
@@ -364,7 +372,7 @@ class PrivacyManager(BaseAgent):
                   blur_level: Optional[int] = None) -> np.ndarray:
         """Apply blur to face region"""
         if blur_level is None:
-            blur_level = self.config["blur_level"]
+            blur_level = self.config.get("blur_level")
             
         x1, y1, x2, y2 = bbox
         face_roi = frame[y1:y2, x1:x2]
@@ -374,11 +382,11 @@ class PrivacyManager(BaseAgent):
 
     def cleanup_old_data(self):
         """Clean up old data based on retention period"""
-        if not self.config["data_minimization"]["enabled"]:
+        if not self.config.get("data_minimization")["enabled"]:
             return
             
         current_time = time.time()
-        retention_period = self.config["data_minimization"]["retention_period"]
+        retention_period = self.config.get("data_minimization")["retention_period"]
         
         # Remove old data
         self.data_retention = {

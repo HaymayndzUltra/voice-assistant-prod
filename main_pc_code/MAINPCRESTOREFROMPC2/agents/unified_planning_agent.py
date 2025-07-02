@@ -7,7 +7,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Unified Planning Agent
 - Combines chain of thought reasoning, code execution, task planning, and progressive code generation
@@ -30,11 +30,11 @@ import threading
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service, register_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from main_pc_code.config.system_config import config
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

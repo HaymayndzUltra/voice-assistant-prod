@@ -21,16 +21,15 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
-    USE_COMMON_UTILS 
+    USE_COMMON_UTILS = True
+except ImportError as e:
+    print(f"Import error: {e}")
+    USE_COMMON_UTILS = False
 from main_pc_code.src.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
 config = Config().get_config()
-except ImportError:
-    USE_COMMON_UTILS = False
-
-
 
 # Configure logging
 logging.basicConfig(
@@ -45,30 +44,18 @@ logger = logging.getLogger(__name__)
 
 class PerformanceLoggerAgent(BaseAgent):
 
-    def __init__(self, port: int = None):
-
+    def __init__(self, port: int = 5632):
         super().__init__(name="PerformanceLoggerAgent", port=port)
-
-        self.start_time = time.time()
-
-    def __init__(self, port:
-
         self.name = "PerformanceLoggerAgent"
         self.running = True
         self.start_time = time.time()
-        self.health_port = self.port + 1
- int = 5632):
-        """Initialize the PerformanceLoggerAgent with ZMQ sockets and database."""
         self.port = port
+        self.health_port = self.port + 1
         self.context = zmq.Context()
-        
-        
         # Start health check thread
         self._start_health_check()
-
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
-
         # Initialize health check socket
         try:
             if USE_COMMON_UTILS:
@@ -82,20 +69,15 @@ class PerformanceLoggerAgent(BaseAgent):
             logging.error(f"Failed to bind health check socket: {e}")
             raise
         self.socket.bind(f"tcp://*:{port}")
-        
         # Lock for thread-safe database access
         self.db_lock = Lock()
-        
         # Initialize database
         self.db_path = "performance_metrics.db"
         self._init_database()
-        
         # Start cleanup thread
-        self.running = True
         self.cleanup_thread = Thread(target=self._cleanup_old_metrics)
         self.cleanup_thread.daemon = True
         self.cleanup_thread.start()
-        
         logger.info(f"PerformanceLoggerAgent initialized on port {port}")
     
     def _start_health_check(self):
@@ -353,20 +335,24 @@ class PerformanceLoggerAgent(BaseAgent):
     def run(self):
         """Main loop for handling requests."""
         logger.info("PerformanceLoggerAgent started")
-        
         while True:
             try:
                 # Wait for next request
                 message = self.socket.recv_json()
                 logger.debug(f"Received request: {message}")
-                
+                # Only process if message is a dict
+                if not isinstance(message, dict):
+                    logger.error(f"Received non-dict message: {message}")
+                    self.socket.send_json({
+                        'status': 'error',
+                        'message': 'Invalid request format, expected a JSON object.'
+                    })
+                    continue
                 # Process request
                 response = self.handle_request(message)
-                
                 # Send response
                 self.socket.send_json(response)
                 logger.debug(f"Sent response: {response}")
-                
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
                 self.socket.send_json({
@@ -374,20 +360,9 @@ class PerformanceLoggerAgent(BaseAgent):
                     'message': str(e)
                 })
 
-
-
     def cleanup(self):
-
-
         """Clean up resources before shutdown."""
-
-
         logger.info("Cleaning up resources...")
-
-
-        # Add specific cleanup code here
-
-
         super().cleanup()
     
     def stop(self):
@@ -397,12 +372,6 @@ class PerformanceLoggerAgent(BaseAgent):
         
         self.socket.close()
         self.context.term()
-
-
-
-
-
-
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -445,100 +414,34 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
 
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-
-        """
-
-
-        Connect to a service on the main PC using the network configuration.
-
-
-        
-
-
-        Args:
-
-
-            service_name: Name of the service in the network config ports section
-
-
-        
-
-
-        Returns:
-
-
-            ZMQ socket connected to the service
-
-
-        """
-
-
-        if not hasattr(self, 'main_pc_connections'):
-
-
-            self.main_pc_connections = {}
-
-
-            
-
-
-        if service_name not in network_config.get("ports", {}):
-
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-
-            return None
-
-
-            
-
-
-        port = network_config["ports"][service_name]
-
-
-        
-
-
-        # Create a new socket for this connection
-
-
-        socket = self.context.socket(zmq.REQ)
-
-
-        
-
-
-        # Connect to the service
-
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-
-        
-
-
-        # Store the connection
-
-
-        self.main_pc_connections[service_name] = socket
-
-
-        
-
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-
-        return socket
+def connect_to_main_pc_service(self, service_name: str):
+    """
+    Connect to a service on the main PC using the network configuration.
+    
+    Args:
+        service_name: Name of the service in the network config ports section
+    
+    Returns:
+        ZMQ socket connected to the service
+    """
+    if not hasattr(self, 'main_pc_connections'):
+        self.main_pc_connections = {}
+    ports = network_config.get("ports") if network_config else None
+    if not ports or service_name not in ports:
+        logger.error(f"Service {service_name} not found in network configuration")
+        return None
+    port = ports[service_name]
+    
+    # Create a new socket for this connection
+    socket = self.context.socket(zmq.REQ)
+    
+    # Connect to the service
+    socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+    
+    # Store the connection
+    self.main_pc_connections[service_name] = socket
+    
+    logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+    
+    return socket

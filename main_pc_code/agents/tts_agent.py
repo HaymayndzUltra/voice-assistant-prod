@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import pickle
 import json
@@ -6,14 +6,23 @@ import logging
 import threading
 import time
 import os
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
-from utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.config_loader import load_config
-from utils.env_loader import get_env
+from main_pc_code.utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
 # Load configuration at module level
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 config = load_config()
 
 # Configure logging

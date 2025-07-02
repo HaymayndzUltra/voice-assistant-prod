@@ -1,0 +1,604 @@
+missing_agents:
+- host: 0.0.0.0
+  name: HealthCheckFixer
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/auto_fix_health_checks.py
+- host: 0.0.0.0
+  name: AgentHealthChecker
+  port: 5706
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/comprehensive_health_check.py
+- health_check_port: 7112
+  host: 0.0.0.0
+  name: AgentHealthValidator
+  script_path: pc2_code/agent_health_check_validation.py
+- host: 0.0.0.0
+  name: AgentPorts
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/config/agent_ports.py
+- host: 0.0.0.0
+  name: NLLBTranslationAdapter
+  script_path: pc2_code/FORMAINPC/NLLBAdapter.py
+- host: 0.0.0.0
+  name: TranslatorServer
+  script_path: pc2_code/FORMAINPC/consolidated_translator.py
+- host: 0.0.0.0
+  name: SimpleTranslatorServer
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/FORMAINPC/consolidated_translator_simple.py
+- dependencies:
+  - AgentPorts
+  host: 0.0.0.0
+  name: AgentHealthFixer
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/scripts/fix_agent_health_issues.py
+- host: 0.0.0.0
+  name: AgentValidator
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/scripts/validate_agents.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: UnifiedUtilsAgent
+  port: 5700
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/src/agents/unified_utils_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: UnifiedMonitor
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/src/agents/unified_monitoring.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: HealthMonitor
+  script_path: pc2_code/agents/ForPC2/health_monitor.py
+- host: 0.0.0.0
+  name: UnifiedErrorAgent
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/ForPC2/UnifiedErrorAgent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AuthenticationAgent
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/ForPC2/AuthenticationAgent.py
+- host: 0.0.0.0
+  name: EdgeRouter
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/src/network/edge_router.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ZMQAuthenticator
+  script_path: main_pc_code/src/network/secure_zmq.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: FusedAudioPreprocessorAgent
+  script_path: main_pc_code/src/audio/fused_audio_preprocessor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ProactiveContextMonitor
+  script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py
+- host: 0.0.0.0
+  name: BaseAgent
+  script_path: main_pc_code/agents/base_agent.py
+- host: 0.0.0.0
+  name: AgentHTTPServer
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/src/core/http_server.py
+- host: 0.0.0.0
+  name: GoTToTAgent
+  script_path: pc2_code/FORMAINPC/GOT_TOTAgent.py
+- host: 0.0.0.0
+  name: ErrorPattern
+  script_path: pc2_code/src/core/rca_agent.py
+- host: 0.0.0.0
+  name: RCA_Agent
+  script_path: pc2_code/src/core/rca_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: OrchestratorAgent
+  script_path: pc2_code/agents/ForPC2/health_monitor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: FixedStreamingTranslation
+  script_path: main_pc_code/agents/needtoverify/fixed_streaming_translation.py
+- host: 0.0.0.0
+  name: TieredResponder
+  script_path: pc2_code/agents/backups/tiered_responder.py
+- host: 0.0.0.0
+  name: PerformanceMonitor
+  script_path: pc2_code/agents/integration/performance_monitor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: TranslationCache
+  script_path: main_pc_code/agents/needtoverify/fixed_streaming_translation.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AdvancedTimeoutManager
+  script_path: main_pc_code/agents/needtoverify/fixed_streaming_translation.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: PerformanceMetrics
+  script_path: main_pc_code/agents/needtoverify/fixed_streaming_translation.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ParameterExtractor
+  script_path: main_pc_code/agents/_archive/parameter_extractor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: TriggerWordDetector
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/trigger_word_detector.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CodeGeneratorAgent
+  script_path: main_pc_code/agents/code_generator_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: StreamingAudioCapture
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/streaming_audio_capture.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: NoiseReductionAgent
+  script_path: main_pc_code/agents/noise_reduction_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: SpeechProcessor
+  script_path: main_pc_code/agents/speech_processor.py
+- dependencies:
+  - BaseAgent
+  - DynamicSTTModelManager
+  host: 0.0.0.0
+  name: StreamingWhisperASR
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: VoiceMeeterControlAgent
+  script_path: main_pc_code/agents/voicemeeter_control_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: StreamingPartialTranscripts
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/streaming_partial_transcripts.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: VADAgent
+  script_path: main_pc_code/agents/vad_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: LazyVotingSystem
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/model_management/lazy_voting.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: PersonalityEngine
+  script_path: main_pc_code/agents/personality_engine.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ResponderAgent
+  script_path: main_pc_code/agents/responder.py
+- dependencies:
+  - BaseAgent
+  - LazyVotingSystem
+  - ModelVotingManager
+  host: 0.0.0.0
+  name: ModelVotingAdapter
+  script_path: main_pc_code/agents/model_voting_adapter.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: VoiceProfilingAgent
+  script_path: main_pc_code/agents/voice_profiling_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: KalmanTracker
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/face_recognition_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: EmotionAnalyzer
+  script_path: main_pc_code/agents/face_recognition_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: LivenessDetector
+  script_path: main_pc_code/agents/face_recognition_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: PrivacyManager
+  script_path: main_pc_code/agents/face_recognition_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: InsightFaceAgent
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/face_recognition_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ExecutorAgent
+  script_path: main_pc_code/agents/executor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AudioCaptureModule
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/audio_capture.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: UltimateTTSAgent
+  script_path: main_pc_code/agents/streaming_tts_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: StreamingLanguageToLLM
+  script_path: main_pc_code/agents/streaming_language_to_llm.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: StreamingInterrupt
+  script_path: main_pc_code/agents/streaming_interrupt.py
+- dependencies:
+  - BaseAgent
+  - WakeWordDetector
+  - SpeechProcessor
+  host: 0.0.0.0
+  name: VoiceController
+  script_path: main_pc_code/agents/voice_controller.py
+- host: 0.0.0.0
+  name: RemoteConnectorAgent
+  script_path: pc2_code/agents/backups/remote_connector_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: DynamicSTTModelManager
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/model_management/modular_system_model_manager.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: LearningAgent
+  script_path: main_pc_code/agents/_trash_2025-06-13/LearningAgent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: SecurityPolicyAgent
+  script_path: main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py
+- dependencies:
+  - BaseAgent
+  - MemoryAgent
+  host: 0.0.0.0
+  name: AgentBreeder
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/_trash_2025-06-13/AgentBreeder.py
+- host: 0.0.0.0
+  name: MemoryAgent
+  port: 5590
+  script_path: pc2_code/agents/archive/memory_reasoning/memory_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: JarvisMemoryAgent
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/jarvis_memory_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: BrowserAutomationAgent
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py
+- dependencies:
+  - BaseAgent
+  health_check_port: 8044
+  host: 0.0.0.0
+  name: TranslatorAgent
+  port: 5544
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/_trash_2025-06-13/archive/translation/translator_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: LRUCache
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: RequestQueue
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: StreamingTextProcessor
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ContextManager
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/context_manager.py
+- host: 0.0.0.0
+  name: LearningModeAgent
+  script_path: pc2_code/agents/archive/memory_reasoning/learning_mode_agent.py
+- host: 0.0.0.0
+  name: UnifiedMemoryReasoningAgent
+  script_path: pc2_code/agents/archive/memory_reasoning/unified_memory_reasoning_agent.py
+- dependencies:
+  - Task
+  host: 0.0.0.0
+  name: LLMTaskAgent
+  script_path: pc2_code/agents/archive/misc/llm_task_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ChainOfThoughtClient
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ErrorDatabase
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_database.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ErrorPatternMemory
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: IntegratedListenerAgent
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/misc/listener_new.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ListenerAgentDebug
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/misc/listener_debug.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: GGUFConnector
+  port: 5604
+  script_path: main_pc_code/MAINPCRESTOREFROMPC2/agents/_trash_2025-06-13/archive/model_management/model_manager_agent_gguf_connector.py
+- dependencies:
+  - BaseAgent
+  - LazyVotingSystem
+  host: 0.0.0.0
+  name: ModelVotingManager
+  script_path: main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_voting_manager.py
+- dependencies:
+  - EnhancedContextualMemory
+  host: 0.0.0.0
+  name: AutonomousWebAssistant
+  script_path: pc2_code/agents/archive/web/autonomous_web_assistant.py
+- host: 0.0.0.0
+  name: UnifiedWebAgent
+  script_path: pc2_code/agents/backups/unified_web_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CodeGenerationIntentHandler
+  script_path: main_pc_code/agents/intent_handlers/code_generation_intent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: TimelineUIServer
+  script_path: main_pc_code/agents/needtoverify/TimelineUIServer.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CommandClusteringEngine
+  script_path: main_pc_code/agents/needtoverify/command_clustering.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CoordinatorModule
+  script_path: main_pc_code/agents/needtoverify/coordinator.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: DiscoveryService
+  script_path: main_pc_code/agents/needtoverify/discovery_service.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: Message
+  script_path: main_pc_code/agents/needtoverify/autogen_framework.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: Task
+  script_path: main_pc_code/agents/needtoverify/autogen_framework.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AgentRegistry
+  script_path: main_pc_code/agents/needtoverify/autogen_framework.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: MessageBus
+  script_path: main_pc_code/agents/needtoverify/autogen_framework.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AutoGenFramework
+  script_path: main_pc_code/agents/needtoverify/autogen_framework.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CommandConfirmation
+  script_path: main_pc_code/agents/needtoverify/command_confirmation.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: SessionAgent
+  script_path: main_pc_code/agents/needtoverify/SessionAgent.py
+- dependencies:
+  - BaseAgent
+  - GGUFConnector
+  host: 0.0.0.0
+  name: CodeCommandHandler
+  script_path: main_pc_code/agents/needtoverify/code_command_handler.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: DistributedLauncher
+  script_path: main_pc_code/agents/needtoverify/distributed_launcher.py
+- dependencies:
+  - BaseAgent
+  - CommandClusteringEngine
+  host: 0.0.0.0
+  name: CommandSuggestionOptimized
+  script_path: main_pc_code/agents/needtoverify/command_suggestion_optimized.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ContextBridgeAgent
+  script_path: main_pc_code/agents/needtoverify/context_bridge_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CommandSuggestion
+  script_path: main_pc_code/agents/needtoverify/command_suggestion.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CommandQueue
+  script_path: main_pc_code/agents/needtoverify/command_queue.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: FileSystemAssistantAgent
+  script_path: main_pc_code/agents/needtoverify/filesystem_assistant_agent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: CustomCommandHandler
+  script_path: main_pc_code/agents/needtoverify/custom_command_handler.py
+- host: 0.0.0.0
+  name: PerformanceLoggerAgent
+  script_path: pc2_code/agents/integration/performance.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AsyncProcessor
+  script_path: pc2_code/agents/backups/async_processor.py
+- host: 0.0.0.0
+  name: CacheManager
+  script_path: main_pc_code/integration/cache_manager.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: WakeWordDetectorAgent
+  script_path: main_pc_code/agents/wake_word_detector.py
+- host: 0.0.0.0
+  name: HelsinkiTranslationAdapter
+  port: 5581
+  script_path: pc2_code/helsinki_adapter.py
+- host: 0.0.0.0
+  name: SimpleTestAgent
+  port: 7101
+  script_path: pc2_code/test_simple_agent.py
+- host: 0.0.0.0
+  name: PhiTranslator
+  port: 5581
+  script_path: pc2_code/phi_adapter_final_fix.py
+- host: 0.0.0.0
+  name: PhiTranslationAdapter
+  port: 5581
+  script_path: pc2_code/phi_adapter.py
+- host: 0.0.0.0
+  name: M2MTranslationAdapter
+  script_path: pc2_code/m2m_adapter.py
+- host: 0.0.0.0
+  name: ZMQBridge
+  script_path: pc2_code/zmq_bridge.py
+- host: 0.0.0.0
+  name: SimpleTranslationAdapter
+  script_path: pc2_code/simple_translation_adapter.py
+- host: 0.0.0.0
+  name: AlertManagerAgent
+  script_path: pc2_code/src/monitoring/alert_manager.py
+- host: 0.0.0.0
+  name: MetricsCollectorAgent
+  script_path: pc2_code/src/monitoring/metrics_collector.py
+- host: 0.0.0.0
+  name: HealthCheckAgent
+  script_path: pc2_code/src/monitoring/health_check.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: ResourceManager
+  script_path: pc2_code/agents/backups/async_processor.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: DreamingModeAgent
+  script_path: pc2_code/agents/DreamingModeAgent.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: EpisodicMemoryAgent
+  port: 7106
+  script_path: pc2_code/agents/EpisodicMemoryAgent.py
+- host: 0.0.0.0
+  name: EnhancedContextualMemory
+  port: 5596
+  script_path: pc2_code/agents/enhanced_contextual_memory.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: AdvancedRouterAgent
+  port: 5555
+  script_path: pc2_code/agents/advanced_router.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: TestCompliantAgent
+  script_path: pc2_code/agents/test_compliant_agent.py
+- host: 0.0.0.0
+  name: TutoringServiceAgent
+  script_path: pc2_code/agents/core_agents/tutoring_service_agent.py
+- host: 0.0.0.0
+  name: AgentBase
+  script_path: pc2_code/agents/agent_utils.py
+- host: 0.0.0.0
+  name: TutorAgent
+  script_path: pc2_code/agents/tutor_agent.py
+- dependencies:
+  - EnhancedContextualMemory
+  host: 0.0.0.0
+  name: MemoryDecayManager
+  script_path: pc2_code/agents/memory_decay_manager.py
+- dependencies:
+  - BaseAgent
+  host: 0.0.0.0
+  name: DummyArgs
+  script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py
+- host: 0.0.0.0
+  name: LLMTranslationAdapter
+  script_path: pc2_code/agents/archive/translation/llm_translation_adapter.py
+- dependencies:
+  - ErrorDatabase
+  host: 0.0.0.0
+  name: ProgressiveCodeGenerator
+  script_path: pc2_code/agents/archive/memory_reasoning/progressive_code_generator.py
+- host: 0.0.0.0
+  name: ContextSummarizerAgent
+  script_path: pc2_code/agents/archive/memory_reasoning/context_summarizer_agent.py
+- host: 0.0.0.0
+  name: ContextualMemoryAgent
+  script_path: pc2_code/agents/archive/memory_reasoning/contextual_memory_agent.py
+- host: 0.0.0.0
+  name: ContextSummarizer
+  script_path: pc2_code/agents/archive/memory_reasoning/context_summarizer.py
+- host: 0.0.0.0
+  name: AutoFixerAgent
+  script_path: pc2_code/agents/archive/misc/auto_fixer_agent.py
+- host: 0.0.0.0
+  name: WebScraperAgent
+  script_path: pc2_code/agents/archive/web/web_scraper_agent.py
+- host: 0.0.0.0
+  name: NLLBTranslatorAgent
+  script_path: pc2_code/translation_components/nllb_translator.py

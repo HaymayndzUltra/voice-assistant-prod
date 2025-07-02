@@ -2,7 +2,17 @@
 Chitchat Agent
 -------------
 Handles natural conversational interactions:
-- Processes casual conversation requests
+- Processes casu
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+al conversation requests
 - Connects to local or remote LLM for responses
 - Maintains conversation context
 - Integrates with personality engine

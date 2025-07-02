@@ -4,6 +4,15 @@ Manages and processes emotional states and responses
 """
 
 import sys
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 import os
 import zmq
 import json
@@ -17,6 +26,7 @@ from main_pc_code.utils.config_loader import load_config
 from main_pc_code.src.core.base_agent import BaseAgent
 
 config = load_config()
+_agent_args = config  # Initialize _agent_args with the loaded config
 
 # Configure logging
 logging.basicConfig(

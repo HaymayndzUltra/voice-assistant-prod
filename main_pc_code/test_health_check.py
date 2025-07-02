@@ -6,7 +6,7 @@ import time
 import zmq
 import json
 import logging
-from agents.knowledge_base import KnowledgeBase
+from main_pc_code.agents.knowledge_base import KnowledgeBase
 
 # Configure logging
 logging.basicConfig(

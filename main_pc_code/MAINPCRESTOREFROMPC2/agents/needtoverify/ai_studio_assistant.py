@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 AI Studio Assistant
 ------------------
@@ -28,7 +28,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from config.pc2_connections import get_connection_string
+from main_pc_code.config.pc2_connections import get_connection_string
 
 # Setup logging
 LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "ai_studio_assistant.log")
@@ -125,6 +125,8 @@ class AIStudioAssistant(BaseAgent):
         # Try to use webdriver_manager if installed
         try:
             from webdriver_manager.chrome import ChromeDriverManager
+    except ImportError as e:
+        print(f"Import error: {e}")
             service = Service(ChromeDriverManager().install())
             self.browser = webdriver.Chrome(service=service, options=chrome_options)
         except ImportError:

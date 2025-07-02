@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 # Proactive Agent Interface: For unified reminder/suggestion broadcasting
 # Other agents (Jarvis Memory, Digital Twin, Learning Mode) can use this to send proactive events
 import zmq

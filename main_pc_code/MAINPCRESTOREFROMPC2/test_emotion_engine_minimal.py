@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append('.')
 
-from agents.emotion_engine import EmotionEngine
+from main_pc_code.agents.emotion_engine import EmotionEngine
 import zmq
 import json
 import time

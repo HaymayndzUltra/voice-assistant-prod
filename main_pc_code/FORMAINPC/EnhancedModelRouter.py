@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Enhanced Model Router (Consolidated)
 -----------------------------------
 Central intelligence hub for model routing, combining:
@@ -51,13 +60,13 @@ except ModuleNotFoundError:
 from main_pc_code.utils.config_loader import load_config
 
 # Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent))
 
 # Import service discovery and secure ZMQ utilities
 try:
-    from utils.service_discovery_client import discover_service
-    from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
-except ImportError:
+    from main_pc_code.utils.service_discovery_client import discover_service
+    from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+except ImportError as e:
+    print(f"Import error: {e}")
     # Fallback if imports fail
     logger.warning("Failed to import service_discovery_client or secure_zmq. Using dummy implementations.")
     def discover_service(service_name: str) -> Optional[Dict[str, Any]]:
@@ -130,9 +139,10 @@ def cache_router_result(func):
 # Import the advanced_router module - prefer local import first then try regular import
 try:
     # Try importing from local directory first
-    sys.path.insert(0, str(Path(__file__).parent))
     try:
         from advanced_router import detect_task_type, map_task_to_model_capabilities
+    except ImportError as e:
+        print(f"Import error: {e}")
         has_advanced_router = True
         logger.info("Advanced router module loaded successfully from local path")
     except ImportError:
@@ -184,132 +194,9 @@ except Exception as e:
     # Fallback implementation of detect_task_type
     def detect_task_type(prompt):
         """Fallback task type detection when advanced_router is not available"""
-
-
-
-        def _health_check_loop(self):
-
-                logger.info("EnhancedModelRouter health check loop started")
-
-                while self.running:
-
-                    try:
-
-                        if self.health_socket.poll(timeout=1000) != 0:
-
-                            message = self.health_socket.recv()
-
-                            try:
-
-                                request = json.loads(message.decode())
-
-                                logger.debug(f"Received health check request: {request}")
-
-                                response = self._get_health_status()
-
-                                self.health_socket.send_json(response)
-
-                                logger.debug(f"Sent health check response: {response}")
-
-                            except Exception as e:
-
-                                logger.error(f"Invalid health check request: {e}")
-
-                                self.health_socket.send_json({
-
-                                    "status": "error",
-
-                                    "error": str(e)
-
-                                })
-
-                    except zmq.error.ZMQError as e:
-
-                        logger.error(f"ZMQ error in health check loop: {e}")
-
-                        time.sleep(1)
-
-                    except Exception as e:
-
-                        logger.error(f"Error in health check loop: {e}")
-
-                        time.sleep(1)
-
-        def _health_check_loop(self):
-
-                logger.info("EnhancedModelRouter health check loop started")
-
-                while self.running:
-
-                    try:
-
-                        if self.health_socket.poll(timeout=1000) != 0:
-
-                            message = self.health_socket.recv()
-
-                            try:
-
-                                request = json.loads(message.decode())
-
-                                logger.debug(f"Received health check request: {request}")
-
-                                response = self._get_health_status()
-
-                                self.health_socket.send_json(response)
-
-                                logger.debug(f"Sent health check response: {response}")
-
-                            except Exception as e:
-
-                                logger.error(f"Invalid health check request: {e}")
-
-                                self.health_socket.send_json({
-
-                                    "status": "error",
-
-                                    "error": str(e)
-
-                                })
-
-                    except zmq.error.ZMQError as e:
-
-                        logger.error(f"ZMQ error in health check loop: {e}")
-
-                        time.sleep(1)
-
-                    except Exception as e:
-
-                        logger.error(f"Error in health check loop: {e}")
-
-                        time.sleep(1)
-
-        def _health_check_loop(self):
-                logger.info("EnhancedModelRouter health check loop started")
-                while self.running:
-                    try:
-                        if self.health_socket.poll(timeout=1000) != 0:
-                            message = self.health_socket.recv()
-                            try:
-                                request = json.loads(message.decode())
-                                logger.debug(f"Received health check request: {request}")
-                                response = self._get_health_status()
-                                self.health_socket.send_json(response)
-                                logger.debug(f"Sent health check response: {response}")
-                            except Exception as e:
-                                logger.error(f"Invalid health check request: {e}")
-                                self.health_socket.send_json({
-                                    "status": "error",
-                                    "error": str(e)
-                                })
-                    except zmq.error.ZMQError as e:
-                        logger.error(f"ZMQ error in health check loop: {e}")
-                        time.sleep(1)
-                    except Exception as e:
-                        logger.error(f"Error in health check loop: {e}")
-                        time.sleep(1)
         if not prompt:
             return "general"
-            
+        
         prompt_lower = prompt.lower()
         if any(k in prompt_lower for k in ["code", "python", "function", "class", "script", "bug", "debug", "deepseek", "javascript", "java", "programming"]):
             return "code"

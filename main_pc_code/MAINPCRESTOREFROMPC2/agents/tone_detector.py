@@ -6,7 +6,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 # Tone detection for Human Awareness Agent
 
 import time
@@ -21,12 +21,14 @@ import re
 import numpy as np
 import wave
 from typing import Dict, Any, Optional
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Try to import audio processing libraries
 try:
     import pyaudio
+    except ImportError as e:
+        print(f"Import error: {e}")
     import whisper
     WHISPER_AVAILABLE = True
     logger = logging.getLogger("ToneDetector")

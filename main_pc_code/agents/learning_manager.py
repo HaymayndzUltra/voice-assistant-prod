@@ -2,7 +2,17 @@
 Learning Manager Agent
 ------------------
 Responsible for:
-- Managing the learning process of the AI system
+- Managing the learning process
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+ of the AI system
 - Tracking learning progress and performance
 - Adjusting learning parameters based on feedback
 - Coordinating with other agents for continuous learning

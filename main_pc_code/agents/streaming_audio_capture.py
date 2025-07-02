@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Streaming Audio Capture Module
 Streams audio chunks in real-time to downstream modules via ZMQ
 Includes integrated wake word detection using Whisper
@@ -210,7 +219,9 @@ class StreamingAudioCaptureAgent(BaseAgent):
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     try:
-                        from src.network.secure_zmq import secure_server_socket, start_auth
+                        from main_pc_code.src.network.secure_zmq import secure_server_socket, start_auth
+                    except ImportError as e:
+                        print(f"Import error: {e}")
                         start_auth()
                         self.pub_socket = secure_server_socket(self.pub_socket)
                         self.health_socket = secure_server_socket(self.health_socket)
@@ -360,6 +371,8 @@ class StreamingAudioCaptureAgent(BaseAgent):
         """Initialize Whisper model for wake word detection"""
         try:
             import torch
+        except ImportError as e:
+            print(f"Import error: {e}")
             import whisper
             
             logger.info("Initializing Whisper model for wake word detection...")
@@ -405,6 +418,8 @@ class StreamingAudioCaptureAgent(BaseAgent):
             # Try again after installation
             try:
                 import whisper
+            except ImportError as e:
+                print(f"Import error: {e}")
                 self.whisper_model = whisper.load_model("tiny")
                 self.whisper_model.eval()
                 logger.info(f"✓ Whisper model successfully installed and initialized")

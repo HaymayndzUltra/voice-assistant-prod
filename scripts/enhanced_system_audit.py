@@ -23,18 +23,39 @@ PC2_AGENTS_ROOT = PROJECT_ROOT / 'pc2_code' / 'agents'
 
 # === AGENT GATHERING ===
 def gather_targeted_agents():
-    """Load agents from startup_config.yaml"""
+    """Load agents from main_pc_code/config/startup_config.yaml"""
+    
+    agents = []
+    
     try:
-        with open(PC2_CONFIG_PATH, 'r') as f:
+        with open(MAIN_CONFIG_PATH, 'r') as f:
             config = yaml.safe_load(f)
         
-        agents = []
-        for agent_config in config.get('pc2_services', []):
-            agents.append({
-                'name': agent_config.get('name', ''),
-                'script_path': f"pc2_code/{agent_config.get('script_path', '')}"
-            })
+        # Process all service categories from main_pc_code config
+        service_categories = [
+            'core_services', 'main_pc_gpu_services', 'emotion_system', 
+            'language_processing', 'memory_system', 'learning_knowledge',
+            'planning_execution', 'tts_services', 'code_generation',
+            'audio_processing', 'vision', 'monitoring_security'
+        ]
         
+        for category in service_categories:
+            if category in config:
+                for agent_config in config[category]:
+                    name = agent_config.get('name', '')
+                    script_path = agent_config.get('script_path', '')
+                    
+                    if name and script_path:
+                        # Convert to absolute path for consistency
+                        if not script_path.startswith('/'):
+                            script_path = f"main_pc_code/{script_path}"
+                        
+                        agents.append({
+                            'name': name,
+                            'script_path': script_path
+                        })
+    
+        print(f"Loaded {len(agents)} agents from main_pc_code config.")
         return agents
     except Exception as e:
         print(f"Error loading agents from config: {e}")
@@ -196,8 +217,20 @@ def check_compliance(file_path):
         issues.append("C4: _get_health_status missing")
     
     # C6/C7: Check for config loader usage
-    if not (re.search(r'from\s+pc2_code\.agents\.utils\.config_loader\s+import\s+Config', content) and 
-            re.search(r'config\s*=\s*Config\(\)\.get_config\(\)', content)):
+    # Check for PC2 config loader pattern
+    pc2_config_pattern = (re.search(r'from\s+pc2_code\.agents\.utils\.config_loader\s+import\s+Config', content) and 
+                          re.search(r'config\s*=\s*Config\(\)\.get_config\(\)', content))
+    
+    # Check for main PC config loader pattern
+    main_pc_config_pattern = (re.search(r'from\s+main_pc_code\.utils\.config_loader\s+import\s+load_config', content) and 
+                             re.search(r'config\s*=\s*load_config\(\)', content))
+    
+    # Also check for the alternative main PC pattern with Config class
+    main_pc_config_pattern_alt = (re.search(r'from\s+main_pc_code\.utils\.config_loader\s+import\s+Config', content) and 
+                                 re.search(r'config\s*=\s*Config\(\)', content))
+    
+    # If none of the patterns match, report the issue
+    if not (pc2_config_pattern or main_pc_config_pattern or main_pc_config_pattern_alt):
         issues.append("C6/C7: Config loader not used correctly")
     
     # C10: Check for standardized __main__ block

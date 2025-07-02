@@ -1,4 +1,4 @@
-from src.core.base_agent import zmq
+from main_pc_code.src.core.base_agent import zmq
 import BaseAgent
 def generate_code_with_cga(self, request_data):
     """Send a code generation request to the Code Generator Agent and return the response.

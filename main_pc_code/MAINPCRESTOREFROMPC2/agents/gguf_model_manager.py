@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 GGUF Model Manager
 -----------------
@@ -20,6 +20,8 @@ import torch
 
 try:
     from llama_cpp import Llama
+    except ImportError as e:
+        print(f"Import error: {e}")
     LLAMA_CPP_AVAILABLE = True
 except ImportError:
     LLAMA_CPP_AVAILABLE = False
@@ -70,7 +72,7 @@ class GGUFModelManager(BaseAgent):
         try:
             # Add the parent directory to sys.path to import the config module
             sys.path.append(str(Path(__file__).parent.parent))
-            from config.system_config import Config
+from main_pc_code.config.system_config import Config
             
             config = Config()
             machine_config = config.get_all().get('main_pc_settings', {})

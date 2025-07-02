@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Self-Healing Agent
 - Monitors the health of all agents in the system
@@ -64,7 +64,7 @@ import inspect
 sys.path.append(str(Path(__file__).parent.parent))
 
 try:
-    from config.system_config import config
+from main_pc_code.config.system_config import config
 except ImportError:
     # Fallback configuration if import fails
     config = {
@@ -101,7 +101,9 @@ if not logger.handlers:
 
 # Now try to import the real AgentBase class from(BaseAgent) agent_utils
 try:
-    from agents.agent_utils import (
+from main_pc_code.agents.agent_utils import (
+    except ImportError as e:
+        print(f"Import error: {e}")
         ZMQClient, ZMQServer, ZMQPublisher, ZMQSubscriber,
         AgentBase, create_agent_logger, generate_unique_id,
         load_config, save_config, get_agent_status, set_agent_status

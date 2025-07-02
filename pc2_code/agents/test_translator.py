@@ -3,8 +3,8 @@ import time
 import json
 import zmq
 import threading
-from consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
-from config.system_config import get_config_for_service, config
+from main_pc_code.FORMAINPC.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
+from pc2_code.config.system_config import get_config_for_service, config
 
 class TestConsolidatedTranslator(unittest.TestCase):
     @classmethod

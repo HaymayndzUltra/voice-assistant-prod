@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 VRAM Optimizer Agent
 Handles VRAM monitoring, optimization, and model management
 Implements predictive model loading and fine-tuned unloading
@@ -19,7 +28,7 @@ import psutil
 import GPUtil
 from collections import defaultdict
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments
@@ -217,6 +226,7 @@ class VRAMOptimizerAgent(BaseAgent):
                 self.tr_socket = None
             
         except ImportError as e:
+            print(f"Import error: {e}")
             logger.error(f"ImportError during service discovery: {e}")
             self._init_fallback_connections()
         except Exception as e:
@@ -319,10 +329,8 @@ class VRAMOptimizerAgent(BaseAgent):
                 self.sdt_socket.setsockopt(zmq.SNDTIMEO, 5000)
                 # Try to reconnect to PC2 SystemDigitalTwin
                 try:
-                    import sys
                     from pathlib import Path
-                    sys.path.append(str(Path(__file__).parent.parent))
-                    from config.pc2_services_config import get_service_connection
+                    from main_pc_code.config.pc2_services_config import get_service_connection
                     
                     # Get connection string for SystemDigitalTwin
                     connection = get_service_connection("SystemDigitalTwin")

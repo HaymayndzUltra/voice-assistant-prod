@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Coordinator Module
 Manages and coordinates all modules in the voice assistant system

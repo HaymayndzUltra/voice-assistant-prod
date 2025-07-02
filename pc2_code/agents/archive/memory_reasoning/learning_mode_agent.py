@@ -4,7 +4,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
 import os
-from agents.proactive_agent_interface import send_proactive_event
+from pc2_code.agents.proactive_agent_interface import send_proactive_event
 
 import threading
 import time

@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Enhanced Streaming Speech Recognition Module
 Combines features from both streaming_speech_recognition.py and streaming_whisper_asr.py
@@ -39,8 +39,8 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import dynamic model management
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service, register_service
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service, register_service
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -99,6 +99,8 @@ class ResourceManager:
         mem = psutil.virtual_memory().percent
         try:
             import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
             gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
         except Exception:
             gpu = 0
@@ -202,7 +204,9 @@ class StreamingSpeechRecognition(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket, start_auth
+from main_pc_code.src.network.secure_zmq import secure_client_socket, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
                     start_auth()
                     self.sub_socket = secure_client_socket(self.sub_socket)
                     logger.info("Applied secure ZMQ to subscriber socket")
@@ -219,7 +223,9 @@ class StreamingSpeechRecognition(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket
+from main_pc_code.src.network.secure_zmq import secure_client_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.wake_word_socket = secure_client_socket(self.wake_word_socket)
                     logger.info("Applied secure ZMQ to wake word subscriber socket")
                 except Exception as e:
@@ -235,7 +241,9 @@ class StreamingSpeechRecognition(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket
+from main_pc_code.src.network.secure_zmq import secure_client_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.vad_socket = secure_client_socket(self.vad_socket)
                     logger.info("Applied secure ZMQ to VAD subscriber socket")
                 except Exception as e:
@@ -251,7 +259,9 @@ class StreamingSpeechRecognition(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+from main_pc_code.src.network.secure_zmq import secure_server_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.pub_socket = secure_server_socket(self.pub_socket)
                     logger.info("Applied secure ZMQ to publisher socket")
                 except Exception as e:
@@ -266,7 +276,9 @@ class StreamingSpeechRecognition(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+from main_pc_code.src.network.secure_zmq import secure_server_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.health_socket = secure_server_socket(self.health_socket)
                     logger.info("Applied secure ZMQ to health publisher socket")
                 except Exception as e:
@@ -311,7 +323,9 @@ class StreamingSpeechRecognition(BaseAgent):
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     try:
-                        from src.network.secure_zmq import secure_client_socket
+from main_pc_code.src.network.secure_zmq import secure_client_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                         self.model_manager_socket = secure_client_socket(self.model_manager_socket)
                         logger.info("Applied secure ZMQ to model manager socket")
                     except Exception as e:

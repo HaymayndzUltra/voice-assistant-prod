@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Dynamic STT Model Manager
@@ -67,6 +67,8 @@ class DynamicSTTModelManager(BaseAgent):
             
             try:
                 import whisper
+    except ImportError as e:
+        print(f"Import error: {e}")
                 self.logger.info(f"Loading STT model '{model_id}'...")
                 start_time = time.time()
                 model = whisper.load_model(model_id)

@@ -12,7 +12,7 @@ import yaml
 import logging
 import argparse
 import sys
-from typing import List
+from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 class Config:
@@ -116,6 +116,19 @@ def get_instance():
     if _instance is None:
         _instance = Config()
     return _instance 
+
+# Function used by agents
+def load_config() -> Dict[str, Any]:
+    """Load configuration from file.
+    
+    This function is used by agents to load their configuration.
+    It returns the configuration as a dictionary.
+    
+    Returns:
+        Configuration dictionary
+    """
+    config = get_instance()
+    return config.get_config()
 
 # Constants and functions from config_parser.py
 _STANDARD_ARGS = ["host", "port"]

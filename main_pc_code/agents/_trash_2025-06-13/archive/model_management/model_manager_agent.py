@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
@@ -34,14 +34,14 @@ import GPUtil
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Import config module
-from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
 config = Config() # Instantiate the global config object
 
 # Import system_config for per-machine settings
-from config import system_config
+from main_pc_code.config import system_config
 
 # Import the GGUF connector
-from agents.model_manager_agent_gguf_connector import get_instance as get_gguf_connector
+from main_pc_code.agents.model_manager_agent_gguf_connector import get_instance as get_gguf_connector
 
 # Default VRAM management settings
 DEFAULT_VRAM_CONFIG = {
@@ -872,7 +872,7 @@ class ModelManagerAgent(BaseAgent):
         """Load model configurations from the central config"""
         try:
             # Determine active PC settings key based on environment variable
-            from utils.config_loader import Config
+from main_pc_code.utils.config_loader import Config
             cfg = Config()
             active_pc_settings_key = cfg.active_pc_settings_key
             logger.info(f"Active PC settings key: {active_pc_settings_key}")
@@ -1369,7 +1369,9 @@ class ModelManagerAgent(BaseAgent):
             
             # Second attempt: Try direct loading through the GGUF Model Manager
             try:
-                from agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+    except ImportError as e:
+        print(f"Import error: {e}")
                 gguf_manager = get_gguf_manager()
                 
                 logger.info(f"Loading GGUF model {model_id} directly via GGUF Model Manager")

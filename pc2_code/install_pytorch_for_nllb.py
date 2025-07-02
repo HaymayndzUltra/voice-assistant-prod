@@ -111,6 +111,8 @@ def validate_installation():
     print_colored("Checking PyTorch installation...", Fore.YELLOW)
     try:
         import torch
+    except ImportError as e:
+        print(f"Import error: {e}")
         print_colored(f"✅ PyTorch {torch.__version__} is installed.", Fore.GREEN)
         
         # Check CUDA availability in PyTorch
@@ -130,6 +132,8 @@ def validate_installation():
     print_colored("\nChecking transformers installation...", Fore.YELLOW)
     try:
         import transformers
+    except ImportError as e:
+        print(f"Import error: {e}")
         print_colored(f"✅ Transformers {transformers.__version__} is installed.", Fore.GREEN)
     except ImportError:
         print_colored("❌ Transformers is not installed correctly.", Fore.RED)
@@ -139,6 +143,8 @@ def validate_installation():
     print_colored("\nTesting model loading capability...", Fore.YELLOW)
     try:
         from transformers import AutoTokenizer
+    except ImportError as e:
+        print(f"Import error: {e}")
         
         # Load a small tokenizer as a test (much faster than loading a full model)
         print_colored("Loading a test tokenizer...", Fore.BLUE)

@@ -1,5 +1,14 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
 - Reports health to Task Router
@@ -31,14 +40,13 @@ import psutil
 import GPUtil
 
 # Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
 
 # Import config module
-from utils.config_loader import Config, parse_agent_args
+from main_pc_code.utils.config_loader import Config, parse_agent_args
 config = Config() # Instantiate the global config object
 
 # Import system_config for per-machine settings
-from config import system_config
+from main_pc_code.config import system_config
 
 # Import PC2 services config module
 from main_pc_code.config.pc2_services_config import load_pc2_services, get_service_connection, list_available_services
@@ -147,6 +155,9 @@ TASK_ROUTER_PORT = int(os.environ.get("TASK_ROUTER_PORT", "5571"))
 from main_pc_code.utils.config_loader import load_config
 config = load_config()
 
+# Move this import to the top of the file
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+
 class ModelManagerAgent(BaseAgent):
     def __init__(self, **kwargs):
         agent_port = config.get("port", MODEL_MANAGER_PORT)
@@ -217,7 +228,7 @@ class ModelManagerAgent(BaseAgent):
         
         # Load VRAM settings from config if available
         if hasattr(self, 'config') and 'vram' in self.config:
-            vram_config = self.config['vram']
+            vram_config = self.config.get('vram')
             self.vram_budget_percent = vram_config.get('vram_budget_percentage', self.vram_budget_percent)
             self.vram_budget_mb = vram_config.get('vram_budget_mb', self.vram_budget_mb)
             self.memory_check_interval = vram_config.get('memory_check_interval', self.memory_check_interval)
@@ -265,7 +276,7 @@ class ModelManagerAgent(BaseAgent):
                     self.logger.warning(f"Port {self.model_port} is in use, waiting for it to become available")
                     if wait_for_port(self.model_port, timeout=5):
                         self.logger.info(f"Port {self.model_port} is now available")
-                        break
+                        pass
                     else:
                         # If we can't get the exact port, log an error but don't automatically change it
                         # This ensures we respect the startup_config.yaml configuration
@@ -277,7 +288,7 @@ class ModelManagerAgent(BaseAgent):
                             self.model_port = self._find_available_port()
                             self.logger.warning(f"Using fallback port {self.model_port} instead")
                 else:
-                    break
+                    pass
             
             # Now handle the status port
             retries = 0
@@ -286,7 +297,7 @@ class ModelManagerAgent(BaseAgent):
                     self.logger.warning(f"Port {self.status_port} is in use, waiting for it to become available")
                     if wait_for_port(self.status_port, timeout=5):
                         self.logger.info(f"Port {self.status_port} is now available")
-                        break
+                        pass
                 else:
                         retries += 1
                         if retries >= max_retries:
@@ -294,7 +305,7 @@ class ModelManagerAgent(BaseAgent):
                             self.status_port = self._find_available_port()
                             self.logger.warning(f"Using fallback status port {self.status_port} instead")
             else:
-                    break
+                    pass
             
             # Bind sockets with retry logic
             bind_success = False
@@ -303,7 +314,7 @@ class ModelManagerAgent(BaseAgent):
                     self.socket.bind(f"tcp://*:{self.model_port}")
                     bind_success = True
                     self.logger.info(f"Model request REP socket bound to port {self.model_port}")
-                    break
+                    pass
                 except zmq.error.ZMQError as e:
                     self.logger.error(f"Failed to bind to port {self.model_port} (attempt {attempt+1}/3): {e}")
                     time.sleep(2)
@@ -323,7 +334,7 @@ class ModelManagerAgent(BaseAgent):
                     self.status_socket.bind(f"tcp://*:{self.status_port}")
                     bind_success = True
                     self.logger.info(f"Status PUB socket bound to port {self.status_port}")
-                    break
+                    pass
                 except zmq.error.ZMQError as e:
                     self.logger.error(f"Failed to bind to status port {self.status_port} (attempt {attempt+1}/3): {e}")
                     time.sleep(2)
@@ -425,7 +436,7 @@ class ModelManagerAgent(BaseAgent):
                         self._unload_model(model_id)
                         current_vram = self._get_current_vram()
                         if current_vram <= self.vram_budget_mb:
-                            break
+                            pass
 
                 # Check for idle models
                 current_time = time.time()
@@ -529,7 +540,7 @@ class ModelManagerAgent(BaseAgent):
                 except KeyboardInterrupt:
                     self.logger.info("Received keyboard interrupt, shutting down...")
                     self.running = False
-                    break
+                    pass
                 except Exception as e:
                     self.logger.error(f"Error in main loop: {e}")
                     self.logger.error(traceback.format_exc())
@@ -587,7 +598,7 @@ class ModelManagerAgent(BaseAgent):
         # Sort models by priority (lowest number = highest priority)
         sorted_models = sorted(
             self.loaded_models.items(),
-            key=lambda x: self.vram_config['priority_levels'].get(x[1].get('priority', 'low'), 3)
+            key=lambda x: self.vram_config.get('priority_levels').get(x[1].get('priority', 'low'), 3)
         )
         
         # Unload the least important model
@@ -646,21 +657,21 @@ class ModelManagerAgent(BaseAgent):
             self.vram_management_config.setdefault('memory_check_interval', 5)
             
         # Validate values
-        if not 0 <= self.vram_management_config['vram_budget_percentage'] <= 100:
-            self.logger.warning(f"Invalid VRAM budget percentage: {self.vram_management_config['vram_budget_percentage']}. Using default 80%")
-            self.vram_management_config['vram_budget_percentage'] = 80
+        if not 0 <= self.vram_management_config.get('vram_budget_percentage') <= 100:
+            self.logger.warning(f"Invalid VRAM budget percentage: {self.vram_management_config.get('vram_budget_percentage')}. Using default 80%")
+            self.vram_management_config.get('vram_budget_percentage') = 80
             
-        if self.vram_management_config['vram_budget_mb'] < 0:
-            self.logger.warning(f"Invalid VRAM budget MB: {self.vram_management_config['vram_budget_mb']}. Using default 4096MB")
-            self.vram_management_config['vram_budget_mb'] = 4096
+        if self.vram_management_config.get('vram_budget_mb') < 0:
+            self.logger.warning(f"Invalid VRAM budget MB: {self.vram_management_config.get('vram_budget_mb')}. Using default 4096MB")
+            self.vram_management_config.get('vram_budget_mb') = 4096
             
-        if self.vram_management_config['idle_unload_timeout_seconds'] < 0:
-            self.logger.warning(f"Invalid idle timeout: {self.vram_management_config['idle_unload_timeout_seconds']}. Using default 300s")
-            self.vram_management_config['idle_unload_timeout_seconds'] = 300
+        if self.vram_management_config.get('idle_unload_timeout_seconds') < 0:
+            self.logger.warning(f"Invalid idle timeout: {self.vram_management_config.get('idle_unload_timeout_seconds')}. Using default 300s")
+            self.vram_management_config.get('idle_unload_timeout_seconds') = 300
 
         # Set model priorities if not present
         if 'model_priorities' not in self.vram_management_config:
-            self.vram_management_config['model_priorities'] = {
+            self.vram_management_config.get('model_priorities') = {
                 'high': 1,
                 'medium': 2,
                 'low': 3
@@ -668,7 +679,7 @@ class ModelManagerAgent(BaseAgent):
         
         # Set quantization options if not present
         if 'quantization_options_per_model_type' not in self.vram_management_config:
-            self.vram_management_config['quantization_options_per_model_type'] = {
+            self.vram_management_config.get('quantization_options_per_model_type') = {
                 'whisper': 'int8',
                 'llm': 'int8',
                 'tts': 'float16'
@@ -704,9 +715,6 @@ class ModelManagerAgent(BaseAgent):
 
     def _memory_management_loop(self):
         """Background thread for managing VRAM usage"""
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
-        
         self.vram_logger.info("Starting memory management loop")
         
         # Check if VRAM Optimizer is available
@@ -992,9 +1000,6 @@ class ModelManagerAgent(BaseAgent):
         Returns:
             True if the model can be accommodated, False otherwise
         """
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
-        
         # Check if VRAM Optimizer is available
         try:
             vram_optimizer_info = discover_service("VRAMOptimizerAgent")
@@ -1091,7 +1096,6 @@ class ModelManagerAgent(BaseAgent):
         """Load model configurations from the central config"""
         try:
             # Determine active PC settings key based on environment variable
-            from utils.config_loader import Config
             cfg = Config()
             active_pc_settings_key = cfg.active_pc_settings_key
             logger.info(f"Active PC settings key: {active_pc_settings_key}")
@@ -1109,8 +1113,8 @@ class ModelManagerAgent(BaseAgent):
             
             # Load GGUF models from system_config.py
             gguf_models_count = 0
-            if "main_pc_settings" in self.machine_config and "model_configs" in self.machine_config["main_pc_settings"]:
-                for model_id, model_cfg in self.machine_config["main_pc_settings"]["model_configs"].items():
+            if "main_pc_settings" in self.machine_config and "model_configs" in self.machine_config.get("main_pc_settings"):
+                for model_id, model_cfg in self.machine_config.get("main_pc_settings")["model_configs"].items():
                     if model_cfg.get('enabled', True) and model_cfg.get('serving_method') == 'gguf_direct':
                         self.models[model_id] = {
                             'display_name': model_cfg.get('display_name', model_id),
@@ -1134,10 +1138,10 @@ class ModelManagerAgent(BaseAgent):
                     logger.info(f"Loaded {len(gguf_models)} additional GGUF model configurations from {gguf_models_path}")
                     
                     # Add GGUF models to main PC settings if they don't exist
-                    if "main_pc_settings" in self.machine_config and "model_configs" in self.machine_config["main_pc_settings"]:
+                    if "main_pc_settings" in self.machine_config and "model_configs" in self.machine_config.get("main_pc_settings"):
                         for model_id, model_config in gguf_models.items():
-                            if model_id not in self.machine_config["main_pc_settings"]["model_configs"]:
-                                self.machine_config["main_pc_settings"]["model_configs"][model_id] = model_config
+                            if model_id not in self.machine_config.get("main_pc_settings")["model_configs"]:
+                                self.machine_config.get("main_pc_settings")["model_configs"][model_id] = model_config
                                 logger.info(f"Added GGUF model {model_id} to model configurations")
             except Exception as e:
                 logger.warning(f"Error loading GGUF models configuration: {e}")
@@ -1435,7 +1439,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Unload the model via GGUF manager
@@ -1562,12 +1566,8 @@ class ModelManagerAgent(BaseAgent):
         elif serving_method == 'gguf_direct':
             # Try connector first, then direct loading if connector fails
             logger.info(f"Loading GGUF model {model_id} - attempting direct loading")
-            
-            # Import and use the GGUF Model Manager directly
             try:
-                from agents.gguf_model_manager import get_instance as get_gguf_manager
                 gguf_manager = get_gguf_manager()
-                
                 logger.info(f"Loading GGUF model {model_id} via GGUF Model Manager")
                 if gguf_manager.load_model(model_id):
                     # Update model status
@@ -1575,7 +1575,6 @@ class ModelManagerAgent(BaseAgent):
                     self.models[model_id]['error'] = None
                     self._mark_model_as_loaded(model_id, estimated_vram_mb)
                     self.model_last_used_timestamp[model_id] = time.time()
-                    
                     # Publish model status update
                     self._publish_model_status(model_id, "online")
                     logger.info(f"GGUF model {model_id} successfully loaded")
@@ -1875,7 +1874,7 @@ class ModelManagerAgent(BaseAgent):
                     if key not in response or response[key] != expected_value:
                         is_valid = False
                         logger.warning(f"Health check for {model_id} failed: expected {key}={expected_value}, got {response.get(key, 'missing')}")
-                        break
+                        pass
                         
                 if is_valid:
                     model_info['status'] = 'online'
@@ -1999,11 +1998,11 @@ class ModelManagerAgent(BaseAgent):
                             if actual_value is None:  # Key must exist even for "ANY"
                                 is_response_valid_and_healthy = False
                                 logger.warning(f"ZMQ service {model_id} health mismatch: Expected key '{key}' to exist (for ANY value), but it's missing.")
-                                break
+                                pass
                         elif actual_value != expected_value:
                             is_response_valid_and_healthy = False
                             logger.warning(f"ZMQ service {model_id} health mismatch: Expected '{key}':'{expected_value}', Got:'{actual_value}'")
-                            break
+                            pass
 
                 if is_response_valid_and_healthy and service_status in ['ok', 'success', 'healthy']:
                     model_info['status'] = 'online'
@@ -2125,7 +2124,7 @@ class ModelManagerAgent(BaseAgent):
         logger.info(f"Checking GGUF model {model_id}")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             if not gguf_manager:
@@ -2147,7 +2146,7 @@ class ModelManagerAgent(BaseAgent):
                         vram_mb = model_info.get('estimated_vram_mb', 0)
                         self._mark_model_as_loaded(model_id, vram_mb)
                     model_info['last_check'] = time.time()
-                    break
+                    pass
             
             if not model_found:
                 # Model not found in response
@@ -2213,7 +2212,7 @@ class ModelManagerAgent(BaseAgent):
                             
                         except zmq.Again:
                             logger.debug(f"[PUBSUB_HC] No more messages for {model_id} at this poll.")
-                            break
+                            pass
                             
                 except Exception as e:
                     logger.error(f"[PUBSUB_HC] Error polling SUB socket for {model_id}: {e}")
@@ -2423,9 +2422,8 @@ class ModelManagerAgent(BaseAgent):
         If VRAM optimizer is available, delegate the decision to it.
         Otherwise, make the decision locally.
         """
-        from utils.service_discovery_client import discover_service
-        from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
-        
+        from main_pc_code.utils.service_discovery_client import discover_service
+        from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
         # Check if VRAM Optimizer is available
         try:
             vram_optimizer_info = discover_service("VRAMOptimizerAgent")
@@ -3205,7 +3203,6 @@ class ModelManagerAgent(BaseAgent):
             secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
             if secure_zmq:
                 try:
-                    # Import secure ZMQ module and configure socket
                     from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
                     start_auth()
                     socket = configure_secure_client(socket)
@@ -3236,7 +3233,7 @@ class ModelManagerAgent(BaseAgent):
                 if model_id in self.models:
                     model_config = self.models[model_id]
                     if "location" in model_config:
-                        device = model_config["location"]
+                        device = model_config.get("location")
                 
                 model_status[model_id] = {
                     "vram_usage_mb": vram_mb,
@@ -3327,7 +3324,7 @@ class ModelManagerAgent(BaseAgent):
                 return False
 
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Load the model via GGUF manager
@@ -3348,7 +3345,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _unload_gguf_model CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Unload the model via GGUF manager
@@ -3369,7 +3366,7 @@ class ModelManagerAgent(BaseAgent):
         logger.critical(f"--- [MainMMA _update_gguf_status CRITICAL ENTRY] Called for model_id: {model_id} ---")
         try:
             # Import and use the GGUF Model Manager directly
-            from agents.gguf_model_manager import get_instance as get_gguf_manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
             gguf_manager = get_gguf_manager()
             
             # Get current status from GGUF manager
@@ -3651,7 +3648,7 @@ class ModelManagerAgent(BaseAgent):
             # Sort models by priority (highest number = lowest priority)
             models_by_priority = sorted(
                 self.loaded_models.items(),
-                key=lambda x: self.vram_config['priority_levels'].get(x[1].get('priority', 'low'), 3),
+                key=lambda x: self.vram_config.get('priority_levels').get(x[1].get('priority', 'low'), 3),
                 reverse=True
             )
             
@@ -3662,7 +3659,7 @@ class ModelManagerAgent(BaseAgent):
                 
                 if current_vram <= vram_budget:
                     logger.info(f"MMA: VRAM pressure resolved after unloading {model_id}")
-                    break
+                    pass
                 else:
                     logger.warning(f"MMA: VRAM still under pressure after unloading {model_id}")
 
@@ -3692,7 +3689,7 @@ class ModelManagerAgent(BaseAgent):
         
         # Load settings from config if available
         if hasattr(self, 'config') and 'vram_management' in self.config:
-            vram_config = self.config['vram_management']
+            vram_config = self.config.get('vram_management')
             self.vram_budget_percent = vram_config.get('budget_percent', self.vram_budget_percent)
             self.memory_check_interval = vram_config.get('check_interval', self.memory_check_interval)
             self.idle_timeout = vram_config.get('idle_timeout', self.idle_timeout)
@@ -3932,10 +3929,19 @@ class ModelManagerAgent(BaseAgent):
                 
                 # Connect to SystemDigitalTwin (with secure ZMQ if enabled)
                 import zmq
-                from main_pc_code.utils.service_discovery_client import get_service_address
                 
                 context = zmq.Context()
                 socket = context.socket(zmq.REQ)
+                
+                # Get SDT address from service discovery
+                try:
+                    from main_pc_code.utils.service_discovery_client import get_service_address
+                    sdt_address = get_service_address("SystemDigitalTwin")
+                    if not sdt_address:
+                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                except Exception as e:
+                    logger.warning(f"Service discovery failed: {e}, using default address")
+                    sdt_address = "tcp://localhost:7120"  # Default fallback
                 
                 # Apply secure ZMQ if enabled
                 secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -3953,8 +3959,13 @@ class ModelManagerAgent(BaseAgent):
                 socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second send timeout
                 
                 # Get SDT address from service discovery
-                sdt_address = get_service_address("SystemDigitalTwin")
-                if not sdt_address:
+                try:
+                    from main_pc_code.utils.service_discovery_client import get_service_address
+                    sdt_address = get_service_address("SystemDigitalTwin")
+                    if not sdt_address:
+                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                except Exception as e:
+                    logger.warning(f"Service discovery failed: {e}, using default address")
                     sdt_address = "tcp://localhost:7120"  # Default fallback
                 
                 # Connect and send the report

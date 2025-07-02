@@ -4,6 +4,16 @@ import yaml
 import sys
 import os
 import json
+
+
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
 import time
 import psutil
 import threading
@@ -38,8 +48,8 @@ LOG_DIR.mkdir(exist_ok=True)
 
 class ResourceMonitor(BaseAgent):
     def __init__(self):
-         super().__init__(name="ResourceMonitor", port=None)
-self.cpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
+        super().__init__(name="ResourceMonitor", port=None)
+        self.cpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.memory_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.gpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.last_check = time.time()
@@ -107,7 +117,7 @@ self.cpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
 
             
 
-        port = network_config["ports"][service_name]
+        port = network_config.get("ports")[service_name]
 
         
 

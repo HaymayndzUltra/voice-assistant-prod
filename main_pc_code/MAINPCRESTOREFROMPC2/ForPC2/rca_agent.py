@@ -27,8 +27,8 @@ import datetime
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
-from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
+from main_pc_code.src.core.http_server import setup_health_check_server
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

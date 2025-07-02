@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import time
 import json
 import zmq
@@ -7,6 +7,15 @@ import logging
 from datetime import datetime
 import psutil
 from datetime import datetime
+
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 USER_PROFILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'user_profile.json')
 ZMQ_RESPONDER_PORT = 5558

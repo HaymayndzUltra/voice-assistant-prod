@@ -18,7 +18,7 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import secure ZMQ module
-from src.network.secure_zmq import (
+from main_pc_code.src.network.secure_zmq import (
 import threading
 from datetime import datetime
 from typing import Dict, Any
@@ -34,6 +34,8 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

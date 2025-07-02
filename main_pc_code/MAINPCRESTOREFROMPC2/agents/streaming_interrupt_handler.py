@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Streaming Interrupt Handler
 Monitors partial transcripts for interruption keywords and sends interrupt signals
@@ -10,10 +10,10 @@ import time
 import logging
 import threading
 import os
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import get_service_address, register_service
-from utils.env_loader import get_env
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import get_service_address, register_service
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse command line arguments
 _agent_args = parse_agent_args()

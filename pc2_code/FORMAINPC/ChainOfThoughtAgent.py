@@ -17,7 +17,7 @@ import traceback
 
 # Add the parent directory to sys.path to import the config
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from pc2_code.config.system_config import config
 
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))

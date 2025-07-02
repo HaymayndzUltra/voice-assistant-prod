@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Sounddevice Configuration Module
 Sets the correct sounddevice settings for all modules in the Voice Assistant system

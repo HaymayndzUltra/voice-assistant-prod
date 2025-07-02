@@ -32,7 +32,8 @@ config = load_config()
 try:
     import fasttext
     FASTTEXT_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     FASTTEXT_AVAILABLE = False
 
 # Logging setup

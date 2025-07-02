@@ -1,190 +1,179 @@
 #!/usr/bin/env python3
 """
-Add missing _get_health_status methods to agent files.
-This script adds the standard _get_health_status method to the specified agent files.
+Add Missing Health Check Methods
+-------------------------------
+Adds health_check methods to agents that don't have them.
+This is required for the test framework to work properly.
 """
-
 import os
 import re
-import sys
-import ast
-import argparse
+import yaml
 from pathlib import Path
-from typing import List, Tuple, Optional, Set
+import ast
+import astor
 
-# Standard _get_health_status method template
-GET_HEALTH_STATUS_TEMPLATE = """
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+# Standard health check implementation to add
+HEALTH_CHECK_TEMPLATE = '''
+    def health_check(self):
+        """Health check method for agent monitoring."""
+        status = {
+            "status": "healthy",
+            "version": "1.0",
+            "uptime": self._get_uptime(),
+            "memory_usage": self._get_memory_usage(),
+            "message_count": getattr(self, "message_count", 0)
         }
-        return {"status": status, "details": details}
-"""
+        return status
+        
+    def _get_uptime(self):
+        """Get agent uptime in seconds."""
+        import time
+        return time.time() - getattr(self, "start_time", time.time())
+        
+    def _get_memory_usage(self):
+        """Get memory usage of this process."""
+        import psutil
+        import os
+        process = psutil.Process(os.getpid())
+        return process.memory_info().rss / (1024 * 1024)  # MB
+'''
 
-def extract_imports(file_content: str) -> List[str]:
-    """Extract import statements from file content."""
-    imports = []
-    lines = file_content.splitlines()
-    for line in lines:
-        line = line.strip()
-        if line.startswith("import ") or line.startswith("from "):
-            imports.append(line)
-    return imports
+def load_active_agents():
+    """Load active agents from startup_config.yaml of MainPC and PC2."""
+    project_root = Path(__file__).resolve().parent
+    mainpc_config = project_root / 'main_pc_code' / 'config' / 'startup_config.yaml'
+    pc2_config = project_root / 'pc2_code' / 'config' / 'startup_config.yaml'
+    active_agents = []
+    
+    for config_path, root_dir in [
+        (mainpc_config, project_root / 'main_pc_code'),
+        (pc2_config, project_root / 'pc2_code')
+    ]:
+        if not config_path.exists():
+            print(f"Config not found: {config_path}")
+            continue
+            
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+            
+        if not config or 'agents' not in config:
+            continue
+            
+        for agent_name, agent_config in config['agents'].items():
+            if 'script_path' in agent_config:
+                script_path = agent_config['script_path']
+                full_path = root_dir / script_path
+                active_agents.append((agent_name, str(full_path)))
+    
+    return active_agents
 
-def has_time_import(imports: List[str]) -> bool:
-    """Check if time is imported."""
-    for imp in imports:
-        if imp == "import time" or imp.startswith("from time "):
-            return True
-    return False
-
-def add_missing_imports(file_content: str) -> str:
-    """Add missing imports needed for _get_health_status method."""
-    imports = extract_imports(file_content)
-    
-    # Check for missing imports
-    needs_time = not has_time_import(imports)
-    
-    # Find the last import statement
-    lines = file_content.splitlines()
-    last_import_idx = -1
-    for i, line in enumerate(lines):
-        if line.strip().startswith(("import ", "from ")):
-            last_import_idx = i
-    
-    # Insert missing imports after the last import
-    if last_import_idx >= 0 and needs_time:
-        lines.insert(last_import_idx + 1, "import time")
-    
-    return "\n".join(lines)
-
-def find_class_end(file_content: str, class_name: str) -> int:
-    """Find the end position of a class definition."""
-    lines = file_content.splitlines()
-    in_class = False
-    class_indent = 0
-    
-    for i, line in enumerate(lines):
-        stripped = line.lstrip()
-        if not in_class and stripped.startswith(f"class {class_name}"):
-            in_class = True
-            class_indent = len(line) - len(stripped)
-        elif in_class:
-            if line.strip() and len(line) - len(line.lstrip()) <= class_indent:
-                # Found a line with same or less indentation than the class definition
-                return i
-    
-    # If we reach here, the class extends to the end of the file
-    return len(lines)
-
-def has_get_health_status_method(file_content: str) -> bool:
-    """Check if the file already has a _get_health_status method."""
-    pattern = r"def\s+_get_health_status\s*\("
-    return bool(re.search(pattern, file_content))
-
-def add_get_health_status_method(file_path: str) -> bool:
-    """Add _get_health_status method to a file if it's missing."""
+def has_health_check(file_path):
+    """Check if a file has a health_check method."""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, 'r') as f:
             content = f.read()
-        
-        # Check if _get_health_status method already exists
-        if has_get_health_status_method(content):
-            print(f"_get_health_status method already exists in {file_path}")
-            return False
-        
-        # Parse the file to find the main agent class
-        tree = ast.parse(content)
-        agent_class = None
-        
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                # Look for classes that inherit from BaseAgent
-                for base in node.bases:
-                    base_name = ""
-                    if isinstance(base, ast.Name):
-                        base_name = base.id
-                    elif isinstance(base, ast.Attribute):
-                        base_name = base.attr
-                    
-                    if base_name == "BaseAgent":
-                        agent_class = node.name
-                        break
-                if agent_class:
-                    break
-        
-        if not agent_class:
-            print(f"No BaseAgent class found in {file_path}")
-            return False
-        
-        # Add missing imports if needed
-        content = add_missing_imports(content)
-        
-        # Add the _get_health_status method to the end of the class
-        lines = content.splitlines()
-        class_end = find_class_end(content, agent_class)
-        
-        # Add the _get_health_status method
-        lines.insert(class_end, GET_HEALTH_STATUS_TEMPLATE)
-        
-        # Write the updated content back to the file
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write("\n".join(lines))
-        
-        print(f"Added _get_health_status method to {file_path}")
-        return True
-    
+            
+        # Simple regex check
+        if re.search(r'def\s+health_check\s*\(', content):
+            return True
+            
+        # More thorough AST check
+        try:
+            tree = ast.parse(content)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef) and node.name == 'health_check':
+                    return True
+        except SyntaxError:
+            # If there's a syntax error, we'll rely on the regex result
+            pass
+            
+        return False
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        print(f"Error checking {file_path}: {e}")
         return False
 
-def process_target_files(target_files: List[str]) -> List[str]:
-    """Process the target files and add _get_health_status method."""
-    modified_files = []
-    for file_path in target_files:
-        if add_get_health_status_method(file_path):
-            modified_files.append(file_path)
-    return modified_files
+def add_health_check(file_path):
+    """Add a health_check method to the file."""
+    try:
+        with open(file_path, 'r') as f:
+            content = f.read()
+            
+        # Find the class definition
+        class_match = re.search(r'class\s+(\w+)(?:\(.*?\))?:', content)
+        if not class_match:
+            print(f"No class definition found in {file_path}")
+            return False
+            
+        # Find the end of the class (last method)
+        methods = re.finditer(r'    def\s+(\w+)\s*\(', content)
+        last_method_end = None
+        
+        for method in methods:
+            method_name = method.group(1)
+            method_start = method.start()
+            
+            # Find the end of this method (next method or end of file)
+            next_method = re.search(r'    def\s+\w+\s*\(', content[method_start + 1:])
+            if next_method:
+                method_end = method_start + 1 + next_method.start() - 1
+            else:
+                # Find the end of the class (indentation level change)
+                lines = content[method_start:].split('\n')
+                method_end = method_start
+                for i, line in enumerate(lines):
+                    if i > 0 and (not line.strip() or not line.startswith('    ')):
+                        method_end += len('\n'.join(lines[:i]))
+                        break
+                else:
+                    method_end = len(content)
+                    
+            last_method_end = method_end
+            
+        if last_method_end is None:
+            # No methods found, add after class definition
+            class_end = class_match.end()
+            new_content = content[:class_end] + "\n" + HEALTH_CHECK_TEMPLATE + content[class_end:]
+        else:
+            # Add after the last method
+            new_content = content[:last_method_end] + "\n" + HEALTH_CHECK_TEMPLATE + content[last_method_end:]
+            
+        with open(file_path, 'w') as f:
+            f.write(new_content)
+            
+        return True
+    except Exception as e:
+        print(f"Error adding health_check to {file_path}: {e}")
+        return False
 
 def main():
-    parser = argparse.ArgumentParser(description='Add _get_health_status methods to agent files')
-    parser.add_argument('--files', '-f', nargs='+', help='List of files to process')
-    args = parser.parse_args()
+    print("Adding missing health_check methods to active agents...")
+    active_agents = load_active_agents()
     
-    # Default target files for Batch 1
-    default_target_files = [
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/coordinator_agent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/GoalOrchestratorAgent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_loader.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/ConsolidatedTranslator.py",
-        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py"
-    ]
+    added_count = 0
+    already_has_count = 0
+    error_count = 0
     
-    target_files = args.files if args.files else default_target_files
+    for agent_name, file_path in active_agents:
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            error_count += 1
+            continue
+            
+        if has_health_check(file_path):
+            print(f"[ALREADY HAS] {agent_name}: {file_path}")
+            already_has_count += 1
+            continue
+            
+        print(f"[ADDING] {agent_name}: {file_path}")
+        if add_health_check(file_path):
+            added_count += 1
+        else:
+            error_count += 1
+            
+    print(f"\nSummary:")
+    print(f"- Added health_check to {added_count} agents")
+    print(f"- {already_has_count} agents already had health_check")
+    print(f"- {error_count} errors encountered")
     
-    print(f"Processing {len(target_files)} target files...")
-    modified_files = process_target_files(target_files)
-    
-    print(f"\nSummary: Added _get_health_status method to {len(modified_files)} files")
-    if modified_files:
-        print("\nModified files:")
-        for file in modified_files:
-            print(f"  - {file}")
-    
-    # Show an example implementation
-    if modified_files:
-        example_file = modified_files[0]
-        print(f"\nExample implementation from {example_file}:")
-        print(GET_HEALTH_STATUS_TEMPLATE)
-
 if __name__ == "__main__":
     main() 

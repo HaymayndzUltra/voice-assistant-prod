@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 VRAM Optimizer Agent
 Handles VRAM monitoring, optimization, and model management
@@ -120,6 +120,8 @@ class VRAMOptimizerAgent(BaseAgent):
         # Import service discovery client
         try:
             from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+    except ImportError as e:
+        print(f"Import error: {e}")
             from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
             
             # Start the ZMQ authenticator
@@ -286,9 +288,11 @@ class VRAMOptimizerAgent(BaseAgent):
                 # Try to reconnect to PC2 SystemDigitalTwin
                 try:
                     import sys
+    except ImportError as e:
+        print(f"Import error: {e}")
                     from pathlib import Path
                     sys.path.append(str(Path(__file__).parent.parent))
-                    from config.pc2_services_config import get_service_connection
+from main_pc_code.config.pc2_services_config import get_service_connection
                     
                     # Get connection string for SystemDigitalTwin
                     connection = get_service_connection("SystemDigitalTwin")
@@ -1085,6 +1089,8 @@ class VRAMOptimizerAgent(BaseAgent):
         if secure_zmq:
             try:
                 from main_pc_code.src.network.secure_zmq import configure_secure_server, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
                 start_auth()
                 socket = configure_secure_server(socket)
                 logger.info("Using secure ZMQ for request handling")
@@ -1099,6 +1105,8 @@ class VRAMOptimizerAgent(BaseAgent):
         # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
+    except ImportError as e:
+        print(f"Import error: {e}")
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

@@ -18,7 +18,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 # Import dynamic CLI parser
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

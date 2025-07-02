@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Advanced Context Management for Voice Assistant
 This module provides enhanced context management capabilities for the voice assistant,

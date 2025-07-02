@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Language and Translation Coordinator Agent
 Combines language analysis and translation functionality into a single, efficient agent.
@@ -22,12 +22,14 @@ from collections import defaultdict
 import langdetect
 from langdetect import DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Optional fastText language ID
 try:
     import fasttext
+    except ImportError as e:
+        print(f"Import error: {e}")
     FASTTEXT_AVAILABLE = True
 except ImportError:
     FASTTEXT_AVAILABLE = False

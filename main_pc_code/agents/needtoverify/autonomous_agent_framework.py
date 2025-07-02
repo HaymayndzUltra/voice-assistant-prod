@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Autonomous Agent Framework
@@ -35,11 +35,11 @@ import inspect
 import re
 import zlib
 import base64
-from agents.utils.data_optimizer import DataOptimizer
+from main_pc_code.agents.utils.data_optimizer import DataOptimizer
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from config.pc2_connections import get_connection_string
+from main_pc_code.config.pc2_connections import get_connection_string
 
 # Setup logging
 LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "autonomous_agent_framework.log")

@@ -4,7 +4,7 @@
 # PC2 Services (Agents)
 pc2_services:
   # Phase 1 - Integration Layer Agents
-  - { name: TieredResponder, script_path: agents/tiered_responder.py, host: 0.0.0.0, port: 7100, health_check_port: 8100, required: true, dependencies: [] }
+  - { name: TieredResponder, script_path: agents/tiered_responder.py, host: 0.0.0.0, port: 7100, health_check_port: 8131, required: true, dependencies: [] }
   - { name: AsyncProcessor, script_path: agents/async_processor.py, host: 0.0.0.0, port: 7101, health_check_port: 8101, required: true, dependencies: [] }
   - { name: CacheManager, script_path: agents/cache_manager.py, host: 0.0.0.0, port: 7102, health_check_port: 8102, required: true, dependencies: [] }
   - { name: PerformanceMonitor, script_path: agents/performance_monitor.py, host: 0.0.0.0, port: 7103, health_check_port: 8103, required: true, dependencies: [] }
@@ -14,7 +14,8 @@ pc2_services:
   - { name: UnifiedMemoryReasoningAgent, script_path: agents/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 7105, health_check_port: 8105, dependencies: [CacheManager], required: true }
   - { name: EpisodicMemoryAgent, script_path: agents/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 7106, health_check_port: 8106, dependencies: [UnifiedMemoryReasoningAgent], required: true }
   - { name: LearningAgent, script_path: agents/LearningAdjusterAgent.py, host: 0.0.0.0, port: 7107, health_check_port: 8107, dependencies: [EpisodicMemoryAgent], required: true }
-  - { name: TutoringAgent, script_path: agents/tutoring_agent.py, host: 0.0.0.0, port: 7108, health_check_port: 8108, required: true, dependencies: [] }
+  - { name: TutorAgent, script_path: agents/tutor_agent.py, host: 0.0.0.0, port: 7108, health_check_port: 8108, required: true, dependencies: [] }
+  - { name: TutoringServiceAgent, script_path: agents/tutoring_service_agent.py, host: 0.0.0.0, port: 7130, health_check_port: 8130, required: true, dependencies: [] }
 
   - { name: MemoryManager, script_path: agents/memory_manager.py, host: 0.0.0.0, port: 7110, health_check_port: 8110, dependencies: [UnifiedMemoryReasoningAgent], required: true }
   - { name: ContextManager, script_path: agents/context_manager.py, host: 0.0.0.0, port: 7111, health_check_port: 8111, dependencies: [MemoryManager], required: true }

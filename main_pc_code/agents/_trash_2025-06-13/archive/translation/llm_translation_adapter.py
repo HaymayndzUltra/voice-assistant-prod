@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 LLM Translation Adapter
 Connects to LLMs for high-quality translation using the dynamic runtime system
@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import LLM runtime tools
-from agents.llm_runtime_tools import ensure_model, get_model_status, get_model_url, get_model_api_type
+from main_pc_code.agents.llm_runtime_tools import ensure_model, get_model_status, get_model_url, get_model_api_type
 
 # Configure logging
 logging.basicConfig(
@@ -111,7 +111,7 @@ class LLMTranslationAdapter(BaseAgent):
             }
         
         # Build prompt based on source language
-        from agents.taglish_detector import detect_taglish
+from main_pc_code.agents.taglish_detector import detect_taglish
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[LLMTranslationAdapter] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

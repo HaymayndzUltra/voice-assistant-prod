@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Digital Twin Agent
 -----------------
@@ -670,6 +670,8 @@ Expert features for power users:
         """Get current memory usage in MB"""
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             process = psutil.Process(os.getpid())
             return process.memory_info().rss / 1024 / 1024
         except ImportError:

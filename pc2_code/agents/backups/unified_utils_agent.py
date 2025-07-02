@@ -19,7 +19,9 @@ if str(project_root) not in sys.path:
 
 # Import config parser utility
 try:
-    from agents.utils.config_parser import parse_agent_args
+from pc2_code.agents.utils.config_parser import parse_agent_args
+    except ImportError as e:
+        print(f"Import error: {e}")
     _agent_args 
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config

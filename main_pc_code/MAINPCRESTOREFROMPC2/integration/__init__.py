@@ -1,7 +1,7 @@
 # Integration layer for system components
-from .performance_monitor import PerformanceMonitor
-from .async_processor import AsyncProcessor, async_task
-from .cache_manager import CacheManager
-from .data_optimizer import optimize_zmq_message, optimize_references
+from main_pc_code.MAINPCRESTOREFROMPC2.integration.performance_monitor import PerformanceMonitor
+from main_pc_code.MAINPCRESTOREFROMPC2.integration.async_processor import AsyncProcessor, async_task
+from main_pc_code.MAINPCRESTOREFROMPC2.integration.cache_manager import CacheManager
+from main_pc_code.MAINPCRESTOREFROMPC2.integration.data_optimizer import optimize_zmq_message, optimize_references
 # Removed import for PredictiveLoader as it's been deprecated
-from .tiered_responder import TieredResponder
+from main_pc_code.MAINPCRESTOREFROMPC2.integration.tiered_responder import TieredResponder

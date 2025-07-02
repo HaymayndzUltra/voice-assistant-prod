@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Optimized Command Suggestion System
 
@@ -32,6 +32,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import clustering if available
 try:
     from core_agents.command_clustering import CommandClusteringEngine
+    except ImportError as e:
+        print(f"Import error: {e}")
     CLUSTERING_AVAILABLE = True
 except ImportError:
     CLUSTERING_AVAILABLE = False

@@ -5,7 +5,17 @@ import os
 import json
 import time
 import logging
-import sqlite3
+import sqlit
+
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
+e3
 from datetime import datetime
 from typing import Dict, Any, Optional
 
@@ -258,7 +268,7 @@ class AgentTrustScorer(BaseAgent):
                 
                 # Send response
                 self.socket.send_json(response)
-                logger.debug(f"Sent response: {response}")
+                logger.info(f"Sent response: {response}")
                 
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
@@ -314,69 +324,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config["ports"][service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket

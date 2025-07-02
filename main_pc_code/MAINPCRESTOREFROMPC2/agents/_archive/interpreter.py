@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import os
@@ -25,7 +25,9 @@ from collections import deque
 
 # Import the advanced context manager
 try:
-    from agents.context_manager import ContextManager, create_context_manager
+from main_pc_code.agents.context_manager import ContextManager, create_context_manager
+    except ImportError as e:
+        print(f"Import error: {e}")
     has_advanced_context = True
     logging.info("[Interpreter] Advanced context management loaded successfully")
 except ImportError as e:
@@ -532,7 +534,7 @@ class InterpreterAgent(BaseAgent):
     def process_text(self, text, speaker_data=None):
         """Process text input with enhanced context awareness and face recognition integration"""
         # Taglish detection integration
-        from agents.taglish_detector import detect_taglish
+from main_pc_code.agents.taglish_detector import detect_taglish
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logging.info(f"[Interpreter] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

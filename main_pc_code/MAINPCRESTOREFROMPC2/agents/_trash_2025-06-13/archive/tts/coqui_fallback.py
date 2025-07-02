@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 # Fallback TTS using Coqui TTS (XTTS or similar) for fast/neutral voice
 from TTS.api import TTS
 import numpy as np

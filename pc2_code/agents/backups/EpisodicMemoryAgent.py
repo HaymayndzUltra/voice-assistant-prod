@@ -11,6 +11,8 @@ import numpy as np
 # Try to import sklearn, but don't fail if not available
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
+    except ImportError as e:
+        print(f"Import error: {e}")
     from sklearn.metrics.pairwise import cosine_similarity
     SKLEARN_AVAILABLE 
 from main_pc_code.src.core.base_agent import BaseAgent

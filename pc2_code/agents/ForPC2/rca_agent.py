@@ -32,19 +32,21 @@ from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
 from main_pc_code.src.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
+from main_pc_code.utils.config_loader import load_config
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
+project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import config parser utility with fallback
 try:
-    from agents.utils.config_parser import parse_agent_args
+    from pc2_code.utils.config_loader import parse_agent_args
     # Config is loaded at the module level
-except ImportError:
-    class DummyArgs(BaseAgent):
+except ImportError as e:
+    print(f"Import error: {e}")
+    class DummyArgs:
         host = 'localhost'
     _agent_args = DummyArgs()
 
@@ -62,48 +64,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("RCA_Agent")
 
-# ZMQ ports
-RCA_AGENT_PORT = 7121  # Default, will be overridden by configuration
-RCA_AGENT_HEALTH_PORT = 8121  # Default health check port
+# Load PC2 specific configuration at the module level
+pc2_config = Config().get_config()
+
+# ZMQ ports - use values from pc2_config if available
+RCA_AGENT_PORT = pc2_config.get('rca_agent_port', 7121)
+RCA_AGENT_HEALTH_PORT = pc2_config.get('rca_agent_health_port', 8121)
 
 # Constants
-LOGS_DIR = "logs"
-SELF_HEALING_PORT = 5614  # Port for Self-Healing Agent on PC2
-SCAN_INTERVAL = 60  # Scan logs every 60 seconds
-ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
-ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
-PC2_IP = "192.168.100.17"  # PC2 IP address
+LOGS_DIR = pc2_config.get('logs_dir', "logs")
+SELF_HEALING_PORT = pc2_config.get('self_healing_port', 5614)
+SCAN_INTERVAL = pc2_config.get('scan_interval', 60)
+ERROR_WINDOW = pc2_config.get('error_window', 600)
+ERROR_THRESHOLD = pc2_config.get('error_threshold', 5)
+PC2_IP = pc2_config.get('pc2_ip', "192.168.100.17")
 
-# Load configuration at the module level
-config = Config().get_config()
+# Also load main PC configuration for cross-machine communication
+main_config = load_config()
 
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""
     def __init__(self, name: str, regex: str, severity: str = "medium", 
                  recommendation: str = "proactive_restart", description: str = ""):
-
-        # Record start time for uptime calculation
-
-        self.start_time = time.time()
-
-        
-
-        # Initialize agent state
-
-        self.running = True
-
-        self.request_count = 0
-
-        
-
-        # Set up connection to main PC if needed
-
-        self.main_pc_connections = {}
-
-        
-
-        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
         self.name = name
         self.regex = regex
         self.severity = severity  # low, medium, high, critical
@@ -118,28 +100,29 @@ class ErrorPattern:
 class ErrorOccurrence:
     """Class to track occurrences of an error pattern"""
     def __init__(self, agent_name: str, error_pattern: ErrorPattern, timestamp: float, line: str):
-         super().__init__(name="DummyArgs", port=None)
-self.agent_name = agent_name
+        self.agent_name = agent_name
         self.error_pattern = error_pattern
         self.timestamp = timestamp
         self.line = line
 
-class RCA_Agent:
+class RCA_Agent(BaseAgent):
     """Root Cause Analysis Agent for proactive system healing"""
     
     def __init__(self, logs_dir: str = LOGS_DIR, self_healing_port: int = SELF_HEALING_PORT, 
                  pc2_ip: str = PC2_IP, port: int = None, health_check_port: int = None):
         """Initialize the RCA Agent"""
+        # Call BaseAgent's __init__ first
+        super().__init__(name="RCA_Agent", port=port if port is not None else RCA_AGENT_PORT)
+        
         self.logs_dir = Path(logs_dir)
         self.self_healing_port = self_healing_port
         self.pc2_ip = pc2_ip
         
-        # Set up ports
-        self.main_port = port if port is not None else RCA_AGENT_PORT
+        # Set up ports - use self.port from BaseAgent for main_port
+        self.main_port = self.port
         self.health_port = health_check_port if health_check_port is not None else RCA_AGENT_HEALTH_PORT
         
-        # Create ZMQ context and server socket
-        self.context = zmq.Context()
+        # Create ZMQ context and server socket - use BaseAgent's context
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.main_port}")
         
@@ -240,16 +223,26 @@ class RCA_Agent:
         
         logger.info(f"RCA_Agent initialized on port {self.main_port}")
     
-    def _health_check(self) -> Dict[str, Any]:
-        """Perform health check."""
-        return {
-            'status': 'success',
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Return health status information. Overrides BaseAgent's _get_health_status."""
+        # Get base status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add RCA_Agent specific health info
+        base_status.update({
             'agent': 'RCA_Agent',
             'timestamp': datetime.datetime.now().isoformat(),
             'scan_thread_alive': self.scan_thread.is_alive() if hasattr(self, 'scan_thread') else False,
+            'error_patterns_count': len(self.error_patterns),
             'error_occurrences_count': len(self.error_occurrences),
-            'port': self.main_port
-        }
+            'logs_dir': str(self.logs_dir)
+        })
+        
+        return base_status
+
+    def _health_check(self) -> Dict[str, Any]:
+        """Legacy health check method for backward compatibility."""
+        return self._get_health_status()
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
@@ -373,11 +366,6 @@ class RCA_Agent:
     def _process_log_file(self, log_file: Path):
         """Process a single log file to find error patterns"""
         # Extract agent name from filename 
-from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()(remove .log extension)
         agent_name = log_file.stem
         
         try:
@@ -447,27 +435,6 @@ config = load_config()(remove .log extension)
                             self._send_recommendation(agent_name, pattern, count)
                             self.sent_recommendations[recommendation_key] = current_time
 
-
-    def _get_health_status(self) -> dict:
-
-        """Return health status information."""
-
-        base_status = super()._get_health_status()
-
-        # Add any additional health information specific to DummyArgs
-
-        base_status.update({
-
-            'service': 'DummyArgs',
-
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-            'additional_info': {}
-
-        })
-
-        return base_status
-    
     def _send_recommendation(self, agent_name: str, pattern: ErrorPattern, count: int):
         """Send a recommendation to the Self-Healing Agent"""
         logger.info(f"Sending recommendation for {agent_name}: {pattern.name} ({count} occurrences)")
@@ -507,17 +474,11 @@ config = load_config()(remove .log extension)
             self.client_socket = self.context.socket(zmq.REQ)
             self.client_socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
 
-
-
-
-
-
-
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = DummyArgs()
+        agent = RCA_Agent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
@@ -554,9 +515,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()

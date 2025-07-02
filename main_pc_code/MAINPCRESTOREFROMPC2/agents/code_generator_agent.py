@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Code Generator Agent
 - Generates code based on natural language descriptions
@@ -24,16 +24,18 @@ import threading
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
+from main_pc_code.config.system_config import config
 
 # Import the GGUF Model Manager
-from agents.gguf_model_manager import get_instance as get_gguf_manager
-from utils.config_parser import parse_agent_args
+from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Check for GGUF support
 try:
     import llama_cpp
+    except ImportError as e:
+        print(f"Import error: {e}")
     LLAMA_CPP_AVAILABLE = True
 except ImportError:
     LLAMA_CPP_AVAILABLE = False
@@ -100,7 +102,9 @@ class CodeGeneratorAgent(BaseAgent):
 
         # Initialize GGUF support if available
         try:
-            from agents.gguf_model_manager import GGUFModelManager
+from main_pc_code.agents.gguf_model_manager import GGUFModelManager
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.gguf_manager = GGUFModelManager()
             self.logger.info("GGUF Model Manager initialized")
         except Exception as e:

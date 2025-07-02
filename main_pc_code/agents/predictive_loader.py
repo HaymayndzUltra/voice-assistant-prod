@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Predictive Loader Agent
 
 This agent predicts which models will be needed in the near future
@@ -16,7 +25,7 @@ import argparse
 import threading
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent

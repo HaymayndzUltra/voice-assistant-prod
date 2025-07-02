@@ -1,4 +1,17 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 Enhanced Streaming Speech Recognition Module
 Combines features from both streaming_speech_recognition.py and streaming_whisper_asr.py
 Features:
@@ -32,11 +45,6 @@ from pathlib import Path
 from queue import Queue
 import psutil
 import traceback
-
-# Add project root to the Python path to allow for absolute imports
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
 
 # Import with canonical paths
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -102,6 +110,8 @@ class ResourceManager:
         mem = psutil.virtual_memory().percent
         try:
             import torch
+        except ImportError as e:
+            print(f"Import error: {e}")
             gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
         except Exception:
             gpu = 0
@@ -133,470 +143,6 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
         """Initialize the enhanced speech recognition system."""
         # Call BaseAgent's __init__ first with proper arguments
         super().__init__(name="StreamingSpeechRecognition")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
 
         """Initialize the enhanced speech recognition system."""
 
@@ -851,7 +397,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket, start_auth
+                    from main_pc_code.src.network.secure_zmq import secure_client_socket, start_auth
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     start_auth()
                     self.sub_socket = secure_client_socket(self.sub_socket)
                     logger.info("Applied secure ZMQ to subscriber socket")
@@ -868,7 +416,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket
+                    from main_pc_code.src.network.secure_zmq import secure_client_socket
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     self.wake_word_socket = secure_client_socket(self.wake_word_socket)
                     logger.info("Applied secure ZMQ to wake word subscriber socket")
                 except Exception as e:
@@ -884,7 +434,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket
+                    from main_pc_code.src.network.secure_zmq import secure_client_socket
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     self.vad_socket = secure_client_socket(self.vad_socket)
                     logger.info("Applied secure ZMQ to VAD subscriber socket")
                 except Exception as e:
@@ -900,7 +452,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+                    from main_pc_code.src.network.secure_zmq import secure_server_socket
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     self.pub_socket = secure_server_socket(self.pub_socket)
                     logger.info("Applied secure ZMQ to publisher socket")
                 except Exception as e:
@@ -915,7 +469,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+                    from main_pc_code.src.network.secure_zmq import secure_server_socket
+                except ImportError as e:
+                    print(f"Import error: {e}")
                     self.health_socket = secure_server_socket(self.health_socket)
                     logger.info("Applied secure ZMQ to health publisher socket")
                 except Exception as e:
@@ -960,7 +516,9 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     try:
-                        from src.network.secure_zmq import secure_client_socket
+                        from main_pc_code.src.network.secure_zmq import secure_client_socket
+                    except ImportError as e:
+                        print(f"Import error: {e}")
                         self.model_manager_socket = secure_client_socket(self.model_manager_socket)
                         logger.info("Applied secure ZMQ to model manager socket")
                     except Exception as e:

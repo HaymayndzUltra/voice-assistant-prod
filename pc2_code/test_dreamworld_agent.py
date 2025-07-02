@@ -14,7 +14,7 @@ os.environ['DREAM_WORLD_PORT'] = '7200'
 
 try:
     print("Testing DreamWorldAgent import...")
-    from agents.DreamWorldAgent import DreamWorldAgent
+from pc2_code.agents.DreamWorldAgent import DreamWorldAgent
     
     print("Creating DreamWorldAgent instance...")
     agent = DreamWorldAgent()

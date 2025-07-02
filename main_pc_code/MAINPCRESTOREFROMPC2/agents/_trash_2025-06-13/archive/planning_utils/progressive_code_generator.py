@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Progressive Code Generator
 - Breaks down complex tasks into smaller, testable components
@@ -20,8 +20,8 @@ import threading
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from config.system_config import config
-from agents.error_database import ErrorDatabase
+from main_pc_code.config.system_config import config
+from main_pc_code.agents.error_database import ErrorDatabase
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')

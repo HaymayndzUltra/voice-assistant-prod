@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Task Router Agent
 - Routes tasks to appropriate models and services
 - Implements Circuit Breaker pattern for resilient connections
@@ -23,13 +32,13 @@ import msgpack  # For efficient message serialization
 import heapq  # For priority queue
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Tuple
-from src.core.base_agent import BaseAgent
-from src.core.http_server import setup_health_check_server
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.src.core.http_server import setup_health_check_server
 from main_pc_code.utils.config_loader import load_config
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import pickle
 from main_pc_code.src.memory.zmq_encoding_utils import safe_encode_json, safe_decode_json
 import psutil

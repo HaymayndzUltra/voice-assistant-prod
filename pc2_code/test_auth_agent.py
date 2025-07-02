@@ -9,7 +9,7 @@ if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
 try:
-    from agents.ForPC2.AuthenticationAgent import AuthenticationAgent
+from pc2_code.agents.ForPC2.AuthenticationAgent import AuthenticationAgent
     print("SUCCESS: AuthenticationAgent imported successfully")
     
     # Test instantiation

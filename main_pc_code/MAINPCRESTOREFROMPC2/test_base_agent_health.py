@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append('.')
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import time

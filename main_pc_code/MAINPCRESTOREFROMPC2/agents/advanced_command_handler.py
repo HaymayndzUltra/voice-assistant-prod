@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Advanced Command Handler for Voice Assistant
 --------------------------------------------
@@ -23,8 +23,8 @@ import importlib.util
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 # Import existing command handler as base
-from agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
-from utils.config_parser import parse_agent_args
+from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Setup logging
@@ -735,7 +735,7 @@ if __name__ == "__main__":
         logging.exception("Failed to start AdvancedCommandHandler")
 
 # --- Parameter Extractor Integration (from parameter_extractor.py) ---
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import re
 import datetime
 from typing import Dict, List, Any, Optional, Tuple, Union

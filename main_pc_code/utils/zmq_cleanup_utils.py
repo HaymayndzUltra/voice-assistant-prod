@@ -222,7 +222,7 @@ def create_cleanup_decorator(logger_instance=None):
 
 # Example usage:
 """
-from utils.zmq_cleanup_utils import with_zmq_cleanup
+from main_pc_code.utils.zmq_cleanup_utils import with_zmq_cleanup
 
 @with_zmq_cleanup
 class MyAgent:

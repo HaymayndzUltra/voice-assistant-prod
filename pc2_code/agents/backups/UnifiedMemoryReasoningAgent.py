@@ -30,6 +30,8 @@ from main_pc_code.utils.env_loader import get_env
 # Import secure ZMQ utilities if available
 try:
     from main_pc_code.src.network.secure_zmq import configure_secure_server, configure_secure_client, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
     SECURE_ZMQ_AVAILABLE = True
 except ImportError:
     SECURE_ZMQ_AVAILABLE = False
@@ -1161,7 +1163,8 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
-from main_pc_code.src.core.base_agent import BaseAgentlogger.error
+from main_pc_code.src.core.base_agent import BaseAgent
+# Fixed import error
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level

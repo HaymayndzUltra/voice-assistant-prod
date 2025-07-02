@@ -106,7 +106,9 @@ def main():
     print("-" * 60)
     
     try:
-        from agents.mood_tracker_agent import MoodTrackerAgent
+from main_pc_code.agents.mood_tracker_agent import MoodTrackerAgent
+    except ImportError as e:
+        print(f"Import error: {e}")
         is_valid, response = test_agent_health(
             MoodTrackerAgent, 
             "MoodTrackerAgent", 
@@ -137,7 +139,9 @@ def main():
     print("-" * 60)
     
     try:
-        from agents.human_awareness_agent import HumanAwarenessAgent
+from main_pc_code.agents.human_awareness_agent import HumanAwarenessAgent
+    except ImportError as e:
+        print(f"Import error: {e}")
         is_valid, response = test_agent_health(
             HumanAwarenessAgent, 
             "HumanAwarenessAgent", 

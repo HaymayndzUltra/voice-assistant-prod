@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Improved Bark TTS Agent with better ZMQ responsiveness
 Designed to handle requests more efficiently and prevent timeouts

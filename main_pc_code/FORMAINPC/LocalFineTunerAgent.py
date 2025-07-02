@@ -1,4 +1,13 @@
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Local Fine Tuner Agent
 Purpose: Manages model fine-tuning and artifact management
 Features: Model tuning, artifact management, job queuing
@@ -42,7 +51,8 @@ config = load_config()
 try:
     from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     USE_COMMON_UTILS = False
 
 # ZMQ timeout settings

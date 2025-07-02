@@ -25,9 +25,9 @@ from collections import deque
 import noisereduce as nr
 from scipy import signal
 import librosa
-from src.core.http_server import setup_health_check_server
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import discover_service
+from main_pc_code.src.core.http_server import setup_health_check_server
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import discover_service
 _agent_args = parse_agent_args()
 
 # Configure logging
@@ -218,7 +218,9 @@ class FusedAudioPreprocessor:
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_client_socket, start_auth
+from main_pc_code.src.network.secure_zmq import secure_client_socket, start_auth
+    except ImportError as e:
+        print(f"Import error: {e}")
                     start_auth()
                     self.sub_socket = secure_client_socket(self.sub_socket)
                     logger.info("Applied secure ZMQ to subscriber socket")
@@ -235,7 +237,9 @@ class FusedAudioPreprocessor:
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+from main_pc_code.src.network.secure_zmq import secure_server_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.clean_audio_pub_socket = secure_server_socket(self.clean_audio_pub_socket)
                     logger.info("Applied secure ZMQ to clean audio publisher socket")
                 except Exception as e:
@@ -250,7 +254,9 @@ class FusedAudioPreprocessor:
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+from main_pc_code.src.network.secure_zmq import secure_server_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.vad_pub_socket = secure_server_socket(self.vad_pub_socket)
                     logger.info("Applied secure ZMQ to VAD publisher socket")
                 except Exception as e:
@@ -265,7 +271,9 @@ class FusedAudioPreprocessor:
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 try:
-                    from src.network.secure_zmq import secure_server_socket
+from main_pc_code.src.network.secure_zmq import secure_server_socket
+    except ImportError as e:
+        print(f"Import error: {e}")
                     self.health_socket = secure_server_socket(self.health_socket)
                     logger.info("Applied secure ZMQ to health publisher socket")
                 except Exception as e:
@@ -276,7 +284,9 @@ class FusedAudioPreprocessor:
             
             # Register with SystemDigitalTwin
             try:
-                from utils.service_discovery_client import register_service
+from main_pc_code.utils.service_discovery_client import register_service
+    except ImportError as e:
+        print(f"Import error: {e}")
                 register_service(
                     name="FusedAudioPreprocessor",
                     port=ZMQ_CLEAN_AUDIO_PUB_PORT,

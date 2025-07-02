@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Wake Word Detector
 ----------------
@@ -21,7 +21,7 @@ import time
 import pickle
 from datetime import datetime
 from typing import Optional, Dict, Any
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_parser import parse_agent_args
 _agent_args = parse_agent_args()
 
 # Configure logging

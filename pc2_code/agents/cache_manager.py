@@ -3,7 +3,17 @@ import yaml
 import sys
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timede
+
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
+lta
 from typing import Dict, Any, Optional, List, Union
 import hashlib
 import logging
@@ -34,8 +44,8 @@ LOG_DIR.mkdir(exist_ok=True)
 
 class ResourceMonitor(BaseAgent):
     def __init__(self):
-         super().__init__(name="ResourceMonitor", port=None)
-self.memory_threshold = 80  # percentage
+        super().__init__(name="ResourceMonitor", port=None)
+        self.memory_threshold = 80  # percentage
         self.last_check = time.time()
         self.stats_history = []
         
@@ -89,7 +99,7 @@ self.memory_threshold = 80  # percentage
 
             
 
-        port = network_config["ports"][service_name]
+        port = network_config.get("ports")[service_name]
 
         
 
@@ -245,9 +255,9 @@ class CacheManager(BaseAgent):
             pattern = f"cache:{cache_type}:*"
             keys = list(self.redis.scan_iter(match=pattern))
             
-            if len(keys) > config['max_size']:
+            if len(keys) > config.get('max_size'):
                 # Remove oldest entries
-                keys_to_remove = keys[:-config['max_size']]
+                keys_to_remove = keys[:-config.get('max_size')]
                 for key in keys_to_remove:
                     self.redis.delete(key)
                     self.cache_stats[cache_type]['evictions'] += 1
@@ -271,7 +281,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis.setex(
                 cache_key,
-                self.cache_config['nlu_results']['ttl'],
+                self.cache_config.get('nlu_results')['ttl'],
                 json.dumps(cache_data)
             )
             self.cache_stats['nlu_results']['size'] += 1
@@ -307,7 +317,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis.setex(
                 cache_key,
-                self.cache_config['model_decisions']['ttl'],
+                self.cache_config.get('model_decisions')['ttl'],
                 json.dumps(cache_data)
             )
             self.cache_stats['model_decisions']['size'] += 1
@@ -343,7 +353,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis.setex(
                 cache_key,
-                self.cache_config['context_summaries']['ttl'],
+                self.cache_config.get('context_summaries')['ttl'],
                 json.dumps(cache_data)
             )
             self.cache_stats['context_summaries']['size'] += 1
@@ -379,7 +389,7 @@ class CacheManager(BaseAgent):
         try:
             self.redis.setex(
                 cache_key,
-                self.cache_config['tool_responses']['ttl'],
+                self.cache_config.get('tool_responses')['ttl'],
                 json.dumps(cache_data)
             )
             self.cache_stats['tool_responses']['size'] += 1

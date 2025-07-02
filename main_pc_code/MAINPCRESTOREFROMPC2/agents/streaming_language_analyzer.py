@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Streaming Language Analyzer Module
 Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
@@ -17,10 +17,10 @@ from pathlib import Path
 import requests
 import socket
 from typing import Dict, Optional
-from utils.config_parser import parse_agent_args
-from utils.service_discovery_client import register_service, get_service_address
-from utils.env_loader import get_env
-from src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.env_loader import get_env
+from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse command line arguments
 _agent_args = parse_agent_args()
@@ -28,6 +28,8 @@ _agent_args = parse_agent_args()
 # Optional fastText language ID
 try:
     import fasttext
+    except ImportError as e:
+        print(f"Import error: {e}")
     FASTTEXT_AVAILABLE = True
 except ImportError:
     FASTTEXT_AVAILABLE = False

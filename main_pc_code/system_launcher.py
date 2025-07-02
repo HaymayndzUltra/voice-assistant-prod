@@ -37,6 +37,8 @@ if str(project_root) not in sys.path:
 # Import common utilities
 try:
     from common_utils.env_loader import get_env, get_ip
+    except ImportError as e:
+        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
 except ImportError:
     USE_COMMON_UTILS = False

@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Voice Controller
 --------------
@@ -11,8 +11,8 @@ Combines wake word detection and speech processing:
 import logging
 import time
 from typing import Optional, Callable, Dict, Any
-from .wake_word_detector import WakeWordDetector
-from .speech_processor import SpeechProcessor
+from main_pc_code.MAINPCRESTOREFROMPC2.agents.wake_word_detector import WakeWordDetector
+from main_pc_code.MAINPCRESTOREFROMPC2.agents.speech_processor import SpeechProcessor
 
 # Configure logging
 logging.basicConfig(

@@ -11,9 +11,10 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
-from config.system_config import get_service_host, get_service_port
+from pc2_code.config.system_config import get_service_host, get_service_port
 from main_pc_code.src.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
+import traceback
 
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -24,7 +25,8 @@ if str(project_root) not in sys.path:
 try:
     from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     USE_COMMON_UTILS = False
 
 # Configure logging
@@ -38,16 +40,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Load configuration at the module level
+try:
+    config = Config().get_config()
+except Exception as e:
+    logger.error(f"Failed to load config: {e}")
+    config = {}
+
 class LearningAdjusterAgent(BaseAgent):
     def __init__(self, port: int = None):
-         super().__init__(name="LearningAdjusterAgent", port=None)
-"""Initialize the LearningAdjusterAgent with ZMQ sockets."""
+        # Get port from config
+        actual_port = config.get('services', {}).get('learning_adjuster', {}).get('port', 5643) if port is None else port
+        
+        # Initialize BaseAgent with name and port
+        super().__init__(name="LearningAdjusterAgent", port=actual_port)
+        
+        """Initialize the LearningAdjusterAgent with ZMQ sockets."""
         self.context = zmq.Context()
         self.name = "LearningAdjusterAgent"
         
-        # Get host and port from environment or config
-        self.host = get_service_host('learning_adjuster', '0.0.0.0')
-        self.port = get_service_port('learning_adjuster', 5643) if port is None else port
+        # Get host and port from config
+        self.host = config.get('services', {}).get('learning_adjuster', {}).get('host', '0.0.0.0')
+        self.port = actual_port
         self.health_port = self.port + 1
         
         # Main REP socket for handling requests
@@ -74,8 +88,8 @@ class LearningAdjusterAgent(BaseAgent):
         # REQ socket for PerformanceLoggerAgent
         try:
             self.performance_socket = self.context.socket(zmq.REQ)
-            performance_host = get_service_host('performance_logger', 'localhost')
-            performance_port = get_service_port('performance_logger', 5632)
+            performance_host = config.get('services', {}).get('performance_logger', {}).get('host', 'localhost')
+            performance_port = config.get('services', {}).get('performance_logger', {}).get('port', 5632)
             self.performance_socket.connect(f"tcp://{performance_host}:{performance_port}")
             logger.info(f"Connected to PerformanceLoggerAgent at {performance_host}:{performance_port}")
         except zmq.error.ZMQError as e:
@@ -85,8 +99,8 @@ class LearningAdjusterAgent(BaseAgent):
         # REQ socket for AgentTrustScorer
         try:
             self.trust_socket = self.context.socket(zmq.REQ)
-            trust_host = get_service_host('agent_trust_scorer', 'localhost')
-            trust_port = get_service_port('agent_trust_scorer', 5628)
+            trust_host = config.get('services', {}).get('agent_trust_scorer', {}).get('host', 'localhost')
+            trust_port = config.get('services', {}).get('agent_trust_scorer', {}).get('port', 5628)
             self.trust_socket.connect(f"tcp://{trust_host}:{trust_port}")
             logger.info(f"Connected to AgentTrustScorer at {trust_host}:{trust_port}")
         except zmq.error.ZMQError as e:
@@ -96,8 +110,8 @@ class LearningAdjusterAgent(BaseAgent):
         # REQ socket for LearningAgent
         try:
             self.learning_socket = self.context.socket(zmq.REQ)
-            learning_host = get_service_host('learning_agent', 'localhost')
-            learning_port = get_service_port('learning_agent', 5633)
+            learning_host = config.get('services', {}).get('learning_agent', {}).get('host', 'localhost')
+            learning_port = config.get('services', {}).get('learning_agent', {}).get('port', 5633)
             self.learning_socket.connect(f"tcp://{learning_host}:{learning_port}")
             logger.info(f"Connected to LearningAgent at {learning_host}:{learning_port}")
         except zmq.error.ZMQError as e:
@@ -116,7 +130,7 @@ class LearningAdjusterAgent(BaseAgent):
         # Start health check thread
         self._start_health_check()
         
-        logger.info(f"LearningAdjusterAgent initialized on port {port}")
+        logger.info(f"LearningAdjusterAgent initialized on port {self.port}")
     
     def _start_health_check(self):
         """Start health check thread."""
@@ -150,27 +164,25 @@ class LearningAdjusterAgent(BaseAgent):
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
+        # Call parent implementation first
+        status = super()._get_health_status()
+        
+        # Add agent-specific health information
         uptime = time.time() - self.start_time
         analysis_thread_alive = self.analysis_thread.is_alive() if hasattr(self, 'analysis_thread') else False
         
-        return {
-            "agent": self.name,
-            "status": "ok",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": uptime,
+        status.update({
+            "agent_type": "learning_adjuster",
             "threads": {
                 "analysis_thread": analysis_thread_alive,
                 "health_thread": True  # This thread is running if we're here
             }
-        }
+        })
+        
+        return status
     
     def _get_performance_metrics(self, agent: str, hours: int = 24) -> List[Dict[str, Any]]:
-        """Get performance metrics for an agent from the 
-
-# Load configuration at the module level
-config = Config().get_config()
-from main_pc_code.utils.config_loader import load_config
-from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
+        """Get performance metrics for an agent from the last N hours."""
         try:
             end_time = datetime.now()
             start_time = end_time - timedelta(hours=hours)
@@ -183,11 +195,14 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
             })
             
             response = self.performance_socket.recv_json()
-            
-            if response['status'] == 'success':
-                return response['metrics']
+            if isinstance(response, dict) and response.get('status') == 'success':
+                metrics = response.get('metrics', [])
+                if isinstance(metrics, list):
+                    return [m for m in metrics if isinstance(m, dict)]
+                else:
+                    return []
             else:
-                logger.error(f"Failed to get performance metrics: {response.get('message', 'Unknown error')}")
+                logger.error(f"Failed to get performance metrics: {response.get('message', 'Unknown error') if isinstance(response, dict) else response}")
                 return []
                 
         except Exception as e:
@@ -208,11 +223,14 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
             })
             
             response = self.performance_socket.recv_json()
-            
-            if response['status'] == 'success':
-                return response['usage']
+            if isinstance(response, dict) and response.get('status') == 'success':
+                usage = response.get('usage', [])
+                if isinstance(usage, list):
+                    return [u for u in usage if isinstance(u, dict)]
+                else:
+                    return []
             else:
-                logger.error(f"Failed to get resource usage: {response.get('message', 'Unknown error')}")
+                logger.error(f"Failed to get resource usage: {response.get('message', 'Unknown error') if isinstance(response, dict) else response}")
                 return []
                 
         except Exception as e:
@@ -228,11 +246,14 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
             })
             
             response = self.trust_socket.recv_json()
-            
-            if response['status'] == 'success':
-                return response['scores']
+            if isinstance(response, dict) and response.get('status') == 'success':
+                scores = response.get('scores', {})
+                if isinstance(scores, dict):
+                    return {k: float(v) for k, v in scores.items() if isinstance(k, str) and isinstance(v, (int, float))}
+                else:
+                    return {}
             else:
-                logger.error(f"Failed to get trust scores: {response.get('message', 'Unknown error')}")
+                logger.error(f"Failed to get trust scores: {response.get('message', 'Unknown error') if isinstance(response, dict) else response}")
                 return {}
                 
         except Exception as e:
@@ -241,380 +262,266 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
     
     def _analyze_agent_performance(self, agent: str) -> Dict[str, Any]:
         """Analyze performance data for an agent and suggest adjustments."""
-        metrics = self._get_performance_metrics(agent)
-        usage = self._get_resource_usage(agent)
-        trust_scores = self._get_trust_scores(agent)
-        
-        if not metrics and not usage:
+        try:
+            # Get performance metrics
+            metrics = self._get_performance_metrics(agent, hours=24)
+            if not metrics:
+                logger.warning(f"No performance metrics found for agent {agent}")
+                return {
+                    'status': 'warning',
+                    'message': f'No performance metrics found for agent {agent}',
+                    'suggestions': []
+                }
+                
+            # Get resource usage
+            usage = self._get_resource_usage(agent, hours=24)
+            
+            # Get trust scores
+            trust_scores = self._get_trust_scores(agent)
+            
+            # Analyze data
+            suggestions = []
+            
+            # Check response times
+            response_times = [m.get('response_time', 0) for m in metrics if isinstance(m.get('response_time'), (int, float))]
+            if response_times:
+                avg_response_time = sum(response_times) / len(response_times)
+                if avg_response_time > 1.0:  # More than 1 second
+                    suggestions.append({
+                        'type': 'performance',
+                        'severity': 'medium',
+                        'message': f'High average response time: {avg_response_time:.2f}s',
+                        'adjustment': {
+                            'parameter': 'batch_size',
+                            'current_value': None,
+                            'suggested_value': 'decrease'
+                        }
+                    })
+                    
+            # Check error rates
+            error_count = sum(1 for m in metrics if m.get('status') == 'error')
+            if metrics and error_count / len(metrics) > 0.05:  # More than 5% errors
+                suggestions.append({
+                    'type': 'reliability',
+                    'severity': 'high',
+                    'message': f'High error rate: {error_count / len(metrics):.1%}',
+                    'adjustment': {
+                        'parameter': 'retry_count',
+                        'current_value': None,
+                        'suggested_value': 'increase'
+                    }
+                })
+                
+            # Check resource usage
+            if usage:
+                cpu_usage = [u.get('cpu_percent', 0) for u in usage if isinstance(u.get('cpu_percent'), (int, float))]
+                if cpu_usage and sum(cpu_usage) / len(cpu_usage) > 80:  # More than 80% CPU
+                    suggestions.append({
+                        'type': 'resource',
+                        'severity': 'high',
+                        'message': f'High CPU usage: {sum(cpu_usage) / len(cpu_usage):.1f}%',
+                        'adjustment': {
+                            'parameter': 'worker_threads',
+                            'current_value': None,
+                            'suggested_value': 'decrease'
+                        }
+                    })
+                    
+                memory_usage = [u.get('memory_percent', 0) for u in usage if isinstance(u.get('memory_percent'), (int, float))]
+                if memory_usage and sum(memory_usage) / len(memory_usage) > 80:  # More than 80% memory
+                    suggestions.append({
+                        'type': 'resource',
+                        'severity': 'high',
+                        'message': f'High memory usage: {sum(memory_usage) / len(memory_usage):.1f}%',
+                        'adjustment': {
+                            'parameter': 'cache_size',
+                            'current_value': None,
+                            'suggested_value': 'decrease'
+                        }
+                    })
+                    
+            # Check trust scores
+            if trust_scores:
+                avg_trust = sum(trust_scores.values()) / len(trust_scores)
+                if avg_trust < 0.7:  # Less than 70% trust
+                    suggestions.append({
+                        'type': 'trust',
+                        'severity': 'medium',
+                        'message': f'Low trust score: {avg_trust:.1%}',
+                        'adjustment': {
+                            'parameter': 'validation_level',
+                            'current_value': None,
+                            'suggested_value': 'increase'
+                        }
+                    })
+                    
+            return {
+                'status': 'success',
+                'message': f'Analysis complete for agent {agent}',
+                'suggestions': suggestions
+            }
+                
+        except Exception as e:
+            logger.error(f"Error analyzing agent performance: {str(e)}")
             return {
                 'status': 'error',
-                'message': 'No performance data available'
+                'message': f'Error analyzing agent performance: {str(e)}',
+                'suggestions': []
             }
-        
-        # Calculate average response time
-        avg_response_time = sum(m['duration'] for m in metrics) / len(metrics) if metrics else 0
-        
-        # Calculate average resource usage
-        avg_cpu = sum(u['cpu_percent'] for u in usage) / len(usage) if usage else 0
-        avg_memory = sum(u['memory_mb'] for u in usage) / len(usage) if usage else 0
-        
-        # Get trust scores
-        reliability = trust_scores.get('reliability', 0)
-        consistency = trust_scores.get('consistency', 0)
-        
-        # Analyze and suggest adjustments
-        suggestions = []
-        
-        # Response time analysis
-        if avg_response_time > 1.0:  # More than 1 second
-            suggestions.append({
-                'type': 'performance',
-                'parameter': 'batch_size',
-                'action': 'decrease',
-                'reason': f'High response time ({avg_response_time:.2f}s)'
-            })
-        
-        # Resource usage analysis
-        if avg_cpu > 80:  # More than 80% CPU
-            suggestions.append({
-                'type': 'resource',
-                'parameter': 'max_workers',
-                'action': 'decrease',
-                'reason': f'High CPU usage ({avg_cpu:.1f}%)'
-            })
-        
-        if avg_memory > 1000:  # More than 1GB
-            suggestions.append({
-                'type': 'resource',
-                'parameter': 'cache_size',
-                'action': 'decrease',
-                'reason': f'High memory usage ({avg_memory:.1f}MB)'
-            })
-        
-        # Trust score analysis
-        if reliability < 0.7 or consistency < 0.7:
-            suggestions.append({
-                'type': 'learning',
-                'parameter': 'training_frequency',
-                'action': 'increase',
-                'reason': f'Low trust scores (reliability: {reliability:.2f}, consistency: {consistency:.2f})'
-            })
-        
-        return {
-            'status': 'success',
-            'analysis': {
-                'avg_response_time': avg_response_time,
-                'avg_cpu_usage': avg_cpu,
-                'avg_memory_usage': avg_memory,
-                'reliability_score': reliability,
-                'consistency_score': consistency
-            },
-            'suggestions': suggestions
-        }
     
     def _analyze_performance(self):
-        """Periodically analyze performance data for all agents."""
+        """Background thread to analyze agent performance and suggest adjustments."""
+        logger.info("Analysis thread started")
+        
         while self.running:
             try:
-                # Get list of agents to analyze
-                self.learning_socket.send_json({
-                    'action': 'get_active_agents'
-                })
+                # Get list of agents to analyze from config
+                agents_to_analyze = config.get('learning_adjuster', {}).get('monitored_agents', [])
                 
-                response = self.learning_socket.recv_json()
-                
-                if response['status'] == 'success':
-                    agents = response['agents']
+                if not agents_to_analyze:
+                    logger.warning("No agents configured for monitoring")
+                    time.sleep(60)  # Check again in 1 minute
+                    continue
                     
-                    # Analyze each agent
-                    for agent in agents:
+                logger.info(f"Analyzing {len(agents_to_analyze)} agents")
+                
+                for agent in agents_to_analyze:
+                    try:
+                        # Analyze agent performance
                         analysis = self._analyze_agent_performance(agent)
                         
-                        if analysis['status'] == 'success' and analysis['suggestions']:
-                            # Apply suggested adjustments
+                        # Apply adjustments if needed
+                        if analysis.get('status') == 'success' and analysis.get('suggestions'):
                             self._apply_adjustments(agent, analysis['suggestions'])
-                
-                # Wait before next analysis
-                time.sleep(3600)  # Analyze every hour
+                            
+                    except Exception as e:
+                        logger.error(f"Error analyzing agent {agent}: {str(e)}")
+                        
+                # Sleep for a while before next analysis
+                sleep_time = config.get('learning_adjuster', {}).get('analysis_interval', 3600)  # Default: 1 hour
+                time.sleep(sleep_time)
                 
             except Exception as e:
-                logger.error(f"Error during performance analysis: {str(e)}")
-                time.sleep(300)  # Wait 5 minutes before retrying
+                logger.error(f"Error in analysis thread: {str(e)}")
+                time.sleep(60)  # Sleep for a minute and try again
     
     def _apply_adjustments(self, agent: str, suggestions: List[Dict[str, Any]]):
-        """Apply suggested adjustments to an agent's configuration."""
+        """Apply suggested adjustments to an agent."""
         try:
-            # Group suggestions by type
-            performance_adjustments = [s for s in suggestions if s['type'] == 'performance']
-            resource_adjustments = [s for s in suggestions if s['type'] == 'resource']
-            learning_adjustments = [s for s in suggestions if s['type'] == 'learning']
+            if not suggestions:
+                return
+                
+            logger.info(f"Applying {len(suggestions)} adjustments to agent {agent}")
             
-            # Apply performance adjustments
-            if performance_adjustments:
-                self.learning_socket.send_json({
-                    'action': 'update_performance_config',
-                    'agent': agent,
-                    'adjustments': performance_adjustments
-                })
-                _ = self.learning_socket.recv_json()
+            # Send adjustments to the learning agent
+            self.learning_socket.send_json({
+                'action': 'apply_adjustments',
+                'agent': agent,
+                'adjustments': suggestions
+            })
             
-            # Apply resource adjustments
-            if resource_adjustments:
-                self.learning_socket.send_json({
-                    'action': 'update_resource_config',
-                    'agent': agent,
-                    'adjustments': resource_adjustments
-                })
-                _ = self.learning_socket.recv_json()
+            # Wait for response
+            response = self.learning_socket.recv_json()
             
-            # Apply learning adjustments
-            if learning_adjustments:
-                self.learning_socket.send_json({
-                    'action': 'update_learning_config',
-                    'agent': agent,
-                    'adjustments': learning_adjustments
-                })
-                _ = self.learning_socket.recv_json()
-            
-            logger.info(f"Applied {len(suggestions)} adjustments to {agent}")
-            
+            if isinstance(response, dict) and response.get('status') == 'success':
+                logger.info(f"Successfully applied adjustments to agent {agent}")
+            else:
+                logger.error(f"Failed to apply adjustments to agent {agent}: {response.get('message', 'Unknown error') if isinstance(response, dict) else response}")
+                
         except Exception as e:
-            logger.error(f"Error applying adjustments: {str(e)}")
+            logger.error(f"Error applying adjustments to agent {agent}: {str(e)}")
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
-        action = request.get('action', '')
-        
-        if action == 'health_check' or action == 'ping':
-            return self._get_health_status()
-        
-        if action == 'analyze_agent':
-            agent = request.get('agent')
-            if not agent:
-                return {
-                    'status': 'error',
-                    'message': 'Missing agent parameter'
-                }
+        try:
+            action = request.get('action', '')
             
-            return self._analyze_agent_performance(agent)
-        
-        if action == 'apply_adjustments':
-            agent = request.get('agent')
-            suggestions = request.get('suggestions', [])
-            
-            if not agent:
-                return {
-                    'status': 'error',
-                    'message': 'Missing agent parameter'
-                }
-            
-            if not suggestions:
-                return {
-                    'status': 'error',
-                    'message': 'Missing suggestions parameter'
-                }
-            
-            return self._apply_adjustments(agent, suggestions)
-        
-        return {
-            'status': 'error',
-            'message': f'Unknown action: {action}'
-        }
+            if action in ['health_check', 'health', 'ping']:
+                return self._get_health_status()
+                
+            elif action == 'analyze_agent':
+                agent = request.get('agent')
+                if not agent:
+                    return {'status': 'error', 'message': 'Missing agent parameter'}
+                    
+                return self._analyze_agent_performance(agent)
+                
+            elif action == 'apply_adjustment':
+                agent = request.get('agent')
+                adjustment = request.get('adjustment')
+                
+                if not agent or not adjustment:
+                    return {'status': 'error', 'message': 'Missing required parameters'}
+                    
+                self._apply_adjustments(agent, [adjustment])
+                return {'status': 'success', 'message': f'Adjustment applied to agent {agent}'}
+                
+            else:
+                return {'status': 'error', 'message': f'Unknown action: {action}'}
+                
+        except Exception as e:
+            logger.error(f"Error handling request: {str(e)}")
+            return {'status': 'error', 'message': f'Error handling request: {str(e)}'}
     
     def run(self):
         """Main run loop."""
-        logger.info("LearningAdjusterAgent starting main loop")
+        logger.info(f"LearningAdjusterAgent starting on port {self.port}")
         
         try:
             while self.running:
                 try:
-                    # Use poller to avoid blocking indefinitely
-                    poller = zmq.Poller()
-                    poller.register(self.socket, zmq.POLLIN)
-                    
-                    # Poll with timeout to allow for clean shutdown
-                    if dict(poller.poll(1000)):
-                        # Receive and process message
-                        message_data = self.socket.recv()
+                    # Use non-blocking recv with timeout
+                    if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                        message = self.socket.recv_json()
+                        logger.debug(f"Received message: {message}")
                         
-                        try:
-                            request = json.loads(message_data)
-                            logger.debug(f"Received request: {request}")
-                            
-                            response = self.handle_request(request)
-                            
-                            self.socket.send_json(response)
-                            logger.debug(f"Sent response: {response}")
-                        except json.JSONDecodeError:
-                            logger.error(f"Received invalid JSON: {message_data}")
-                            self.socket.send_json({
-                                'status': 'error',
-                                'message': 'Invalid JSON request'
-                            })
-                        except Exception as e:
-                            logger.error(f"Error processing request: {str(e)}")
-                            self.socket.send_json({
-                                'status': 'error',
-                                'message': f'Error processing request: {str(e)}'
-                            })
+                        # Process message
+                        response = self.handle_request(message)
+                        
+                        # Send response
+                        self.socket.send_json(response)
+                        
                 except zmq.error.ZMQError as e:
-                    logger.error(f"ZMQ error in main loop: {str(e)}")
-                    time.sleep(1)
+                    logger.error(f"ZMQ error: {e}")
+                    time.sleep(1)  # Sleep to avoid tight loop on error
                 except Exception as e:
-                    logger.error(f"Error in main loop: {str(e)}")
+                    logger.error(f"Error processing message: {e}")
+                    # Try to send error response
+                    try:
+                        self.socket.send_json({
+                            'status': 'error',
+                            'message': f'Internal server error: {str(e)}'
+                        })
+                    except:
+                        pass
                     time.sleep(1)
+                    
         except KeyboardInterrupt:
-            logger.info("Received keyboard interrupt")
+            logger.info("LearningAdjusterAgent interrupted")
         finally:
-            self.stop()
-
-
-    def cleanup(self):
-
-        """Clean up resources before shutdown."""
-
-        logger.info("Cleaning up resources...")
-
-        # Add specific cleanup code here
-
-        super().cleanup()
+            self.cleanup()
     
-    def stop(self):
-        """Stop the agent and clean up resources."""
-        logger.info("Stopping LearningAdjusterAgent")
-        
-        # Set running flag to false to stop all threads
+    def cleanup(self):
+        """Clean up resources."""
+        logger.info("Cleaning up LearningAdjusterAgent resources")
         self.running = False
         
-        # Wait for threads to finish
+        # Join threads
         if hasattr(self, 'analysis_thread') and self.analysis_thread.is_alive():
             self.analysis_thread.join(timeout=2.0)
             
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
+        # Call parent cleanup
+        super().cleanup()
         
-        # Close sockets
-        self.socket.close()
-        self.health_socket.close()
-        self.performance_socket.close()
-        self.trust_socket.close()
-        self.learning_socket.close()
-        
-        # Terminate context
-        self.context.term()
-        
-        logger.info("LearningAdjusterAgent stopped")
-
-
-
-
-
-
+        logger.info("LearningAdjusterAgent cleanup complete")
+    
+    def stop(self):
+        """Stop the agent."""
+        self.running = False
 
 if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
-    agent = None
+    agent = LearningAdjusterAgent()
     try:
-        agent = LearningAdjusterAgent()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
-    except Exception as e:
-        import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
-            agent.cleanup()
-
-# Load network configuration
-def load_network_config():
-    """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network config: {e}")
-        # Default fallback values
-        return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
-            "secure_zmq": False
-        }
-
-# Load both configurations
-network_config = load_network_config()
-
-# Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config["ports"][service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket
+        agent.stop()

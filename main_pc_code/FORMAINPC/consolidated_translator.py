@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
 Consolidated Primary Translator
 - Combines best features from all translator implementations
 - Multi-level translation pipeline with fallbacks
@@ -11,7 +20,6 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path BEFORE any other imports
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import json
 import time
@@ -37,14 +45,14 @@ from main_pc_code.src.core.base_agent import BaseAgent
 # Import config parser for dynamic port support
 from main_pc_code.utils.config_loader import load_config
 config = load_config()
-from utils.service_discovery_client import discover_service
-from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
+from main_pc_code.utils.service_discovery_client import discover_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 
 # Import MemoryOrchestrator client functions
-from src.memory.zmq_encoding_utils import encode_for_zmq, decode_from_zmq
+from main_pc_code.src.memory.zmq_encoding_utils import encode_for_zmq, decode_from_zmq
 
 # Import data optimizer
-from utils.data_optimizer import optimize_zmq_message
+from main_pc_code.utils.data_optimizer import optimize_zmq_message
 
 # Configure logging
 LOG_LEVEL = 'INFO'
@@ -1026,7 +1034,7 @@ class SessionManager:
                             if socket:
                                 # Send health check request
                                 socket.send_json({"action": "health_check"})
-                                if socket.poll(timeout=self.config["health"]["timeout"] * 1000):
+                                if socket.poll(timeout=self.config.get("health")["timeout"] * 1000):
                                     response = socket.recv_json()
                                     self.health_status["engines"][engine] = response.get("status") == "ok"
                                 else:
@@ -1061,18 +1069,18 @@ class SessionManager:
                     logger.debug(f"Health status: {self.health_status}")
                 
                 # Wait for next check interval
-                time.sleep(self.config["health"]["check_interval"])
+                time.sleep(self.config.get("health")["check_interval"])
                 
             except Exception as e:
                 logger.error(f"Error in health monitoring: {e}")
                 self.health_status["status"] = "error"
-                time.sleep(self.config["health"]["check_interval"])
+                time.sleep(self.config.get("health")["check_interval"])
 
     def _refresh_service_info(self):
         """Refresh service information using service discovery"""
         try:
             # Get NLLB service info
-            nllb_service_name = self.config['engines']['nllb']['service_name']
+            nllb_service_name = self.config.get('engines')['nllb']['service_name']
             nllb_service_info = discover_service(nllb_service_name)
             if nllb_service_info and nllb_service_info.get("status") == "SUCCESS":
                 payload = nllb_service_info.get("payload", {})
@@ -1088,7 +1096,7 @@ class SessionManager:
                 logger.warning(f"Failed to discover NLLB service - continuing without NLLB")
             
             # Get Phi service info
-            phi_service_name = self.config['engines']['phi']['service_name']
+            phi_service_name = self.config.get('engines')['phi']['service_name']
             phi_service_info = discover_service(phi_service_name)
             if phi_service_info and phi_service_info.get("status") == "SUCCESS":
                 payload = phi_service_info.get("payload", {})
@@ -1104,7 +1112,7 @@ class SessionManager:
                 logger.warning(f"Failed to discover Phi service - continuing without Phi")
             
             # Get Google service info (via Remote Connector Agent)
-            google_service_name = self.config['engines']['google']['service_name']
+            google_service_name = self.config.get('engines')['google']['service_name']
             google_service_info = discover_service(google_service_name)
             if google_service_info and google_service_info.get("status") == "SUCCESS":
                 payload = google_service_info.get("payload", {})
@@ -1171,12 +1179,12 @@ class TranslationPipeline:
         self.config = config
         self.logger = logging.getLogger('ConsolidatedTranslator')
         self.cache = TranslationCache(
-            max_size=config['cache']['max_size'],
-            ttl=config['cache']['ttl']
+            max_size=config.get('cache')['max_size'],
+            ttl=config.get('cache')['ttl']
         )
         self.session_manager = SessionManager(
-            max_history=config['session']['max_history'],
-            timeout=config['session']['timeout']
+            max_history=config.get('session')['max_history'],
+            timeout=config.get('session')['timeout']
         )
         self.engine_status = {
             'dictionary': {'status': 'unknown', 'last_error': None},
@@ -1190,7 +1198,8 @@ class TranslationPipeline:
             from langdetect import detect, DetectorFactory
             DetectorFactory.seed = 0  # For consistent results
             self.has_langdetect = True
-        except ImportError:
+        except ImportError as e:
+            print(f"Import error: {e}")
             logger.warning("langdetect not available. Language detection will be limited.")
             self.has_langdetect = False
             
@@ -1201,7 +1210,8 @@ class TranslationPipeline:
             import nltk
             nltk.download('punkt', quiet=True)
             self.has_bleu = True
-        except ImportError:
+        except ImportError as e:
+            print(f"Import error: {e}")
             logger.warning("nltk not available. Quality metrics will be limited.")
             self.has_bleu = False
         
@@ -1313,12 +1323,12 @@ class TranslationPipeline:
         logger.info("Requesting translation models from ModelManagerAgent")
         
         # NLLB model
-        nllb_model_id = self.config['engines']['nllb'].get('model', 'facebook/nllb-200-distilled-600M')
+        nllb_model_id = self.config.get('engines')['nllb'].get('model', 'facebook/nllb-200-distilled-600M')
         if nllb_model_id:
             self._request_model_loading(nllb_model_id, priority="high")
         
         # Phi model (if configured)
-        phi_model_id = self.config['engines']['phi'].get('model')
+        phi_model_id = self.config.get('engines')['phi'].get('model')
         if phi_model_id:
             self._request_model_loading(phi_model_id, priority="medium")
         
@@ -1370,7 +1380,7 @@ class TranslationPipeline:
             
             # Send request with timeout
             socket.send_json(optimized_request)
-            if socket.poll(timeout=self.config['engines']['nllb']['timeout'] * 1000):
+            if socket.poll(timeout=self.config.get('engines')['nllb']['timeout'] * 1000):
                 response = socket.recv_json()
                 socket.close()
                 if response.get('status') == 'success':
@@ -1441,7 +1451,7 @@ class TranslationPipeline:
             
             # Send request with timeout
             socket.send_json(optimized_request)
-            if socket.poll(timeout=self.config['engines']['phi']['timeout'] * 1000):
+            if socket.poll(timeout=self.config.get('engines')['phi']['timeout'] * 1000):
                 response = socket.recv_json()
                 socket.close()
                 
@@ -1509,7 +1519,7 @@ class TranslationPipeline:
             
             # Send request with timeout
             socket.send_json(optimized_request)
-            if socket.poll(timeout=self.config['engines']['google']['timeout'] * 1000):
+            if socket.poll(timeout=self.config.get('engines')['google']['timeout'] * 1000):
                 response = socket.recv_json()
                 socket.close()
                 if response.get('status') == 'success':

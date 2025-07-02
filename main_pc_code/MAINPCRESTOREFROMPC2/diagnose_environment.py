@@ -33,12 +33,16 @@ def check_environment():
     # Check if we can import required modules
     try:
         import zmq
+    except ImportError as e:
+        print(f"Import error: {e}")
         logger.info(f"PyZMQ version: {zmq.__version__}")
     except ImportError as e:
         logger.error(f"Failed to import PyZMQ: {e}")
     
     try:
         import requests
+    except ImportError as e:
+        print(f"Import error: {e}")
         logger.info(f"Requests version: {requests.__version__}")
     except ImportError as e:
         logger.error(f"Failed to import requests: {e}")

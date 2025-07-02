@@ -7,8 +7,8 @@ import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 from pathlib import Path
-from agents.agent_utils import AgentBase
-from src.core.base_agent import BaseAgent
+from pc2_code.agents.agent_utils import AgentBase
+from pc2_code.src.core.base_agent import BaseAgent
 import signal
 
 class UnifiedMonitor(AgentBase):
@@ -41,6 +41,8 @@ class UnifiedMonitor(AgentBase):
         """Ensure all required dependencies are installed"""
         try:
             import psutil
+    except ImportError as e:
+        print(f"Import error: {e}")
             self.logger.info("All required dependencies are installed")
             self.psutil_available = True
         except ImportError:

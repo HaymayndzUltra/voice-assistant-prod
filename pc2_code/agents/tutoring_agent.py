@@ -20,7 +20,8 @@ if str(project_root) not in sys.path:
 try:
     from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     USE_COMMON_UTILS = False
 
 from pc2_code.agents.utils.config_loader import Config
@@ -30,8 +31,8 @@ logger = logging.getLogger("TutoringAgent")
 
 class AdvancedTutoringAgent(BaseAgent):
     def __init__(self, user_profile: Dict[str, Any], port: int = 5650):
-         super().__init__(name="AdvancedTutoringAgent", port=5650)
-self.user_profile = user_profile
+        super().__init__(name="AdvancedTutoringAgent", port=5650)
+        self.user_profile = user_profile
         self.lesson_history = []
         self.current_topic = user_profile.get('subject', 'General Knowledge')
         self.difficulty_level = user_profile.get('difficulty', 'medium')

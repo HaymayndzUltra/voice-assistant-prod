@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
  
     def _perform_initialization(self):
         """Initialize agent components."""

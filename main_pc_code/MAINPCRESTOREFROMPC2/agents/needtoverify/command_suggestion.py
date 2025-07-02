@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Command Suggestion Module
 Analyzes command usage patterns to suggest related commands
