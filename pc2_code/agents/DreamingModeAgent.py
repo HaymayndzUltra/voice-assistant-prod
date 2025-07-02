@@ -35,19 +35,11 @@ project_root = current_dir.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# Import config parser utility with fallback
-try:
-    from agents.utils.config_parser import parse_agent_args
-    _agent_args 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()= parse_agent_args()
-except ImportError:
-    class DummyArgs(BaseAgent):
-        host = 'localhost'
-    _agent_args = DummyArgs()
+config = Config().get_config()
 
 # Configure logging
 log_file_path = 'logs/dreaming_mode_agent.log'
@@ -69,72 +61,11 @@ DREAMING_MODE_PORT = 7127
 DREAMING_MODE_HEALTH_PORT = 7128
 DREAM_WORLD_PORT = 7104  # DreamWorldAgent port
 
-
-
-        def connect_to_main_pc_service(self, service_name: str):
-
-            """
-
-            Connect to a service on the main PC using the network configuration.
-
-            
-
-            Args:
-
-                service_name: Name of the service in the network config ports section
-
-            
-
-            Returns:
-
-                ZMQ socket connected to the service
-
-            """
-
-            if not hasattr(self, 'main_pc_connections'):
-
-                self.main_pc_connections = {}
-
-                
-
-            if service_name not in network_config.get("ports", {}):
-
-                logger.error(f"Service {service_name} not found in network configuration")
-
-                return None
-
-                
-
-            port = network_config["ports"][service_name]
-
-            
-
-            # Create a new socket for this connection
-
-            socket = self.context.socket(zmq.REQ)
-
-            
-
-            # Connect to the service
-
-            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-            
-
-            # Store the connection
-
-            self.main_pc_connections[service_name] = socket
-
-            
-
-            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-            return socket
-class DreamingModeAgent:
+class DreamingModeAgent(BaseAgent):
     """Dreaming Mode Agent for coordinating system dreaming cycles"""
     def __init__(self, port=None):
-         super().__init__(name="DummyArgs", port=None)
-self.main_port = port if port else DREAMING_MODE_PORT
+        super().__init__(name="DreamingModeAgent", port=port)
+        self.main_port = port if port else DREAMING_MODE_PORT
         self.health_port = self.main_port + 1
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
@@ -373,23 +304,15 @@ self.main_port = port if port else DREAMING_MODE_PORT
             self.context.term()
         logger.info("Cleanup complete")
 
-
     def _get_health_status(self) -> dict:
-
         """Return health status information."""
-
         base_status = super()._get_health_status()
 
-        # Add any additional health information specific to DummyArgs
-
+        # Add any additional health information specific to DreamingModeAgent
         base_status.update({
-
-            'service': 'DummyArgs',
-
+            'service': 'DreamingModeAgent',
             'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
             'additional_info': {}
-
         })
 
         return base_status
@@ -397,15 +320,11 @@ self.main_port = port if port else DREAMING_MODE_PORT
     def stop(self):
         self.running = False
 
-
-
-
-
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = DummyArgs()
+        agent = DreamingModeAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
@@ -442,9 +361,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()

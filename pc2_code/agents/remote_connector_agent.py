@@ -20,6 +20,8 @@ import traceback
 from pathlib import Path
 from datetime import datetime, timedelta
 import hashlib
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
@@ -657,12 +659,7 @@ class RemoteConnectorAgent(BaseAgent):
         return False
     
     def handle_model_status_updates(self):
-        """Handle model status updates from the 
-from main_pc_code.src.core.base_agent import BaseAgentmodel manager
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()"""
+        """Handle model status updates from the model manager"""
         while self.running:
             try:
                 # Use poll with timeout
@@ -873,6 +870,8 @@ config = load_config()"""
 
 
 
+
+
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
@@ -914,14 +913,8 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
 
-
+config = Config().get_config()
 
     def connect_to_main_pc_service(self, service_name: str):
 

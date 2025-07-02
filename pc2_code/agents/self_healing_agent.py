@@ -58,6 +58,8 @@ import subprocess
 import signal
 import shutil
 import uuid
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -352,7 +354,7 @@ from main_pc_code.src.core.base_agent import BaseAgentAgent.
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level
-config = load_config()"""
+config = Config().get_config()"""
         try:
             target_agent = recommendation.get('target_agent')
             recommendation_type = recommendation.get('recommendation')
@@ -555,6 +557,8 @@ def _get_health_status(self) -> dict:
     def stop(self):
         """Stop the agent gracefully."""
         self.running = False
+
+
 
 
 

@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import get_service_host, get_service_port
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Configure logging
 logging.basicConfig(
@@ -169,16 +171,16 @@ class MCTSNode:
         uncertainty_factor = 1.0 - self.uncertainty  # Lower uncertainty increases exploration
         return exploitation + exploration * uncertainty_factor
 
-class DreamWorldAgent:
-    def __init__(self):
-        """Initialize the Dream World Agent."""
+class DreamWorldAgent(BaseAgent):
+    def __init__(self, port: int = 7104):
+        super().__init__(name="DreamWorldAgent", port=port)
+        self.start_time = time.time()
         self.context = zmq.Context()
         self.initialized = False
         self.initialization_error = None
         
         # Get host and port from environment or config
         self.host = get_service_host('dream_world', '0.0.0.0')
-        self.port = get_service_port('dream_world', 7104)  # Updated to expected port
         self.health_port = self.port + 1  # Health check port
         
         # Setup sockets first for immediate health check availability
@@ -587,12 +589,7 @@ class DreamWorldAgent:
         return child
     
     def _simulate(self, node: MCTSNode, scenario: str, max_depth: int = 10) -> Tuple[float, float]:
-        """Simulate a random playout from a 
-from main_pc_code.src.core.base_agent import BaseAgentnode with uncertainty tracking.
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()"""
+        """Simulate a random playout from a node with uncertainty tracking."""
         state = node.state.copy()
         depth = 0
         total_value = 0.0
@@ -967,88 +964,53 @@ config = load_config()"""
             self.socket.close()
             self.context.term()
 
-
-    def _get_health_status(self) -> dict:
-
-        """Return health status information."""
-
+    def _get_health_status(self):
         base_status = super()._get_health_status()
-
-        # Add any additional health information specific to ScenarioType
-
         base_status.update({
-
-            'service': 'ScenarioType',
-
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-            'additional_info': {}
-
+            'service': 'DreamWorldAgent',
+            'uptime': time.time() - self.start_time
         })
-
         return base_status
 
     def run(self):
-
         """Run the agent's main loop."""
-
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
 
         # Main loop implementation
-
         try:
-
             while True:
-
                 # Your main processing logic here
-
                 pass
-
         except KeyboardInterrupt:
-
             logger.info("Keyboard interrupt received, shutting down...")
-
         except Exception as e:
-
             logger.error(f"Error in main loop: {e}")
-
             raise
 
-
-
     def cleanup(self):
-
         """Clean up resources before shutdown."""
-
         logger.info("Cleaning up resources...")
-
         # Add specific cleanup code here
-
         super().cleanup()
             
     def process_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
         # Process message and return response
         return {"status": "success", "message": "Dream world updated"}
 
-
-
-
-
 if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = ScenarioType()
+        agent = DreamWorldAgent()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
 # Load network configuration
@@ -1075,9 +1037,5 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+
+config = Config().get_config()

@@ -1,0 +1,36 @@
+PC2 Cross-Machine Compliance Report
+Generated: 2025-07-02 14:49:57
+
+Total agents: 28
+Successfully fixed: 27
+Failed: 1
+
+Agent details:
+- TieredResponder: Fixed
+- AsyncProcessor: Fixed
+- CacheManager: Fixed
+- PerformanceMonitor: Fixed
+- DreamWorldAgent: Fixed
+- UnifiedMemoryReasoningAgent: Fixed
+- EpisodicMemoryAgent: Fixed
+- LearningAgent: Fixed
+- TutoringAgent: Fixed
+- MemoryManager: Fixed
+- ContextManager: Fixed
+- ExperienceTracker: Fixed
+- ResourceManager: Fixed
+- HealthMonitor: Fixed
+- TaskScheduler: Fixed
+- AuthenticationAgent: Fixed
+- UnifiedErrorAgent: Fixed
+- UnifiedUtilsAgent: Fixed
+- ProactiveContextMonitor: Fixed
+- RCAAgent: Fixed
+- AgentTrustScorer: Fixed
+- FileSystemAssistantAgent: Fixed
+- RemoteConnectorAgent: Fixed
+- SelfHealingAgent: Fixed
+- UnifiedWebAgent: Fixed
+- DreamingModeAgent: Fixed
+- PerformanceLoggerAgent: Fixed
+- AdvancedRouter: Fixed

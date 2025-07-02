@@ -159,11 +159,12 @@ self.name = "FileSystemAssistantAgent"
             
             # Extract action and path from query
             
-from main_pc_code.src.core.base_agent import BaseAgentaction 
-from main_pc_code.utils.config_loader import load_config
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()= query.get("action")
+config = Config().get_config()
+action = query.get("action")
             path = query.get("path")
             
             logger.info(f"[FileSystemAssistant] Received request: {action} on {path}")
@@ -392,6 +393,8 @@ config = load_config()= query.get("action")
         """Stop the agent gracefully"""
         logger.info("[FileSystemAssistant] Stopping agent")
         self.running = False
+
+
 
 
 

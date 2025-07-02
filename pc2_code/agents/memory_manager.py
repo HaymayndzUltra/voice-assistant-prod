@@ -15,10 +15,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()# Configure logging
+config = Config().get_config()
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -527,6 +529,8 @@ class MemoryManager(BaseAgent):
             self.umra_socket.close()
         self.context.term()
         logger.info("MemoryManager shutdown complete")
+
+
 
 
 

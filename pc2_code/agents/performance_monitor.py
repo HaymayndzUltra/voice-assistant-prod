@@ -16,10 +16,10 @@ import numpy as np
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()# Constants
+config = Config().get_config()# Constants
 METRICS_PORT = 5619
 HEALTH_PORT = 5620
 BROADCAST_INTERVAL = 5  # seconds
@@ -132,8 +132,10 @@ self.cpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
 
         return socket
-class PerformanceMonitor:
-    def __init__(self):
+class PerformanceMonitor(BaseAgent):
+    def __init__(self, port: int = 7103):
+        super().__init__(name="PerformanceMonitor", port=port)
+        self.start_time = time.time()
         self._setup_logging()
         self._setup_zmq()
         self._setup_metrics()
@@ -273,7 +275,7 @@ class PerformanceMonitor:
                 
             services_health[service] = service_health
             
-        return {
+        base_status = {
             'timestamp': datetime.now().isoformat(),
             'status': 'ok' if resources_ok and all(s['status'] == 'ok' for s in services_health.values()) else 'degraded',
             'resources': {
@@ -282,6 +284,11 @@ class PerformanceMonitor:
             },
             'services': services_health
         }
+        base_status.update({
+            'service': 'PerformanceMonitor',
+            'uptime': time.time() - self.start_time
+        })
+        return base_status
         
     def log_metric(self, service: str, metric_type: str, value: Any) -> None:
         """Log a performance metric"""
@@ -433,21 +440,22 @@ def main():
 
 
 
+
+
 if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = ResourceMonitor()
+        agent = PerformanceMonitor()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
 # Load network configuration
@@ -474,9 +482,3 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()

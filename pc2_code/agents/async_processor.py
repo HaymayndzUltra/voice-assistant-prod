@@ -18,10 +18,12 @@ import json
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()# Constants
+config = Config().get_config()
+
+# Constants
 PUSH_PORT = 7102  # For fire-and-forget tasks
 PULL_PORT = 7101  # For async task processing and health check
 HEALTH_PORT = 7103  # For health monitoring
@@ -42,6 +44,42 @@ class ResourceManager(BaseAgent):
     def __init__(self, port: int = None):
 
         super().__init__(name="ResourceManager", port=port)
+
+
+        self.context = zmq.Context()
+
+
+        self.resource_manager = ResourceManager()
+
+
+        self.task_queue = TaskQueue()
+
+
+        self._setup_sockets()
+
+
+        self._setup_logging()
+
+
+        self._setup_health_monitoring()
+
+
+        self.context = zmq.Context()
+
+
+        self.resource_manager = ResourceManager()
+
+
+        self.task_queue = TaskQueue()
+
+
+        self._setup_sockets()
+
+
+        self._setup_logging()
+
+
+        self._setup_health_monitoring()
 
 
         self.context = zmq.Context()
@@ -230,8 +268,10 @@ class TaskQueue:
             'task_stats': dict(self.task_stats)
         }
 
-class AsyncProcessor:
-    def __init__(self):
+class AsyncProcessor(BaseAgent):
+    def __init__(self, port: int = 7101):
+        super().__init__(name="AsyncProcessor", port=port)
+        self.start_time = time.time()
         self.context = zmq.Context()
         self.resource_manager = ResourceManager()
         self.task_queue = TaskQueue()
@@ -390,6 +430,20 @@ class AsyncProcessor:
             self.push_socket.close()
             self.health_socket.close()
 
+    def _get_health_status(self):
+        base_status = super()._get_health_status()
+        base_status.update({
+            'service': 'AsyncProcessor',
+            'uptime': time.time() - self.start_time
+        })
+        return base_status
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info("Cleaning up resources...")
+        # Add specific cleanup code here
+        super().cleanup()
+
 def async_task(task_type: str, priority: str = 'medium'):
     """
     Decorator to make a function run asynchronously
@@ -420,76 +474,20 @@ def async_task(task_type: str, priority: str = 'medium'):
     
     return decorator
 
-
-
-    def _get_health_status(self) -> dict:
-
-
-        """Return health status information."""
-
-
-        base_status = super()._get_health_status()
-
-
-        # Add any additional health information specific to ResourceManager
-
-
-        base_status.update({
-
-
-            'service': 'ResourceManager',
-
-
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-
-            'additional_info': {}
-
-
-        })
-
-
-        return base_status
-
-
-
-    def cleanup(self):
-
-
-        """Clean up resources before shutdown."""
-
-
-        logger.info("Cleaning up resources...")
-
-
-        # Add specific cleanup code here
-
-
-        super().cleanup()
-
 def main():
-    processor = AsyncProcessor()
-    processor.run()
-
-
-
-
-
-if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = ResourceManager()
+        agent = AsyncProcessor()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
 # Load network configuration
@@ -516,7 +514,18 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+
+if __name__ == "__main__":
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = AsyncProcessor()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):

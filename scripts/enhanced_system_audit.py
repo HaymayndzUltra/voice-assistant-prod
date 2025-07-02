@@ -7,6 +7,8 @@ Enhanced System Audit Script (v4 - UPDATED FOR CONFIG_LOADER)
 - Prints a markdown table report
 """
 import os
+import re
+import sys
 import yaml
 import ast
 from pathlib import Path
@@ -19,14 +21,24 @@ CODEBASE_ROOT = PROJECT_ROOT / 'main_pc_code'
 PC2_CODEBASE_ROOT = PROJECT_ROOT / 'pc2_code'
 PC2_AGENTS_ROOT = PROJECT_ROOT / 'pc2_code' / 'agents'
 
-# === TARGETED AGENTS ===
-# Comment out or remove this as we'll be using all agents from pc2_code/agents
-# TARGETED_AGENTS = [
-#     {'name': 'FusedAudioPreprocessor', 'script_path': 'src/audio/fused_audio_preprocessor.py'},
-#     {'name': 'WakeWordDetector', 'script_path': 'agents/wake_word_detector.py'},
-#     {'name': 'VisionCaptureAgent', 'script_path': 'src/vision/vision_capture_agent.py'},
-#     {'name': 'FaceRecognitionAgent', 'script_path': 'agents/face_recognition_agent.py'}
-# ]
+# === AGENT GATHERING ===
+def gather_targeted_agents():
+    """Load agents from startup_config.yaml"""
+    try:
+        with open(PC2_CONFIG_PATH, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        agents = []
+        for agent_config in config.get('pc2_services', []):
+            agents.append({
+                'name': agent_config.get('name', ''),
+                'script_path': f"pc2_code/{agent_config.get('script_path', '')}"
+            })
+        
+        return agents
+    except Exception as e:
+        print(f"Error loading agents from config: {e}")
+        return []
 
 # === COMPLIANCE CHECKS (UPDATED FOR CONFIG_LOADER) ===
 def check_base_agent_inheritance(source_code):
@@ -142,98 +154,62 @@ def check_main_block(source_code):
     except Exception:
         return False
 
-# === AGENT GATHERING ===
-def gather_agents_from_config(config_path):
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-    agents = []
-    
-    # Process all sections in the config file
-    for section_name, section_data in config.items():
-        if isinstance(section_data, list):
-            for agent in section_data:
-                if isinstance(agent, dict) and 'script_path' in agent:
-                    agent_name = agent.get('name', os.path.basename(agent['script_path']).split('.')[0])
-                    agents.append({
-                        'name': agent_name,
-                        'script_path': agent['script_path']
-                    })
-    
-    return agents
-
-def gather_pc2_agents_from_config():
-    """Gather agents from PC2 startup_config.yaml."""
-    try:
-        return gather_agents_from_config(PC2_CONFIG_PATH)
-    except Exception as e:
-        print(f"Error loading PC2 config: {e}")
-        return []
-
 # === MAIN AUDIT ===
 def main():
-    # Use PC2 agents from startup_config.yaml
-    agents = gather_pc2_agents_from_config()
-    print(f"Auditing {len(agents)} agents from pc2_code/config/startup_config.yaml.")
+    """Main function to run the audit."""
+    targeted_agents = gather_targeted_agents()
+    print(f"Auditing {len(targeted_agents)} agents from startup_config.yaml.")
     
-    results = []
-
-    for agent in agents:
-        agent_name = agent['name']
-        rel_path = agent['script_path']
+    # Print table header
+    print("| Agent Name | File Path | Compliance Status | Issues Found |")
+    print("|------------|-----------|-------------------|--------------|")
+    
+    for agent in targeted_agents:
+        name = agent['name']
+        script_path = agent['script_path']
         
-        # Set the correct root directory for PC2 agents
-        abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
+        compliance_status, issues = check_compliance(script_path)
         
-        issues = []
-        if not abs_path.exists():
-            status = '❌ NON-COMPLIANT'
-            issues.append('File not found')
-        else:
-            try:
-                with open(abs_path, 'r', encoding='utf-8') as f:
-                    code = f.read()
-                
-                # Run all checks
-                if not check_base_agent_inheritance(code): issues.append('C1/C2: No BaseAgent inheritance')
-                if not check_super_init_call(code): issues.append('C3: super().__init__ not called')
-                if not check_get_health_status_implemented(code): issues.append('C4: _get_health_status missing')
-                if not check_config_loader_usage(code): issues.append('C6/C7: Config loader not used correctly')
-                if not check_main_block(code): issues.append('C10: __main__ block not standardized')
+        issues_str = ", ".join(issues) if issues else "None"
+        print(f"| {name} | {script_path} | {compliance_status} | {issues_str} |")
 
-                if not issues:
-                    status = '✅ FULLY COMPLIANT'
-                elif len(issues) <= 2:
-                    status = '🟠 PARTIALLY COMPLIANT'
-                else:
-                    status = '❌ NON-COMPLIANT'
-
-            except Exception as e:
-                status = '❌ NON-COMPLIANT'
-                issues.append(f'File read/parse error: {e}')
-
-        results.append({
-            'name': agent_name,
-            'file': rel_path,
-            'status': status,
-            'issues': issues
-        })
-
-    # Print markdown table
-    print('| Agent Name | File Path | Compliance Status | Issues Found |')
-    print('|------------|-----------|-------------------|--------------|')
-    for r in results:
-        issues_str = ', '.join(r['issues']) if r['issues'] else 'None'
-        print(f"| {r['name']} | {r['file']} | {r['status']} | {issues_str} |")
+def check_compliance(file_path):
+    """Check agent file for compliance with standards."""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        return False, [f"Error reading file: {e}"]
     
-    # Print summary
-    compliant = sum(1 for r in results if r['status'] == '✅ FULLY COMPLIANT')
-    partially = sum(1 for r in results if r['status'] == '🟠 PARTIALLY COMPLIANT')
-    non_compliant = sum(1 for r in results if r['status'] == '❌ NON-COMPLIANT')
+    issues = []
     
-    print(f"\nSummary: {len(results)} agents audited")
-    print(f"✅ Fully Compliant: {compliant} ({compliant/len(results)*100:.1f}%)")
-    print(f"🟠 Partially Compliant: {partially} ({partially/len(results)*100:.1f}%)")
-    print(f"❌ Non-Compliant: {non_compliant} ({non_compliant/len(results)*100:.1f}%)")
+    # C1/C2: Check for BaseAgent inheritance
+    if not re.search(r'class\s+\w+\s*\(\s*BaseAgent\s*\)', content):
+        issues.append("C1/C2: No BaseAgent inheritance")
+    
+    # C3: Check for super().__init__ call
+    if not re.search(r'super\(\)\.__init__', content):
+        issues.append("C3: super().__init__ not called")
+    
+    # C4: Check for _get_health_status method
+    if not re.search(r'def\s+_get_health_status\s*\(', content):
+        issues.append("C4: _get_health_status missing")
+    
+    # C6/C7: Check for config loader usage
+    if not (re.search(r'from\s+pc2_code\.agents\.utils\.config_loader\s+import\s+Config', content) and 
+            re.search(r'config\s*=\s*Config\(\)\.get_config\(\)', content)):
+        issues.append("C6/C7: Config loader not used correctly")
+    
+    # C10: Check for standardized __main__ block
+    if not re.search(r'if\s+__name__\s*==\s*[\'"]__main__[\'"]\s*:', content):
+        issues.append("C10: __main__ block not standardized")
+    
+    is_compliant = len(issues) == 0
+    is_partially_compliant = 0 < len(issues) <= 2
+    
+    compliance_status = "✅ COMPLIANT" if is_compliant else "🟠 PARTIALLY COMPLIANT" if is_partially_compliant else "❌ NON-COMPLIANT"
+    
+    return compliance_status, issues
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main() 

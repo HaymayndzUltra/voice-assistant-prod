@@ -10,9 +10,26 @@ input, allowing agents to determine the most appropriate model or processing pat
 
 import re
 import logging
+import zmq
+import time
+from datetime import datetime
 # TODO: web_automation.py not found. Feature disabled.
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory
 from typing import Dict, Any, List, Set, Tuple, Optional, Union
+import sys
+from pathlib import Path
+
+# Add the project root to Python path
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
+
+# Load configuration at the module level
+config = Config().get_config()
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -72,11 +89,7 @@ CODE_PATTERNS = [
     r"import\s+[\w\.,\s]+",      # Import statements
     r"from\s+[\w\.]+\s+import",  # From import statements
     
-from main_pc_code.src.core.base_agent import BaseAgentr
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()"function\s+\w+\s*\(.*?\)", # JavaScript function
+"function\s+\w+\s*\(.*?\)", # JavaScript function
     r"var\s+\w+\s*=|let\s+\w+\s*=|const\s+\w+\s*=", # Variable declarations
     r"<\w+[^>]*>.*?</\w+>",      # HTML tags
     r"\[\s*[\w\s,\"\']*\s*\]",   # Array notation
@@ -209,23 +222,97 @@ def map_task_to_model_capabilities(task_type: str) -> List[str]:
     
     return capability_mapping.get(task_type, ["text-generation"])
 
+class AdvancedRouterAgent(BaseAgent):
+    """Advanced Router Agent for task classification and routing"""
+    
+    def __init__(self, port=5555):
+        super().__init__(name="AdvancedRouterAgent", port=port)
+        self.start_time = time.time()
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind(f"tcp://*:{self.port}")
+        self.health_socket = self.context.socket(zmq.REP)
+        self.health_socket.bind(f"tcp://*:{self.port + 1}")
+        self.running = True
+        logger.info(f"AdvancedRouterAgent initialized on port {self.port}")
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Return health status information."""
+        return {
+            'status': 'success',
+            'agent': 'AdvancedRouterAgent',
+            'timestamp': datetime.now().isoformat(),
+            'uptime': time.time() - self.start_time
+        }
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming routing requests."""
+        try:
+            if 'prompt' not in request:
+                return {"status": "error", "message": "Missing 'prompt' field in request"}
+            
+            prompt = request['prompt']
+            task_type = detect_task_type(prompt)
+            capabilities = map_task_to_model_capabilities(task_type)
+            
+            return {
+                "status": "success",
+                "task_type": task_type,
+                "capabilities": capabilities
+            }
+        except Exception as e:
+            logger.error(f"Error handling request: {e}")
+            return {"status": "error", "message": str(e)}
+    
+    def run(self):
+        """Run the agent's main loop."""
+        logger.info("AdvancedRouterAgent starting...")
+        
+        while self.running:
+            try:
+                # Handle main socket requests
+                if self.socket.poll(100, zmq.POLLIN):
+                    request = self.socket.recv_json()
+                    logger.info(f"Received request: {request}")
+                    response = self.handle_request(request)
+                    self.socket.send_json(response)
+                
+                # Handle health check requests
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    _ = self.health_socket.recv()
+                    health_data = self._get_health_status()
+                    self.health_socket.send_json(health_data)
+                
+                time.sleep(0.01)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in main loop: {e}")
+                time.sleep(1)  # Sleep longer on error
+    
+    def cleanup(self):
+        """Clean up resources."""
+        logger.info("Cleaning up resources...")
+        self.running = False
+        if hasattr(self, 'socket') and self.socket:
+            self.socket.close()
+        if hasattr(self, 'health_socket') and self.health_socket:
+            self.health_socket.close()
+        if hasattr(self, 'context') and self.context:
+            self.context.term()
+        logger.info("Cleanup complete")
+
 # Example usage demonstration
 if __name__ == "__main__":
-    # Test examples
-    test_prompts = [
-        "Write a Python function to calculate Fibonacci numbers",
-        "Why is the sky blue?",
-        "Hello, how are you doing today?",
-        "Write a poem about autumn",
-        "What is the capital of France?",
-        "Calculate 15% of 67",
-        "I need help with my project"
-    ]
-    
-    for prompt in test_prompts:
-        task_type = detect_task_type(prompt)
-        capabilities = map_task_to_model_capabilities(task_type)
-        print(f"Prompt: {prompt}")
-        print(f"Detected Task Type: {task_type}")
-        print(f"Required Capabilities: {capabilities}")
-        print("---")
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = AdvancedRouterAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print("Agent stopped by user")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print("Cleaning up...")
+            agent.cleanup()

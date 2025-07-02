@@ -32,9 +32,31 @@ logger = logging.getLogger("pc2_restore_functionality")
 # Define paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PC2_CODE = PROJECT_ROOT / 'pc2_code'
-PC2_CONFIG_PATH = PC2_CODE / 'config' / 'startup_config.yaml'
 PC2_AGENTS_DIR = PC2_CODE / 'agents'
 PC2_BACKUPS_DIR = PC2_AGENTS_DIR / 'backups'
+PC2_CONFIG_PATH = PC2_CODE / 'config' / 'startup_config.yaml'
+
+# Load agents from startup_config.yaml
+def load_target_agents():
+    """Load agents from startup_config.yaml"""
+    try:
+        with open(PC2_CONFIG_PATH, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        agents = []
+        for agent_config in config.get('pc2_services', []):
+            agents.append({
+                'name': agent_config.get('name', ''),
+                'script_path': agent_config.get('script_path', '')
+            })
+        
+        return agents
+    except Exception as e:
+        logger.error(f"Error loading agents from config: {e}")
+        return []
+
+# List of target agents to process
+TARGET_AGENTS = load_target_agents()
 
 def create_backup(file_path: Path) -> Path:
     """Create a backup of a file before modifying it."""
@@ -107,29 +129,6 @@ def extract_init_content(init_method: str) -> str:
         filtered_lines = [line[common_indent:] if line.strip() else line for line in filtered_lines]
     
     return '\n'.join(filtered_lines)
-
-def gather_agents_from_config() -> List[Dict]:
-    """Gather agents from PC2 startup_config.yaml."""
-    try:
-        with open(PC2_CONFIG_PATH, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        
-        agents = []
-        # Process all sections in the config file
-        for section_name, section_data in config.items():
-            if isinstance(section_data, list):
-                for agent in section_data:
-                    if isinstance(agent, dict) and 'script_path' in agent:
-                        agent_name = agent.get('name', os.path.basename(agent['script_path']).split('.')[0])
-                        agents.append({
-                            'name': agent_name,
-                            'script_path': agent['script_path']
-                        })
-        
-        return agents
-    except Exception as e:
-        logger.error(f"Error loading config: {e}")
-        return []
 
 def restore_agent_functionality(agent: Dict) -> bool:
     """Restore functionality for a specific agent."""
@@ -256,21 +255,16 @@ def restore_agent_functionality(agent: Dict) -> bool:
         logger.error(f"Error restoring functionality for {agent_name}: {e}")
         return False
 
-def restore_all_agents():
-    """Restore functionality for all agents in PC2 config."""
-    agents = gather_agents_from_config()
-    if not agents:
-        logger.error("No agents found in config")
-        return 0
-    
-    logger.info(f"Found {len(agents)} agents in PC2 config")
+def restore_targeted_agents():
+    """Restore functionality for the targeted agents."""
+    logger.info(f"Processing {len(TARGET_AGENTS)} targeted agents")
     
     success_count = 0
-    for agent in agents:
+    for agent in TARGET_AGENTS:
         if restore_agent_functionality(agent):
             success_count += 1
     
-    logger.info(f"Successfully restored functionality for {success_count}/{len(agents)} agents")
+    logger.info(f"Successfully restored functionality for {success_count}/{len(TARGET_AGENTS)} agents")
     return success_count
 
 def main():
@@ -278,8 +272,8 @@ def main():
     # Create backup directory if it doesn't exist
     PC2_BACKUPS_DIR.mkdir(exist_ok=True)
     
-    # Restore functionality for all agents
-    restored_count = restore_all_agents()
+    # Restore functionality for targeted agents
+    restored_count = restore_targeted_agents()
     
     # Run compliance check to verify
     print("\nRunning compliance check...")

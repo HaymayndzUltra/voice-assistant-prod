@@ -11,17 +11,14 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import numpy as np
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Try to import sklearn, but don't fail if not available
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
-    SKLEARN_AVAILABLE 
-from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()= True
+    SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
     print("Warning: sklearn not available, text similarity features will be disabled")
@@ -39,31 +36,21 @@ logger = logging.getLogger(__name__)
 
 class EpisodicMemoryAgent(BaseAgent):
     def __init__(self, port: int = 7106, health_port: int = 7107):
-         super().__init__(name="EpisodicMemoryAgent", port=7106)
+        super().__init__(name="EpisodicMemoryAgent", port=7106)
 
-         # Record start time for uptime calculation
+        # Record start time for uptime calculation
+        self.start_time = time.time()
 
-         self.start_time = time.time()
+        # Initialize agent state
+        self.running = True
+        self.request_count = 0
 
-         
+        # Set up connection to main PC if needed
+        self.main_pc_connections = {}
 
-         # Initialize agent state
+        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
 
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-"""Initialize the EpisodicMemoryAgent with ZMQ socket and database."""
+        # Initialize the EpisodicMemoryAgent with ZMQ socket and database.
         self.port = port
         self.health_port = health_port
         self.context = zmq.Context()
@@ -690,36 +677,24 @@ class EpisodicMemoryAgent(BaseAgent):
                     "error": str(e)
                 }))
 
-
     def _get_health_status(self) -> dict:
-
         """Return health status information."""
-
         base_status = super()._get_health_status()
 
         # Add any additional health information specific to EpisodicMemoryAgent
-
         base_status.update({
-
             'service': 'EpisodicMemoryAgent',
-
             'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
             'additional_info': {}
-
         })
 
         return base_status
 
-
     def cleanup(self):
-
         """Clean up resources before shutdown."""
-
         logger.info("Cleaning up resources...")
 
         # Add specific cleanup code here
-
         super().cleanup()
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -815,10 +790,6 @@ class EpisodicMemoryAgent(BaseAgent):
             logger.error(f"Error handling request: {e}")
             return {"status": "error", "error": str(e)}
 
-
-
-
-
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
@@ -860,69 +831,36 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
 
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
+def connect_to_main_pc_service(self, service_name: str):
+    """
+    Connect to a service on the main PC using the network configuration.
+    
+    Args:
+        service_name: Name of the service in the network config ports section
+    
+    Returns:
+        ZMQ socket connected to the service
+    """
+    if not hasattr(self, 'main_pc_connections'):
+        self.main_pc_connections = {}
         
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
+    if service_name not in network_config.get("ports", {}):
+        logger.error(f"Service {service_name} not found in network configuration")
+        return None
         
+    port = network_config["ports"][service_name]
+    
+    # Create a new socket for this connection
+    socket = self.context.socket(zmq.REQ)
+    
+    # Connect to the service
+    socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+    
+    # Store the connection
+    self.main_pc_connections[service_name] = socket
+    
+    logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+    return socket
 
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config["ports"][service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket
+config = Config().get_config()

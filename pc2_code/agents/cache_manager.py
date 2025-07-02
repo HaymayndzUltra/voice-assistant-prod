@@ -16,10 +16,10 @@ from collections import defaultdict
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()# Constants
+config = Config().get_config()# Constants
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_DB = 0
@@ -114,31 +114,14 @@ self.memory_threshold = 80  # percentage
         logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
 
         return socket
-class CacheManager:
-    def __init__(self, redis_host=REDIS_HOST, redis_port=REDIS_PORT, db=REDIS_DB):
-
-        # Record start time for uptime calculation
-
+class CacheManager(BaseAgent):
+    def __init__(self, redis_host=REDIS_HOST, redis_port=REDIS_PORT, db=REDIS_DB, port: int = 7102):
+        super().__init__(name="CacheManager", port=port)
         self.start_time = time.time()
-
-        
-
-        # Initialize agent state
-
         self.running = True
-
         self.request_count = 0
-
-        
-
-        # Set up connection to main PC if needed
-
         self.main_pc_connections = {}
-
-        
-
         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
         self.cache_config = {
             'nlu_results': {
                 'ttl': timedelta(minutes=5),
@@ -445,6 +428,14 @@ class CacheManager:
         except KeyboardInterrupt:
             self.logger.info("Cache Manager shutting down...")
 
+    def _get_health_status(self):
+        base_status = super()._get_health_status()
+        base_status.update({
+            'service': 'CacheManager',
+            'uptime': time.time() - self.start_time
+        })
+        return base_status
+
 class CacheManagerHealth:
     def __init__(self, port=7102):
         self.port = port
@@ -470,61 +461,20 @@ class CacheManagerHealth:
         self.socket.close()
         self.context.term()
 
-
-    def _get_health_status(self) -> dict:
-
-        """Return health status information."""
-
-        base_status = super()._get_health_status()
-
-        # Add any additional health information specific to ResourceMonitor
-
-        base_status.update({
-
-            'service': 'ResourceMonitor',
-
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-            'additional_info': {}
-
-        })
-
-        return base_status
-
-
-    def cleanup(self):
-
-        """Clean up resources before shutdown."""
-
-        logger.info("Cleaning up resources...")
-
-        # Add specific cleanup code here
-
-        super().cleanup()
-
 def main():
-    cache_manager = CacheManager()
-    cache_manager.run()
-
-
-
-
-
-if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = ResourceMonitor()
+        agent = CacheManager()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
 # Load network configuration
@@ -551,9 +501,6 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+
+if __name__ == "__main__":
+    main()

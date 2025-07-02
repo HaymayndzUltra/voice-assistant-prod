@@ -14,6 +14,8 @@ from collections import deque
 import os
 import sys
 from pathlib import Path
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Constants
 ZMQ_PULL_PORT = 7110
@@ -36,6 +38,48 @@ class ResourceManager(BaseAgent):
     def __init__(self, port: int = None):
 
         super().__init__(name="ResourceManager", port=port)
+
+
+        self.context = zmq.Context()
+
+
+        self.resource_manager = ResourceManager()
+
+
+        self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
+
+
+        self._setup_sockets()
+
+
+        self._setup_tiers()
+
+
+        self._setup_logging()
+
+
+        self._setup_health_monitoring()
+
+
+        self.context = zmq.Context()
+
+
+        self.resource_manager = ResourceManager()
+
+
+        self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
+
+
+        self._setup_sockets()
+
+
+        self._setup_tiers()
+
+
+        self._setup_logging()
+
+
+        self._setup_health_monitoring()
 
 
         self.context = zmq.Context()
@@ -210,8 +254,11 @@ class ResourceManager(BaseAgent):
 
 
         return socket
-class TieredResponder:
-    def __init__(self):
+
+class TieredResponder(BaseAgent):
+    def __init__(self, port: int = 7100):
+        super().__init__(name="TieredResponder", port=port)
+        self.start_time = time.time()
         self.context = zmq.Context()
         self.resource_manager = ResourceManager()
         self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
@@ -431,12 +478,7 @@ class TieredResponder:
         return f"Fast response to: {text}"
 
     async def _get_deep_model_response(self, text: str) -> str:
-        """Get detailed response from deep 
-from main_pc_code.src.core.base_agent import BaseAgentmodel
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()"""
+        """Get detailed response from deep model"""
         # Simulate model response
         return f"Detailed analysis of: {text}"
 
@@ -496,76 +538,38 @@ config = load_config()"""
             self.push_socket.close()
             self.health_socket.close()
 
-
-
-    def _get_health_status(self) -> dict:
-
-
-        """Return health status information."""
-
-
+    def _get_health_status(self):
         base_status = super()._get_health_status()
-
-
-        # Add any additional health information specific to ResourceManager
-
-
         base_status.update({
-
-
-            'service': 'ResourceManager',
-
-
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-
-            'additional_info': {}
-
-
+            'service': 'TieredResponder',
+            'uptime': time.time() - self.start_time
         })
-
-
         return base_status
 
-
-
     def cleanup(self):
-
-
         """Clean up resources before shutdown."""
-
-
         logger.info("Cleaning up resources...")
-
-
         # Add specific cleanup code here
-
-
         super().cleanup()
 
 def main():
     responder = TieredResponder()
     responder.run()
 
-
-
-
-
 if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = ResourceManager()
+        agent = TieredResponder()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()
 
 # Load network configuration
@@ -592,9 +596,5 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+
+config = Config().get_config()

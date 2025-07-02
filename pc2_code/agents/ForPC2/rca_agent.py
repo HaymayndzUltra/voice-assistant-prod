@@ -30,6 +30,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -72,67 +74,9 @@ ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
 ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
 PC2_IP = "192.168.100.17"  # PC2 IP address
 
+# Load configuration at the module level
+config = Config().get_config()
 
-
-        def connect_to_main_pc_service(self, service_name: str):
-
-            """
-
-            Connect to a service on the main PC using the network configuration.
-
-            
-
-            Args:
-
-                service_name: Name of the service in the network config ports section
-
-            
-
-            Returns:
-
-                ZMQ socket connected to the service
-
-            """
-
-            if not hasattr(self, 'main_pc_connections'):
-
-                self.main_pc_connections = {}
-
-                
-
-            if service_name not in network_config.get("ports", {}):
-
-                logger.error(f"Service {service_name} not found in network configuration")
-
-                return None
-
-                
-
-            port = network_config["ports"][service_name]
-
-            
-
-            # Create a new socket for this connection
-
-            socket = self.context.socket(zmq.REQ)
-
-            
-
-            # Connect to the service
-
-            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-            
-
-            # Store the connection
-
-            self.main_pc_connections[service_name] = socket
-
-            
-
-            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-            return socket
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""
     def __init__(self, name: str, regex: str, severity: str = "medium", 
@@ -562,6 +506,8 @@ config = load_config()(remove .log extension)
             self.client_socket.close()
             self.client_socket = self.context.socket(zmq.REQ)
             self.client_socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
+
+
 
 
 

@@ -11,6 +11,7 @@ import numpy as np
 from collections import deque
 import re
 from datetime import datetime
+from pc2_code.agents.utils.config_loader import Config
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,14 +20,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level
-config = load_config()(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/context_manager.log'),
-        logging.StreamHandler()
-    ]
-)
+config = Config().get_config()
 logger = logging.getLogger(__name__)
 
 class ContextManager(BaseAgent):
@@ -376,6 +370,8 @@ class ContextManagerAgent:
         self.health_socket.close()
         self.context.term()
         logger.info("ContextManagerAgent shutdown complete")
+
+
 
 
 

@@ -11,10 +11,12 @@ from typing import Dict, Any, Optional
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()# Configure logging
+config = Config().get_config()
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,40 +29,23 @@ logger = logging.getLogger(__name__)
 
 class AgentTrustScorer(BaseAgent):
     def __init__(self, port: int = 5626):
-         super().__init__(name="AgentTrustScorer", port=5626)
-
-         # Record start time for uptime calculation
-
-         self.start_time = time.time()
-
-         
-
-         # Initialize agent state
-
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-"""Initialize the AgentTrustScorer with ZMQ socket and database."""
+        super().__init__(name="AgentTrustScorer", port=5626)
+        # Record start time for uptime calculation
+        self.start_time = time.time()
+        # Initialize agent state
+        self.running = True
+        self.request_count = 0
+        # Set up connection to main PC if needed
+        self.main_pc_connections = {}
+        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {{'PC2_IP' if 'PC2_IP' in globals() else 'unknown'}}) port {self.port}")
+        # Initialize the AgentTrustScorer with ZMQ socket and database.
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{port}")
-        
         # Initialize database
         self.db_path = "agent_trust_scores.db"
         self._init_database()
-        
         logger.info(f"AgentTrustScorer initialized on port {port}")
     
     def _init_database(self):
@@ -281,6 +266,8 @@ class AgentTrustScorer(BaseAgent):
                     'status': 'error',
                     'message': str(e)
                 })
+
+
 
 
 

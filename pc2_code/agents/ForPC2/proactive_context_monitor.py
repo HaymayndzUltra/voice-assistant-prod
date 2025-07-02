@@ -19,6 +19,8 @@ import sys
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -54,96 +56,16 @@ PROACTIVE_MONITOR_PORT = 7119  # Default, will be overridden by configuration
 PROACTIVE_MONITOR_HEALTH_PORT = 8119  # Default health check port
 # Health check port is defined above
 
-
-
-        def connect_to_main_pc_service(self, service_name: str):
-
-            """
-
-            Connect to a service on the main PC using the network configuration.
-
-            
-
-            Args:
-
-                service_name: Name of the service in the network config ports section
-
-            
-
-            Returns:
-
-                ZMQ socket connected to the service
-
-            """
-
-            if not hasattr(self, 'main_pc_connections'):
-
-                self.main_pc_connections = {}
-
-                
-
-            if service_name not in network_config.get("ports", {}):
-
-                logger.error(f"Service {service_name} not found in network configuration")
-
-                return None
-
-                
-
-            port = network_config["ports"][service_name]
-
-            
-
-            # Create a new socket for this connection
-
-            socket = self.context.socket(zmq.REQ)
-
-            
-
-            # Connect to the service
-
-            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-            
-
-            # Store the connection
-
-            self.main_pc_connections[service_name] = socket
-
-            
-
-            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-            return socket
-class ProactiveContextMonitor:
+class ProactiveContextMonitor(BaseAgent):
     """Proactive Context Monitor Agent for analyzing context and triggering proactive actions."""
     
     def __init__(self, port=None, health_check_port=None):
-         super().__init__(name="DummyArgs", port=None)
-
-         # Record start time for uptime calculation
-
-         self.start_time = time.time()
-
-         
-
-         # Initialize agent state
-
-         self.running = True
-
-         self.request_count = 0
-
-         
-
-         # Set up connection to main PC if needed
-
-         self.main_pc_connections = {}
-
-         
-
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-"""Initialize the Proactive Context Monitor Agent."""
+        super().__init__(name="ProactiveContextMonitor", port=port)
+        self.start_time = time.time()
+        self.running = True
+        self.request_count = 0
+        self.main_pc_connections = {}
+        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
         self.main_port = port if port is not None else PROACTIVE_MONITOR_PORT
         self.health_port = health_check_port if health_check_port is not None else PROACTIVE_MONITOR_HEALTH_PORT
         self.context = zmq.Context()
@@ -173,192 +95,29 @@ class ProactiveContextMonitor:
         """Set up a simple HTTP server for health checks."""
         from http.server import HTTPServer, BaseHTTPRequestHandler
         
-        class HealthCheckHandler
-from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
-
-# Load configuration at the module level
-config = load_config()(BaseHTTPRequestHandler):
+        class HealthCheckHandler(BaseHTTPRequestHandler):
             def do_GET(self):
                 self.send_response(200)
-                self.send_header('Content-type', 'text/plain')
                 self.end_headers()
                 self.wfile.write(b"OK")
-                
-            def log_message(self, format, *args):
-                logger.debug("%s - %s", self.address_string(), format % args)
         
-        server = HTTPServer(('localhost', self.health_port), HealthCheckHandler)
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-    
-    def _start_background_threads(self):
-        """Start background processing threads."""
-        self.context_thread = threading.Thread(target=self._context_processing_loop, daemon=True)
-        self.context_thread.start()
-        logger.info("Context processing thread started")
-    
-    def _context_processing_loop(self):
-        """Background thread for processing context updates."""
-        while self.running:
-            try:
-                # Process any pending context updates
-                self._process_context_updates()
-                time.sleep(1)
-            except Exception as e:
-                logger.error(f"Error in context processing loop: {e}")
-    
-    def _process_context_updates(self):
-        """Process pending context updates and trigger proactive actions."""
-        try:
-            # Process context history and trigger actions as needed
-            if self.context_history:
-                latest_context = self.context_history[-1]
-                # TODO: Implement context analysis and proactive action triggers
-                pass
-        except Exception as e:
-            logger.error(f"Error processing context updates: {e}")
-    
-    def _health_check(self) -> Dict[str, Any]:
-        """Perform health check."""
-        return {
-            'status': 'success',
-            'agent': 'ProactiveContextMonitor',
-            'timestamp': datetime.now().isoformat(),
-            'context_history_length': len(self.context_history),
-            'context_thread_alive': self.context_thread.is_alive(),
-            'port': self.main_port
-        }
-    
-    def run(self):
-        """Main run loop."""
-        logger.info(f"Proactive Context Monitor starting on port {self.main_port}")
-        try:
-            while self.running:
-                try:
-                    # Wait for messages with timeout
-                    if self.socket.poll(1000) == 0:
-                        continue
-                    
-                    # Receive and process message
-                    message = self.socket.recv_json()
-                    response = self.handle_message(message)
-                    self.socket.send_json(response)
-                    
-                except zmq.error.ZMQError as e:
-                    if e.errno == zmq.EAGAIN:
-                        continue
-                    logger.error(f"ZMQ error in main loop: {e}")
-                except Exception as e:
-                    logger.error(f"Error in main loop: {e}")
-                    
-        except KeyboardInterrupt:
-            logger.info("Received shutdown signal")
-        finally:
-            self.cleanup()
-    
-    def handle_message(self, message: Any) -> Dict[str, Any]:
-        """Handle incoming messages.
-        
-        Args:
-            message: The message to handle, expected to be a dictionary
-            
-        Returns:
-            Response message dictionary
-        """
-        try:
-            # Type check the message
-            if not isinstance(message, dict):
-                return {'status': 'error', 'message': 'Message must be a dictionary'}
-                
-            action = message.get('action', '')
-            if action == 'update_context':
-                # Add to context history
-                self.context_history.append({
-                    'timestamp': datetime.now().isoformat(),
-                    'context': message.get('context', {})
-                })
-                return {'status': 'success'}
-            elif action == 'get_context':
-                return {
-                    'status': 'success',
-                    'context': self.context_history[-1] if self.context_history else {}
-                }
-            elif action == 'health_check':
-                return self._health_check()
-            else:
-                return {'status': 'error', 'message': f'Unknown action: {action}'}
-        except Exception as e:
-            logger.error(f"Error handling message: {e}")
-            return {'status': 'error', 'message': str(e)}
-    
-    def cleanup(self):
-        """Clean up resources."""
-        logger.info("Cleaning up...")
-        self.running = False
-        if hasattr(self, 'context_thread'):
-            self.context_thread.join(timeout=1)
-        if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
-        logger.info("Cleanup complete")
+        server_address = (BIND_ADDRESS, self.health_port)
+        httpd = HTTPServer(server_address, HealthCheckHandler)
+        logger.info(f"Health check server started on {server_address}")
+        httpd.serve_forever()
 
-
-    
-    def _get_health_status(self) -> dict:
-
-    
+    def _get_health_status(self):
         """Return health status information."""
-
-    
         base_status = super()._get_health_status()
-
-    
-        # Add any additional health information specific to DummyArgs
-
-    
         base_status.update({
-
-    
-            'service': 'DummyArgs',
-
-    
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
-    
-            'additional_info': {}
-
-    
+            'service': 'ProactiveContextMonitor',
+            'uptime': time.time() - self.start_time,
+            'context_history_length': len(self.context_history) if hasattr(self, 'context_history') else 0
         })
-
-    
         return base_status
-    
-    def stop(self):
-        """Stop the agent gracefully."""
-        self.running = False
 
-
-
-
-
-if __name__ == "__main__":
-    # Standardized main execution block for PC2 agents
-    agent = None
-    try:
-        agent = DummyArgs()
-        agent.run()
-    except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
-    except Exception as e:
-        import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name} on PC2...")
-            agent.cleanup()
+# Load configuration at the module level
+config = Config().get_config()
 
 # Load network configuration
 def load_network_config():
@@ -384,9 +143,20 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+
+if __name__ == "__main__":
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = ProactiveContextMonitor()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
+            print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()

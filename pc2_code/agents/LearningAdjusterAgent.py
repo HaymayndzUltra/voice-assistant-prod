@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
 from config.system_config import get_service_host, get_service_port
+from main_pc_code.src.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
 
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -166,7 +168,7 @@ class LearningAdjusterAgent(BaseAgent):
         """Get performance metrics for an agent from the 
 
 # Load configuration at the module level
-config = load_config()
+config = Config().get_config()
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
         try:
@@ -502,6 +504,8 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
         self.context.term()
         
         logger.info("LearningAdjusterAgent stopped")
+
+
 
 
 

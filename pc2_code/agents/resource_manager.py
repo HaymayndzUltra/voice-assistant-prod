@@ -22,17 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/resource_manager.log'),
-        logging.StreamHandler()
-    ]
-)
+config = Config().get_config()
 logger = logging.getLogger(__name__)
 
 class ResourceManager(BaseAgent):
@@ -417,6 +410,8 @@ self.port = port
         self.health_socket.close()
         self.context.term()
         logger.info("ResourceManager shutdown complete")
+
+
 
 
 

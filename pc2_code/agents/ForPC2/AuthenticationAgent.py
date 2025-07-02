@@ -42,10 +42,10 @@ try:
     from agents.utils.config_parser import parse_agent_args
     _agent_args 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
-config = load_config()= parse_agent_args()
+config = Config().get_config()
 except ImportError:
     # Fallback if config parser not available
     class DummyArgs(BaseAgent):
@@ -461,6 +461,8 @@ class AuthenticationAgent:
     def stop(self):
         """Stop the agent gracefully."""
         self.running = False
+
+
 
 
 
