@@ -34,12 +34,34 @@ except ImportError:
 
 # Core PC2 agents to test
 PC2_AGENTS = [
-    {"name": "AuthenticationAgent", "host": "localhost", "port": 7116},
+    {"name": "TieredResponder", "host": "localhost", "port": 7100},
+    {"name": "AsyncProcessor", "host": "localhost", "port": 7101},
+    {"name": "CacheManager", "host": "localhost", "port": 7102},
     {"name": "PerformanceMonitor", "host": "localhost", "port": 7103},
-    {"name": "RemoteConnectorAgent", "host": "localhost", "port": 7124},
-    {"name": "TinyLlamaService", "host": "localhost", "port": 5615},
+    {"name": "DreamWorldAgent", "host": "localhost", "port": 7104},
     {"name": "UnifiedMemoryReasoningAgent", "host": "localhost", "port": 7105},
-    {"name": "CacheManager", "host": "localhost", "port": 7102}
+    {"name": "EpisodicMemoryAgent", "host": "localhost", "port": 7106},
+    {"name": "LearningAgent", "host": "localhost", "port": 7107},
+    {"name": "TutoringAgent", "host": "localhost", "port": 7108},
+    {"name": "MemoryManager", "host": "localhost", "port": 7110},
+    {"name": "ContextManager", "host": "localhost", "port": 7111},
+    {"name": "ExperienceTracker", "host": "localhost", "port": 7112},
+    {"name": "ResourceManager", "host": "localhost", "port": 7113},
+    {"name": "HealthMonitor", "host": "localhost", "port": 7114},
+    {"name": "TaskScheduler", "host": "localhost", "port": 7115},
+    {"name": "AuthenticationAgent", "host": "localhost", "port": 7116},
+    {"name": "UnifiedErrorAgent", "host": "localhost", "port": 7117},
+    {"name": "UnifiedUtilsAgent", "host": "localhost", "port": 7118},
+    {"name": "ProactiveContextMonitor", "host": "localhost", "port": 7119},
+    {"name": "RCAAgent", "host": "localhost", "port": 7121},
+    {"name": "AgentTrustScorer", "host": "localhost", "port": 7122},
+    {"name": "FileSystemAssistantAgent", "host": "localhost", "port": 7123},
+    {"name": "RemoteConnectorAgent", "host": "localhost", "port": 7124},
+    {"name": "SelfHealingAgent", "host": "localhost", "port": 7125},
+    {"name": "UnifiedWebAgent", "host": "localhost", "port": 7126},
+    {"name": "DreamingModeAgent", "host": "localhost", "port": 7127},
+    {"name": "PerformanceLoggerAgent", "host": "localhost", "port": 7128},
+    {"name": "AdvancedRouter", "host": "localhost", "port": 7129}
 ]
 
 # MainPC agents to test cross-machine communication
