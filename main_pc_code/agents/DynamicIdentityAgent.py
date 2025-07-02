@@ -59,6 +59,13 @@ class DynamicIdentityAgent(BaseAgent):
         self.current_persona = 'teacher'
         self.start_time = time.time()
         self.running = True
+        
+        # Initialize TaskRouter connection variables
+        self.task_router_connection = None
+        self.task_router_connected = False
+        # Start a background thread to connect to TaskRouter when it becomes available
+        threading.Thread(target=self._connect_to_task_router, daemon=True).start()
+        
         # Perform remaining initialization asynchronously so that health checks can succeed quickly
         threading.Thread(target=self._perform_initialization, daemon=True).start()
         logger.info("Dynamic Identity Agent initialized (async init started)")
@@ -72,6 +79,36 @@ class DynamicIdentityAgent(BaseAgent):
             "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
         return {"status": status, "details": details}
+    
+    def _connect_to_task_router(self):
+        """Connect to TaskRouter using service discovery when it becomes available."""
+        from main_pc_code.utils.service_discovery_client import get_service_address
+        
+        retry_count = 0
+        max_retries = 10
+        retry_delay = 5  # seconds
+        
+        while retry_count < max_retries and self.running:
+            try:
+                # Try to discover TaskRouter service
+                task_router_address = get_service_address("TaskRouter")
+                if task_router_address:
+                    logger.info(f"TaskRouter discovered at {task_router_address}")
+                    # Initialize connection to TaskRouter if needed
+                    # For now, we just mark it as connected since we don't need direct communication
+                    self.task_router_connected = True
+                    break
+                else:
+                    logger.warning("TaskRouter not found in service registry, will retry...")
+            except Exception as e:
+                logger.error(f"Error discovering TaskRouter: {e}")
+            
+            # Wait before retrying
+            retry_count += 1
+            time.sleep(retry_delay)
+        
+        if not self.task_router_connected:
+            logger.warning("Failed to connect to TaskRouter after maximum retries")
     
     def _perform_initialization(self):
         try:

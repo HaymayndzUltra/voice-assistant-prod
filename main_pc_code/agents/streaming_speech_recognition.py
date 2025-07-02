@@ -195,122 +195,12 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
         # Initialize ResourceManager
 
         self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
-
-        # Initialize connection to ModelManagerAgent
-
-        self._connect_to_model_manager()
-
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-
-        """Initialize the enhanced speech recognition system."""
-
-        self._running = False
-
-        self._thread = None
-
-        self.health_thread = None
-
-        self.process_thread = None
-
-        # Initialize ZMQ context
-
-        self.zmq_context = zmq.Context()
-
-        # Initialize sockets
-
-        self._init_sockets()
-
-        # Initialize audio processing
-
-        self.audio_queue = Queue()
-
-        self.buffer = []
-
-        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-
-        # Model management is now delegated to ModelManagerAgent
-
-        self.model_manager_socket = None
-
-        # Initialize state
-
-        self.wake_word_detected = False
-
-        self.last_wake_word_time = 0
-
-        self.wake_word_timeout = 5.0  # seconds
-
-        self.current_language = 'en'
-
-        # VAD integration
-
-        self.vad_speech_active = False
-
-        self.vad_confidence = 0.0
-
-        self.vad_last_update = 0
-
-        # Initialize ResourceManager
-
-        self.resource_manager = ResourceManager()
+        
+        # Initialize TaskRouter connection variables
+        self.task_router_connection = None
+        self.task_router_connected = False
+        # Start a background thread to connect to TaskRouter when it becomes available
+        threading.Thread(target=self._connect_to_task_router, daemon=True).start()
 
         # Initialize connection to ModelManagerAgent
 
@@ -361,6 +251,36 @@ class StreamingSpeechRecognitionAgent(BaseAgent):
         self._connect_to_model_manager()
         
         logger.info("Enhanced Streaming Speech Recognition initialized")
+    
+    def _connect_to_task_router(self):
+        """Connect to TaskRouter using service discovery when it becomes available."""
+        from main_pc_code.utils.service_discovery_client import get_service_address
+        
+        retry_count = 0
+        max_retries = 10
+        retry_delay = 5  # seconds
+        
+        while retry_count < max_retries and self._running:
+            try:
+                # Try to discover TaskRouter service
+                task_router_address = get_service_address("TaskRouter")
+                if task_router_address:
+                    logger.info(f"TaskRouter discovered at {task_router_address}")
+                    # Initialize connection to TaskRouter if needed
+                    # For now, we just mark it as connected since we don't need direct communication
+                    self.task_router_connected = True
+                    break
+                else:
+                    logger.warning("TaskRouter not found in service registry, will retry...")
+            except Exception as e:
+                logger.error(f"Error discovering TaskRouter: {e}")
+            
+            # Wait before retrying
+            retry_count += 1
+            time.sleep(retry_delay)
+        
+        if not self.task_router_connected:
+            logger.warning("Failed to connect to TaskRouter after maximum retries")
     
     def _init_sockets(self):
         """Initialize all ZMQ sockets."""

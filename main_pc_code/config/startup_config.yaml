@@ -7,7 +7,7 @@ core_services:
     script_path: src/core/task_router.py
     port: 8571
     required: true
-    dependencies: [StreamingTTSAgent, DynamicIdentityAgent, StreamingSpeechRecognition]
+    dependencies: [StreamingTTSAgent, StreamingSpeechRecognition]
     params:
       cot_host: "0.0.0.0"
       cot_port: 5612
@@ -133,7 +133,7 @@ audio_processing:
     script_path: agents/streaming_speech_recognition.py
     host: 0.0.0.0
     port: 6580
-    dependencies: [TaskRouter]
+    dependencies: []
     required: true
     params:
       model_config_path: "config/model_config.json"
