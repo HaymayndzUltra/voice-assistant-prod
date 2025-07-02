@@ -659,19 +659,19 @@ class ModelManagerAgent(BaseAgent):
         # Validate values
         if not 0 <= self.vram_management_config.get('vram_budget_percentage') <= 100:
             self.logger.warning(f"Invalid VRAM budget percentage: {self.vram_management_config.get('vram_budget_percentage')}. Using default 80%")
-            self.vram_management_config.get('vram_budget_percentage') = 80
+            self.vram_budget_percentage = 80  # Fixed assignment to function call
             
         if self.vram_management_config.get('vram_budget_mb') < 0:
             self.logger.warning(f"Invalid VRAM budget MB: {self.vram_management_config.get('vram_budget_mb')}. Using default 4096MB")
-            self.vram_management_config.get('vram_budget_mb') = 4096
+            self.vram_budget_mb = 4096  # Fixed assignment to function call
             
         if self.vram_management_config.get('idle_unload_timeout_seconds') < 0:
             self.logger.warning(f"Invalid idle timeout: {self.vram_management_config.get('idle_unload_timeout_seconds')}. Using default 300s")
-            self.vram_management_config.get('idle_unload_timeout_seconds') = 300
+            self.idle_timeout = 300  # Fixed assignment to function call
 
         # Set model priorities if not present
         if 'model_priorities' not in self.vram_management_config:
-            self.vram_management_config.get('model_priorities') = {
+            self.model_priorities = {
                 'high': 1,
                 'medium': 2,
                 'low': 3
@@ -679,7 +679,7 @@ class ModelManagerAgent(BaseAgent):
         
         # Set quantization options if not present
         if 'quantization_options_per_model_type' not in self.vram_management_config:
-            self.vram_management_config.get('quantization_options_per_model_type') = {
+            self.quantization_options = {
                 'whisper': 'int8',
                 'llm': 'int8',
                 'tts': 'float16'

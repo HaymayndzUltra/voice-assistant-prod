@@ -1,5 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader i
+from main_pc_code.utils.config_loader import load_config
 
 # Add the project's main_pc_code directory to the Python path
 import sys
@@ -8,8 +8,6 @@ from pathlib import Path
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-mport load_config
 
 """
 
