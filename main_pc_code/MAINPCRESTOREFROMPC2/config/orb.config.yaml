@@ -1,0 +1,40 @@
+system_config_path: modular_system/system_config/
+
+local_agents:
+  - name: unified_web_agent
+    script: _PC2 SOURCE OF TRUTH LATEST/unified_web_agent.py
+  - name: remote_connector_agent
+    script: _PC2 SOURCE OF TRUTH LATEST/remote_connector_agent.py
+  - name: consolidated_translator
+    script: _PC2 SOURCE OF TRUTH LATEST/consolidated_translator.py
+  - name: tinyllama_service_enhanced
+    script: _PC2 SOURCE OF TRUTH LATEST/tinyllama_service_enhanced.py
+  - name: self_healing_agent
+    script: _PC2 SOURCE OF TRUTH LATEST/self_healing_agent.py
+  - name: enhanced_model_router
+    script: _PC2 SOURCE OF TRUTH LATEST/enhanced_model_router.py
+  - name: advanced_router
+    script: _PC2 SOURCE OF TRUTH LATEST/advanced_router.py
+  - name: filesystem_assistant_agent
+    script: _PC2 SOURCE OF TRUTH LATEST/filesystem_assistant_agent.py
+  - name: digital_twin_agent
+    script: _PC2 SOURCE OF TRUTH LATEST/digital_twin_agent.py
+
+pc2:
+  host: 192.168.1.2
+  username: 63956
+  password: Prof2022
+  port: 22
+  remote_folder: "D:\\DISKARTE\\Voice Assistant"
+  launch_script: "system_launcher.py"
+  launch_command: "cd /d D:\\DISKARTE\\Voice Assistant && python system_launcher.py"
+
+zmq:
+  ports:
+    model_manager: 5556
+    code_generator: 5604
+    unified_memory_reasoning: 5560
+    context_manager: 5561
+    context_manager_pub: 5570
+    translation: 5581
+    health_monitor: 5597 

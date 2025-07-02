@@ -6,11 +6,13 @@ import numpy as np
 import sounddevice as sd
 import logging
 import time
-from utils.config_loader import parse_agent_args
-from utils.env import get_env
+from main_pc_code.utils.config_loader import load_config
+from utils.env_loader import get_env
 import psutil
 from datetime import datetime
-_agent_args = parse_agent_args()
+
+# Load configuration at module level
+config = load_config()
 
 # Cache directory
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cache', 'tts')
@@ -21,14 +23,25 @@ if not os.path.exists(CACHE_DIR):
 
 # Cache management
 class TTSCache(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5704))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5704)) if port is None else port
+        agent_name = config.get("name", "TTSCache")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        self.running = True
+        
         # Cache configuration
-        self.max_size: int = int(_agent_args.get('max_cache_size', 1000))
-        self.cache_dir: str = CACHE_DIR
+        self.max_size = int(config.get("max_cache_size", 1000))
+        self.cache_dir = CACHE_DIR
         self.cache_index = {}
         self.load_cache_index()
         
@@ -157,7 +170,6 @@ class TTSCache(BaseAgent):
             logging.error(f"[TTS Cache] Error clearing cache: {e}")
             return False
 
-
     def health_check(self):
         '''
         Performs a health check on the agent, returning a dictionary with its status.
@@ -173,21 +185,24 @@ class TTSCache(BaseAgent):
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "cache_size": len(self.cache_index),
+                    "max_cache_size": self.max_size
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
@@ -198,42 +213,63 @@ class TTSCache(BaseAgent):
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
             "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "uptime_seconds": time.time() - self.start_time,
+            "cache_entries": len(self.cache_index)
         }
         return {"status": status, "details": details}
 
 # Global cache instance created with CLI-provided arguments if available
 # This allows external modules to import helper functions without running the agent loop.
-_port_arg = getattr(_agent_args, "port", None)
-_max_size_arg = getattr(_agent_args, "max_cache_size", 1000)
-
-tts_cache = TTSCache()
+tts_cache = None
 
 # -------------------- Helper API --------------------
 def get_cached_audio(text, emotion=None):
     """Get audio from cache if available"""
+    global tts_cache
+    if tts_cache is None:
+        tts_cache = TTSCache()
     return tts_cache.get_from_cache(text, emotion)
     
 def add_to_cache(text, audio_data, emotion=None, sample_rate=16000):
     """Add audio to cache"""
+    global tts_cache
+    if tts_cache is None:
+        tts_cache = TTSCache()
     return tts_cache.add_to_cache(text, audio_data, emotion, sample_rate)
     
 def play_cached_audio(audio_data, sample_rate=16000):
     """Play cached audio data"""
+    global tts_cache
+    if tts_cache is None:
+        tts_cache = TTSCache()
     return tts_cache.play_cached_audio(audio_data, sample_rate)
     
 def clear_cache():
     """Clear the entire cache"""
+    global tts_cache
+    if tts_cache is None:
+        tts_cache = TTSCache()
     return tts_cache.clear_cache()
 
 
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
+    # Configure basic logging
     logging.basicConfig(level=logging.INFO)
-    logging.info(
-        f"Starting TTSCache agent on port {tts_cache.port} (health: {tts_cache.health_check_port})"
-    )
+    
+    # Standardized main execution block
+    agent = None
     try:
-        tts_cache.run()
+        agent = TTSCache()
+        logging.info(f"Starting TTSCache agent on port {agent.port}")
+        agent.run()
     except KeyboardInterrupt:
         logging.info("TTSCache agent interrupted by user")
+    except Exception as e:
+        import traceback
+        logging.error(f"An unexpected error occurred in TTSCache: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logging.info("Cleaning up TTSCache agent...")
+            agent.cleanup()

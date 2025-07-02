@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Dict, Any, Optional
+import yaml
 """
 Root Cause Analysis (RCA) Agent
 -------------------------------
@@ -38,9 +40,9 @@ if str(project_root) not in sys.path:
 # Import config parser utility with fallback
 try:
     from agents.utils.config_parser import parse_agent_args
-    _agent_args = parse_agent_args()
+    # Config is loaded at the module level
 except ImportError:
-    class DummyArgs:
+    class DummyArgs(BaseAgent):
         host = 'localhost'
     _agent_args = DummyArgs()
 
@@ -70,10 +72,94 @@ ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
 ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
 PC2_IP = "192.168.100.17"  # PC2 IP address
 
+
+
+        def connect_to_main_pc_service(self, service_name: str):
+
+            """
+
+            Connect to a service on the main PC using the network configuration.
+
+            
+
+            Args:
+
+                service_name: Name of the service in the network config ports section
+
+            
+
+            Returns:
+
+                ZMQ socket connected to the service
+
+            """
+
+            if not hasattr(self, 'main_pc_connections'):
+
+                self.main_pc_connections = {}
+
+                
+
+            if service_name not in network_config.get("ports", {}):
+
+                logger.error(f"Service {service_name} not found in network configuration")
+
+                return None
+
+                
+
+            port = network_config["ports"][service_name]
+
+            
+
+            # Create a new socket for this connection
+
+            socket = self.context.socket(zmq.REQ)
+
+            
+
+            # Connect to the service
+
+            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+            
+
+            # Store the connection
+
+            self.main_pc_connections[service_name] = socket
+
+            
+
+            logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+            return socket
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""
     def __init__(self, name: str, regex: str, severity: str = "medium", 
                  recommendation: str = "proactive_restart", description: str = ""):
+
+        # Record start time for uptime calculation
+
+        self.start_time = time.time()
+
+        
+
+        # Initialize agent state
+
+        self.running = True
+
+        self.request_count = 0
+
+        
+
+        # Set up connection to main PC if needed
+
+        self.main_pc_connections = {}
+
+        
+
+        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+
         self.name = name
         self.regex = regex
         self.severity = severity  # low, medium, high, critical
@@ -88,7 +174,8 @@ class ErrorPattern:
 class ErrorOccurrence:
     """Class to track occurrences of an error pattern"""
     def __init__(self, agent_name: str, error_pattern: ErrorPattern, timestamp: float, line: str):
-        self.agent_name = agent_name
+         super().__init__(name="DummyArgs", port=None)
+self.agent_name = agent_name
         self.error_pattern = error_pattern
         self.timestamp = timestamp
         self.line = line
@@ -341,7 +428,12 @@ class RCA_Agent:
     
     def _process_log_file(self, log_file: Path):
         """Process a single log file to find error patterns"""
-        # Extract agent name from filename (remove .log extension)
+        # Extract agent name from filename 
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()(remove .log extension)
         agent_name = log_file.stem
         
         try:
@@ -410,6 +502,27 @@ class RCA_Agent:
                         if current_time - last_sent > ERROR_WINDOW:
                             self._send_recommendation(agent_name, pattern, count)
                             self.sent_recommendations[recommendation_key] = current_time
+
+
+    def _get_health_status(self) -> dict:
+
+        """Return health status information."""
+
+        base_status = super()._get_health_status()
+
+        # Add any additional health information specific to DummyArgs
+
+        base_status.update({
+
+            'service': 'DummyArgs',
+
+            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+
+            'additional_info': {}
+
+        })
+
+        return base_status
     
     def _send_recommendation(self, agent_name: str, pattern: ErrorPattern, count: int):
         """Send a recommendation to the Self-Healing Agent"""
@@ -450,7 +563,54 @@ class RCA_Agent:
             self.client_socket = self.context.socket(zmq.REQ)
             self.client_socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
 
+
+
+
+
 if __name__ == "__main__":
-    # Create and run the RCA Agent
-    rca_agent = RCA_Agent()
-    rca_agent.run() 
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = DummyArgs()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

@@ -13,11 +13,12 @@ import logging
 import random
 from datetime import datetime
 from typing import Dict
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import time
 import psutil
-from datetime import datetime
-_agent_args = parse_agent_args()
+
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -31,9 +32,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class EmotionSynthesisAgent(BaseAgent):
-    def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get port and name from config with fallbacks
+        agent_port = config.get("port", 5643) if port is None else port
+        agent_name = config.get("name", "EmotionSynthesisAgent")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
         
         # Emotional markers for different emotions
         self.emotion_markers = {
@@ -68,6 +73,11 @@ class EmotionSynthesisAgent(BaseAgent):
                 'modifiers': ['slightly', 'somewhat', 'rather']
             }
         }
+        
+        # Initialize metrics
+        self.processed_emotions_count = 0
+        self.last_synthesis_time = None
+        self.start_time = time.time()
         
         logger.info(f"EmotionSynthesisAgent initialized on port {self.port}")
     
@@ -116,6 +126,11 @@ class EmotionSynthesisAgent(BaseAgent):
         """Add emotional nuance to the text"""
         try:
             modified_text = self._add_emotional_markers(text, emotion, intensity)
+            
+            # Update metrics
+            self.processed_emotions_count += 1
+            self.last_synthesis_time = datetime.utcnow().isoformat()
+            
             return {
                 'status': 'success',
                 'original_text': text,
@@ -143,11 +158,11 @@ class EmotionSynthesisAgent(BaseAgent):
         else:
             return super().handle_request(request)
     
-    def shutdown(self):
+    def cleanup(self):
         """Gracefully shutdown the agent"""
         logger.info("Shutting down EmotionSynthesisAgent")
-        # No call to super().stop() since BaseAgent does not have it
-        # Add any additional cleanup here if needed
+        # Call BaseAgent's cleanup method
+        super().cleanup()
 
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""
@@ -160,7 +175,6 @@ class EmotionSynthesisAgent(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
-
     def health_check(self):
         '''
         Performs a health check on the agent, returning a dictionary with its status.
@@ -169,10 +183,9 @@ class EmotionSynthesisAgent(BaseAgent):
             # Basic health check logic
             is_healthy = True # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+            # Agent-specific health checks
+            if not self.emotion_markers:
+                is_healthy = False
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
@@ -183,7 +196,10 @@ class EmotionSynthesisAgent(BaseAgent):
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "processed_emotions_count": self.processed_emotions_count,
+                    "last_synthesis_time": self.last_synthesis_time
+                }
             }
             return status_report
         except Exception as e:
@@ -195,10 +211,18 @@ class EmotionSynthesisAgent(BaseAgent):
             }
 
 if __name__ == "__main__":
-    agent = EmotionSynthesisAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        agent = EmotionSynthesisAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.shutdown()
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

@@ -1,4 +1,6 @@
 from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
 """
 Streaming Interrupt Handler
 Monitors partial transcripts for interruption keywords and sends interrupt signals
@@ -10,15 +12,14 @@ import time
 import logging
 import threading
 import os
-from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
 
-# Parse command line arguments
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -27,13 +28,10 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingInterruptHandler")
 
-# ZMQ Configuration - using ports from startup_config.yaml via args
-ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5575))  # Subscribe to partial transcripts
-ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5576))  # Publish interrupt signals
-TTS_PORT = int(getattr(_agent_args, 'streaming_tts_agent_port', 5562))  # TTS agent port for sending stop commands
-
-# Get bind address from environment variables with default to a safe value for Docker compatibility
-# BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
+# ZMQ Configuration - using ports from config
+ZMQ_SUB_PORT = int(config.get("streaming_speech_recognition_port", 5575))  # Subscribe to partial transcripts
+ZMQ_PUB_PORT = int(config.get("port", 5576))  # Publish interrupt signals
+TTS_PORT = int(config.get("streaming_tts_agent_port", 5562))  # TTS agent port for sending stop commands
 
 # Interruption keywords in different languages
 INTERRUPT_KEYWORDS = {
@@ -42,11 +40,21 @@ INTERRUPT_KEYWORDS = {
 }
 
 class StreamingInterruptHandler(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5707))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5576)) if port is None else port
+        agent_name = config.get("name", "StreamingInterruptHandler")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
         self.context = zmq.Context()
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
         
@@ -216,9 +224,9 @@ class StreamingInterruptHandler(BaseAgent):
         except Exception as e:
             logger.error(f"Error in interrupt handler: {e}")
         finally:
-            self._cleanup()
+            self.cleanup()
     
-    def _cleanup(self):
+    def cleanup(self):
         """Clean up ZMQ resources to prevent leaks"""
         logger.info("Cleaning up resources")
         try:
@@ -230,69 +238,75 @@ class StreamingInterruptHandler(BaseAgent):
                 self.tts_socket.close()
             if hasattr(self, 'context'):
                 self.context.term()
+                
+            # Call BaseAgent's cleanup
+            super().cleanup()
+                
             logger.info("All resources cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
 
-
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
             # Basic health check logic
             is_healthy = True # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "last_interrupt": time.time() - self.last_interrupt_time if self.last_interrupt_time > 0 else -1
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
+        """Default health status implementation required by BaseAgent."""
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "status_message": "Agent is operational" if self.running else "Agent is not running",
+            "uptime_seconds": time.time() - self.start_time
         }
         return {"status": status, "details": details}
-
-if __name__ == "__main__":
-    print("=== Streaming Interrupt Handler ===")
-    print("Monitors partial transcripts for interruption keywords")
-    print(f"Subscribing to partial transcripts via service discovery")
-    print(f"Publishing interrupt signals on port {ZMQ_PUB_PORT}")
     
-    agent = StreamingInterruptHandler()
-    agent.run()
-
     def _perform_initialization(self):
         """Initialize agent components."""
         try:
-            # Add your initialization code here
+            # Add initialization code here if needed
             pass
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
+
+# -------------------- Agent Entrypoint --------------------
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
+    try:
+        logger.info("Starting StreamingInterruptHandler...")
+        agent = StreamingInterruptHandler()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info(f"Cleaning up {agent.name}...")
+            agent.cleanup()

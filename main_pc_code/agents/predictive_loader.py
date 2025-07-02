@@ -25,10 +25,10 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import config parser
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -42,6 +42,72 @@ class PredictiveLoader(BaseAgent):
     
     def __init__(self, **kwargs):
         super().__init__()
+
+    
+        self.port = port
+
+    
+        self.host = host
+
+    
+        self.task_router_port = task_router_port
+
+    
+        self.context = zmq.Context()
+
+    
+        self.socket = self.context.socket(zmq.REP)
+
+    
+        self.socket.bind(f"tcp://{host}:{port}")
+
+    
+        logger.info(f"Predictive Loader initialized on port {port}")
+
+    
+        # Setup connection to Task Router
+
+    
+        self.task_router_socket = self.context.socket(zmq.REQ)
+
+    
+        self.task_router_socket.connect(f"tcp://localhost:{task_router_port}")
+
+    
+        logger.info(f"Connected to Task Router on port {task_router_port}")
+
+    
+        # Setup health check socket
+
+    
+        self.health_port = port + 1
+
+    
+        self.health_socket = self.context.socket(zmq.REP)
+
+    
+        self.health_socket.bind(f"tcp://{host}:{self.health_port}")
+
+    
+        logger.info(f"Health check endpoint initialized on port {self.health_port}")
+
+    
+        # Initialize model usage patterns
+
+    
+        self.model_usage = {}
+
+    
+        self.prediction_window = 3600  # 1 hour
+
+    
+        self.lookahead_window = 300    # 5 minutes
+
+    
+        # Start health check thread
+
+    
+        self._start_health_check()
         self.port = self.config.getint('predictive_loader.port', 5617)
         self.task_router_port = self.config.getint('dependencies.task_router_port', 8571)
         self.host = self.config.get('network.bind_address', '0.0.0.0')

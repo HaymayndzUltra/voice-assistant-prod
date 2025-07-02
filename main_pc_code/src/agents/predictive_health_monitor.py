@@ -29,14 +29,13 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
 from src.core.base_agent import BaseAgent, logger
-from config.system_config import DEFAULT_CONFIG as config
-
-# Load distributed config
-with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
-    distributed_config = json.load(f)
+from main_pc_code.utils.config_loader import load_config
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Load config
+config = load_config()
 
 # Constants
 HEALTH_MONITOR_PORT = config.get('zmq.health_monitor_port', 5605)
@@ -44,12 +43,221 @@ SELF_HEALING_PORT = config.get('zmq.self_healing_port', 5606)
 RESTART_COOLDOWN = config.get('system.restart_cooldown', 60)  # seconds
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for health check requests
 
+# Load distributed config
+with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
+    distributed_config = json.load(f)
+
 class PredictiveHealthMonitor(BaseAgent):
     """Predictive health monitoring system for voice assistant agents"""
     
     def __init__(self, port: Optional[int] = None, **kwargs):
-        super().__init__(port=port, name="PredictiveHealthMonitor")
         """Initialize the predictive health monitor"""
+        super().__init__(name="PredictiveHealthMonitor", port=port)
+
+    
+        """Initialize the predictive health monitor"""
+
+    
+        self.port = port or HEALTH_MONITOR_PORT
+
+    
+        self.health_port = HEALTH_CHECK_PORT
+
+    
+        # Get machine information
+
+    
+        self.hostname = socket.gethostname()
+
+    
+        try:
+
+    
+            self.ip_address = socket.gethostbyname(self.hostname)
+
+    
+        except:
+
+    
+            self.ip_address = "127.0.0.1"
+
+    
+        logger.info(f"Running on {self.hostname} ({self.ip_address})")
+
+    
+        # Initialize ZMQ
+
+    
+        self.context = zmq.Context()
+
+    
+        # Socket to receive requests
+
+    
+        self.socket = self.context.socket(zmq.REP)
+
+    
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+        try:
+
+    
+            self.socket.bind(f"tcp://*:{self.port}")
+
+    
+            logger.info(f"Predictive Health Monitor bound to port {self.port}")
+
+    
+        except zmq.error.ZMQError as e:
+
+    
+            logger.error(f"Failed to bind to port {self.port}: {e}")
+
+    
+            if "Address already in use" in str(e):
+
+    
+                logger.warning(f"Port {self.port} is in use, trying alternative port")
+
+    
+                try:
+
+    
+                    alt_port = self.port + 10
+
+    
+                    self.socket.bind(f"tcp://*:{alt_port}")
+
+    
+                    self.port = alt_port
+
+    
+                    logger.info(f"Successfully bound to alternative port {alt_port}")
+
+    
+                except zmq.error.ZMQError as e2:
+
+    
+                    logger.error(f"Failed to bind to alternative port: {e2}")
+
+    
+                    raise
+
+    
+            else:
+
+    
+                raise
+
+    
+        # Socket for health checks
+
+    
+        self.health_socket = self.context.socket(zmq.REP)
+
+    
+        self.health_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+        try:
+
+    
+            self.health_socket.bind(f"tcp://*:{self.health_port}")
+
+    
+            logger.info(f"Health check socket bound to port {self.health_port}")
+
+    
+        except zmq.error.ZMQError as e:
+
+    
+            logger.error(f"Failed to bind health check socket: {e}")
+
+    
+            if "Address already in use" in str(e):
+
+    
+                try:
+
+    
+                    alt_port = self.health_port + 10
+
+    
+                    self.health_socket.bind(f"tcp://*:{alt_port}")
+
+    
+                    self.health_port = alt_port
+
+    
+                    logger.info(f"Health check socket bound to alternative port {alt_port}")
+
+    
+                except zmq.error.ZMQError as e2:
+
+    
+                    logger.error(f"Failed to bind to alternative health port: {e2}")
+
+    
+            else:
+
+    
+                logger.warning("Health check functionality will be limited")
+
+    
+        # Agent health status
+
+    
+        self.agent_health = {}
+
+    
+        # Agent processes and dependencies
+
+    
+        self.agent_processes = {}
+
+    
+        self.agent_last_restart = {}
+
+    
+        self.agent_dependencies = {}
+
+    
+        self.agent_configs = {}
+
+    
+        # Load agent configurations
+
+    
+        self._load_agent_configs()
+
+    
+        # Running flag
+
+    
+        self.running = True
+
+    
+        # Start monitoring thread
+
+    
+        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+
+    
+        self.monitor_thread.start()
+
+    
+        # Start health check thread
+
+    
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+
+    
+        self.health_thread.start()
+
+    
+        logger.info("Predictive Health Monitor initialized")
+        
         # Get machine information
         self.hostname = socket.gethostname()
         self.ip_address = socket.gethostbyname(self.hostname)
@@ -179,6 +387,9 @@ class PredictiveHealthMonitor(BaseAgent):
         # Start optimization thread
         self.optimization_thread = threading.Thread(target=self._optimization_loop, daemon=True)
         self.optimization_thread.start()
+        
+        # Set start time for uptime calculation
+        self.start_time = time.time()
         
         logger.info("Predictive Health Monitor initialized")
 
@@ -1295,47 +1506,55 @@ class PredictiveHealthMonitor(BaseAgent):
                 logger.error(f"Error during cleanup: {str(e)}")
             logger.info("Cleanup complete")
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Implement the required health status method that overrides the BaseAgent method.
+        Returns detailed health information about this agent.
+        """
+        # Get basic health status from parent class
+        health_status = super()._get_health_status()
+        
+        # Add agent-specific metrics
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            # System metrics
+            system_metrics = self._get_system_metrics()
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
+            # Agent monitoring stats
+            monitored_agents = len(self.agent_health)
+            healthy_agents = sum(1 for status in self.agent_health.values() if status.get("healthy", False))
+            
+            # Add to health status
+            health_status.update({
+                "agent_specific_metrics": {
+                    "system_metrics": system_metrics,
+                    "monitored_agents_count": monitored_agents,
+                    "healthy_agents_count": healthy_agents,
+                    "unhealthy_agents_count": monitored_agents - healthy_agents,
+                    "database_size_mb": os.path.getsize(self.db_path) / (1024 * 1024) if os.path.exists(self.db_path) else 0,
+                    "model_loaded": self.model is not None,
+                    "optimization_thread_alive": self.optimization_thread.is_alive() if hasattr(self, 'optimization_thread') else False
+                }
+            })
+            
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+            logger.error(f"Error getting health status: {e}")
+            health_status["errors"] = [f"Failed to get complete health metrics: {str(e)}"]
+            
+        return health_status
 
-# --- Orchestrator Logic Integration (from orchestrator.py) ---
-from src.core.base_agent import BaseAgent
-import signal
-import psutil
-from pathlib import Path
-from datetime import datetime
-
-class OrchestratorAgent(BaseAgent):
-    # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with PredictiveHealthMonitor)
-    pass 
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = PredictiveHealthMonitor()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

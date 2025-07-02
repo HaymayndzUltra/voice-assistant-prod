@@ -14,6 +14,8 @@ try:
 except ImportError:
     # Fallback when running from project root already containing 'main_pc_code'
     from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
 """
 TTS Connector Module
 Connects the modular system's text processor to the Bark TTS agent
@@ -31,9 +33,10 @@ from collections import deque, OrderedDict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 import os
-from utils.config_loader import parse_agent_args
-from datetime import datetime
-_agent_args = parse_agent_args()
+from utils.env_loader import get_env
+
+# Load configuration at module level
+config = load_config()
 
 # Logging setup
 log_dir = os.path.join(os.path.dirname(__file__), '../../logs')
@@ -65,8 +68,7 @@ SYSTEM_LOAD_THRESHOLD = 80  # percentage
 
 class ConnectionPool:
     """ZMQ connection pool for TTS agent"""
-    def __init__(self, context: zmq.Context, address: str, pool_size: int, port: int = None, **kwargs):
-
+    def __init__(self, context: zmq.Context, address: str, pool_size: int, **kwargs):
         self.context = context
         self.address = address
         self.pool_size = pool_size
@@ -105,59 +107,136 @@ class ConnectionPool:
 
 class RequestQueue:
     """Priority-based request queue with batching support"""
-    def __init__(self, max_size: int = MAX_QUEUE_SIZE, port: int = None, **kwargs):
 
+
+
+            
+    def shutdown(self):
+
+            
+            """Cleanup resources"""
+
+            
+            logger.info("Shutting down TTS Connector...")
+
+            
+            self.running = False
+        
+
+            
+            # Close connection pool
+
+            
+            if self.connection_pool:
+
+            
+                self.connection_pool.close()
+        
+
+            
+            # Close ZMQ sockets
+
+            
+            if self.sub_socket:
+
+            
+                self.sub_socket.close()
+
+            
+            if self.health_socket:
+
+            
+                self.health_socket.close()
+        
+
+            
+            # Terminate ZMQ context
+
+            
+            if self.context:
+
+            
+                self.context.term()
+        
+
+            
+            logger.info("TTS Connector shutdown complete")
+
+            
+    def put(self, request: Dict, priority: int = 1):
+
+            
+            """Add request to appropriate queue based on priority"""
+
+            
+            with self.lock:
+
+            
+                if priority == 0:  # High priority
+
+            
+                    self.high_priority.put(request)
+
+            
+                elif priority == 1:  # Normal priority
+
+            
+                    self.normal_priority.put(request)
+
+            
+                else:  # Low priority
+
+            
+                    self.low_priority.put(request)
+
+    def get_batch(self, size: int = BATCH_SIZE, timeout: float = BATCH_TIMEOUT) -> List[Dict]:
+            """Get a batch of requests, prioritizing higher priority queues"""
+            batch = []
+            start_time = time.time()
+        
+            while len(batch) < size and time.time() - start_time < timeout:
+                try:
+                    # Try high priority first
+                    if not self.high_priority.empty():
+                        batch.append(self.high_priority.get_nowait())
+                        continue
+                    
+                    # Then normal priority
+                    if not self.normal_priority.empty():
+                        batch.append(self.normal_priority.get_nowait())
+                        continue
+                    
+                    # Finally low priority
+                    if not self.low_priority.empty():
+                        batch.append(self.low_priority.get_nowait())
+                        continue
+                    
+                    # If all queues are empty, wait a bit
+                    time.sleep(0.01)
+                
+                except queue.Empty:
+                    break
+                
+            return batch
+    def __init__(self, max_size: int = MAX_QUEUE_SIZE, **kwargs):
         self.high_priority = queue.PriorityQueue(maxsize=max_size)
         self.normal_priority = queue.PriorityQueue(maxsize=max_size)
         self.low_priority = queue.PriorityQueue(maxsize=max_size)
         self.lock = threading.Lock()
-        
-    def put(self, request: Dict, priority: int = 1):
-        """Add request to appropriate queue based on priority"""
-        with self.lock:
-            if priority == 0:  # High priority
-                self.high_priority.put(request)
-            elif priority == 1:  # Normal priority
-                self.normal_priority.put(request)
-            else:  # Low priority
-                self.low_priority.put(request)
-                
-    def get_batch(self, size: int = BATCH_SIZE, timeout: float = BATCH_TIMEOUT) -> List[Dict]:
-        """Get a batch of requests, prioritizing higher priority queues"""
-        batch = []
-        start_time = time.time()
-        
-        while len(batch) < size and time.time() - start_time < timeout:
-            try:
-                # Try high priority first
-                if not self.high_priority.empty():
-                    batch.append(self.high_priority.get_nowait())
-                    continue
-                    
-                # Then normal priority
-                if not self.normal_priority.empty():
-                    batch.append(self.normal_priority.get_nowait())
-                    continue
-                    
-                # Finally low priority
-                if not self.low_priority.empty():
-                    batch.append(self.low_priority.get_nowait())
-                    continue
-                    
-                # If all queues are empty, wait a bit
-                time.sleep(0.01)
-                
-            except queue.Empty:
-                break
-                
-        return batch
 
 class TTSConnector(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5703))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5703)) if port is None else int(port)
+        agent_name = config.get("name", "TTSConnector")
+        self.bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Initialize ZMQ context
+        self.context = zmq.Context()
 
         # Initialize connection pool
         self.connection_pool = ConnectionPool(
@@ -208,6 +287,7 @@ class TTSConnector(BaseAgent):
         
         self.running = True
         self.health_thread = None
+        self.start_time = time.time()
         
     def report_health(self):
         """Report health metrics to the system health dashboard"""
@@ -378,34 +458,42 @@ class TTSConnector(BaseAgent):
         return False
         
     def run(self):
+        """Main execution loop of the agent."""
         logger.info("TTS Connector running...")
         
         # Start health reporting thread
         self.health_thread = threading.Thread(target=self.report_health, daemon=True)
         self.health_thread.start()
-        
 
-        while self.running:
-            try:
-
-                # Get batch of requests
-                batch = self.request_queue.get_batch()
-                if not batch:
-                    time.sleep(0.01)
-                    continue
-                # Process batch
-                start_time = time.time()
-                self._process_batch(batch)
-                # Update statistics
-                self.stats["batch_processing_count"] += 1
-                self.stats["queue_sizes"].append(
-                    self.request_queue.high_priority.qsize() +
-                    self.request_queue.normal_priority.qsize() +
-                    self.request_queue.low_priority.qsize()
-                )
-            except Exception as e:
-                logger.error(f"Error in processing loop: {e}")
-                self.stats["error_count"] += 1
+        try:
+            while self.running:
+                try:
+                    # Get batch of requests
+                    batch = self.request_queue.get_batch()
+                    if not batch:
+                        time.sleep(0.01)
+                        continue
+                    # Process batch
+                    start_time = time.time()
+                    self._process_batch(batch)
+                    # Update statistics
+                    self.stats["batch_processing_count"] += 1
+                    self.stats["queue_sizes"].append(
+                        self.request_queue.high_priority.qsize() +
+                        self.request_queue.normal_priority.qsize() +
+                        self.request_queue.low_priority.qsize()
+                    )
+                except Exception as e:
+                    logger.error(f"Error in processing loop: {e}")
+                    self.stats["error_count"] += 1
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received, shutting down...")
+        except Exception as e:
+            logger.error(f"Error in main loop: {e}")
+            logger.exception("Exception details:")
+        finally:
+            logger.info("Exiting main loop...")
+            self.cleanup()
     
     def _process_batch(self, batch: List[Dict]):
         """Process a batch of requests"""
@@ -427,82 +515,133 @@ class TTSConnector(BaseAgent):
                 logger.error(f"Error processing request: {e}")
                 self.stats["error_count"] += 1
     
-    def shutdown(self):
-        """Cleanup resources"""
+    def cleanup(self):
+        """Clean up resources before shutdown."""
         logger.info("Shutting down TTS Connector...")
+        
         self.running = False
         
         # Close connection pool
-        if self.connection_pool:
+        if hasattr(self, 'connection_pool') and self.connection_pool:
             self.connection_pool.close()
         
         # Close ZMQ sockets
-        if self.sub_socket:
+        if hasattr(self, 'sub_socket') and self.sub_socket:
             self.sub_socket.close()
-        if self.health_socket:
+            
+        if hasattr(self, 'health_socket') and self.health_socket:
             self.health_socket.close()
         
         # Terminate ZMQ context
-        if self.context:
+        if hasattr(self, 'context') and self.context:
             self.context.term()
+        
+        # Call BaseAgent cleanup
+        super().cleanup()
         
         logger.info("TTS Connector shutdown complete")
 
+    def _get_health_status(self):
+        """Default health status implementation required by BaseAgent."""
+        try:
+            # Check if the agent is initialized and running
+            is_healthy = self.running and hasattr(self, 'connection_pool')
+            
+            # Calculate success rate safely
+            total_requests = self.stats["total_requests"] if hasattr(self, 'stats') else 0
+            success_rate = 100  # Default to 100% if no requests
+            if total_requests > 0 and hasattr(self, 'stats'):
+                success_rate = (self.stats["successful_requests"] / total_requests) * 100
+            
+            status = {
+                "status": "HEALTHY" if is_healthy else "UNHEALTHY",
+                "details": {
+                    "status_message": "Agent is operational" if is_healthy else "Agent has issues",
+                    "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+                    "request_stats": {
+                        "total": total_requests,
+                        "success_rate": success_rate
+                    } if hasattr(self, 'stats') else {}
+                }
+            }
+            return status
+        except Exception as e:
+            logger.error(f"Error in _get_health_status: {e}")
+            return {
+                "status": "UNHEALTHY",
+                "details": {
+                    "status_message": f"Error generating health status: {str(e)}",
+                    "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+                }
+            }
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
             # Basic health check logic
             is_healthy = True # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+            # Check TTS agent connection if possible
+            if hasattr(self, 'connection_pool'):
+                try:
+                    socket = self.connection_pool.acquire(timeout=1.0)
+                    if socket:
+                        self.connection_pool.release(socket)
+                    else:
+                        is_healthy = False
+                except Exception:
+                    is_healthy = False
+
+            # Calculate success rate safely
+            total_requests = self.stats["total_requests"]
+            success_rate = 100  # Default to 100% if no requests
+            if total_requests > 0:
+                success_rate = (self.stats["successful_requests"] / total_requests) * 100
+            
+            # Get average latency safely
+            avg_latency_ms = 0
+            if "avg_latency" in self.stats and self.stats["avg_latency"] is not None:
+                avg_latency_ms = self.stats["avg_latency"] * 1000
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "total_requests": total_requests,
+                    "success_rate": success_rate,
+                    "avg_latency_ms": avg_latency_ms
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
 
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
-
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
         logger.info("=== TTS Connector starting up ===")
         agent = TTSConnector()
         agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.exception(f"TTS Connector crashed on startup: {e}")
-        sys.exit(1)
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        try:
-            agent.shutdown()
-        except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

@@ -71,7 +71,12 @@ CODE_PATTERNS = [
     r"class\s+\w+(\s*\(.*?\))?:", # Python class definitions
     r"import\s+[\w\.,\s]+",      # Import statements
     r"from\s+[\w\.]+\s+import",  # From import statements
-    r"function\s+\w+\s*\(.*?\)", # JavaScript function
+    
+from main_pc_code.src.core.base_agent import BaseAgentr
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()"function\s+\w+\s*\(.*?\)", # JavaScript function
     r"var\s+\w+\s*=|let\s+\w+\s*=|const\s+\w+\s*=", # Variable declarations
     r"<\w+[^>]*>.*?</\w+>",      # HTML tags
     r"\[\s*[\w\s,\"\']*\s*\]",   # Array notation

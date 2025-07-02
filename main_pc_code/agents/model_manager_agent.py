@@ -143,23 +143,19 @@ logger.critical("--- EXECUTING MAIN MMA (agents/) Version: GGUF_GRANULAR_LOG_V_U
 MODEL_MANAGER_PORT = int(os.environ.get("MODEL_MANAGER_PORT", "5570"))
 TASK_ROUTER_PORT = int(os.environ.get("TASK_ROUTER_PORT", "5571"))
 
-# Parse agent arguments
-_agent_args = parse_agent_args()
+# Import and load configuration at module level
+from main_pc_code.utils.config_loader import load_config
+config = load_config()
 
 class ModelManagerAgent(BaseAgent):
-    def __init__(self, port: int = None, name: str = None, **kwargs):
-        agent_port = _agent_args.get('port', 5000) if port is None else port
-        agent_name = _agent_args.get('name', 'ModelManagerAgent') if name is None else name
-        super().__init__(port=agent_port, name=agent_name)
-    
     def __init__(self, **kwargs):
-        agent_port = _agent_args.get('port', MODEL_MANAGER_PORT)
-        agent_name = _agent_args.get('name', 'ModelManagerAgent')
-        super().__init__(_agent_args)
-        self.enable_pc2_services = _agent_args.get('enable_pc2_services', False)
-        self.vram_budget_percentage = _agent_args.get('vram_budget_percentage', 80)
-        self.memory_check_interval = _agent_args.get('memory_check_interval', 5)
-        self.idle_unload_timeout_seconds = _agent_args.get('idle_unload_timeout_seconds', 300)
+        agent_port = config.get("port", MODEL_MANAGER_PORT)
+        agent_name = config.get("name", 'ModelManagerAgent')
+        super().__init__(name=agent_name, port=agent_port)
+        self.enable_pc2_services = config.get("enable_pc2_services", False)
+        self.vram_budget_percentage = config.get("vram_budget_percentage", 80)
+        self.memory_check_interval = config.get("memory_check_interval", 5)
+        self.idle_unload_timeout_seconds = config.get("idle_unload_timeout_seconds", 300)
         self.commands_processed = 0
         self.loaded_models = {}
         self.model_last_used = {}
@@ -175,8 +171,6 @@ class ModelManagerAgent(BaseAgent):
         else:
             self.total_gpu_memory = 0
             self.vram_budget_mb = 0
-        self.current_vram_used = 0
-        self.current_estimated_vram_used = 0
         print(f"[MMA INIT] VRAM: device={self.device}, total_gpu_memory={self.total_gpu_memory}, vram_budget_mb={self.vram_budget_mb}, vram_budget_percent={self.vram_budget_percentage}")
         self._init_logging()
         import logging
@@ -3995,34 +3989,24 @@ class ModelManagerAgent(BaseAgent):
 
 # Main entry point
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
         # Create necessary directories
         Path("logs").mkdir(exist_ok=True)
         Path("cache").mkdir(exist_ok=True)
         
-        # Parse command-line arguments
-        from main_pc_code.utils.config_parser import parse_agent_args
-        args = parse_agent_args()
-        port = getattr(args, 'port', 5570)
-        
         # Initialize and run the agent
-        logger.info(f"Starting ModelManagerAgent on port {port}")
-        agent = ModelManagerAgent(port=port)
+        logger.info(f"Starting ModelManagerAgent")
+        agent = ModelManagerAgent()
         agent.run()
-        
     except KeyboardInterrupt:
-        logger.info("ModelManagerAgent interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.error(f"Fatal error in ModelManagerAgent: {e}")
         import traceback
-        logger.error(traceback.format_exc())
-        sys.exit(1)
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

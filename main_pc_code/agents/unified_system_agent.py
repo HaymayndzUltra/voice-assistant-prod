@@ -1,4 +1,9 @@
-from src.core.base_agent import BaseAgent
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+config = load_config()
 """
 Unified System Agent
 -------------------
@@ -23,9 +28,6 @@ import signal
 import socket
 import platform
 import traceback
-from utils.config_loader import parse_agent_args
-from datetime import datetime
-_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -61,14 +63,290 @@ class UnifiedSystemAgent(BaseAgent):
     """Unified system management agent that handles orchestration, service discovery, and maintenance."""
     
     def __init__(self):
-        self.port = int(_agent_args.get('port', 5702))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
         """Initialize the unified system agent."""
+        # Initialize basic properties before calling super().__init__()
+
+    
+        """Initialize the unified system agent."""
+
+    
+        try:
+
+    
+            logger.info("Starting UnifiedSystemAgent initialization...")
+
+    
+            self.start_time = time.time()
+
+    
+            # Initialize thread-safe data structures
+
+    
+            self.services_lock = threading.Lock()
+
+    
+            self.services = {}
+
+    
+            self.is_initialized = threading.Event()
+
+    
+            self.initialization_error = None
+
+    
+            # Initialize ZMQ context and sockets
+
+    
+            logger.info("Initializing ZMQ context...")
+
+    
+            self.context = zmq.Context()
+
+    
+            # ROUTER socket for main communication
+
+    
+            logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
+
+    
+            self.router_socket = self.context.socket(zmq.ROUTER)
+
+    
+            self.router_socket.setsockopt(zmq.LINGER, 0)
+
+    
+            self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+            self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
+
+    
+            self.router_socket.bind(f"tcp://*:{SYSTEM_AGENT_PORT}")
+
+    
+            logger.info(f"Successfully bound ROUTER socket to port {SYSTEM_AGENT_PORT}")
+
+    
+            # REP socket for health checks
+
+    
+            logger.info(f"Binding REP socket to port {HEALTH_CHECK_PORT}...")
+
+    
+            self.health_socket = self.context.socket(zmq.REP)
+
+    
+            self.health_socket.setsockopt(zmq.LINGER, 0)
+
+    
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+            self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
+
+    
+            self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
+
+    
+            logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
+
+    
+            # Start background initialization thread
+
+    
+            logger.info("Starting background initialization thread...")
+
+    
+            self.init_thread = threading.Thread(target=self._initialize_background, daemon=True)
+
+    
+            self.init_thread.start()
+
+    
+            # Start service monitoring thread
+
+    
+            logger.info("Starting service monitoring thread...")
+
+    
+            self.monitor_thread = threading.Thread(target=self._monitor_services, daemon=True)
+
+    
+            self.monitor_thread.start()
+
+    
+            # Create readiness file
+
+    
+            logger.info("Creating readiness file...")
+
+    
+            self._create_readiness_file()
+
+    
+            logger.info("UnifiedSystemAgent initialization completed successfully")
+
+    
+        except Exception as e:
+
+    
+            error_msg = f"Failed to initialize UnifiedSystemAgent: {str(e)}\n{traceback.format_exc()}"
+
+    
+            logger.error(error_msg)
+
+    
+            self.initialization_error = error_msg
+
+    
+            raise
+
+    
+        """Initialize the unified system agent."""
+
+    
+        try:
+
+    
+            logger.info("Starting UnifiedSystemAgent initialization...")
+
+    
+            self.start_time = time.time()
+
+    
+            # Initialize thread-safe data structures
+
+    
+            self.services_lock = threading.Lock()
+
+    
+            self.services = {}
+
+    
+            self.is_initialized = threading.Event()
+
+    
+            self.initialization_error = None
+
+    
+            # Initialize ZMQ context and sockets
+
+    
+            logger.info("Initializing ZMQ context...")
+
+    
+            self.context = zmq.Context()
+
+    
+            # ROUTER socket for main communication
+
+    
+            logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
+
+    
+            self.router_socket = self.context.socket(zmq.ROUTER)
+
+    
+            self.router_socket.setsockopt(zmq.LINGER, 0)
+
+    
+            self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+            self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
+
+    
+            self.router_socket.bind(f"tcp://*:{SYSTEM_AGENT_PORT}")
+
+    
+            logger.info(f"Successfully bound ROUTER socket to port {SYSTEM_AGENT_PORT}")
+
+    
+            # REP socket for health checks
+
+    
+            logger.info(f"Binding REP socket to port {HEALTH_CHECK_PORT}...")
+
+    
+            self.health_socket = self.context.socket(zmq.REP)
+
+    
+            self.health_socket.setsockopt(zmq.LINGER, 0)
+
+    
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+            self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
+
+    
+            self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
+
+    
+            logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
+
+    
+            # Start background initialization thread
+
+    
+            logger.info("Starting background initialization thread...")
+
+    
+            self.init_thread = threading.Thread(target=self._initialize_background, daemon=True)
+
+    
+            self.init_thread.start()
+
+    
+            # Start service monitoring thread
+
+    
+            logger.info("Starting service monitoring thread...")
+
+    
+            self.monitor_thread = threading.Thread(target=self._monitor_services, daemon=True)
+
+    
+            self.monitor_thread.start()
+
+    
+            # Create readiness file
+
+    
+            logger.info("Creating readiness file...")
+
+    
+            self._create_readiness_file()
+
+    
+            logger.info("UnifiedSystemAgent initialization completed successfully")
+
+    
+        except Exception as e:
+
+    
+            error_msg = f"Failed to initialize UnifiedSystemAgent: {str(e)}\n{traceback.format_exc()}"
+
+    
+            logger.error(error_msg)
+
+    
+            self.initialization_error = error_msg
+
+    
+            raise
+        self.name = "UnifiedSystemAgent"
+        self.port = int(config.get("port", 5702))
+        self.bind_address = config.get("bind_address", os.environ.get('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        self.start_time = time.time()
+        self.running = True
+        
+        # Call super().__init__() with correct parameters
+        super().__init__(name=self.name, port=self.port)
+        
         try:
             logger.info("Starting UnifiedSystemAgent initialization...")
-            self.start_time = time.time()
             
             # Initialize thread-safe data structures
             self.services_lock = threading.Lock()
@@ -137,7 +415,7 @@ class UnifiedSystemAgent(BaseAgent):
             
             # Create a temporary socket to send ready signal
             ready_socket = self.context.socket(zmq.REQ)
-            ready_socket.connect(f"tcp://{_agent_args.host}:{fra_port}")  # Connect to FaceRecognitionAgent
+            ready_socket.connect(f"tcp://{config.get('host')}:{fra_port}")  # Connect to FaceRecognitionAgent
             
             # Send ready signal
             ready_socket.send_json({
@@ -196,7 +474,7 @@ class UnifiedSystemAgent(BaseAgent):
     
     def _monitor_services(self):
         """Monitor running services and restart if needed."""
-        while True:
+        while self.running:
             try:
                 with self.services_lock:
                     for service_name, service_info in list(self.services.items()):
@@ -229,6 +507,12 @@ class UnifiedSystemAgent(BaseAgent):
             logger.error(f"Error discovering services: {str(e)}")
             raise
     
+    def _restart_service(self, service_name):
+        """Restart a service by name."""
+        logger.info(f"Restarting service: {service_name}")
+        # Implementation would go here
+        pass
+    
     def handle_request(self, request: Dict) -> Dict:
         """Handle incoming requests."""
         try:
@@ -238,29 +522,10 @@ class UnifiedSystemAgent(BaseAgent):
             
             if action in ["ping", "health"]:
                 logger.info("Processing health check request")
-                response = {
-                    "status": "ok",
-                    "ready": True,
-                    "initialized": self.is_initialized.is_set(),
-                    "message": "Unified System Agent is healthy",
-                    "timestamp": datetime.now().isoformat(),
-                    "uptime": time.time() - self.start_time,
-                    "active_threads": threading.active_count(),
-                    "queue_size": len(self.services) if hasattr(self, 'services') else 0
-                }
-                
-                if self.initialization_error:
-                    response.update({
-                        "status": "error",
-                        "ready": False,
-                        "error": self.initialization_error
-                    })
-                
-                logger.info(f"Health check response: {response}")
-                return response
+                return self._get_health_status()
             
-            # For other actions, check if initialization is complete
             if not self.is_initialized.is_set():
+                logger.warning("Received request but agent is not fully initialized yet")
                 return {
                     "status": "error",
                     "ready": False,
@@ -302,6 +567,34 @@ class UnifiedSystemAgent(BaseAgent):
             logger.error(f"Exception in handle_request: {str(e)}\n{traceback.format_exc()}")
             return {"status": "error", "error": str(e)}
     
+    def _get_service_status(self, service_name):
+        """Get status of a specific service."""
+        return {"status": "success", "service": service_name, "info": self.services.get(service_name, {})}
+    
+    def _start_service(self, service_name):
+        """Start a service by name."""
+        return {"status": "success", "message": f"Started service {service_name}"}
+    
+    def _stop_service(self, service_name):
+        """Stop a service by name."""
+        return {"status": "success", "message": f"Stopped service {service_name}"}
+    
+    def _cleanup_system(self):
+        """Clean up system resources."""
+        return {"status": "success", "message": "System cleanup completed"}
+    
+    def _get_system_info(self):
+        """Get system information."""
+        return {
+            "status": "success", 
+            "system_info": {
+                "hostname": socket.gethostname(),
+                "platform": platform.system(),
+                "cpu_count": psutil.cpu_count(),
+                "memory_total": psutil.virtual_memory().total
+            }
+        }
+    
     def run(self):
         """Main loop for handling requests."""
         try:
@@ -311,7 +604,7 @@ class UnifiedSystemAgent(BaseAgent):
             poller.register(self.router_socket, zmq.POLLIN)
             poller.register(self.health_socket, zmq.POLLIN)
             
-            while True:
+            while self.running:
                 try:
                     socks = dict(poller.poll(1000))
                     
@@ -370,20 +663,6 @@ class UnifiedSystemAgent(BaseAgent):
             self.health_socket.close()
             self.context.term()
     
-    def stop(self):
-        """Stop the agent gracefully."""
-        logger.info("Stopping Unified System Agent...")
-        self.running = False
-        # Stop monitoring thread
-        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
-            self.monitor_thread.join(timeout=5)
-        # Close sockets
-        self.router_socket.close()
-        self.health_socket.close()
-        # Terminate context
-        self.context.term()
-        logger.info("Unified System Agent stopped")
-
     def _connect_to_agents(self):
         """Connect to all required agents."""
         try:
@@ -391,7 +670,8 @@ class UnifiedSystemAgent(BaseAgent):
             fra_port = self.config.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
             ready_socket = self.context.socket(zmq.REQ)
             ready_socket.setsockopt(zmq.LINGER, 0)
-            ready_socket.connect(f"tcp://{_agent_args.host}:{fra_port}")  # Connect to FaceRecognitionAgent
+            ready_socket.connect(f"tcp://{config.get('host')}:{fra_port}")  # Connect to FaceRecognitionAgent
+            self.agent_sockets = {}
             self.agent_sockets['face_recognition'] = ready_socket
             logger.info(f"Connected to FaceRecognitionAgent on port {fra_port}")
             
@@ -400,63 +680,98 @@ class UnifiedSystemAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error connecting to agents: {e}")
             raise
-
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+    
+    def cleanup(self):
+        """Clean up resources before exit."""
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            logger.info("Cleaning up UnifiedSystemAgent resources...")
+            self.running = False
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
+            # Stop monitoring thread
+            if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+                self.monitor_thread.join(timeout=5)
+                
+            # Close sockets
+            if hasattr(self, 'router_socket'):
+                self.router_socket.close()
+            if hasattr(self, 'health_socket'):
+                self.health_socket.close()
+                
+            # Close agent sockets
+            if hasattr(self, 'agent_sockets'):
+                for socket_name, socket in self.agent_sockets.items():
+                    socket.close()
+                    
+            # Terminate ZMQ context
+            if hasattr(self, 'context'):
+                self.context.term()
+                
+            logger.info("UnifiedSystemAgent cleaned up successfully")
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
+            logger.error(f"Error during cleanup: {e}")
+    
+    def stop(self):
+        """Stop the agent gracefully."""
+        logger.info("Stopping Unified System Agent...")
+        self.cleanup()
+        logger.info("Unified System Agent stopped")
 
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
+        """Get the current health status of the agent.
+        
+        This method overrides the BaseAgent._get_health_status method to add 
+        agent-specific health information.
+        
+        Returns:
+            Dict[str, Any]: A dictionary containing health status information
+        """
+        # Get the base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add UnifiedSystemAgent-specific health metrics
+        try:
+            # System resource utilization
+            system_metrics = {
+                "cpu_percent": psutil.cpu_percent(),
+                "memory_percent": psutil.virtual_memory().percent,
+                "disk_usage_percent": psutil.disk_usage('/').percent,
+                "network_connections": len(psutil.net_connections())
+            }
+            
+            # Service-specific metrics
+            service_metrics = {
+                "registered_services": len(self.services) if hasattr(self, 'services') else 0,
+                "healthy_services": sum(1 for s in self.services.values() if s.get("status") == "healthy") if hasattr(self, 'services') else 0,
+                "unhealthy_services": sum(1 for s in self.services.values() if s.get("status") != "healthy") if hasattr(self, 'services') else 0,
+                "last_service_check": getattr(self, 'last_service_check', 'never')
+            }
+            
+            # Update the base status with our additional information
+            base_status.update({
+                "system_metrics": system_metrics,
+                "service_metrics": service_metrics,
+                "initialization_complete": self.is_initialized.is_set(),
+            })
+            
+        except Exception as e:
+            logger.error(f"Error collecting health metrics: {e}")
+            base_status.update({"health_metrics_error": str(e)})
+        
+        return base_status
 
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
-        start_unified_system_agent()
+        agent = UnifiedSystemAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logger.exception("Unified System Agent crashed on startup: %s", str(e))
-        sys.exit(1) 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

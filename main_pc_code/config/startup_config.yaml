@@ -145,7 +145,7 @@ vision:
 
 # Additional Monitoring and Security
 monitoring_security:
-  - { name: PredictiveHealthMonitor, script_path: agents/predictive_health_monitor.py, host: 0.0.0.0 , port: 5613 , required: true }
+  - { name: PredictiveHealthMonitor, script_path: src/agents/predictive_health_monitor.py, host: 0.0.0.0 , port: 5613 , required: true }
   - { name: SystemDigitalTwin, script_path: agents/system_digital_twin.py, host: 0.0.0.0, port: 7120, health_check_port: 8100, required: true }
 
 # Environment variables for all agents

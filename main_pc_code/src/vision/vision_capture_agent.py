@@ -28,11 +28,13 @@ if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 from src.core.base_agent import BaseAgent
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
+from utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -53,11 +55,23 @@ MAX_IMAGE_SIZE = (1920, 1080)  # Maximum dimensions for screenshots
 class VisionCaptureAgent(BaseAgent):
     """Agent for capturing screenshots and providing them via ZMQ"""
 
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5711))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5711)) if port is None else port
+        agent_name = config.get("name", "VisionCaptureAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
+        # Set running flag
+        self.running = True
 
         # Create screenshot directory if it doesn't exist
         self.screenshot_dir = Path("data/screenshots")
@@ -135,52 +149,58 @@ class VisionCaptureAgent(BaseAgent):
             logger.error(f"Error capturing screenshot: {e}")
             return {"status": "error", "error": f"Failed to capture screenshot: {str(e)}"}
 
-
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
             # Basic health check logic
             is_healthy = True # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "screenshot_directory": str(self.screenshot_dir)
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
+        """Default health status implementation required by BaseAgent."""
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "status_message": "Agent is operational" if self.running else "Agent is not running",
+            "uptime_seconds": time.time() - self.start_time
         }
         return {"status": status, "details": details}
 
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
-    # Create and start the Vision Capture Agent
-    agent = VisionCaptureAgent()
-    agent.run() 
+    # Standardized main execution block
+    agent = None
+    try:
+        logger.info("Starting VisionCaptureAgent...")
+        agent = VisionCaptureAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logger.error(f"An unexpected error occurred in {agent.name if agent else 'VisionCaptureAgent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

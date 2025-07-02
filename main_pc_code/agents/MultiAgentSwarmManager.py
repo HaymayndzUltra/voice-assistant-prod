@@ -21,13 +21,13 @@ import asyncio
 import traceback
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # Parse command line arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # ZMQ Configuration
 SWARM_MANAGER_PORT = 5645  # Main port for SwarmManager
 if hasattr(_agent_args, 'port'):
-    SWARM_MANAGER_PORT = int(_agent_args.port)
+    SWARM_MANAGER_PORT = int(config.get("port"))
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility

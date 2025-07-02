@@ -48,7 +48,7 @@ except ModuleNotFoundError:
         sys.path.insert(0, str(parent_main_pc))
     from web_automation import GLOBAL_TASK_MEMORY  # type: ignore
 
-from utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -69,6 +69,9 @@ except ImportError:
 
 # Import BaseAgent for standardized agent implementation
 from main_pc_code.src.core.base_agent import BaseAgent
+
+# Load configuration at the module level
+config = load_config()
 
 # Default ZMQ request/response timeout in milliseconds
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
@@ -94,9 +97,7 @@ CACHE_TTL = 600  # seconds
 _router_cache = {}
 _router_cache_lock = threading.Lock()
 
-# Argument parsing
-args = parse_agent_args()
-
+# Project path setup
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if PROJECT_ROOT not in sys.path:
@@ -183,6 +184,129 @@ except Exception as e:
     # Fallback implementation of detect_task_type
     def detect_task_type(prompt):
         """Fallback task type detection when advanced_router is not available"""
+
+
+
+        def _health_check_loop(self):
+
+                logger.info("EnhancedModelRouter health check loop started")
+
+                while self.running:
+
+                    try:
+
+                        if self.health_socket.poll(timeout=1000) != 0:
+
+                            message = self.health_socket.recv()
+
+                            try:
+
+                                request = json.loads(message.decode())
+
+                                logger.debug(f"Received health check request: {request}")
+
+                                response = self._get_health_status()
+
+                                self.health_socket.send_json(response)
+
+                                logger.debug(f"Sent health check response: {response}")
+
+                            except Exception as e:
+
+                                logger.error(f"Invalid health check request: {e}")
+
+                                self.health_socket.send_json({
+
+                                    "status": "error",
+
+                                    "error": str(e)
+
+                                })
+
+                    except zmq.error.ZMQError as e:
+
+                        logger.error(f"ZMQ error in health check loop: {e}")
+
+                        time.sleep(1)
+
+                    except Exception as e:
+
+                        logger.error(f"Error in health check loop: {e}")
+
+                        time.sleep(1)
+
+        def _health_check_loop(self):
+
+                logger.info("EnhancedModelRouter health check loop started")
+
+                while self.running:
+
+                    try:
+
+                        if self.health_socket.poll(timeout=1000) != 0:
+
+                            message = self.health_socket.recv()
+
+                            try:
+
+                                request = json.loads(message.decode())
+
+                                logger.debug(f"Received health check request: {request}")
+
+                                response = self._get_health_status()
+
+                                self.health_socket.send_json(response)
+
+                                logger.debug(f"Sent health check response: {response}")
+
+                            except Exception as e:
+
+                                logger.error(f"Invalid health check request: {e}")
+
+                                self.health_socket.send_json({
+
+                                    "status": "error",
+
+                                    "error": str(e)
+
+                                })
+
+                    except zmq.error.ZMQError as e:
+
+                        logger.error(f"ZMQ error in health check loop: {e}")
+
+                        time.sleep(1)
+
+                    except Exception as e:
+
+                        logger.error(f"Error in health check loop: {e}")
+
+                        time.sleep(1)
+
+        def _health_check_loop(self):
+                logger.info("EnhancedModelRouter health check loop started")
+                while self.running:
+                    try:
+                        if self.health_socket.poll(timeout=1000) != 0:
+                            message = self.health_socket.recv()
+                            try:
+                                request = json.loads(message.decode())
+                                logger.debug(f"Received health check request: {request}")
+                                response = self._get_health_status()
+                                self.health_socket.send_json(response)
+                                logger.debug(f"Sent health check response: {response}")
+                            except Exception as e:
+                                logger.error(f"Invalid health check request: {e}")
+                                self.health_socket.send_json({
+                                    "status": "error",
+                                    "error": str(e)
+                                })
+                    except zmq.error.ZMQError as e:
+                        logger.error(f"ZMQ error in health check loop: {e}")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.error(f"Error in health check loop: {e}")
+                        time.sleep(1)
         if not prompt:
             return "general"
             
@@ -232,8 +356,8 @@ class EnhancedModelRouter(BaseAgent):
     def __init__(self, zmq_port=None, pub_port=None):
         # Allow port override via --port
         if zmq_port is None:
-            if hasattr(args, 'port') and args.port is not None:
-                zmq_port = int(args.port)
+            if hasattr(config, 'port') and config.port is not None:
+                zmq_port = int(config.port)
             else:
                 zmq_port = ZMQ_MODEL_ROUTER_PORT
         if pub_port is None:
@@ -1427,13 +1551,21 @@ class EnhancedModelRouter(BaseAgent):
         """Alias for stop() to maintain compatibility with BaseAgent."""
         self.stop()
 
-def main():
-    """Main entry point for the Enhanced Model Router"""
-    router = EnhancedModelRouter(zmq_port=args.port)
-    try:
-        router.run()
-    except KeyboardInterrupt:
-        router.cleanup()
-
 if __name__ == "__main__":
-    main()
+    # Standardized main execution block
+    agent = None
+    try:
+        # Parse port from config if available
+        port = config.get("port", ZMQ_MODEL_ROUTER_PORT)
+        agent = EnhancedModelRouter(zmq_port=port)
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

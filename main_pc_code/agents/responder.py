@@ -16,11 +16,11 @@ import torch
 import logging
 import time
 import pickle
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from utils.service_discovery_client import discover_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Get the directory of the current file for the log
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -81,7 +81,7 @@ except ImportError:
 
 
 # Settings
-# ZMQ_RESPONDER_PORT = int(getattr(_agent_args, 'port', 5637))  # Updated to match config
+# ZMQ_RESPONDER_PORT = int(config.get("port", 5637))  # Updated to match config
 # ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds in milliseconds
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
@@ -154,15 +154,15 @@ logging.basicConfig(
 logger = logging.getLogger("ResponderAgent")
 
 # Get interrupt port from args or use default
-# INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+# INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
 class ResponderAgent(BaseAgent):
     def __init__(self):
-        self.port = _agent_args.get('port')
-        self.voice = _agent_args.get('voice')
-        self.bind_address = _agent_args.get('bind_address')
-        self.ZMQ_REQUEST_TIMEOUT = int(_agent_args.get('zmq_request_timeout', 5000))
-        self.VISUAL_FEEDBACK_ENABLED = bool(_agent_args.get('visual_feedback_enabled', False))
+        self.port = config.get("get")('port')
+        self.voice = config.get("get")('voice')
+        self.bind_address = config.get("get")('bind_address')
+        self.ZMQ_REQUEST_TIMEOUT = int(config.get("get")('zmq_request_timeout', 5000))
+        self.VISUAL_FEEDBACK_ENABLED = bool(config.get("get")('visual_feedback_enabled', False))
         super().__init__(_agent_args)
         self.context = zmq.Context()
         
@@ -183,8 +183,8 @@ class ResponderAgent(BaseAgent):
             self.interrupt_socket = configure_secure_client(self.interrupt_socket)
             
         # Try to get the interrupt handler address from service discovery
-        interrupt_host = _agent_args.get('interrupt_host', 'localhost')
-        interrupt_port = _agent_args.get('streaming_interrupt_handler_port')
+        interrupt_host = config.get("get")('interrupt_host', 'localhost')
+        interrupt_port = config.get("get")('streaming_interrupt_handler_port')
         interrupt_address = f"tcp://{interrupt_host}:{interrupt_port}"
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -267,7 +267,7 @@ class ResponderAgent(BaseAgent):
             face_service = discover_service("FaceRecognitionAgent")
             if face_service and face_service.get("status") == "SUCCESS":
                 face_info = face_service.get("payload", {})
-                face_host = face_info.get("ip", _agent_args.get('face_host', 'localhost'))
+                face_host = face_info.get("ip", config.get("get")('face_host', 'localhost'))
                 face_port = face_info.get("port", 5610)  # Default port
                 
                 self.face_socket = self.context.socket(zmq.SUB)
@@ -616,7 +616,7 @@ class ResponderAgent(BaseAgent):
                 screen_width = root.winfo_screenwidth()
                 screen_height = root.winfo_screenheight()
                 window_width = min(screen_width - 100, len(text) * 10 + 100)
-                window_height = int(_agent_args.get('window_height', 100))
+                window_height = int(config.get("get")('window_height', 100))
                 x = (screen_width - window_width) // 2
                 y = screen_height - window_height - 50
                 root.geometry(f"{window_width}x{window_height}+{x}+{y}")
@@ -661,15 +661,15 @@ class ResponderAgent(BaseAgent):
         """
         # Use config or _agent_args for defaults if not provided
         if speed is None:
-            speed = float(getattr(self, 'speed', _agent_args.get('speed', 1.0)))
+            speed = float(getattr(self, 'speed', config.get("get")('speed', 1.0)))
         if pitch is None:
-            pitch = float(getattr(self, 'pitch', _agent_args.get('pitch', 1.0)))
+            pitch = float(getattr(self, 'pitch', config.get("get")('pitch', 1.0)))
         if energy is None:
-            energy = float(getattr(self, 'energy', _agent_args.get('energy', 1.0)))
+            energy = float(getattr(self, 'energy', config.get("get")('energy', 1.0)))
         if vibrato is None:
-            vibrato = float(getattr(self, 'vibrato', _agent_args.get('vibrato', 0.0)))
+            vibrato = float(getattr(self, 'vibrato', config.get("get")('vibrato', 0.0)))
         if breathiness is None:
-            breathiness = float(getattr(self, 'breathiness', _agent_args.get('breathiness', 0.0)))
+            breathiness = float(getattr(self, 'breathiness', config.get("get")('breathiness', 0.0)))
 
         # TODO: re-implement full DSP chain (speed, pitch, etc.) if necessary.
         audio = audio * energy
@@ -835,13 +835,18 @@ class ResponderAgent(BaseAgent):
 #                         SCRIPT ENTRY POINT                                #
 # ------------------------------------------------------------------------- #
 if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
         agent = ResponderAgent()
-        agent.start()
+        agent.run()
     except KeyboardInterrupt:
-        logging.info("[Responder] KeyboardInterrupt received. Stopping...")
-        agent.stop()
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        logging.critical(f"[Responder] FATAL error in __main__: {e}")
         import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

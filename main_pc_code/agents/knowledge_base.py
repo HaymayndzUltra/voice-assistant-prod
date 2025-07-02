@@ -12,12 +12,12 @@ import sqlite3
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from src.core.base_agent import BaseAgent
 import psutil
-from datetime import datetime
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -31,14 +31,24 @@ logging.basicConfig(
 logger = logging.getLogger('KnowledgeBase')
 
 class KnowledgeBase(BaseAgent):
-    def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = config.get("port", 5571) if port is None else port
+        agent_name = config.get("name", "KnowledgeBase")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
         
         # Initialize database tracking
         self.db_path = os.path.join("data", "knowledge.db")
         self.fact_count = 0
         self.db_status = False
+        self.start_time = time.time()
+        
+        # Initialize flags and events
+        self.initialized = False
+        self.initialization_error = None
+        self.is_initialized = threading.Event()
         
         # Start initialization in background
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
@@ -51,6 +61,7 @@ class KnowledgeBase(BaseAgent):
             self._init_database()
             
             # Mark as initialized
+            self.initialized = True
             self.is_initialized.set()
             logger.info("KnowledgeBase initialization complete")
             
@@ -248,261 +259,254 @@ class KnowledgeBase(BaseAgent):
             Dictionary with status and fact content
         """
         if not self.initialized:
-            return {'status': 'error', 'message': 'Knowledge base not initialized'}
+            return {
+                'status': 'error',
+                'message': 'Knowledge base not initialized',
+                'ready': False
+            }
             
         try:
-            # Connect to database
-            conn, cursor = self._get_db_connection()
+            facts = self.query_facts(topic)
             
-            # Query for fact
-            cursor.execute(
-                "SELECT id, topic, content, created_at, updated_at FROM facts WHERE topic = ?",
-                (topic,)
-            )
-            
-            # Get result
-            result = cursor.fetchone()
-            
-            # Close connection
-            conn.close()
-            
-            if result:
-                fact_id, topic, content_json, created_at, updated_at = result
-                
-                # Parse JSON content
-                try:
-                    content = json.loads(content_json)
-                except json.JSONDecodeError:
-                    content = {"value": content_json}
-                
-                logger.info(f"Retrieved fact: {topic}")
-                
+            if not facts:
                 return {
-                    'status': 'success',
-                    'fact': {
-                        'id': fact_id,
-                        'topic': topic,
-                        'content': content,
-                        'created_at': created_at,
-                        'updated_at': updated_at
-                    }
-                }
-            else:
-                return {
-                    'status': 'error',
-                    'message': f"No fact found with topic '{topic}'"
+                    'status': 'warning',
+                    'message': f'No facts found for topic: {topic}',
+                    'facts': []
                 }
                 
+            return {
+                'status': 'success',
+                'message': f'Found {len(facts)} facts for topic: {topic}',
+                'facts': facts
+            }
+            
         except Exception as e:
             logger.error(f"Error retrieving fact: {e}")
             return {
                 'status': 'error',
-                'message': f"Failed to retrieve fact: {str(e)}"
+                'message': f'Error retrieving facts: {str(e)}'
             }
     
     def update_fact(self, topic: str, content: Union[Dict, List, str]) -> Dict[str, Any]:
-        """Update an existing fact in the knowledge base.
+        """Update facts for a given topic.
         
         Args:
             topic: Topic of the fact to update
             content: New content for the fact
             
         Returns:
-            Dictionary with status and message
+            Dictionary with status and update results
         """
+        if not self.initialized:
+            return {
+                'status': 'error',
+                'message': 'Knowledge base not initialized',
+                'ready': False
+            }
+            
         try:
-            # Validate inputs
-            if not topic:
-                return {'status': 'error', 'message': 'Topic cannot be empty'}
+            # First check if the fact exists
+            facts = self.query_facts(topic)
             
-            # Serialize content to JSON if it's a dict or list
-            if isinstance(content, (dict, list)):
-                content_json = json.dumps(content)
-            else:
-                content_json = json.dumps({"value": str(content)})
-            
-            # Get current timestamp
-            current_time = time.time()
-            
-            # Connect to database
+            if not facts:
+                # Create new fact if none exists
+                self.add_fact(topic, content)
+                return {
+                    'status': 'success',
+                    'message': 'New fact created',
+                    'updated': 0,
+                    'created': 1
+                }
+                
+            # Update all existing facts for this topic
             conn, cursor = self._get_db_connection()
             
-            # Check if fact exists
-            cursor.execute("SELECT id FROM facts WHERE topic = ?", (topic,))
-            if not cursor.fetchone():
-                conn.close()
-                return {
-                    'status': 'error',
-                    'message': f"No fact found with topic '{topic}'. Use add_fact instead."
-                }
-            
-            # Update fact
+            # Convert content to JSON string if it's a dict or list
+            if isinstance(content, (dict, list)):
+                content = json.dumps(content)
+                
             cursor.execute(
-                "UPDATE facts SET content = ?, updated_at = ? WHERE topic = ?",
-                (content_json, current_time, topic)
+                """
+                UPDATE facts
+                SET content = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE topic = ?
+                """,
+                (content, topic)
             )
             
-            # Commit changes
+            updated_count = cursor.rowcount
             conn.commit()
-            
-            # Close connection
             conn.close()
-            
-            logger.info(f"Updated fact: {topic}")
             
             return {
                 'status': 'success',
-                'message': f"Fact '{topic}' updated successfully"
+                'message': f'Updated {updated_count} facts',
+                'updated': updated_count,
+                'created': 0
             }
-                
+            
         except Exception as e:
             logger.error(f"Error updating fact: {e}")
             return {
                 'status': 'error',
-                'message': f"Failed to update fact: {str(e)}"
+                'message': f'Error updating facts: {str(e)}'
             }
     
-    def search_facts(self, query: str = None, limit: int = 10) -> Dict[str, Any]:
-        """Search for facts in the knowledge base.
+    def search_facts(self, query: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
+        """Search facts by keyword in topic or content.
         
         Args:
-            query: Search string (will match against topic)
+            query: Search query string
             limit: Maximum number of results to return
             
         Returns:
-            Dictionary with status and matching facts
+            Dictionary with status and search results
         """
+        if not self.initialized:
+            return {
+                'status': 'error',
+                'message': 'Knowledge base not initialized',
+                'ready': False
+            }
+            
         try:
-            # Connect to database
             conn, cursor = self._get_db_connection()
             
-            # Prepare query
             if query:
-                # Search for topics containing the query string
-                sql = "SELECT id, topic, content, created_at, updated_at FROM facts WHERE topic LIKE ? ORDER BY updated_at DESC LIMIT ?"
-                cursor.execute(sql, (f'%{query}%', limit))
+                # Search for query in topic or content
+                cursor.execute(
+                    """
+                    SELECT id, topic, content, created_at, updated_at
+                    FROM facts
+                    WHERE topic LIKE ? OR content LIKE ?
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """,
+                    (f"%{query}%", f"%{query}%", limit)
+                )
             else:
-                # Get most recently updated facts
-                sql = "SELECT id, topic, content, created_at, updated_at FROM facts ORDER BY updated_at DESC LIMIT ?"
-                cursor.execute(sql, (limit,))
-            
-            # Get results
-            results = cursor.fetchall()
-            
-            # Close connection
-            conn.close()
-            
-            # Format results
-            facts = []
-            for fact_id, topic, content_json, created_at, updated_at in results:
-                # Parse JSON content
-                try:
-                    content = json.loads(content_json)
-                except json.JSONDecodeError:
-                    content = {"value": content_json}
+                # Return most recent facts
+                cursor.execute(
+                    """
+                    SELECT id, topic, content, created_at, updated_at
+                    FROM facts
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """,
+                    (limit,)
+                )
                 
-                facts.append({
-                    'id': fact_id,
-                    'topic': topic,
-                    'content': content,
-                    'created_at': created_at,
-                    'updated_at': updated_at
-                })
-            
-            logger.info(f"Search found {len(facts)} facts")
+            facts = []
+            for row in cursor.fetchall():
+                fact = {
+                    "id": row[0],
+                    "topic": row[1],
+                    "content": row[2],
+                    "created_at": row[3],
+                    "updated_at": row[4]
+                }
+                
+                # Try to parse JSON content
+                try:
+                    fact["content"] = json.loads(fact["content"])
+                except:
+                    pass
+                    
+                facts.append(fact)
+                
+            conn.close()
             
             return {
                 'status': 'success',
-                'facts': facts,
-                'count': len(facts)
+                'message': f'Found {len(facts)} results',
+                'facts': facts
             }
-                
+            
         except Exception as e:
             logger.error(f"Error searching facts: {e}")
             return {
                 'status': 'error',
-                'message': f"Failed to search facts: {str(e)}"
+                'message': f'Error searching facts: {str(e)}'
             }
-        
+    
     def _handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle incoming requests.
+        """Process incoming requests and dispatch to appropriate handlers."""
+        logger.info(f"Received request: {request}")
         
-        Args:
-            request: Dictionary containing the request details
-            
-        Returns:
-            Dictionary with response
-        """
         action = request.get('action')
         
-        if action == 'health':
-            return self.get_health_status()
-        elif action == 'add_fact':
-            return self.add_fact(
-                request.get('fact', {}).get('subject'),
-                request.get('fact', {}).get('object')
-            )
-        elif action == 'query':
-            return self.get_fact(request.get('query', {}).get('subject'))
-        elif action == 'update_fact':
-            return self.update_fact(
-                request.get('fact', {}).get('subject'),
-                request.get('fact', {}).get('object')
-            )
-        elif action == 'search_facts':
-            return self.search_facts(
-                request.get('query'),
-                request.get('limit', 10)
-            )
-        else:
-            return {
-                'status': 'error',
-                'message': f"Unknown action: {action}"
-            }
+        if action == 'get_fact':
+            return self.get_fact(request.get('topic', ''))
             
-    def stop(self):
-        """Stop the agent and clean up resources."""
-        self.socket.close()
-        self.context.term()
-        logger.info("Knowledge Base stopped")
-
+        elif action == 'add_fact':
+            try:
+                self.add_fact(request.get('topic', ''), request.get('content', ''))
+                return {'status': 'success', 'message': 'Fact added successfully'}
+            except Exception as e:
+                return {'status': 'error', 'message': str(e)}
+                
+        elif action == 'update_fact':
+            return self.update_fact(request.get('topic', ''), request.get('content', ''))
+            
+        elif action == 'search_facts':
+            query = request.get('query')
+            query_str = query if query is not None else ""
+            limit = request.get('limit', 10)
+            return self.search_facts(query_str, limit)
+            
+        elif action == 'get_health':
+            return self.get_health_status()
+            
+        else:
+            return {'status': 'error', 'message': f'Unknown action: {action}'}
+    
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info("Shutting down Knowledge Base Agent")
+        super().cleanup()
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.initialized and self.db_status
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "fact_count": self.fact_count,
+                    "db_status": "active" if self.db_status else "inactive",
+                    "database_path": self.db_path
+                }
             }
             return status_report
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-if __name__ == '__main__':
-    agent = KnowledgeBase()
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
+        agent = KnowledgeBase()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

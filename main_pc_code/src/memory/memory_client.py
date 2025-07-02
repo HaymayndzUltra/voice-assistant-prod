@@ -12,7 +12,6 @@ import time
 import json
 import zmq
 import logging
-import argparse
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 
@@ -23,7 +22,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Configure logging
 logging.basicConfig(
@@ -32,22 +31,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryClient")
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 class MemoryClient(BaseAgent):
     """Client for interacting with the Memory Orchestrator"""
     
-    def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
-        self.host = _agent_args.get('host', "<BIND_ADDR>")
-        self.orchestrator_port = int(_agent_args.get('orchestrator_port', 12345))
-        self.context = zmq.Context()
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = config.get("port", 5644) if port is None else port
+        agent_name = config.get("name", "MemoryClient")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Get orchestrator connection details
+        self.host = config.get("host", "localhost") 
+        self.orchestrator_port = int(config.get("orchestrator_port", 5576))
+        
+        # Connect to the orchestrator
         self.orchestrator_socket = self.context.socket(zmq.REQ)
-        self.orchestrator_socket.connect(f"tcp://localhost:{self.orchestrator_port}")
+        self.orchestrator_socket.connect(f"tcp://{self.host}:{self.orchestrator_port}")
         logger.info(f"Connected to Memory Orchestrator on port {self.orchestrator_port}")
+        
+        # Initialize metrics
         self.requests_sent = 0
         self.orchestrator_connection_status = "connected"
+        self.start_time = time.time()
 
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""
@@ -60,9 +70,8 @@ class MemoryClient(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
-    def start(self):
+    def run(self):
         """Start the memory client service"""
-        self.start_time = time.time()
         logger.info("Memory Client starting")
         try:
             while True:
@@ -135,9 +144,19 @@ class MemoryClient(BaseAgent):
             logger.error(f"Error during cleanup: {e}")
         super().cleanup()
 
-def main():
-    client = MemoryClient()
-    client.start()
-
 if __name__ == "__main__":
-    main() 
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = MemoryClient()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

@@ -1,4 +1,6 @@
 import zmq
+from typing import Dict, Any, Optional
+import yaml
 import json
 import logging
 import threading
@@ -11,9 +13,13 @@ import re
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from utils.config_parser import parse_agent_args
 
-logging.basicConfig(
+logging.basicConfig
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
@@ -23,9 +29,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ContextManager:
+class ContextManager(BaseAgent):
     def __init__(self, min_size=5, max_size=20, initial_size=10):
-        self.min_size = min_size
+         super().__init__(name="ContextManager", port=None)
+
+         # Record start time for uptime calculation
+
+         self.start_time = time.time()
+
+         
+
+         # Initialize agent state
+
+         self.running = True
+
+         self.request_count = 0
+
+         
+
+         # Set up connection to main PC if needed
+
+         self.main_pc_connections = {}
+
+         
+
+         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+
+self.min_size = min_size
         self.max_size = max_size
         self.current_size = initial_size
         self.context_window = deque(maxlen=self.current_size)
@@ -138,6 +168,67 @@ class ContextManager:
         if items_to_remove:
             logger.debug(f"[ContextManager] Pruned {len(items_to_remove[:max_to_remove])} low-importance items")
 
+
+
+    def connect_to_main_pc_service(self, service_name: str):
+
+        """
+
+        Connect to a service on the main PC using the network configuration.
+
+        
+
+        Args:
+
+            service_name: Name of the service in the network config ports section
+
+        
+
+        Returns:
+
+            ZMQ socket connected to the service
+
+        """
+
+        if not hasattr(self, 'main_pc_connections'):
+
+            self.main_pc_connections = {}
+
+            
+
+        if service_name not in network_config.get("ports", {}):
+
+            logger.error(f"Service {service_name} not found in network configuration")
+
+            return None
+
+            
+
+        port = network_config["ports"][service_name]
+
+        
+
+        # Create a new socket for this connection
+
+        socket = self.context.socket(zmq.REQ)
+
+        
+
+        # Connect to the service
+
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+        
+
+        # Store the connection
+
+        self.main_pc_connections[service_name] = socket
+
+        
+
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+        return socket
 class ContextManagerAgent:
     def __init__(self, port=7111, health_port=7112):
         self.port = port
@@ -248,21 +339,92 @@ class ContextManagerAgent:
                 logger.error(f"Error in main loop: {str(e)}")
                 time.sleep(1)
 
+
+    def _get_health_status(self) -> dict:
+
+        """Return health status information."""
+
+        base_status = super()._get_health_status()
+
+        # Add any additional health information specific to ContextManager
+
+        base_status.update({
+
+            'service': 'ContextManager',
+
+            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+
+            'additional_info': {}
+
+        })
+
+        return base_status
+
+
+    def cleanup(self):
+
+        """Clean up resources before shutdown."""
+
+        logger.info("Cleaning up resources...")
+
+        # Add specific cleanup code here
+
+        super().cleanup()
+
     def shutdown(self):
         self.socket.close()
         self.health_socket.close()
         self.context.term()
         logger.info("ContextManagerAgent shutdown complete")
 
+
+
+
+
 if __name__ == "__main__":
-    args = parse_agent_args()
-    agent = ContextManagerAgent(
-        port=getattr(args, 'port', 7111),
-        health_port=getattr(args, 'health_port', 7112)
-    )
+    # Standardized main execution block for PC2 agents
+    agent = None
     try:
+        agent = ContextManager()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
     finally:
-        agent.shutdown() 
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

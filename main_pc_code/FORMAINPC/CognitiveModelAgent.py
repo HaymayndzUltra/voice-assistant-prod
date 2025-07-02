@@ -9,10 +9,10 @@ from typing import Dict, Any, List, Optional
 import networkx as nx
 from main_pc_code.src.core.base_agent import BaseAgent
 import psutil
-from datetime import datetime
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
-_agent_args = parse_agent_args()
+# Module-level configuration loading
+config = load_config()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -34,19 +34,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def __init__(self, port: int = None, name: str = None, **kwargs):
-    agent_port = _agent_args.get('port', 5000) if port is None else port
-    agent_name = _agent_args.get('name', 'CognitiveModelAgent') if name is None else name
-    super().__init__(port=agent_port, name=agent_name)
-    def __init__(self, port: int = 5641):
+class CognitiveModelAgent(BaseAgent):
+    """
+    Cognitive Model Agent for belief system management and cognitive reasoning.
+    """
+    
+    def __init__(self, port: int = 5641, name: str = None, **kwargs):
         """Initialize the Cognitive Model Agent."""
+        # Get name from config with fallback
+        agent_name = config.get("name", 'CognitiveModelAgent') if name is None else name
+        
         # Call BaseAgent's __init__ first
-        super().__init__(name="CognitiveModelAgent", port=port)
+        super().__init__(name=agent_name, port=port)
+        
         self.host = "0.0.0.0"
         self.port = port
-        self.name = "CognitiveModelAgent"
         self.running = True
         self.start_time = time.time()
+        
         # Health status
         self.health_status = {
             "status": "ok",
@@ -55,9 +60,11 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
             "beliefs_count": 0,
             "remote_connection": "ok"
         }
+        
         # REP socket for handling requests
         self.socket.setsockopt(zmq.ROUTER, 1)
         self.socket.bind(f"tcp://{self.host}:{self.port}")
+        
         # Connect to Remote Connector on PC2
         self.remote_socket = self.context.socket(zmq.REQ)
         self.remote_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -69,6 +76,7 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
         except Exception as e:
             logger.warning(f"Could not connect to Remote Connector: {e}")
             self.health_status["remote_connection"] = "error"
+            
         # Initialize belief system
         self.belief_system = nx.DiGraph()
         self._initialize_belief_system()
@@ -249,133 +257,112 @@ def __init__(self, port: int = None, name: str = None, **kwargs):
             belief = request.get('belief')
             belief_type = request.get('type')
             relationships = request.get('relationships', [])
-            
-            if not belief or not belief_type:
-                return {
-                    'status': 'error',
-                    'message': 'Missing required parameters: belief and type'
-                }
-            
             return self.add_belief(belief, belief_type, relationships)
-            
+        
         elif action == 'query_belief':
             belief = request.get('belief')
-            
-            if not belief:
-                return {
-                    'status': 'error',
-                    'message': 'Missing required parameter: belief'
-                }
-            
             return self.query_belief_consistency(belief)
-            
-        elif action == 'get_system':
+        
+        elif action == 'get_belief_system':
             return self.get_belief_system()
-            
+        
         else:
             return {
                 'status': 'error',
-                'message': f'Unknown action: {action}'
+                'message': 'Unknown action'
             }
     
     def start(self):
-        """Run the agent's main loop."""
-        logger.info("Cognitive Model Agent started")
-        
-        try:
-            while True:
-                # Receive message
-                identity, _, message = self.socket.recv_multipart()
-                message = json.loads(message.decode())
-                
-                # Process message
-                response = self.process_message(message)
-                
-                # Send response
-                self.socket.send_multipart([
-                    identity,
-                    b'',
-                    json.dumps(response).encode()
-                ])
-                
-        except KeyboardInterrupt:
-            logger.info("Shutting down Cognitive Model Agent...")
-        finally:
-            self.socket.close()
-            self.context.term()
-            
+        """Start the agent."""
+        logger.info("Starting Cognitive Model Agent")
+        while self.running:
+            try:
+                # Receive and handle requests
+                message = self.socket.recv_json()
+                response = self.handle_request(message)
+                self.socket.send_json(response)
+            except Exception as e:
+                logger.error(f"Error processing request: {e}")
+                # Try to send an error response
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'message': str(e)
+                    })
+                except:
+                    pass
+    
     def process_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        # Process message and return response
+        """Process a message and return a response."""
         return self.handle_request(message)
     
     def _get_health_status(self) -> Dict[str, Any]:
-        base_status = super()._get_health_status()
-        self._update_health_status()
-        base_status.update({
-            "service": "cognitive_model_agent",
-            "beliefs_count": len(self.belief_system.nodes),
-            "remote_connection": self.health_status["remote_connection"]
-        })
-        return base_status
+        """Get health status of the agent."""
+        return {
+            'status': 'ok',
+            'service': 'cognitive_model_agent',
+            'beliefs_count': len(self.belief_system.nodes),
+            'relationships_count': len(self.belief_system.edges),
+            'remote_connection': self.health_status['remote_connection']
+        }
     
     def _update_health_status(self):
         """Update health status with current information."""
-        try:
-            # Update beliefs count
-            beliefs_count = len(self.belief_system.nodes)
-            self.health_status.update({
-                "beliefs_count": beliefs_count,
-                "uptime": time.time() - self.health_status["start_time"]
-            })
-        except Exception as e:
-            logger.error(f"Error updating health status: {e}")
-
+        self.health_status.update({
+            'beliefs_count': len(self.belief_system.nodes),
+            'uptime': time.time() - self.start_time
+        })
+    
     def cleanup(self):
-        logger.info("Stopping Cognitive Model Agent")
+        """Clean up resources before shutdown."""
+        logger.info("Shutting down Cognitive Model Agent")
+        self.running = False
+        if hasattr(self, 'remote_socket'):
+            self.remote_socket.close()
+        # BaseAgent's cleanup will handle the main socket
         super().cleanup()
-        logger.info("Cognitive Model Agent stopped")
-
-
+    
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check on the agent."""
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.remote_socket is not None
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "beliefs_count": len(self.belief_system.nodes),
+                    "relationships_count": len(self.belief_system.edges),
+                    "remote_connection": self.health_status['remote_connection']
+                }
             }
             return status_report
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Cognitive Model Agent')
-    parser.add_argument('--port', type=int, default=5641, help='Port to listen on')
-    args = parser.parse_args()
-
-    agent = CognitiveModelAgent(args.port)
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
-        agent.start()
+        agent = CognitiveModelAgent()
+        agent.run()
     except KeyboardInterrupt:
-        agent.cleanup() 
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

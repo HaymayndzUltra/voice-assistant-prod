@@ -24,10 +24,10 @@ from datetime import datetime
 from typing import Dict, Any, List, Set, Tuple
 
 from src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse command line arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 log_dir = os.path.join(MAIN_PC_CODE, 'logs')
@@ -60,21 +60,21 @@ class IntentionValidatorAgent(BaseAgent):
         }
         
         # Get port and name from _agent_args with fallbacks
-        agent_port = getattr(_agent_args, 'port', 5572) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'IntentionValidator') if name is None else name
-        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'IntentionValidatorAgent') if name is None else name
+        agent_port = config.get("port", 5572) if port is None else port
+        agent_name = config.get("name", 'IntentionValidator') if name is None else name
+        agent_port = config.get("port", 5000) if port is None else port
+        agent_name = config.get("name", 'IntentionValidatorAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
         # Get TaskRouter connection details from command line args (lowercase)
-        self.taskrouter_host = taskrouter_host or getattr(_agent_args, 'taskrouter_host', None) or "localhost"
-        self.taskrouter_port = taskrouter_port or getattr(_agent_args, 'taskrouter_port', None) or 5570
+        self.taskrouter_host = taskrouter_host or config.get("taskrouter_host", None) or "localhost"
+        self.taskrouter_port = taskrouter_port or config.get("taskrouter_port", None) or 5570
         
         # Also check for uppercase variant for backward compatibility
         if hasattr(_agent_args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
-            self.taskrouter_host = _agent_args.TaskRouter_host
+            self.taskrouter_host = config.get("TaskRouter_host")
         if hasattr(_agent_args, 'TaskRouter_port') and self.taskrouter_port == 5570:
-            self.taskrouter_port = _agent_args.TaskRouter_port
+            self.taskrouter_port = config.get("TaskRouter_port")
             
         self.db_path = os.path.join(MAIN_PC_CODE, "data", "intention_validation.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)

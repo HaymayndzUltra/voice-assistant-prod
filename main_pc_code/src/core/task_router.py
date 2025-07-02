@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Tuple
 from src.core.base_agent import BaseAgent
 from src.core.http_server import setup_health_check_server
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 # Import service discovery and network utilities
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
@@ -35,7 +35,8 @@ from main_pc_code.src.memory.zmq_encoding_utils import safe_encode_json, safe_de
 import psutil
 from datetime import datetime
 
-_agent_args = parse_agent_args()
+# Module-level configuration loading
+config = load_config()
 
 # Configure logging
 log_dir = 'logs'
@@ -50,14 +51,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger('TaskRouter')
 
-# === ALL CONFIGURATION FROM _agent_args ===
-DEFAULT_PORT = int(os.environ.get("TASK_ROUTER_PORT", "7000"))  # Default port if not specified in _agent_args
-TASK_ROUTER_PORT = getattr(_agent_args, 'port', DEFAULT_PORT)
+# === ALL CONFIGURATION FROM config ===
+DEFAULT_PORT = int(os.environ.get("TASK_ROUTER_PORT", "7000"))  # Default port if not specified in config
+TASK_ROUTER_PORT = config.get("port", DEFAULT_PORT)
 TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1
-CRIT_BREAK_FAIL = getattr(_agent_args, 'circuit_breaker_failure_threshold', 3)
-CRIT_BREAK_RESET = getattr(_agent_args, 'circuit_breaker_reset_timeout', 30)
-CRIT_BREAK_HALF_OPEN = getattr(_agent_args, 'circuit_breaker_half_open_timeout', 5)
-INTERRUPT_PORT = getattr(_agent_args, 'interrupt_port', 5576)
+CRIT_BREAK_FAIL = config.get("circuit_breaker_failure_threshold", 3)
+CRIT_BREAK_RESET = config.get("circuit_breaker_reset_timeout", 30)
+CRIT_BREAK_HALF_OPEN = config.get("circuit_breaker_half_open_timeout", 5)
+INTERRUPT_PORT = config.get("interrupt_port", 5576)
 
 class CircuitBreaker:
     """
@@ -192,10 +193,13 @@ class TaskRouter(BaseAgent):
     """Routes tasks between different services and handles circuit breaking."""
 
     def __init__(self, **kwargs):
-        # === CONFIGURATION FROM _agent_args ===
-        super().__init__(_agent_args)
-        self.port = getattr(_agent_args, 'port', DEFAULT_PORT)
-        self.name = getattr(_agent_args, 'name', 'TaskRouter')
+        # === CONFIGURATION FROM config ===
+        self.port = config.get("port", DEFAULT_PORT)
+        self.name = config.get("name", 'TaskRouter')
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=self.name, port=self.port)
+        
         self.circuit_breakers = {}
         self.service_status = {}
         self.running = True
@@ -228,7 +232,7 @@ class TaskRouter(BaseAgent):
     def _load_configuration(self):
         """Load configuration from command-line arguments."""
         try:
-            self.config = vars(_agent_args)
+            self.config = vars(config)
             logger.info("Configuration loaded successfully")
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
@@ -458,7 +462,7 @@ class TaskRouter(BaseAgent):
             # Create health check socket
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            bind_address = getattr(_agent_args, 'bind_address', 'localhost')
+            bind_address = config.get("bind_address", 'localhost')
             self.health_socket.bind(f"tcp://{bind_address}:{TASK_ROUTER_HEALTH_PORT}")
             logger.info(f"Health check socket bound to port {TASK_ROUTER_HEALTH_PORT}")
             
@@ -613,9 +617,18 @@ class TaskRouter(BaseAgent):
             }
 
 if __name__ == "__main__":
-    # === STANDARDIZED MAIN BLOCK ===
-    port = getattr(_agent_args, 'port', DEFAULT_PORT)
-    name = getattr(_agent_args, 'name', 'TaskRouter')
-    logger.info(f"Starting TaskRouter on port {port}")
-    agent = TaskRouter()
-    agent.run() 
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = TaskRouter()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

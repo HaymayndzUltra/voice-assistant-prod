@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -7,13 +7,12 @@ import time
 import os
 from datetime import datetime
 from collections import deque
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import psutil
-from datetime import datetime
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -28,27 +27,31 @@ logger = logging.getLogger(__name__)
 
 class ActiveLearningMonitor(BaseAgent):
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+        self.port = config.get("port", 5700)
+        self.start_time = time.time()
+        self.name = "ActiveLearningMonitor"
+        self.running = True
+        self.processed_items = 0
+        self.monitored_events = 0
+        super().__init__()
         self.context = zmq.Context()
         
         # Subscribe to UMRA output
         self.umra_socket = self.context.socket(zmq.SUB)
-        self.umra_socket.connect(f"tcp://localhost:{_agent_args.umra_port}")
+        self.umra_socket.connect(f"tcp://localhost:{config.get('umra_port', 5701)}")
         self.umra_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Subscribe to Coordinator output
         self.coordinator_socket = self.context.socket(zmq.SUB)
-        self.coordinator_socket.connect(f"tcp://localhost:{_agent_args.coordinator_port}")
+        self.coordinator_socket.connect(f"tcp://localhost:{config.get('coordinator_port', 5702)}")
         self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Connect to SelfTrainingOrchestrator
         self.orchestrator_socket = self.context.socket(zmq.REQ)
         self.orchestrator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.orchestrator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.orchestrator_socket.connect(f"tcp://localhost:{_agent_args.orchestrator_port}")
+        self.orchestrator_socket.connect(f"tcp://localhost:{config.get('orchestrator_port', 5703)}")
         
-        self.running = True
         self.training_data = []
         self.interaction_buffer = deque(maxlen=1000)  # Store last 1000 interactions
         
@@ -191,7 +194,6 @@ class ActiveLearningMonitor(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
 
-
     def health_check(self):
         '''
         Performs a health check on the agent, returning a dictionary with its status.
@@ -226,19 +228,18 @@ class ActiveLearningMonitor(BaseAgent):
             }
 
 if __name__ == "__main__":
-    monitor = ActiveLearningMonitor()
+    # Standardized main execution block
+    agent = None
     try:
-        while True:
-            time.sleep(1)
+        agent = ActiveLearningMonitor()
+        agent.run()
     except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        monitor.shutdown() 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

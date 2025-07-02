@@ -23,14 +23,14 @@ import logging
 import threading
 import base64
 from typing import Dict, Any, List, Optional, Tuple, Union
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -44,8 +44,8 @@ logging.basicConfig(
 logger = logging.getLogger("CoordinatorAgent")
 
 # Constants for agent communication
-COORDINATOR_PORT = int(getattr(_agent_args, 'port', 26002))
-PROACTIVE_SUGGESTION_PORT = int(getattr(_agent_args, 'proactive_suggestion_port', 5591))
+COORDINATOR_PORT = int(config.get("port", 26002))
+PROACTIVE_SUGGESTION_PORT = int(config.get("proactive_suggestion_port", 5591))
 
 # Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
@@ -88,6 +88,130 @@ class CoordinatorAgent(BaseAgent):
     def __init__(self, **kwargs):
         """Initialize the Coordinator Agent."""
         super().__init__()
+
+        """Initialize the Coordinator Agent."""
+
+        self.port = port
+
+        # Create ZMQ context and socket for the coordinator
+
+        self.context = zmq.Context()
+
+        self.socket = self.context.socket(zmq.REP)
+
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        # Apply secure ZMQ if enabled
+
+        if SECURE_ZMQ:
+
+            self.socket = configure_secure_server(self.socket)
+
+            logger.info("Secure ZMQ enabled for CoordinatorAgent")
+
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+
+        self.socket.bind(bind_address)
+
+        logger.info(f"Coordinator socket bound to {bind_address}")
+
+        # Register with service discovery
+
+        self._register_service()
+
+        # Discover and connect to required services using service discovery
+
+        self.service_info = {}
+
+        self._discover_services()
+
+        # Create socket for proactive suggestions (with port fallback)
+
+        self.suggestion_socket = self.context.socket(zmq.REP)
+
+        self.suggestion_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        self.suggestion_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        # Apply secure ZMQ to suggestion socket if enabled
+
+        if SECURE_ZMQ:
+
+            self.suggestion_socket = configure_secure_server(self.suggestion_socket)
+
+        # Attempt to bind to the preferred port; fall back if it's unavailable.
+
+        self.suggestion_port = PROACTIVE_SUGGESTION_PORT
+
+        try:
+
+            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+
+            self.suggestion_socket.bind(suggestion_bind_address)
+
+            logger.info(f"Proactive suggestion socket bound to {suggestion_bind_address}")
+
+        except zmq.ZMQError as e:
+
+            logger.warning(
+
+                f"Port {self.suggestion_port} already in use (error: {e}). "
+
+                "Searching for the next available port."
+
+            )
+
+            self.suggestion_port = find_available_port(self.suggestion_port + 1)
+
+            suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
+
+            self.suggestion_socket.bind(suggestion_bind_address)
+
+            logger.info(f"Proactive suggestion socket bound to fallback port {suggestion_bind_address}")
+
+        # Flag to control the agent
+
+        self.running = True
+
+        # Proactive assistance state
+
+        self.last_interaction_time = time.time()
+
+        self.pending_suggestions = []
+
+        # Initialize memory connection
+
+        self._init_memory_connection()
+
+        # Start service discovery refresh thread
+
+        self.discovery_thread = threading.Thread(target=self._service_discovery_refresh_loop)
+
+        self.discovery_thread.daemon = True
+
+        self.discovery_thread.start()
+
+        # Start the proactive suggestion handler thread
+
+        self.suggestion_thread = threading.Thread(target=self._handle_proactive_suggestions)
+
+        self.suggestion_thread.daemon = True
+
+        self.suggestion_thread.start()
+
+        # Start the inactivity checker thread
+
+        self.inactivity_thread = threading.Thread(target=self._check_inactivity)
+
+        self.inactivity_thread.daemon = True
+
+        self.inactivity_thread.start()
+
+        logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
         self._agent_args = self.parse_agent_args()
         self.zmq_timeout = self.config.getint('coordinator.zmq_timeout_ms', 5000)
         self.inactivity_threshold = self.config.getint('coordinator.inactivity_threshold_seconds', 30)

@@ -1,0 +1,368 @@
+"""
+Chitchat Agent
+-------------
+Handles natural conversational interactions:
+- Processes casual conversation requests
+- Connects to local or remote LLM for responses
+- Maintains conversation context
+- Integrates with personality engine
+"""
+
+import zmq
+import json
+import logging
+import time
+import threading
+import os
+import sys
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from src.core.base_agent import BaseAgent
+from utils.config_parser import parse_agent_args
+
+_agent_args = parse_agent_args()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('chitchat_agent.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# ZMQ Configuration
+ZMQ_CHITCHAT_PORT = 5573  # Port for receiving chitchat requests
+ZMQ_HEALTH_PORT = 6582  # Health status
+PC2_IP = "192.168.100.17"  # PC2 IP address
+PC2_LLM_PORT = 5557  # Remote LLM on PC2
+
+# Conversation settings
+MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
+MAX_HISTORY_TOKENS = 2000  # Maximum number of tokens in history
+
+class ChitchatAgent(BaseAgent):
+    """Agent for handling natural conversational interactions."""
+    
+    def _get_default_port(self) -> int:
+        """Override default port to use the configured port."""
+        return 5711  # Using the new port we configured
+        
+    def __init__(self, port: int = 5711, **kwargs):
+        super().__init__(port=port, name="ChitchatAgent")
+        """Initialize the chitchat agent."""
+        self.chitchat_port = port
+        self.health_port = port + 1
+        
+        # Initialize ZMQ
+        self.context = zmq.Context()
+        self._setup_sockets()
+        
+        # Initialize state
+        self.running = True
+        self.conversation_history = {}  # User ID -> conversation history
+        self.health_thread = None
+        
+        logger.info("Chitchat Agent initialized")
+    
+    def _setup_sockets(self):
+        """Set up ZMQ sockets."""
+        try:
+            # Main REP socket for chitchat requests with fallback if port in use
+            self.socket = self.context.socket(zmq.REP)
+            self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            rep_port = self.chitchat_port
+            while True:
+                try:
+                    self.socket.bind(f"tcp://*:{rep_port}")
+                    if rep_port != self.chitchat_port:
+                        logger.warning(f"Chitchat REP port {self.chitchat_port} unavailable, using {rep_port} instead")
+                        self.chitchat_port = rep_port
+                    break
+                except zmq.error.ZMQError as e:
+                    if 'Address already in use' in str(e):
+                        rep_port += 1  # try next port
+                    else:
+                        raise
+            
+            # Health socket with fallback
+            self.health_socket = self.context.socket(zmq.PUB)
+            health_port = self.health_port
+            while True:
+                try:
+                    self.health_socket.bind(f"tcp://*:{health_port}")
+                    if health_port != self.health_port:
+                        logger.warning(f"Health port {self.health_port} unavailable, using {health_port} instead")
+                        self.health_port = health_port
+                    break
+                except zmq.error.ZMQError as e:
+                    if 'Address already in use' in str(e):
+                        health_port += 1
+                    else:
+                        raise
+            
+            # PC2 LLM socket
+            self.llm_socket = self.context.socket(zmq.REQ)
+            self.llm_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.llm_socket.setsockopt(zmq.LINGER, 0)
+            self.llm_socket.setsockopt(zmq.RCVTIMEO, 30000)  # 30 second timeout
+            self.llm_socket.connect(f"tcp://{PC2_IP}:{PC2_LLM_PORT}")
+            
+            logger.info(f"ZMQ sockets initialized - Chitchat REP: {self.chitchat_port}, Health: {self.health_port}, LLM: {PC2_IP}:{PC2_LLM_PORT}")
+        except Exception as e:
+            logger.error(f"Error initializing ZMQ sockets: {str(e)}")
+            raise
+    
+    def _get_conversation_history(self, user_id):
+        """Get conversation history for a user."""
+        if user_id not in self.conversation_history:
+            self.conversation_history[user_id] = []
+        return self.conversation_history[user_id]
+    
+    def _add_to_history(self, user_id, role, content):
+        """Add a message to the conversation history."""
+        if user_id not in self.conversation_history:
+            self.conversation_history[user_id] = []
+        
+        # Add new message
+        self.conversation_history[user_id].append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # Trim history if needed
+        if len(self.conversation_history[user_id]) > MAX_HISTORY_LENGTH:
+            self.conversation_history[user_id] = self.conversation_history[user_id][-MAX_HISTORY_LENGTH:]
+    
+    def _format_messages_for_llm(self, history):
+        """Format conversation history for LLM."""
+        messages = []
+        
+        # Add system message
+        messages.append({
+            "role": "system",
+            "content": "You are a helpful, friendly, and conversational AI assistant. Respond in a natural, engaging way. Keep responses concise but informative."
+        })
+        
+        # Add conversation history
+        for msg in history:
+            messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        return messages
+    
+    def _generate_response_with_local_llm(self, messages):
+        """Generate a response using a local LLM."""
+        try:
+            # TODO: Implement local LLM integration
+            # This is a placeholder for future local model integration
+            logger.warning("Local LLM not implemented, falling back to remote LLM")
+            return self._generate_response_with_remote_llm(messages)
+        except Exception as e:
+            logger.error(f"Error generating response with local LLM: {str(e)}")
+            return "I'm having trouble thinking right now. Can we try again in a moment?"
+    
+    def _generate_response_with_remote_llm(self, messages):
+        """Generate a response using the remote LLM on PC2."""
+        try:
+            # Create request
+            request = {
+                "action": "generate_chat_response",
+                "messages": messages,
+                "model": "gpt-4o",  # Use GPT-4o for best conversational quality
+                "temperature": 0.7,
+                "max_tokens": 300,
+                "request_id": str(uuid.uuid4())
+            }
+            
+            # Send request
+            self.llm_socket.send_json(request)
+            
+            # Get response
+            response = self.llm_socket.recv_json()
+            
+            if response.get("status") == "success":
+                return response.get("response", "")
+            else:
+                logger.error(f"Error from remote LLM: {response.get('message', 'Unknown error')}")
+                return "I'm having trouble connecting to my thinking module. Can we try again in a moment?"
+        except zmq.error.ZMQError as e:
+            logger.error(f"ZMQ error communicating with remote LLM: {str(e)}")
+            return "I'm having trouble connecting to my thinking module. Can we try again in a moment?"
+        except Exception as e:
+            logger.error(f"Error generating response with remote LLM: {str(e)}")
+            return "I'm having trouble thinking right now. Can we try again in a moment?"
+    
+    def process_chitchat(self, text, user_id=None):
+        """Process a chitchat request and generate a response."""
+        if not user_id:
+            user_id = "default"
+        
+        logger.info(f"Processing chitchat request from user {user_id}: {text[:50]}...")
+        
+        # Get conversation history
+        history = self._get_conversation_history(user_id)
+        
+        # Add user message to history
+        self._add_to_history(user_id, "user", text)
+        
+        # Format messages for LLM
+        messages = self._format_messages_for_llm(history)
+        
+        # Generate response
+        try:
+            # Try remote LLM first
+            response = self._generate_response_with_remote_llm(messages)
+        except Exception as e:
+            logger.error(f"Error with remote LLM, falling back to local: {str(e)}")
+            # Fallback to local LLM
+            response = self._generate_response_with_local_llm(messages)
+        
+        # Add assistant response to history
+        self._add_to_history(user_id, "assistant", response)
+        
+        return response
+    
+    def handle_request(self, request):
+        """Handle a request from the coordinator."""
+        try:
+            action = request.get("action", "")
+            
+            if action == "health_check":
+                return {
+                    "status": "ok",
+                    "message": "ChitchatAgent is healthy",
+                    "initialization_status": {"is_initialized": True}
+                }
+            if action == "chitchat":
+                text = request.get("text", "")
+                user_id = request.get("user_id", "default")
+                
+                response = self.process_chitchat(text, user_id)
+                
+                return {
+                    "status": "success",
+                    "response": response,
+                    "request_id": request.get("request_id", "")
+                }
+            elif action == "clear_history":
+                user_id = request.get("user_id", "default")
+                
+                if user_id in self.conversation_history:
+                    self.conversation_history[user_id] = []
+                
+                return {
+                    "status": "success",
+                    "message": f"Conversation history cleared for user {user_id}",
+                    "request_id": request.get("request_id", "")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": f"Unknown action: {action}",
+                    "request_id": request.get("request_id", "")
+                }
+        except Exception as e:
+            logger.error(f"Error handling request: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Error: {str(e)}",
+                "request_id": request.get("request_id", "")
+            }
+    
+    def health_broadcast_loop(self):
+        """Loop for broadcasting health status."""
+        while self.running:
+            try:
+                # Prepare health status
+                status = {
+                    "component": "chitchat_agent",
+                    "status": "running",
+                    "timestamp": datetime.now().isoformat(),
+                    "metrics": {
+                        "active_users": len(self.conversation_history),
+                        "total_conversations": sum(len(history) for history in self.conversation_history.values())
+                    }
+                }
+                
+                # Publish health status
+                self.health_socket.send_json(status)
+                
+            except Exception as e:
+                logger.error(f"Error broadcasting health status: {str(e)}")
+            
+            # Sleep for a while
+            time.sleep(5)
+    
+    def run(self):
+        """Run the chitchat agent."""
+        logger.info("Starting chitchat agent")
+        
+        # Start health broadcast thread
+        self.health_thread = threading.Thread(target=self.health_broadcast_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        
+        # Main loop
+        while self.running:
+            try:
+                # Wait for request
+                request_json = self.socket.recv_json()
+                
+                # Process request
+                response = self.handle_request(request_json)
+                
+                # Send response
+                self.socket.send_json(response)
+                
+            except Exception as e:
+                logger.error(f"Error in main loop: {str(e)}")
+                # Try to send error response
+                try:
+                    self.socket.send_json({
+                        "status": "error",
+                        "message": f"Server error: {str(e)}",
+                        "request_id": request_json.get("request_id", "") if 'request_json' in locals() else ""
+                    })
+                except:
+                    pass
+    
+    def stop(self):
+        """Stop the chitchat agent."""
+        logger.info("Stopping chitchat agent")
+        self.running = False
+        
+        # Close sockets
+        self.socket.close()
+        self.health_socket.close()
+        self.llm_socket.close()
+        
+        # Wait for threads to finish
+        if self.health_thread:
+            self.health_thread.join(timeout=1.0)
+        
+        logger.info("Chitchat agent stopped")
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5711)
+    args = parser.parse_args()
+    agent = ChitchatAgent(port=args.port)
+    agent.run()
+
+    def _perform_initialization(self):
+        """Initialize agent components."""
+        try:
+            # Add your initialization code here
+            pass
+        except Exception as e:
+            logger.error(f"Initialization error: {e}")
+            raise

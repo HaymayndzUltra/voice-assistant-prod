@@ -26,9 +26,9 @@ import psutil
 from main_pc_code.src.core.base_agent import BaseAgent
 # Import existing command handler as base
 from agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

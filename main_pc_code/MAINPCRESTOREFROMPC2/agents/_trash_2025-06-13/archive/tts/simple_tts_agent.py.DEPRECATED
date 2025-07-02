@@ -1,0 +1,135 @@
+"""
+Simple TTS Agent
+Uses direct Windows SAPI interface for reliable text-to-speech
+"""
+import zmq
+import json
+import logging
+import sys
+import os
+import time
+from pathlib import Path
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'modular_system', 'logs', 'simple_tts_agent.py.log'))
+    ]
+)
+logger = logging.getLogger("SimpleTTSAgent")
+
+# ZMQ Configuration
+TTS_PORT = 5562  # Same as regular TTS agent for compatibility
+
+# Import win32com for direct SAPI access
+try:
+    import win32com.client
+    logger.info("Successfully imported win32com.client for SAPI TTS")
+except ImportError:
+    logger.error("Failed to import win32com.client. Installing...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
+    import win32com.client
+    logger.info("Successfully installed and imported win32com.client for SAPI TTS")
+
+class SimpleTTSAgent:
+    def __init__(self):
+        """Initialize the Simple TTS agent with direct SAPI"""
+        logger.info("Initializing Simple TTS Agent")
+        
+        # Initialize ZMQ
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind(f"tcp://*:{TTS_PORT}")
+        logger.info(f"TTS Agent listening on port {TTS_PORT}")
+        
+        # Initialize TTS engine
+        self.speaking = False
+        logger.info("TTS Agent Initialized and Ready")
+        
+        # Say a test message
+        self.speak("TTS Agent Initialized and Ready")
+    
+    def speak(self, text):
+        """Speak the given text using Windows SAPI"""
+        if not text:
+            return False
+            
+        try:
+            # Create a new SAPI.SpVoice instance for each speak request
+            # This prevents any issues with reusing the same instance
+            speaker = win32com.client.Dispatch("SAPI.SpVoice")
+            logger.info(f"Speaking: {text[:50]}..." if len(text) > 50 else f"Speaking: {text}")
+            
+            # Speak the text
+            self.speaking = True
+            speaker.Speak(text)
+            self.speaking = False
+            
+            # Clean up
+            del speaker
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in TTS: {e}")
+            self.speaking = False
+            return False
+    
+    def run(self):
+        """Main loop for the TTS agent"""
+        logger.info("Starting Simple TTS Agent")
+        
+        try:
+            while True:
+                try:
+                    # Wait for messages
+                    message = self.socket.recv_string()
+                    data = json.loads(message)
+                    command = data.get("command", "")
+                    
+                    if command == "speak":
+                        text = data.get("text", "")
+                        logger.info(f"Received message: {json.dumps(data)[:50]}...")
+                        
+                        # Speak the text
+                        success = self.speak(text)
+                        
+                        # Send response
+                        if success:
+                            self.socket.send_string(json.dumps({"status": "ok", "message": "Speech started"}))
+                        else:
+                            self.socket.send_string(json.dumps({"status": "error", "message": "Failed to speak"}))
+                            
+                    elif command == "stop":
+                        logger.info("Received stop command")
+                        # We can't easily stop SAPI mid-speech, but we'll acknowledge
+                        self.socket.send_string(json.dumps({"status": "ok", "message": "Acknowledged stop command"}))
+                        
+                    else:
+                        logger.warning(f"Unknown command: {command}")
+                        self.socket.send_string(json.dumps({"status": "error", "message": f"Unknown command: {command}"}))
+                        
+                except zmq.Again:
+                    # No message available, sleep a bit
+                    time.sleep(0.1)
+                    
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt detected")
+        except Exception as e:
+            logger.error(f"Error in TTS agent: {e}")
+        finally:
+            logger.info("Shutting down TTS agent")
+            self.socket.close()
+            self.context.term()
+
+if __name__ == "__main__":
+    print("=== Simple TTS Agent ===")
+    print(f"Listening on ZMQ port {TTS_PORT}")
+    print("Using Windows SAPI for TTS")
+    
+    # Create and run TTS agent
+    agent = SimpleTTSAgent()
+    agent.run()

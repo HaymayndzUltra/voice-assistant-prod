@@ -15,13 +15,13 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import threading
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import psutil
 import traceback
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +37,88 @@ logger = logging.getLogger(__name__)
 class ProactiveAgent(BaseAgent):
     def __init__(self, **kwargs):
         super().__init__()
+
+        """Initialize the ProactiveAgent with ZMQ sockets."""
+
+        config_port = None
+
+        # Try to load from config if needed
+
+        try:
+
+            config_path = os.path.join('config', 'system_config.json')
+
+            if os.path.exists(config_path):
+
+                with open(config_path, 'r', encoding='utf-8-sig') as f:
+
+                    config = json.load(f)
+
+                if 'agents' in config and 'proactive_agent' in config['agents']:
+
+                    config_port = config['agents']['proactive_agent'].get('port')
+
+                elif 'agents' in config and 'memory_decay' in config['agents']:
+
+                    # fallback: use memory_decay port if that's the intended mapping
+
+                    config_port = config['agents']['memory_decay'].get('port')
+
+        except Exception as e:
+
+            logger.warning(f"Could not load port from config: {e}")
+
+        # Port selection logic
+
+        if port is not None:
+
+            self.port = port
+
+        elif hasattr(args, 'port') and args.port is not None:
+
+            self.port = int(args.port)
+
+        elif config_port is not None:
+
+            self.port = int(config_port)
+
+        else:
+
+            self.port = 5624  # fallback default
+
+        self.context = zmq.Context()
+
+        # Main REP socket for handling requests
+
+        self.socket = self.context.socket(zmq.REP)
+
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        self.socket.bind(f"tcp://*:{self.port}")
+
+        # Store tasks and reminders
+
+        self.tasks_file = "tasks.json"
+
+        self.tasks = self._load_tasks()
+
+        # Initialize coordinator socket (will be set up in async initialization)
+
+        self.coordinator_socket = None
+
+        # Start monitoring thread
+
+        self.running = True
+
+        self.monitor_thread = threading.Thread(target=self._monitor_tasks)
+
+        self.monitor_thread.daemon = True
+
+        self.monitor_thread.start()
+
+        logger.info(f"ProactiveAgent initialized on port {self.port}")
         self.port = self.config.getint('proactive_agent.port', 5624)
         self.coordinator_address = self.config.get('dependencies.coordinator_address', 'tcp://localhost:26002')
         self.suggestion_interval = self.config.getint('proactive_agent.suggestion_interval_seconds', 60)

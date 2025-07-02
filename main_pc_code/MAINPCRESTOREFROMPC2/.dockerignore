@@ -1,0 +1,146 @@
+# Include only what we need
+*
+!agents/
+!src/
+!utils/
+!config/
+!requirements.txt
+
+# Exclude unnecessary files from included directories
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+**/*.so
+**/*.egg
+**/*.egg-info/
+**/.env
+**/.venv/
+**/.git/
+**/.gitignore
+**/.pytest_cache/
+**/.coverage
+**/*.log
+**/*.sqlite
+**/*.db
+**/.DS_Store
+**/*.bak
+**/*.swp
+**/*.tmp
+
+# Keep specific config files
+!config/model_config.json
+!config/config_manager.py
+!utils/config_loader.py
+!utils/agent_health.py
+!utils/__init__.py
+
+# Version control
+.git
+.gitignore
+.gitattributes
+.github
+.gitlab-ci.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env
+.venv
+.python-version
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+*.log.*
+log/
+
+# Docker
+.docker/
+docker-compose.override.yml
+.dockerignore
+Dockerfile.*
+
+# Project specific
+models/
+data/
+temp/
+cache/
+.env
+*.bak
+*.tmp
+*.temp
+*.old
+*.orig
+*.rej
+*~
+
+# Documentation
+docs/
+*.md
+*.rst
+*.txt
+!requirements.txt
+
+# Test files
+tests/
+test/
+testing/
+__tests__/
+*.test.js
+*.spec.js
+
+# Misc
+*.DS_Store
+Thumbs.db
+.directory
+*.gz
+*.zip
+*.tar
+*.rar
+*.7z
+node_modules/
+bower_components/ 

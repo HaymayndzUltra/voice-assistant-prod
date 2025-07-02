@@ -12,10 +12,8 @@ import time
 import collections
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Deque, Union
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import psutil
-from datetime import datetime
-_agent_args = parse_agent_args()
 
 # Configure logging
 logging.basicConfig(
@@ -28,29 +26,44 @@ logging.basicConfig(
 )
 logger = logging.getLogger('MemoryManager')
 
+# Load configuration at module level
+config = load_config()
+
 class MemoryManager(BaseAgent):
     def _get_default_port(self) -> int:
         """Override default port to use the configured port."""
         return 5712  # Using a new port that's not in use
         
-    def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = config.get("port", 5712) if port is None else port
+        agent_name = config.get("name", "MemoryManager")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
         """Initialize the Memory Manager.
         
         Args:
             port: Port to listen on
             memory_size: Maximum number of interactions to store in short-term memory
         """
-        self.memory_size = _agent_args.get('memory_size', 1000)
+        self.memory_size = config.get("memory_size", 1000)
         
         # Initialize short-term memory as a fixed-size deque
         self.memory: Deque[Dict[str, Any]] = collections.deque(maxlen=self.memory_size)
+        
+        # Record start time for uptime calculation
+        self.start_time = time.time()
         
         # Start health check thread
         self.health_check_thread = threading.Thread(target=self._health_check_loop)
         self.health_check_thread.daemon = True
         self.health_check_thread.start()
+        
+        # Initialize metrics
+        self.processed_items = 0
+        self.memory_operations = 0
         
         logger.info(f"Memory Manager initialized on port {self.port} with memory size {self.memory_size}")
         
@@ -105,6 +118,10 @@ class MemoryManager(BaseAgent):
             # Add to memory
             self.memory.append(interaction)
             
+            # Update metrics
+            self.memory_operations += 1
+            self.processed_items += 1
+            
             logger.info(f"Added interaction from {interaction['source']}")
             
             return {
@@ -141,6 +158,9 @@ class MemoryManager(BaseAgent):
             if limit and limit > 0:
                 memory_list = memory_list[-limit:]
             
+            # Update metrics
+            self.memory_operations += 1
+            
             logger.info(f"Retrieved {len(memory_list)} recent interactions")
             
             return {
@@ -167,6 +187,9 @@ class MemoryManager(BaseAgent):
             
             # Clear memory
             self.memory.clear()
+            
+            # Update metrics
+            self.memory_operations += 1
             
             logger.info(f"Cleared {previous_size} interactions from memory")
             
@@ -232,11 +255,12 @@ class MemoryManager(BaseAgent):
         else:
             return {'status': 'error', 'message': f'Unknown action: {action}'}
             
-    def stop(self):
+    def cleanup(self):
         """Stop the agent and clean up resources."""
         self.socket.close()
         self.context.term()
         logger.info("Memory Manager stopped")
+        super().cleanup()
 
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""
@@ -248,53 +272,58 @@ class MemoryManager(BaseAgent):
         }
         base_status.update(specific_metrics)
         return base_status
-
+    
     def _perform_initialization(self):
         """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+        # For future implementation
+        pass
 
+
+        
+    def stop(self):
+
+        
+            """Stop the agent and clean up resources."""
+
+        
+            self.socket.close()
+
+        
+            self.context.term()
+
+        
+            logger.info("Memory Manager stopped")
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform health check and return status."""
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            return {
+                "status": "healthy",
+                "agent": self.name,
+                "uptime": time.time() - self.start_time,
+                "memory_usage": len(self.memory),
+                "memory_capacity": self.memory_size,
+                "memory_operations": getattr(self, 'memory_operations', 0)
             }
-            return status_report
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
+                "error": str(e)
             }
 
-if __name__ == '__main__':
-    agent = MemoryManager()
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
     try:
+        agent = MemoryManager()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

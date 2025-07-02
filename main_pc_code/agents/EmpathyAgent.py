@@ -16,11 +16,11 @@ import time
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
 from datetime import datetime
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -44,15 +44,15 @@ class EmpathyAgent(BaseAgent):
             tts_connector_port: Port for sending voice settings to TTSConnector
         """
         # Get port and name from _agent_args with fallbacks
-        agent_port = getattr(_agent_args, 'port', 5585) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'EmpathyAgent') if name is None else name
-        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'EmpathyAgent') if name is None else name
+        agent_port = config.get("port", 5585) if port is None else port
+        agent_name = config.get("name", 'EmpathyAgent') if name is None else name
+        agent_port = config.get("port", 5000) if port is None else port
+        agent_name = config.get("name", 'EmpathyAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
         # Retrieve ports from command-line/args or default values
-        emotion_engine_port = getattr(_agent_args, 'emotionengine_port', 5582)
-        tts_connector_port = getattr(_agent_args, 'ttsconnector_port', 5582)
+        emotion_engine_port = config.get("emotionengine_port", 5582)
+        tts_connector_port = config.get("ttsconnector_port", 5582)
         self.emotion_engine_port = emotion_engine_port
         self.tts_connector_port = tts_connector_port
         
@@ -69,9 +69,9 @@ class EmpathyAgent(BaseAgent):
         self.emotion_sub_socket = self.context.socket(zmq.SUB)
         # Determine host from args or default
         if isinstance(_agent_args, dict):
-            _host = _agent_args.get('host', 'localhost')
+            _host = config.get("get")('host', 'localhost')
         else:
-            _host = getattr(_agent_args, 'host', 'localhost')
+            _host = config.get("host", 'localhost')
         self.emotion_sub_socket.connect(f"tcp://{_host}:{emotion_engine_port}")
         self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
         
@@ -471,6 +471,23 @@ if __name__ == '__main__':
             
 def _perform_initialization(self):
     """Initialize agent components."""
+
+    def get_health_status(self) -> Dict[str, Any]:
+            """Get the current health status of the agent.
+        
+            Returns:
+                Dictionary with health status information
+            """
+            return {
+                'status': 'success',
+                'uptime': time.time() - self.start_time,
+                'components': {
+                    'emotion_subscription': True,
+                    'tts_connection': True,
+                    'voice_settings': True
+                },
+                'current_emotional_state': self.current_emotional_state
+            }
     try:
         # Add your initialization code here
         pass

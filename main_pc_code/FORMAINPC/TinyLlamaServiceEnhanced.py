@@ -47,10 +47,10 @@ ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments for standardized configuration
-_agent_args = parse_agent_args()
+config = load_config()
 
 # ZMQ Configuration
 ZMQ_BIND_ADDRESS = "0.0.0.0"  # Listen on all interfaces
@@ -191,11 +191,70 @@ class ResourceManager:
 
 class TinyLlamaService(BaseAgent):
     """Enhanced TinyLlama Service with resource management"""
+
+
+    
+    def _start_health_check(self):
+
+    
+            """Start health check thread."""
+
+    
+            self.health_thread = threading.Thread(target=self._health_check_loop)
+
+    
+            self.health_thread.daemon = True
+
+    
+            self.health_thread.start()
+
+    
+            logger.info("Health check thread started")
+
+    
+    def _health_check_loop(self):
+    
+            """Background loop to handle health check requests."""
+    
+            logger.info("Health check loop started")
+        
+    
+            while self.running:
+    
+                try:
+    
+                    # Check for health check requests with timeout
+    
+                    if self.health_socket.poll(100, zmq.POLLIN):
+    
+                        # Receive request (don't care about content)
+    
+                        _ = self.health_socket.recv()
+                    
+    
+                        # Get health data
+    
+                        health_data = self._get_health_status()
+                    
+    
+                        # Send response
+    
+                        self.health_socket.send_json(health_data)
+                    
+    
+                    time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+    
+                except Exception as e:
+    
+                    logger.error(f"Error in health check loop: {e}")
+    
+                    time.sleep(1)
     
     def __init__(self, port: int = None, name: str = None, **kwargs):
         # Standardized port and name handling with fallback to 5615 for port
-        agent_port = getattr(_agent_args, 'port', 5615) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'TinyLlamaService') if name is None else name
+        agent_port = config.get("port", 5615) if port is None else port
+        agent_name = config.get("name", 'TinyLlamaService') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
         logger.info("=" * 80)

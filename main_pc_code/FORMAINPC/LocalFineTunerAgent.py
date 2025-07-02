@@ -35,9 +35,9 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 import psutil
 from datetime import datetime
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
-_agent_args = parse_agent_args()
+config = load_config()
 
 try:
     from common_utils.zmq_helper import create_socket
@@ -83,8 +83,8 @@ class TuningJob:
 
 class LocalFineTunerAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
-        agent_port = _agent_args.get('port', 5000) if port is None else port
-        agent_name = _agent_args.get('name', 'LocalFineTunerAgent') if name is None else name
+        agent_port = config.get("get")('port', 5000) if port is None else port
+        agent_name = config.get("get")('name', 'LocalFineTunerAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         # ZMQ setup
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)

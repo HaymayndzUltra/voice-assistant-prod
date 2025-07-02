@@ -5,7 +5,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from agents.base_agent import BaseAgent
+from src.core.base_agent import BaseAgent
 import zmq
 import json
 import subprocess
@@ -13,8 +13,12 @@ import threading
 import logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
-from utils.config_loader import parse_agent_args
-_agent_args = parse_agent_args()
+from main_pc_code.utils.config_loader import load_config
+from utils.env_loader import get_env
+from datetime import datetime
+
+# Load configuration at module level
+config = load_config()
 
 # Logging setup
 LOG_PATH = "executor_agent.log"
@@ -46,8 +50,6 @@ def log_usage_analytics(user: str, command: str, status: str):
         logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
 
 import zmq
-from utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
 ZMQ_LOG_PORT = 5600  # Central log collector port
 log_context = zmq.Context()
 log_socket = log_context.socket(zmq.PUB)
@@ -88,17 +90,43 @@ USER_PERMISSIONS = {
 
 
 class ExecutorAgent(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5709))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
-        # Initialize BaseAgent (this allocates main REP and a health port, which may shift if ports are occupied)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5709)) if port is None else port
+        agent_name = config.get("name", "ExecutorAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
+        # Initialize agent state
         self.running = True
         self.last_command = None
         self.command_history = []
         self.health_status = "OK"
         self.last_health_check = time.time()
+        
+        # Initialize ZMQ sockets - adding a socket for receiving commands
+        self.context = zmq.Context()
+        self.command_socket = self.context.socket(zmq.REP)
+        bind_address = f"tcp://{self.bind_address}:{self.port}"
+        self.command_socket.bind(bind_address)
+        logging.info(f"[Executor] Command socket bound to {bind_address}")
+        
+        # Initialize feedback socket for sending execution results
+        self.feedback_socket = self.context.socket(zmq.PUB)
+        feedback_port = int(config.get("executor_feedback_port", 5710))
+        feedback_address = f"tcp://{self.bind_address}:{feedback_port}"
+        self.feedback_socket.bind(feedback_address)
+        logging.info(f"[Executor] Feedback socket bound to {feedback_address}")
+        
+        # Start hot reload watcher thread
         self.hot_reload_thread = threading.Thread(
             target=self.hot_reload_watcher, daemon=True)
         self.hot_reload_thread.start()
@@ -192,25 +220,63 @@ class ExecutorAgent(BaseAgent):
         })
         self.feedback_socket.send_string(msg)
 
-    def start(self):
+    def run(self):
         logging.info("[Executor] Agent started. Press Ctrl+C to stop.")
-        while self.running:
-            try:
-                msg = self.command_socket.recv_string()
-                data = json.loads(msg)
-                command = data.get("command", "").strip().lower()
-                user = data.get("user", "default")
-                logging.info(f"[Executor] Received command: {command} from user: {user}")
-                self.last_command = command
-                self.execute_command(command, user)
-            except Exception as e:
-                logging.error(f"[Executor] Error: {e}")
-        logging.info("[Executor] Agent stopped.")
+        
+        try:
+            while self.running:
+                try:
+                    # Set a timeout to avoid blocking indefinitely
+                    poller = zmq.Poller()
+                    poller.register(self.command_socket, zmq.POLLIN)
+                    
+                    if poller.poll(1000):  # 1 second timeout
+                        msg = self.command_socket.recv_string()
+                        data = json.loads(msg)
+                        command = data.get("command", "").strip().lower()
+                        user = data.get("user", "default")
+                        logging.info(f"[Executor] Received command: {command} from user: {user}")
+                        self.last_command = command
+                        
+                        # Execute the command
+                        self.execute_command(command, user)
+                        
+                        # Send acknowledgement to the client
+                        self.command_socket.send_string(json.dumps({"status": "processed"}))
+                    
+                except zmq.ZMQError as e:
+                    logging.error(f"[Executor] ZMQ error: {e}")
+                except json.JSONDecodeError as e:
+                    logging.error(f"[Executor] Invalid JSON: {e}")
+                except Exception as e:
+                    logging.error(f"[Executor] Error: {e}")
+                
+                time.sleep(0.01)  # Small sleep to reduce CPU usage
+        except KeyboardInterrupt:
+            logging.info("[Executor] Keyboard interrupt received")
+        except Exception as e:
+            logging.error(f"[Executor] Unexpected error: {e}")
+        finally:
+            self.cleanup()
 
-    def stop(self):
+    def cleanup(self):
+        """Clean up resources"""
         self.running = False
-        self.command_socket.close()
-        self.context.term()
+        
+        # Close ZMQ sockets
+        try:
+            if hasattr(self, 'command_socket'):
+                self.command_socket.close()
+            if hasattr(self, 'feedback_socket'):
+                self.feedback_socket.close()
+            if hasattr(self, 'context'):
+                self.context.term()
+        except Exception as e:
+            logging.error(f"[Executor] Error during cleanup: {e}")
+        
+        # Call BaseAgent's cleanup
+        super().cleanup()
+        
         logging.info("[Executor] Stopped.")
 
     def hot_reload_watcher(self):
@@ -226,24 +292,79 @@ class ExecutorAgent(BaseAgent):
                 logging.error(f"[Executor] Hot reload watcher error: {e}")
 
     def health_check(self):
-        now = time.time()
-        if now - self.last_health_check > 60:
-            self.last_health_check = now
-            return {"status": self.health_status, "uptime": now}
-        return {"status": self.health_status}
-
-
+        """Perform a health check and return status."""
+        try:
+            now = time.time()
+            uptime = now - self.start_time
+            
+            # Check if we're due for a detailed health check
+            if now - self.last_health_check > 60:
+                self.last_health_check = now
+                
+                # Perform more detailed checks here if needed
+                # For example, check if command history has recent entries
+                
+                # Check system resources
+                cpu_percent = 0
+                memory_percent = 0
+                try:
+                    import psutil
+                    cpu_percent = psutil.cpu_percent()
+                    memory_percent = psutil.virtual_memory().percent
+                except ImportError:
+                    logging.warning("[Executor] psutil not available for system metrics")
+                
+                return {
+                    "status": self.health_status,
+                    "agent_name": self.name,
+                    "uptime": uptime,
+                    "last_command": self.last_command,
+                    "command_count": len(self.command_history),
+                    "system_metrics": {
+                        "cpu_percent": cpu_percent,
+                        "memory_percent": memory_percent
+                    }
+                }
+            
+            # For frequent checks, return minimal info
+            return {
+                "status": self.health_status,
+                "uptime": uptime
+            }
+        except Exception as e:
+            logging.error(f"[Executor] Health check error: {e}")
+            return {"status": "ERROR", "error": str(e)}
 
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
+        """Default health status implementation required by BaseAgent."""
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "status_message": "Agent is operational" if self.running else "Agent is not running",
+            "uptime_seconds": time.time() - self.start_time,
+            "last_command": self.last_command,
+            "command_history_size": len(self.command_history)
         }
         return {"status": status, "details": details}
 
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
-    agent = ExecutorAgent()
-    agent.run()
+    # Configure logging
+    logging.basicConfig(level=logging.INFO, 
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    # Standardized main execution block
+    agent = None
+    try:
+        logging.info("Starting ExecutorAgent...")
+        agent = ExecutorAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logging.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logging.error(f"An unexpected error occurred in {agent.name if agent else 'ExecutorAgent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logging.info(f"Cleaning up {agent.name}...")
+            agent.cleanup()

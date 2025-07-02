@@ -35,8 +35,8 @@ import argparse
 from main_pc_code.src.core.base_agent import BaseAgent
 
 # Import config parser for dynamic port support
-from main_pc_code.utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
+from main_pc_code.utils.config_loader import load_config
+config = load_config()
 from utils.service_discovery_client import discover_service
 from src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client
 

@@ -15,7 +15,7 @@ pc2_services:
   - { name: EpisodicMemoryAgent, script_path: agents/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 7106, health_check_port: 8106, dependencies: [UnifiedMemoryReasoningAgent], required: true }
   - { name: LearningAgent, script_path: agents/LearningAdjusterAgent.py, host: 0.0.0.0, port: 7107, health_check_port: 8107, dependencies: [EpisodicMemoryAgent], required: true }
   - { name: TutoringAgent, script_path: agents/tutoring_agent.py, host: 0.0.0.0, port: 7108, health_check_port: 8108, required: true, dependencies: [] }
-  - { name: KnowledgeBaseAgent, script_path: agents/knowledge_base_agent.py, host: 0.0.0.0, port: 7109, health_check_port: 8109, dependencies: [CacheManager], required: true }
+
   - { name: MemoryManager, script_path: agents/memory_manager.py, host: 0.0.0.0, port: 7110, health_check_port: 8110, dependencies: [UnifiedMemoryReasoningAgent], required: true }
   - { name: ContextManager, script_path: agents/context_manager.py, host: 0.0.0.0, port: 7111, health_check_port: 8111, dependencies: [MemoryManager], required: true }
   - { name: ExperienceTracker, script_path: agents/experience_tracker.py, host: 0.0.0.0, port: 7112, health_check_port: 8112, dependencies: [EpisodicMemoryAgent], required: true }
@@ -25,7 +25,7 @@ pc2_services:
 
   # ForPC2 Agents (PC2-Specific Services)
   - { name: AuthenticationAgent, script_path: agents/ForPC2/AuthenticationAgent.py, host: 0.0.0.0, port: 7116, health_check_port: 8116, required: true, dependencies: [] }
-  - { name: UnifiedErrorAgent, script_path: agents/ForPC2/unified_error_agent.py, host: 0.0.0.0, port: 7117, health_check_port: 8117, required: true, dependencies: [] }
+  - { name: UnifiedErrorAgent, script_path: agents/ForPC2/UnifiedErrorAgent.py, host: 0.0.0.0, port: 7117, health_check_port: 8117, required: true, dependencies: [] }
   - { name: UnifiedUtilsAgent, script_path: agents/ForPC2/unified_utils_agent.py, host: 0.0.0.0, port: 7118, health_check_port: 8118, required: true, dependencies: [] }
   - { name: ProactiveContextMonitor, script_path: agents/ForPC2/proactive_context_monitor.py, host: 0.0.0.0, port: 7119, health_check_port: 8119, dependencies: [ContextManager], required: true }
   - { name: RCAAgent, script_path: agents/ForPC2/rca_agent.py, host: 0.0.0.0, port: 7121, health_check_port: 8121, dependencies: [HealthMonitor], required: true }

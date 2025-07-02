@@ -1,4 +1,3 @@
-from src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 NLU Agent
@@ -6,6 +5,7 @@ NLU Agent
 Natural Language Understanding agent that analyzes user input and extracts intents and entities.
 """
 
+from src.core.base_agent import BaseAgent
 import os
 import zmq
 import json
@@ -13,10 +13,12 @@ import time
 import logging
 import re
 import threading
+import traceback
 from typing import Dict, Any, List, Tuple
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -37,9 +39,9 @@ class NLUAgent(BaseAgent):
     
     def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the NLU Agent."""
-        # Get port and name from _agent_args with fallbacks
-        agent_port = getattr(_agent_args, 'port', 5558) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'NLUAgent') if name is None else name
+        # Get port and name from config with fallbacks
+        agent_port = config.get("port", 5558) if port is None else port
+        agent_name = config.get("name", 'NLUAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
         # Initialize basic state
@@ -87,6 +89,9 @@ class NLUAgent(BaseAgent):
         }
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
+        
+        # Record start time for uptime calculation
+        self.start_time = time.time()
         
         logger.info("NLUAgent basic initialization complete")
     
@@ -248,87 +253,104 @@ class NLUAgent(BaseAgent):
         elif intent.startswith("[PC2]"):
             # Extract query for PC2
             if intent == "[PC2] Calculate":
-                match = re.search(r"(calculate|compute|solve|evaluate) (.*)", text, re.IGNORECASE)
+                # Extract the mathematical expression
+                pattern = r"(?:calculate|compute|solve|evaluate)\s+(.*?)(?:$|\?)"
+                match = re.search(pattern, text, re.IGNORECASE)
                 if match:
                     entities.append({
-                        "entity": "query",
-                        "value": match.group(2).strip(),
-                        "confidence": 0.8
+                        "entity": "expression",
+                        "value": match.group(1).strip(),
+                        "confidence": 0.9
                     })
             
             elif intent == "[PC2] Search":
-                match = re.search(r"(search|find|look up|google) (.*)", text, re.IGNORECASE)
+                # Extract the search query
+                pattern = r"(?:search|find|look up|google)\s+(.*?)(?:$|\?)"
+                match = re.search(pattern, text, re.IGNORECASE)
                 if match:
                     entities.append({
                         "entity": "query",
-                        "value": match.group(2).strip(),
-                        "confidence": 0.8
+                        "value": match.group(1).strip(),
+                        "confidence": 0.9
                     })
             
             elif intent == "[PC2] Summarize":
-                match = re.search(r"(summarize|summarise|summary) (.*)", text, re.IGNORECASE)
+                # Extract the text to summarize
+                pattern = r"(?:summarize|summarise|summary)\s+(.*?)(?:$|\?)"
+                match = re.search(pattern, text, re.IGNORECASE)
                 if match:
                     entities.append({
-                        "entity": "query",
-                        "value": match.group(2).strip(),
-                        "confidence": 0.8
+                        "entity": "content",
+                        "value": match.group(1).strip(),
+                        "confidence": 0.9
                     })
+        
+        elif intent == "[Timer]":
+            # Extract time duration
+            pattern = r"(?:set timer|start timer|countdown)\s+(?:for)?\s*(\d+)\s*(second|minute|hour|day)s?"
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                entities.append({
+                    "entity": "duration",
+                    "value": {
+                        "amount": int(match.group(1)),
+                        "unit": match.group(2).lower()
+                    },
+                    "confidence": 0.9
+                })
         
         return entities
 
     def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "nlu_status": "active",
-            "processed_utterances": getattr(self, 'processed_utterances', 0),
-            "last_utterance_time": getattr(self, 'last_utterance_time', 'N/A')
+        """Return detailed health status information."""
+        return {
+            "status": "ok" if self.initialization_status["is_initialized"] else "initializing",
+            "message": "NLUAgent is running",
+            "initialization": self.initialization_status,
+            "uptime_seconds": time.time() - self.start_time
         }
-        base_status.update(specific_metrics)
-        return base_status
-
-
+    
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.initialization_status["is_initialized"]
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "agent_name": self.name,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "uptime_seconds": time.time() - self.start_time,
+                "initialization_status": self.initialization_status,
                 "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                    "cpu_percent": os.getloadavg()[0],  # 1 minute load average
+                    "memory_usage_mb": int(os.popen('ps -p %d -o rss | tail -1' % os.getpid()).read()) / 1024
+                }
             }
             return status_report
+            
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
+                "error": f"Health check failed: {str(e)}"
             }
+    
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        self.stop()
 
 if __name__ == "__main__":
-    import psutil
-from datetime import datetime
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-parser = argparse.ArgumentParser()
-parser.add_argument("--port", type=int, default=5709)
-args = parser.parse_args()
-agent = NLUAgent()
-agent.start()
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = NLUAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

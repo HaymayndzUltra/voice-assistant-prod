@@ -1,4 +1,8 @@
 import zmq
+from typing import Dict, Any, Optional
+import yaml
+import sys
+import os
 import threading
 from typing import Callable, Any, Dict, List, Optional
 from functools import wraps
@@ -12,7 +16,12 @@ import asyncio
 from pathlib import Path
 import json
 
-# Constants
+
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()# Constants
 PUSH_PORT = 7102  # For fire-and-forget tasks
 PULL_PORT = 7101  # For async task processing and health check
 HEALTH_PORT = 7103  # For health monitoring
@@ -28,7 +37,32 @@ TASK_PRIORITIES = {
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
-class ResourceManager:
+class ResourceManager(BaseAgent):
+
+    def __init__(self, port: int = None):
+
+        super().__init__(name="ResourceManager", port=port)
+
+
+        self.context = zmq.Context()
+
+
+        self.resource_manager = ResourceManager()
+
+
+        self.task_queue = TaskQueue()
+
+
+        self._setup_sockets()
+
+
+        self._setup_logging()
+
+
+        self._setup_health_monitoring()
+
+        self.start_time = time.time()
+
     def __init__(self):
         self.cpu_threshold = 80  # percentage
         self.memory_threshold = 80  # percentage
@@ -70,6 +104,97 @@ class ResourceManager:
             
         return True
 
+
+
+
+    def connect_to_main_pc_service(self, service_name: str):
+
+
+        """
+
+
+        Connect to a service on the main PC using the network configuration.
+
+
+        
+
+
+        Args:
+
+
+            service_name: Name of the service in the network config ports section
+
+
+        
+
+
+        Returns:
+
+
+            ZMQ socket connected to the service
+
+
+        """
+
+
+        if not hasattr(self, 'main_pc_connections'):
+
+
+            self.main_pc_connections = {}
+
+
+            
+
+
+        if service_name not in network_config.get("ports", {}):
+
+
+            logger.error(f"Service {service_name} not found in network configuration")
+
+
+            return None
+
+
+            
+
+
+        port = network_config["ports"][service_name]
+
+
+        
+
+
+        # Create a new socket for this connection
+
+
+        socket = self.context.socket(zmq.REQ)
+
+
+        
+
+
+        # Connect to the service
+
+
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+
+        
+
+
+        # Store the connection
+
+
+        self.main_pc_connections[service_name] = socket
+
+
+        
+
+
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+
+        return socket
 class TaskQueue:
     def __init__(self):
         self.queues = {
@@ -295,9 +420,105 @@ def async_task(task_type: str, priority: str = 'medium'):
     
     return decorator
 
+
+
+    def _get_health_status(self) -> dict:
+
+
+        """Return health status information."""
+
+
+        base_status = super()._get_health_status()
+
+
+        # Add any additional health information specific to ResourceManager
+
+
+        base_status.update({
+
+
+            'service': 'ResourceManager',
+
+
+            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+
+
+            'additional_info': {}
+
+
+        })
+
+
+        return base_status
+
+
+
+    def cleanup(self):
+
+
+        """Clean up resources before shutdown."""
+
+
+        logger.info("Cleaning up resources...")
+
+
+        # Add specific cleanup code here
+
+
+        super().cleanup()
+
 def main():
     processor = AsyncProcessor()
     processor.run()
 
+
+
+
+
 if __name__ == "__main__":
-    main()
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = ResourceManager()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

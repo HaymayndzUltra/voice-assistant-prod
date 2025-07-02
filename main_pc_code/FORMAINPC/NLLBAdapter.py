@@ -25,10 +25,10 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import psutil
 from datetime import datetime
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Step 1: ADD Standard Config Parser
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Timeout for ZeroMQ send/recv operations (milliseconds)
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
@@ -93,6 +93,282 @@ class NLLBTranslationAdapter(BaseAgent):
     def __init__(self):
         # Call BaseAgent's __init__ first
         super().__init__()
+
+    
+        # Initialize logger
+
+    
+        self.logger = logging.getLogger("NLLBTranslationAdapter")
+
+    
+        # Initialize ZMQ
+
+    
+        self.context = zmq.Context()
+
+    
+        # Socket to handle requests
+
+    
+        self.socket = self.context.socket(zmq.REP)
+
+    
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+        self.service_port = CONFIG_ZMQ_PORT
+
+    
+        self.bind_address = CONFIG_ZMQ_BIND_ADDRESS
+
+    
+        # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
+
+    
+        # Health monitoring
+
+    
+        self.health_status = {
+
+    
+            "status": "ok",
+
+    
+            "service": "nllb_translation_adapter",
+
+    
+            "model_state": "unloaded",
+
+    
+            "last_check": time.time(),
+
+    
+            "resource_stats": {
+
+    
+                "device": None,
+
+    
+                "memory_usage": None,
+
+    
+                "gpu_memory": None
+
+    
+            }
+
+    
+        }
+
+    
+        # Language code mapping
+
+    
+        self.language_code_mapping = {
+
+    
+            'fil_Latn': 'tgl_Latn'  # Map Filipino to Tagalog
+
+    
+        }
+
+    
+        try:
+
+    
+            self.socket.bind(f"tcp://{self.bind_address}:{self.service_port}")
+
+    
+            self.logger.info(f"NLLB Translation Adapter bound to tcp://{self.bind_address}:{self.service_port}")
+
+    
+        except zmq.error.ZMQError as e:
+
+    
+            self.logger.error(f"Error binding to port {self.service_port} on address {self.bind_address}: {e}")
+
+    
+            if self.bind_address == "0.0.0.0":
+
+    
+                self.logger.warning(f"Attempting fallback bind to tcp://127.0.0.1:{self.service_port}")
+
+    
+                try:
+
+    
+                    self.socket.bind(f"tcp://127.0.0.1:{self.service_port}")
+
+    
+                    self.logger.info(f"NLLB Translation Adapter bound to FALLBACK tcp://127.0.0.1:{self.service_port}")
+
+    
+                    self.bind_address = "127.0.0.1"
+
+    
+                except zmq.error.ZMQError as e2:
+
+    
+                    self.logger.error(f"Fallback bind also failed: {e2}")
+
+    
+                    raise RuntimeError(f"Cannot bind to port {self.service_port}") from e2
+
+    
+            else:
+
+    
+                raise RuntimeError(f"Cannot bind to port {self.service_port} on {self.bind_address}") from e
+
+    
+        # Initialize health check socket
+
+    
+        self.name = "NLLBTranslationAdapter"
+
+    
+        self.start_time = time.time()
+
+    
+        self.health_port = self.service_port + 1
+
+    
+        try:
+
+    
+            self.health_socket = self.context.socket(zmq.REP)
+
+    
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+
+    
+            self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
+
+    
+            self.logger.info(f"Health check socket bound to port {self.health_port}")
+
+    
+        except zmq.error.ZMQError as e:
+
+    
+            self.logger.error(f"Failed to bind health check socket: {e}")
+
+    
+            # Continue even if health check socket fails
+
+    
+        # Initialize model and tokenizer as None (not loaded initially)
+
+    
+        self.model = None
+
+    
+        self.tokenizer = None
+
+    
+        # Model configuration
+
+    
+        self.model_name = CONFIG_MODEL_PATH_OR_NAME
+
+    
+        if CONFIG_DEVICE == 'auto':
+
+    
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    
+        else:
+
+    
+            self.device = CONFIG_DEVICE
+
+    
+        # Update health status with device info
+
+    
+        self.health_status["resource_stats"]["device"] = self.device
+
+    
+        # Idle timeout settings
+
+    
+        self.last_request_time = time.time()
+
+    
+        self.service_idle_timeout_seconds = CONFIG_IDLE_TIMEOUT
+
+    
+        # Request timeout settings
+
+    
+        self.request_timeout_seconds = 30  # Increased from default 10 seconds
+
+    
+        # Supported languages
+
+    
+        self.supported_languages = {
+
+    
+            "eng_Latn": "English",
+
+    
+            "tgl_Latn": "Tagalog",
+
+    
+            "ceb_Latn": "Cebuano",
+
+    
+            "ilo_Latn": "Ilocano",
+
+    
+            "hil_Latn": "Hiligaynon",
+
+    
+            "war_Latn": "Waray",
+
+    
+            "bik_Latn": "Bikol",
+
+    
+            "pam_Latn": "Kapampangan",
+
+    
+            "pag_Latn": "Pangasinan"
+
+    
+        }
+
+    
+        # Running flag
+
+    
+        self.running = True
+
+    
+        # Start monitoring thread
+
+    
+        self.monitor_thread = threading.Thread(target=self._monitor_resources, daemon=True)
+
+    
+        self.monitor_thread.daemon = True
+
+    
+        self.monitor_thread.start()
+
+    
+        # Start health check thread
+
+    
+        self._start_health_check()
+
+    
+        self.logger.info(f"NLLB Translation Adapter initialized on {self.device}")
         
         # Initialize logger
         self.logger = logging.getLogger("NLLBTranslationAdapter")
@@ -104,8 +380,8 @@ class NLLBTranslationAdapter(BaseAgent):
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.service_port = _agent_args.getint('nllb_adapter.port', 5581)
-        self.bind_address = _agent_args.get('network.bind_address', '0.0.0.0')
+        self.service_port = config.get("getint")('nllb_adapter.port', 5581)
+        self.bind_address = config.get("get")('network.bind_address', '0.0.0.0')
 
         # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
         
@@ -136,11 +412,11 @@ class NLLBTranslationAdapter(BaseAgent):
         self.tokenizer = None
         
         # Model configuration
-        self.model_name = _agent_args.get('models.nllb.model_path_or_name', 'facebook/nllb-200-distilled-600M')
-        if _agent_args.get('models.nllb.device', 'auto') == 'auto':
+        self.model_name = config.get("get")('models.nllb.model_path_or_name', 'facebook/nllb-200-distilled-600M')
+        if config.get("get")('models.nllb.device', 'auto') == 'auto':
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
-            self.device = _agent_args.get('models.nllb.device', 'cpu')
+            self.device = config.get("get")('models.nllb.device', 'cpu')
         
         # Update health status with device info
         self.health_status = {
@@ -155,7 +431,7 @@ class NLLBTranslationAdapter(BaseAgent):
         # Initialize other attributes
         self.model_loaded = False
         self.last_request_time = time.time()
-        self.service_idle_timeout_seconds = _agent_args.getint('models.nllb.idle_timeout_seconds', 3600)
+        self.service_idle_timeout_seconds = config.get("getint")('models.nllb.idle_timeout_seconds', 3600)
         self.running = True
         
         # Initialize language support

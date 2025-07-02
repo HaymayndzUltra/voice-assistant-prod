@@ -16,7 +16,7 @@ import threading
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from main_pc_code.src.core.base_agent import BaseAgent
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Configure logging
 logging.basicConfig(
@@ -25,30 +25,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryOrchestrator")
 
-# Configuration
-# ZMQ_PORT = 5576
-HEALTH_PORT = int(_agent_args.get('health_port', ZMQ_PORT + 1))
+# Load configuration at module level
+config = load_config()
 
-_agent_args = parse_agent_args()
+# Configuration
+ZMQ_PORT = int(config.get("port", 5576))
+HEALTH_PORT = int(config.get("health_port", ZMQ_PORT + 1))
+BIND_ADDRESS = config.get("bind_address", "0.0.0.0")
 
 class MemoryOrchestrator(BaseAgent):
     """
     Minimal Memory Orchestrator implementation focusing on proper encoding/decoding.
     """
     
-    def __init__(self):
+    def __init__(self, port=None):
         """Initialize the Memory Orchestrator service."""
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.port}")
+        # Get port from config with fallback
+        agent_port = config.get("port", 5576) if port is None else port
+        agent_name = config.get("name", "MemoryOrchestrator")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
         
         # Setup health check socket
         try:
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://<BIND_ADDR>:{HEALTH_PORT}")
+            self.health_socket.bind(f"tcp://{BIND_ADDRESS}:{HEALTH_PORT}")
             logger.info(f"Health check socket bound to port {HEALTH_PORT}")
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to bind health check socket: {e}")
@@ -78,7 +81,7 @@ class MemoryOrchestrator(BaseAgent):
         base_status.update(specific_metrics)
         return base_status
     
-    def start(self):
+    def run(self):
         """Start the Memory Orchestrator service."""
         if self._running:
             logger.warning("Memory Orchestrator is already running")
@@ -115,7 +118,7 @@ class MemoryOrchestrator(BaseAgent):
                 response_json = json.dumps(response)
                 self.socket.send(response_json.encode('utf-8'))
     
-    def stop(self):
+    def cleanup(self):
         """Stop the Memory Orchestrator service."""
         logger.info("Stopping Memory Orchestrator service")
         self._running = False
@@ -248,29 +251,53 @@ class MemoryOrchestrator(BaseAgent):
         payload = request.get("payload", {})
         request_id = request.get("request_id", "unknown")
         
-        # Get memory ID from payload
+        # Check if memory ID is provided
         memory_id = payload.get("memory_id")
+        if memory_id:
+            # Get specific memory by ID
+            memory = self.memories.get(memory_id)
+            if memory:
+                return self.create_success_response(
+                    "read",
+                    request_id,
+                    {
+                        "memory": memory
+                    }
+                )
+            else:
+                return self.create_error_response(
+                    "not_found",
+                    f"Memory with ID {memory_id} not found",
+                    request_id
+                )
         
-        if not memory_id:
-            return self.create_error_response(
-                "validation_error",
-                "Memory ID is required",
-                request_id
-            )
+        # Handle query-based retrieval
+        memories = list(self.memories.values())
         
-        # Check if memory exists
-        if memory_id not in self.memories:
-            return self.create_error_response(
-                "memory_not_found",
-                f"Memory with ID {memory_id} not found",
-                request_id
-            )
+        # Filter by type if provided
+        memory_type = payload.get("memory_type")
+        if memory_type:
+            memories = [m for m in memories if m.get("memory_type") == memory_type]
         
-        # Return the memory
+        # Filter by tags if provided
+        tags = payload.get("tags", [])
+        if tags:
+            memories = [
+                m for m in memories if any(tag in m.get("tags", []) for tag in tags)
+            ]
+        
+        # Apply limit if provided
+        limit = payload.get("limit")
+        if limit and isinstance(limit, int) and limit > 0:
+            memories = memories[:limit]
+        
         return self.create_success_response(
             "read",
             request_id,
-            self.memories[memory_id]
+            {
+                "memories": memories,
+                "count": len(memories)
+            }
         )
     
     def handle_update(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -278,91 +305,105 @@ class MemoryOrchestrator(BaseAgent):
         payload = request.get("payload", {})
         request_id = request.get("request_id", "unknown")
         
-        # Get memory ID from payload
+        # Check if memory ID is provided
         memory_id = payload.get("memory_id")
-        
         if not memory_id:
             return self.create_error_response(
                 "validation_error",
-                "Memory ID is required",
+                "Memory ID is required for update",
                 request_id
             )
         
         # Check if memory exists
         if memory_id not in self.memories:
             return self.create_error_response(
-                "memory_not_found",
+                "not_found",
                 f"Memory with ID {memory_id} not found",
                 request_id
             )
         
-        # Update memory fields
+        # Get the existing memory
         memory = self.memories[memory_id]
-        memory.update({
-            "content": payload.get("content", memory.get("content")),
-            "tags": payload.get("tags", memory.get("tags")),
-            "priority": payload.get("priority", memory.get("priority")),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        })
         
-        # Return success response
-        return self.create_success_response(
-            "update",
-            request_id,
-            {
-                "memory_id": memory_id,
-                "updated_at": memory.get("updated_at")
-            }
-        )
+        # Update fields
+        update_fields = ["content", "tags", "priority"]
+        updated = False
+        
+        for field in update_fields:
+            if field in payload:
+                memory[field] = payload[field]
+                updated = True
+        
+        if updated:
+            # Update the timestamp
+            memory["updated_at"] = datetime.now(timezone.utc).isoformat()
+            
+            # Store updated memory
+            self.memories[memory_id] = memory
+            
+            return self.create_success_response(
+                "update",
+                request_id,
+                {
+                    "memory_id": memory_id,
+                    "updated_at": memory["updated_at"]
+                }
+            )
+        else:
+            return self.create_error_response(
+                "validation_error",
+                "No valid fields provided for update",
+                request_id
+            )
     
     def handle_delete(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle a delete memory request."""
         payload = request.get("payload", {})
         request_id = request.get("request_id", "unknown")
         
-        # Get memory ID from payload
+        # Check if memory ID is provided
         memory_id = payload.get("memory_id")
-        
         if not memory_id:
             return self.create_error_response(
                 "validation_error",
-                "Memory ID is required",
+                "Memory ID is required for deletion",
                 request_id
             )
         
         # Check if memory exists
         if memory_id not in self.memories:
             return self.create_error_response(
-                "memory_not_found",
+                "not_found",
                 f"Memory with ID {memory_id} not found",
                 request_id
             )
         
         # Delete the memory
-        del self.memories[memory_id]
+        deleted_memory = self.memories.pop(memory_id)
         
-        # Return success response
         return self.create_success_response(
             "delete",
             request_id,
             {
-                "deleted": True
+                "memory_id": memory_id,
+                "memory_type": deleted_memory.get("memory_type"),
+                "deleted_at": datetime.now(timezone.utc).isoformat()
             }
         )
 
-def main():
-    """Main entry point for the Memory Orchestrator service."""
-    try:
-        orchestrator = MemoryOrchestrator()
-        logger.info("Starting Memory Orchestrator service...")
-        orchestrator.start()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down...")
-    except Exception as e:
-        logger.error(f"Error in Memory Orchestrator service: {e}", exc_info=True)
-    finally:
-        if 'orchestrator' in locals():
-            orchestrator.stop()
-
 if __name__ == "__main__":
-    main()
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = MemoryOrchestrator()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

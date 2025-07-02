@@ -8,30 +8,38 @@ import time
 import os
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
 from utils.service_discovery_client import register_service, get_service_address
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
-# Parse CLI arguments
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("TTSAgent")
 
-# Get configuration from args or fallback to defaults
-INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
-
-# Get bind address from environment variables with default to a safe value for Docker compatibility
-# BIND_ADDRESS = get_env('BIND_ADDRESS', '<BIND_ADDR>')
+# Get configuration from config or fallback to defaults
+INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
 class TTSAgent(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5706))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5706)) if port is None else port
+        agent_name = config.get("name", "TTSAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
+        # Initialize ZMQ context and socket
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -178,9 +186,9 @@ class TTSAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Unexpected error in main loop: {e}")
         finally:
-            self._shutdown()
+            self.cleanup()
 
-    def _shutdown(self):
+    def cleanup(self):
         """Clean up resources"""
         logger.info("Shutting down TTSAgent")
         self.running = False
@@ -199,6 +207,9 @@ class TTSAgent(BaseAgent):
             self.context.term()
             logger.info("Terminated ZMQ context")
         
+        # Call BaseAgent's cleanup
+        super().cleanup()
+        
         logger.info("TTSAgent shut down successfully")
 
     def _perform_initialization(self):
@@ -212,35 +223,30 @@ class TTSAgent(BaseAgent):
 
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Perform a health check and return status."""
         try:
             # Basic health check logic
             is_healthy = True # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "interrupt_flag": self.interrupt_flag.is_set()
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
@@ -251,10 +257,26 @@ class TTSAgent(BaseAgent):
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
             "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "uptime_seconds": time.time() - self.start_time
         }
         return {"status": status, "details": details}
 
+
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
-    agent = TTSAgent()
-    agent.run()
+    # Standardized main execution block
+    agent = None
+    try:
+        logger.info("Starting TTSAgent...")
+        agent = TTSAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logger.error(f"An unexpected error occurred in {agent.name if agent else 'TTSAgent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info(f"Cleaning up {agent.name}...")
+            agent.cleanup()

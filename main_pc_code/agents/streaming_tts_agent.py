@@ -1,4 +1,6 @@
 from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
 """
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
@@ -25,15 +27,14 @@ from pathlib import Path
 import hashlib
 import tempfile
 import re
-from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import register_service, get_service_address
 from utils.env_loader import get_env
 import pickle
 from src.network.secure_zmq import configure_secure_client, configure_secure_server
-
-# Parse CLI arguments once
-_agent_args = parse_agent_args()
 from collections import OrderedDict
+
+# Load configuration at module level
+config = load_config()
 
 # Add the parent directory to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -59,27 +60,39 @@ if os.path.exists(xtts_path):
     logger.info(f"Added custom XTTS path: {xtts_path}")
 
 # ZMQ Configuration
-SAMPLE_RATE = int(getattr(_agent_args, 'sample_rate', 24000))
-CHANNELS = int(getattr(_agent_args, 'channels', 1))
-BUFFER_SIZE = int(getattr(_agent_args, 'buffer_size', 1024))
-MAX_CACHE_SIZE = int(getattr(_agent_args, 'max_cache_size', 50))
+SAMPLE_RATE = int(config.get("sample_rate", 24000))
+CHANNELS = int(config.get("channels", 1))
+BUFFER_SIZE = int(config.get("buffer_size", 1024))
+MAX_CACHE_SIZE = int(config.get("max_cache_size", 50))
 
-INTERRUPT_PORT = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
+INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
 class UltimateTTSAgent(BaseAgent):
-    def __init__(self):
-        self.port = int(getattr(_agent_args, 'port', 5562))
-        self.unified_system_port = int(getattr(_agent_args, 'unifiedsystemagent_port', 5569))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.interrupt_port = int(getattr(_agent_args, 'streaming_interrupt_handler_port', 5576))
-        self.sample_rate = int(getattr(_agent_args, 'sample_rate', 24000))
-        self.channels = int(getattr(_agent_args, 'channels', 1))
-        self.buffer_size = int(getattr(_agent_args, 'buffer_size', 1024))
-        self.max_cache_size = int(getattr(_agent_args, 'max_cache_size', 50))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5562)) if port is None else port
+        agent_name = config.get("name", "UltimateTTSAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Additional configuration values
+        self.unified_system_port = int(config.get("unifiedsystemagent_port", 5569))
+        self.interrupt_port = int(config.get("streaming_interrupt_handler_port", 5576))
+        self.sample_rate = int(config.get("sample_rate", 24000))
+        self.channels = int(config.get("channels", 1))
+        self.buffer_size = int(config.get("buffer_size", 1024))
+        self.max_cache_size = int(config.get("max_cache_size", 50))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        
         """Initialize the Ultimate TTS agent with 4-tier fallback system"""
         logger.info("Initializing Ultimate TTS Agent")
-        self.language = getattr(_agent_args, 'language', 'en')
+        self.language = config.get("language", 'en')
         
         # Voice customization settings
         self.speaker_wav = None
@@ -190,8 +203,12 @@ class UltimateTTSAgent(BaseAgent):
         # Register with service discovery
         self._register_service()
         
+        # Set running flag and start_time
+        self.running = True
+        self.start_time = time.time()
+        
         logger.info("TTS Agent basic initialization complete")
-    
+
     def _register_service(self):
         """Register this agent with the service discovery system"""
         try:
@@ -845,23 +862,19 @@ class UltimateTTSAgent(BaseAgent):
             }
 
 if __name__ == "__main__":
-    print("=== Ultimate TTS Agent ===")
-    print(f"Listening on ZMQ port {self.port}")  # dynamically parsed
-    print("4-tier TTS system:")
-    print("1. XTTS v2 (Primary)")
-    print("2. Windows SAPI (Secondary)")
-    print("3. pyttsx3 (Tertiary)")
-    print("4. Console Print (Final)")
-    
-    # Create and run TTS agent
-    agent = UltimateTTSAgent()
-    agent.run()
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+    # Standardized main execution block
+    agent = None
+    try:
+        logger.info("Starting UltimateTTSAgent...")
+        agent = UltimateTTSAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logger.error(f"An unexpected error occurred in {agent.name if agent else 'UltimateTTSAgent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info(f"Cleaning up {agent.name}...")
+            agent.cleanup()

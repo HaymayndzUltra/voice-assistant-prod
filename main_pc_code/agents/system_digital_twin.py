@@ -1,10 +1,3 @@
-import sys
-import os
-# Add true project root to Python path to resolve imports
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 #!/usr/bin/env python3
 """
 System Digital Twin Agent
@@ -14,16 +7,24 @@ a simulation endpoint to predict the impact of future actions on system resource
 It serves as a predictive analytics layer for resource management decisions.
 """
 
+import sys
+import os
+# Add true project root to Python path to resolve imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import time
 import json
 import logging
 import threading
 import zmq
+import psutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union, cast
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server, start_auth
@@ -41,6 +42,9 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("SystemDigitalTwinAgent")
+
+# Parse agent arguments at module level with canonical import
+config = load_config()
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', 'localhost')
@@ -63,9 +67,6 @@ DEFAULT_CONFIG = {
     "network_baseline_ms": 50,  # Default expected network latency
 }
 
-# Parse agent arguments
-_agent_args = parse_agent_args()
-
 class SystemDigitalTwinAgent(BaseAgent):
     """
     A digital twin of the voice assistant system that monitors real-time metrics
@@ -73,17 +74,19 @@ class SystemDigitalTwinAgent(BaseAgent):
     """
     
     def __init__(self):
-        # Initialize with BaseAgent
-        super().__init__(_agent_args)
-        
-        # Get configuration from _agent_args
-        self.port = getattr(_agent_args, 'port', DEFAULT_PORT)
+        # Set required properties before calling super().__init__
+        self.name = "SystemDigitalTwin"
+        self.port = int(config.get("port", DEFAULT_PORT))
         if self.port is None:
             self.port = DEFAULT_PORT
             logger.warning(f"Port was None, using default port {DEFAULT_PORT}")
             
-        self.bind_address = getattr(_agent_args, 'bind_address', BIND_ADDRESS)
-        self.zmq_timeout = getattr(_agent_args, 'zmq_request_timeout', ZMQ_REQUEST_TIMEOUT)
+        self.bind_address = config.get("bind_address", BIND_ADDRESS)
+        self.zmq_timeout = int(config.get("zmq_request_timeout", ZMQ_REQUEST_TIMEOUT))
+        self.start_time = time.time()
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=self.name, port=self.port)
         
         # Merge provided config with defaults
         self.config = DEFAULT_CONFIG.copy()
@@ -91,7 +94,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         # Set up ports and host from configuration
         # Use parameter port first, then config, then fall back to default
         self.main_port = self.port
-        self.health_port = getattr(_agent_args, 'health_check_port', DEFAULT_HEALTH_PORT)
+        self.health_port = config.get("health_check_port", DEFAULT_HEALTH_PORT)
         if self.health_port is None:
             self.health_port = DEFAULT_HEALTH_PORT
             logger.warning(f"Health port was None, using default health port {DEFAULT_HEALTH_PORT}")
@@ -134,7 +137,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.prom = None
         try:
             from prometheus_api_client import PrometheusConnect
-            prometheus_url = getattr(_agent_args, 'prometheus_url', self.config["prometheus_url"])
+            prometheus_url = config.get("prometheus_url", self.config["prometheus_url"])
             self.prom = PrometheusConnect(url=prometheus_url, disable_ssl=True)
             logger.info("Prometheus client initialized successfully")
         except ImportError:
@@ -161,8 +164,8 @@ class SystemDigitalTwinAgent(BaseAgent):
         self._register_agent("SystemDigitalTwin", "MainPC", "HEALTHY", datetime.now().isoformat())
         
         # Track VRAM usage from ModelManagerAgent
-        vram_capacity = getattr(_agent_args, 'vram_capacity_mb', self.config.get("vram_capacity_mb", 24000))
-        pc2_vram_capacity = getattr(_agent_args, 'pc2_vram_capacity_mb', 12000)
+        vram_capacity = config.get("vram_capacity_mb", self.config.get("vram_capacity_mb", 24000))
+        pc2_vram_capacity = config.get("pc2_vram_capacity_mb", 12000)
         
         self.vram_metrics = {
             "mainpc_vram_total_mb": vram_capacity,
@@ -183,9 +186,12 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.metrics_thread.daemon = True
         self.metrics_thread.start()
         
+        # For health status tracking
+        self.last_update_time = datetime.now().isoformat()
+        
         logger.info(f"SystemDigitalTwin initialized on port {self.main_port}" + 
                    f" with {'secure' if secure_zmq else 'standard'} ZMQ")
-    
+
     def _register_service(self):
         """Register this agent with the service discovery system"""
         try:
@@ -478,14 +484,35 @@ class SystemDigitalTwinAgent(BaseAgent):
         return response
     
     def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
+        """Get the current health status of the agent.
+        
+        This method overrides the BaseAgent._get_health_status method to add
+        agent-specific health information.
+        
+        Returns:
+            Dict[str, Any]: A dictionary containing health status information
+        """
+        # Get the base health status from parent class
         base_status = super()._get_health_status()
-        specific_metrics = {
-            "twin_status": "active" if getattr(self, 'running', False) else "inactive",
-            "registered_agents_count": len(getattr(self, 'registered_agents', {})),
-            "last_update_time": getattr(self, 'last_update_time', 'N/A')
-        }
-        base_status.update(specific_metrics)
+        
+        # Add agent-specific health metrics
+        try:
+            specific_metrics = {
+                "twin_status": "active" if getattr(self, 'running', False) else "inactive",
+                "registered_agents_count": len(getattr(self, 'registered_agents', {})),
+                "last_update_time": getattr(self, 'last_update_time', 'N/A'),
+                "prometheus_connected": self._check_prometheus_connection(),
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                }
+            }
+            base_status.update({"agent_specific_metrics": specific_metrics})
+            
+        except Exception as e:
+            logger.error(f"Error collecting health metrics: {e}")
+            base_status.update({"health_metrics_error": str(e)})
+        
         return base_status
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -837,10 +864,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error updating VRAM metrics: {e}")
             import traceback
-import psutil
-from datetime import datetime
             logger.error(traceback.format_exc())
-
 
     def health_check(self):
         '''
@@ -875,11 +899,20 @@ from datetime import datetime
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
+# Add standardized __main__ block
 if __name__ == "__main__":
-    agent = SystemDigitalTwinAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        agent = SystemDigitalTwinAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("SystemDigitalTwin interrupted")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.cleanup() 
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

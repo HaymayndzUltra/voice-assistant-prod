@@ -33,8 +33,8 @@ try:
 except ImportError:
     USE_COMMON_UTILS = False
 import psutil
-from main_pc_code.utils.config_parser import parse_agent_args
-_agent_args = parse_agent_args()
+from main_pc_code.utils.config_loader import load_config
+config = load_config()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

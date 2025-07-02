@@ -1,4 +1,7 @@
 import zmq
+from typing import Dict, Any, Optional
+import yaml
+import os
 import json
 import logging
 import sqlite3
@@ -18,7 +21,12 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
-    USE_COMMON_UTILS = True
+    USE_COMMON_UTILS 
+from main_pc_code.src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()= True
 except ImportError:
     USE_COMMON_UTILS = False
 
@@ -35,7 +43,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class PerformanceLoggerAgent:
+class PerformanceLoggerAgent(BaseAgent):
+
+    def __init__(self, port: int = None):
+
+        super().__init__(name="PerformanceLoggerAgent", port=port)
+
+        self.start_time = time.time()
+
     def __init__(self, port:
 
         self.name = "PerformanceLoggerAgent"
@@ -358,6 +373,22 @@ class PerformanceLoggerAgent:
                     'status': 'error',
                     'message': str(e)
                 })
+
+
+
+    def cleanup(self):
+
+
+        """Clean up resources before shutdown."""
+
+
+        logger.info("Cleaning up resources...")
+
+
+        # Add specific cleanup code here
+
+
+        super().cleanup()
     
     def stop(self):
         """Stop the agent and clean up resources."""
@@ -367,21 +398,145 @@ class PerformanceLoggerAgent:
         self.socket.close()
         self.context.term()
 
-if __name__ == '__main__':
-    agent = PerformanceLoggerAgent()
+
+
+
+
+if __name__ == "__main__":
+    # Standardized main execution block for PC2 agents
+    agent = None
     try:
+        agent = PerformanceLoggerAgent()
         agent.run()
     except KeyboardInterrupt:
-        agent.stop() 
-        # Set running flag to false to stop all threads
-        self.running = False
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
+
+
+
+    def connect_to_main_pc_service(self, service_name: str):
+
+
+        """
+
+
+        Connect to a service on the main PC using the network configuration.
+
+
         
-        # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            logging.info("Health thread joined")
+
+
+        Args:
+
+
+            service_name: Name of the service in the network config ports section
+
+
         
-        # Close health socket if it exists
-        if hasattr(self, "health_socket"):
-            self.health_socket.close()
-            logging.info("Health socket closed")
+
+
+        Returns:
+
+
+            ZMQ socket connected to the service
+
+
+        """
+
+
+        if not hasattr(self, 'main_pc_connections'):
+
+
+            self.main_pc_connections = {}
+
+
+            
+
+
+        if service_name not in network_config.get("ports", {}):
+
+
+            logger.error(f"Service {service_name} not found in network configuration")
+
+
+            return None
+
+
+            
+
+
+        port = network_config["ports"][service_name]
+
+
+        
+
+
+        # Create a new socket for this connection
+
+
+        socket = self.context.socket(zmq.REQ)
+
+
+        
+
+
+        # Connect to the service
+
+
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+
+        
+
+
+        # Store the connection
+
+
+        self.main_pc_connections[service_name] = socket
+
+
+        
+
+
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+
+        return socket

@@ -14,10 +14,10 @@ import psutil
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List, Optional, Tuple
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.src.core.base_agent import BaseAgent
 
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(

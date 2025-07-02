@@ -1,4 +1,5 @@
 from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
 import sys
 import os
 import time
@@ -32,13 +33,14 @@ from scipy.spatial.distance import cosine
 import sounddevice as sd
 import librosa
 import soundfile as sf
-from utils.config_loader import parse_agent_args
+from utils.env_loader import get_env
 import psutil
-from datetime import datetime
+
+# Load configuration at module level
+config = load_config()
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
 
 # Load configuration
 with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "face_recognition_config.json"), "r") as f:
@@ -77,10 +79,9 @@ class PrivacyZone:
     blur_level: int = 25
     enabled: bool = True
 
-class KalmanTracker(BaseAgent):
+class KalmanTracker(object):
     """Kalman filter-based tracker for smooth face tracking"""
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="FaceRecognitionAgent")
+    def __init__(self, measurement_noise=0.1, process_noise=0.01):
         self.kf = KalmanFilter(dim_x=4, dim_z=2)  # x, y, dx, dy
         self.kf.F = np.array([[1, 0, 1, 0],
                              [0, 1, 0, 1],
@@ -109,55 +110,52 @@ class KalmanTracker(BaseAgent):
         y = self.kf.x[1] - height/2
         return (int(x), int(y), int(x + width), int(y + height))
 
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
-
-    def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
-
 class EmotionAnalyzer(BaseAgent):
     """Advanced emotion analysis with multi-label support and temporal tracking"""
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="FaceRecognitionAgent")
+
+        self.port = port
+
+        self.running = True
+
+        self.tracked_persons = {}
+
+        self.known_faces = {}
+
+        self.emotion_history = {}
+
+        self.privacy_zones = []
+
+        self.initialization_status = {
+
+            "is_initialized": False,
+
+            "error": None,
+
+            "progress": 0.0,
+
+            "components": {
+
+                "zmq": False,
+
+                "face_detector": False,
+
+                "face_recognizer": False,
+
+                "emotion_analyzer": False,
+
+                "liveness_detector": False
+
+            }
+
+        }
+
+        self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
+
+        self.init_thread.start()
+
+        logging.info("FaceRecognitionAgent basic init complete, async init started")
         self.config = config
         self.emotion_model = self._load_emotion_model()
         self.voice_model = self._load_voice_model() if config["voice_integration"]["enabled"] else None
@@ -389,13 +387,25 @@ class PrivacyManager(BaseAgent):
         }
 
 class FaceRecognitionAgent(BaseAgent):
-    """Main face recognition agent using InsightFace"""
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5713))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5560)) if port is None else port
+        agent_name = config.get("name", "FaceRecognitionAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
+        # Set running flag
         self.running = True
+        
+        # Initialize other attributes
         self.tracked_persons = {}
         self.known_faces = {}
         self.emotion_history = {}
@@ -412,8 +422,11 @@ class FaceRecognitionAgent(BaseAgent):
                 "liveness_detector": False
             }
         }
+        
+        # Start async initialization
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
+        
         logging.info("FaceRecognitionAgent basic init complete, async init started")
 
     def _perform_initialization(self):
@@ -636,12 +649,61 @@ class FaceRecognitionAgent(BaseAgent):
         if hasattr(self, 'context'):
             self.context.term()
 
+    def health_check(self):
+        """Perform a health check and return status."""
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "tracked_persons": len(self.tracked_persons) if hasattr(self, 'tracked_persons') else 0,
+                    "known_faces": len(self.known_faces) if hasattr(self, 'known_faces') else 0,
+                    "initialization_status": self.initialization_status["is_initialized"] if hasattr(self, 'initialization_status') else False
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+    def _get_health_status(self):
+        """Default health status implementation required by BaseAgent."""
+        status = "HEALTHY" if self.running else "UNHEALTHY"
+        details = {
+            "status_message": "Agent is operational" if self.running else "Agent is not running",
+            "uptime_seconds": time.time() - self.start_time,
+            "initialization_status": self.initialization_status["is_initialized"] if hasattr(self, 'initialization_status') else False
+        }
+        return {"status": status, "details": details}
+
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
-    # Create and start the agent
-    agent = FaceRecognitionAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        logging.info("Starting FaceRecognitionAgent...")
+        agent = FaceRecognitionAgent()
         agent.run()
     except KeyboardInterrupt:
-        logging.info("Agent interrupted by user")
+        logging.info(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        logging.error(f"An unexpected error occurred in {agent.name if agent else 'FaceRecognitionAgent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.stop()
+        if agent and hasattr(agent, 'cleanup'):
+            logging.info(f"Cleaning up {agent.name}...")
+            agent.cleanup()

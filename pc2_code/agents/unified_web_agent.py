@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict, Any, Optional
 """
 Unified Web Agent
 ----------------
@@ -90,7 +91,729 @@ TIMEOUT = 30  # seconds
 # Get bind address from environment variables with default to 0.0.0.0 for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
-class UnifiedWebAgent:
+class UnifiedWebAgent(BaseAgent):
+
+    
+    def __init__(self, port: int = None):
+
+    
+        super().__init__(name="UnifiedWebAgent", port=port)
+
+
+    
+        """Initialize the unified web agent with improved capabilities"""
+
+
+    
+        # Load configuration from startup_config.yaml
+
+
+    
+        self._load_config()
+
+
+    
+        # ZMQ setup
+
+
+    
+        self.context = zmq.Context()
+
+
+    
+        # Main socket for requests
+
+
+    
+        self.socket = self.context.socket(zmq.REP)
+
+
+    
+        # Secure ZMQ configuration
+
+
+    
+        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.socket = configure_secure_server(self.socket)
+
+
+    
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+
+
+    
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+
+
+    
+        try:
+
+
+    
+            self.socket.bind(bind_address)
+
+
+    
+            logger.info(f"Unified Web Agent bound to {bind_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.error(f"Failed to bind to {bind_address}: {e}")
+
+
+    
+            raise
+
+
+    
+        # Health check socket
+
+
+    
+        self.health_socket = self.context.socket(zmq.REP)
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.health_socket = configure_secure_server(self.health_socket)
+
+
+    
+        health_bind_address = f"tcp://{BIND_ADDRESS}:{self.health_port}"
+
+
+    
+        try:
+
+
+    
+            self.health_socket.bind(health_bind_address)
+
+
+    
+            logger.info(f"Health check bound to {health_bind_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.error(f"Failed to bind health check to {health_bind_address}: {e}")
+
+
+    
+            raise
+
+
+    
+        # Memory agent connection socket (will be initialized later)
+
+
+    
+        self.memory_socket = None
+
+
+    
+        # Setup interrupt subscription
+
+
+    
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+
+
+    
+        # Try to get the interrupt handler address from service discovery
+
+
+    
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+
+
+    
+        if not interrupt_address:
+
+
+    
+            # Fall back to configured port
+
+
+    
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+
+
+    
+        try:
+
+
+    
+            self.interrupt_socket.connect(interrupt_address)
+
+
+    
+            self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+
+
+    
+            logger.info(f"Connected to interrupt handler at {interrupt_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.warning(f"Could not connect to interrupt handler: {e}")
+
+
+    
+        # Setup directories
+
+
+    
+        self.cache_dir = Path('cache') / "web_agent"
+
+
+    
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+
+    
+        self.output_dir = Path('output')
+
+
+    
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+    
+        # Initialize database
+
+
+    
+        self.db_path = self.cache_dir / "web_agent_cache.sqlite"
+
+
+    
+        self.conn = sqlite3.connect(str(self.db_path))
+
+
+    
+        self._create_tables()
+
+
+    
+        # Initialize web driver
+
+
+    
+        self.driver = None
+
+
+    
+        self._init_web_driver()
+
+
+    
+        # HTTP session for non-browser requests
+
+
+    
+        self.session = requests.Session()
+
+
+    
+        self.session.headers.update({
+
+
+    
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
+
+    
+        })
+
+
+    
+        # State tracking
+
+
+    
+        self.current_url = None
+
+
+    
+        self.page_content = None
+
+
+    
+        self.last_request_time = 0
+
+
+    
+        self.conversation_context = []
+
+
+    
+        self.running = True
+
+
+    
+        self.interrupted = False
+
+
+    
+        # Proactive settings
+
+
+    
+        self.proactive_mode = True
+
+
+    
+        self.proactive_topics = ["ai news", "technology updates", "machine learning breakthroughs"]
+
+
+    
+        self.confidence_threshold = 0.7
+
+
+    
+        # Statistics
+
+
+    
+        self.total_requests = 0
+
+
+    
+        self.successful_requests = 0
+
+
+    
+        self.failed_requests = 0
+
+
+    
+        self.health_check_requests = 0
+
+
+    
+        self.start_time = time.time()
+
+
+    
+        # Register with SystemDigitalTwin
+
+
+    
+        self._register_with_service_discovery()
+
+
+    
+        # Initialize connection to memory agent
+
+
+    
+        self._init_memory_connection()
+
+
+    
+        # Start background threads
+
+
+    
+        self._start_proactive_thread()
+
+
+    
+        self._start_interrupt_thread()
+
+
+    
+        logger.info(f"Unified Web Agent initialized successfully")
+
+
+    
+        """Initialize the unified web agent with improved capabilities"""
+
+
+    
+        # Load configuration from startup_config.yaml
+
+
+    
+        self._load_config()
+
+
+    
+        # ZMQ setup
+
+
+    
+        self.context = zmq.Context()
+
+
+    
+        # Main socket for requests
+
+
+    
+        self.socket = self.context.socket(zmq.REP)
+
+
+    
+        # Secure ZMQ configuration
+
+
+    
+        self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.socket = configure_secure_server(self.socket)
+
+
+    
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+
+
+    
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+
+
+    
+        try:
+
+
+    
+            self.socket.bind(bind_address)
+
+
+    
+            logger.info(f"Unified Web Agent bound to {bind_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.error(f"Failed to bind to {bind_address}: {e}")
+
+
+    
+            raise
+
+
+    
+        # Health check socket
+
+
+    
+        self.health_socket = self.context.socket(zmq.REP)
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.health_socket = configure_secure_server(self.health_socket)
+
+
+    
+        health_bind_address = f"tcp://{BIND_ADDRESS}:{self.health_port}"
+
+
+    
+        try:
+
+
+    
+            self.health_socket.bind(health_bind_address)
+
+
+    
+            logger.info(f"Health check bound to {health_bind_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.error(f"Failed to bind health check to {health_bind_address}: {e}")
+
+
+    
+            raise
+
+
+    
+        # Memory agent connection socket (will be initialized later)
+
+
+    
+        self.memory_socket = None
+
+
+    
+        # Setup interrupt subscription
+
+
+    
+        self.interrupt_socket = self.context.socket(zmq.SUB)
+
+
+    
+        if self.secure_zmq:
+
+
+    
+            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+
+
+    
+        # Try to get the interrupt handler address from service discovery
+
+
+    
+        interrupt_address = get_service_address("StreamingInterruptHandler")
+
+
+    
+        if not interrupt_address:
+
+
+    
+            # Fall back to configured port
+
+
+    
+            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+
+
+    
+        try:
+
+
+    
+            self.interrupt_socket.connect(interrupt_address)
+
+
+    
+            self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
+
+
+    
+            logger.info(f"Connected to interrupt handler at {interrupt_address}")
+
+
+    
+        except Exception as e:
+
+
+    
+            logger.warning(f"Could not connect to interrupt handler: {e}")
+
+
+    
+        # Setup directories
+
+
+    
+        self.cache_dir = Path('cache') / "web_agent"
+
+
+    
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+
+    
+        self.output_dir = Path('output')
+
+
+    
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+    
+        # Initialize database
+
+
+    
+        self.db_path = self.cache_dir / "web_agent_cache.sqlite"
+
+
+    
+        self.conn = sqlite3.connect(str(self.db_path))
+
+
+    
+        self._create_tables()
+
+
+    
+        # Initialize web driver
+
+
+    
+        self.driver = None
+
+
+    
+        self._init_web_driver()
+
+
+    
+        # HTTP session for non-browser requests
+
+
+    
+        self.session = requests.Session()
+
+
+    
+        self.session.headers.update({
+
+
+    
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+
+
+    
+        })
+
+
+    
+        # State tracking
+
+
+    
+        self.current_url = None
+
+
+    
+        self.page_content = None
+
+
+    
+        self.last_request_time = 0
+
+
+    
+        self.conversation_context = []
+
+
+    
+        self.running = True
+
+
+    
+        self.interrupted = False
+
+
+    
+        # Proactive settings
+
+
+    
+        self.proactive_mode = True
+
+
+    
+        self.proactive_topics = ["ai news", "technology updates", "machine learning breakthroughs"]
+
+
+    
+        self.confidence_threshold = 0.7
+
+
+    
+        # Statistics
+
+
+    
+        self.total_requests = 0
+
+
+    
+        self.successful_requests = 0
+
+
+    
+        self.failed_requests = 0
+
+
+    
+        self.health_check_requests = 0
+
+
+    
+        self.start_time = time.time()
+
+
+    
+        # Register with SystemDigitalTwin
+
+
+    
+        self._register_with_service_discovery()
+
+
+    
+        # Initialize connection to memory agent
+
+
+    
+        self._init_memory_connection()
+
+
+    
+        # Start background threads
+
+
+    
+        self._start_proactive_thread()
+
+
+    
+        self._start_interrupt_thread()
+
+
+    
+        logger.info(f"Unified Web Agent initialized successfully")
+
+    
+        self.start_time = time.time()
+
     """Enhanced web agent with proactive information gathering and context-aware browsing"""
     
     def __init__(self):
@@ -1759,7 +2482,12 @@ class UnifiedWebAgent:
         return prioritized
     
     def _extract_relevant_data(self, content: str, context: Dict[str, Any], url: str, title: str) -> Dict[str, Any]:
-        """Extract data relevant to the context from page content"""
+        """Extract data relevant to the context from page 
+from main_pc_code.src.core.base_agent import BaseAgentcontent
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()"""
         # Extract a summary (first 1000 chars)
         summary = content[:1000] + "..." if len(content) > 1000 else content
         
@@ -1819,6 +2547,47 @@ class UnifiedWebAgent:
         except Exception as e:
             logger.error(f"Error storing browsing context: {e}")
 
+
+
+    
+    def _get_health_status(self) -> dict:
+
+
+    
+        """Return health status information."""
+
+
+    
+        base_status = super()._get_health_status()
+
+
+    
+        # Add any additional health information specific to UnifiedWebAgent
+
+
+    
+        base_status.update({
+
+
+    
+            'service': 'UnifiedWebAgent',
+
+
+    
+            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+
+
+    
+            'additional_info': {}
+
+
+    
+        })
+
+
+    
+        return base_status
+
 def main():
     """Main entry point"""
     try:
@@ -1837,5 +2606,24 @@ def main():
         if 'agent' in locals():
             agent.cleanup()
 
+
+
+
+
 if __name__ == "__main__":
-    main() 
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = UnifiedWebAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+

@@ -1,4 +1,6 @@
 import logging
+import yaml
+import os
 import time
 import json
 import zmq
@@ -24,9 +26,10 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("TutoringAgent")
 
-class AdvancedTutoringAgent:
+class AdvancedTutoringAgent(BaseAgent):
     def __init__(self, user_profile: Dict[str, Any], port: int = 5650):
-        self.user_profile = user_profile
+         super().__init__(name="AdvancedTutoringAgent", port=5650)
+self.user_profile = user_profile
         self.lesson_history = []
         self.current_topic = user_profile.get('subject', 'General Knowledge')
         self.difficulty_level = user_profile.get('difficulty', 'medium')
@@ -180,7 +183,12 @@ class AdvancedTutoringAgent:
                         if isinstance(response["content"], str):
                             # Try to extract JSON from the string
                             import re
-                            json_match = re.search(r'({.*})', response["content"], re.DOTALL)
+                            
+from main_pc_code.src.core.base_agent import BaseAgentjson_match 
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()= re.search(r'({.*})', response["content"], re.DOTALL)
                             if json_match:
                                 lesson_data = json.loads(json_match.group(1))
                             else:
@@ -367,6 +375,17 @@ class AdvancedTutoringAgent:
             logger.info("Received keyboard interrupt")
         finally:
             self.stop()
+
+
+    def cleanup(self):
+
+        """Clean up resources before shutdown."""
+
+        logger.info("Cleaning up resources...")
+
+        # Add specific cleanup code here
+
+        super().cleanup()
         
     def stop(self):
         """Clean up ZMQ resources"""
@@ -395,18 +414,114 @@ class AdvancedTutoringAgent:
         
         logger.info("AdvancedTutoringAgent stopped")
 
+
+
+
+
 if __name__ == "__main__":
-    # Example user profile
-    user_profile = {
-        "subject": "Python Programming",
-        "difficulty": "medium",
-        "learning_style": "interactive"
-    }
-    
-    agent = AdvancedTutoringAgent(user_profile)
+    # Standardized main execution block for PC2 agents
+    agent = None
     try:
+        agent = AdvancedTutoringAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
     finally:
-        agent.stop() 
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
+
+    def connect_to_main_pc_service(self, service_name: str):
+
+        """
+
+        Connect to a service on the main PC using the network configuration.
+
+        
+
+        Args:
+
+            service_name: Name of the service in the network config ports section
+
+        
+
+        Returns:
+
+            ZMQ socket connected to the service
+
+        """
+
+        if not hasattr(self, 'main_pc_connections'):
+
+            self.main_pc_connections = {}
+
+            
+
+        if service_name not in network_config.get("ports", {}):
+
+            logger.error(f"Service {service_name} not found in network configuration")
+
+            return None
+
+            
+
+        port = network_config["ports"][service_name]
+
+        
+
+        # Create a new socket for this connection
+
+        socket = self.context.socket(zmq.REQ)
+
+        
+
+        # Connect to the service
+
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+        
+
+        # Store the connection
+
+        self.main_pc_connections[service_name] = socket
+
+        
+
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+        return socket

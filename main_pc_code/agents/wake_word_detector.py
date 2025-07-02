@@ -1,4 +1,6 @@
 from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
 """
 Wake Word Detector
 ----------------
@@ -21,10 +23,11 @@ import time
 import pickle
 from datetime import datetime
 from typing import Optional, Dict, Any
-from utils.config_loader import parse_agent_args
+from utils.env_loader import get_env
 import psutil
-from datetime import datetime
-_agent_args = parse_agent_args()
+
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -38,17 +41,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ZMQ Configuration
-ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 6577))
+ZMQ_PUB_PORT = int(config.get("port", 6577))
 ZMQ_HEALTH_PORT = 6579
 ZMQ_AUDIO_PORT = 6575  # Port for receiving audio from streaming_audio_capture.py
 ZMQ_VAD_PORT = 6579    # Port for receiving VAD events
 
 class WakeWordDetectorAgent(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5705))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None, wake_word_path=None, sensitivity=0.5, energy_threshold=300):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5705)) if port is None else port
+        agent_name = config.get("name", "WakeWordDetectorAgent")
+        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
         """
         Initialize the wake word detector.
         
@@ -77,6 +90,9 @@ class WakeWordDetectorAgent(BaseAgent):
         
         # Initialize Porcupine
         self._init_porcupine()
+        
+        # Set running flag
+        self.running = True
         
         logger.info("Wake word detector initialized")
     
@@ -390,15 +406,33 @@ class WakeWordDetectorAgent(BaseAgent):
         }
         return {"status": status, "details": details}
 
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
-    detector = WakeWordDetectorAgent()
+    # Configure basic logging
+    logging.basicConfig(level=logging.INFO)
     
+    # Standardized main execution block
+    agent = None
     try:
-        detector.start()
-        print("Wake word detector running. Press Ctrl+C to stop.")
-        while True:
-            time.sleep(1)
+        # Load configuration from config file
+        wake_word_path = config.get("wake_word_path", "path/to/default_wake_word.ppn")
+        sensitivity = float(config.get("sensitivity", 0.5))
+        energy_threshold = int(config.get("energy_threshold", 300))
+        
+        logger.info("Starting WakeWordDetectorAgent...")
+        agent = WakeWordDetectorAgent(
+            wake_word_path=wake_word_path,
+            sensitivity=sensitivity,
+            energy_threshold=energy_threshold
+        )
+        agent.run()
     except KeyboardInterrupt:
-        print("\nStopping wake word detector...")
+        logger.info("WakeWordDetectorAgent interrupted by user")
+    except Exception as e:
+        import traceback
+        logger.error(f"An unexpected error occurred in WakeWordDetectorAgent: {e}")
+        traceback.print_exc()
     finally:
-        detector.stop() 
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info("Cleaning up WakeWordDetectorAgent...")
+            agent.cleanup() 

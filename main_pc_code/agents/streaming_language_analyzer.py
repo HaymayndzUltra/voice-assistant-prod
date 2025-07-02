@@ -20,13 +20,13 @@ import socket
 from typing import Dict, Optional, Any
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Parse command line arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Optional fastText language ID
 try:
@@ -40,10 +40,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("StreamingLanguageAnalyzer")
 
 # Port configuration from args or defaults
-ZMQ_SUB_PORT = int(getattr(_agent_args, 'streaming_speech_recognition_port', 5576) or 5576)
-ZMQ_PUB_PORT = int(getattr(_agent_args, 'port', 5577) or 5577)
-ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 5597) or 5597)
-ZMQ_REQUEST_TIMEOUT = int(getattr(_agent_args, 'zmq_request_timeout', 5000) or 5000)
+ZMQ_SUB_PORT = int(config.get("streaming_speech_recognition_port", 5576) or 5576)
+ZMQ_PUB_PORT = int(config.get("port", 5577) or 5577)
+ZMQ_HEALTH_PORT = int(config.get("health_port", 5597) or 5597)
+ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout", 5000) or 5000)
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')

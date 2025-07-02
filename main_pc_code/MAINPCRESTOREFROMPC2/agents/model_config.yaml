@@ -1,0 +1,155 @@
+# Model Configuration with Version Management
+# Last updated: 2025-05-21
+
+models:
+  # Primary code generation models
+  deepseek:
+    path: models/deepseek-coder-v1.5.Q4_K_M.gguf
+    version: v1.5
+    release_date: "2023-12-15"
+    vram_mb: 8000
+    args: --ctx-size 16384 --batch-size 512 --threads 8 --temp 0.7
+    fallback: llama3
+    use_case: code_generation
+    priority: high
+    preload: true  # Whether to load at system startup
+    compatibility:
+      min_driver: "525.60.11"
+      recommended_vram: 12000
+      platforms: ["cuda", "rocm"]
+    metrics:
+      avg_response_time: 0.85  # seconds
+      success_rate: 0.98
+    
+  wizardcoder:
+    path: models/wizardcoder-python-v1.0.Q4_K_M.gguf
+    version: v1.0
+    release_date: "2023-10-10"
+    vram_mb: 7500
+    args: --ctx-size 12288 --batch-size 512 --threads 8 --temp 0.7
+    fallback: deepseek
+    use_case: code_generation
+    priority: high
+    preload: true
+    compatibility:
+      min_driver: "525.60.11"
+      recommended_vram: 10000
+      platforms: ["cuda", "rocm"]
+    metrics:
+      avg_response_time: 0.92  # seconds
+      success_rate: 0.96
+    
+  llama3:
+    path: models/llama3-8b-instruct.Q4_K_M.gguf
+    version: v1.0
+    release_date: "2024-01-20"
+    vram_mb: 6000
+    args: --ctx-size 8192 --batch-size 512 --threads 6 --temp 0.7
+    fallback: phi3
+    use_case: reasoning
+    priority: medium
+    preload: false
+    compatibility:
+      min_driver: "520.56.06"
+      recommended_vram: 8000
+      platforms: ["cuda", "rocm", "cpu"]
+    metrics:
+      avg_response_time: 1.1  # seconds
+      success_rate: 0.97
+
+  # Translation models
+  phi:
+    path: models/phi3-mini-128k-instruct.Q4_K_M.gguf
+    version: v1.0
+    release_date: "2024-03-15"
+    vram_mb: 4000
+    args: --ctx-size 8192 --batch-size 256 --threads 4 --temp 0.7
+    fallback: tinyllama
+    use_case: translation
+    priority: medium
+    preload: false
+    url: "http://192.168.1.2:11434/api/generate"  # Ollama API URL for phi:latest model
+    api_type: "ollama"  # Use Ollama API
+    compatibility:
+      min_driver: "515.65.01"
+      recommended_vram: 6000
+      platforms: ["cuda", "rocm", "cpu"]
+    metrics:
+      avg_response_time: 0.78  # seconds
+      success_rate: 0.99
+    
+  # Fallback / lightweight model
+  tinyllama:
+    path: models/TinyLlama-1.1B-Chat-v1.0.Q4_K_M.gguf
+    version: v1.0
+    release_date: "2023-12-05"
+    vram_mb: 1500
+    args: --ctx-size 2048 --batch-size 128 --threads 2 --temp 0.8
+    fallback: null  # Ultimate fallback has no further fallback
+    use_case: fallback
+    priority: low
+    preload: false
+    compatibility:
+      min_driver: "470.82.01"
+      recommended_vram: 2000
+      platforms: ["cuda", "rocm", "cpu", "vulkan"]
+    metrics:
+      avg_response_time: 0.45  # seconds
+      success_rate: 0.95
+    emergency_fallback: true  # This model is preserved during emergency memory cleanup
+    
+  # Optional models (commented out by default)
+  # mistral:
+  #   path: models/Mistral-7B-Instruct-v0.2.Q4_K_M.gguf
+  #   version: v0.2
+  #   release_date: "2023-10-01"
+  #   vram_mb: 5500
+  #   args: --ctx-size 8192 --batch-size 512 --threads 6 --temp 0.7
+  #   fallback: llama3
+  #   use_case: reasoning
+  #   priority: medium
+  #   preload: false
+  #   compatibility:
+  #     min_driver: "520.56.06"
+  #     recommended_vram: 8000
+  #     platforms: ["cuda", "rocm", "cpu"]
+  #   metrics:
+  #     avg_response_time: 1.05  # seconds
+  #     success_rate: 0.96
+
+# Global configuration
+global:
+  vram_limit_mb: 10000  # 10GB VRAM limit
+  model_timeout_sec: 300  # 5 minutes of inactivity before unloading
+  max_retries: 3
+  base_retry_delay: 1.0  # seconds
+  health_port: 5597
+  default_fallback: "tinyllama"  # System-wide fallback if model-specific fallback fails
+  emergency_vram_threshold: 0.05  # Trigger emergency cleanup when free VRAM < 5% of total
+  model_startup_timeout_sec: 60  # Max time to wait for a model to start
+  check_compatibility: true  # Whether to check driver and platform compatibility
+
+# Version history tracking
+version_history:
+  deepseek:
+    - version: "v1.5"
+      date: "2023-12-15"
+      changes: "Improved code generation capabilities, reduced hallucinations"
+    - version: "v1.4"
+      date: "2023-10-30"
+      changes: "Added support for TypeScript and Rust code generation"
+    - version: "v1.3"
+      date: "2023-09-15"
+      changes: "Initial production release"
+      
+  phi3:
+    - version: "v1.0"
+      date: "2024-03-15"
+      changes: "Initial release with excellent translation capabilities"
+
+# System requirements
+system_requirements:
+  recommended_cuda_version: "12.1"
+  min_cuda_version: "11.7"
+  recommended_ram_gb: 16
+  min_ram_gb: 8

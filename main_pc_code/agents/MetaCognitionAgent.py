@@ -26,14 +26,14 @@ import threading
 import os
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.config.agent_ports import default_ports
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # Parse command line arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000
 if hasattr(_agent_args, 'zmq_request_timeout'):
-    ZMQ_REQUEST_TIMEOUT = int(_agent_args.zmq_request_timeout)
+    ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout"))
 
 # Get bind address from environment variables with default to a safe value for Docker compatibility
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')

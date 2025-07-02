@@ -8,6 +8,8 @@ if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
 from src.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+
 """
 Unified Planning Agent
 - Combines chain of thought reasoning, code execution, task planning, and progressive code generation
@@ -28,15 +30,10 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import threading
 
-# Add the parent directory to sys.path to import the config module
-sys.path.append(str(Path(__file__).parent.parent))
-from utils.config_loader import parse_agent_args
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 import psutil
-from datetime import datetime
-from datetime import datetime
 
 # Configure logging (keep as is, or optionally source log level/path from _agent_args)
 logging.basicConfig(
@@ -50,16 +47,22 @@ logger = logging.getLogger("UnifiedPlanningAgent")
 
 SECURE_ZMQ = is_secure_zmq_enabled()
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 class UnifiedPlanningAgent(BaseAgent):
     """Unified agent for planning, execution, and code generation"""
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5601))
-        self.health_port = int(_agent_args.get('health_port', 5602))
-        self.bind_address = _agent_args.get('bind_address', get_env('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5601)) if port is None else port
+        agent_name = config.get("name", "UnifiedPlanningAgent")
+        self.health_port = int(config.get("health_port", 5602))
+        self.bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
         self.running = True
         self.start_time = time.time()
         self.initialization_status = {
@@ -227,7 +230,7 @@ class UnifiedPlanningAgent(BaseAgent):
             else:
                 # Fallback to default ports if service discovery fails
                 fallback_ports = {
-                    "TaskRouter": getattr(_agent_args, 'task_router_port', 5557),
+                    "TaskRouter": config.get("task_router_port", 5557),
                     "AutoGenFramework": int(config.get('zmq.autogen_framework_port', 5600))
                 }
                 
@@ -512,74 +515,6 @@ class UnifiedPlanningAgent(BaseAgent):
         
         # System prompt for the planning LLM
         system_prompt = """You are a task planning AI. Your job is to break down a complex task into a series of steps that can be executed by specialized agents. For each step, you need to specify:
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
-
 1. The agent type that should handle the step
 2. A description of what needs to be done
 3. Any parameters needed for the step
@@ -903,96 +838,72 @@ Analyze this task and identify its requirements and complexity. Return your anal
                 traceback.print_exc()
     
     def run(self):
-        """Run the unified planning agent"""
+        """Main execution loop of the agent."""
+        logger.info(f"Starting {self.name} main loop...")
         try:
-            # Register with AutoGen framework using service discovery
-            if self.framework:
-                self.framework.send_string(json.dumps({
-                    "request_type": "register_agent",
-                    "agent_id": "unified_planning",
-                    "endpoint": f"tcp://{self.bind_address}:{self.port}",
-                    "capabilities": [
-                        "planning",
-                        "task_decomposition",
-                        "code_generation",
-                        "code_execution",
-                        "chain_of_thought"
-                    ]
-                }))
-                
-                # Wait for response
-                response_str = self.framework.recv_string()
-                response = json.loads(response_str)
-                
-                if response["status"] != "success":
-                    logger.error(f"Error registering with AutoGen framework: {response.get('error', 'Unknown error')}")
-                else:
-                    logger.info("Registered with AutoGen framework")
-            else:
-                logger.warning("AutoGen framework connection not available, skipping registration")
-            
-            # Main request handling loop
             self.handle_requests()
-                
         except KeyboardInterrupt:
-            logger.info("Interrupted by user")
+            logger.info("Keyboard interrupt received. Shutting down gracefully...")
         except Exception as e:
-            logger.error(f"Error in main loop: {str(e)}")
-            traceback.print_exc()
+            logger.error(f"Error in main loop: {e}")
+            logger.error(traceback.format_exc())
         finally:
+            logger.info("Exiting main loop...")
             self.cleanup()
-    
+
     def cleanup(self):
-        """Clean up resources"""
+        """Clean up resources before shutdown."""
         logger.info("Cleaning up resources...")
-        self.running = False
-        
-        # Unregister from AutoGen framework
+        if hasattr(self, 'running'):
+            self.running = False
+            
+        # Close all ZMQ sockets
         try:
-            if self.framework:
-                self.framework.send_string(json.dumps({
-                    "request_type": "unregister_agent",
-                    "agent_id": "unified_planning"
-                }))
-                
-                # Wait for response with timeout
-                try:
-                    response_str = self.framework.recv_string()
-                    logger.info("Successfully unregistered from AutoGen framework")
-                except zmq.Again:
-                    logger.warning("Timeout waiting for unregister response from AutoGen framework")
-        except Exception as e:
-            logger.error(f"Error unregistering from AutoGen framework: {e}")
-        
-        # Close sockets in a try-finally block to ensure they're all closed
-        try:
-            if hasattr(self, 'receiver'):
+            if hasattr(self, 'receiver') and self.receiver:
                 self.receiver.close()
-                logger.debug("Closed receiver socket")
+        except Exception as e:
+            logger.error(f"Error closing receiver socket: {e}")
             
-            if hasattr(self, 'health_check'):
+        try:
+            if hasattr(self, 'health_check') and self.health_check:
                 self.health_check.close()
-                logger.debug("Closed health check socket")
+        except Exception as e:
+            logger.error(f"Error closing health check socket: {e}")
             
+        try:
             if hasattr(self, 'task_router') and self.task_router:
                 self.task_router.close()
-                logger.debug("Closed task router socket")
+        except Exception as e:
+            logger.error(f"Error closing task router socket: {e}")
             
+        try:
             if hasattr(self, 'framework') and self.framework:
                 self.framework.close()
-                logger.debug("Closed framework socket")
         except Exception as e:
-            logger.error(f"Error during socket cleanup: {e}")
-        finally:
-            # Terminate ZMQ context
-            if hasattr(self, 'context'):
+            logger.error(f"Error closing framework socket: {e}")
+            
+        # Terminate ZMQ context if needed
+        try:
+            if hasattr(self, 'context') and self.context:
                 self.context.term()
-                logger.debug("Terminated ZMQ context")
+        except Exception as e:
+            logger.error(f"Error terminating ZMQ context: {e}")
         
-        logger.info("Unified Planning Agent stopped successfully")
+        logger.info(f"{self.name} cleanup complete")
 
-
-# Main entry point
 if __name__ == "__main__":
-    agent = UnifiedPlanningAgent()
-    agent.run()
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = UnifiedPlanningAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

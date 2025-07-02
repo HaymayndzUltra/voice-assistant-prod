@@ -43,11 +43,11 @@ if MAIN_PC_CODE not in sys.path:
 
 # Import BaseAgent for standardized agent implementation
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 class Node:
     """Node in the reasoning tree/graph"""
@@ -65,8 +65,8 @@ class GoTToTAgent(BaseAgent):
     """Graph/Tree-of-Thought Agent for advanced reasoning"""
     def __init__(self, port: int = 5646, name: str = "GoTToTAgent", **kwargs):
         # Standardized config loading
-        agent_port = port if port is not None else getattr(_agent_args, 'port', 5646)
-        agent_name = name if name is not None else getattr(_agent_args, 'name', 'GoTToTAgent')
+        agent_port = port if port is not None else config.get("port", 5646)
+        agent_name = name if name is not None else config.get("name", 'GoTToTAgent')
         super().__init__(name=agent_name, port=int(agent_port))
 
         self.context = zmq.Context()

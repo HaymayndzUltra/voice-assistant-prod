@@ -10,7 +10,6 @@ import json
 import os
 from typing import Dict, Any, Optional
 from datetime import datetime
-import argparse
 import sys
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -18,18 +17,23 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from src.core.base_agent import BaseAgent
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import psutil
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-_agent_args = parse_agent_args()
+# Load configuration at module level
+config = load_config()
 
 class HumanAwarenessAgent(BaseAgent):
-    def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get port from config with fallback
+        agent_port = config.get("port", 5642) if port is None else port
+        agent_name = config.get("name", "HumanAwarenessAgent")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
         self.running = True
         # Add async init status
         self.initialization_status = {
@@ -50,7 +54,10 @@ class HumanAwarenessAgent(BaseAgent):
         self.attention_level = 0
         
         # Load configuration
-        self.config = self._load_config()
+        self.agent_config = self._load_config()
+        
+        # Record start time for uptime calculation
+        self.start_time = time.time()
         
     def _load_config(self) -> Dict:
         """Load agent configuration."""
@@ -136,7 +143,7 @@ class HumanAwarenessAgent(BaseAgent):
                                 "initialization_status": self.initialization_status
                             })
                             continue
-                        response = self._handle_request(message)
+                        response = self.handle_request(message)
                         self.socket.send_json(response)
                     else:
                         time.sleep(0.05)
@@ -160,7 +167,6 @@ class HumanAwarenessAgent(BaseAgent):
         """Update emotion and attention analysis."""
         # TODO: Implement actual emotion analysis logic
         pass
-
 
     def health_check(self):
         '''
@@ -196,10 +202,18 @@ class HumanAwarenessAgent(BaseAgent):
             }
 
 if __name__ == "__main__":
-    agent = HumanAwarenessAgent()
+    # Standardized main execution block
+    agent = None
     try:
+        agent = HumanAwarenessAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Received shutdown signal")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
     finally:
-        agent.stop() 
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

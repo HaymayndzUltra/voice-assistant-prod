@@ -6,14 +6,13 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 # Tone detection for Human Awareness Agent
 
 import time
 import logging
 import threading
 import zmq
-import os
 import json
 from datetime import datetime
 from queue import Queue
@@ -21,8 +20,14 @@ import re
 import numpy as np
 import wave
 from typing import Dict, Any, Optional
-from utils.config_loader import parse_agent_args
-_agent_args = parse_agent_args()
+from main_pc_code.utils.config_loader import load_config
+import psutil
+
+# Load configuration at module level
+config = load_config()
+
+# ZMQ timeout settings
+ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Try to import audio processing libraries
 try:
@@ -68,13 +73,21 @@ TONE_CATEGORIES = {
     "tired": "fatigued, exhausted, low-energy"
 }
 
-class ToneDetectorAgent(BaseAgent):
+class ToneDetector(BaseAgent):
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
+        # Initialize with proper parameters before calling super().__init__()
+        self.port = config.get("port", 5625)
+        self.start_time = time.time()
+        self.running = True
+        self.name = "ToneDetector"
+        self.processed_audio_chunks = 0
+        self.last_detection_time = None
+        
+        # Call super().__init__() without _agent_args
+        super().__init__()
         
         # Initialize tone detection components
-        self.dev_mode = _agent_args.get('dev_mode', True)
+        self.dev_mode = config.get("dev_mode", True)
         self.whisper_socket = None
         self.tagalog_analyzer = None
         self.whisper_model = None
@@ -83,7 +96,7 @@ class ToneDetectorAgent(BaseAgent):
         self.tone_thread = threading.Thread(target=self._start_tone_monitor, daemon=True)
         self.tone_thread.start()
         
-        logger.info(f"ToneDetectorAgent initialized on port {self.port}")
+        logger.info(f"ToneDetector initialized on port {self.port}")
     
     def _start_tone_monitor(self):
         """Start tone monitoring in background thread."""
@@ -134,6 +147,10 @@ class ToneDetectorAgent(BaseAgent):
                                         }, block=False)
                                 except Exception:
                                     pass  # Queue full, just discard
+                            
+                            # Update metrics for health check
+                            self.last_detection_time = datetime.utcnow().isoformat()
+                            self.processed_audio_chunks += 1
                     elif self.whisper_model:
                         # Use direct microphone access with Whisper
                         logger.info("Listening for speech via direct microphone...")
@@ -157,6 +174,10 @@ class ToneDetectorAgent(BaseAgent):
                                     }, block=False)
                             except Exception:
                                 pass  # Queue full, just discard
+                            
+                            # Update metrics for health check
+                            self.last_detection_time = datetime.utcnow().isoformat()
+                            self.processed_audio_chunks += 1
                     else:
                         # No connection, sleep longer
                         time.sleep(5)
@@ -175,7 +196,8 @@ class ToneDetectorAgent(BaseAgent):
             # Use the partial transcripts port from streaming system
             context = zmq.Context()
             socket = context.socket(zmq.SUB)
-            socket.connect(f"tcp://{_agent_args.host}:5575")  # Partial transcripts port
+            host = config.get("host", "localhost")
+            socket.connect(f"tcp://{host}:5575")  # Partial transcripts port
             socket.setsockopt_string(zmq.SUBSCRIBE, "")
             logger.info("Connected to Whisper partial transcripts stream")
             return socket
@@ -204,8 +226,8 @@ class ToneDetectorAgent(BaseAgent):
             socket = context.socket(zmq.REQ)
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            host = _agent_args.get('tagalog_analyzer_host', 'localhost')
-            port = _agent_args.get('tagalog_analyzer_port', 5707)
+            host = config.get("tagalog_analyzer_host", "localhost")
+            port = config.get("tagalog_analyzer_port", 5707)
             socket.connect(f"tcp://{host}:{port}")  # TagalogAnalyzer service port
             logger.info("Connected to TagalogAnalyzer service")
             return socket
@@ -250,14 +272,21 @@ class ToneDetectorAgent(BaseAgent):
         name_prefix_count = sum(1 for prefix in name_prefixes if prefix in text_lower)
         
         # Count English markers
-        english_count = sum(1 for marker in english_markers if marker in text_lower)
+        english_count = sum(1 for marker in english_markers if f" {marker} " in f" {text_lower} ")
         
-        # Determine language based on marker counts
-        if tagalog_count > 0 or name_prefix_count > 0:
-            if english_count > tagalog_count:
-                return "Taglish"  # Mixed Tagalog-English
-            else:
-                return "Tagalog"
+        # Detect Tagalog-English code-switching
+        words = re.findall(r'\b\w+\b', text_lower)
+        total_words = len(words) if words else 1
+        
+        # Calculate language scores
+        tagalog_score = (tagalog_count + name_prefix_count * 2) / total_words
+        english_score = english_count / total_words
+        
+        # Determine language
+        if tagalog_score > 0.2 and english_score > 0.1:
+            return "Taglish"  # Code-switching
+        elif tagalog_score > english_score:
+            return "Tagalog"
         else:
             return "English"
     
@@ -265,90 +294,88 @@ class ToneDetectorAgent(BaseAgent):
         # Detect language
         language = self._detect_language(text)
         
-        # If Tagalog/Taglish and TagalogAnalyzer is available, use it
-        if language in ["Tagalog", "Taglish"] and tagalog_analyzer:
+        # If Tagalog and we have a Tagalog analyzer, use it
+        if language == "Tagalog" and tagalog_analyzer is not None:
             try:
-                # Send text to TagalogAnalyzer for analysis
                 tagalog_analyzer.send_json({
-                    "action": "analyze_sentiment_and_intent",
+                    "action": "analyze_tone",
                     "text": text
                 })
                 response = tagalog_analyzer.recv_json()
-                
-                if response.get("status") == "ok":
-                    sentiment = response.get("sentiment", {})
-                    intent = response.get("intent", {})
-                    
-                    # Get sentiment label
-                    sentiment_label = sentiment.get("label", "neutral")
-                    
-                    # Check for question patterns (indicates confusion)
-                    question_score = intent.get("question", 0.0)
-                    if question_score > 0.7 and "bakit" in text.lower():
-                        return "confused"  # Questions with "bakit" (why) usually indicate confusion
-                    
-                    # Check for negative statements (indicates frustration)
-                    negative_score = intent.get("negative", 0.0)
-                    if negative_score > 0.5 or sentiment_label == "negative":
-                        return "frustrated"
-                    
-                    # Check for positive sentiment (indicates excitement)
-                    if sentiment_label == "positive":
-                        positive_score = sentiment.get("positive", 0.0)
-                        if positive_score > 0.6:
-                            return "excited"  # Strong positive sentiment indicates excitement
-                        else:
-                            return "neutral"  # Mild positive sentiment might just be neutral tone
-                    
-                    # Default to neutral if no strong indicators
-                    return "neutral"
-                else:
-                    logger.warning(f"TagalogAnalyzer error: {response.get('message')}")
-                    # Fall back to keyword approach
+                if response.get("status") == "success":
+                    return response.get("tone", "neutral")
             except Exception as e:
                 logger.error(f"Error using TagalogAnalyzer: {e}")
-                # Fall back to keyword approach
         
-        # English text or fallback for Tagalog
-        text = text.lower()
+        # For English or if Tagalog analyzer failed, use rule-based approach
         
-        # Enhanced keyword-based detection for better accuracy
-        indicators = {
-            "frustrated": [
-                "can't", "not working", "doesn't work", "stupid", "annoying", "frustrated", "argh", "ugh",
-                "terrible", "awful", "hate", "useless", "broken", "failed", "failing", "failure", "error", 
-                "errors", "problem", "disaster", "horrible", "impossible", "ridiculous", "angry", "upset",
-                "bad", "wrong", "not right", "buggy", "bugs"
-            ],
-            "confused": [
-                "don't understand", "confused", "how do i", "what's happening", "why isn't", "not sure",
-                "unclear", "confusing", "complicated", "complex", "lost", "puzzled", "unsure", "uncertain",
-                "what does this mean", "don't get it", "no idea", "i'm lost", "strange", "weird", "odd", 
-                "doesn't make sense", "hard to follow", "not following", "can't figure out", "why is", "how is", "what is"
-            ],
-            "excited": [
-                "great", "awesome", "excellent", "perfect", "nice", "love it", "wow", "amazing", "brilliant",
-                "fantastic", "wonderful", "delighted", "happy", "glad", "thrilled", "impressed", "incredible",
-                "superb", "outstanding", "remarkable", "spectacular", "terrific", "fabulous", "marvelous",
-                "joy", "exciting", "excited", "pleasure", "pleased", "satisfaction", "satisfied", "lovely",
-                "cool", "super", "fantastic", "love", "really good", "impressive", "gorgeous", "beautiful"
-            ],
-            "tired": [
-                "tired", "exhausted", "too much", "need a break", "long day", "fatigued", "worn out", 
-                "drained", "sleepy", "drowsy", "weary", "beat", "spent", "burned out", "overworked",
-                "need rest", "need sleep", "exhausting", "draining", "tedious", "boring", "can't focus"
-            ]
-        }
+        # Initialize scores for each tone
+        scores = {tone: 0 for tone in TONE_CATEGORIES.keys()}
         
-        # Check for indicators
-        scores = {category: 0 for category in TONE_CATEGORIES.keys()}
-        scores["neutral"] = 1  # Default score
+        # Frustrated tone markers
+        frustrated_markers = [
+            r'\b(argh|ugh|aargh|grr|hmph|tsk)\b',
+            r'\b(not working|doesn\'t work|broken|useless|stupid|dumb|hate|annoying)\b',
+            r'(!!+|\?!+)',
+            r'\b(why (won\'t|can\'t|doesn\'t))\b',
+            r'\b(so (annoying|frustrating))\b',
+            r'\b(keep|keeps) (getting|having)\b',
+            r'\b(tried|trying) (everything|several times)\b',
+            r'\b(still|again) (not working|doesn\'t work)\b'
+        ]
         
-        for tone, keywords in indicators.items():
-            for keyword in keywords:
-                if keyword in text:
-                    scores[tone] += 1
-                    scores["neutral"] -= 0.2  # Reduce neutral score when other emotions detected
+        # Confused tone markers
+        confused_markers = [
+            r'\b(confused|puzzled|unsure|uncertain|don\'t understand|not sure)\b',
+            r'\b(what\'s happening|what is happening)\b',
+            r'\b(how (do|does|did))\b',
+            r'\b(why (is|are|does))\b',
+            r'(\?{2,})',
+            r'\b(lost|unclear|ambiguous)\b',
+            r'\b(can\'t figure|can\'t tell)\b',
+            r'\b(supposed to|meant to)\b'
+        ]
+        
+        # Excited tone markers
+        excited_markers = [
+            r'\b(wow|amazing|awesome|great|excellent|fantastic|incredible|brilliant)\b',
+            r'\b(love|adore|enjoy|appreciate)\b',
+            r'(!{2,})',
+            r'\b(so (good|great|amazing))\b',
+            r'\b(can\'t wait|looking forward)\b',
+            r'\b(thank you|thanks) (so much|a lot)\b',
+            r'\b(exactly|perfect|precisely)\b',
+            r'\b(yes|yep|yeah)!+'
+        ]
+        
+        # Tired tone markers
+        tired_markers = [
+            r'\b(tired|exhausted|fatigued|drained|weary)\b',
+            r'\b(need (a break|rest|sleep))\b',
+            r'\b(been (working|trying) (for|all))\b',
+            r'\b(so (long|much time))\b',
+            r'\b(give up|too much)\b',
+            r'(\.{3,})',
+            r'\b(sigh|ugh|meh)\b',
+            r'\b(not again|once more)\b'
+        ]
+        
+        # Check each tone's markers
+        for marker in frustrated_markers:
+            if re.search(marker, text.lower()):
+                scores["frustrated"] += 1
+                
+        for marker in confused_markers:
+            if re.search(marker, text.lower()):
+                scores["confused"] += 1
+                
+        for marker in excited_markers:
+            if re.search(marker, text.lower()):
+                scores["excited"] += 1
+                
+        for marker in tired_markers:
+            if re.search(marker, text.lower()):
+                scores["tired"] += 1
         
         # Find the highest scoring tone
         max_tone = max(scores.items(), key=lambda x: x[1])
@@ -448,6 +475,10 @@ class ToneDetectorAgent(BaseAgent):
             except Exception:
                 pass
             
+            # Update metrics for health check
+            self.last_detection_time = datetime.utcnow().isoformat()
+            self.processed_audio_chunks += 1
+            
             # Random interval between 20-40 seconds
             time.sleep(random.uniform(20, 40))
     
@@ -483,9 +514,15 @@ class ToneDetectorAgent(BaseAgent):
     
     def shutdown(self):
         """Gracefully shutdown the agent"""
-        logger.info("Shutting down ToneDetectorAgent")
+        logger.info("Shutting down ToneDetector")
         self.running = False
         super().stop()
+    
+    def cleanup(self):
+        """Cleanup resources before shutdown"""
+        logger.info("Cleaning up ToneDetector resources")
+        self.running = False
+        # Add any specific cleanup code here
 
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""
@@ -497,7 +534,6 @@ class ToneDetectorAgent(BaseAgent):
         }
         base_status.update(specific_metrics)
         return base_status
-
 
     def health_check(self):
         '''
@@ -533,19 +569,18 @@ class ToneDetectorAgent(BaseAgent):
             }
 
 if __name__ == "__main__":
-    import argparse
-import psutil
-from datetime import datetime
-
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-parser = argparse.ArgumentParser()
-parser.add_argument("--port", type=int, default=5625)
-args = parser.parse_args()
-agent = ToneDetectorAgent(port=args.port)
-try:
-    agent.run()
-except KeyboardInterrupt:
-    logger.info("Received shutdown signal")
-finally:
-    agent.shutdown()
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = ToneDetector()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

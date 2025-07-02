@@ -20,10 +20,10 @@ import psutil
 sys.path.append(str(Path(__file__).parent.parent))
 from config.system_config import config
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # === PHASE A: BASEAGENT INHERITANCE ===
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
@@ -45,8 +45,8 @@ logger = logging.getLogger("ChainOfThoughtAgent")
 class ChainOfThoughtAgent(BaseAgent):
     def __init__(self, port: int = 5612, name: str = "ChainOfThoughtAgent", **kwargs):
         # Use _agent_args if port or name are not provided
-        agent_port = port if port is not None else getattr(_agent_args, 'port', 5612)
-        agent_name = name if name is not None else getattr(_agent_args, 'name', 'ChainOfThoughtAgent')
+        agent_port = port if port is not None else config.get("port", 5612)
+        agent_name = name if name is not None else config.get("name", 'ChainOfThoughtAgent')
         super().__init__(name=str(agent_name), port=int(agent_port))
         logger.info("=" * 80)
         logger.info("Initializing Chain of Thought Agent")

@@ -31,10 +31,10 @@ if PROJECT_ROOT not in sys.path:
 
 # Import with canonical paths
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments at module level with canonical import
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Optional fastText language ID
 try:
@@ -63,7 +63,7 @@ ENABLE_CACHING = True
 ENABLE_PERFORMANCE_MONITORING = True
 
 # Network configuration
-PC2_IP = getattr(_agent_args, 'host', 'localhost')  # Temporarily changed for local testing
+PC2_IP = config.get("host", 'localhost')  # Temporarily changed for local testing
 PC2_TRANSLATOR_PORT = 5563
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = 5632  # Performance monitoring port (as configured in startup_config.yaml)
@@ -224,8 +224,1305 @@ class PerformanceMonitor:
 
 class TranslationCache:
     """Cache for translation results."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-    def __init__(self, **kwargs):
+    def shutdown(self):
+
+    
+            """Shutdown the coordinator."""
+
+    
+            self._running = False
+
+    
+            if self._thread:
+
+    
+                self._thread.join(timeout=5.0)
+
+    
+            if self.performance_monitor:
+
+    
+                self.performance_monitor.stop()
+
+    
+            self.cleanup()
+
+    
+            logger.info("Shutdown complete")
+
+    
+    def process_loop(self):
+
+    
+            """Main processing loop."""
+
+    
+            while self._running:
+
+    
+                try:
+
+    
+                    # Check for input from Whisper ASR
+
+    
+                    if self.input_socket.poll(1000, zmq.POLLIN):
+
+    
+                        try:
+
+    
+                            # First try to receive as string (common format from ASR)
+
+    
+                            message_str = self.input_socket.recv_string()
+                        
+
+    
+                            # Check if it's a JSON error message
+
+    
+                            if message_str.startswith('{"status":"error"'):
+
+    
+                                error_data = json.loads(message_str)
+
+    
+                                if error_data.get("status") == "error":
+
+    
+                                    # Log the received error
+
+    
+                                    logger.error(f"Received error from {error_data.get('source_agent', 'unknown')}: {error_data.get('message')}")
+
+    
+                                    # Handle specific error types if needed
+
+    
+                                    if error_data.get("error_type") in ["TranscriptionError", "ModelInferenceError"]:
+
+    
+                                        logger.error(f"Upstream transcription error: {error_data.get('message')}")
+
+    
+                                        # Could implement specific recovery strategies here if needed
+
+    
+                                    continue
+                        
+
+    
+                            # If not an error, check if it's a transcription message
+
+    
+                            if message_str.startswith("TRANSCRIPTION:"):
+
+    
+                                # Extract the JSON part
+
+    
+                                json_str = message_str[14:].strip()
+
+    
+                                try:
+
+    
+                                    data = json.loads(json_str)
+
+    
+                                    self.thread_pool.submit(self._process_text, data)
+
+    
+                                except json.JSONDecodeError:
+
+    
+                                    logger.error(f"Failed to parse transcription JSON: {json_str[:100]}...")
+
+    
+                            else:
+
+    
+                                # Try to parse as direct JSON
+
+    
+                                try:
+
+    
+                                    data = json.loads(message_str)
+
+    
+                                    self.thread_pool.submit(self._process_text, data)
+
+    
+                                except json.JSONDecodeError:
+
+    
+                                    logger.error(f"Received unrecognized message format: {message_str[:100]}...")
+
+    
+                        except zmq.Again:
+
+    
+                            pass  # No message available
+
+    
+                        except Exception as e:
+
+    
+                            logger.error(f"Error processing incoming message: {str(e)}")
+
+    
+                            # Log but continue processing
+                
+
+    
+                    # Send health update
+
+    
+                    self._send_health_update()
+                
+
+    
+                    time.sleep(0.1)  # Prevent CPU overuse
+                
+
+    
+                except Exception as e:
+
+    
+                    logger.error(f"Error in processing loop: {e}")
+
+    
+                    time.sleep(1)
+
+    
+    def join(self, timeout=None):
+
+    
+            """Wait for the processing thread to complete."""
+
+    
+            if self._thread:
+
+    
+                self._thread.join(timeout=timeout)
+
+    
+    def get_status(self) -> Dict:
+
+    
+            """Get the current status of the coordinator."""
+
+    
+            return {
+
+    
+                "status": "running" if self._running else "stopped",
+
+    
+                "metrics": self.metrics.get_metrics(),
+
+    
+                "timeout_stats": self.timeout_manager.get_timeout_stats(),
+
+    
+                "performance_stats": self.performance_monitor.get_service_stats() if self.performance_monitor else {}
+
+    
+            }
+
+    
+    def _try_pc2_translation(self, text: str, source_lang: str, target_lang: str, service: str = 'nllb') -> Dict:
+
+    
+            """Try translation using PC2 Translator with specified service."""
+
+    
+            try:
+
+    
+                # Calculate timeout
+
+    
+                timeout = self.timeout_manager.calculate_timeout(text)
+
+    
+                self.translation_socket.setsockopt(zmq.RCVTIMEO, timeout)
+            
+
+    
+                # Prepare request
+
+    
+                request = {
+
+    
+                    "text": text,
+
+    
+                    "source_language": source_lang,
+
+    
+                    "target_language": target_lang,
+
+    
+                    "service": service,
+
+    
+                    "timestamp": time.time()
+
+    
+                }
+            
+
+    
+                # Send request
+
+    
+                self.translation_socket.send_json(request)
+            
+
+    
+                # Wait for response
+
+    
+                if self.translation_socket.poll(timeout, zmq.POLLIN):
+
+    
+                    response = self.translation_socket.recv_json()
+
+    
+                    if response.get("status") == "success":
+
+    
+                        return {
+
+    
+                            "success": True,
+
+    
+                            "translated_text": response.get("translated_text"),
+
+    
+                            "method": service
+
+    
+                        }
+            
+
+    
+                return {"success": False, "error": f"{service} translation failed"}
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"{service} translation error: {e}")
+
+    
+                return {"success": False, "error": str(e)}
+
+    
+    def _try_local_translation(self, text: str, source_lang: str, target_lang: str) -> Dict:
+
+    
+            """Try translation using local pattern matching."""
+
+    
+            try:
+
+    
+                # Simple pattern-based translation (example)
+
+    
+                patterns = {
+
+    
+                    "kumusta": "how are you",
+
+    
+                    "salamat": "thank you",
+
+    
+                    "magandang umaga": "good morning",
+
+    
+                    "magandang hapon": "good afternoon",
+
+    
+                    "magandang gabi": "good evening",
+
+    
+                    "paalam": "goodbye",
+
+    
+                    "sige": "okay",
+
+    
+                    "hindi": "no",
+
+    
+                    "oo": "yes",
+
+    
+                    "paki": "please",
+
+    
+                    "salamat po": "thank you (polite)",
+
+    
+                    "walang anuman": "you're welcome",
+
+    
+                    "pasensya na": "sorry",
+
+    
+                    "ingat": "take care",
+
+    
+                    "mabuhay": "long live"
+
+    
+                }
+            
+
+    
+                text_lower = text.lower()
+
+    
+                for pattern, translation in patterns.items():
+
+    
+                    if pattern in text_lower:
+
+    
+                        return {
+
+    
+                            "success": True,
+
+    
+                            "translated_text": translation,
+
+    
+                            "method": "local"
+
+    
+                        }
+            
+
+    
+                return {"success": False, "error": "No matching patterns found"}
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Local translation error: {e}")
+
+    
+                return {"success": False, "error": str(e)}
+
+    
+    def _try_google_translation(self, text: str, source_lang: str, target_lang: str) -> Dict:
+
+    
+            """Try translation using Google Translate API."""
+
+    
+            try:
+
+    
+                if not self.google_translator:
+
+    
+                    return {"success": False, "error": "Google translator not initialized"}
+            
+
+    
+                result = self.google_translator.translate(
+
+    
+                    text,
+
+    
+                    src=source_lang,
+
+    
+                    dest=target_lang
+
+    
+                )
+            
+
+    
+                return {
+
+    
+                    "success": True,
+
+    
+                    "translated_text": result.text,
+
+    
+                    "method": "google"
+
+    
+                }
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Google translation error: {e}")
+
+    
+                return {"success": False, "error": str(e)}
+
+    
+    def _try_emergency_translation(self, text: str, source_lang: str, target_lang: str) -> Dict:
+
+    
+            """Try emergency word-by-word translation."""
+
+    
+            try:
+
+    
+                # Simple word-by-word translation (example)
+
+    
+                word_map = {
+
+    
+                    "kumusta": "how",
+
+    
+                    "ka": "are",
+
+    
+                    "salamat": "thank",
+
+    
+                    "po": "you",
+
+    
+                    "magandang": "good",
+
+    
+                    "umaga": "morning",
+
+    
+                    "hapon": "afternoon",
+
+    
+                    "gabi": "evening",
+
+    
+                    "paalam": "goodbye",
+
+    
+                    "sige": "okay",
+
+    
+                    "hindi": "no",
+
+    
+                    "oo": "yes",
+
+    
+                    "paki": "please",
+
+    
+                    "walang": "no",
+
+    
+                    "anuman": "problem",
+
+    
+                    "pasensya": "sorry",
+
+    
+                    "na": "already",
+
+    
+                    "ingat": "care",
+
+    
+                    "mabuhay": "live"
+
+    
+                }
+            
+
+    
+                words = text.lower().split()
+
+    
+                translated_words = []
+            
+
+    
+                for word in words:
+
+    
+                    translated_word = word_map.get(word, word)
+
+    
+                    translated_words.append(translated_word)
+            
+
+    
+                return {
+
+    
+                    "success": True,
+
+    
+                    "translated_text": " ".join(translated_words),
+
+    
+                    "method": "emergency"
+
+    
+                }
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Emergency translation error: {e}")
+
+    
+                return {"success": False, "error": str(e)}
+
+    
+    def _translate_text(self, text: str, source_lang: str, target_lang: str) -> Dict:
+
+    
+            """Translate text with intelligent fallback mechanisms."""
+
+    
+            start_time = time.time()
+
+    
+            success = False
+
+    
+            fallback_type = None
+
+    
+            error = None
+        
+
+    
+            try:
+
+    
+                # Check cache first if enabled
+
+    
+                if ENABLE_CACHING:
+
+    
+                    cache_key = self._generate_cache_key(text, source_lang, target_lang)
+
+    
+                    cached_result = self.cache.get(cache_key)
+
+    
+                    if cached_result:
+
+    
+                        logger.info("Cache hit for translation request")
+
+    
+                        return {
+
+    
+                            "success": True,
+
+    
+                            "translated_text": cached_result,
+
+    
+                            "method": "cache"
+
+    
+                        }
+            
+
+    
+                # Get best performing service
+
+    
+                primary_service = self.performance_monitor.get_best_service() if self.performance_monitor else 'nllb'
+
+    
+                logger.info(f"Selected primary service: {primary_service}")
+            
+
+    
+                # Try primary service first
+
+    
+                result = self._try_pc2_translation(text, source_lang, target_lang, primary_service)
+
+    
+                if result["success"]:
+
+    
+                    success = True
+
+    
+                    fallback_type = primary_service
+
+    
+                else:
+
+    
+                    error = result.get("error")
+
+    
+                    # Try fallbacks if enabled
+
+    
+                    if ENABLE_FALLBACKS:
+
+    
+                        # Try other services in order of performance
+
+    
+                        services = ['nllb', 'phi', 'google']
+
+    
+                        services.remove(primary_service)  # Remove primary service from fallback list
+                    
+
+    
+                        for service in services:
+
+    
+                            if not success:
+
+    
+                                result = self._try_pc2_translation(text, source_lang, target_lang, service)
+
+    
+                                if result["success"]:
+
+    
+                                    success = True
+
+    
+                                    fallback_type = service
+
+    
+                                    break
+                    
+
+    
+                        if not success and ENABLE_LOCAL_PATTERN_FALLBACK:
+
+    
+                            result = self._try_local_translation(text, source_lang, target_lang)
+
+    
+                            if result["success"]:
+
+    
+                                success = True
+
+    
+                                fallback_type = "local"
+                    
+
+    
+                        if not success and ENABLE_EMERGENCY_FALLBACK:
+
+    
+                            result = self._try_emergency_translation(text, source_lang, target_lang)
+
+    
+                            if result["success"]:
+
+    
+                                success = True
+
+    
+                                fallback_type = "emergency"
+            
+
+    
+                # Record metrics
+
+    
+                elapsed_time = time.time() - start_time
+
+    
+                self.metrics.record_request(success, elapsed_time, fallback_type, error)
+            
+
+    
+                # Cache successful result if enabled
+
+    
+                if success and ENABLE_CACHING:
+
+    
+                    self.cache.set(cache_key, result["translated_text"])
+            
+
+    
+                # Log result
+
+    
+                if success:
+
+    
+                    logger.info(f"Translation successful using {'fallback: ' + fallback_type if fallback_type else 'PC2'}")
+
+    
+                else:
+
+    
+                    logger.error(f"All translation methods failed: {error}")
+            
+
+    
+                return result
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Error processing translation request: {e}")
+
+    
+                return {"success": False, "error": str(e)}
+
+    
+    def _send_health_update(self):
+
+    
+            """Send health status update to Unified System Agent."""
+
+    
+            try:
+
+    
+                health_data = {
+
+    
+                    "status": "healthy",
+
+    
+                    "metrics": self.metrics.get_metrics(),
+
+    
+                    "timeout_stats": self.timeout_manager.get_timeout_stats(),
+
+    
+                    "performance_stats": self.performance_monitor.get_service_stats() if self.performance_monitor else {},
+
+    
+                    "timestamp": time.time()
+
+    
+                }
+
+    
+                self.health_socket.send_json(health_data)
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Failed to send health update: {e}")
+
+    
+    def _process_text(self, data: Dict):
+
+    
+            """Process incoming text with language detection and translation."""
+
+    
+            try:
+
+    
+                text = data.get("transcript") 
+
+    
+                if text is None:
+
+    
+                    text = data.get("text") 
+
+    
+                if not text:
+
+    
+                    return
+            
+
+    
+                # Detect language
+
+    
+                detected_lang = self._detect_language(text)
+
+    
+                logger.info(f"Detected language: {detected_lang}")
+            
+
+    
+                # Determine if translation is needed
+
+    
+                if detected_lang != 'en':
+
+    
+                    # Translation needed
+
+    
+                    translation_result = self._translate_text(text, detected_lang, 'en')
+
+    
+                    if translation_result["success"]:
+
+    
+                        # Send translated text to TTS
+
+    
+                        self.output_socket.send_json({
+
+    
+                            "text": translation_result["translated_text"],
+
+    
+                            "language": "en",
+
+    
+                            "timestamp": time.time()
+
+    
+                        })
+
+    
+                    else:
+
+    
+                        logger.error(f"Translation failed: {translation_result.get('error')}")
+
+    
+                else:
+
+    
+                    # No translation needed, forward to TTS
+
+    
+                    self.output_socket.send_json({
+
+    
+                        "text": text,
+
+    
+                        "language": "en",
+
+    
+                        "timestamp": time.time()
+
+    
+                    })
+            
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Error processing text: {e}")
+
+    
+    def _is_taglish_candidate(self, text: str, langdetect_code: str, langdetect_confidence: float) -> bool:
+
+    
+            """Check if text is a candidate for more specific Taglish detection."""
+
+    
+            text_lower = text.lower()
+
+    
+            words = text_lower.split()
+
+    
+            word_count = len(words)
+
+
+    
+            if langdetect_code in ['en', 'tl']:
+
+    
+                # If langdetect is somewhat confident it's en or tl, it's a candidate
+
+    
+                if langdetect_confidence > 0.5: 
+
+    
+                    return True
+
+    
+                # If low confidence, but contains Tagalog words, it's a candidate
+
+    
+                if any(word in TAGALOG_WORDS_SET for word in words):
+
+    
+                    return True
+
+    
+            # If langdetect identified other languages but Tagalog words are present
+
+    
+            elif any(word in TAGALOG_WORDS_SET for word in words):
+
+    
+                return True
+
+    
+            return False
+
+    
+    def _generate_cache_key(self, text: str, source_lang: str, target_lang: str) -> str:
+
+    
+            """Generate a unique cache key for a translation request."""
+
+    
+            return f"{text}:{source_lang}:{target_lang}"
+
+    
+    def _detect_language(self, text: str) -> str:
+
+    
+            """Detect the language of the input text, with refined Taglish/Tagalog detection."""
+
+    
+            if not text.strip():
+
+    
+                logger.info("Empty text received for language detection, defaulting to 'unknown'.")
+
+    
+                return 'unknown'
+
+
+    
+            detected_lang_code = 'en' # Default
+
+    
+            text_lower = text.lower()
+
+
+    
+            # Step 1: Initial detection with langdetect
+
+    
+            try:
+
+    
+                langdetect_results = langdetect.detect_langs(text_lower)
+
+    
+                primary_lang_obj = langdetect_results[0]
+
+    
+                ld_lang_code = primary_lang_obj.lang
+
+    
+                ld_confidence = primary_lang_obj.prob
+
+    
+                logger.info(f"langdetect: Initial detection '{ld_lang_code}' (conf: {ld_confidence:.2f}) for: '{text[:50]}...' ")
+
+    
+                detected_lang_code = ld_lang_code
+
+    
+            except LangDetectException:
+
+    
+                logger.warning(f"langdetect failed for: '{text[:50]}...'. Proceeding with other methods.")
+
+    
+                # If langdetect fails, we rely on subsequent methods, especially for short texts
+
+    
+                ld_lang_code = 'unknown'
+
+    
+                ld_confidence = 0.0
+
+    
+            except Exception as e:
+
+    
+                logger.error(f"Unexpected error in langdetect for '{text[:50]}...': {e}")
+
+    
+                ld_lang_code = 'unknown'
+
+    
+                ld_confidence = 0.0
+
+
+    
+            # Step 2: Refine with fastText if available and it's a Taglish candidate
+
+    
+            is_candidate_for_refinement = self._is_taglish_candidate(text_lower, ld_lang_code, ld_confidence)
+        
+
+    
+            if self.fasttext_model and is_candidate_for_refinement:
+
+    
+                try:
+
+    
+                    # fastText expects a single line of text
+
+    
+                    predictions = self.fasttext_model.predict(text_lower.replace('\n', ' '), k=1)
+
+    
+                    ft_lang_code = predictions[0][0].replace('__label__', '')
+
+    
+                    ft_confidence = predictions[1][0]
+
+    
+                    logger.info(f"fastText: Detected '{ft_lang_code}' (conf: {ft_confidence:.2f})")
+
+    
+                    # Trust fastText more for 'tl' and 'en' if confidence is high, or if it identifies 'taglish'
+
+    
+                    if ft_lang_code in ['en', 'tl', 'taglish'] and ft_confidence > 0.6:
+
+    
+                        detected_lang_code = ft_lang_code
+
+    
+                    elif ft_lang_code == 'tl' and detected_lang_code == 'en' and ft_confidence > 0.4: # Re-evaluate if langdetect said en but fastText says tl
+
+    
+                        detected_lang_code = 'tl'
+
+    
+                except Exception as e:
+
+    
+                    logger.warning(f"fastText prediction failed: {e}") 
+
+
+    
+            # Step 3: Further refine with TagaBERTa if available and still ambiguous or Tagalog/Taglish suspected
+
+    
+            if self.tagabert_available and self.tagabert_socket and is_candidate_for_refinement and detected_lang_code in ['en', 'tl', 'taglish', 'unknown']:
+
+    
+                try:
+
+    
+                    request_payload = {"action": "analyze_language", "text": text_lower}
+
+    
+                    self.tagabert_socket.send_json(request_payload)
+
+    
+                    if self.tagabert_socket.poll(1000, zmq.POLLIN): # Wait 1 sec for TagaBERTa
+
+    
+                        response = self.tagabert_socket.recv_json()
+
+    
+                        tb_lang_code = response.get('language')
+
+    
+                        tb_confidence = response.get('confidence', 0.0)
+
+    
+                        logger.info(f"TagaBERTa: Detected '{tb_lang_code}' (conf: {tb_confidence:.2f})")
+
+    
+                        if tb_lang_code and tb_confidence > 0.7: # Trust TagaBERTa if highly confident
+
+    
+                            detected_lang_code = tb_lang_code
+
+    
+                    else:
+
+    
+                        logger.warning("TagaBERTa service timed out during language analysis.")
+
+    
+                        # Re-establish connection for next time if timeout
+
+    
+                        self.tagabert_socket.close()
+
+    
+                        self.tagabert_socket = self.context.socket(zmq.REQ)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.LINGER, 0)
+
+    
+                        self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)
+
+    
+                except Exception as e:
+
+    
+                    logger.error(f"Error communicating with TagaBERTa service: {e}")
+
+    
+                    # Attempt to gracefully handle socket error
+
+    
+                    try:
+
+    
+                        if self.tagabert_socket:
+
+    
+                            self.tagabert_socket.close()
+
+    
+                        self.tagabert_socket = self.context.socket(zmq.REQ)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 1000)
+
+    
+                        self.tagabert_socket.setsockopt(zmq.LINGER, 0)
+
+    
+                        self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)
+
+    
+                    except Exception as se_conn:
+
+    
+                        logger.error(f"Failed to re-establish TagaBERTa connection: {se_conn}")
+
+    
+                        self.tagabert_available = False # Mark as unavailable if re-connection fails
+
+    
+                        self.tagabert_socket = None
+
+
+    
+            # Step 4: Final check using lexicon for 'tl' or 'taglish'
+
+    
+            # If detected_lang_code is still 'en' but contains many Tagalog words, consider it 'taglish'
+
+    
+            if detected_lang_code == 'en':
+
+    
+                words = text_lower.split()
+
+    
+                tagalog_word_count = sum(1 for word in words if word in TAGALOG_WORDS_SET or word in self.tagalog_lexicon)
+
+    
+                if len(words) > 0 and (tagalog_word_count / len(words)) > 0.3: # If more than 30% words are Tagalog
+
+    
+                    logger.info(f"Lexicon override: Detected 'en' but found {tagalog_word_count}/{len(words)} Tagalog words. Classifying as 'taglish'.")
+
+    
+                    detected_lang_code = 'taglish'
+
+    
+                elif len(words) <= 5 and tagalog_word_count >=1 and (tagalog_word_count / len(words)) >= 0.2: # For very short phrases, 1 or 2 tagalog words might make it taglish
+
+    
+                     logger.info(f"Lexicon override (short phrase): Detected 'en' but found {tagalog_word_count}/{len(words)} Tagalog words. Classifying as 'taglish'.")
+
+    
+                     detected_lang_code = 'taglish'
+
+
+    
+            # Normalize 'fil' (Filipino) or 'taglish' to 'tl' if that's what downstream services expect for Tagalog
+
+    
+            if detected_lang_code in ['fil', 'taglish']:
+
+    
+                logger.info(f"Normalizing '{detected_lang_code}' to 'tl' for translation purposes.")
+
+    
+                detected_lang_code = 'tl'
+        
+
+    
+            # Ensure we always return a valid code, default to 'en' if all else fails and it's unknown
+
+    
+            if detected_lang_code == 'unknown' or not detected_lang_code:
+
+    
+                logger.info("Language detection inconclusive, defaulting to 'en'.")
+
+    
+                detected_lang_code = 'en'
+
+
+    
+            logger.info(f"Final detected language: '{detected_lang_code}' for text: '{text[:50]}...' ")
+
+    
+            return detected_lang_code
+
+    def __init__(self):
         self.cache = {}
         self.timestamps = {}
         self.max_size = CACHE_SIZE
@@ -381,24 +1678,27 @@ class PerformanceMetrics:
 class LanguageAndTranslationCoordinator(BaseAgent):
     def __init__(self):
         """Initialize the Language and Translation Coordinator agent."""
-        # Call BaseAgent's __init__ first with proper arguments
-        super().__init__(name="LanguageAndTranslationCoordinator")
+        # Set required properties before calling super().__init__
+        self.name = "LanguageAndTranslationCoordinator"
+        self.port = int(config.get("port", 5710))
+        self.start_time = time.time()
         
-        # Get configuration from agent args
-        self.port = int(getattr(_agent_args, 'port', 5710))
-        self.bind_address = getattr(_agent_args, 'bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=self.name, port=self.port)
+        
+        # Get additional configuration from agent args
+        self.bind_address = config.get("bind_address", '<BIND_ADDR>')
+        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
         # Initialize components as regular classes, not BaseAgent subclasses
-        self.performance_monitor = PerformanceMonitor()
-        self.translation_cache = TranslationCache()
+        self.performance_monitor = PerformanceMonitor() if ENABLE_PERFORMANCE_MONITORING else None
+        self.translation_cache = TranslationCache() if ENABLE_CACHING else None
         self.timeout_manager = AdvancedTimeoutManager()
         self.metrics = PerformanceMetrics()
         
         # Initialize state
         self._running = False
         self._thread = None
-        self.start_time = time.time()
         
         # Initialize ZMQ context and sockets
         self.zmq_context = zmq.Context()
@@ -435,58 +1735,99 @@ class LanguageAndTranslationCoordinator(BaseAgent):
             except Exception as e:
                 logger.error(f"Failed to initialize Google Translator: {e}")
         
+        # Initialize and verify TagaBERTa service connection
+        self.tagabert_socket = None
+        try:
+            self.tagabert_socket = self.zmq_context.socket(zmq.REQ)
+            self.tagabert_socket.setsockopt(zmq.RCVTIMEO, 3000)  # 3 second timeout
+            self.tagabert_socket.connect(TAGABERT_SERVICE_ADDRESS)
+            logger.info(f"Connected to TagaBERTa service at {TAGABERT_SERVICE_ADDRESS}")
+            
+            # Test connection
+            self.tagabert_socket.send_json({
+                "action": "ping", 
+                "timestamp": datetime.now().isoformat()
+            })
+            response = self.tagabert_socket.recv_json()
+            
+            if response.get("status") == "ok":
+                logger.info("TagaBERTa service is responsive")
+            else:
+                logger.warning(f"TagaBERTa service responded with non-ok status: {response}")
+        except Exception as e:
+            logger.warning(f"Failed to initialize TagaBERTa service connection: {e}")
+            if self.tagabert_socket:
+                self.tagabert_socket.close()
+                self.tagabert_socket = None
+        
+        # Thread pool for parallel processing
+        self.thread_pool = ThreadPoolExecutor(max_workers=4)
+        
         # Start performance monitoring
-        if ENABLE_PERFORMANCE_MONITORING:
+        if self.performance_monitor:
             self.performance_monitor.start()
+        
+        # Start processing
+        self.start()
             
         logger.info("Language and Translation Coordinator initialized")
-
+        
     def _get_health_status(self):
         """Get the current health status of the agent.
         
+        This method overrides the BaseAgent._get_health_status method to add
+        agent-specific health information.
+        
         Returns:
-            dict: A dictionary containing health status information
+            Dict[str, Any]: A dictionary containing health status information
         """
-        # Basic health check logic
-        is_healthy = self._running
+        # Get the base health status from parent class
+        base_status = super()._get_health_status()
         
-        # Check ZMQ socket health
-        zmq_healthy = hasattr(self, 'sub_socket') and self.sub_socket is not None and \
-                      hasattr(self, 'pub_socket') and self.pub_socket is not None
-        if not zmq_healthy:
-            is_healthy = False
+        # Add agent-specific health metrics
+        try:
+            # Check if running
+            is_running = getattr(self, '_running', False)
+            
+            # Check ZMQ socket health
+            zmq_healthy = hasattr(self, 'sub_socket') and self.sub_socket is not None and \
+                          hasattr(self, 'pub_socket') and self.pub_socket is not None
+            
+            # Get metrics
+            metrics = self.metrics.get_metrics() if hasattr(self, 'metrics') else {}
+            
+            # Add metrics to base status
+            base_status.update({
+                "agent_specific_metrics": {
+                    "running": is_running,
+                    "zmq_socket_healthy": zmq_healthy,
+                    "performance_metrics": metrics,
+                    "fasttext_model_loaded": self.fasttext_model is not None,
+                    "google_translator_available": self.google_translator is not None,
+                    "tagabert_socket_available": self.tagabert_socket is not None
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Error collecting health metrics: {e}")
+            base_status.update({"health_metrics_error": str(e)})
         
-        # Get metrics
-        metrics = self.metrics.get_metrics() if hasattr(self, 'metrics') else {}
-        
-        status_report = {
-            "status": "healthy" if is_healthy else "unhealthy",
-            "agent_name": "LanguageAndTranslationCoordinator",
-            "timestamp": datetime.utcnow().isoformat(),
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-            "details": {
-                "running": getattr(self, '_running', False),
-                "zmq_socket_healthy": zmq_healthy,
-                "performance_metrics": metrics,
-                "fasttext_model_loaded": self.fasttext_model is not None,
-                "google_translator_available": self.google_translator is not None
-            }
-        }
-        
-        return status_report
+        return base_status
 
 # Add standardized __main__ block
 if __name__ == "__main__":
+    # Standardized main execution block
     agent = None
     try:
         agent = LanguageAndTranslationCoordinator()
         agent.run()
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        print(f"Error: {e}")
         import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()

@@ -20,10 +20,10 @@ import GPUtil
 from collections import defaultdict
 
 from src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -31,8 +31,8 @@ logger = logging.getLogger("VRAMOptimizerAgent")
 
 class VRAMOptimizerAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
-        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'VRAMOptimizerAgent') if name is None else name
+        agent_port = config.get("port", 5000) if port is None else port
+        agent_name = config.get("name", 'VRAMOptimizerAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
 
         # Load configuration from startup_config.yaml
@@ -150,8 +150,8 @@ class VRAMOptimizerAgent(BaseAgent):
                 logger.info(f"Found SystemDigitalTwin at {sdt_address}")
             else:
                 logger.warning("SystemDigitalTwin not found via service discovery, using default")
-                sdt_port = getattr(_agent_args, 'sdt_port', 7000)
-                sdt_host = getattr(_agent_args, 'sdt_host', 'localhost')
+                sdt_port = config.get("sdt_port", 7000)
+                sdt_host = config.get("sdt_host", 'localhost')
                 sdt_address = f"tcp://{sdt_host}:{sdt_port}"
             
             # Connect to SystemDigitalTwin
@@ -175,8 +175,8 @@ class VRAMOptimizerAgent(BaseAgent):
                 logger.info(f"Found ModelManagerAgent at {mma_address}")
             else:
                 logger.warning("ModelManagerAgent not found via service discovery, using default")
-                mma_port = getattr(_agent_args, 'mma_port', 5000)
-                mma_host = getattr(_agent_args, 'mma_host', 'localhost')
+                mma_port = config.get("mma_port", 5000)
+                mma_host = config.get("mma_host", 'localhost')
                 mma_address = f"tcp://{mma_host}:{mma_port}"
             
             # Connect to ModelManagerAgent
@@ -230,10 +230,10 @@ class VRAMOptimizerAgent(BaseAgent):
         logger.warning("Using fallback connections")
         
         # Get fallback connection details from _agent_args
-        sdt_port = getattr(_agent_args, 'sdt_port', 7000)
-        sdt_host = getattr(_agent_args, 'sdt_host', 'localhost')
-        mma_port = getattr(_agent_args, 'mma_port', 5000)
-        mma_host = getattr(_agent_args, 'mma_host', 'localhost')
+        sdt_port = config.get("sdt_port", 7000)
+        sdt_host = config.get("sdt_host", 'localhost')
+        mma_port = config.get("mma_port", 5000)
+        mma_host = config.get("mma_host", 'localhost')
         
         # Connect to SystemDigitalTwin
         try:

@@ -15,7 +15,7 @@ import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from threading import Thread
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from utils.service_discovery_client import discover_service, register_service, get_service_address
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
@@ -24,7 +24,7 @@ from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_clien
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Remove argparse and use dynamic argument parser
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -47,6 +47,70 @@ class GoalOrchestratorAgent(BaseAgent):
     def __init__(self, **kwargs):
         """Initialize the GoalOrchestratorAgent with ZMQ sockets."""
         super().__init__()
+
+        """Initialize the GoalOrchestratorAgent with ZMQ sockets."""
+
+        # Use port from command line args if not provided
+
+        self.port = port if port is not None else getattr(args, 'port', 7000)
+
+        if self.port is None:
+
+            raise ValueError("Port must be provided either through constructor or command line arguments")
+
+        # Initialize ZMQ context
+
+        self.context = zmq.Context()
+
+        # Main REP socket for handling requests
+
+        self.socket = self.context.socket(zmq.REP)
+
+        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+        # Apply secure ZMQ if enabled
+
+        if SECURE_ZMQ:
+
+            self.socket = configure_secure_server(self.socket)
+
+            logger.info("Secure ZMQ enabled for GoalOrchestratorAgent")
+
+        # Bind to address using BIND_ADDRESS for Docker compatibility
+
+        bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
+
+        self.socket.bind(bind_address)
+
+        logger.info(f"GoalOrchestratorAgent socket bound to {bind_address}")
+
+        # Register with service discovery
+
+        self._register_service()
+
+        # Connect to required services using service discovery
+
+        self.planning_socket = self._create_service_socket("UnifiedPlanningAgent")
+
+        self.performance_socket = self._create_service_socket("PerformanceLoggerAgent")
+
+        # Store active goals and their tasks
+
+        self.active_goals = {}
+
+        # Start monitoring thread
+
+        self.running = True
+
+        self.monitor_thread = Thread(target=self._monitor_goals)
+
+        self.monitor_thread.daemon = True
+
+        self.monitor_thread.start()
+
+        logger.info(f"GoalOrchestratorAgent initialized on port {self.port}")
         self.zmq_timeout = self.config.getint('goal_orchestrator.zmq_timeout_ms', 5000)
         bind_address_ip = self.config.get('network.bind_address', '0.0.0.0')
         self.fallback_ports = {

@@ -1,4 +1,6 @@
 """
+from typing import Dict, Any, Optional
+import yaml
 Remote Connector / API Client Agent
 - Handles API requests to remote/local models
 - Provides a unified interface for all AI models
@@ -61,7 +63,212 @@ MODEL_MANAGER_PORT = config.get('zmq.model_manager_port', 5556)  # Base port for
 MODEL_MANAGER_HOST = config.get('zmq.model_manager_host', '192.168.100.16')  # Main PC's IP address
 TASK_ROUTER_PORT = config.get('zmq.task_router_port', 5558)
 
-class RemoteConnectorAgent:
+class RemoteConnectorAgent(BaseAgent):
+
+    def __init__(self, port: int = None):
+
+        super().__init__(name="RemoteConnectorAgent", port=port)
+
+
+        self.name = "RemoteConnectorAgent"
+
+
+        # Port on which this agent will listen
+
+
+        self.port = REMOTE_CONNECTOR_PORT
+
+
+        self.running = True
+
+
+        self.start_time = time.time()
+
+
+        # Health check port is agent port + 1
+
+
+        self.health_port = self.port + 1
+
+
+        logger.info("=" * 80)
+
+
+        logger.info("Initializing Remote Connector Agent")
+
+
+        logger.info("=" * 80)
+
+
+        # Start health check thread
+
+
+        self._start_health_check()
+
+
+        # Initialize ZMQ
+
+
+        self.context = zmq.Context()
+
+
+        # Socket to receive requests
+
+
+        self.receiver = self.context.socket(zmq.REP)
+
+
+        self.receiver.bind(f"tcp://0.0.0.0:{REMOTE_CONNECTOR_PORT}")
+
+
+        logger.info(f"Remote Connector bound to port {REMOTE_CONNECTOR_PORT}")
+
+
+        # Socket to communicate with model manager
+
+
+        self.model_manager = self.context.socket(zmq.REQ)
+
+
+        self.model_manager_port = config.get('zmq.model_manager_port', 5555)  # Changed from 5556 to 5555 to connect to MMA's REP socket
+
+
+        self.model_manager_connected = False
+
+
+        try:
+
+
+            self.model_manager.connect(f"tcp://{MODEL_MANAGER_HOST}:{self.model_manager_port}")
+
+
+            # Set a short timeout for the connection attempt
+
+
+            self.model_manager.setsockopt(zmq.RCVTIMEO, 500)  # 500ms timeout
+
+
+            self.model_manager_connected = True
+
+
+            logger.info(f"Connected to Model Manager on {MODEL_MANAGER_HOST}:{self.model_manager_port}")
+
+
+        except Exception as e:
+
+
+            logger.warning(f"Could not connect to Model Manager: {e}. Will operate in standalone mode.")
+
+
+        # Socket to subscribe to model status updates
+
+
+        self.model_status = self.context.socket(zmq.SUB)
+
+
+        self.model_status_port = self.model_manager_port + 10  # Publisher port is base + 10
+
+
+        try:
+
+
+            self.model_status.connect(f"tcp://{MODEL_MANAGER_HOST}:{self.model_status_port}")
+
+
+            self.model_status.setsockopt_string(zmq.SUBSCRIBE, "")
+
+
+            self.model_status.setsockopt(zmq.RCVTIMEO, 500)  # 500ms timeout
+
+
+            logger.info(f"Subscribed to Model Manager status updates on {MODEL_MANAGER_HOST}:{self.model_status_port}")
+
+
+        except Exception as e:
+
+
+            logger.warning(f"Could not connect to Model Manager status updates: {e}. Will operate without live model status.")
+
+
+        # Set all models as available in standalone mode
+
+
+        self.standalone_mode = not self.model_manager_connected
+
+
+        # Setup response cache
+
+
+        self.cache_enabled = config.get('models.cache_enabled', True)
+
+
+        self.cache_dir = Path(config.get('system.cache_dir', 'cache')) / "model_responses"
+
+
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+
+        self.cache_ttl = config.get('models.cache_ttl', 3600)  # Cache TTL in seconds (default: 1 hour)
+
+
+        # Cache for model status
+
+
+        self.model_cache = {}
+
+
+        # Thread for handling model status updates
+
+
+        self.status_thread = None
+
+
+        # Running flag
+
+
+        self.running = True
+
+
+        # Record start time for uptime tracking
+
+
+        self.start_time = time.time()
+
+
+        # Track statistics
+
+
+        self.total_requests = 0
+
+
+        self.successful_requests = 0
+
+
+        self.failed_requests = 0
+
+
+        self.cache_hits = 0
+
+
+        self.cache_misses = 0
+
+
+        logger.info("Remote Connector Agent initialized")
+
+
+        logger.info(f"Cache enabled: {self.cache_enabled}")
+
+
+        logger.info(f"Cache TTL: {self.cache_ttl} seconds")
+
+
+        logger.info(f"Standalone mode: {self.standalone_mode}")
+
+
+        logger.info("=" * 80)
+
+        self.start_time = time.time()
+
     def __init__(self):
 
         self.name = "RemoteConnectorAgent"
@@ -450,7 +657,12 @@ class RemoteConnectorAgent:
         return False
     
     def handle_model_status_updates(self):
-        """Handle model status updates from the model manager"""
+        """Handle model status updates from the 
+from main_pc_code.src.core.base_agent import BaseAgentmodel manager
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()"""
         while self.running:
             try:
                 # Use poll with timeout
@@ -657,25 +869,145 @@ class RemoteConnectorAgent:
 
 
 # Main entry point
+
+
+
+
 if __name__ == "__main__":
+    # Standardized main execution block for PC2 agents
+    agent = None
     try:
-        logger.info("Starting Remote Connector Agent...")
         agent = RemoteConnectorAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("Remote Connector Agent interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
-        logger.error(f"Error running Remote Connector Agent: {str(e)}")
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
-        # Set running flag to false to stop all threads
-        self.running = False
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": "192.168.100.16",
+            "pc2_ip": "192.168.100.17",
+            "bind_address": "0.0.0.0",
+            "secure_zmq": False
+        }
+
+# Load both configurations
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
+PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
+
+
+
+    def connect_to_main_pc_service(self, service_name: str):
+
+
+        """
+
+
+        Connect to a service on the main PC using the network configuration.
+
+
         
-        # Wait for threads to finish
-        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
-            self.health_thread.join(timeout=2.0)
-            logging.info("Health thread joined")
+
+
+        Args:
+
+
+            service_name: Name of the service in the network config ports section
+
+
         
-        # Close health socket if it exists
-        if hasattr(self, "health_socket"):
-            self.health_socket.close()
-            logging.info("Health socket closed")
+
+
+        Returns:
+
+
+            ZMQ socket connected to the service
+
+
+        """
+
+
+        if not hasattr(self, 'main_pc_connections'):
+
+
+            self.main_pc_connections = {}
+
+
+            
+
+
+        if service_name not in network_config.get("ports", {}):
+
+
+            logger.error(f"Service {service_name} not found in network configuration")
+
+
+            return None
+
+
+            
+
+
+        port = network_config["ports"][service_name]
+
+
+        
+
+
+        # Create a new socket for this connection
+
+
+        socket = self.context.socket(zmq.REQ)
+
+
+        
+
+
+        # Connect to the service
+
+
+        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+
+
+        
+
+
+        # Store the connection
+
+
+        self.main_pc_connections[service_name] = socket
+
+
+        
+
+
+        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
+
+
+        return socket

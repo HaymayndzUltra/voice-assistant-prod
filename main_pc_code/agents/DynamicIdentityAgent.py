@@ -14,12 +14,12 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, Any, List
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import threading
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 class DynamicIdentityAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         # Get port and name from _agent_args with fallbacks
-        agent_port = getattr(_agent_args, 'port', 5802) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'DynamicIdentityAgent') if name is None else name
+        agent_port = config.get("port", 5802) if port is None else port
+        agent_name = config.get("name", 'DynamicIdentityAgent') if name is None else name
         # Use strict_port=True to ensure bind failure surfaces instead of silent port change
-        agent_port = getattr(_agent_args, 'port', 5000) if port is None else port
-        agent_name = getattr(_agent_args, 'name', 'DynamicIdentityAgent') if name is None else name
+        agent_port = config.get("port", 5000) if port is None else port
+        agent_name = config.get("name", 'DynamicIdentityAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
         self.initialization_status = {
@@ -94,7 +94,7 @@ class DynamicIdentityAgent(BaseAgent):
             self.model_socket = self.context.socket(zmq.REQ)
             self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            _host = getattr(_agent_args, 'host', 'localhost')
+            _host = config.get("host", 'localhost')
             self.model_socket.connect(f"tcp://{_host}:{self.emr_port}")
             # REQ socket for EmpathyAgent
             self.empathy_socket = self.context.socket(zmq.REQ)

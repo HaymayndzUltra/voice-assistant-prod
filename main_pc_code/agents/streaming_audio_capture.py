@@ -32,10 +32,10 @@ if PROJECT_ROOT not in sys.path:
 
 # Import with canonical path
 from main_pc_code.src.core.base_agent import BaseAgent
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments at module level with canonical import
-_agent_args = parse_agent_args()
+config = load_config()
 
 # Attempt to import health check server utility, fallback to no-op if unavailable
 try:
@@ -80,7 +80,7 @@ CHUNK_SAMPLES = int(SAMPLE_RATE * CHUNK_DURATION)
 WAKE_WORD_BUFFER_SECONDS = 2  # Reduced from 3s for faster wake word detection
 # Gracefully parse port argument (can be None or non-int)
 _default_pub_port = 6575
-_arg_port = getattr(_agent_args, 'port', None)
+_arg_port = config.get("port", None)
 try:
     ZMQ_PUB_PORT = int(_arg_port) if _arg_port else _default_pub_port
 except (TypeError, ValueError):
@@ -103,18 +103,19 @@ def find_available_port(start_port, max_attempts=10):
 class StreamingAudioCaptureAgent(BaseAgent):
     def __init__(self):
         """Initialize the StreamingAudioCapture agent with audio processing capabilities."""
-        # Call BaseAgent's __init__ first with proper arguments
-        super().__init__(name="StreamingAudioCapture")
+        # Set initial properties for super() call
+        self.name = "StreamingAudioCapture"
+        self.port = int(config.get("port", ZMQ_PUB_PORT))
+        self.start_time = time.time()
         
-        # Get configuration from agent args
-        self.port = int(getattr(_agent_args, 'port', 5701))
-        self.bind_address = getattr(_agent_args, 'bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(getattr(_agent_args, 'zmq_request_timeout', 5000))
-        
-        logger.info("Initializing StreamingAudioCapture with direct audio parameters...")
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=self.name, port=self.port)
+
         # Detect dummy mode via env var
         self.dummy_mode = os.getenv("USE_DUMMY_AUDIO", "false").lower() == "true"
-        
+
+        from collections import deque  # still used regardless of mode
+
         if self.dummy_mode:
             logger.warning("USE_DUMMY_AUDIO=true -> Running in dummy audio mode; skipping PyAudio initialization")
             self.p = None
@@ -136,14 +137,16 @@ class StreamingAudioCaptureAgent(BaseAgent):
         print("✅ DEBUG: __init__ called, parameters set") # User requested debug print
 
         # Preserve other original initializations & add necessary ones
-        self.running = False
+        self.running = True
         self.context = None
         self.pub_socket = None
+        self.health_socket = None
         self.stream = None  # Correctly None initially, will be set in __enter__
+        self.health_thread = None
         self.whisper_model = None # For wake word if used
         self.device = None # Might store device info later
         self.http_server = None # HTTP health check server
-        self.start_time = time.time()  # Track start time for health reporting
+        self.pub_port = self.port
 
         # Wake word related
         self.wake_word_enabled = WAKE_WORD_ENABLED
@@ -837,87 +840,59 @@ class StreamingAudioCaptureAgent(BaseAgent):
     def _get_health_status(self):
         """Get the current health status of the agent.
         
+        This method overrides the BaseAgent._get_health_status method to add
+        agent-specific health information.
+        
         Returns:
-            dict: A dictionary containing health status information
+            Dict[str, Any]: A dictionary containing health status information
         """
-        # Basic health check logic
-        is_healthy = True # Assume healthy unless a check fails
+        # Get the base health status from parent class
+        base_status = super()._get_health_status()
         
-        # Check if audio stream is active
-        if hasattr(self, 'stream') and self.stream:
-            stream_active = self.stream.is_active() if hasattr(self.stream, 'is_active') else False
-        else:
-            stream_active = False
-            # Only mark as unhealthy if we're not in dummy mode and expected to have a stream
-            if not self.dummy_mode:
-                is_healthy = False
-        
-        # Check ZMQ socket health
-        zmq_healthy = hasattr(self, 'pub_socket') and self.pub_socket is not None
-        if not zmq_healthy:
-            is_healthy = False
-        
-        status_report = {
-            "status": "healthy" if is_healthy else "unhealthy",
-            "agent_name": "StreamingAudioCapture",
-            "timestamp": datetime.utcnow().isoformat(),
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-            "details": {
-                "audio_stream_active": stream_active,
-                "zmq_socket_healthy": zmq_healthy,
-                "dummy_mode": self.dummy_mode,
-                "wake_word_enabled": self.wake_word_enabled,
-                "activation_count": self.activation_count
-            }
-        }
-        
-        return status_report
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        # Add agent-specific health metrics
         try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            # Check if audio stream is active
+            if hasattr(self, 'stream') and self.stream:
+                stream_active = self.stream.is_active() if hasattr(self.stream, 'is_active') else False
+            else:
+                stream_active = False
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
+            # Check ZMQ socket health
+            zmq_healthy = hasattr(self, 'pub_socket') and self.pub_socket is not None
+            
+            # Add metrics to base status
+            base_status.update({
+                "agent_specific_metrics": {
+                    "audio_stream_active": stream_active,
+                    "zmq_socket_healthy": zmq_healthy,
+                    "dummy_mode": getattr(self, 'dummy_mode', False),
+                    "wake_word_enabled": getattr(self, 'wake_word_enabled', False),
+                    "activation_count": getattr(self, 'activation_count', 0),
+                    "sample_rate": getattr(self, 'sample_rate', 0),
+                    "channels": getattr(self, 'channels', 0)
+                }
+            })
+            
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+            logger.error(f"Error collecting health metrics: {e}")
+            base_status.update({"health_metrics_error": str(e)})
+        
+        return base_status
 
 # Add standardized __main__ block
 if __name__ == "__main__":
+    # Standardized main execution block
     agent = None
     try:
         agent = StreamingAudioCaptureAgent()
         agent.run()
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        print(f"Error: {e}")
         import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
             agent.cleanup()

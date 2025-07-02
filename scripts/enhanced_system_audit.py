@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced System Audit Script (v3 - TRULY CORRECTED)
+Enhanced System Audit Script (v4 - UPDATED FOR CONFIG_LOADER)
 - Loads all agents from startup_config.yaml
 - Analyzes each agent file for compliance with architectural and configuration standards
 - Strictly checks for CANONICAL import paths and other criteria.
@@ -13,10 +13,22 @@ from pathlib import Path
 
 # === CONFIG ===
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = PROJECT_ROOT / 'main_pc_code' / 'config' / 'startup_config.yaml'
+MAIN_CONFIG_PATH = PROJECT_ROOT / 'main_pc_code' / 'config' / 'startup_config.yaml'
+PC2_CONFIG_PATH = PROJECT_ROOT / 'pc2_code' / 'config' / 'startup_config.yaml'
 CODEBASE_ROOT = PROJECT_ROOT / 'main_pc_code'
+PC2_CODEBASE_ROOT = PROJECT_ROOT / 'pc2_code'
+PC2_AGENTS_ROOT = PROJECT_ROOT / 'pc2_code' / 'agents'
 
-# === COMPLIANCE CHECKS (TRULY CORRECTED) ===
+# === TARGETED AGENTS ===
+# Comment out or remove this as we'll be using all agents from pc2_code/agents
+# TARGETED_AGENTS = [
+#     {'name': 'FusedAudioPreprocessor', 'script_path': 'src/audio/fused_audio_preprocessor.py'},
+#     {'name': 'WakeWordDetector', 'script_path': 'agents/wake_word_detector.py'},
+#     {'name': 'VisionCaptureAgent', 'script_path': 'src/vision/vision_capture_agent.py'},
+#     {'name': 'FaceRecognitionAgent', 'script_path': 'agents/face_recognition_agent.py'}
+# ]
+
+# === COMPLIANCE CHECKS (UPDATED FOR CONFIG_LOADER) ===
 def check_base_agent_inheritance(source_code):
     try:
         tree = ast.parse(source_code)
@@ -58,30 +70,30 @@ def check_get_health_status_implemented(source_code):
     except Exception:
         return False
 
-def check_config_parser_usage(source_code):
-    # TRULY CORRECTED LOGIC: Must check for the exact canonical path and module-level call.
+def check_config_loader_usage(source_code):
+    # UPDATED LOGIC: Check for config_loader instead of config_parser
     try:
         tree = ast.parse(source_code)
         canonical_import_found = False
-        parser_called_at_module_level = False
+        loader_called_at_module_level = False
         
         for node in ast.walk(tree):
             # Check for the canonical import
             if isinstance(node, ast.ImportFrom):
-                if node.module == 'main_pc_code.utils.config_parser' and any(alias.name == 'parse_agent_args' for alias in node.names):
+                if node.module == 'main_pc_code.utils.config_loader' and any(alias.name == 'load_config' for alias in node.names):
                     canonical_import_found = True
             
-            # Check for module-level assignment `_agent_args = parse_agent_args()`
+            # Check for module-level assignment `config = load_config()`
             if isinstance(node, ast.Assign):
                 # Ensure it's at the top level of the module body
-                if any(isinstance(target, ast.Name) and target.id == '_agent_args' for target in node.targets):
-                    if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'parse_agent_args':
+                if any(isinstance(target, ast.Name) and target.id == 'config' for target in node.targets):
+                    if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == 'load_config':
                         # Check if this assignment is in the module's top-level body
                         # This is a heuristic: check if it's directly in the module's body, not inside a function/class
                         if node in tree.body: # Direct check if node is a top-level statement
-                            parser_called_at_module_level = True
+                            loader_called_at_module_level = True
                             
-        return canonical_import_found and parser_called_at_module_level
+        return canonical_import_found and loader_called_at_module_level
     except Exception:
         return False
 
@@ -135,29 +147,42 @@ def gather_agents_from_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     agents = []
-    agent_sections = [k for k, v in config.items() if isinstance(v, list)]
-    for section in agent_sections:
-        for agent in config[section]:
-            if isinstance(agent, dict) and 'name' in agent and 'script_path' in agent:
-                agents.append({
-                    'name': agent['name'].strip(),
-                    'script_path': agent['script_path'].strip()
-                })
+    
+    # Process all sections in the config file
+    for section_name, section_data in config.items():
+        if isinstance(section_data, list):
+            for agent in section_data:
+                if isinstance(agent, dict) and 'script_path' in agent:
+                    agent_name = agent.get('name', os.path.basename(agent['script_path']).split('.')[0])
+                    agents.append({
+                        'name': agent_name,
+                        'script_path': agent['script_path']
+                    })
+    
     return agents
+
+def gather_pc2_agents_from_config():
+    """Gather agents from PC2 startup_config.yaml."""
+    try:
+        return gather_agents_from_config(PC2_CONFIG_PATH)
+    except Exception as e:
+        print(f"Error loading PC2 config: {e}")
+        return []
 
 # === MAIN AUDIT ===
 def main():
-    if not CONFIG_PATH.exists():
-        print(f"Error: Config file not found at {CONFIG_PATH}")
-        return
-
-    agents = gather_agents_from_config(CONFIG_PATH)
+    # Use PC2 agents from startup_config.yaml
+    agents = gather_pc2_agents_from_config()
+    print(f"Auditing {len(agents)} agents from pc2_code/config/startup_config.yaml.")
+    
     results = []
 
     for agent in agents:
         agent_name = agent['name']
         rel_path = agent['script_path']
-        abs_path = (CODEBASE_ROOT / rel_path).resolve()
+        
+        # Set the correct root directory for PC2 agents
+        abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
         
         issues = []
         if not abs_path.exists():
@@ -172,7 +197,7 @@ def main():
                 if not check_base_agent_inheritance(code): issues.append('C1/C2: No BaseAgent inheritance')
                 if not check_super_init_call(code): issues.append('C3: super().__init__ not called')
                 if not check_get_health_status_implemented(code): issues.append('C4: _get_health_status missing')
-                if not check_config_parser_usage(code): issues.append('C6/C7: Config parser not used correctly')
+                if not check_config_loader_usage(code): issues.append('C6/C7: Config loader not used correctly')
                 if not check_main_block(code): issues.append('C10: __main__ block not standardized')
 
                 if not issues:
@@ -199,6 +224,16 @@ def main():
     for r in results:
         issues_str = ', '.join(r['issues']) if r['issues'] else 'None'
         print(f"| {r['name']} | {r['file']} | {r['status']} | {issues_str} |")
+    
+    # Print summary
+    compliant = sum(1 for r in results if r['status'] == '✅ FULLY COMPLIANT')
+    partially = sum(1 for r in results if r['status'] == '🟠 PARTIALLY COMPLIANT')
+    non_compliant = sum(1 for r in results if r['status'] == '❌ NON-COMPLIANT')
+    
+    print(f"\nSummary: {len(results)} agents audited")
+    print(f"✅ Fully Compliant: {compliant} ({compliant/len(results)*100:.1f}%)")
+    print(f"🟠 Partially Compliant: {partially} ({partially/len(results)*100:.1f}%)")
+    print(f"❌ Non-Compliant: {non_compliant} ({non_compliant/len(results)*100:.1f}%)")
 
 if __name__ == '__main__':
     main() 

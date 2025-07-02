@@ -26,10 +26,12 @@ import noisereduce as nr
 from scipy import signal
 import librosa
 from src.core.http_server import setup_health_check_server
-from utils.config_loader import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 from utils.service_discovery_client import discover_service
 from main_pc_code.src.core.base_agent import BaseAgent
-_agent_args = parse_agent_args()
+
+# Load configuration at module level
+config = load_config()
 
 # Configure logging
 logging.basicConfig(
@@ -46,10 +48,10 @@ logger = logging.getLogger(__name__)
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
 
 # ZMQ Configuration - Use service discovery instead of hardcoded ports
-ZMQ_SUB_PORT = int(getattr(_agent_args, 'sub_port', 6575))  # Raw audio from streaming_audio_capture.py
-ZMQ_CLEAN_AUDIO_PUB_PORT = int(getattr(_agent_args, 'clean_audio_pub_port', 6578))  # Clean audio (same as old NoiseReductionAgent)
-ZMQ_VAD_PUB_PORT = int(getattr(_agent_args, 'vad_pub_port', 6579))  # Voice activity events (same as old VADAgent)
-ZMQ_HEALTH_PORT = int(getattr(_agent_args, 'health_port', 6581))  # Health check port (as configured in startup_config.yaml)
+ZMQ_SUB_PORT = int(config.get("sub_port", 6575))  # Raw audio from streaming_audio_capture.py
+ZMQ_CLEAN_AUDIO_PUB_PORT = int(config.get("clean_audio_pub_port", 6578))  # Clean audio (same as old NoiseReductionAgent)
+ZMQ_VAD_PUB_PORT = int(config.get("vad_pub_port", 6579))  # Voice activity events (same as old VADAgent)
+ZMQ_HEALTH_PORT = int(config.get("health_port", 6581))  # Health check port (as configured in startup_config.yaml)
 
 # Noise Reduction Settings
 NOISE_REDUCTION_STRENGTH = 0.5  # Strength of noise reduction (0.0-1.0)
@@ -85,11 +87,21 @@ AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
 class FusedAudioPreprocessorAgent(BaseAgent):
-    def __init__(self):
-        self.port = int(_agent_args.get('port', 5703))
-        self.bind_address = _agent_args.get('bind_address', '<BIND_ADDR>')
-        self.zmq_timeout = int(_agent_args.get('zmq_request_timeout', 5000))
-        super().__init__(_agent_args)
+    def __init__(self, port=None):
+        # Get configuration values with fallbacks
+        agent_port = int(config.get("port", 5703)) if port is None else port
+        agent_name = config.get("name", "FusedAudioPreprocessorAgent")
+        bind_address = config.get("bind_address", '<BIND_ADDR>')
+        zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store important attributes
+        self.bind_address = bind_address
+        self.zmq_timeout = zmq_timeout
+        self.start_time = time.time()
+        
         self._running = False
         self._thread = None
         
@@ -203,16 +215,16 @@ class FusedAudioPreprocessorAgent(BaseAgent):
                 audio_capture_service = discover_service("StreamingAudioCapture")
                 if audio_capture_service and audio_capture_service.get("status") == "SUCCESS":
                     audio_capture_info = audio_capture_service.get("payload", {})
-                    audio_capture_host = audio_capture_info.get("host", _agent_args.host)
+                    audio_capture_host = audio_capture_info.get("host", config.get("host"))
                     audio_capture_port = audio_capture_info.get("port", ZMQ_SUB_PORT)
                     logger.info(f"Discovered StreamingAudioCapture at {audio_capture_host}:{audio_capture_port}")
                 else:
                     logger.warning("Could not discover StreamingAudioCapture, using configured host and port")
-                    audio_capture_host = _agent_args.host
+                    audio_capture_host = config.get("host")
                     audio_capture_port = ZMQ_SUB_PORT
             except Exception as e:
                 logger.error(f"Error discovering StreamingAudioCapture: {e}")
-                audio_capture_host = _agent_args.host
+                audio_capture_host = config.get("host")
                 audio_capture_port = ZMQ_SUB_PORT
             
             # Subscribe to raw audio
@@ -868,12 +880,24 @@ class FusedAudioPreprocessorAgent(BaseAgent):
             # Stop the preprocessor
             self.stop()
 
-
+# -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
+    # Configure basic logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Standardized main execution block
+    agent = None
     try:
-        # Create and run the fused audio preprocessor
-        preprocessor = FusedAudioPreprocessorAgent()
-        preprocessor.run()
+        agent = FusedAudioPreprocessorAgent()
+        logger.info(f"Starting FusedAudioPreprocessorAgent on port {agent.port}")
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("FusedAudioPreprocessorAgent interrupted by user")
     except Exception as e:
-        logger.error(f"Error running fused audio preprocessor: {str(e)}")
-        sys.exit(1) 
+        import traceback
+        logger.error(f"An unexpected error occurred in FusedAudioPreprocessorAgent: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            logger.info("Cleaning up FusedAudioPreprocessorAgent...")
+            agent.cleanup() 

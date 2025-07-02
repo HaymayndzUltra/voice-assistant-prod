@@ -1,4 +1,4 @@
-from src.core.base_agent import BaseAgent
+from main_pc_code.src.core.base_agent import BaseAgent
 """
 Feedback Handler Module
 Provides visual and voice confirmation feedback for command execution
@@ -11,10 +11,11 @@ import time
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple, Union
-from main_pc_code.utils.config_parser import parse_agent_args
+from main_pc_code.utils.config_loader import load_config
 import psutil
-from datetime import datetime
-_agent_args = parse_agent_args()
+
+# Load config at module level
+config = load_config()
 
 logger = logging.getLogger("FeedbackHandler")
 
@@ -51,14 +52,13 @@ class FeedbackHandler(BaseAgent):
     """Handles visual and voice feedback for command execution"""
     
     def __init__(self):
-        self.port = _agent_args.get('port')
-        super().__init__(_agent_args)
-        """Initialize the feedback handler
-        
-        Args:
-            gui_port: ZMQ port for GUI feedback
-            voice_port: ZMQ port for voice feedback
-        """
+        self.port = config.get("port", 5578)
+        self.start_time = time.time()
+        self.name = "FeedbackHandler"
+        self.running = True
+        self.feedback_received_count = 0
+        self.last_feedback_time = None
+        super().__init__()
         self.context = zmq.Context()
         
         # Socket for GUI feedback (visual)
@@ -75,7 +75,7 @@ class FeedbackHandler(BaseAgent):
         # Socket for voice feedback (already exists at port 5574)
         self.voice_socket = self.context.socket(zmq.PUB)
         try:
-            self.voice_socket.connect(f"tcp://{_agent_args.get('host', '127.0.0.1')}:5574")
+            self.voice_socket.connect(f"tcp://{config.get('host', '127.0.0.1')}:5574")
             logger.info(f"Connected to voice feedback socket on port 5574")
         except Exception as e:
             logger.warning(f"Could not connect to voice feedback socket: {e}")
@@ -90,7 +90,6 @@ class FeedbackHandler(BaseAgent):
         self.reconnect_cooldown = 5  # seconds
         
         # Start health check thread
-        self.running = True
         self.health_thread = threading.Thread(target=self._check_connections, daemon=True)
         self.health_thread.start()
     
@@ -299,7 +298,7 @@ class FeedbackHandler(BaseAgent):
             # Close and recreate socket
             self.voice_socket.close()
             self.voice_socket = self.context.socket(zmq.PUB)
-            self.voice_socket.connect(f"tcp://{_agent_args.get('host', '127.0.0.1')}:5574")
+            self.voice_socket.connect(f"tcp://{config.get('host', '127.0.0.1')}:5574")
             self.voice_connected = True
             logger.info("Reconnected to voice feedback socket")
         except Exception as e:
@@ -385,3 +384,20 @@ class FeedbackHandler(BaseAgent):
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }
+
+if __name__ == "__main__":
+    # Standardized main execution block
+    agent = None
+    try:
+        agent = FeedbackHandler()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()
