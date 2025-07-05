@@ -8,7 +8,9 @@ import json
 import time
 import logging
 import threading
-from typing import Dict, Any, cast, Optional, Union
+import uuid
+import socket
+from typing import Dict, Any, cast, Optional, Union, List, Tuple, TypeVar, cast
 from datetime import datetime
 from abc import ABC, abstractmethod
 
@@ -17,9 +19,15 @@ from main_pc_code.utils.path_manager import PathManager
 
 # Now that the path is set, we can use absolute imports
 from main_pc_code.utils.config_loader import parse_agent_args
+from main_pc_code.src.common.data_models import (
+    SystemEvent, ErrorReport, ErrorSeverity, AgentRegistration
+)
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+# Type variables for better type hinting
+T = TypeVar('T')
 
 class BaseAgent:
     """Base class for all agents with proper initialization and health check patterns."""
@@ -78,6 +86,12 @@ class BaseAgent:
         
         # Start initialization in background
         self._start_initialization()
+        
+        # Get agent capabilities for registration
+        self.capabilities = kwargs.get('capabilities', self._get_default_capabilities())
+        
+        # Set up auto-registration with SystemDigitalTwin
+        self._register_with_digital_twin()
         
         logger.info(f"{self.name} initialized on port {self.port} (health check: {self.health_check_port})")
     
@@ -418,4 +432,267 @@ class BaseAgent:
             return int(value)
         except (ValueError, TypeError):
             logger.warning(f"Could not convert {value} to int, using default {default}")
-            return default 
+            return default
+
+    # ===================================================================
+    #         STANDARDIZED COMMUNICATION METHODS
+    # ===================================================================
+    
+    def _get_default_capabilities(self) -> List[str]:
+        """Get default capabilities for this agent based on class name."""
+        agent_type = self.__class__.__name__.lower()
+        if "translator" in agent_type:
+            return ["translation"]
+        elif "memory" in agent_type:
+            return ["memory_management"]
+        elif "model" in agent_type:
+            return ["model_inference"]
+        elif "speech" in agent_type or "tts" in agent_type:
+            return ["speech_processing"]
+        else:
+            return ["basic_agent"]
+    
+    def _register_with_digital_twin(self) -> None:
+        """Register this agent with the SystemDigitalTwin for service discovery."""
+        try:
+            # Get hostname for registration
+            hostname = socket.gethostname()
+            try:
+                ip_address = socket.gethostbyname(hostname)
+            except socket.gaierror:
+                ip_address = "127.0.0.1"
+                logger.warning(f"Could not resolve hostname, using {ip_address}")
+            
+            # Prepare registration data
+            registration = AgentRegistration(
+                agent_id=self.name,
+                agent_type=self.__class__.__name__,
+                host=ip_address,
+                port=self.port,
+                health_check_port=self.health_check_port,
+                capabilities=self.capabilities,
+                dependencies=[],  # Subclasses should override this
+                metadata={
+                    "start_time": datetime.now().isoformat(),
+                    "python_version": sys.version
+                }
+            )
+            
+            # Send registration to SystemDigitalTwin
+            self.send_request_to_agent(
+                "SystemDigitalTwin",
+                {
+                    "action": "register_agent",
+                    "agent_name": self.name,
+                    "status": "HEALTHY",
+                    "location": "MainPC",  # Default to MainPC, can be overridden
+                    "registration_data": registration.dict()
+                },
+                retries=3,
+                retry_delay=2.0
+            )
+            logger.info(f"Successfully registered {self.name} with SystemDigitalTwin")
+        except Exception as e:
+            logger.warning(f"Failed to register with SystemDigitalTwin: {e}. Will continue without registration.")
+    
+    def get_agent_endpoint(self, agent_name: str) -> Tuple[str, int]:
+        """Get the endpoint (host, port) for a specific agent from SystemDigitalTwin.
+        
+        Args:
+            agent_name: Name of the agent to locate
+            
+        Returns:
+            Tuple of (host, port) for the requested agent
+            
+        Raises:
+            RuntimeError: If the agent cannot be found or SystemDigitalTwin is unreachable
+        """
+        try:
+            response = self.send_request_to_agent(
+                "SystemDigitalTwin",
+                {"action": "get_agent_endpoint", "agent_name": agent_name}
+            )
+            
+            if response.get("status") != "success":
+                raise RuntimeError(f"Failed to get endpoint for {agent_name}: {response.get('error', 'Unknown error')}")
+            
+            host = response.get("host", "localhost")
+            port = response.get("port")
+            
+            if port is None:
+                raise RuntimeError(f"No port returned for agent {agent_name}")
+                
+            return host, int(port)
+        except Exception as e:
+            logger.error(f"Error getting endpoint for {agent_name}: {e}")
+            raise RuntimeError(f"Could not locate agent {agent_name}: {str(e)}")
+    
+    def send_request_to_agent(
+        self, 
+        agent_name: str, 
+        request: Dict[str, Any],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        timeout: int = 5000,
+        retries: int = 1,
+        retry_delay: float = 1.0
+    ) -> Dict[str, Any]:
+        """Send a request to another agent using standardized message format.
+        
+        Args:
+            agent_name: Name of the target agent
+            request: Request payload to send
+            host: Optional host address, will try to discover if not provided
+            port: Optional port number, will try to discover if not provided
+            timeout: ZMQ timeout in milliseconds
+            retries: Number of retry attempts
+            retry_delay: Delay between retries in seconds
+            
+        Returns:
+            Response from the agent as a dictionary
+            
+        Raises:
+            RuntimeError: If communication fails after all retries
+        """
+        # Special case for SystemDigitalTwin - use hardcoded values if discovery not available
+        if agent_name == "SystemDigitalTwin" and (host is None or port is None):
+            host = host or "localhost"
+            port = port or 7120  # Default SystemDigitalTwin port from config
+        
+        # Try to discover the agent if host/port not provided
+        if host is None or port is None:
+            try:
+                discovered_host, discovered_port = self.get_agent_endpoint(agent_name)
+                host = host or discovered_host
+                port = port or discovered_port
+            except Exception as e:
+                if agent_name == "SystemDigitalTwin":
+                    # For SystemDigitalTwin, fall back to default if discovery fails
+                    host = "localhost"
+                    port = 7120
+                    logger.warning(f"Using default SystemDigitalTwin endpoint: {host}:{port}")
+                else:
+                    raise RuntimeError(f"Could not discover endpoint for {agent_name}: {str(e)}")
+        
+        # Ensure host and port are not None at this point
+        if host is None:
+            host = "localhost"
+            logger.warning(f"Host was None for {agent_name}, using default: {host}")
+        
+        if port is None:
+            raise RuntimeError(f"Could not determine port for agent {agent_name}")
+        
+        # Set up request socket
+        request_socket = None
+        for attempt in range(retries):
+            try:
+                if request_socket:
+                    request_socket.close()
+                
+                request_socket = self.context.socket(zmq.REQ)
+                request_socket.setsockopt(zmq.LINGER, 0)
+                request_socket.setsockopt(zmq.RCVTIMEO, timeout)
+                request_socket.connect(f"tcp://{host}:{port}")
+                
+                # Add metadata to request
+                enriched_request = request.copy()
+                enriched_request.update({
+                    "source_agent": self.name,
+                    "request_id": str(uuid.uuid4()),
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                # Send request and wait for response
+                request_socket.send_json(enriched_request)
+                response_data = request_socket.recv_json()
+                
+                # Ensure we return a dictionary
+                if not isinstance(response_data, dict):
+                    response_data = {"status": "success", "data": response_data}
+                
+                return cast(Dict[str, Any], response_data)
+                
+            except zmq.error.Again:
+                logger.warning(f"Timeout waiting for response from {agent_name} (attempt {attempt+1}/{retries})")
+            except Exception as e:
+                logger.error(f"Error communicating with {agent_name} (attempt {attempt+1}/{retries}): {e}")
+            
+            # Wait before retry
+            if attempt < retries - 1:
+                time.sleep(retry_delay)
+        
+        # Clean up socket if still exists
+        if request_socket:
+            request_socket.close()
+            
+        raise RuntimeError(f"Failed to communicate with {agent_name} after {retries} attempts")
+    
+    def send_event(self, event_type: str, data: Dict[str, Any], propagate: bool = False) -> None:
+        """Send a system event to the SystemDigitalTwin for distribution.
+        
+        Args:
+            event_type: Type of event being sent
+            data: Event payload data
+            propagate: Whether this event should be propagated to other machines
+        """
+        try:
+            event = SystemEvent(
+                event_id=str(uuid.uuid4()),
+                event_type=event_type,
+                source_agent=self.name,
+                data=data,
+                propagate=propagate
+            )
+            
+            self.send_request_to_agent(
+                "SystemDigitalTwin",
+                {
+                    "action": "publish_event",
+                    "event": event.dict()
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to send event {event_type}: {e}")
+    
+    def report_error(
+        self, 
+        error_type: str, 
+        message: str, 
+        severity: ErrorSeverity = ErrorSeverity.ERROR,
+        context: Optional[Dict[str, Any]] = None,
+        stack_trace: Optional[str] = None,
+        related_task_id: Optional[str] = None
+    ) -> None:
+        """Report an error to the error management system.
+        
+        Args:
+            error_type: Type or category of error
+            message: Human-readable error message
+            severity: Error severity level
+            context: Additional contextual information
+            stack_trace: Optional stack trace
+            related_task_id: ID of related task if applicable
+        """
+        try:
+            error_report = ErrorReport(
+                error_id=str(uuid.uuid4()),
+                agent_id=self.name,
+                severity=severity,
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                stack_trace=stack_trace,
+                related_task_id=related_task_id
+            )
+            
+            self.send_request_to_agent(
+                "SystemDigitalTwin",
+                {
+                    "action": "report_error",
+                    "error": error_report.dict()
+                }
+            )
+        except Exception as e:
+            # Log locally if error reporting fails
+            logger.error(f"Error in report_error: {e}")
+            logger.error(f"Original error: {error_type} - {message}") 

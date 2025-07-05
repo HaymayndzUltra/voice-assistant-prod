@@ -28,7 +28,7 @@ import threading
 import zmq
 import psutil
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple, Union, cast, TypeVar
 
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
@@ -36,6 +36,7 @@ from main_pc_code.utils.service_discovery_client import get_service_discovery_cl
 from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
+from main_pc_code.src.common.data_models import AgentRegistration, SystemEvent, ErrorReport
 
 # Configure logging
 log_file_path = 'logs/system_digital_twin.log'
@@ -69,6 +70,9 @@ DEFAULT_CONFIG = {
     "network_baseline_ms": 50,
 }
 
+# Type variable for better type hinting
+T = TypeVar('T')
+
 class SystemDigitalTwinAgent(BaseAgent):
     """
     A digital twin of the system that monitors real-time metrics
@@ -87,6 +91,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.running = True
         self.service_registry = {}
         self.registered_agents = {}
+        self.agent_endpoints = {}  # New: Store agent endpoints for discovery
         self.prom = None
         self.metrics_thread = None
         self.secure_zmq_enabled = False
@@ -264,6 +269,9 @@ class SystemDigitalTwinAgent(BaseAgent):
     def _get_prometheus_value(self, metric_name: str, default: float) -> float:
         """Get the latest value for a specific Prometheus metric."""
         try:
+            if self.prom is None:
+                return default
+                
             metric_data = self.prom.get_current_metric_value(metric_name)
             if metric_data:
                 return float(metric_data[0]['value'][1])
@@ -364,6 +372,164 @@ class SystemDigitalTwinAgent(BaseAgent):
             logger.error(f"Error updating VRAM metrics: {e}", exc_info=True)
             return {"status": "error", "error": str(e)}
 
+    # ===================================================================
+    #         NEW AGENT REGISTRATION AND DISCOVERY METHODS
+    # ===================================================================
+    
+    def register_agent(self, registration_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Register an agent with detailed information for service discovery.
+        
+        Args:
+            registration_data: Agent registration information including endpoint details
+            
+        Returns:
+            Response indicating success or failure
+        """
+        if registration_data is None:
+            return {"status": "error", "error": "Missing registration data"}
+            
+        try:
+            # Convert to AgentRegistration model if plain dict
+            if not isinstance(registration_data, AgentRegistration):
+                try:
+                    registration = AgentRegistration(**registration_data)
+                except Exception as e:
+                    logger.error(f"Invalid registration data: {e}")
+                    return {"status": "error", "error": f"Invalid registration data: {str(e)}"}
+            else:
+                registration = registration_data
+                
+            agent_id = registration.agent_id
+            
+            # Store the endpoint information
+            self.agent_endpoints[agent_id] = {
+                "host": registration.host,
+                "port": registration.port,
+                "health_check_port": registration.health_check_port,
+                "last_registered": datetime.now().isoformat(),
+                "agent_type": registration.agent_type,
+                "capabilities": registration.capabilities,
+                "metadata": registration.metadata
+            }
+            
+            # Also update the agent status
+            location = registration.metadata.get("location", "MainPC")
+            self.update_agent_status(agent_id, "HEALTHY", location)
+            
+            logger.info(f"Registered agent {agent_id} at {registration.host}:{registration.port}")
+            return {
+                "status": "success", 
+                "message": f"Successfully registered {agent_id}",
+                "agent_id": agent_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error registering agent: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+    
+    def get_agent_endpoint(self, agent_name: str) -> Dict[str, Any]:
+        """Get the endpoint information for a specific agent.
+        
+        Args:
+            agent_name: Name of the agent to locate
+            
+        Returns:
+            Dictionary with host and port information
+        """
+        if agent_name in self.agent_endpoints:
+            endpoint = self.agent_endpoints[agent_name]
+            return {
+                "status": "success",
+                "agent_name": agent_name,
+                "host": endpoint["host"],
+                "port": endpoint["port"],
+                "health_check_port": endpoint["health_check_port"]
+            }
+        else:
+            logger.warning(f"No endpoint found for agent {agent_name}")
+            return {"status": "error", "error": f"Agent {agent_name} not found in registry"}
+    
+    def publish_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Publish a system event to all interested agents.
+        
+        Args:
+            event: The event data to publish
+            
+        Returns:
+            Response indicating success or failure
+        """
+        if event is None:
+            return {"status": "error", "error": "Missing event data"}
+            
+        try:
+            # Convert to SystemEvent model if plain dict
+            if not isinstance(event, SystemEvent):
+                try:
+                    system_event = SystemEvent(**event)
+                except Exception as e:
+                    logger.error(f"Invalid event data: {e}")
+                    return {"status": "error", "error": f"Invalid event data: {str(e)}"}
+            else:
+                system_event = event
+                
+            # Log the event
+            logger.info(f"Publishing event: {system_event.event_type} from {system_event.source_agent}")
+            
+            # TODO: Implement event distribution to interested agents
+            # For now, just log it
+            
+            return {
+                "status": "success",
+                "message": f"Event {system_event.event_id} published successfully",
+                "event_id": system_event.event_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error publishing event: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+    
+    def report_error(self, error: Dict[str, Any]) -> Dict[str, Any]:
+        """Record an error report and take appropriate action.
+        
+        Args:
+            error: The error report data
+            
+        Returns:
+            Response indicating success or failure
+        """
+        if error is None:
+            return {"status": "error", "error": "Missing error report data"}
+            
+        try:
+            # Convert to ErrorReport model if plain dict
+            if not isinstance(error, ErrorReport):
+                try:
+                    error_report = ErrorReport(**error)
+                except Exception as e:
+                    logger.error(f"Invalid error report data: {e}")
+                    return {"status": "error", "error": f"Invalid error report data: {str(e)}"}
+            else:
+                error_report = error
+                
+            # Log the error
+            logger.error(
+                f"Error reported by {error_report.agent_id}: "
+                f"[{error_report.severity}] {error_report.error_type} - {error_report.message}"
+            )
+            
+            # TODO: Implement error handling logic
+            # For critical errors, could trigger self-healing
+            
+            return {
+                "status": "success",
+                "message": f"Error {error_report.error_id} recorded successfully",
+                "error_id": error_report.error_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing error report: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle an incoming request by dispatching to the correct method."""
         action = request.get("action")
@@ -379,15 +545,49 @@ class SystemDigitalTwinAgent(BaseAgent):
         elif action == "simulate_load":
             load_type = request.get("load_type")
             value = request.get("value")
-            if not all([load_type, isinstance(value, (int, float))]):
-                return {"status": "error", "error": "Missing or invalid parameters: load_type, value"}
-            return self.simulate_load(load_type, value)
+            
+            # Type validation
+            if not isinstance(load_type, str):
+                return {"status": "error", "error": "load_type must be a string"}
+                
+            try:
+                value_float = float(value) if value is not None else 0.0
+            except (ValueError, TypeError):
+                return {"status": "error", "error": "value must be a number"}
+                
+            return self.simulate_load(load_type, value_float)
         elif action == "register_agent":
+            # Check if this is a detailed registration with registration_data
+            if "registration_data" in request:
+                registration_data = request.get("registration_data")
+                return self.register_agent(registration_data)
+            
+            # Otherwise fall back to simple registration
             agent_name = request.get("agent_name")
             status = request.get("status")
-            if not all([agent_name, status]):
-                return {"status": "error", "error": "Missing required parameters: agent_name, status"}
+            
+            if not agent_name or not isinstance(agent_name, str):
+                return {"status": "error", "error": "Missing or invalid agent_name parameter"}
+                
+            if not status or not isinstance(status, str):
+                return {"status": "error", "error": "Missing or invalid status parameter"}
+                
             return self.update_agent_status(agent_name, status, request.get("location"))
+        elif action == "get_agent_endpoint":
+            agent_name = request.get("agent_name")
+            if not agent_name or not isinstance(agent_name, str):
+                return {"status": "error", "error": "Missing or invalid agent_name parameter"}
+            return self.get_agent_endpoint(agent_name)
+        elif action == "publish_event":
+            event = request.get("event")
+            if not event:
+                return {"status": "error", "error": "Missing required parameter: event"}
+            return self.publish_event(event)
+        elif action == "report_error":
+            error = request.get("error")
+            if not error:
+                return {"status": "error", "error": "Missing required parameter: error"}
+            return self.report_error(error)
         elif action == "update_vram_metrics":
             payload = request.get("payload", {})
             return self._update_vram_metrics(payload)
