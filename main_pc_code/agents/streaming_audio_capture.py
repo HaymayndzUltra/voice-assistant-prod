@@ -110,83 +110,141 @@ def find_available_port(start_port, max_attempts=10):
     raise RuntimeError(f"Could not find available port after {max_attempts} attempts")
 
 class StreamingAudioCaptureAgent(BaseAgent):
-    def __init__(self):
-        """Initialize the StreamingAudioCapture agent with audio processing capabilities."""
-        # Set initial properties for super() call
-        self.name = "StreamingAudioCapture"
-        self.port = int(config.get("port", ZMQ_PUB_PORT))
+    def __init__(self, config=None, **kwargs):
+        """Initialize the StreamingAudioCapture agent with audio processing capabilities and robust template compliance."""
+        config = config or {}
+        # Standardize name and port handling
+        self.name = kwargs.get('name', os.environ.get("AGENT_NAME", "StreamingAudioCapture"))
+        self.port = int(kwargs.get('port', os.environ.get("AGENT_PORT", config.get("port", ZMQ_PUB_PORT))))
+        self.health_port = int(os.environ.get("HEALTH_CHECK_PORT", str(self.port + 1)))
+        self.running = True
         self.start_time = time.time()
-        
-        # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=self.name, port=self.port)
-
-        # Detect dummy mode via env var
+        # Project root setup
+        self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+        if self.project_root not in sys.path:
+            sys.path.insert(0, self.project_root)
+        # Call BaseAgent's __init__
+        super().__init__(port=self.port, name=self.name)
+        # --- Original initialization preserved below ---
         self.dummy_mode = os.getenv("USE_DUMMY_AUDIO", "false").lower() == "true"
-
-        from collections import deque  # still used regardless of mode
-
+        from collections import deque
         if self.dummy_mode:
             logger.warning("USE_DUMMY_AUDIO=true -> Running in dummy audio mode; skipping PyAudio initialization")
             self.p = None
         else:
-            import pyaudio  # Local import to avoid hard dependency when dummy
+            import pyaudio
             try:
                 self.p = pyaudio.PyAudio()
                 logger.info(f"PyAudio instance created in __init__: {self.p}")
             except Exception as e_pyaudio_init:
                 logger.critical(f"CRITICAL_PYAUDIO_INIT_FAIL: Failed to initialize PyAudio in __init__: {e_pyaudio_init}", exc_info=True)
-                raise  # Re-raise to ensure __init__ fails and doesn't proceed
-
-        # Hardcoded audio parameters for debugging
-        self.device_index = 1  # IMPORTANT: Verify this index is correct for your system!
+                raise
+        self.device_index = 1
         self.sample_rate = 16000
         self.channels = 1
-        self.chunk_samples = 1024  # This will be frames_per_buffer
-
-        print("✅ DEBUG: __init__ called, parameters set") # User requested debug print
-
-        # Preserve other original initializations & add necessary ones
-        self.running = True
+        self.chunk_samples = 1024
+        print("✅ DEBUG: __init__ called, parameters set")
         self.context = None
         self.pub_socket = None
         self.health_socket = None
-        self.stream = None  # Correctly None initially, will be set in __enter__
+        self.stream = None
         self.health_thread = None
-        self.whisper_model = None # For wake word if used
-        self.device = None # Might store device info later
-        self.http_server = None # HTTP health check server
+        self.whisper_model = None
+        self.device = None
+        self.http_server = None
         self.pub_port = self.port
-
-        # Wake word related
         self.wake_word_enabled = WAKE_WORD_ENABLED
         self.wake_words = WAKE_WORD_LIST
-        self.wake_word_timeout_end_time = 0 # Stores the timestamp when current activation expires
-
+        self.wake_word_timeout_end_time = 0
         if self.sample_rate and WAKE_WORD_BUFFER_SECONDS:
             self.audio_buffer = deque(maxlen=int(self.sample_rate * WAKE_WORD_BUFFER_SECONDS))
         else:
             logger.warning("Sample rate or WAKE_WORD_BUFFER_SECONDS not set for audio_buffer init.")
             self.audio_buffer = deque()
-
-        # Energy fallback related
         self.energy_fallback_enabled = ENERGY_FALLBACK_ENABLED
         self.energy_threshold = ENERGY_THRESHOLD
         self.energy_min_samples = int(ENERGY_MIN_DURATION * self.sample_rate) if self.sample_rate else 0
         self.energy_cooldown = ENERGY_COOLDOWN
         self.energy_buffer = deque(maxlen=self.energy_min_samples if self.energy_min_samples > 0 else 100)
-
         self._last_transcription = None
         self.wake_word_active = False
         self.activation_count = 0
         self.last_energy_activation = 0
         self.activation_source = None
-
-        # Error tracking for error propagation
         self.error_count = 0
         self.last_error_time = 0
-        self.error_cooldown = 5  # seconds between error messages to avoid flooding
-
+        self.error_cooldown = 5
         logger.info(f"__init__ complete. Using: device_index={self.device_index}, sample_rate={self.sample_rate}, channels={self.channels}, chunk_samples={self.chunk_samples}, wake_word_enabled={self.wake_word_enabled}")
+        # --- End original initialization ---
+        # Robust ZMQ setup
+        self.setup_zmq()
+        # Start health check thread
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+
+    def setup_zmq(self):
+        """Set up ZMQ sockets with proper error handling"""
+        try:
+            self.context = zmq.Context()
+            # Main PUB socket
+            self.pub_socket = self.context.socket(zmq.PUB)
+            self.pub_socket.setsockopt(zmq.LINGER, 0)
+            # Health socket
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.LINGER, 0)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+            # Bind sockets with retry logic
+            self._bind_socket_with_retry(self.pub_socket, self.pub_port)
+            self._bind_socket_with_retry(self.health_socket, self.health_port)
+            logger.info(f"Successfully set up ZMQ sockets on ports {self.pub_port} (PUB) and {self.health_port} (health)")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting up ZMQ: {e}")
+            self.cleanup()
+            return False
+
+    def _bind_socket_with_retry(self, socket, port, max_retries=5):
+        retries = 0
+        while retries < max_retries:
+            try:
+                socket.bind(f"tcp://*:{port}")
+                logger.info(f"Successfully bound to port {port}")
+                return True
+            except zmq.error.ZMQError as e:
+                retries += 1
+                logger.warning(f"Failed to bind to port {port} (attempt {retries}/{max_retries}): {e}")
+                if retries >= max_retries:
+                    logger.error(f"Failed to bind to port {port} after {max_retries} attempts")
+                    raise
+                time.sleep(1)
+        return False
+
+    def _health_check_loop(self):
+        logger.info("Starting health check loop")
+        while self.running:
+            try:
+                if self.health_socket and self.health_socket.poll(100) != 0:
+                    message = self.health_socket.recv() if self.health_socket else None
+                    logger.debug(f"Received health check request: {message}")
+                    response = self._get_health_status()
+                    if self.health_socket:
+                        self.health_socket.send_json(response)
+                        logger.debug("Sent health check response")
+            except zmq.error.Again:
+                pass
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+            time.sleep(0.1)
+
+    def _get_health_status(self):
+        return {
+            'status': 'ok',
+            'name': self.name,
+            'uptime': time.time() - self.start_time,
+            'service': 'streaming_audio_capture',
+            'dummy_mode': self.dummy_mode,
+            'wake_word_enabled': self.wake_word_enabled
+        }
 
     def __enter__(self):
         """Context manager entry - uses pre-initialized PyAudio and hardcoded audio parameters."""

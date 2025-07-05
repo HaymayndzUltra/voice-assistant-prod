@@ -1,0 +1,94 @@
+# Minimal Viable System Configuration
+# Updated with correct file paths
+
+core_agents:
+  - name: ModelManagerAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py
+    port: 5500
+    health_check_port: 5501
+    description: 'Manages model loading, unloading, and VRAM allocation'
+
+  - name: CoordinatorAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/coordinator_agent.py
+    port: 5510
+    health_check_port: 5511
+    description: 'Coordinates communication between agents and manages system state'
+
+  - name: SystemDigitalTwin
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py
+    port: 5520
+    health_check_port: 5521
+    description: 'Maintains a digital representation of the system state'
+
+  - name: ChainOfThoughtAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+    port: 5530
+    health_check_port: 5531
+    description: 'Implements chain-of-thought reasoning for complex tasks'
+
+  - name: GOT_TOTAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/GOT_TOTAgent.py
+    port: 5540
+    health_check_port: 5541
+    description: 'Graph of Thoughts implementation for reasoning'
+
+  - name: SelfTrainingOrchestrator
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+    port: 5550
+    health_check_port: 5551
+    description: 'Manages the self-training process for agents'
+
+  - name: TinyLlamaService
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+    port: 5560
+    health_check_port: 5561
+    description: 'Provides access to the TinyLlama model for lightweight inference'
+
+  - name: LearningAdjusterAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/pc2_code/agents/LearningAdjusterAgent.py
+    port: 5570
+    health_check_port: 5571
+    description: 'Adjusts learning parameters based on performance metrics'
+
+  - name: MemoryOrchestrator
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_orchestrator.py
+    port: 5580
+    health_check_port: 5581
+    description: 'Manages memory storage and retrieval'
+
+dependencies:
+  - name: StreamingSpeechRecognition
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py
+    port: 5600
+    health_check_port: 5601
+    description: 'Provides real-time speech recognition'
+
+  - name: StreamingInterruptHandler
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt_handler.py
+    port: 5610
+    health_check_port: 5611
+    description: 'Handles interruptions in streaming processes'
+
+  - name: FusedAudioPreprocessor
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/src/audio/fused_audio_preprocessor.py
+    port: 5620
+    health_check_port: 5621
+    description: 'Preprocesses audio for improved recognition quality'
+
+  - name: AudioCapture
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/audio_capture.py
+    port: 5630
+    health_check_port: 5631
+    description: 'Captures audio from input devices'
+
+  - name: TaskRouter
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/task_router.py
+    port: 5640
+    health_check_port: 5641
+    description: 'Routes tasks to appropriate agents based on capabilities'
+
+  - name: StreamingTTSAgent
+    file_path: /home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_speech_output/streaming_tts_agent.py
+    port: 5650
+    health_check_port: 5651
+    description: 'Provides streaming text-to-speech capabilities'

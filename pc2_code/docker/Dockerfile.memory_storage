@@ -1,0 +1,40 @@
+# Dockerfile for Memory & Storage Container
+FROM pc2-base:latest
+
+WORKDIR /app
+
+# Copy specific agent code
+COPY pc2_code/agents/UnifiedMemoryReasoningAgent.py /app/pc2_code/agents/
+COPY pc2_code/agents/memory_manager.py /app/pc2_code/agents/
+COPY pc2_code/agents/EpisodicMemoryAgent.py /app/pc2_code/agents/
+COPY pc2_code/agents/context_manager.py /app/pc2_code/agents/
+COPY pc2_code/agents/experience_tracker.py /app/pc2_code/agents/
+COPY pc2_code/agents/memory_decay_manager.py /app/pc2_code/agents/
+COPY pc2_code/agents/enhanced_contextual_memory.py /app/pc2_code/agents/
+
+# Copy utils and dependencies
+COPY pc2_code/agents/utils /app/pc2_code/agents/utils/
+COPY common_utils /app/common_utils/
+
+# Copy configuration
+COPY pc2_code/config/startup_config_fixed.yaml /app/pc2_code/config/startup_config.yaml
+COPY pc2_code/config/network_config.yaml /app/pc2_code/config/
+
+# Copy scripts
+COPY pc2_code/scripts/start_container.py /app/pc2_code/scripts/
+COPY pc2_code/scripts/health_check.py /app/pc2_code/scripts/
+
+# Install specific dependencies
+COPY pc2_code/docker/requirements.memory_storage.txt .
+RUN pip install --no-cache-dir -r requirements.memory_storage.txt
+
+# Create data directories
+RUN mkdir -p /app/data/memory /app/data/episodic /app/data/context
+
+# Set environment variables
+ENV CONTAINER_GROUP=memory_storage
+ENV HEALTH_CHECK_PORT=8105
+ENV MEMORY_DB_PATH=/app/data/memory/memory.db
+
+# Set entry point
+CMD ["python", "-m", "pc2_code.scripts.start_container", "memory_storage"] 

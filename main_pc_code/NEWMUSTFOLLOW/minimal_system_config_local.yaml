@@ -1,0 +1,52 @@
+core_agents:
+  - file_path: main_pc_code/agents/system_digital_twin.py
+    name: SystemDigitalTwin
+    port: 7120
+    required: true
+    params:
+      health_check_port: 7121
+  - file_path: main_pc_code/agents/model_manager_agent.py
+    name: ModelManagerAgent
+    port: 5570
+    required: true
+    params:
+      health_check_port: 5571
+  - file_path: main_pc_code/agents/coordinator_agent.py
+    name: CoordinatorAgent
+    port: 26002
+    required: true
+    params:
+      health_check_port: 26003
+  - file_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+    name: ChainOfThoughtAgent
+    port: 5612
+    required: true
+    params:
+      health_check_port: 5613
+  - file_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+    name: GoTToTAgent
+    port: 7000
+    required: false
+    params:
+      health_check_port: 7001
+dependencies:
+  - file_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+    name: SelfTrainingOrchestrator
+    port: 5644
+    required: true
+    params:
+      health_check_port: 5645
+  - file_path: main_pc_code/agents/emotion_engine.py
+    name: EmotionEngine
+    port: 5590
+    required: true
+    params:
+      health_check_port: 5591
+  - file_path: main_pc_code/agents/streaming_audio_capture.py
+    name: AudioCapture
+    port: 6575
+    required: true
+    params:
+      health_check_port: 6576
+      env_vars:
+        USE_DUMMY_AUDIO: 'true'

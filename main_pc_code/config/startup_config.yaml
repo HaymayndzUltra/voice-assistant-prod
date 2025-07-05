@@ -1,171 +1,475 @@
-# Advanced AI System Configuration
-# This configuration represents the canonical source of truth for the system
+# ===================================================================
+#         ADVANCED AI SYSTEM - STARTUP CONFIGURATION
+# ===================================================================
+# Canonical source of truth for all system agents and services.
+#
+# Structure:
+#   - Functional Groups (e.g., core_services, memory_system)
+#   - Agent Definitions (name, script_path, port, etc.)
+#   - Global Settings (environment, resources, health_checks)
+#
+# -------------------------------------------------------------------
 
-# Main PC Core Services
+# -------------------------------------------
+# SECTION 1: AGENT & SERVICE DEFINITIONS
+# -------------------------------------------
+
+# --- Core Services ---
+# The foundational agents required for the system to operate.
 core_services:
+  - name: ModelManagerAgent
+    script_path: main_pc_code/agents/model_manager_agent.py
+    port: 5570
+    required: true
+    params: { enable_pc2_services: true }
+
+  - name: CoordinatorAgent
+    script_path: main_pc_code/agents/coordinator_agent.py
+    port: 26002
+    required: true
+
+  - name: ChainOfThoughtAgent
+    script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+    port: 5612
+    required: true
+
+  - name: GoTToTAgent
+    script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+    port: 5646
+    required: true
+
+  - name: SystemDigitalTwin
+    script_path: main_pc_code/agents/system_digital_twin.py
+    port: 7120
+    required: true
+    dependencies: [ModelManagerAgent]
+    params: { health_check_port: 8120 }
+
+  - name: PredictiveHealthMonitor
+    script_path: main_pc_code/src/agents/predictive_health_monitor.py
+    port: 5613
+    required: true
+    dependencies: [SystemDigitalTwin]
+
+  - name: StreamingTTSAgent
+    script_path: main_pc_code/agents/streaming_tts_agent.py
+    port: 5562
+    required: true
+    dependencies: [CoordinatorAgent, ModelManagerAgent]
+
+  - name: StreamingInterruptHandler
+    script_path: main_pc_code/agents/streaming_interrupt_handler.py
+    port: 5576
+    required: true
+    dependencies: [StreamingSpeechRecognition]
+
   - name: TaskRouter
-    script_path: src/core/task_router.py
+    script_path: main_pc_code/src/core/task_router.py
     port: 8571
     required: true
-    dependencies: [StreamingTTSAgent, StreamingSpeechRecognition]
+    dependencies:
+      - StreamingTTSAgent
+      - StreamingSpeechRecognition
+      - ChainOfThoughtAgent
+      - GoTToTAgent
     params:
-      cot_host: "0.0.0.0"
+      cot_host: '0.0.0.0'
       cot_port: 5612
-      got_tot_host: "0.0.0.0"
+      got_tot_host: '0.0.0.0'
       got_tot_port: 5646
-      emr_host: "0.0.0.0"
+      emr_host: '0.0.0.0'
       emr_port: 5598
-      translator_host: "0.0.0.0"
+      translator_host: '0.0.0.0'
       translator_port: 5563
       queue_max_size: 100
       batch_max_size: 5
       batch_timeout_ms: 200
-  - { name: ChainOfThoughtAgent, script_path: FORMAINPC/ChainOfThoughtAgent.py, host: 0.0.0.0, port: 5612, required: true }
-  - { name: GOT_TOTAgent, script_path: FORMAINPC/GOT_TOTAgent.py, host: 0.0.0.0, port: 5646, required: true }
-  - { name: ModelManagerAgent  , script_path: agents/model_manager_agent.py      , host: 0.0.0.0 , port: 5570 , required: true, params: { enable_pc2_services: true } }
+
   - name: VRAMOptimizerAgent
-    script_path: agents/vram_optimizer_agent.py
-    host: 0.0.0.0
+    script_path: main_pc_code/agents/vram_optimizer_agent.py
     port: 5572
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
     required: true
+    dependencies: [ModelManagerAgent, SystemDigitalTwin, TaskRouter]
     params:
-      # VRAM thresholds (as ratio of total VRAM)
-      critical_threshold: 0.85      # 85% VRAM usage - triggers immediate unloading
-      warning_threshold: 0.75       # 75% VRAM usage - triggers idle model unloading
-      safe_threshold: 0.5           # 50% VRAM usage - considered safe
-      
-      # VRAM budgets per device in MB
-      mainpc_vram_budget_mb: 20000  # 20GB for RTX 4090
-      pc2_vram_budget_mb: 10000     # 10GB for RTX 3060
-      
-      # Idle timeouts and intervals
-      idle_timeout: 900             # Unload models after 15 minutes of inactivity
-      idle_check_interval: 60       # Check for idle models every minute
-      
-      # Memory optimization
-      defragmentation_threshold: 0.7  # 70% fragmentation triggers defrag
-      optimization_interval: 300      # Run optimization every 5 minutes
-      
-      # Predictive loading settings
+      critical_threshold: 0.85
+      warning_threshold: 0.75
+      safe_threshold: 0.5
+      mainpc_vram_budget_mb: 20000
+      pc2_vram_budget_mb: 10000
+      idle_timeout: 900
+      idle_check_interval: 60
+      defragmentation_threshold: 0.7
+      optimization_interval: 300
       predictive_loading_enabled: true
-      lookahead_window: 300           # 5 min lookahead for task prediction
-      prediction_window: 3600         # Track usage patterns for 1 hour
-  - { name: CoordinatorAgent  , script_path: agents/coordinator_agent.py      , host: 0.0.0.0 , port: 26002 , required: true }
-  - { name: GoalOrchestratorAgent, script_path: agents/GoalOrchestratorAgent.py  , host: 0.0.0.0 , port: 7001 , dependencies: [TaskRouter] , required: true }
-  - { name: IntentionValidatorAgent, script_path: agents/IntentionValidatorAgent.py, host: 0.0.0.0 , port: 5701 , dependencies: [TaskRouter] , required: true }
-  - { name: DynamicIdentityAgent, script_path: agents/DynamicIdentityAgent.py    , host: 0.0.0.0 , port: 5802 , dependencies: [TaskRouter] , required: true }
-  - { name: EmpathyAgent       , script_path: agents/EmpathyAgent.py            , host: 0.0.0.0 , port: 5703 , dependencies: [EmotionEngine] , required: true }
-  - { name: ProactiveAgent     , script_path: agents/ProactiveAgent.py          , host: 0.0.0.0 , port: 5624 , dependencies: [TaskRouter] , required: true }
-  - { name: PredictiveLoader   , script_path: agents/predictive_loader.py        , host: 0.0.0.0 , port: 5617 , dependencies: [TaskRouter] , required: true }
+      lookahead_window: 300
+      prediction_window: 3600
 
-# Main PC GPU Services
-main_pc_gpu_services:
-  - { name: EnhancedModelRouter, script_path: FORMAINPC/EnhancedModelRouter.py     , host: 0.0.0.0 , port: 5598 , required: true }
-  - { name: TinyLlamaService   , script_path: FORMAINPC/TinyLlamaServiceEnhanced.py, host: 0.0.0.0 , port: 5615 , required: true }
-  - { name: NLLBAdapter        , script_path: FORMAINPC/NLLBAdapter.py             , host: 0.0.0.0 , port: 5581 , required: true }
-  - { name: LearningAdjusterAgent, script_path: FORMAINPC/LearningAdjusterAgent.py  , host: 0.0.0.0 , port: 5643 , required: true }
-  - { name: LocalFineTunerAgent, script_path: FORMAINPC/LocalFineTunerAgent.py     , host: 0.0.0.0 , port: 5645 , required: true }
-  - { name: SelfTrainingOrchestrator, script_path: FORMAINPC/SelfTrainingOrchestrator.py, host: 0.0.0.0 , port: 5644 , required: true }
-  - { name: CognitiveModelAgent, script_path: FORMAINPC/CognitiveModelAgent.py     , host: 0.0.0.0 , port: 5641 , required: true }
-  - { name: ConsolidatedTranslator, script_path: FORMAINPC/consolidated_translator.py, host: 0.0.0.0 , port: 5564 , required: true }
-
-# Emotion System
-emotion_system:
-  - { name: EmotionEngine      , script_path: agents/emotion_engine.py          , host: 0.0.0.0 , port: 5590 , required: true }
-  - { name: MoodTrackerAgent   , script_path: agents/mood_tracker_agent.py      , host: 0.0.0.0 , port: 5704 , dependencies: [EmotionEngine] , required: true }
-  - { name: HumanAwarenessAgent, script_path: agents/human_awareness_agent.py   , host: 0.0.0.0 , port: 5705 , dependencies: [EmotionEngine] , required: true }
-  - { name: EmotionSynthesisAgent, script_path: agents/emotion_synthesis_agent.py, host: 0.0.0.0 , port: 5706 , dependencies: [CoordinatorAgent, ModelManagerAgent] , required: true }
-  - { name: ToneDetector       , script_path: agents/tone_detector.py          , host: 0.0.0.0 , port: 5625 , dependencies: [EmotionEngine] , required: true }
-  - { name: VoiceProfiler      , script_path: agents/voice_profiling_agent.py   , host: 0.0.0.0 , port: 5708 , dependencies: [EmotionEngine] , required: true }
-
-# Language & Processing
-language_processing:
-  - { name: NLUAgent           , script_path: agents/nlu_agent.py              , host: 0.0.0.0 , port: 5709 , dependencies: [LanguageAndTranslationCoordinator] , required: true }
-  - { name: AdvancedCommandHandler, script_path: agents/advanced_command_handler.py, host: 0.0.0.0 , port: 5710 , dependencies: [NLUAgent, CodeGenerator] , required: true }
-  - { name: ChitchatAgent      , script_path: agents/chitchat_agent.py         , host: 0.0.0.0 , port: 5711 , dependencies: [NLUAgent] , required: true }
-  - { name: FeedbackHandler    , script_path: agents/feedback_handler.py       , host: 0.0.0.0 , port: 5636 , dependencies: [NLUAgent] , required: true }
-  - { name: Responder          , script_path: agents/responder.py              , host: 0.0.0.0 , port: 5637 , dependencies: [NLUAgent, EmotionEngine] , required: true }
-  - { name: StreamingLanguageAnalyzer, script_path: agents/streaming_language_analyzer.py, host: 0.0.0.0, port: 5579, dependencies: [StreamingSpeechRecognition], required: true }
-
-# Memory System
-memory_system:
-  - { name: SessionMemoryAgent , script_path: agents/session_memory_agent.py    , host: 0.0.0.0 , port: 5574 , dependencies: [CoordinatorAgent] , required: true }
-  - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: 0.0.0.0 , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
-  - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5575 , dependencies: [TaskRouter], required: true }
-  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5583 , required: true }
-  # PC2 agents - commented out as they should be in PC2 config, not MainPC
-  # - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
-  # - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5597, dependencies: [UnifiedMemoryReasoningAgent], required: true }
-
-# Learning and Knowledge
-learning_knowledge:
-  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5580 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
-  - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: 0.0.0.0 , port: 5578 , dependencies: [MemoryManager] , required: true }
-  - { name: MetaCognitionAgent , script_path: agents/MetaCognitionAgent.py      , host: 0.0.0.0 , port: 5630 , dependencies: [KnowledgeBase, CoordinatorAgent] , required: true }
-  - { name: ActiveLearningMonitor, script_path: agents/active_learning_monitor.py, host: 0.0.0.0 , port: 5638 , dependencies: [LearningManager] , required: true }
-
-# Planning and Execution
-planning_execution:
-  - { name: UnifiedPlanningAgent, script_path: agents/unified_planning_agent.py, host: 0.0.0.0 , port: 5634 , dependencies: [GoalOrchestratorAgent, IntentionValidatorAgent] , required: true }
-  - { name: MultiAgentSwarmManager, script_path: agents/MultiAgentSwarmManager.py, host: 0.0.0.0 , port: 5639 , dependencies: [UnifiedPlanningAgent] , required: true }
-  - { name: UnifiedSystemAgent  , script_path: agents/unified_system_agent.py   , host: 0.0.0.0 , port: 5640 , dependencies: [UnifiedPlanningAgent] , required: true }
-
-# TTS Services
-tts_services:
-  - { name: TTSConnector, script_path: agents/tts_connector.py, host: 0.0.0.0, port: 5582, dependencies: [CoordinatorAgent], required: true }
-  - { name: TTSCache, script_path: agents/tts_cache.py, host: 0.0.0.0, port: 5628, required: true }
-  - { name: StreamingTTSAgent, script_path: agents/streaming_tts_agent.py, host: 0.0.0.0, port: 5562, dependencies: [CoordinatorAgent], required: true }
-  - { name: TTSAgent, script_path: agents/tts_agent.py, host: 0.0.0.0, port: 5563, dependencies: [StreamingInterruptHandler], required: true }
-  - { name: StreamingInterruptHandler, script_path: agents/streaming_interrupt_handler.py, host: 0.0.0.0, port: 5576, dependencies: [StreamingSpeechRecognition], required: true }
-
-# Code Generation Pipeline
-code_generation:
-  - { name: CodeGenerator      , script_path: agents/code_generator_agent.py    , host: 0.0.0.0 , port: 5604 , dependencies: [ModelManagerAgent] , required: true }
-  - { name: Executor           , script_path: agents/executor.py               , host: 0.0.0.0 , port: 5606 , dependencies: [] , required: true }
-
-# Audio Processing
-audio_processing:
-  - { name: AudioCapture, script_path: agents/streaming_audio_capture.py, host: 0.0.0.0, port: 6575, required: true, env_vars: { USE_DUMMY_AUDIO: "true" } }
-  - { name: FusedAudioPreprocessor, script_path: src/audio/fused_audio_preprocessor.py, host: 0.0.0.0 , port: 6578 , dependencies: [AudioCapture] , required: true }
-  - { name: WakeWordDetector   , script_path: agents/wake_word_detector.py     , host: 0.0.0.0 , port: 6577 , dependencies: [AudioCapture, FusedAudioPreprocessor] , required: true }
-  - name: StreamingSpeechRecognition
-    script_path: agents/streaming_speech_recognition.py
-    host: 0.0.0.0
-    port: 6580
-    dependencies: []
+  - name: GoalOrchestratorAgent
+    script_path: main_pc_code/agents/GoalOrchestratorAgent.py
+    port: 7001
     required: true
+    dependencies: [TaskRouter]
+
+  - name: IntentionValidatorAgent
+    script_path: main_pc_code/agents/IntentionValidatorAgent.py
+    port: 5701
+    required: true
+    dependencies: [TaskRouter]
+
+  - name: DynamicIdentityAgent
+    script_path: main_pc_code/agents/DynamicIdentityAgent.py
+    port: 5802
+    required: true
+    dependencies: [TaskRouter]
+
+  - name: ProactiveAgent
+    script_path: main_pc_code/agents/ProactiveAgent.py
+    port: 5624
+    required: true
+    dependencies: [TaskRouter]
+
+  - name: PredictiveLoader
+    script_path: main_pc_code/agents/predictive_loader.py
+    port: 5617
+    required: true
+    dependencies: [TaskRouter]
+
+  - name: GGUFModelManager
+    script_path: main_pc_code/agents/gguf_model_manager.py
+    port: 5575
+    required: true
+    dependencies: [ModelManagerAgent]
     params:
-      model_config_path: "config/model_config.json"
-  - { name: LanguageAndTranslationCoordinator, script_path: agents/language_and_translation_coordinator.py, host: 0.0.0.0 , port: 6581 , dependencies: [TaskRouter] , required: true }
+      models_dir: "models"
+      idle_timeout_seconds: 300
+      vram_monitoring_enabled: true
 
-# Vision
+# --- Main PC GPU Services ---
+# Services that heavily utilize the GPU for tasks like inference and training.
+main_pc_gpu_services:
+  - name: SelfTrainingOrchestrator
+    script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+    port: 5644
+    required: true
+
+  - name: TinyLlamaService
+    script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+    port: 5615
+    required: true
+    dependencies: [ModelManagerAgent]
+
+  - name: NLLBAdapter
+    script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+    port: 5581
+    required: true
+    dependencies: [ModelManagerAgent]
+
+  - name: FixedStreamingTranslation
+    script_path: main_pc_code/agents/fixed_streaming_translation.py
+    port: 5584
+    required: true
+    dependencies: [ModelManagerAgent]
+
+  - name: EnhancedModelRouter
+    script_path: main_pc_code/FORMAINPC/EnhancedModelRouter.py
+    port: 5598
+    required: true
+    dependencies: [ModelManagerAgent, ChainOfThoughtAgent]
+
+  - name: CognitiveModelAgent
+    script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
+    port: 5641
+    required: true
+    dependencies: [ChainOfThoughtAgent]
+
+  - name: LearningAdjusterAgent
+    script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+    port: 5643
+    required: true
+    dependencies: [SelfTrainingOrchestrator]
+
+  - name: LocalFineTunerAgent
+    script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+    port: 5645
+    required: true
+    dependencies: [SelfTrainingOrchestrator]
+
+  - name: TranslatorServer
+    script_path: main_pc_code/FORMAINPC/consolidated_translator.py
+    port: 5564
+    required: true
+    dependencies:
+      - MemoryOrchestrator
+      - ModelManagerAgent
+      - NLLBAdapter
+      - FixedStreamingTranslation
+
+# --- Emotion System ---
+# Agents responsible for understanding and synthesizing emotion.
+emotion_system:
+  - name: EmotionEngine
+    script_path: main_pc_code/agents/emotion_engine.py
+    port: 5590
+    required: true
+
+  - name: MoodTrackerAgent
+    script_path: main_pc_code/agents/mood_tracker_agent.py
+    port: 5704
+    required: true
+    dependencies: [EmotionEngine]
+
+  - name: HumanAwarenessAgent
+    script_path: main_pc_code/agents/human_awareness_agent.py
+    port: 5705
+    required: true
+    dependencies: [EmotionEngine]
+
+  - name: ToneDetector
+    script_path: main_pc_code/agents/tone_detector.py
+    port: 5625
+    required: true
+    dependencies: [EmotionEngine]
+
+  - name: VoiceProfiler
+    script_path: main_pc_code/agents/voice_profiling_agent.py
+    port: 5708
+    required: true
+    dependencies: [EmotionEngine]
+
+  - name: EmpathyAgent
+    script_path: main_pc_code/agents/EmpathyAgent.py
+    port: 5703
+    required: true
+    dependencies: [EmotionEngine]
+
+  - name: EmotionSynthesisAgent
+    script_path: main_pc_code/agents/emotion_synthesis_agent.py
+    port: 5706
+    required: true
+    dependencies: [CoordinatorAgent, ModelManagerAgent]
+
+# --- Memory System ---
+# Agents that manage short-term, long-term, and episodic memory.
+memory_system:
+  - name: MemoryOrchestrator
+    script_path: main_pc_code/src/memory/memory_orchestrator.py
+    port: 5575
+    required: true
+    dependencies: [TaskRouter]
+
+  - name: SessionMemoryAgent
+    script_path: main_pc_code/agents/session_memory_agent.py
+    port: 5574
+    required: true
+    dependencies: [CoordinatorAgent]
+
+  - name: MemoryManager
+    script_path: main_pc_code/agents/memory_manager.py
+    port: 5712
+    required: true
+    dependencies: [SessionMemoryAgent]
+
+  - name: MemoryClient
+    script_path: main_pc_code/src/memory/memory_client.py
+    port: 5583
+    required: true
+    dependencies: [MemoryOrchestrator]
+
+# --- Learning and Knowledge ---
+# Agents focused on knowledge acquisition, learning, and metacognition.
+learning_knowledge:
+  - name: KnowledgeBase
+    script_path: main_pc_code/agents/knowledge_base.py
+    port: 5578
+    required: true
+    dependencies: [MemoryManager]
+
+  - name: LearningManager
+    script_path: main_pc_code/agents/learning_manager.py
+    port: 5580
+    required: true
+    dependencies: [MemoryManager, CoordinatorAgent]
+
+  - name: MetaCognitionAgent
+    script_path: main_pc_code/agents/MetaCognitionAgent.py
+    port: 5630
+    required: true
+    dependencies: [KnowledgeBase, CoordinatorAgent, ChainOfThoughtAgent]
+
+  - name: ActiveLearningMonitor
+    script_path: main_pc_code/agents/active_learning_monitor.py
+    port: 5638
+    required: true
+    dependencies: [LearningManager]
+
+# --- Planning and Execution ---
+# High-level agents for goal setting, planning, and task execution.
+planning_execution:
+  - name: UnifiedPlanningAgent
+    script_path: main_pc_code/agents/unified_planning_agent.py
+    port: 5634
+    required: true
+    dependencies: [GoalOrchestratorAgent, IntentionValidatorAgent]
+
+  - name: MultiAgentSwarmManager
+    script_path: main_pc_code/agents/MultiAgentSwarmManager.py
+    port: 5639
+    required: true
+    dependencies: [UnifiedPlanningAgent]
+
+  - name: UnifiedSystemAgent
+    script_path: main_pc_code/agents/unified_system_agent.py
+    port: 5640
+    required: true
+    dependencies: [UnifiedPlanningAgent]
+
+# --- TTS Services ---
+# Text-to-Speech pipeline components.
+tts_services:
+  - name: TTSConnector
+    script_path: main_pc_code/agents/tts_connector.py
+    port: 5582
+    required: true
+    dependencies: [CoordinatorAgent]
+
+  - name: TTSCache
+    script_path: main_pc_code/agents/tts_cache.py
+    port: 5628
+    required: true
+    dependencies: [StreamingTTSAgent]
+
+  - name: TTSAgent
+    script_path: main_pc_code/agents/tts_agent.py
+    port: 5563
+    required: true
+    dependencies: [StreamingInterruptHandler]
+
+# --- Code Generation Pipeline ---
+# Agents that can write and execute code.
+code_generation:
+  - name: CodeGenerator
+    script_path: main_pc_code/agents/code_generator_agent.py
+    port: 5604
+    required: true
+    dependencies: [ModelManagerAgent]
+
+  - name: Executor
+    script_path: main_pc_code/agents/executor.py
+    port: 5606
+    required: true
+    dependencies: [CodeGenerator]
+
+# --- Audio Processing ---
+# Pipeline for capturing and pre-processing audio input.
+audio_processing:
+  - name: AudioCapture
+    script_path: main_pc_code/agents/streaming_audio_capture.py
+    port: 6575
+    required: true
+    params: { env_vars: { USE_DUMMY_AUDIO: 'true' } }
+
+  - name: FusedAudioPreprocessor
+    script_path: main_pc_code/src/audio/fused_audio_preprocessor.py
+    port: 6578
+    required: true
+    dependencies: [AudioCapture]
+
+  - name: WakeWordDetector
+    script_path: main_pc_code/agents/wake_word_detector.py
+    port: 6577
+    required: true
+    dependencies: [AudioCapture, FusedAudioPreprocessor]
+
+  - name: StreamingSpeechRecognition
+    script_path: main_pc_code/agents/streaming_speech_recognition.py
+    port: 6580
+    required: true
+    dependencies: [FusedAudioPreprocessor, ModelManagerAgent]
+    params: { model_config_path: 'config/model_config.json' }
+
+  - name: StreamingLanguageAnalyzer
+    script_path: main_pc_code/agents/streaming_language_analyzer.py
+    port: 5579
+    required: true
+    dependencies: [StreamingSpeechRecognition]
+
+  - name: LanguageAndTranslationCoordinator
+    script_path: main_pc_code/agents/language_and_translation_coordinator.py
+    port: 6581
+    required: true
+    dependencies: [TaskRouter]
+
+# --- Language Processing ---
+# Natural Language Understanding (NLU) and response generation.
+language_processing:
+  - name: NLUAgent
+    script_path: main_pc_code/agents/nlu_agent.py
+    port: 5709
+    required: true
+    dependencies: [LanguageAndTranslationCoordinator]
+
+  - name: AdvancedCommandHandler
+    script_path: main_pc_code/agents/advanced_command_handler.py
+    port: 5710
+    required: true
+    dependencies: [NLUAgent, CodeGenerator]
+
+  - name: ChitchatAgent
+    script_path: main_pc_code/agents/chitchat_agent.py
+    port: 5711
+    required: true
+    dependencies: [NLUAgent]
+
+  - name: FeedbackHandler
+    script_path: main_pc_code/agents/feedback_handler.py
+    port: 5636
+    required: true
+    dependencies: [NLUAgent]
+
+  - name: Responder
+    script_path: main_pc_code/agents/responder.py
+    port: 5637
+    required: true
+    dependencies: [NLUAgent, EmotionEngine]
+
+# --- Vision ---
+# Agents for visual input processing.
 vision:
-  - { name: VisionCaptureAgent , script_path: src/vision/vision_capture_agent.py, host: 0.0.0.0 , port: 5592 , required: true }
-  - { name: FaceRecognitionAgent, script_path: agents/face_recognition_agent.py, host: 0.0.0.0 , port: 5610 , dependencies: [TaskRouter, ModelManagerAgent] , required: true }
+  - name: VisionCaptureAgent
+    script_path: main_pc_code/src/vision/vision_capture_agent.py
+    port: 5592
+    required: true
+    dependencies: [CoordinatorAgent]
 
-# Additional Monitoring and Security
-monitoring_security:
-  - { name: PredictiveHealthMonitor, script_path: src/agents/predictive_health_monitor.py, host: 0.0.0.0 , port: 5613 , required: true }
-  - { name: SystemDigitalTwin, script_path: agents/system_digital_twin.py, host: 0.0.0.0, port: 7120, health_check_port: 8120, required: true }
+  - name: FaceRecognitionAgent
+    script_path: main_pc_code/agents/face_recognition_agent.py
+    port: 5610
+    required: true
+    dependencies: [TaskRouter, ModelManagerAgent]
 
-# Environment variables for all agents
+# ===================================================================
+#         SECTION 2: GLOBAL SYSTEM SETTINGS
+# ===================================================================
+# These settings apply to all agents unless overridden locally.
+
+# --- Global Environment Variables ---
 environment:
-  PYTHONPATH: "${PYTHONPATH}:${PWD}"
-  LOG_LEVEL: "INFO"
-  DEBUG_MODE: "false"
-  ENABLE_METRICS: "true"
-  ENABLE_TRACING: "true"
-  ENABLE_DATA_OPTIMIZER: "true"
-  DATA_OPTIMIZER_METHOD: "compressed_msgpack"
+  PYTHONPATH: '${PYTHONPATH}:${PWD}'
+  LOG_LEVEL: 'INFO'
+  DEBUG_MODE: 'false'
+  ENABLE_METRICS: 'true'
+  ENABLE_TRACING: 'true'
+  ENABLE_DATA_OPTIMIZER: 'true'
+  DATA_OPTIMIZER_METHOD: 'compressed_msgpack'
 
-# Resource limits for all agents
+# --- Global Resource Limits ---
 resource_limits:
   cpu_percent: 80
   memory_mb: 2048
   max_threads: 4
 
-# Volume mappings for all agents
+# --- Global Volume Mappings ---
+# For containerized environments like Docker.
 volumes:
   - source: ./logs
     target: /app/logs
@@ -176,14 +480,15 @@ volumes:
   - source: ./config
     target: /app/config
 
-# Health check configuration
+# --- Global Health Check Configuration ---
 health_checks:
   interval_seconds: 30
   timeout_seconds: 10
   retries: 3
   start_period_seconds: 300
 
-# Network configuration
+# --- Global Network Configuration ---
+# For containerized environments.
 network:
   name: ai_system_network
   driver: bridge

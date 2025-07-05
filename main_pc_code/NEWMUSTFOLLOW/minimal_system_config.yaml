@@ -1,0 +1,173 @@
+# Minimal Viable System Configuration
+# This configuration includes only the 9 healthy agents and their direct dependencies
+
+# Core agents that are already healthy
+core_agents:
+  # Independent base agents (no dependencies)
+  - {
+      name: ModelManagerAgent,
+      script_path: agents/model_manager_agent.py,
+      host: 0.0.0.0,
+      port: 5570,
+      required: true,
+      params: { enable_pc2_services: true },
+    }
+  - {
+      name: ChainOfThoughtAgent,
+      script_path: FORMAINPC/ChainOfThoughtAgent.py,
+      host: 0.0.0.0,
+      port: 5612,
+      required: true,
+    }
+  - {
+      name: GoTToTAgent,
+      script_path: FORMAINPC/GOT_TOTAgent.py,
+      host: 0.0.0.0,
+      port: 5646,
+      required: true,
+    }
+  - {
+      name: CoordinatorAgent,
+      script_path: agents/coordinator_agent.py,
+      host: 0.0.0.0,
+      port: 26002,
+      required: true,
+    }
+
+  # Agents with dependencies
+  - name: SystemDigitalTwin
+    script_path: agents/system_digital_twin.py
+    host: 0.0.0.0
+    port: 7120
+    health_check_port: 8120
+    dependencies: [ModelManagerAgent]
+    required: true
+
+  - {
+      name: TinyLlamaService,
+      script_path: FORMAINPC/TinyLlamaServiceEnhanced.py,
+      host: 0.0.0.0,
+      port: 5615,
+      dependencies: [ModelManagerAgent],
+      required: true,
+    }
+
+  - {
+      name: LearningAdjusterAgent,
+      script_path: FORMAINPC/LearningAdjusterAgent.py,
+      host: 0.0.0.0,
+      port: 5643,
+      dependencies: [SelfTrainingOrchestrator],
+      required: true,
+    }
+
+  - {
+      name: StreamingInterruptHandler,
+      script_path: agents/streaming_interrupt_handler.py,
+      host: 0.0.0.0,
+      port: 5576,
+      dependencies: [StreamingSpeechRecognition],
+      required: true,
+    }
+
+  - {
+      name: MemoryOrchestrator,
+      script_path: src/memory/memory_orchestrator.py,
+      host: 0.0.0.0,
+      port: 5575,
+      dependencies: [TaskRouter],
+      required: true,
+    }
+
+# Direct dependencies of the healthy agents
+dependencies:
+  # SelfTrainingOrchestrator is required by LearningAdjusterAgent
+  - {
+      name: SelfTrainingOrchestrator,
+      script_path: FORMAINPC/SelfTrainingOrchestrator.py,
+      host: 0.0.0.0,
+      port: 5644,
+      required: true,
+    }
+
+  # StreamingSpeechRecognition is required by StreamingInterruptHandler
+  - name: StreamingSpeechRecognition
+    script_path: agents/streaming_speech_recognition.py
+    host: 0.0.0.0
+    port: 6580
+    dependencies: [FusedAudioPreprocessor, ModelManagerAgent]
+    required: true
+    params:
+      model_config_path: 'config/model_config.json'
+
+  # FusedAudioPreprocessor is required by StreamingSpeechRecognition
+  - {
+      name: FusedAudioPreprocessor,
+      script_path: src/audio/fused_audio_preprocessor.py,
+      host: 0.0.0.0,
+      port: 6578,
+      dependencies: [AudioCapture],
+      required: true,
+    }
+
+  # AudioCapture is required by FusedAudioPreprocessor
+  - {
+      name: AudioCapture,
+      script_path: agents/streaming_audio_capture.py,
+      host: 0.0.0.0,
+      port: 6575,
+      required: true,
+      env_vars: { USE_DUMMY_AUDIO: 'true' },
+    }
+
+  # TaskRouter is required by MemoryOrchestrator
+  - name: TaskRouter
+    script_path: src/core/task_router.py
+    port: 8571
+    required: true
+    dependencies:
+      [
+        StreamingTTSAgent,
+        StreamingSpeechRecognition,
+        ChainOfThoughtAgent,
+        GoTToTAgent,
+      ]
+    params:
+      cot_host: '0.0.0.0'
+      cot_port: 5612
+      got_tot_host: '0.0.0.0'
+      got_tot_port: 5646
+      emr_host: '0.0.0.0'
+      emr_port: 5598
+      translator_host: '0.0.0.0'
+      translator_port: 5563
+      queue_max_size: 100
+      batch_max_size: 5
+      batch_timeout_ms: 200
+
+  # StreamingTTSAgent is required by TaskRouter
+  - {
+      name: StreamingTTSAgent,
+      script_path: agents/streaming_tts_agent.py,
+      host: 0.0.0.0,
+      port: 5562,
+      dependencies: [CoordinatorAgent, ModelManagerAgent],
+      required: true,
+    }
+
+# Environment variables for all agents
+environment:
+  PYTHONPATH: '${PYTHONPATH}:${PWD}'
+  LOG_LEVEL: 'INFO'
+  DEBUG_MODE: 'false'
+  ENABLE_METRICS: 'true'
+  ENABLE_TRACING: 'true'
+  ENABLE_DATA_OPTIMIZER: 'true'
+  DATA_OPTIMIZER_METHOD: 'compressed_msgpack'
+
+# Health check configuration
+health_checks:
+  interval_seconds: 30
+  timeout_seconds: 10
+  retries: 3
+  start_period_seconds: 300

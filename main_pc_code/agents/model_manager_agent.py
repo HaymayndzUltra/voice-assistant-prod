@@ -174,6 +174,10 @@ class ModelManagerAgent(BaseAgent):
         self.loaded_model_instances = {}
         self.model_last_used_timestamp = {}
         self.models = {}
+        # Add threading lock for models access
+        self.models_lock = threading.Lock()
+        # Initialize VRAM tracking variables
+        self.current_estimated_vram_used = 0.0
         self.threads = []
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if self.device == 'cuda':
@@ -196,14 +200,15 @@ class ModelManagerAgent(BaseAgent):
     def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
         # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
+        # Use "ok" status to match BaseAgent and health checker expectations
+        status = "ok" if self.running else "error"
         details = {
             "status_message": "Agent is operational.",
             "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
         return {"status": status, "details": details}
         
-    def _init_vram_management(self):
+    def _initialize_vram_management(self):
         """Initialize VRAM management settings."""
         # Default VRAM settings
         self.vram_budget_percent = 80  # Use 80% of available VRAM
@@ -253,18 +258,18 @@ class ModelManagerAgent(BaseAgent):
             # This is the definitive source of port configuration
             if hasattr(self, 'port') and self.port:
                 self.model_port = self.port
-                self.status_port = self.port + 1  # Convention: health check port is main port + 1
-                self.logger.info(f"Using port configuration from startup_config.yaml: model_port={self.model_port}, status_port={self.status_port}")
+                self.health_check_port = self.port + 1  # Convention: health check port is main port + 1
+                self.logger.info(f"Using port configuration from startup_config.yaml: model_port={self.model_port}, health_check_port={self.health_check_port}")
             # PRIORITY 2: Use test ports if provided (for unit tests)
             elif test_ports:
                 self.model_port = test_ports[0]
-                self.status_port = test_ports[1]
-                self.logger.info(f"Using test port configuration: model_port={self.model_port}, status_port={self.status_port}")
+                self.health_check_port = test_ports[1]
+                self.logger.info(f"Using test port configuration: model_port={self.model_port}, health_check_port={self.health_check_port}")
             # PRIORITY 3: Use default ports as last resort
             else:
                 self.model_port = MODEL_MANAGER_PORT
-                self.status_port = MODEL_MANAGER_PORT + 1
-                self.logger.info(f"Using default port configuration: model_port={self.model_port}, status_port={self.status_port}")
+                self.health_check_port = MODEL_MANAGER_PORT + 1
+                self.logger.info(f"Using default port configuration: model_port={self.model_port}, health_check_port={self.health_check_port}")
             
             # Port conflict resolution strategy
             max_retries = 3
@@ -290,20 +295,20 @@ class ModelManagerAgent(BaseAgent):
                 else:
                     pass
             
-            # Now handle the status port
+            # Now handle the health check port
             retries = 0
             while retries < max_retries:
-                if is_port_in_use(self.status_port):
-                    self.logger.warning(f"Port {self.status_port} is in use, waiting for it to become available")
-                    if wait_for_port(self.status_port, timeout=5):
-                        self.logger.info(f"Port {self.status_port} is now available")
+                if is_port_in_use(self.health_check_port):
+                    self.logger.warning(f"Port {self.health_check_port} is in use, waiting for it to become available")
+                    if wait_for_port(self.health_check_port, timeout=5):
+                        self.logger.info(f"Port {self.health_check_port} is now available")
                         pass
                 else:
                         retries += 1
                         if retries >= max_retries:
-                            self.logger.error(f"Could not bind to status port {self.status_port} after {max_retries} attempts")
-                            self.status_port = self._find_available_port()
-                            self.logger.warning(f"Using fallback status port {self.status_port} instead")
+                            self.logger.error(f"Could not bind to health check port {self.health_check_port} after {max_retries} attempts")
+                            self.health_check_port = self._find_available_port()
+                            self.logger.warning(f"Using fallback health check port {self.health_check_port} instead")
             else:
                     pass
             
@@ -323,25 +328,48 @@ class ModelManagerAgent(BaseAgent):
                 self.logger.critical(f"Could not bind to model port {self.model_port} after multiple attempts")
                 raise RuntimeError(f"Failed to bind to model port {self.model_port}")
             
-            # Status publisher socket (PUB)
+            # Status publisher socket (PUB) - Use a different port for publishing status updates
+            self.status_pub_port = self.health_check_port + 1  # Use health_check_port+1 for PUB socket
             self.status_socket = self.context.socket(zmq.PUB)
             self.pub_socket = self.status_socket  # Alias for compatibility with existing code
             
-            # Bind status socket with retry logic
+            # Bind status PUB socket with retry logic
             bind_success = False
             for attempt in range(3):
                 try:
-                    self.status_socket.bind(f"tcp://*:{self.status_port}")
+                    self.status_socket.bind(f"tcp://*:{self.status_pub_port}")
                     bind_success = True
-                    self.logger.info(f"Status PUB socket bound to port {self.status_port}")
+                    self.logger.info(f"Status PUB socket bound to port {self.status_pub_port}")
                     pass
                 except zmq.error.ZMQError as e:
-                    self.logger.error(f"Failed to bind to status port {self.status_port} (attempt {attempt+1}/3): {e}")
+                    self.logger.error(f"Failed to bind to status PUB port {self.status_pub_port} (attempt {attempt+1}/3): {e}")
                     time.sleep(2)
             
             if not bind_success:
-                self.logger.critical(f"Could not bind to status port {self.status_port} after multiple attempts")
+                self.logger.critical(f"Could not bind to status PUB port {self.status_pub_port} after multiple attempts")
                 # We can continue without the status socket, but log it as a critical issue
+                
+            # Health check socket (REP) for responding to health check requests
+            self.health_socket = self.context.socket(zmq.REP)
+            self.health_socket.setsockopt(zmq.LINGER, 0)
+            self.health_socket.setsockopt(zmq.RCVTIMEO, 5000)
+            self.health_socket.setsockopt(zmq.SNDTIMEO, 5000)
+            
+            # Bind health check socket with retry logic
+            bind_success = False
+            for attempt in range(3):
+                try:
+                    self.health_socket.bind(f"tcp://*:{self.health_check_port}")
+                    bind_success = True
+                    self.logger.info(f"Health check REP socket bound to port {self.health_check_port}")
+                    pass
+                except zmq.error.ZMQError as e:
+                    self.logger.error(f"Failed to bind to health check port {self.health_check_port} (attempt {attempt+1}/3): {e}")
+                    time.sleep(2)
+            
+            if not bind_success:
+                self.logger.critical(f"Could not bind to health check port {self.health_check_port} after multiple attempts")
+                # This is critical as it will prevent health checks
             
         except zmq.error.ZMQError as e:
             self.logger.error(f"ZMQ initialization error: {e}")
@@ -358,21 +386,28 @@ class ModelManagerAgent(BaseAgent):
     def _start_background_threads(self):
         """Start all background threads."""
         # Memory management thread
-        self.memory_thread = threading.Thread(target=self._memory_management_loop)
+        self.memory_thread = threading.Thread(target=self._memory_management_loop, name="memory_management")
         self.memory_thread.daemon = True
         self.threads.append(self.memory_thread)
         self.memory_thread.start()
         self.logger.info("Memory management thread started")
         
-        # Health check thread
-        self.health_thread = threading.Thread(target=self._health_check_loop)
+        # Health check thread for models
+        self.health_thread = threading.Thread(target=self._health_check_loop, name="model_health_check")
         self.health_thread.daemon = True
         self.threads.append(self.health_thread)
         self.health_thread.start()
-        self.logger.info("Health check thread started")
+        self.logger.info("Model health check thread started")
+        
+        # Health check response thread for agent health checks
+        self.health_response_thread = threading.Thread(target=self._health_response_loop, name="health_response")
+        self.health_response_thread.daemon = True
+        self.threads.append(self.health_response_thread)
+        self.health_response_thread.start()
+        self.logger.info("Agent health response thread started")
         
         # Model request handling thread
-        self.request_thread = threading.Thread(target=self._handle_model_requests_loop)
+        self.request_thread = threading.Thread(target=self._handle_model_requests_loop, name="request_handling")
         self.request_thread.daemon = True
         self.threads.append(self.request_thread)
         self.request_thread.start()
@@ -410,7 +445,7 @@ class ModelManagerAgent(BaseAgent):
             self.logger.error(f"Error checking model health for {model_id}: {e}")
             return False
     
-    def _memory_management_loop(self):
+    def _vram_management_loop(self):
         """Background thread for managing VRAM usage and unloading idle models."""
         self.vram_logger.info("Starting memory management loop")
         import time
@@ -489,6 +524,38 @@ class ModelManagerAgent(BaseAgent):
                 self.logger.error(traceback.format_exc())
                 time.sleep(5)  # Sleep before retrying
     
+    def _health_response_loop(self):
+        """Background thread for handling health check requests from the health checker."""
+        self.logger.info("Starting health response loop on port %s", self.health_check_port)
+        
+        while self.running:
+            try:
+                # Check for health check requests with a timeout
+                if self.health_socket.poll(timeout=1000) != 0:  # 1 second timeout
+                    try:
+                        # Receive the request
+                        message = self.health_socket.recv()
+                        request = json.loads(message.decode())
+                        self.logger.debug(f"Received health check request: {request}")
+                        
+                        # Get health status and send response
+                        response = self._get_health_status()
+                        self.logger.debug(f"Sending health check response: {response}")
+                        self.health_socket.send_json(response)
+                    except json.JSONDecodeError:
+                        self.logger.error(f"Invalid JSON in health check request")
+                        self.health_socket.send_json({"status": "error", "error": "Invalid JSON"})
+                    except Exception as e:
+                        self.logger.error(f"Error processing health check request: {e}")
+                        self.health_socket.send_json({"status": "error", "error": str(e)})
+            except zmq.error.ZMQError as e:
+                self.logger.error(f"ZMQ error in health response loop: {e}")
+                time.sleep(1)
+            except Exception as e:
+                self.logger.error(f"Error in health response loop: {e}")
+                self.logger.error(traceback.format_exc())
+                time.sleep(1)
+    
     def cleanup(self):
         """Clean up resources."""
         self.running = False
@@ -503,12 +570,17 @@ class ModelManagerAgent(BaseAgent):
             self.socket.close()
         if hasattr(self, 'pub_socket'):
             self.pub_socket.close()
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
         if hasattr(self, 'context'):
             self.context.term()
         
         # Unload all models
         for model_id in list(self.loaded_models.keys()):
-            self._unload_model(model_id)
+            try:
+                self.unload_model(model_id)
+            except Exception as e:
+                self.logger.error(f"Error unloading model {model_id} during cleanup: {e}")
         
         # Join threads
         for thread in self.threads:
@@ -2705,19 +2777,21 @@ class ModelManagerAgent(BaseAgent):
             self.health_check_models(publish_update=False) 
             
             response_payload = {
-                'status': 'success', # Indicates the health check process was triggered
-                'message': 'Full health check performed.',
-                'models': self.models, # Return all model statuses
-                'loaded_models': list(self.loaded_model_instances.keys()),
-                'vram_usage': {
-                    'total_budget_mb': self.vram_budget_mb,
-                    'used_mb': self.current_estimated_vram_used,
-                    'remaining_mb': self.vram_budget_mb - self.current_estimated_vram_used
+                'status': 'ok', # Changed to 'ok' to match health checker expectations
+                'message': 'Agent is healthy. Full check performed.',
+                'details': { # Moved model data under 'details' for better organization
+                    'models': self.models, # Return all model statuses
+                    'loaded_models': list(self.loaded_model_instances.keys()),
+                    'vram_usage': {
+                        'total_budget_mb': self.vram_budget_mb,
+                        'used_mb': self.current_estimated_vram_used,
+                        'remaining_mb': self.vram_budget_mb - self.current_estimated_vram_used
+                    }
                 },
                 'request_id_received': request_id,
                 'timestamp': time.time()
             }
-            logger.info(f"Responding to health_check request (ID: {request_id}) with full model status.")
+            logger.info(f"Responding to health_check request (ID: {request_id}) with 'ok' status.")
             return json.dumps(response_payload)
 
         elif request_type == 'get_model_status':
@@ -3193,80 +3267,115 @@ class ModelManagerAgent(BaseAgent):
         Report current VRAM usage and loaded models to SystemDigitalTwin.
         """
         try:
-            # Create ZMQ socket for SystemDigitalTwin
-            context = zmq.Context.instance()
-            socket = context.socket(zmq.REQ)
-            socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
-            socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
+            # Get current system state
+            loaded_models_info = {}
+            total_vram_used = 0
             
-            # Check if secure ZMQ is enabled
-            secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
-            if secure_zmq:
-                try:
-                    from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
-                    start_auth()
-                    socket = configure_secure_client(socket)
-                    logger.debug("Secure ZMQ configured for SDT connection")
-                except Exception as e:
-                    logger.warning(f"Failed to configure secure ZMQ for SDT: {e}")
-                    secure_zmq = False
-            
-            # Use service discovery to find SystemDigitalTwin
-            try:
-                from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
-                sdt_address = get_service_address("SystemDigitalTwin")
-                if not sdt_address:
-                    # Fallback to hardcoded address
-                    sdt_address = "tcp://localhost:7120"
-            except Exception as e:
-                logger.warning(f"Service discovery failed: {e}, using default address")
-                sdt_address = "tcp://localhost:7120"
-            
-            logger.debug(f"Connecting to SystemDigitalTwin at {sdt_address}")
-            socket.connect(sdt_address)
-            
-            # Prepare model status information
-            model_status = {}
-            for model_id, model_info in self.loaded_models.items():
-                vram_mb = self.model_memory_usage.get(model_id, 0)
-                device = "MainPC"
-                if model_id in self.models:
-                    model_config = self.models[model_id]
-                    if "location" in model_config:
-                        device = model_config.get("location")
-                
-                model_status[model_id] = {
-                    "vram_usage_mb": vram_mb,
-                    "device": device
-                }
-            
-            # Build report message
-            report = {
-                "command": "REPORT_MODEL_VRAM",
-                "payload": {
-                    "agent_name": "ModelManagerAgent",
-                    "total_vram_used_mb": self.current_vram_used,
-                    "total_vram_mb": self.total_gpu_memory,
-                    "loaded_models": model_status
-                }
-            }
-            
-            # Send report to SystemDigitalTwin
-            logger.debug(f"Sending VRAM report to SystemDigitalTwin: {report}")
-            socket.send_json(report)
-            
-            # Wait for response with timeout
-            poller = zmq.Poller()
-            poller.register(socket, zmq.POLLIN)
-            if poller.poll(5000):  # 5s timeout
-                response = socket.recv_json()
-                logger.debug(f"Received response from SystemDigitalTwin: {response}")
+            # Use models_lock if available, otherwise proceed without locking
+            if hasattr(self, 'models_lock'):
+                lock = self.models_lock
             else:
-                logger.warning("Timeout waiting for response from SystemDigitalTwin")
+                # Create a dummy context manager if lock doesn't exist
+                from contextlib import nullcontext
+                lock = nullcontext()
             
-            # Clean up
-            socket.close()
-            
+            with lock:
+                
+                # Gather info for all loaded models
+                for model_name, model_info in self.loaded_models.items():
+                    # Skip if model is being loaded or unloaded
+                    if model_info.get('status') not in ['LOADED', 'ACTIVE']:
+                        continue
+                        
+                    # Get VRAM usage - either reported or estimated
+                    vram_usage = model_info.get('vram_usage_mb', model_info.get('estimated_vram_mb', 0))
+                    
+                    # Add to total
+                    total_vram_used += vram_usage
+                    
+                    # Prepare model info
+                    loaded_models_info[model_name] = {
+                        'vram_usage_mb': vram_usage,
+                        'device': model_info.get('device', 'MainPC'),
+                        'last_used': model_info.get('last_used', time.time()),
+                        'is_active': model_info.get('is_active', False),
+                        'quantization': model_info.get('quantization', 'FP16')
+                    }
+                
+                # Prepare payload for SystemDigitalTwin
+                payload = {
+                    'agent_name': 'ModelManagerAgent',
+                    'total_vram_mb': 24000,  # Default for RTX 4090
+                    # Fix: Use the current_estimated_vram_used attribute instead of current_vram_used
+                    'total_vram_used_mb': getattr(self, 'current_estimated_vram_used', total_vram_used),
+                    'loaded_models': loaded_models_info,
+                    'timestamp': time.time()
+                }
+                
+                # Connect to SystemDigitalTwin (with secure ZMQ if enabled)
+                import zmq
+                
+                context = zmq.Context()
+                socket = context.socket(zmq.REQ)
+                
+                # Get SDT address from service discovery
+                try:
+                    from main_pc_code.utils.service_discovery_client import get_service_address
+                    sdt_address = get_service_address("SystemDigitalTwin")
+                    if not sdt_address:
+                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                except Exception as e:
+                    logger.warning(f"Service discovery failed: {e}, using default address")
+                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                
+                # Apply secure ZMQ if enabled
+                secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
+                if secure_zmq:
+                    try:
+                        from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+                        start_auth()
+                        socket = configure_secure_client(socket)
+                        logger.debug("Secure ZMQ configured for SDT connection")
+                    except Exception as e:
+                        logger.warning(f"Failed to configure secure ZMQ for SDT: {e}")
+                        secure_zmq = False
+                
+                # Set timeouts
+                socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second receive timeout
+                socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second send timeout
+                
+                # Get SDT address from service discovery
+                try:
+                    from main_pc_code.utils.service_discovery_client import get_service_address
+                    sdt_address = get_service_address("SystemDigitalTwin")
+                    if not sdt_address:
+                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                except Exception as e:
+                    logger.warning(f"Service discovery failed: {e}, using default address")
+                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                
+                # Connect and send the report
+                socket.connect(sdt_address)
+                request = {
+                    'command': 'REPORT_MODEL_VRAM',
+                    'payload': payload
+                }
+                
+                socket.send_json(request)
+                
+                # Wait for response with timeout
+                try:
+                    response = socket.recv_json()
+                    if response.get('status') == 'SUCCESS':
+                        logger.debug("Successfully reported VRAM metrics to SystemDigitalTwin")
+                    else:
+                        logger.warning(f"Error reporting VRAM metrics: {response.get('message', 'Unknown error')}")
+                except zmq.error.Again:
+                    logger.warning("Timeout waiting for SystemDigitalTwin response when reporting VRAM metrics")
+                
+                # Close socket
+                socket.close()
+                
         except Exception as e:
             logger.error(f"Error reporting VRAM status to SystemDigitalTwin: {e}")
             logger.error(traceback.format_exc())
@@ -3782,14 +3891,15 @@ class ModelManagerAgent(BaseAgent):
         
         try:
             # Check if PC2 services are enabled in the agent's config
-            enable_pc2_services = self.config.get('enable_pc2_services', False)
+            # Fix: Use the global config object instead of self.config
+            enable_pc2_services = config.get('enable_pc2_services', False)
             
             if not enable_pc2_services:
                 self.logger.debug("PC2 services integration disabled in agent configuration")
                 return service_status
                 
             # Get PC2 services using the centralized config module
-            pc2_config = self.pc2_services
+            pc2_config = self.pc2_services if hasattr(self, 'pc2_services') else None
             
             if not pc2_config or not pc2_config.get('enabled', False):
                 self.logger.warning("PC2 services not enabled in pc2_services.yaml configuration")
@@ -3885,7 +3995,6 @@ class ModelManagerAgent(BaseAgent):
             except Exception as e:
                 self.logger.error(f"Error in health check loop: {e}")
                 self.logger.error(traceback.format_exc())
-                time.sleep(5)  # Sleep before retrying
 
     def report_vram_metrics_to_sdt(self):
         """
@@ -3994,6 +4103,44 @@ class ModelManagerAgent(BaseAgent):
             logger.error(f"Error reporting VRAM metrics to SystemDigitalTwin: {e}")
             import traceback
             logger.error(traceback.format_exc())
+
+    def _unload_model(self, model_id: str) -> None:
+        """
+        Unload a model by its ID.
+        This is a private helper method that delegates to the appropriate unload method
+        based on the model type.
+        
+        Args:
+            model_id: The ID of the model to unload
+        """
+        if model_id not in self.loaded_models:
+            self.logger.warning(f"Cannot unload model {model_id}: not currently loaded")
+            return
+            
+        model_info = self.loaded_models.get(model_id, {})
+        model_type = model_info.get('type')
+        
+        self.logger.info(f"Unloading model {model_id} of type {model_type}")
+        
+        if model_type == 'ollama':
+            self._unload_ollama_model(model_id)
+        elif model_type == 'custom_api':
+            self._unload_custom_api_model(model_id)
+        elif model_type == 'zmq_service':
+            self._unload_zmq_service_model(model_id)
+        elif model_type == 'gguf':
+            self._unload_gguf_model(model_id)
+        else:
+            self.logger.warning(f"Unknown model type {model_type} for model {model_id}")
+            
+        # Mark as unloaded regardless of the specific unload method
+        self._mark_model_as_unloaded(model_id)
+        
+        # Update VRAM usage
+        self._update_vram_usage()
+        
+        # Publish status update
+        self._publish_status_update()
 
 # --- PATCH: Attach standalone functions to ModelManagerAgent class (ensures methods are available before main is executed) ---
 # --- END PATCH ---

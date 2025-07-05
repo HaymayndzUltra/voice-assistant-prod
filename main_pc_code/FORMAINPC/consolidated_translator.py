@@ -104,12 +104,12 @@ TRANSLATOR_CONFIG = {
             "timeout": 30,
             "service_name": "NLLBAdapter"  # Use service discovery instead of hardcoded host/port
         },
-        "phi": {
+        "fixed_streaming": {
             "enabled": True,
             "priority": 3,
             "confidence_threshold": 0.75,
             "timeout": 3,
-            "service_name": "PhiTranslationService"  # Use service discovery instead of hardcoded host/port
+            "service_name": "FixedStreamingTranslation"  # Use service discovery instead of hardcoded host/port
         },
         "google": {
             "enabled": True,
@@ -1026,7 +1026,7 @@ class SessionManager:
                 self._refresh_service_info()
                 
                 # Update engine status based on service discovery results
-                for engine in ['nllb', 'phi', 'google']:
+                for engine in ['nllb', 'fixed_streaming', 'google']:
                     if engine in self.service_info:
                         try:
                             # Get a socket for the engine
@@ -1095,21 +1095,21 @@ class SessionManager:
                 self.engine_status['nllb']['last_error'] = "Service not found"
                 logger.warning(f"Failed to discover NLLB service - continuing without NLLB")
             
-            # Get Phi service info
-            phi_service_name = self.config.get('engines')['phi']['service_name']
-            phi_service_info = discover_service(phi_service_name)
-            if phi_service_info and phi_service_info.get("status") == "SUCCESS":
-                payload = phi_service_info.get("payload", {})
-                self.service_info['phi'] = {
+            # Get Fixed Streaming service info
+            fixed_streaming_service_name = self.config.get('engines')['fixed_streaming']['service_name']
+            fixed_streaming_service_info = discover_service(fixed_streaming_service_name)
+            if fixed_streaming_service_info and fixed_streaming_service_info.get("status") == "SUCCESS":
+                payload = fixed_streaming_service_info.get("payload", {})
+                self.service_info['fixed_streaming'] = {
                     'host': payload.get('ip', 'localhost'),
                     'port': payload.get('port', 5000)
                 }
-                self.engine_status['phi']['status'] = 'connected'
-                logger.info(f"Discovered Phi service at {self.service_info['phi']['host']}:{self.service_info['phi']['port']}")
+                self.engine_status['fixed_streaming']['status'] = 'connected'
+                logger.info(f"Discovered Fixed Streaming service at {self.service_info['fixed_streaming']['host']}:{self.service_info['fixed_streaming']['port']}")
             else:
-                self.engine_status['phi']['status'] = 'disconnected'
-                self.engine_status['phi']['last_error'] = "Service not found"
-                logger.warning(f"Failed to discover Phi service - continuing without Phi")
+                self.engine_status['fixed_streaming']['status'] = 'disconnected'
+                self.engine_status['fixed_streaming']['last_error'] = "Service not found"
+                logger.warning(f"Failed to discover Fixed Streaming service - continuing without Fixed Streaming")
             
             # Get Google service info (via Remote Connector Agent)
             google_service_name = self.config.get('engines')['google']['service_name']
@@ -1189,7 +1189,7 @@ class TranslationPipeline:
         self.engine_status = {
             'dictionary': {'status': 'unknown', 'last_error': None},
             'nllb': {'status': 'unknown', 'last_error': None},
-            'phi': {'status': 'unknown', 'last_error': None},
+            'fixed_streaming': {'status': 'unknown', 'last_error': None},
             'google': {'status': 'unknown', 'last_error': None}
         }
         
@@ -1240,7 +1240,7 @@ class TranslationPipeline:
         self.rate_limits = {
             'dictionary': {'calls': 0, 'last_reset': time.time(), 'max_calls': 1000, 'window': 60},
             'nllb': {'calls': 0, 'last_reset': time.time(), 'max_calls': 100, 'window': 60},
-            'phi': {'calls': 0, 'last_reset': time.time(), 'max_calls': 50, 'window': 60},
+            'fixed_streaming': {'calls': 0, 'last_reset': time.time(), 'max_calls': 50, 'window': 60},
             'google': {'calls': 0, 'last_reset': time.time(), 'max_calls': 200, 'window': 60}
         }
         
@@ -1256,7 +1256,7 @@ class TranslationPipeline:
         self.engine_performance = {
             'dictionary': {'success': 0, 'total': 0, 'avg_time': 0},
             'nllb': {'success': 0, 'total': 0, 'avg_time': 0},
-            'phi': {'success': 0, 'total': 0, 'avg_time': 0},
+            'fixed_streaming': {'success': 0, 'total': 0, 'avg_time': 0},
             'google': {'success': 0, 'total': 0, 'avg_time': 0}
         }
         
@@ -1276,7 +1276,7 @@ class TranslationPipeline:
             'engine_usage': {
                 'dictionary': 0,
                 'nllb': 0,
-                'phi': 0,
+                'fixed_streaming': 0,
                 'google': 0
             },
             'resource_usage': {
@@ -1297,7 +1297,7 @@ class TranslationPipeline:
             "engines": {
                 "dictionary": True,
                 "nllb": True,
-                "phi": True,
+                "fixed_streaming": True,
                 "google": True
             }
         }
@@ -1327,10 +1327,10 @@ class TranslationPipeline:
         if nllb_model_id:
             self._request_model_loading(nllb_model_id, priority="high")
         
-        # Phi model (if configured)
-        phi_model_id = self.config.get('engines')['phi'].get('model')
-        if phi_model_id:
-            self._request_model_loading(phi_model_id, priority="medium")
+        # Fixed Streaming model (if configured)
+        fixed_streaming_model_id = self.config.get('engines')['fixed_streaming'].get('model')
+        if fixed_streaming_model_id:
+            self._request_model_loading(fixed_streaming_model_id, priority="medium")
         
         logger.info("Translation model requests completed")
 
@@ -1401,32 +1401,32 @@ class TranslationPipeline:
             self.engine_status['nllb']['last_error'] = str(e)
             return {'status': 'error', 'message': str(e)}
 
-    def _translate_with_phi(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
-        """Translate text using Phi LLM via HTTP API"""
+    def _translate_with_fixed_streaming(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
+        """Translate text using Fixed Streaming model via HTTP API"""
         try:
-            # Check if Phi service is connected
-            if self.engine_status['phi']['status'] != 'connected':
-                return {'status': 'error', 'message': 'Phi service not connected'}
+            # Check if Fixed Streaming service is connected
+            if self.engine_status['fixed_streaming']['status'] != 'connected':
+                return {'status': 'error', 'message': 'Fixed Streaming service not connected'}
             
             # Check cache first
             cache_key = f"{text}:{source_lang}:{target_lang}"
             cached_result = self.cache.get(cache_key)
             if cached_result:
-                self.engine_status['phi']['status'] = 'connected'
+                self.engine_status['fixed_streaming']['status'] = 'connected'
                 return {
                     'status': 'success',
                     'translated_text': cached_result,
-                    'engine_used': 'phi',
+                    'engine_used': 'fixed_streaming',
                     'cached': True
                 }
             
             # Get service info
-            if 'phi' not in self.service_info:
-                self.engine_status['phi']['status'] = 'error'
-                self.engine_status['phi']['last_error'] = 'Phi service info not available'
-                return {'status': 'error', 'message': 'Phi service info not available'}
+            if 'fixed_streaming' not in self.service_info:
+                self.engine_status['fixed_streaming']['status'] = 'error'
+                self.engine_status['fixed_streaming']['last_error'] = 'Fixed Streaming service info not available'
+                return {'status': 'error', 'message': 'Fixed Streaming service info not available'}
             
-            # Prepare request for Phi API
+            # Prepare request for Fixed Streaming API
             request = {
                 "action": "translate",
                 "text": text,
@@ -1443,15 +1443,15 @@ class TranslationPipeline:
             optimized_request = self._optimize_message(request)
             
             # Create socket for request
-            socket = self._get_engine_socket('phi')
+            socket = self._get_engine_socket('fixed_streaming')
             if not socket:
-                self.engine_status['phi']['status'] = 'error'
-                self.engine_status['phi']['last_error'] = 'Could not connect to Phi service'
-                return {'status': 'error', 'message': 'Could not connect to Phi service'}
+                self.engine_status['fixed_streaming']['status'] = 'error'
+                self.engine_status['fixed_streaming']['last_error'] = 'Could not connect to Fixed Streaming service'
+                return {'status': 'error', 'message': 'Could not connect to Fixed Streaming service'}
             
             # Send request with timeout
             socket.send_json(optimized_request)
-            if socket.poll(timeout=self.config.get('engines')['phi']['timeout'] * 1000):
+            if socket.poll(timeout=self.config.get('engines')['fixed_streaming']['timeout'] * 1000):
                 response = socket.recv_json()
                 socket.close()
                 
@@ -1463,32 +1463,32 @@ class TranslationPipeline:
                     translated_text = translated_text.strip()
                     
                     if translated_text:
-                        self.engine_status['phi']['status'] = 'connected'
+                        self.engine_status['fixed_streaming']['status'] = 'connected'
                         # Cache the translation with engine parameter
-                        self.cache.set(cache_key, translated_text, engine='phi')
+                        self.cache.set(cache_key, translated_text, engine='fixed_streaming')
                         return {
                             'status': 'success',
                             'translated_text': translated_text,
-                            'engine_used': 'phi',
+                            'engine_used': 'fixed_streaming',
                             'cached': False
                         }
                     else:
-                        self.engine_status['phi']['status'] = 'error'
-                        self.engine_status['phi']['last_error'] = 'Empty translation'
+                        self.engine_status['fixed_streaming']['status'] = 'error'
+                        self.engine_status['fixed_streaming']['last_error'] = 'Empty translation'
                         return {'status': 'error', 'message': 'Empty translation'}
                 else:
-                    self.engine_status['phi']['status'] = 'error'
-                    self.engine_status['phi']['last_error'] = response.get('message', 'Unknown error')
+                    self.engine_status['fixed_streaming']['status'] = 'error'
+                    self.engine_status['fixed_streaming']['last_error'] = response.get('message', 'Unknown error')
                     return response
             else:
                 socket.close()
-                self.engine_status['phi']['status'] = 'error'
-                self.engine_status['phi']['last_error'] = 'Request timed out'
+                self.engine_status['fixed_streaming']['status'] = 'error'
+                self.engine_status['fixed_streaming']['last_error'] = 'Request timed out'
                 return {'status': 'error', 'message': 'Request timed out'}
                 
         except Exception as e:
-            self.engine_status['phi']['status'] = 'error'
-            self.engine_status['phi']['last_error'] = str(e)
+            self.engine_status['fixed_streaming']['status'] = 'error'
+            self.engine_status['fixed_streaming']['last_error'] = str(e)
             return {'status': 'error', 'message': str(e)}
 
     def _translate_with_google(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
@@ -1627,7 +1627,7 @@ class TranslatorServer(BaseAgent):
         self.api_version = "2.0"
         self.capabilities = {
             'languages': ['en', 'tl', 'fil_Latn'],
-            'engines': ['dictionary', 'nllb', 'phi', 'google'],
+            'engines': ['dictionary', 'nllb', 'fixed_streaming', 'google'],
             'features': [
                 'language_detection',
                 'quality_metrics',

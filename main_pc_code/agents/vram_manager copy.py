@@ -7,7 +7,8 @@ import threading
 import numpy as np
 import torch
 from typing import Dict, List, Optional, Tuple, Union
-from dataclasses import dataclass from(BaseAgent) collections import OrderedDict, defaultdict
+from dataclasses import dataclass
+from collections import OrderedDict, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import psutil
 import json

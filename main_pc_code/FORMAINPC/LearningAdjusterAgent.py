@@ -76,10 +76,17 @@ class ParameterConfig:
     metadata: Optional[Dict] = None
 
 class LearningAdjusterAgent(BaseAgent):
-    def __init__(self, port: int = 5643):
+    def __init__(self, config=None, **kwargs):
         """Initialize the Learning Adjuster Agent."""
-        # Call BaseAgent's __init__ first
-        super().__init__()
+        # Ensure config is a dictionary
+        config = config or {}
+        
+        # Get port from config with fallback
+        agent_port = int(config.get("port", 5643))
+        agent_name = kwargs.get('name', "LearningAdjusterAgent")
+        
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(port=agent_port, **kwargs)
         
         # ZMQ setup
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -386,6 +393,7 @@ class LearningAdjusterAgent(BaseAgent):
         
         # Add LearningAdjuster-specific metrics
         base_status.update({
+            "status": "ok",  # Use 'ok' instead of 'received' to match expected format
             "service": "learning_adjuster_agent",
             "active_parameters": self.health_status["active_parameters"],
             "database_status": self.health_status["database_status"]
@@ -407,14 +415,14 @@ class LearningAdjusterAgent(BaseAgent):
             elif action == "register_parameter":
                 config = ParameterConfig(**request["config"])
                 success = self.register_parameter(config)
-                return {"status": "success" if success else "error"}
+                return {"status": "ok" if success else "error"}
                 
             elif action == "adjust_parameter":
                 success = self.adjust_parameter(
                     request["parameter_name"],
                     request["new_value"]
                 )
-                return {"status": "success" if success else "error"}
+                return {"status": "ok" if success else "error"}
                 
             elif action == "record_performance":
                 success = self.record_performance(
@@ -422,7 +430,7 @@ class LearningAdjusterAgent(BaseAgent):
                     request["value"],
                     request.get("parameters")
                 )
-                return {"status": "success" if success else "error"}
+                return {"status": "ok" if success else "error"}
                 
             elif action == "optimize_parameters":
                 return self.optimize_parameters(request["metric_name"])
@@ -507,7 +515,7 @@ class LearningAdjusterAgent(BaseAgent):
             #     is_healthy = False
 
             status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
+                "status": "ok" if is_healthy else "error",
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "timestamp": datetime.utcnow().isoformat(),
                 "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
@@ -521,7 +529,7 @@ class LearningAdjusterAgent(BaseAgent):
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
-                "status": "unhealthy",
+                "status": "error",
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }

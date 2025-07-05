@@ -1,4 +1,8 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+"""
+GGUF Model Manager
+-----------------
+Handles loading, unloading, and managing GGUF models using llama-cpp-python
+Provides a unified interface for model access
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -9,32 +13,25 @@ MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
-GGUF Model Manager
------------------
-Handles loading, unloading, and managing GGUF models using llama-cpp-python
-Provides a unified interface for model access
-"""
-import os
+from main_pc_code.src.core.base_agent import BaseAgent
+
 import gc
 import uuid
 import time
 import json
 import logging
 import threading
-import sys
-from pathlib import Path
 from typing import Dict, Optional, Any, Union, List
 import traceback
 import torch
 
+# Try to import Llama from llama_cpp
 try:
-    from llama_cpp import Llama
-    except ImportError as e:
-        print(f"Import error: {e}")
+    from llama_cpp import Llama  # type: ignore
     LLAMA_CPP_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     LLAMA_CPP_AVAILABLE = False
-    print("WARNING: llama-cpp-python not available. GGUF models will not work.")
+    print(f"WARNING: llama-cpp-python not available. GGUF models will not work. Error: {e}")
 
 # Configure logging
 logging.basicConfig(
@@ -50,21 +47,28 @@ logger = logging.getLogger("GGUFModelManager")
 class GGUFModelManager(BaseAgent):
     """Manager for GGUF models using llama-cpp-python"""
     
-    def __init__(self, port: int = None, **kwargs):
-        super().__init__(port=port, name="GgufModelManager")
+    def __init__(self, port: int = 5575, models_dir: str = "models", **kwargs):
         """Initialize the GGUF model manager
         
         Args:
+            port: Port to run the agent on
             models_dir: Directory where GGUF models are stored
+            **kwargs: Additional arguments to pass to the BaseAgent
         """
+        super().__init__(port=port, name="GgufModelManager")
+        
         self.models_dir = Path(models_dir)
         self.models_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize model tracking
+        self.loaded_models = {}
+        self.last_used = {}
         
         # Initialize state tracker
         self.state_tracker = GGUFStateTracker()
         
         # Dictionary to store model metadata
-        self.model_metadata: Dict[str, Dict[str, Any]] = {}
+        self.model_metadata = {}
         
         # Lock for thread safety
         self.lock = threading.RLock()
@@ -80,7 +84,7 @@ class GGUFModelManager(BaseAgent):
         """Load model metadata from config files"""
         try:
             # Add the parent directory to sys.path to import the config module
-from main_pc_code.config.system_config import Config
+            from main_pc_code.config.system_config import Config
             
             config = Config()
             machine_config = config.get_all().get('main_pc_settings', {})
@@ -198,6 +202,11 @@ from main_pc_code.config.system_config import Config
             try:
                 # Unload the model
                 del self.loaded_models[model_id]
+                self.state_tracker.mark_model_unloaded(model_id)
+                logger.info(f"Successfully unloaded model {model_id}")
+                return True
+            except Exception as e:
+                logger.error(f"Error unloading model {model_id}: {e}")
                 return False
     
     def generate_text(self, model_id: str, prompt: str, system_prompt: Optional[str] = None,
@@ -340,10 +349,116 @@ from main_pc_code.config.system_config import Config
             
             logger.info("GGUF Model Manager cleanup complete")
 
+    def health_check(self) -> Dict[str, Any]:
+        """Perform health check for the GGUF Model Manager"""
+        try:
+            # Check if llama-cpp is available
+            llama_available = LLAMA_CPP_AVAILABLE
+            
+            # Get VRAM usage
+            vram_usage = self.state_tracker.get_vram_usage()
+            
+            # Get model status
+            models_status = self.get_all_model_status()
+            loaded_count = len([m for m in models_status.values() if m.get('loaded', False)])
+            total_count = len(self.model_metadata)
+            
+            # Check for any errors in recent operations
+            health_status = {
+                'status': 'healthy',
+                'llama_cpp_available': llama_available,
+                'models_loaded': loaded_count,
+                'total_models': total_count,
+                'vram_usage': vram_usage,
+                'timestamp': time.time()
+            }
+            
+            # Mark as unhealthy if llama-cpp is not available
+            if not llama_available:
+                health_status['status'] = 'unhealthy'
+                health_status['error'] = 'llama-cpp-python not available'
+            
+            return health_status
+            
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return {
+                'status': 'unhealthy',
+                'error': str(e),
+                'timestamp': time.time()
+            }
+
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests for the GGUF Model Manager"""
+        try:
+            action = request.get('action')
+            
+            if action == 'list_models':
+                return {
+                    'status': 'success',
+                    'models': self.list_models()
+                }
+            elif action == 'load_model':
+                model_id = request.get('model_id')
+                if not model_id:
+                    return {'status': 'error', 'error': 'model_id required'}
+                success = self.load_model(model_id)
+                return {
+                    'status': 'success' if success else 'error',
+                    'loaded': success
+                }
+            elif action == 'unload_model':
+                model_id = request.get('model_id')
+                if not model_id:
+                    return {'status': 'error', 'error': 'model_id required'}
+                success = self.unload_model(model_id)
+                return {
+                    'status': 'success' if success else 'error',
+                    'unloaded': success
+                }
+            elif action == 'generate_text':
+                model_id = request.get('model_id')
+                prompt = request.get('prompt')
+                if not model_id or not prompt:
+                    return {'status': 'error', 'error': 'model_id and prompt required'}
+                
+                result = self.generate_text(
+                    model_id=model_id,
+                    prompt=prompt,
+                    system_prompt=request.get('system_prompt'),
+                    max_tokens=request.get('max_tokens', 1024),
+                    temperature=request.get('temperature', 0.7)
+                )
+                return result
+            elif action == 'health_check':
+                return self.health_check()
+            else:
+                return {'status': 'error', 'error': f'Unknown action: {action}'}
+                
+        except Exception as e:
+            logger.error(f"Error handling request: {e}")
+            return {'status': 'error', 'error': str(e)}
+
+    def _perform_initialization(self):
+        """Initialize agent components."""
+        try:
+            # Load model metadata
+            self._load_model_metadata()
+            
+            # Check GGUF support
+            if not LLAMA_CPP_AVAILABLE:
+                logger.warning("llama-cpp-python not available. GGUF models will not work.")
+            
+            logger.info("GGUF Model Manager initialization complete")
+            
+        except Exception as e:
+            logger.error(f"Initialization error: {e}")
+            raise
+
 class GGUFStateTracker(BaseAgent):
     """Tracks the state and VRAM usage of GGUF models"""
     
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, port: int = 5576, **kwargs):
         super().__init__(port=port, name="GgufModelManager")
         self.loaded_models: Dict[str, Dict[str, Any]] = {}
         self.model_last_used: Dict[str, float] = {}

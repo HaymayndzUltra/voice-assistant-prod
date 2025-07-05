@@ -19,7 +19,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 PLUGINS_DIR = os.path.join(os.path.dirname(__file__), '..', 'plugins')
 LOADED_PLUGINS = {}
 
-class PluginEventHandler(BaseAgent)(FileSystemEventHandler):
+class PluginEventHandler(BaseAgent, FileSystemEventHandler):
     def on_modified(self, event):
         if event.is_directory or not event.src_path.endswith('.py'):
             return

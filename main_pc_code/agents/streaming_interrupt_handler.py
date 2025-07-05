@@ -49,15 +49,18 @@ INTERRUPT_KEYWORDS = {
 }
 
 class StreamingInterruptHandler(BaseAgent):
-    def __init__(self, port=None):
+    def __init__(self, config=None, **kwargs):
+        # Ensure config is a dictionary
+        config = config or {}
+        
         # Get configuration values with fallbacks
-        agent_port = int(config.get("port", 5576)) if port is None else port
-        agent_name = config.get("name", "StreamingInterruptHandler")
+        agent_port = int(config.get("port", 5576))
+        agent_name = kwargs.get('name', "StreamingInterruptHandler")
         bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
         zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
         # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=agent_name, port=agent_port)
+        super().__init__(port=agent_port, **kwargs)
         
         # Store important attributes
         self.bind_address = bind_address

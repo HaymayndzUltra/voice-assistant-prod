@@ -30,7 +30,7 @@ config = load_config()
 
 # Configuration
 ZMQ_PORT = int(config.get("port", 5576))
-HEALTH_PORT = int(config.get("health_port", ZMQ_PORT + 1))
+HEALTH_PORT = int(config.get("health_check_port", 5586))  # Use explicit health_check_port from config
 BIND_ADDRESS = config.get("bind_address", "0.0.0.0")
 
 class MemoryOrchestrator(BaseAgent):
@@ -38,21 +38,27 @@ class MemoryOrchestrator(BaseAgent):
     Minimal Memory Orchestrator implementation focusing on proper encoding/decoding.
     """
     
-    def __init__(self, port=None):
+    def __init__(self, config=None, **kwargs):
         """Initialize the Memory Orchestrator service."""
+        # Ensure config is a dictionary
+        config = config or {}
+        
         # Get port from config with fallback
-        agent_port = config.get("port", 5576) if port is None else port
-        agent_name = config.get("name", "MemoryOrchestrator")
+        agent_port = config.get("port", 5576)
+        agent_name = kwargs.get('name', "MemoryOrchestrator")
+        
+        # Get health check port from config or parameter
+        health_port = config.get("health_check_port", 5586)
         
         # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=agent_name, port=agent_port)
+        super().__init__(name=agent_name, port=agent_port, **kwargs)
         
         # Setup health check socket
         try:
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
-            self.health_socket.bind(f"tcp://{BIND_ADDRESS}:{HEALTH_PORT}")
-            logger.info(f"Health check socket bound to port {HEALTH_PORT}")
+            self.health_socket.bind(f"tcp://{BIND_ADDRESS}:{health_port}")
+            logger.info(f"Health check socket bound to port {health_port}")
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to bind health check socket: {e}")
             # Continue even if health check socket fails

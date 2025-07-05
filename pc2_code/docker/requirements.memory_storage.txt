@@ -1,0 +1,27 @@
+# Requirements for Memory & Storage Container
+# Include any specific dependencies needed by memory and storage agents
+
+# UnifiedMemoryReasoningAgent dependencies
+sqlalchemy==2.0.17
+nltk==3.8.1
+scikit-learn==1.3.0
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
+
+# EpisodicMemoryAgent dependencies
+networkx==3.1
+matplotlib==3.7.2
+
+# Memory Manager dependencies
+lmdb==1.4.1
+pymongo==4.4.1
+
+# Context Manager dependencies
+spacy==3.6.0
+transformers==4.30.2
+
+# Memory Decay Manager dependencies
+apscheduler==3.10.1
+
+# Install spacy model
+RUN python -m spacy download en_core_web_sm 

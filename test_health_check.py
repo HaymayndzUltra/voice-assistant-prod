@@ -1,55 +1,35 @@
 #!/usr/bin/env python3
 """
-Simple script to test ZMQ health check connection
+Test script for SystemDigitalTwin health check
 """
-
 import zmq
 import json
 import time
 
-def test_health_check(host, port, action):
-    print(f"Testing health check on {host}:{port} with action '{action}'...")
-    
-    # Create ZMQ client
+def test_health_check(port=8120):
+    """Send a health check request to the SystemDigitalTwin agent"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
+    socket.setsockopt(zmq.LINGER, 0)
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-    socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second timeout
-    
-    # Connect to health port
-    socket.connect(f"tcp://{host}:{port}")
+    socket.connect(f"tcp://localhost:{port}")
     
     # Send health check request
-    request = {'action': action}
-    print(f"Sending request: {request}")
+    request = {"action": "health_check"}
     socket.send_json(request)
     
     # Receive response
     try:
-        print("Waiting for response...")
-        response_bytes = socket.recv()
-        response = json.loads(response_bytes.decode('utf-8'))
-        print(f"Response received: {json.dumps(response, indent=2)}")
-        return True, response
+        response = socket.recv_json()
+        print(f"Health check response: {json.dumps(response, indent=2)}")
+        return response
     except zmq.error.Again:
-        print("Timeout: No response within 5 seconds")
-        return False, {"error": "Timeout - no response received"}
-    except Exception as e:
-        print(f"Error: {e}")
-        return False, {"error": str(e)}
+        print(f"Health check request timed out after 5 seconds")
+        return None
     finally:
         socket.close()
         context.term()
 
 if __name__ == "__main__":
-    # Test MoodTrackerAgent
-    print("=" * 60)
-    print("Testing MoodTrackerAgent")
-    print("=" * 60)
-    test_health_check("localhost", 5705, "health")
-    
-    # Test HumanAwarenessAgent
-    print("\n" + "=" * 60)
-    print("Testing HumanAwarenessAgent")
-    print("=" * 60)
-    test_health_check("localhost", 5706, "health") 
+    print("Testing SystemDigitalTwin health check...")
+    test_health_check(8120) 

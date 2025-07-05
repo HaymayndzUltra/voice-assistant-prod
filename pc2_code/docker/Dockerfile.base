@@ -1,0 +1,30 @@
+# Base Dockerfile for PC2 System
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libzmq3-dev \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install common Python dependencies
+COPY pc2_code/docker/requirements.common.txt .
+RUN pip install --no-cache-dir -r requirements.common.txt
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV LOG_LEVEL=INFO
+ENV DEBUG_MODE=false
+ENV BIND_ADDRESS=0.0.0.0
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/config
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import requests; exit(0) if requests.get('http://localhost:' + os.environ.get('HEALTH_CHECK_PORT', '8100') + '/health').status_code == 200 else exit(1)" 

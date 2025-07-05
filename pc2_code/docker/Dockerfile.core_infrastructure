@@ -1,0 +1,34 @@
+# Dockerfile for Core Infrastructure Container
+FROM pc2-base:latest
+
+WORKDIR /app
+
+# Copy specific agent code
+COPY pc2_code/agents/resource_manager.py /app/pc2_code/agents/
+COPY pc2_code/agents/health_monitor.py /app/pc2_code/agents/
+COPY pc2_code/agents/task_scheduler.py /app/pc2_code/agents/
+COPY pc2_code/agents/advanced_router.py /app/pc2_code/agents/
+# SystemDigitalTwin is not included as it's only on main_pc
+
+# Copy utils and dependencies
+COPY pc2_code/agents/utils /app/pc2_code/agents/utils/
+COPY common_utils /app/common_utils/
+
+# Copy configuration
+COPY pc2_code/config/startup_config_fixed.yaml /app/pc2_code/config/startup_config.yaml
+COPY pc2_code/config/network_config.yaml /app/pc2_code/config/
+
+# Copy scripts
+COPY pc2_code/scripts/start_container.py /app/pc2_code/scripts/
+COPY pc2_code/scripts/health_check.py /app/pc2_code/scripts/
+
+# Install specific dependencies
+COPY pc2_code/docker/requirements.core_infrastructure.txt .
+RUN pip install --no-cache-dir -r requirements.core_infrastructure.txt
+
+# Set environment variables
+ENV CONTAINER_GROUP=core_infrastructure
+ENV HEALTH_CHECK_PORT=8113
+
+# Set entry point
+CMD ["python", "-m", "pc2_code.scripts.start_container", "core_infrastructure"] 

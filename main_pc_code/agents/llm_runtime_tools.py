@@ -540,7 +540,7 @@ def save_telemetry_to_disk() -> None:
         logger.error(f"Error saving telemetry to disk: {e}")
 
 
-class TelemetryDashboardHandler(BaseAgent)(http.server.SimpleHTTPRequestHandler):
+class TelemetryDashboardHandler(BaseAgent, http.server.SimpleHTTPRequestHandler):
     """HTTP handler for telemetry dashboard"""
     
     def do_GET(self):

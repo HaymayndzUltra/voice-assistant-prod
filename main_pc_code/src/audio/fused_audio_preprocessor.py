@@ -97,15 +97,18 @@ AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
 class FusedAudioPreprocessorAgent(BaseAgent):
-    def __init__(self, port=None):
+    def __init__(self, config=None, **kwargs):
+        # Ensure config is a dictionary
+        config = config or {}
+        
         # Get configuration values with fallbacks
-        agent_port = int(config.get("port", 5703)) if port is None else port
-        agent_name = config.get("name", "FusedAudioPreprocessorAgent")
+        agent_port = int(config.get("port", 5703))
+        agent_name = kwargs.get('name', "FusedAudioPreprocessorAgent")
         bind_address = config.get("bind_address", '<BIND_ADDR>')
         zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
         # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=agent_name, port=agent_port)
+        super().__init__(port=agent_port, **kwargs)
         
         # Store important attributes
         self.bind_address = bind_address

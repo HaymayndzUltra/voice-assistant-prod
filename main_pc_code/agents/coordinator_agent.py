@@ -12,9 +12,10 @@ MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
-MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if MAIN_PC_CODE_DIR not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR)
+# Remove redundant path addition
+# MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# if MAIN_PC_CODE_DIR not in sys.path:
+#     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 # Now we can use absolute imports from the main_pc_code directory
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -31,11 +32,13 @@ import time
 import logging
 import threading
 import base64
+import psutil  # Add missing import for health check
+from datetime import datetime  # Add missing import for health check
 from typing import Dict, Any, List, Optional, Tuple, Union
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -96,185 +99,60 @@ def find_available_port(start_port: int, max_attempts: int = 20) -> int:
 class CoordinatorAgent(BaseAgent):
     def __init__(self, **kwargs):
         """Initialize the Coordinator Agent."""
-        super().__init__()
-
-        """Initialize the Coordinator Agent."""
-
-        self.port = port
-
+        # Get port from kwargs or use default
+        port = kwargs.get('port', COORDINATOR_PORT)
+        name = kwargs.get('name', "CoordinatorAgent")
+        # Set health_check_port before calling super().__init__
+        kwargs['health_check_port'] = 26003
+        super().__init__(name=name, port=port, health_check_port=26003)
+        
         # Create ZMQ context and socket for the coordinator
-
         self.context = zmq.Context()
-
         self.socket = self.context.socket(zmq.REP)
-
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-
+        
         # Apply secure ZMQ if enabled
-
         if SECURE_ZMQ:
-
             self.socket = configure_secure_server(self.socket)
-
             logger.info("Secure ZMQ enabled for CoordinatorAgent")
-
+        
         # Bind to address using BIND_ADDRESS for Docker compatibility
-
         bind_address = f"tcp://{BIND_ADDRESS}:{self.port}"
-
         self.socket.bind(bind_address)
-
         logger.info(f"Coordinator socket bound to {bind_address}")
-
-        # Register with service discovery
-
-        self._register_service()
-
+        
         # Discover and connect to required services using service discovery
-
         self.service_info = {}
-
         self._discover_services()
-
+        
         # Create socket for proactive suggestions (with port fallback)
-
         self.suggestion_socket = self.context.socket(zmq.REP)
-
         self.suggestion_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-
         self.suggestion_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-
+        
         # Apply secure ZMQ to suggestion socket if enabled
-
         if SECURE_ZMQ:
-
             self.suggestion_socket = configure_secure_server(self.suggestion_socket)
 
         # Attempt to bind to the preferred port; fall back if it's unavailable.
-
         self.suggestion_port = PROACTIVE_SUGGESTION_PORT
-
         try:
-
             suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
-
             self.suggestion_socket.bind(suggestion_bind_address)
-
             logger.info(f"Proactive suggestion socket bound to {suggestion_bind_address}")
-
         except zmq.ZMQError as e:
-
             logger.warning(
-
                 f"Port {self.suggestion_port} already in use (error: {e}). "
-
                 "Searching for the next available port."
-
             )
-
             self.suggestion_port = find_available_port(self.suggestion_port + 1)
-
             suggestion_bind_address = f"tcp://{BIND_ADDRESS}:{self.suggestion_port}"
-
             self.suggestion_socket.bind(suggestion_bind_address)
-
             logger.info(f"Proactive suggestion socket bound to fallback port {suggestion_bind_address}")
-
-        # Flag to control the agent
-
-        self.running = True
-
-        # Proactive assistance state
-
-        self.last_interaction_time = time.time()
-
-        self.pending_suggestions = []
-
-        # Initialize memory connection
-
-        self._init_memory_connection()
-
-        # Start service discovery refresh thread
-
-        self.discovery_thread = threading.Thread(target=self._service_discovery_refresh_loop)
-
-        self.discovery_thread.daemon = True
-
-        self.discovery_thread.start()
-
-        # Start the proactive suggestion handler thread
-
-        self.suggestion_thread = threading.Thread(target=self._handle_proactive_suggestions)
-
-        self.suggestion_thread.daemon = True
-
-        self.suggestion_thread.start()
-
-        # Start the inactivity checker thread
-
-        self.inactivity_thread = threading.Thread(target=self._check_inactivity)
-
-        self.inactivity_thread.daemon = True
-
-        self.inactivity_thread.start()
-
-        logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
-        self._agent_args = self.parse_agent_args()
-        self.zmq_timeout = self.config.getint('coordinator.zmq_timeout_ms', 5000)
-        self.inactivity_threshold = self.config.getint('coordinator.inactivity_threshold_seconds', 30)
-        self.max_pending_suggestions = self.config.getint('coordinator.max_pending_suggestions', 5)
-        bind_address_ip = self.config.get('network.bind_address', '0.0.0.0')
-        self.port = self.config.getint('coordinator.port', 26002)
         
-        # Create ZMQ context and socket for the coordinator
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
-        self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
-        
-        # Apply secure ZMQ if enabled
-        if SECURE_ZMQ:
-            self.socket = configure_secure_server(self.socket)
-            logger.info("Secure ZMQ enabled for CoordinatorAgent")
-        
-        # Bind to address using BIND_ADDRESS for Docker compatibility
-        bind_address = f"tcp://{bind_address_ip}:{self.port}"
-        self.socket.bind(bind_address)
-        logger.info(f"Coordinator socket bound to {bind_address}")
-        
-        # Register with service discovery
+        # Register with service discovery (after suggestion_port is set)
         self._register_service()
-        
-        # Discover and connect to required services using service discovery
-        self.service_info = {}
-        self._discover_services()
-        
-        # Create socket for proactive suggestions (with port fallback)
-        self.suggestion_socket = self.context.socket(zmq.REP)
-        self.suggestion_socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
-        self.suggestion_socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
-        
-        # Apply secure ZMQ to suggestion socket if enabled
-        if SECURE_ZMQ:
-            self.suggestion_socket = configure_secure_server(self.suggestion_socket)
-
-        # Attempt to bind to the preferred port; fall back if it's unavailable.
-        self.suggestion_port = self.config.getint('coordinator.proactive_suggestion_port', 5591)
-        try:
-            suggestion_bind_address = f"tcp://{bind_address_ip}:{self.suggestion_port}"
-            self.suggestion_socket.bind(suggestion_bind_address)
-            logger.info(f"Proactive suggestion socket bound to {suggestion_bind_address}")
-        except zmq.ZMQError as e:
-            logger.warning(
-                f"Port {self.suggestion_port} already in use (error: {e}). "
-                "Searching for the next available port."
-            )
-            self.suggestion_port = find_available_port(self.suggestion_port + 1)
-            suggestion_bind_address = f"tcp://{bind_address_ip}:{self.suggestion_port}"
-            self.suggestion_socket.bind(suggestion_bind_address)
-            logger.info(f"Proactive suggestion socket bound to fallback port {suggestion_bind_address}")
         
         # Flag to control the agent
         self.running = True
@@ -282,7 +160,7 @@ class CoordinatorAgent(BaseAgent):
         
         # Proactive assistance state
         self.last_interaction_time = time.time()
-        self.pending_suggestions = []
+        self.pending_suggestions = []  # Initialize as empty list
         
         # Initialize memory connection
         self._init_memory_connection()
@@ -303,11 +181,7 @@ class CoordinatorAgent(BaseAgent):
         self.inactivity_thread.start()
         
         logger.info(f"CoordinatorAgent initialized and listening on port {self.port}")
-        
-    def _get_health_status(self):
-        # Basic health check.
-        return {'status': 'ok', 'running': self.running, 'pending_suggestions': len(self.pending_suggestions)}
-    
+
     def _register_service(self):
         """Register this agent with the service discovery system"""
         try:
@@ -330,7 +204,7 @@ class CoordinatorAgent(BaseAgent):
     def _init_memory_connection(self):
         """Initialize connection to the MemoryOrchestrator"""
         try:
-            # Get MemoryOrchestrator address from service discovery
+            # Try to discover MemoryOrchestrator via service discovery
             memory_address = get_service_address("MemoryOrchestrator")
             if memory_address:
                 # Extract host and port from the address
@@ -341,12 +215,14 @@ class CoordinatorAgent(BaseAgent):
                 logger.info(f"Discovered MemoryOrchestrator at {self.memory_host}:{self.memory_port}")
             else:
                 logger.warning("Failed to discover MemoryOrchestrator, will retry later")
-                self.memory_host = self.config.get('dependencies.memory_orchestrator_host', 'localhost')
-                self.memory_port = self.config.getint('dependencies.memory_orchestrator_port', 5576)
+                # Use default values if service discovery fails
+                self.memory_host = 'localhost'
+                self.memory_port = 5576
         except Exception as e:
             logger.error(f"Error initializing memory connection: {str(e)}")
-            self.memory_host = self.config.get('dependencies.memory_orchestrator_host', 'localhost')
-            self.memory_port = self.config.getint('dependencies.memory_orchestrator_port', 5576)
+            # Use default values if there's an error
+            self.memory_host = 'localhost'
+            self.memory_port = 5576
     
     def _get_memory_connection(self):
         """Get a connection to the MemoryOrchestrator"""
@@ -383,21 +259,23 @@ class CoordinatorAgent(BaseAgent):
             logger.error(f"Error getting memory connection: {str(e)}")
             return None
     
-    def store_memory(self, memory_type: str, content: str, tags: List[str] = None, priority: int = 5):
+    def store_memory(self, memory_type: str, content: str, tags: Optional[List[str]] = None, priority: int = 5):
         """Store a memory using the MemoryOrchestrator"""
         try:
             socket = self._get_memory_connection()
             if not socket:
                 logger.error("Failed to connect to MemoryOrchestrator")
                 return None
-            
+            # Ensure tags is always a list
+            if tags is None:
+                tags = []
             request = {
                 "action": "create",
                 "request_id": f"coord-{int(time.time())}",
                 "payload": {
                     "memory_type": memory_type,
                     "content": content,
-                    "tags": tags or [],
+                    "tags": tags,
                     "priority": priority
                 }
             }
@@ -458,13 +336,21 @@ class CoordinatorAgent(BaseAgent):
             
             for service_name in required_services:
                 service_info = discover_service(service_name)
-                if service_info and service_info.get("status") == "SUCCESS":
+                if service_info and isinstance(service_info, dict) and service_info.get("status") == "SUCCESS":
                     service_payload = service_info.get("payload")
-                    self.service_info[service_name] = {
-                        "host": service_payload["ip"],
-                        "port": service_payload["port"]
-                    }
-                    logger.info(f"Discovered {service_name} at {service_payload['ip']}:{service_payload['port']}")
+                    if service_payload and isinstance(service_payload, dict):
+                        host = service_payload.get("ip")
+                        port = service_payload.get("port")
+                        if host is not None and port is not None:
+                            self.service_info[service_name] = {
+                                "host": host,
+                                "port": port
+                            }
+                            logger.info(f"Discovered {service_name} at {host}:{port}")
+                        else:
+                            logger.warning(f"Service payload for {service_name} missing host or port.")
+                    else:
+                        logger.warning(f"Service payload for {service_name} is not available or not a dict.")
                 else:
                     logger.warning(f"Failed to discover {service_name}, will retry later")
                     
@@ -472,13 +358,21 @@ class CoordinatorAgent(BaseAgent):
             pc2_services = ["PC2Agent", "VisionProcessingAgent"]
             for service_name in pc2_services:
                 service_info = discover_service(service_name)
-                if service_info and service_info.get("status") == "SUCCESS":
+                if service_info and isinstance(service_info, dict) and service_info.get("status") == "SUCCESS":
                     service_payload = service_info.get("payload")
-                    self.service_info[service_name] = {
-                        "host": service_payload["ip"],
-                        "port": service_payload["port"]
-                    }
-                    logger.info(f"Discovered PC2 service {service_name} at {service_payload['ip']}:{service_payload['port']}")
+                    if service_payload and isinstance(service_payload, dict):
+                        host = service_payload.get("ip")
+                        port = service_payload.get("port")
+                        if host is not None and port is not None:
+                            self.service_info[service_name] = {
+                                "host": host,
+                                "port": port
+                            }
+                            logger.info(f"Discovered PC2 service {service_name} at {host}:{port}")
+                        else:
+                            logger.warning(f"PC2 service payload for {service_name} missing host or port.")
+                    else:
+                        logger.warning(f"PC2 service payload for {service_name} is not available or not a dict.")
                 else:
                     logger.warning(f"Failed to discover PC2 service {service_name}, will retry later")
         
@@ -501,31 +395,35 @@ class CoordinatorAgent(BaseAgent):
                 socket = self.context.socket(zmq.REQ)
                 socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
                 socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     socket = configure_secure_client(socket)
-                    
                 socket.connect(service_address)
                 logger.debug(f"Connected to {service_name} at {service_address}")
                 return socket
             elif service_name in self.service_info:
                 # Fall back to cached service info
-                host = self.service_info[service_name]["host"]
-                port = self.service_info[service_name]["port"]
-                
-                # Create a new socket for the request
-                socket = self.context.socket(zmq.REQ)
-                socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-                socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-                
-                # Apply secure ZMQ if enabled
-                if SECURE_ZMQ:
-                    socket = configure_secure_client(socket)
-                    
-                socket.connect(f"tcp://{host}:{port}")
-                logger.debug(f"Connected to {service_name} at {host}:{port} (fallback)")
-                return socket
+                service_info = self.service_info.get(service_name)
+                if service_info is not None and isinstance(service_info, dict):
+                    host = service_info.get("host")
+                    port = service_info.get("port")
+                    if host is not None and port is not None:
+                        # Create a new socket for the request
+                        socket = self.context.socket(zmq.REQ)
+                        socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+                        socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                        # Apply secure ZMQ if enabled
+                        if SECURE_ZMQ:
+                            socket = configure_secure_client(socket)
+                        socket.connect(f"tcp://{host}:{port}")
+                        logger.debug(f"Connected to {service_name} at {host}:{port} (fallback)")
+                        return socket
+                    else:
+                        logger.error(f"Cached service_info for {service_name} is missing host or port.")
+                        return None
+                else:
+                    logger.error(f"Cached service_info for {service_name} is not available or not a dict.")
+                    return None
             else:
                 logger.error(f"Failed to discover {service_name}")
                 return None
@@ -533,12 +431,37 @@ class CoordinatorAgent(BaseAgent):
             logger.error(f"Error getting service connection for {service_name}: {str(e)}")
             return None
 
+    def run(self):
+        """
+        Run the agent. This method is called by the health checker.
+        Initialize the health check socket and thread, then call start().
+        """
+        try:
+            # Add debug logging
+            print("CoordinatorAgent.run() called")
+            logger.info("CoordinatorAgent.run() called")
+            
+            # Call start() to handle requests
+            self.start()
+        except KeyboardInterrupt:
+            logger.info(f"{self.name} interrupted by user")
+        except Exception as e:
+            logger.error(f"Error in {self.name}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+        finally:
+            self.stop()
+            
     def start(self):
         """Start the Coordinator Agent."""
         print("Starting CoordinatorAgent...")
         logger.info("Starting CoordinatorAgent")
         
         try:
+            # Add debug logging
+            print("CoordinatorAgent.start() called - about to handle requests")
+            logger.info("CoordinatorAgent.start() called - about to handle requests")
+            
             self._handle_requests()
         except KeyboardInterrupt:
             logger.info("CoordinatorAgent interrupted by user")
@@ -662,6 +585,11 @@ class CoordinatorAgent(BaseAgent):
     def _present_suggestion(self, suggestion: Dict[str, Any]):
         """Present a proactive suggestion to the user."""
         try:
+            # Validate suggestion has required content
+            if not suggestion or 'content' not in suggestion:
+                logger.error(f"Invalid suggestion format: missing 'content' key: {suggestion}")
+                return
+                
             # Log the suggestion
             logger.info(f"Presenting proactive suggestion: {suggestion['content']}")
             
@@ -680,6 +608,8 @@ class CoordinatorAgent(BaseAgent):
             
         except Exception as e:
             logger.error(f"Error presenting suggestion: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
     def _process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process an incoming request based on its type."""
@@ -1000,216 +930,56 @@ class CoordinatorAgent(BaseAgent):
             return {"status": "error", "error": f"Failed to process vision request: {str(e)}"}
 
     def _health_check(self) -> Dict[str, Any]:
-        """Perform a health check on all connected agents."""
-        health_status = {
-            "coordinator": "ok",
-            "task_router": "unknown",
-            "tts": "unknown",
-            "pc2": "unknown",
-            "health_monitor": "unknown",
-            "vision_capture": "unknown",
-            "vision_processing": "unknown"
-        }
-        
-        # Check Task Router
-        try:
-            socket = self._get_service_connection("TaskRouter")
-            if not socket:
-                health_status["task_router"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["task_router"] = "ok"
-            else:
-                health_status["task_router"] = "error"
-        except:
-            health_status["task_router"] = "error"
-        
-        # Check TTS Agent
-        try:
-            socket = self._get_service_connection("TTSConnector")
-            if not socket:
-                health_status["tts"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["tts"] = "ok"
-            else:
-                health_status["tts"] = "error"
-        except:
-            health_status["tts"] = "error"
-        
-        # Check PC2 Agent
-        try:
-            socket = self._get_service_connection("PC2Agent")
-            if not socket:
-                health_status["pc2"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["pc2"] = "ok"
-            else:
-                health_status["pc2"] = "error"
-        except:
-            health_status["pc2"] = "error"
-        
-        # Check Health Monitor
-        try:
-            socket = self._get_service_connection("HealthMonitor")
-            if not socket:
-                health_status["health_monitor"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["health_monitor"] = "ok"
-            else:
-                health_status["health_monitor"] = "error"
-        except:
-            health_status["health_monitor"] = "error"
-        
-        # Check Vision Capture Agent
-        try:
-            socket = self._get_service_connection("VisionCaptureAgent")
-            if not socket:
-                health_status["vision_capture"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["vision_capture"] = "ok"
-            else:
-                health_status["vision_capture"] = "error"
-        except:
-            health_status["vision_capture"] = "error"
-        
-        # Check Vision Processing Agent
-        try:
-            socket = self._get_service_connection("VisionProcessingAgent")
-            if not socket:
-                health_status["vision_processing"] = "error"
-                return {
-                    "status": "ok",
-                    "health_status": health_status
-                }
-            
-            health_request = {
-                "type": "health_check"
-            }
-            
-            socket.send_string(json.dumps(health_request))
-            response_str = socket.recv_string()
-            socket.close()
-            
-            response = json.loads(response_str)
-            
-            if response.get("status") == "ok":
-                health_status["vision_processing"] = "ok"
-            else:
-                health_status["vision_processing"] = "error"
-        except:
-            health_status["vision_processing"] = "error"
-        
-        return {
-            "status": "ok",
-            "health_status": health_status
-        }
+        """Perform a health check on this agent and all connected agents."""
+        # Get own detailed health status
+        my_health = self.health_check()
+
+        # Aggregate dependency health checks (legacy logic preserved)
+        dependency_health = {}
+        # List of dependencies to check
+        dependencies = [
+            ("TaskRouter", "task_router"),
+            ("TTSConnector", "tts"),
+            ("PC2Agent", "pc2"),
+            ("HealthMonitor", "health_monitor"),
+            ("VisionCaptureAgent", "vision_capture"),
+            ("cessingAgent", "vision_processing")
+        ]
+        for service_name, key in dependencies:
+            try:
+                socket = self._get_service_connection(service_name)
+                if not socket:
+                    dependency_health[key] = "error"
+                    continue
+                health_request = {"type": "health_check"}
+                socket.send_string(json.dumps(health_request))
+                response_str = socket.recv_string()
+                socket.close()
+                response = json.loads(response_str)
+                if response.get("status") in ("ok", "healthy"):
+                    dependency_health[key] = response.get("status")
+                else:
+                    dependency_health[key] = "error"
+            except Exception as e:
+                dependency_health[key] = f"error: {str(e)}"
+
+        my_health['dependency_health_status'] = dependency_health
+        return my_health
 
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+        return {"status": "healthy", "agent_name": self.name}
 
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
+    def _get_health_status(self):
+        try:
+            return self.health_check()
         except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
+            import traceback
+            logger.error(f"Exception in _get_health_status: {e}\n{traceback.format_exc()}")
             return {
                 "status": "unhealthy",
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
+                "error": f"Exception in _get_health_status: {str(e)}"
             }
 
 if __name__ == "__main__":
@@ -1217,7 +987,7 @@ if __name__ == "__main__":
     agent = None
     try:
         agent = CoordinatorAgent()
-        agent.run()
+        agent.start()  # Call start() instead of run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:

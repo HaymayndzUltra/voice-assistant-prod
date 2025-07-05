@@ -1,0 +1,198 @@
+version: '3'
+
+services:
+  core_infrastructure:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.core_infrastructure
+    image: pc2-core-infrastructure:latest
+    container_name: pc2-core-infrastructure
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "core_infrastructure"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  memory_storage:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.memory_storage
+    image: pc2-memory-storage:latest
+    container_name: pc2-memory-storage
+    depends_on:
+      - core_infrastructure
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "memory_storage"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  security_authentication:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.security_authentication
+    image: pc2-security-authentication:latest
+    container_name: pc2-security-authentication
+    depends_on:
+      - core_infrastructure
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "security_authentication"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  integration_communication:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.integration_communication
+    image: pc2-integration-communication:latest
+    container_name: pc2-integration-communication
+    depends_on:
+      - core_infrastructure
+      - security_authentication
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "integration_communication"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  monitoring_support:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.monitoring_support
+    image: pc2-monitoring-support:latest
+    container_name: pc2-monitoring-support
+    depends_on:
+      - core_infrastructure
+      - memory_storage
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "monitoring_support"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  dream_tutoring:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.dream_tutoring
+    image: pc2-dream-tutoring:latest
+    container_name: pc2-dream-tutoring
+    depends_on:
+      - core_infrastructure
+      - memory_storage
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "dream_tutoring"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  web_external:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.web_external
+    image: pc2-web-external:latest
+    container_name: pc2-web-external
+    depends_on:
+      - core_infrastructure
+      - memory_storage
+      - integration_communication
+    networks:
+      - pc2-network
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config
+      - ../data:/app/data
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "python", "-m", "pc2_code.scripts.health_check", "web_external"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  pc2-network:
+    external: true 

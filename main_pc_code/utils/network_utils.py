@@ -1,121 +1,228 @@
 #!/usr/bin/env python3
 """
-Network Configuration Utilities
+Network Utilities
 
-This module provides functions to load and access the central network configuration
-for the distributed AI system running across MainPC and PC2.
+Provides functions for network configuration and machine identification.
 """
 
 import os
 import sys
 import yaml
-import socket
 import logging
-from pathlib import Path
+import netifaces
 from typing import Dict, Any, Optional
 
-# Set up logging
+# Add the project's main_pc_code directory to the Python path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
+
+# Configure logging
 logger = logging.getLogger(__name__)
 
-# Construct the path relative to the project root to make it more robust
-# This approach works regardless of where the script is imported from
-PROJECT_ROOT = Path(os.path.abspath(__file__)).parent.parent.parent
-CONFIG_PATH = os.path.join(PROJECT_ROOT, 'config', 'network_config.yaml')
+# Global cache for network configuration
+_network_config = None
 
-def load_network_config() -> Optional[Dict[str, Any]]:
+def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """
-    Loads the central network configuration from network_config.yaml.
+    Load network configuration from YAML file.
     
+    Args:
+        config_path: Path to the configuration file, or None to use default
+        
     Returns:
-        dict: A dictionary containing the network configuration, or None if an error occurs.
+        Dictionary containing network configuration
     """
+    global _network_config
+    
+    # Return cached configuration if available
+    if _network_config is not None:
+        return _network_config
+    
+    # Use default path if not specified
+    if config_path is None:
+        config_path = os.environ.get(
+            "NETWORK_CONFIG_PATH", 
+            os.path.join(PROJECT_ROOT, "config", "network_config.yaml")
+        )
+    
     try:
-        with open(os.path.abspath(CONFIG_PATH), 'r') as f:
+        with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
-            logger.debug(f"Network configuration loaded successfully from {CONFIG_PATH}")
-            return config
-    except FileNotFoundError:
-        logger.error(f"Network configuration file not found at {CONFIG_PATH}")
-        return None
-    except yaml.YAMLError as e:
-        logger.error(f"Could not parse network_config.yaml: {e}")
-        return None
+        
+        # Get environment type
+        env_type = os.environ.get("ENV_TYPE", "development")
+        
+        # Load environment-specific configuration
+        if "environment" in config and env_type in config["environment"]:
+            env_config = config["environment"][env_type]
+            
+            # Override with environment variables
+            for key, value in env_config.items():
+                if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+                    env_var = value[2:-1]
+                    env_value = os.environ.get(env_var)
+                    if env_value is not None:
+                        env_config[key] = env_value
+                    else:
+                        # Use default if environment variable is not set
+                        if "defaults" in config and key in config["defaults"]:
+                            env_config[key] = config["defaults"][key]
+            
+            # Update machine IPs based on environment configuration
+            if "machines" in config:
+                for machine, machine_config in config["machines"].items():
+                    if "ip" in machine_config and isinstance(machine_config["ip"], str):
+                        if machine_config["ip"].startswith("${") and machine_config["ip"].endswith("}"):
+                            env_var = machine_config["ip"][2:-1]
+                            env_value = os.environ.get(env_var)
+                            if env_value is not None:
+                                machine_config["ip"] = env_value
+                            elif machine.lower() == "mainpc" and "mainpc_ip" in env_config:
+                                machine_config["ip"] = env_config["mainpc_ip"]
+                            elif machine.lower() == "pc2" and "pc2_ip" in env_config:
+                                machine_config["ip"] = env_config["pc2_ip"]
+        
+        logger.debug(f"Network configuration loaded successfully from {config_path}")
+        _network_config = config
+        return config
     except Exception as e:
-        logger.error(f"Unexpected error loading network config: {e}")
-        return None
-
-def get_mainpc_address(service_name: str = "system_digital_twin") -> str:
-    """
-    Gets the full address (host:port) for a service on MainPC.
-    
-    Args:
-        service_name: Name of the service as defined in the ports section of the config file
-                     Defaults to "system_digital_twin"
-    
-    Returns:
-        str: TCP address string in format "tcp://host:port"
-    """
-    config = load_network_config()
-    if not config:
-        logger.warning("Network configuration not loaded. Falling back to localhost:7120")
-        return "tcp://localhost:7120"
-    
-    host = config.get('main_pc_ip', 'localhost')
-    port = config.get('ports', {}).get(service_name, 7120)
-    
-    return f"tcp://{host}:{port}"
-
-def get_pc2_address(service_name: str = "unified_memory_reasoning") -> str:
-    """
-    Gets the full address (host:port) for a service on PC2.
-    
-    Args:
-        service_name: Name of the service as defined in the ports section of the config file
-                    Defaults to "unified_memory_reasoning"
-    
-    Returns:
-        str: TCP address string in format "tcp://host:port"
-    """
-    config = load_network_config()
-    if not config:
-        logger.warning("Network configuration not loaded. Falling back to localhost:7230")
-        return "tcp://localhost:7230"
-    
-    host = config.get('pc2_ip', 'localhost')
-    port = config.get('ports', {}).get(service_name, 7230)
-    
-    return f"tcp://{host}:{port}"
+        logger.error(f"Error loading network configuration from {config_path}: {e}")
+        # Return a minimal default configuration
+        return {
+            "environment": {
+                "development": {
+                    "use_local_mode": True,
+                    "mainpc_ip": "127.0.0.1",
+                    "pc2_ip": "127.0.0.1"
+                }
+            },
+            "machines": {
+                "mainpc": {"ip": "127.0.0.1"},
+                "pc2": {"ip": "127.0.0.1"}
+            }
+        }
 
 def get_current_machine() -> str:
     """
-    Determine which machine this code is running on (MainPC or PC2)
-    by comparing the local IP address with the configured IPs.
+    Determine which machine this code is running on based on IP address.
     
     Returns:
-        str: "MAINPC", "PC2", or "UNKNOWN"
+        String 'MAINPC', 'PC2', or 'UNKNOWN'
     """
-    config = load_network_config()
-    if not config:
-        return "UNKNOWN"
+    # Force local mode if environment variable is set
+    if os.environ.get("FORCE_LOCAL_MODE", "").lower() in ("true", "1", "yes"):
+        logger.info("Forced local mode, assuming MAINPC")
+        return "MAINPC"
     
     try:
-        # Get the local IP address by creating a temporary socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Doesn't need to be reachable, just to determine the outgoing interface
-        s.connect(("8.8.8.8", 80))
-        local_ip = s.getsockname()[0]
-        s.close()
+        # Get all IP addresses of this machine
+        local_ips = []
+        for interface in netifaces.interfaces():
+            addrs = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addrs:
+                for addr in addrs[netifaces.AF_INET]:
+                    local_ips.append(addr['addr'])
         
-        if local_ip == config.get('main_pc_ip'):
-            return "MAINPC"
-        elif local_ip == config.get('pc2_ip'):
-            return "PC2"
+        # Remove loopback
+        if '127.0.0.1' in local_ips:
+            local_ips.remove('127.0.0.1')
+            
+        # Load network configuration
+        config = load_network_config()
+        
+        # Check if any local IP matches a machine in the configuration
+        if "machines" in config:
+            for machine, machine_config in config["machines"].items():
+                if "ip" in machine_config and machine_config["ip"] in local_ips:
+                    logger.info(f"Identified as {machine.upper()} based on IP {machine_config['ip']}")
+                    return machine.upper()
+        
+        # If we get here, no match was found
+        if local_ips:
+            logger.warning(f"Local IP {local_ips[0]} doesn't match any configured machine IP")
+            
+            # In development mode, assume MAINPC for convenience
+            env_type = os.environ.get("ENV_TYPE", "development")
+            if env_type == "development":
+                logger.info("Development mode: assuming MAINPC despite IP mismatch")
+                return "MAINPC"
         else:
-            logger.warning(f"Local IP {local_ip} doesn't match any configured machine IP")
-            return "UNKNOWN"
+            logger.warning("No non-loopback IP addresses found")
+        
+        return "UNKNOWN"
     except Exception as e:
         logger.error(f"Error determining current machine: {e}")
         return "UNKNOWN"
+
+def get_machine_ip(machine: Optional[str] = None) -> str:
+    """
+    Get the IP address for the specified machine.
+    
+    Args:
+        machine: Machine name ('MAINPC', 'PC2'), or None for current machine
+    
+    Returns:
+        IP address as string, or '127.0.0.1' if not found
+    """
+    if machine is None:
+        machine = get_current_machine()
+    
+    machine = machine.lower()
+    
+    # Check environment variables first
+    if machine == "mainpc":
+        env_ip = os.environ.get("MAINPC_IP")
+        if env_ip:
+            return env_ip
+    elif machine == "pc2":
+        env_ip = os.environ.get("PC2_IP")
+        if env_ip:
+            return env_ip
+    
+    # Then check configuration
+    config = load_network_config()
+    if "machines" in config and machine in config["machines"]:
+        machine_config = config["machines"][machine]
+        if "ip" in machine_config:
+            return machine_config["ip"]
+    
+    # Default to loopback for development
+    env_type = os.environ.get("ENV_TYPE", "development")
+    if env_type == "development":
+        logger.debug(f"Using loopback IP for {machine} in development mode")
+        return "127.0.0.1"
+    
+    logger.warning(f"Could not find IP for machine {machine}, using loopback")
+    return "127.0.0.1"
+
+def is_local_mode() -> bool:
+    """
+    Check if the system is running in local mode.
+    
+    Returns:
+        True if running in local mode, False otherwise
+    """
+    # Check environment variable first
+    force_local = os.environ.get("FORCE_LOCAL_MODE", "").lower()
+    if force_local in ("true", "1", "yes"):
+        return True
+    
+    # Then check configuration
+    config = load_network_config()
+    env_type = os.environ.get("ENV_TYPE", "development")
+    
+    if "environment" in config and env_type in config["environment"]:
+        env_config = config["environment"][env_type]
+        if "use_local_mode" in env_config:
+            return env_config["use_local_mode"]
+    
+    # Default to True for development
+    if env_type == "development":
+        return True
+    
+    return False
 
 if __name__ == '__main__':
     # Configure logging for the test
@@ -131,8 +238,8 @@ if __name__ == '__main__':
         print(f"System Digital Twin port: {config.get('ports', {}).get('system_digital_twin')}")
         
         print("\nUtility function tests:")
-        print(f"MainPC SDT address: {get_mainpc_address()}")
-        print(f"PC2 UMR address: {get_pc2_address()}")
+        print(f"MainPC SDT address: {get_machine_ip()}")
+        print(f"PC2 UMR address: {get_machine_ip('pc2')}")
         print(f"Current machine: {get_current_machine()}")
     else:
-        print("Failed to load network configuration") 
+        print("Failed to load network configuration")

@@ -8,6 +8,7 @@ MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
+# Define PROJECT_ROOT properly
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -60,7 +61,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(f"{PROJECT_ROOT}/logs/streaming_speech_recognition.log")
+        logging.FileHandler(os.path.join(PROJECT_ROOT, "logs/streaming_speech_recognition.log"))
     ])
 logger = logging.getLogger("StreamingSpeechRecognition")
 

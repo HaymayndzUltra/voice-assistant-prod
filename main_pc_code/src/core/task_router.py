@@ -32,6 +32,7 @@ import msgpack  # For efficient message serialization
 import heapq  # For priority queue
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Tuple
+import argparse
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.src.core.http_server import setup_health_check_server
 from main_pc_code.utils.config_loader import load_config
@@ -43,6 +44,11 @@ import pickle
 from main_pc_code.src.memory.zmq_encoding_utils import safe_encode_json, safe_decode_json
 import psutil
 from datetime import datetime
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Task Router Agent')
+parser.add_argument('--port', type=int, help='Port to bind to')
+args, unknown = parser.parse_known_args()
 
 # Module-level configuration loading
 config = load_config()
@@ -61,8 +67,26 @@ logging.basicConfig(
 logger = logging.getLogger('TaskRouter')
 
 # === ALL CONFIGURATION FROM config ===
-DEFAULT_PORT = int(os.environ.get("TASK_ROUTER_PORT", "7000"))  # Default port if not specified in config
-TASK_ROUTER_PORT = config.get("port", DEFAULT_PORT)
+# Get port from command line args, environment variable, config file, or use default
+DEFAULT_PORT = 8571  # Changed from 7000 to match the config file
+cmd_port = args.port
+env_port = os.environ.get("TASK_ROUTER_PORT")
+config_port = config.get("port")
+
+# Priority: command line > environment > config file > default
+if cmd_port is not None:
+    TASK_ROUTER_PORT = cmd_port
+    logger.info(f"Using port from command line: {TASK_ROUTER_PORT}")
+elif env_port:
+    TASK_ROUTER_PORT = int(env_port)
+    logger.info(f"Using port from environment: {TASK_ROUTER_PORT}")
+elif config_port:
+    TASK_ROUTER_PORT = config_port
+    logger.info(f"Using port from config: {TASK_ROUTER_PORT}")
+else:
+    TASK_ROUTER_PORT = DEFAULT_PORT
+    logger.info(f"Using default port: {TASK_ROUTER_PORT}")
+
 TASK_ROUTER_HEALTH_PORT = TASK_ROUTER_PORT + 1
 CRIT_BREAK_FAIL = config.get("circuit_breaker_failure_threshold", 3)
 CRIT_BREAK_RESET = config.get("circuit_breaker_reset_timeout", 30)
@@ -203,7 +227,8 @@ class TaskRouter(BaseAgent):
 
     def __init__(self, **kwargs):
         # === CONFIGURATION FROM config ===
-        self.port = config.get("port", DEFAULT_PORT)
+        # Use the module-level port that's already been determined from all sources
+        self.port = TASK_ROUTER_PORT
         self.name = config.get("name", 'TaskRouter')
         
         # Call BaseAgent's __init__ with proper parameters
@@ -239,9 +264,20 @@ class TaskRouter(BaseAgent):
         logger.info("Task Router Agent initialized successfully")
 
     def _load_configuration(self):
-        """Load configuration from command-line arguments."""
+        """Load configuration from command-line arguments and config file."""
         try:
-            self.config = vars(config)
+            # Don't use vars() on config as it might not have __dict__
+            # Instead, use it directly if it's a dictionary, or convert it if needed
+            if isinstance(config, dict):
+                self.config = config
+            else:
+                # Try to convert to dict if it has items() method
+                try:
+                    self.config = {k: v for k, v in config.items()}
+                except AttributeError:
+                    # Fallback to empty dict if conversion fails
+                    self.config = {}
+            
             logger.info("Configuration loaded successfully")
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
@@ -250,14 +286,25 @@ class TaskRouter(BaseAgent):
     def _init_zmq(self, test_ports: Optional[Tuple[int]] = None):
         """Initialize ZMQ sockets."""
         # REP socket for incoming tasks
+        # Use test_ports if provided, otherwise use the class port attribute
+        # which has already been set from command line/env/config/default
         self.task_port = test_ports[0] if test_ports else self.port
         self.task_socket = self.context.socket(zmq.REP)
         
         if self.secure_zmq:
             self.task_socket = configure_secure_server(self.task_socket)
         
+        try:
         self.task_socket.bind(f"tcp://*:{self.task_port}")
         logger.info(f"Task router listening on port {self.task_port}")
+        except zmq.error.ZMQError as e:
+            logger.error(f"Failed to bind to port {self.task_port}: {e}")
+            # Try an alternative port if binding fails
+            alt_port = self.task_port + 10
+            logger.info(f"Attempting to bind to alternative port {alt_port}")
+            self.task_socket.bind(f"tcp://*:{alt_port}")
+            self.task_port = alt_port
+            logger.info(f"Successfully bound to alternative port {self.task_port}")
         
         # Initialize interrupt socket
         self.interrupt_socket = self.context.socket(zmq.SUB)
