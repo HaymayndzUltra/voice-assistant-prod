@@ -1,7 +1,7 @@
 # AGENTS ORDERED BY CONTAINER GROUPS
 
 ## Core Infrastructure Container
-- **RequestCoordinator**: Unified central coordinator that handles the flow of information between all agents and routes tasks to appropriate services. Combines the functionality of the former CoordinatorAgent and TaskRouter. Fully compliant with Phase 0 standards, using Pydantic data models for type safety, BaseAgent helper methods for standardized communication, and dynamic service discovery.
+- **RequestCoordinator**: Unified central coordinator that handles the flow of information between all agents and routes tasks to appropriate services. Combines the functionality of the former CoordinatorAgent and TaskRouter. Fully compliant with Phase 0 standards, using Pydantic data models for type safety, BaseAgent helper methods for standardized communication, and dynamic service discovery. This agent coordinates and dispatches requests on the Main PC. It now reports errors via the distributed Error Bus (ZMQ PUB/SUB, topic 'ERROR:') to the SystemHealthManager on PC2, enabling scalable, decoupled error reporting.
 - **SystemDigitalTwin**: Central monitoring system na nagta-track ng system metrics at serves as a central registry for other agents.
 - **DynamicIdentityAgent**: Manages system identity and persona switching, connecting to multiple core services.
 - **UnifiedSystemAgent**: Central command center for system orchestration, service discovery, maintenance, and monitoring.
@@ -11,6 +11,7 @@
 - **MemoryClient**: Sole interface for all memory operations on Main PC, forwarding requests to the central MemoryOrchestratorService on PC2. Replaces all legacy memory managers.
 - **KnowledgeBase**: Manages the system's knowledge base using SQLite for storing, retrieving, and searching facts.
 - **TTSCache**: Provides caching functionality for text-to-speech operations to avoid redundant processing.
+- **MemoryOrchestratorService**: This service is the central memory hub for the distributed system, consolidating memory orchestration, robust SQLite persistence, and Redis-based distributed caching. This agent now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
 
 ## AI Models & GPU Services Container
 - **ModelManagerAgent**: Direktang namamahala ng AI models at GPU resources, nagmo-monitor ng VRAM usage.
@@ -73,4 +74,149 @@
 ## Learning & Knowledge Container
 - **LearningAdjusterAgent**: Manages and optimizes learning parameters for agents.
 - **LearningManager**: Responsible for managing the learning process of the AI system.
-- **ActiveLearningMonitor**: Monitors interactions between users and the system for learning opportunities. 
+- **ActiveLearningMonitor**: Monitors interactions between users and the system for learning opportunities.
+
+# Main PC Agents Documentation
+
+## Core System Agents
+
+### RequestCoordinator
+- **Purpose**: Central request handling and routing for all agents
+- **Port**: 26002
+- **Key Functions**:
+  - Routes requests to appropriate agents
+  - Manages request lifecycle and timeouts
+  - Implements circuit breaker pattern for resilience
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### ModelOrchestrator
+- **Purpose**: Orchestrates model selection and routing
+- **Port**: 7010
+- **Key Functions**:
+  - Breaks down high-level goals into executable tasks
+  - Selects appropriate models for each task
+  - Manages execution flow and dependencies
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### SystemDigitalTwin
+- **Purpose**: Maintains system-wide state and service discovery
+- **Port**: 7120
+- **Key Functions**:
+  - Provides service discovery for all agents
+  - Maintains system configuration and state
+  - Handles agent registration and health monitoring
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### PredictiveHealthMonitor
+- **Purpose**: Monitors and predicts agent health
+- **Port**: 5613
+- **Key Functions**:
+  - Monitors agent health and performance
+  - Predicts potential failures using machine learning
+  - Implements tiered recovery strategies
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+## Error Management
+
+The system now uses an event-driven Error Bus architecture for error management:
+
+1. All agents report errors via the central Error Bus (ZMQ PUB/SUB, port 7150)
+2. The SystemHealthManager agent (on PC2) subscribes to error events and handles them
+3. Errors are published with the topic "ERROR:" and include:
+   - Error type
+   - Error message
+   - Severity
+   - Context (optional)
+
+This architecture provides:
+- Decoupled error reporting and processing
+- Improved scalability and resilience
+- Centralized error management and pattern detection
+- Simplified agent code
+
+## Memory System
+
+### MemoryClient
+- **Purpose**: Client for the central MemoryOrchestratorService on PC2
+- **Port**: 5713
+- **Key Functions**:
+  - Provides memory storage and retrieval operations
+  - Caches frequently accessed memories
+  - Implements memory importance scoring
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### SessionMemoryAgent
+- **Purpose**: Manages short-term session memory
+- **Port**: 5574
+- **Key Functions**:
+  - Stores conversation context and session state
+  - Provides recency-based memory retrieval
+  - Implements memory summarization
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### LearningManager
+- **Purpose**: Manages learning and adaptation
+- **Port**: 5580
+- **Key Functions**:
+  - Identifies learning opportunities
+  - Coordinates model fine-tuning
+  - Tracks learning progress
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+## Speech Processing
+
+### StreamingSpeechRecognition
+- **Purpose**: Converts speech to text in real-time
+- **Port**: 6580
+- **Key Functions**:
+  - Processes audio streams from AudioCapture
+  - Provides real-time transcription
+  - Supports multiple languages
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### StreamingTTSAgent
+- **Purpose**: Converts text to speech in real-time
+- **Port**: 5562
+- **Key Functions**:
+  - Generates high-quality speech from text
+  - Supports multiple voices and languages
+  - Implements streaming for low latency
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### StreamingInterruptHandler
+- **Purpose**: Handles interruptions during speech output
+- **Port**: 5576
+- **Key Functions**:
+  - Monitors for interruption keywords
+  - Sends stop signals to TTS and other agents
+  - Manages graceful interruption of ongoing speech
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+## Model Management
+
+### ModelManagerAgent
+- **Purpose**: Manages AI models and their lifecycle
+- **Port**: 5570
+- **Key Functions**:
+  - Loads and unloads models based on demand
+  - Manages model versions and updates
+  - Provides unified interface for model inference
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### VRAMOptimizerAgent
+- **Purpose**: Optimizes GPU memory usage
+- **Port**: 5572
+- **Key Functions**:
+  - Monitors VRAM usage across all models
+  - Implements model offloading strategies
+  - Prevents VRAM fragmentation
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### GGUFModelManager
+- **Purpose**: Manages GGUF format models
+- **Port**: 5575
+- **Key Functions**:
+  - Loads and manages GGUF models
+  - Provides inference API for GGUF models
+  - Implements model caching and optimization
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')** 

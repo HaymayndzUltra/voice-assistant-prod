@@ -78,9 +78,123 @@ DEPENDENCIES: zmq, json, threading, BaseAgent.
 
 AGENT: MemoryOrchestratorService
 GROUP: Data & Storage Services
-REASONING: This service is the central memory hub for the distributed system, consolidating memory orchestration, robust SQLite persistence, and Redis-based distributed caching. It exposes a unified ZMQ API for all memory operations (add, get, search, update, delete) and serves as the single source of truth for all memory data. The service implements advanced features including memory decay, reinforcement learning, hierarchical organization, and semantic search. It runs on port 7140 to avoid conflicts with other services and is foundational for all memory-related workflows.
+REASONING: This service is the central memory hub for the distributed system, consolidating memory orchestration, robust SQLite persistence, and Redis-based distributed caching. This agent now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:'). It exposes a unified ZMQ API for all memory operations (add, get, search, update, delete) and serves as the single source of truth for all memory data. The service implements advanced features including memory decay, reinforcement learning, hierarchical organization, and semantic search. It runs on port 7140 to avoid conflicts with other services and is foundational for all memory-related workflows.
 RESOURCES: Moderate to High (database operations, Redis cache)
 DEPENDENCIES: BaseAgent, sqlite3, zmq, pydantic, threading, redis.
 FILE: pc2_code/agents/memory_orchestrator_service.py
 PORT: 7140
 HEALTH_CHECK_PORT: 7141
+
+AGENT: SystemHealthManager
+GROUP: Utilities & Support Services
+REASONING: This agent is now the central event-driven error management and self-healing agent for PC2. It manages the Error Bus (ZMQ PUB/SUB, topic 'ERROR:') for scalable, decoupled error reporting and processing. It autonomously collects errors, analyzes logs, monitors agent health, and performs recovery actions.
+RESOURCES: Moderate (event bus, log analysis, health monitoring)
+DEPENDENCIES: zmq, BaseAgent, threading, json, logging, MemoryOrchestratorService.
+FILE: pc2_code/agents/ForPC2/system_health_manager.py
+PORT: 7117
+HEALTH_CHECK_PORT: 8117
+ERROR_BUS_PORT: 7150
+
+# PC2 Agents Documentation
+
+## Core System Agents
+
+### SystemHealthManager
+- **Purpose**: Centralized error management and system health monitoring
+- **Port**: 7130
+- **Error Bus Port**: 7150
+- **Key Functions**:
+  - Listens for errors on the Error Bus (ZMQ PUB/SUB, topic 'ERROR:')
+  - Analyzes error patterns and determines appropriate responses
+  - Implements recovery strategies based on error severity
+  - Monitors agent health via heartbeats
+  - Scans log files for error patterns
+  - Consolidates functionality from former UnifiedErrorAgent, RCA_Agent, and SelfHealingAgent
+
+### MemoryOrchestratorService
+- **Purpose**: Central memory management service
+- **Port**: 7140
+- **Key Functions**:
+  - Stores and retrieves memory entries
+  - Implements memory importance scoring
+  - Provides memory search capabilities
+  - Broadcasts memory updates to subscribers
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### RemoteConnectorAgent
+- **Purpose**: Connects to remote model services
+- **Port**: 7160
+- **Key Functions**:
+  - Manages connections to external AI models
+  - Provides unified interface for model requests
+  - Implements request routing and load balancing
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### PerformanceLoggerAgent
+- **Purpose**: Logs and analyzes system performance
+- **Port**: 7170
+- **Key Functions**:
+  - Collects performance metrics from all agents
+  - Generates performance reports and visualizations
+  - Identifies performance bottlenecks
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+## Error Management Architecture
+
+The system now uses an event-driven Error Bus architecture for error management:
+
+1. **Error Bus**: ZMQ PUB/SUB pattern on port 7150
+   - All agents publish errors to topic "ERROR:"
+   - SystemHealthManager subscribes to all error messages
+
+2. **Error Format**:
+   ```json
+   {
+     "error_type": "string",
+     "message": "string",
+     "severity": "string",
+     "context": {}
+   }
+   ```
+
+3. **Error Processing Flow**:
+   - Agent detects an error and calls its report_error method
+   - Error is published to the Error Bus with topic "ERROR:"
+   - SystemHealthManager receives the error message
+   - SystemHealthManager analyzes the error and determines appropriate action
+   - Recovery actions are executed based on error severity and patterns
+
+4. **Benefits**:
+   - Decoupled architecture improves system resilience
+   - Centralized error processing enables better pattern detection
+   - Event-driven model reduces system overhead
+   - Simplified agent code for error reporting
+
+## Additional Services
+
+### UnifiedWebAgent
+- **Purpose**: Provides web browsing and information retrieval
+- **Port**: 7180
+- **Key Functions**:
+  - Searches the web for information
+  - Extracts content from web pages
+  - Summarizes web content
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### TutoringAgent
+- **Purpose**: Provides tutoring services
+- **Port**: 7190
+- **Key Functions**:
+  - Creates personalized learning plans
+  - Provides interactive tutorials
+  - Tracks learning progress
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
+
+### FileSystemAssistantAgent
+- **Purpose**: Manages file system operations
+- **Port**: 7200
+- **Key Functions**:
+  - Provides file search capabilities
+  - Manages file organization
+  - Implements file backup and recovery
+  - **Reports errors via the central Error Bus (ZMQ PUB/SUB, topic 'ERROR:')**
