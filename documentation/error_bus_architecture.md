@@ -51,87 +51,89 @@ graph TD
     VRAM -->|publish errors| ErrorBus
     GGUF -->|publish errors| ErrorBus
     OtherAgents -->|publish errors| ErrorBus
-
-    MOS -->|publish errors| ErrorBus
+    
     RCA -->|publish errors| ErrorBus
+    MOS -->|publish errors| ErrorBus
     PLA -->|publish errors| ErrorBus
     UWA -->|publish errors| ErrorBus
     TA -->|publish errors| ErrorBus
     FSAA -->|publish errors| ErrorBus
-
+    
     ErrorBus -->|subscribe| SHM
 
-    classDef mainPC fill:#f9f,stroke:#333,stroke-width:2px
-    classDef pc2 fill:#bbf,stroke:#333,stroke-width:2px
-    classDef errorBus fill:#fbb,stroke:#f00,stroke-width:3px
-    
-    class RC,MO,SDT,PHM,MC,SMA,LM,SSR,STTS,SIH,MMA,VRAM,GGUF,OtherAgents mainPC
-    class SHM,MOS,RCA,PLA,UWA,TA,FSAA pc2
-    class ErrorBus errorBus
+    %% SystemDigitalTwin Integration
+    SHM -->|query agents| SDT
+    SDT -->|agent registry| SHM
+    SHM -->|get agent info| SDT
+    SDT -->|script paths & ports| SHM
 ```
 
 ## Key Components
 
-### 1. Error Bus
-- **Technology**: ZMQ PUB/SUB pattern
+### Error Bus
+- **Technology**: ZeroMQ (ZMQ) PUB/SUB pattern
 - **Port**: 7150
 - **Topic**: "ERROR:"
-- **Purpose**: Central message bus for all error reports
+- **Purpose**: Decouples error reporting from error processing, allowing for a scalable error management system
 
-### 2. Error Publishers (All Agents)
-- All agents in the system (80+) have been updated to publish errors to the Error Bus
-- Each agent implements a `report_error` method with the following signature:
-  ```python
-  def report_error(self, error_type, message, severity="ERROR", context=None):
-      error_data = {
-          "error_type": error_type,
-          "message": message,
-          "severity": severity,
-          "context": context or {}
-      }
-      try:
-          msg = json.dumps(error_data).encode('utf-8')
-          self.error_bus_pub.send_multipart([b"ERROR:", msg])
-      except Exception as e:
-          print(f"Failed to publish error to Error Bus: {e}")
-  ```
+### SystemHealthManager
+- **Location**: PC2
+- **Port**: 7117
+- **Responsibilities**:
+  - Subscribes to the Error Bus to receive all error reports
+  - Analyzes error patterns and determines appropriate responses
+  - Monitors agent health via heartbeats
+  - Scans log files for error patterns
+  - Implements recovery strategies based on error severity
+  - Dynamically discovers agents via SystemDigitalTwin
 
-### 3. Error Subscriber (SystemHealthManager)
-- The SystemHealthManager agent on PC2 subscribes to all error messages
-- It analyzes error patterns and determines appropriate responses
-- It implements recovery strategies based on error severity
-- It consolidates functionality from the former UnifiedErrorAgent, RCA_Agent, and SelfHealingAgent
+### SystemDigitalTwin Integration
+- **Purpose**: Enables dynamic agent discovery and intelligent recovery
+- **Functionality**:
+  - SystemHealthManager queries SystemDigitalTwin for registered agents
+  - SystemHealthManager periodically updates its agent registry from SystemDigitalTwin
+  - When recovery is needed, SystemHealthManager gets detailed agent information (script paths, ports, etc.)
+  - Recovery actions use agent-specific information for more intelligent restarts
 
-## Benefits
+## Error Reporting Protocol
 
-1. **Decoupled Architecture**: Error reporting is now decoupled from error processing
-2. **Improved Scalability**: Agents can report errors without blocking or waiting for responses
-3. **Centralized Error Management**: All errors are processed by a single SystemHealthManager
-4. **Enhanced Monitoring**: SystemHealthManager can analyze error patterns across the entire system
-5. **Simplified Agent Code**: Agents have a simple, consistent way to report errors
+All agents in the system use a standardized error reporting protocol:
 
-## Implementation Details
+1. Each agent initializes a ZMQ PUB socket connected to the Error Bus endpoint
+2. When an error occurs, the agent publishes a message to the "ERROR:" topic
+3. The message contains standardized error information:
+   ```python
+   {
+       "action": "report_error",
+       "source": "<agent_name>",
+       "error_type": "<error_type>",
+       "severity": "<low|medium|high|critical>",
+       "reason": "<error_description>",
+       "details": {
+           # Additional error-specific information
+       },
+       "standardized_format": {
+           "message_type": "error_report",
+           "source": "<agent_name>",
+           "timestamp": "<ISO timestamp>",
+           "error_data": {
+               "error_id": "<unique_id>",
+               "error_type": "<error_type>",
+               "severity": "<low|medium|high|critical>",
+               "details": {
+                   "description": "<error_description>",
+                   # Additional error-specific information
+               }
+           }
+       }
+   }
+   ```
 
-### Error Data Format
-```json
-{
-  "error_type": "string",
-  "message": "string",
-  "severity": "string",
-  "context": {}
-}
-```
+## Benefits of the Architecture
 
-### Error Severity Levels
-- **CRITICAL**: System-threatening errors that require immediate attention
-- **ERROR**: Standard errors that affect functionality but don't threaten the system
-- **WARNING**: Potential issues that don't immediately affect functionality
-- **INFO**: Informational messages about potential issues
-
-### Recovery Strategies
-The SystemHealthManager implements several recovery strategies based on error severity:
-1. **Restart Agent**: Restart the failing agent
-2. **Reset State**: Clear the agent's state and reinitialize
-3. **Failover**: Switch to a backup implementation
-4. **Graceful Degradation**: Continue operation with reduced functionality
-5. **Alert**: Notify human operators for critical issues 
+1. **Decoupled Components**: Error reporting is decoupled from error processing
+2. **Scalability**: New agents can be added without modifying the error management system
+3. **Reduced Network Traffic**: No direct request-response cycle for each error report
+4. **Centralized Error Analysis**: All errors are processed in one place, enabling pattern detection
+5. **Dynamic Agent Discovery**: SystemHealthManager automatically discovers and monitors agents
+6. **Intelligent Recovery**: Recovery actions use detailed agent information from SystemDigitalTwin 
