@@ -77,6 +77,8 @@ class SystemHealthManager(BaseAgent):
 
     Now manages a central event-driven Error Bus using ZMQ PUB/SUB. Agents publish errors to the bus (topic 'ERROR:'),
     and SystemHealthManager subscribes to this topic for scalable, decoupled error processing.
+    
+    Integrates with SystemDigitalTwin for dynamic agent discovery and monitoring.
     """
     
     def __init__(self, port=None, health_check_port=None, host="0.0.0.0"):
@@ -96,6 +98,19 @@ class SystemHealthManager(BaseAgent):
         self.heartbeat_timeout = 30   # seconds
         self.max_missed_heartbeats = 3
         self.recovery_lock = threading.Lock()
+        
+        # SystemDigitalTwin integration
+        self.digital_twin_discovery_interval = 60  # seconds
+        self.last_discovery_time = 0
+        
+        # Set up connection to SystemDigitalTwin on Main PC
+        self.digital_twin_connected = self._connect_to_system_digital_twin()
+        if self.digital_twin_connected:
+            logger.info("Successfully connected to SystemDigitalTwin")
+            # Initial agent discovery
+            self._discover_agents_from_digital_twin()
+        else:
+            logger.warning("Failed to connect to SystemDigitalTwin, will use local agent registry only")
 
         # Start heartbeat monitoring thread
         self.heartbeat_thread = threading.Thread(target=self._heartbeat_monitor_loop, daemon=True)
@@ -228,6 +243,60 @@ class SystemHealthManager(BaseAgent):
         self.error_bus_thread.start()
         logger.info("Error Bus listener thread started.")
     
+    def _connect_to_system_digital_twin(self) -> bool:
+        """Establish connection to SystemDigitalTwin on Main PC."""
+        try:
+            # Use the existing connect_to_main_pc_service method
+            self.digital_twin_socket = self.connect_to_main_pc_service("SystemDigitalTwin")
+            if self.digital_twin_socket:
+                logger.info("Connected to SystemDigitalTwin service")
+                return True
+            else:
+                logger.warning("Failed to connect to SystemDigitalTwin service")
+                return False
+        except Exception as e:
+            logger.error(f"Error connecting to SystemDigitalTwin: {e}")
+            return False
+    
+    def _discover_agents_from_digital_twin(self) -> None:
+        """Query SystemDigitalTwin for the list of registered agents."""
+        if not hasattr(self, 'digital_twin_socket') or not self.digital_twin_socket:
+            logger.warning("Cannot discover agents: No connection to SystemDigitalTwin")
+            return
+        
+        try:
+            # Use BaseAgent's send_request_to_agent method for standardized communication
+            response = self.send_request_to_agent(
+                agent_name="SystemDigitalTwin",
+                request={"action": "get_registered_agents"},
+                timeout=5000  # 5 seconds timeout
+            )
+            
+            if isinstance(response, dict) and response.get("status") == "success" and "agents" in response:
+                agents = response.get("agents", [])
+                if isinstance(agents, list):
+                    logger.info(f"Discovered {len(agents)} agents from SystemDigitalTwin")
+                    
+                    # Register all discovered agents
+                    for agent_info in agents:
+                        if isinstance(agent_info, dict):
+                            agent_name = agent_info.get("name")
+                            if agent_name:
+                                self.register_agent(agent_name)
+                                logger.debug(f"Registered agent from discovery: {agent_name}")
+                    
+                    # Update last discovery time
+                    self.last_discovery_time = time.time()
+                else:
+                    logger.warning("Agents data from SystemDigitalTwin is not a list")
+            else:
+                error_msg = "Unknown error"
+                if isinstance(response, dict):
+                    error_msg = response.get("message", error_msg)
+                logger.warning(f"Failed to get agents from SystemDigitalTwin: {error_msg}")
+        except Exception as e:
+            logger.error(f"Error discovering agents from SystemDigitalTwin: {e}")
+    
     def register_agent(self, agent_name: str):
         """Register an agent for health monitoring."""
         if agent_name is None:
@@ -240,6 +309,7 @@ class SystemHealthManager(BaseAgent):
                 'missed_heartbeats': 0,
                 'restart_attempts': 0
             }
+            logger.info(f"Agent {agent_name} registered for health monitoring")
 
     def receive_heartbeat(self, agent_name: str):
         """Update heartbeat info for an agent."""
@@ -254,6 +324,12 @@ class SystemHealthManager(BaseAgent):
     def _heartbeat_monitor_loop(self):
         while self.running:
             now = time.time()
+            
+            # Periodically discover agents from SystemDigitalTwin
+            if self.digital_twin_connected and (now - self.last_discovery_time) > self.digital_twin_discovery_interval:
+                self._discover_agents_from_digital_twin()
+            
+            # Monitor registered agents
             for agent_name, info in list(self.agent_registry.items()):
                 if now - info['last_heartbeat'] > self.heartbeat_timeout:
                     info['missed_heartbeats'] += 1
@@ -273,21 +349,66 @@ class SystemHealthManager(BaseAgent):
         with self.recovery_lock:
             logger.info(f"Attempting to recover agent: {agent_name}")
             try:
-                self._restart_agent(agent_name)
+                # First, try to get agent information from SystemDigitalTwin
+                agent_info = self._get_agent_info_from_digital_twin(agent_name)
+                
+                if agent_info:
+                    # Use agent info from SystemDigitalTwin for recovery
+                    self._restart_agent(agent_name, agent_info)
+                else:
+                    # Fall back to basic restart without additional info
+                    self._restart_agent(agent_name)
+                    
                 if agent_name in self.agent_registry:
                     self.agent_registry[agent_name]['restart_attempts'] += 1
                 logger.info(f"Restarted agent {agent_name} successfully.")
             except Exception as e:
                 logger.error(f"Failed to restart agent {agent_name}: {e}")
 
-    def _restart_agent(self, agent_name: str):
-        # Placeholder: implement actual restart logic (e.g., subprocess, docker, etc.)
-        logger.info(f"Restart logic for {agent_name} would be executed here.")
+    def _get_agent_info_from_digital_twin(self, agent_name: str) -> Dict[str, Any]:
+        """Get detailed agent information from SystemDigitalTwin."""
+        if not self.digital_twin_connected:
+            return {}
+            
+        try:
+            response = self.send_request_to_agent(
+                agent_name="SystemDigitalTwin",
+                request={"action": "get_agent_info", "agent_name": agent_name},
+                timeout=5000
+            )
+            
+            if isinstance(response, dict) and response.get("status") == "success" and "agent_info" in response:
+                logger.info(f"Retrieved agent info for {agent_name} from SystemDigitalTwin")
+                return response.get("agent_info", {})
+            else:
+                logger.warning(f"Failed to get agent info for {agent_name} from SystemDigitalTwin")
+                return {}
+        except Exception as e:
+            logger.error(f"Error getting agent info from SystemDigitalTwin: {e}")
+            return {}
+
+    def _restart_agent(self, agent_name: str, agent_info: Optional[Dict[str, Any]] = None):
+        """Restart an agent using information from SystemDigitalTwin if available."""
+        if agent_info and isinstance(agent_info, dict) and "script_path" in agent_info:
+            script_path = agent_info.get("script_path")
+            port = agent_info.get("port")
+            logger.info(f"Restarting agent {agent_name} using script: {script_path} on port {port}")
+            
+            # Here you would implement the actual restart logic using subprocess
+            # For now, this is still a placeholder
+            logger.info(f"Restart logic for {agent_name} would use script_path: {script_path} and port: {port}")
+        else:
+            # Fall back to basic restart without script path
+            logger.info(f"Restart logic for {agent_name} would be executed here (no script path available).")
+        
+        # Placeholder for actual restart implementation
         pass
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests to the agent."""
         if not isinstance(request, dict):
             return {'status': 'error', 'message': 'Invalid request type, expected dict'}
+            
         action = request.get('action', '')
         if action == 'heartbeat':
             agent_name = request.get('agent_name')
@@ -304,11 +425,24 @@ class SystemHealthManager(BaseAgent):
             else:
                 return {'status': 'error', 'message': 'Missing agent_name in registration'}
         elif action == 'report_error':
-            return self._handle_error_report(request)
+            # Ensure request is properly typed before passing to _handle_error_report
+            if isinstance(request, dict):
+                return self._handle_error_report(request)
+            else:
+                return {'status': 'error', 'message': 'Invalid request format for error report'}
         elif action == 'get_error_stats':
             return self._get_error_stats()
         elif action == 'health_check':
             return self._health_check()
+        elif action == 'get_monitored_agents':
+            # New action to get the list of agents being monitored
+            return {
+                'status': 'success',
+                'agents': [
+                    {'name': name, 'status': info['status'], 'last_heartbeat': info['last_heartbeat']}
+                    for name, info in self.agent_registry.items()
+                ]
+            }
         else:
             return {'status': 'error', 'message': f'Unknown action: {action}'}
     
@@ -498,12 +632,23 @@ class SystemHealthManager(BaseAgent):
         self.running = False
 
     def connect_to_main_pc_service(self, service_name: str):
+        """Connect to a service on the main PC."""
         if not hasattr(self, 'main_pc_connections'):
             self.main_pc_connections = {}
-        ports = network_config.get("ports") if network_config and isinstance(network_config.get("ports"), dict) else {}
+            
+        # Safely handle network_config
+        if not network_config or not isinstance(network_config, dict):
+            logger.error(f"Invalid network configuration")
+            return None
+            
+        ports = {}
+        if "ports" in network_config and isinstance(network_config["ports"], dict):
+            ports = network_config["ports"]
+            
         if service_name not in ports:
             logger.error(f"Service {service_name} not found in network configuration")
             return None
+            
         port = ports[service_name]
         socket = self.context.socket(zmq.REQ)
         socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
@@ -619,7 +764,10 @@ class SystemHealthManager(BaseAgent):
                 if topic == b"ERROR:":
                     try:
                         error_data = json.loads(msg.decode('utf-8'))
-                        self._handle_error_report(error_data)
+                        if isinstance(error_data, dict):
+                            self._handle_error_report(error_data)
+                        else:
+                            logger.error(f"Received non-dict error data on error bus: {error_data}")
                     except Exception as e:
                         logger.error(f"Failed to process error bus message: {e}")
             except zmq.error.ZMQError as e:
