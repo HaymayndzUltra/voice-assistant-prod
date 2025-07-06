@@ -96,7 +96,10 @@ AGC_ATTACK_TIME = 0.01  # Attack time in seconds
 AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
-class FusedAudioPreprocessorAgent(BaseAgent):
+class FusedAudioPreprocessorAgent(
+    """
+    FusedAudioPreprocessorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, config=None, **kwargs):
         # Ensure config is a dictionary
         config = config or {}
@@ -151,7 +154,18 @@ class FusedAudioPreprocessorAgent(BaseAgent):
         
         logger.info("Fused Audio Preprocessor initialized")
     
-    def _load_config(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _load_config(self):
         """Load configuration from config file if available."""
         try:
             config_path = Path("config/audio_preprocessing.json")

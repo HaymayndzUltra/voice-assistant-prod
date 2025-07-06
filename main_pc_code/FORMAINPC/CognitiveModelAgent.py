@@ -36,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 class CognitiveModelAgent(BaseAgent):
     """
-    Cognitive Model Agent for belief system management and cognitive reasoning.
-    """
+    Cognitive Model Agent for belief system management and cognitive reasoning. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port: int = 5641, name: str = None, **kwargs):
         """Initialize the Cognitive Model Agent."""
@@ -82,7 +81,18 @@ class CognitiveModelAgent(BaseAgent):
         self._initialize_belief_system()
         logger.info(f"Cognitive Model Agent listening on {self.host}:{self.port}")
     
-    def _initialize_belief_system(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _initialize_belief_system(self):
         """Initialize the belief system with core beliefs."""
         # Add core beliefs
         core_beliefs = [

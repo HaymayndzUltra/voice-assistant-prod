@@ -92,6 +92,9 @@ MODEL_MANAGER_HOST = app_config.get('zmq.model_manager_host', '192.168.100.16') 
 TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this snippet
 
 class RemoteConnectorAgent(BaseAgent):
+    """
+    RemoteConnectorAgent: Handles remote model/API connections. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self, port: int = None):
         # Initialize BaseAgent first
         super().__init__(name="RemoteConnectorAgent", port=port if port else REMOTE_CONNECTOR_PORT)
@@ -168,6 +171,13 @@ class RemoteConnectorAgent(BaseAgent):
         self.failed_requests = 0
         self.cache_hits = 0
         self.cache_misses = 0
+
+        # New attributes for error reporting
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
 
         logger.info("Remote Connector Agent initialized")
         logger.info(f"Cache enabled: {self.cache_enabled}")
@@ -699,6 +709,18 @@ class RemoteConnectorAgent(BaseAgent):
                     logger.error(f"Failed to send error response after exception: {send_error}")
         logger.info("Main request handling loop exited.")
 
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
     def run(self):
         """Run the remote connector agent. Overrides BaseAgent's run method."""
@@ -719,7 +741,6 @@ class RemoteConnectorAgent(BaseAgent):
             logger.error(f"An unexpected error occurred in {self.name}'s main run loop: {e}", exc_info=True)
         finally:
             self.cleanup() # Ensure cleanup is called
-
 
     def cleanup(self):
         """Clean up resources before shutdown. Overrides BaseAgent's cleanup method."""

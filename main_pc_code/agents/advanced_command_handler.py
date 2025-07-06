@@ -60,8 +60,7 @@ SCRIPT_TYPES = {
 
 class AdvancedCommandHandler(BaseAgent):
     """
-    Extends the custom command handler with advanced features for Phase 4
-    """
+    Extends the custom command handler with advanced features for Phase 4 Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         """
@@ -126,7 +125,18 @@ class AdvancedCommandHandler(BaseAgent):
         ])
         self.commands_processed = 0
     
-    def load_domain_modules(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def load_domain_modules(self):
         """Load domain-specific command modules"""
         domains_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

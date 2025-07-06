@@ -73,7 +73,7 @@ logging.basicConfig(
 logger = logging.getLogger("TinyLlamaService")
 
 class ModelState(Enum):
-    """Model state enum"""
+    """Model state enum Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     UNLOADED = "unloaded"
     LOADING = "loading"
     LOADED = "loaded"
@@ -103,7 +103,18 @@ class ResourceManager:
         self.vram_threshold = 0.9 if self.device == "cuda" else None
         self.last_cleanup = time.time()
         self.cleanup_interval = 300  # 5 minutes
-        self.default_batch_size = DEFAULT_BATCH_SIZE
+        self.
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default_batch_size = DEFAULT_BATCH_SIZE
         self.max_batch_size = MAX_BATCH_SIZE
         self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
     

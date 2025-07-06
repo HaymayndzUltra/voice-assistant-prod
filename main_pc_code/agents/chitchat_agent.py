@@ -59,7 +59,7 @@ MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
 MAX_HISTORY_TOKENS = 2000  # Maximum number of tokens in history
 
 class ChitchatAgent(BaseAgent):
-    """Agent for handling natural conversational interactions."""
+    """Agent for handling natural conversational interactions. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def _get_default_port(self) -> int:
         """Override default port to use the configured port."""
@@ -91,7 +91,18 @@ class ChitchatAgent(BaseAgent):
         
         logger.info("Chitchat Agent initialized")
     
-    def _setup_sockets(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _setup_sockets(self):
         """Set up ZMQ sockets."""
         try:
             # Main REP socket for chitchat requests with fallback if port in use

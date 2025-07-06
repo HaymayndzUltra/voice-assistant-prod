@@ -89,7 +89,10 @@ USER_PERMISSIONS = {
 }
 
 
-class ExecutorAgent(BaseAgent):
+class ExecutorAgent(
+    """
+    ExecutorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5709)) if port is None else port
@@ -131,7 +134,18 @@ class ExecutorAgent(BaseAgent):
             target=self.hot_reload_watcher, daemon=True)
         self.hot_reload_thread.start()
 
-    def authenticate_user(self, user):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def authenticate_user(self, user):
         """
         Prompt for user password and check against stored credentials in user_profile.json.
         Returns True if authenticated, False otherwise.

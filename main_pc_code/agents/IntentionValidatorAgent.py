@@ -51,12 +51,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class IntentionValidatorAgent(BaseAgent):
+class IntentionValidatorAgent(
+    """
+    IntentionValidatorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = None, name: str = None, host="localhost", request_coordinator_host=None, request_coordinator_port=None, **kwargs):
         """Initialize the IntentionValidatorAgent.
         
         Args:
-            port: Port to bind to (default from _agent_args or 5572)
+            port: Port to bind to (
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default from _agent_args or 5572)
             name: Agent name (default from _agent_args or "IntentionValidator")
             host: Host to bind to (default: localhost)
             request_coordinator_host: RequestCoordinator host (default: localhost)

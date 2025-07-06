@@ -2,6 +2,7 @@
 
 # Add the project's main_pc_code directory to the Python path
 import sys
+import json
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
@@ -17,13 +18,27 @@ from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 from main_pc_code.agents.memory_client import MemoryClient
 
-class KnowledgeBase(BaseAgent):
+class KnowledgeBase(
+    """
+    KnowledgeBase:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = 5571, health_port: int = 5572):
         super().__init__(name="KnowledgeBase", port=port, health_check_port=health_port)
         self.memory_client = MemoryClient()
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         action = request.get("action")
         if action == "add_fact":
             return self.add_fact(request)

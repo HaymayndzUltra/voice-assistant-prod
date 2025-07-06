@@ -62,7 +62,7 @@ DREAMING_MODE_HEALTH_PORT = 7128
 DREAM_WORLD_PORT = 7104  # DreamWorldAgent port
 
 class DreamingModeAgent(BaseAgent):
-    """Dreaming Mode Agent for coordinating system dreaming cycles"""
+    """Dreaming Mode Agent for coordinating system dreaming cycles Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self, port=None):
         super().__init__(name="DreamingModeAgent", port=port)
         self.main_port = port if port else DREAMING_MODE_PORT
@@ -94,7 +94,18 @@ class DreamingModeAgent(BaseAgent):
         self.avg_dream_quality = 0.0
         logger.info(f"DreamingModeAgent initialized on port {self.main_port}")
 
-    def _health_check(self) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _health_check(self) -> Dict[str, Any]:
         return {
             'status': 'success',
             'agent': 'DreamingModeAgent',

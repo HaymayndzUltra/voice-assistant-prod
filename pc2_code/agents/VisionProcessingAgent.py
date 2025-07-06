@@ -39,7 +39,7 @@ logging.basicConfig(
 logger = logging.getLogger("VisionProcessingAgent")
 
 class VisionProcessingAgent(BaseAgent):
-    """Agent for processing images and providing descriptions"""
+    """Agent for processing images and providing descriptions Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
 
     def __init__(self, **kwargs):
         """Initialize the Vision Processing Agent."""
@@ -60,7 +60,18 @@ class VisionProcessingAgent(BaseAgent):
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
 
-    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""
         request_type = request.get("type", "")
         

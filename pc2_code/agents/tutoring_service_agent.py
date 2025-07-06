@@ -31,7 +31,10 @@ except Exception as e:
     logger.error(f"Failed to load config: {e}")
     config = {}
 
-class TutoringServiceAgent(BaseAgent):
+class TutoringServiceAgent(
+    """
+    TutoringServiceAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         # Get host and port from config
         self.host = config.get('services', {}).get('tutoring_service', {}).get('host', '0.0.0.0')
@@ -48,7 +51,18 @@ class TutoringServiceAgent(BaseAgent):
         
         logger.info(f"Tutoring Service Agent initialized on {self.host}:{self.port}")
         
-    def _get_health_status(self) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
         # Call parent implementation
         status = super()._get_health_status()

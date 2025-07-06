@@ -7,6 +7,7 @@ allowing other agents to store and retrieve memories.
 """
 
 import os
+import json
 import zmq
 import logging
 from typing import Dict, Any, Optional
@@ -18,13 +19,27 @@ def get_service_address(service_name: str) -> str:
     # Dummy implementation; replace with actual service discovery if available
     return os.environ.get("MEMORY_ORCHESTRATOR_ADDR", "tcp://192.168.1.102:7115")
 
-class MemoryClient(BaseAgent):
+class MemoryClient(
+    """
+    MemoryClient:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, agent_name="MemoryClient", port=5713):
         super().__init__(agent_name, port)
         self.orchestrator_socket = None
         self._initialize_client_socket()
 
-    def _initialize_client_socket(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _initialize_client_socket(self):
         try:
             connection_str = get_service_address("MemoryOrchestratorService")
             logger.info(f"Connecting to MemoryOrchestratorService at {connection_str}")

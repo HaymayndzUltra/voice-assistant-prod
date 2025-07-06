@@ -9,6 +9,7 @@ capturing visual data that can be processed by the VisionProcessingAgent.
 """
 
 import sys
+import json
 import os
 import io
 import zmq
@@ -53,7 +54,7 @@ SCREENSHOT_QUALITY = 90  # JPEG quality (0-100)
 MAX_IMAGE_SIZE = (1920, 1080)  # Maximum dimensions for screenshots
 
 class VisionCaptureAgent(BaseAgent):
-    """Agent for capturing screenshots and providing them via ZMQ"""
+    """Agent for capturing screenshots and providing them via ZMQ Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
 
     def __init__(self, port=None):
         # Get configuration values with fallbacks
@@ -82,7 +83,18 @@ class VisionCaptureAgent(BaseAgent):
 
         logger.info(f"VisionCaptureAgent initialized and listening on port {self.port}")
 
-    def run(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def run(self):
         """Start the Vision Capture Agent's main loop."""
         logger.info("Starting VisionCaptureAgent main loop.")
         super().run()  # This will handle requests via handle_request

@@ -9,6 +9,7 @@ input, allowing agents to determine the most appropriate model or processing pat
 """
 
 import re
+import json
 import logging
 import zmq
 import time
@@ -223,7 +224,7 @@ def map_task_to_model_capabilities(task_type: str) -> List[str]:
     return capability_mapping.get(task_type, ["text-generation"])
 
 class AdvancedRouterAgent(BaseAgent):
-    """Advanced Router Agent for task classification and routing"""
+    """Advanced Router Agent for task classification and routing Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port=5555):
         super().__init__(name="AdvancedRouterAgent", port=port)
@@ -236,7 +237,18 @@ class AdvancedRouterAgent(BaseAgent):
         self.running = True
         logger.info(f"AdvancedRouterAgent initialized on port {self.port}")
     
-    def _get_health_status(self) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information."""
         return {
             'status': 'success',

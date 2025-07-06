@@ -57,7 +57,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ParameterType(Enum):
+class ParameterType(
+    """
+    ParameterType:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """Enum):
     LEARNING_RATE = "learning_rate"
     BATCH_SIZE = "batch_size"
     OPTIMIZER = "optimizer"
@@ -115,7 +118,18 @@ class LearningAdjusterAgent(BaseAgent):
         
         logger.info(f"Learning Adjuster Agent initialized on port {self.port}")
 
-    def _init_db(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _init_db(self):
         """Initialize the SQLite database."""
         try:
             conn = sqlite3.connect(self.db_path)

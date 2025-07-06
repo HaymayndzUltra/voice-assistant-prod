@@ -45,7 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger("GGUFModelManager")
 
 class GGUFModelManager(BaseAgent):
-    """Manager for GGUF models using llama-cpp-python"""
+    """Manager for GGUF models using llama-cpp-python Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port: int = 5575, models_dir: str = "models", **kwargs):
         """Initialize the GGUF model manager
@@ -80,7 +80,18 @@ class GGUFModelManager(BaseAgent):
         if not LLAMA_CPP_AVAILABLE:
             logger.warning("llama-cpp-python not available. GGUF models will not work.")
     
-    def _load_model_metadata(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _load_model_metadata(self):
         """Load model metadata from config files"""
         try:
             # Add the parent directory to sys.path to import the config module

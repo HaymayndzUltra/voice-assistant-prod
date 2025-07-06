@@ -55,7 +55,10 @@ ZMQ_HEALTH_PORT = 6579
 ZMQ_AUDIO_PORT = 6575  # Port for receiving audio from streaming_audio_capture.py
 ZMQ_VAD_PORT = 6579    # Port for receiving VAD events
 
-class WakeWordDetectorAgent(BaseAgent):
+class WakeWordDetectorAgent(
+    """
+    WakeWordDetectorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None, wake_word_path=None, sensitivity=0.5, energy_threshold=300):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5705)) if port is None else port
@@ -105,7 +108,18 @@ class WakeWordDetectorAgent(BaseAgent):
         
         logger.info("Wake word detector initialized")
     
-    def _load_api_key(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _load_api_key(self):
         """Load Porcupine API key from config file."""
         try:
             config_path = os.path.join('config', 'api_keys.json')

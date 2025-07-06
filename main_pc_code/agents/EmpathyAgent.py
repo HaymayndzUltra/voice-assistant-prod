@@ -42,7 +42,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class EmpathyAgent(BaseAgent):
+class EmpathyAgent(
+    """
+    EmpathyAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the EmpathyAgent with ZMQ sockets.
         
@@ -59,7 +62,18 @@ class EmpathyAgent(BaseAgent):
         agent_name = config.get("name", 'EmpathyAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
-        # Retrieve ports from command-line/args or default values
+        # Retrieve ports from command-line/args or 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default values
         emotion_engine_port = config.get("emotionengine_port", 5582)
         tts_connector_port = config.get("ttsconnector_port", 5582)
         self.emotion_engine_port = emotion_engine_port

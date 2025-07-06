@@ -82,7 +82,10 @@ TONE_CATEGORIES = {
     "tired": "fatigued, exhausted, low-energy"
 }
 
-class ToneDetector(BaseAgent):
+class ToneDetector(
+    """
+    ToneDetector:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         # Initialize with proper parameters before calling super().__init__()
         self.port = config.get("port", 5625)
@@ -107,7 +110,18 @@ class ToneDetector(BaseAgent):
         
         logger.info(f"ToneDetector initialized on port {self.port}")
     
-    def _start_tone_monitor(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _start_tone_monitor(self):
         """Start tone monitoring in background thread."""
         try:
             # Connect to the Whisper stream

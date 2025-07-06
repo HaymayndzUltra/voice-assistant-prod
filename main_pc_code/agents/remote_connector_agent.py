@@ -58,6 +58,9 @@ TASK_ROUTER_PORT = config.get('zmq.task_router_port', 8570)  # Updated to connec
 TASK_ROUTER_PUB_PORT = TASK_ROUTER_PORT + 10  # Publisher port is base + 10
 
 class RemoteConnectorAgent(BaseAgent):
+    """
+    RemoteConnectorAgent: Handles remote model/API connections. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="RemoteConnectorAgent")
         # Initialize ZMQ
@@ -101,6 +104,12 @@ class RemoteConnectorAgent(BaseAgent):
         self.running = True
         
         logger.info("Remote Connector Agent initialized")
+        
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
     
     def _calculate_cache_key(self, model, prompt, system_prompt=None, temperature=0.7):
         """Calculate a unique cache key for a request"""
@@ -195,6 +204,7 @@ class RemoteConnectorAgent(BaseAgent):
         except Exception as e:
             error_msg = f"Error contacting Ollama model '{model}': {str(e)}"
             logger.error(error_msg)
+            self.report_error("OllamaConnectionError", error_msg)
             return {
                 "status": "error",
                 "model": model,
@@ -244,6 +254,7 @@ class RemoteConnectorAgent(BaseAgent):
         except Exception as e:
             error_msg = f"Error contacting Deepseek Coder: {str(e)}"
             logger.error(error_msg)
+            self.report_error("DeepseekConnectionError", error_msg)
             return {
                 "status": "error",
                 "model": "deepseek",
@@ -431,7 +442,18 @@ class RemoteConnectorAgent(BaseAgent):
         
         logger.info("Remote Connector Agent stopped")
 
-
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
     def health_check(self):
         '''

@@ -88,7 +88,7 @@ ENABLE_DYNAMIC_QUANTIZATION = True
 TENSORRT_ENABLED = False  # Placeholder for future TensorRT integration
 
 class NLLBTranslationAdapter(BaseAgent):
-    """Service for NLLB translation model with self-managed on-demand loading/unloading"""
+    """Service for NLLB translation model with self-managed on-demand loading/unloading Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         # Call BaseAgent's __init__ first
@@ -305,7 +305,18 @@ class NLLBTranslationAdapter(BaseAgent):
         # Request timeout settings
 
     
-        self.request_timeout_seconds = 30  # Increased from default 10 seconds
+        self.request_timeout_seconds = 30  # Increased from 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default 10 seconds
 
     
         # Supported languages

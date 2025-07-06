@@ -112,7 +112,18 @@ class AdaptiveLearningEngine:
         self.difficulty_model = self._init_difficulty_model()
         self.learning_style_model = self._init_learning_style_model()
         
-    def _init_difficulty_model(self) -> nn.Module:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _init_difficulty_model(self) -> nn.Module:
         """Initialize neural network for difficulty prediction"""
         model = nn.Sequential(
             nn.Linear(5, 32),
@@ -392,7 +403,7 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
-    """Main tutor agent that coordinates all tutoring functionality"""
+    """Main tutor agent that coordinates all tutoring functionality Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Get port from config
         port = TUTOR_CONFIG.get('port', 5605)

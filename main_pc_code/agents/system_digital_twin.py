@@ -76,8 +76,7 @@ T = TypeVar('T')
 class SystemDigitalTwinAgent(BaseAgent):
     """
     A digital twin of the system that monitors real-time metrics
-    and provides predictive analytics for resource management.
-    """
+    and provides predictive analytics for resource management. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, config=None, **kwargs):
         config = config or {}
@@ -121,7 +120,18 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.last_update_time = datetime.now().isoformat()
         logger.info(f"{self.name} initialized.")
 
-    def setup(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def setup(self):
         """Set up the agent's components after initialization."""
         try:
             self._setup_zmq()

@@ -58,7 +58,9 @@ with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.j
     distributed_config = json.load(f)
 
 class PredictiveHealthMonitor(BaseAgent):
-    """Predictive health monitoring system for voice assistant agents"""
+    """
+    PredictiveHealthMonitor: Monitors and predicts agent health. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     
     def __init__(self, port: Optional[int] = None, **kwargs):
         """Initialize the predictive health monitor"""
@@ -402,6 +404,12 @@ class PredictiveHealthMonitor(BaseAgent):
         self.start_time = time.time()
         
         logger.info("Predictive Health Monitor initialized")
+
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
 
     def _create_tables(self) -> None:
         """Create necessary database tables."""
@@ -1552,6 +1560,19 @@ class PredictiveHealthMonitor(BaseAgent):
             health_status["errors"] = [f"Failed to get complete health metrics: {str(e)}"]
             
         return health_status
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == "__main__":
     # Standardized main execution block

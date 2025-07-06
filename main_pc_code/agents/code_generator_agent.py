@@ -57,7 +57,7 @@ MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = {}
 
 class CodeGeneratorAgent(BaseAgent):
-    """Agent for generating code from natural language prompts."""
+    """Agent for generating code from natural language prompts. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Standard BaseAgent initialization at the beginning
         self.config = _agent_args
@@ -85,7 +85,18 @@ class CodeGeneratorAgent(BaseAgent):
             self.gguf_manager = None
         self.logger.info(f"Code Generator Agent initialized on port {self.port}")
 
-    def run(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def run(self):
         try:
             self.socket.bind(f"tcp://{self.bind_address}:{self.port}")
             self.logger.info(f"Code Generator Agent listening on port {self.port}")

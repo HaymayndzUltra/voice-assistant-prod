@@ -34,7 +34,10 @@ logger = logging.getLogger(__name__)
 # Load configuration at module level
 config = load_config()
 
-class HumanAwarenessAgent(BaseAgent):
+class HumanAwarenessAgent(
+    """
+    HumanAwarenessAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None):
         # Get port from config with fallback
         agent_port = config.get("port", 5642) if port is None else port
@@ -68,7 +71,18 @@ class HumanAwarenessAgent(BaseAgent):
         # Record start time for uptime calculation
         self.start_time = time.time()
         
-    def _load_config(self) -> Dict:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _load_config(self) -> Dict:
         """Load agent configuration."""
         try:
             config_path = os.path.join('config', 'system_config.json')

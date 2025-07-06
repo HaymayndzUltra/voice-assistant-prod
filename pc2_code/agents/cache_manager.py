@@ -42,14 +42,28 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 logger = logging.getLogger("CacheManager")
 
-class ResourceMonitor(BaseAgent):
+class ResourceMonitor(
+    """
+    ResourceMonitor:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         super().__init__(name="ResourceMonitor", port=None)
         self.memory_threshold = 80  # percentage
         self.last_check = time.time()
         self.stats_history = []
         
-    def get_stats(self) -> Dict[str, Any]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def get_stats(self) -> Dict[str, Any]:
         """Get current resource statistics"""
         stats = {
             'memory_percent': psutil.virtual_memory().percent,

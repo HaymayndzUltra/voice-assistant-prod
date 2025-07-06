@@ -95,8 +95,7 @@ class FileSystemAssistantAgent(BaseAgent):
     in a controlled and secure manner. It provides operations such as listing directories,
     reading files, writing files, checking file existence, and more.
     
-    The agent uses a ZMQ REP socket to receive requests and send responses.
-    """
+    The agent uses a ZMQ REP socket to receive requests and send responses. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, zmq_port=ZMQ_FILESYSTEM_AGENT_PORT):
         # Call BaseAgent's constructor first. This sets self.name, self.port, self.running, self.start_time.
@@ -104,7 +103,18 @@ class FileSystemAssistantAgent(BaseAgent):
 
         # Use the port determined by BaseAgent or passed in
         self.port = self.port if self.port else zmq_port
-        self.health_port = self.port + 1 # Consistent health port definition
+        self.health_port = self.port + 1 # Consistent health port 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+definition
 
         logger.info("=" * 80)
         logger.info(f"Initializing {self.name} on port {self.port}")

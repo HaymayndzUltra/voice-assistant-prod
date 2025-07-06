@@ -100,8 +100,7 @@ class UnifiedWebAgent(BaseAgent):
     - Proactive information gathering
     - Context-aware navigation
     - Secure communication with SystemDigitalTwin
-    - Integration with the memory system
-    """
+    - Integration with the memory system Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
 
     def __init__(self, port: int = None):
         super().__init__(name="UnifiedWebAgent", port=port) # Call BaseAgent's constructor first
@@ -237,7 +236,18 @@ class UnifiedWebAgent(BaseAgent):
         logger.info(f"Unified Web Agent initialized successfully on port {self.port}")
 
 
-    def _load_config(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _load_config(self):
         """Load configuration from startup_config.yaml"""
         try:
             config_path = project_root / "pc2_code" / "config" / "startup_config.yaml"

@@ -58,7 +58,7 @@ LEARNING_TIMEOUT = 3600  # 1 hour timeout for learning sessions
 DEFAULT_LEARNING_RATE = 0.01
 
 class LearningManager(BaseAgent):
-    """Agent for managing the learning process of the AI system."""
+    """Agent for managing the learning process of the AI system. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         """Initialize the learning manager."""
@@ -94,7 +94,18 @@ class LearningManager(BaseAgent):
         
         self.health_thread = None
     
-    def _perform_initialization(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _perform_initialization(self):
         try:
             self._init_components()
             self.initialization_status["components"]["core"] = True

@@ -37,7 +37,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class AgentTrustScorer(BaseAgent):
+class AgentTrustScorer(
+    """
+    AgentTrustScorer:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = 5626):
         super().__init__(name="AgentTrustScorer", port=5626)
         # Record start time for uptime calculation
@@ -58,7 +61,18 @@ class AgentTrustScorer(BaseAgent):
         self._init_database()
         logger.info(f"AgentTrustScorer initialized on port {port}")
     
-    def _init_database(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _init_database(self):
         """Initialize SQLite database for trust scores."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()

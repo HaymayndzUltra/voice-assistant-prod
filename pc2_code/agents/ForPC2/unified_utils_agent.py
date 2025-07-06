@@ -52,7 +52,10 @@ logger = logging.getLogger('UnifiedUtilsAgent')
 UTILS_AGENT_PORT = 7118  # Default, will be overridden by configuration
 UTILS_AGENT_HEALTH_PORT = 8118  # Default health check port
 
-class UnifiedUtilsAgent(BaseAgent):
+class UnifiedUtilsAgent(
+    """
+    UnifiedUtilsAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None, health_check_port=None, host="0.0.0.0"):
         # Call BaseAgent's constructor first
         super().__init__(name="UnifiedUtilsAgent", port=port if port else UTILS_AGENT_PORT)
@@ -75,7 +78,18 @@ class UnifiedUtilsAgent(BaseAgent):
         
         logger.info(f"UnifiedUtilsAgent initialized on port {self.main_port}")
 
-    def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
         """Clean up temporary files."""
         result = {"files_removed": 0, "errors": []}
         try:

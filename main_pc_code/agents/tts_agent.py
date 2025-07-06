@@ -32,7 +32,10 @@ logger = logging.getLogger("TTSAgent")
 # Get configuration from config or fallback to defaults
 INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
-class TTSAgent(BaseAgent):
+class TTSAgent(
+    """
+    TTSAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5706)) if port is None else port
@@ -87,7 +90,18 @@ class TTSAgent(BaseAgent):
         
         logger.info("TTSAgent initialized")
     
-    def _register_service(self, port):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _register_service(self, port):
         """Register this agent with the service discovery system"""
         try:
             register_result = register_service(

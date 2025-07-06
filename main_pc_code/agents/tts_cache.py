@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+import json
 import os
 import hashlib
 import pickle
@@ -31,7 +32,10 @@ if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR, exist_ok=True)
 
 # Cache management
-class TTSCache(BaseAgent):
+class TTSCache(
+    """
+    TTSCache:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5704)) if port is None else port
@@ -54,7 +58,18 @@ class TTSCache(BaseAgent):
         self.cache_index = {}
         self.load_cache_index()
         
-    def load_cache_index(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def load_cache_index(self):
         """Load the cache index from disk"""
         index_path = os.path.join(self.cache_dir, 'cache_index.pkl')
         if os.path.exists(index_path):

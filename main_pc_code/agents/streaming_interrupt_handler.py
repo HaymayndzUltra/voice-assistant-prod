@@ -49,6 +49,9 @@ INTERRUPT_KEYWORDS = {
 }
 
 class StreamingInterruptHandler(BaseAgent):
+    """
+    StreamingInterruptHandler: Handles streaming interrupts. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self, config=None, **kwargs):
         # Ensure config is a dictionary
         config = config or {}
@@ -117,6 +120,12 @@ class StreamingInterruptHandler(BaseAgent):
         self.running = True
         self.last_interrupt_time = 0
         self.interrupt_cooldown = 2.0  # Seconds between interrupts to prevent duplicates
+        
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
     
     def _register_service(self, port):
         """Register this agent with the service discovery system"""
@@ -303,6 +312,19 @@ class StreamingInterruptHandler(BaseAgent):
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":

@@ -109,7 +109,10 @@ def find_available_port(start_port, max_attempts=10):
             continue
     raise RuntimeError(f"Could not find available port after {max_attempts} attempts")
 
-class StreamingAudioCaptureAgent(BaseAgent):
+class StreamingAudioCaptureAgent(
+    """
+    StreamingAudioCaptureAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, config=None, **kwargs):
         """Initialize the StreamingAudioCapture agent with audio processing capabilities and robust template compliance."""
         config = config or {}
@@ -182,7 +185,18 @@ class StreamingAudioCaptureAgent(BaseAgent):
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
 
-    def setup_zmq(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
             self.context = zmq.Context()

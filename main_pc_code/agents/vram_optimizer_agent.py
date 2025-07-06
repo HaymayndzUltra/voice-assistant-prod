@@ -38,7 +38,10 @@ config = load_config()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("VRAMOptimizerAgent")
 
-class VRAMOptimizerAgent(BaseAgent):
+class VRAMOptimizerAgent(
+    """
+    VRAMOptimizerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         agent_port = config.get("port", 5000) if port is None else port
         agent_name = config.get("name", 'VRAMOptimizerAgent') if name is None else name
@@ -71,7 +74,18 @@ class VRAMOptimizerAgent(BaseAgent):
 
         # Advanced management
         self.memory_pool = {}
-        self.defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
+        self.
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
         self.usage_patterns = defaultdict(list)
         self.prediction_window = self.config.get('vram_optimizer.prediction_window', 3600)
         self.optimization_interval = self.config.get('vram_optimizer.optimization_interval', 300)

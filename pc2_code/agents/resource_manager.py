@@ -29,7 +29,10 @@ from pc2_code.agents.utils.config_loader import Config
 config = Config().get_config()
 logger = logging.getLogger(__name__)
 
-class ResourceManager(BaseAgent):
+class ResourceManager(
+    """
+    ResourceManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=7113, health_port=7114):
          super().__init__(name="ResourceManager", port=7113)
 
@@ -71,7 +74,18 @@ class ResourceManager(BaseAgent):
          
          logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
     
-    def _setup_sockets(self):
+    
+
+         self.error_bus_port = 7150
+
+         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+         self.error_bus_pub = self.context.socket(zmq.PUB)
+
+         self.error_bus_pub.connect(self.error_bus_endpoint)
+def _setup_sockets(self):
         """Setup ZMQ sockets."""
         # Main socket for handling requests
         try:

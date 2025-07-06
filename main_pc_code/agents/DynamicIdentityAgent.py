@@ -41,7 +41,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class DynamicIdentityAgent(BaseAgent):
+class DynamicIdentityAgent(
+    """
+    DynamicIdentityAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         # Get port and name from _agent_args with fallbacks
         agent_port = config.get("port", 5802) if port is None else port
@@ -70,7 +73,18 @@ class DynamicIdentityAgent(BaseAgent):
         threading.Thread(target=self._perform_initialization, daemon=True).start()
         logger.info("Dynamic Identity Agent initialized (async init started)")
     
-    def _get_health_status(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
         # This can be expanded with more specific checks later.
         status = "HEALTHY" if self.running else "UNHEALTHY"

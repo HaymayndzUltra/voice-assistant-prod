@@ -40,7 +40,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class EmotionSynthesisAgent(BaseAgent):
+class EmotionSynthesisAgent(
+    """
+    EmotionSynthesisAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=None):
         # Get port and name from config with fallbacks
         agent_port = config.get("port", 5643) if port is None else port
@@ -90,7 +93,18 @@ class EmotionSynthesisAgent(BaseAgent):
         
         logger.info(f"EmotionSynthesisAgent initialized on port {self.port}")
     
-    def _add_emotional_markers(self, text, emotion, intensity=0.5):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _add_emotional_markers(self, text, emotion, intensity=0.5):
         """Add emotional markers to the text based on the emotion and intensity"""
         if emotion not in self.emotion_markers:
             return text

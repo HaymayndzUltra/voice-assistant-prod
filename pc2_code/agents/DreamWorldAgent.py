@@ -33,7 +33,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ScenarioType(BaseAgent):
+class ScenarioType(
+    """
+    ScenarioType:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     ETHICAL = "ethical"
     RESOURCE = "resource"
     SOCIAL = "social"
@@ -73,7 +76,18 @@ class MCTSNode:
         self.causal_links = []
         self.counterfactuals = []
     
-    def add_child(self, state: Dict[str, Any], action: Dict[str, Any]) -> 'MCTSNode':
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def add_child(self, state: Dict[str, Any], action: Dict[str, Any]) -> 'MCTSNode':
         """Add a child node to this node."""
         child = MCTSNode(state, parent=self, action=action)
         self.children.append(child)

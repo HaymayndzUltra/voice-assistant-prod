@@ -37,7 +37,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger('EmotionEngine')
 
-class EmotionEngine(BaseAgent):
+class EmotionEngine(
+    """
+    EmotionEngine:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, config=None, **kwargs):
         """Initialize the Emotion Engine with proper template compliance."""
         # Ensure config is a dictionary
@@ -123,7 +126,18 @@ class EmotionEngine(BaseAgent):
         # Initialization complete
         logger.info(f"{self.name} initialized on port {self.port} (health: {self.health_port}, pub: {self.pub_port})")
 
-    def _signal_handler(self, sig, frame):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _signal_handler(self, sig, frame):
         """Handle signals for graceful termination"""
         logger.info(f"Received signal {sig}, shutting down")
         self.running = False

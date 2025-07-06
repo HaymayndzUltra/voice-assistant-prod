@@ -167,7 +167,10 @@ logger = logging.getLogger("ResponderAgent")
 # Get interrupt port from args or use default
 # INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
-class ResponderAgent(BaseAgent):
+class ResponderAgent(
+    """
+    ResponderAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         self.port = config.get("get")('port')
         self.voice = config.get("get")('voice')
@@ -258,7 +261,18 @@ class ResponderAgent(BaseAgent):
         
         logger.info("ResponderAgent initialized")
 
-    def _connect_to_services(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _connect_to_services(self):
         """Connect to required services using service discovery"""
         try:
             # Defensive: ensure health_status is a dict with 'connections' dict

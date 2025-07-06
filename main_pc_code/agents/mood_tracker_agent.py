@@ -40,7 +40,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class MoodTrackerAgent(BaseAgent):
+class MoodTrackerAgent(
+    """
+    MoodTrackerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         """Initialize the MoodTrackerAgent (refactored for compliance)."""
         # Standard BaseAgent initialization at the beginning
@@ -101,7 +104,18 @@ class MoodTrackerAgent(BaseAgent):
         logger.info(f"Subscribed to EmotionEngine on port {self.emotion_engine_port}")
         logger.info(f"Mood history size: {self.history_size}")
     
-    def _monitor_emotions(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _monitor_emotions(self):
         """Monitor emotional state updates from EmotionEngine."""
         logger.info("Starting emotion monitoring thread")
         while self.running:

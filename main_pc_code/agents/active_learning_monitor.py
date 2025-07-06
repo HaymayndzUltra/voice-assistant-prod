@@ -26,6 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ActiveLearningMonitor(BaseAgent):
+    """
+    ActiveLearningMonitor: Monitors active learning processes. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self):
         self.port = config.get("port", 5700)
         self.start_time = time.time()
@@ -73,6 +76,12 @@ class ActiveLearningMonitor(BaseAgent):
         self.analysis_thread.start()
         
         logger.info("ActiveLearningMonitor initialized")
+        
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
     
     def _is_high_value_interaction(self, interaction):
         """Determine if an interaction is valuable for training"""
@@ -226,6 +235,19 @@ class ActiveLearningMonitor(BaseAgent):
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == "__main__":
     # Standardized main execution block

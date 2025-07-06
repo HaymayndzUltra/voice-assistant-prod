@@ -145,8 +145,8 @@ pc2_services:
       dependencies: [UnifiedUtilsAgent],
     }
   - {
-      name: UnifiedErrorAgent,
-      script_path: pc2_code/agents/ForPC2/UnifiedErrorAgent.py,
+      name: SystemHealthManager,
+      script_path: pc2_code/agents/ForPC2/system_health_manager.py,
       host: 0.0.0.0,
       port: 7117,
       health_check_port: 8117,
@@ -160,7 +160,7 @@ pc2_services:
       port: 7118,
       health_check_port: 8118,
       required: true,
-      dependencies: [UnifiedErrorAgent],
+      dependencies: [SystemHealthManager],
     }
   - {
       name: ProactiveContextMonitor,
@@ -169,15 +169,6 @@ pc2_services:
       port: 7119,
       health_check_port: 8119,
       dependencies: [ContextManager],
-      required: true,
-    }
-  - {
-      name: RCAAgent,
-      script_path: pc2_code/agents/ForPC2/rca_agent.py,
-      host: 0.0.0.0,
-      port: 7121,
-      health_check_port: 8121,
-      dependencies: [HealthMonitor],
       required: true,
     }
 
@@ -210,15 +201,6 @@ pc2_services:
       dependencies: [AdvancedRouter],
     }
   - {
-      name: SelfHealingAgent,
-      script_path: pc2_code/agents/self_healing_agent.py,
-      host: 0.0.0.0,
-      port: 7125,
-      health_check_port: 8125,
-      required: true,
-      dependencies: [HealthMonitor],
-    }
-  - {
       name: UnifiedWebAgent,
       script_path: pc2_code/agents/unified_web_agent.py,
       host: 0.0.0.0,
@@ -243,7 +225,7 @@ pc2_services:
       port: 7128,
       health_check_port: 8128,
       required: true,
-      dependencies: [SelfHealingAgent],
+      dependencies: [SystemHealthManager],
     }
   - {
       name: AdvancedRouter,
@@ -306,3 +288,5 @@ core_services:
     required: true
     startup_priority: 1
     description: "Central memory service with direct Redis integration for caching and SQLite for persistence."
+
+error_bus_port: 7150

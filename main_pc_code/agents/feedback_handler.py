@@ -49,7 +49,7 @@ FEEDBACK_STYLES = {
 }
 
 class FeedbackHandler(BaseAgent):
-    """Handles visual and voice feedback for command execution"""
+    """Handles visual and voice feedback for command execution Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         self.port = config.get("port", 5578)
@@ -93,7 +93,18 @@ class FeedbackHandler(BaseAgent):
         self.health_thread = threading.Thread(target=self._check_connections, daemon=True)
         self.health_thread.start()
     
-    def send_visual_feedback(self, message: str, status: str = "success", 
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def send_visual_feedback(self, message: str, status: str = "success", 
                             data: Dict[str, Any] = None, timeout: int = None) -> bool:
         """Send visual feedback to the GUI
         

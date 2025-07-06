@@ -429,7 +429,18 @@ class TranslationCache:
         
         logger.info("Translation cache initialized with MemoryOrchestrator integration")
         
-    def _connect_to_memory_orchestrator(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _connect_to_memory_orchestrator(self):
         """Connect to the MemoryOrchestrator service"""
         try:
             # Discover MemoryOrchestrator service
@@ -1601,7 +1612,7 @@ class TranslationPipeline:
 
 # === AGENT ENTRYPOINT: TranslatorServer(BaseAgent) ===
 class TranslatorServer(BaseAgent):
-    """ZMQ server for translation service with dynamic port support and standardized health check"""
+    """ZMQ server for translation service with dynamic port support and standardized health check Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self, main_port: int = None, health_port: int = None):
         # Derive port and name from _agent_args, with fallbacks
         self.config = _agent_args

@@ -22,6 +22,9 @@ class PlanStep(BaseModel):
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 class ModelOrchestrator(BaseAgent):
+    """
+    ModelOrchestrator: Orchestrates model selection and routing. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self, port: int = 7010):
         super().__init__(name="ModelOrchestrator", port=port)
         self.context = zmq.Context()
@@ -42,6 +45,12 @@ class ModelOrchestrator(BaseAgent):
 
         # Context management
         self.conversation_history: Dict[str, List[Dict[str, Any]]] = {}  # key: conversation_id
+
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
 
     def _init_circuit_breakers(self):
         services = ["ModelManagerAgent"]  # Add more as needed
@@ -224,6 +233,19 @@ class ModelOrchestrator(BaseAgent):
             self.socket.close()
             self.context.term()
             logger.info("ModelOrchestrator stopped.")
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == "__main__":
     import argparse

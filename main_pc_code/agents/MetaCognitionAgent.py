@@ -58,7 +58,7 @@ BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 SECURE_ZMQ = is_secure_zmq_enabled()
 
 class MetaCognitionAgent(BaseAgent):
-    """Agent for monitoring and analyzing system performance and behavior."""
+    """Agent for monitoring and analyzing system performance and behavior. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         """Initialize the meta cognition agent."""
@@ -84,7 +84,18 @@ class MetaCognitionAgent(BaseAgent):
         self.init_thread.start()
         logger.info("MetaCognitionAgent basic init complete, async init started")
 
-    def _perform_initialization(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _perform_initialization(self):
         try:
             # Place all blocking init here
             self._init_components()

@@ -67,11 +67,22 @@ class Node:
         self.step = step
         self.score: float = 0.0
         
-    def add_child(self, child):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def add_child(self, child):
         self.children.append(child)
 
 class GoTToTAgent(BaseAgent):
-    """Graph/Tree-of-Thought Agent for advanced reasoning"""
+    """Graph/Tree-of-Thought Agent for advanced reasoning Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self, port: int = 5646, name: str = "GoTToTAgent", **kwargs):
         # Standardized config loading
         agent_port = port if port is not None else config.get("port", 5646)

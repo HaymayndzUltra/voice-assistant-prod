@@ -43,6 +43,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class PerformanceLoggerAgent(BaseAgent):
+    """
+    PerformanceLoggerAgent: Logs performance metrics. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
 
     def __init__(self, port: int = 5632):
         super().__init__(name="PerformanceLoggerAgent", port=port)
@@ -52,6 +55,11 @@ class PerformanceLoggerAgent(BaseAgent):
         self.port = port
         self.health_port = self.port + 1
         self.context = zmq.Context()
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
         # Start health check thread
         self._start_health_check()
         # Main REP socket for handling requests
@@ -372,6 +380,19 @@ class PerformanceLoggerAgent(BaseAgent):
         
         self.socket.close()
         self.context.term()
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents

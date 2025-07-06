@@ -51,7 +51,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ChainOfThoughtAgent")
 
-class ChainOfThoughtAgent(BaseAgent):
+class ChainOfThoughtAgent(
+    """
+    ChainOfThoughtAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port: int = 5612, name: str = "ChainOfThoughtAgent", **kwargs):
         # Use _agent_args if port or name are not provided
         agent_port = port if port is not None else config.get("port", 5612)
@@ -83,7 +86,18 @@ class ChainOfThoughtAgent(BaseAgent):
         logger.info(f"Remote Connector port: {self.llm_router_port}")
         logger.info("=" * 80)
     
-    def connect_llm_router(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def connect_llm_router(self):
         """Establish connection to the Remote Connector Agent for model inference"""
         if self.llm_router_socket is None:
             self.llm_router_socket = self.llm_router_context.socket(zmq.REQ)

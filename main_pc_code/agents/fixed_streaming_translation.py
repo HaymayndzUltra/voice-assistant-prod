@@ -54,11 +54,22 @@ CACHE_TTL = 3600  # 1 hour
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 
 class PerformanceMonitor(BaseAgent):
-    """Monitors and tracks performance metrics for translation services."""
+    """Monitors and tracks performance metrics for translation services. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port: int = 5584, **kwargs):
         super().__init__(port=port, name="FixedStreamingTranslation")
-        self.service_latencies = defaultdict(list)
+        self.service_latencies = 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+defaultdict(list)
         self.service_errors = defaultdict(int)
         self.service_successes = defaultdict(int)
         self.lock = threading.Lock()

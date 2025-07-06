@@ -158,7 +158,10 @@ config = load_config()
 # Move this import to the top of the file
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
 
-class ModelManagerAgent(BaseAgent):
+class ModelManagerAgent(
+    """
+    ModelManagerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, **kwargs):
         agent_port = config.get("port", MODEL_MANAGER_PORT)
         agent_name = config.get("name", 'ModelManagerAgent')
@@ -197,7 +200,18 @@ class ModelManagerAgent(BaseAgent):
         self.start_time = time.time()
         self.running = True
     
-    def _get_health_status(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
         # This can be expanded with more specific checks later.
         # Use "ok" status to match BaseAgent and health checker expectations

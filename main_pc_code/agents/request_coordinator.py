@@ -148,12 +148,24 @@ class CircuitBreaker:
 
 # === Main Agent Class ===
 class RequestCoordinator(BaseAgent):
+    """
+    RequestCoordinator: Main PC agent for coordinating requests.
+    Now reports errors via the distributed Error Bus (ZMQ PUB/SUB, topic 'ERROR:') to the SystemHealthManager on PC2.
+    """
     def __init__(self, **kwargs):
         port = kwargs.get('port', DEFAULT_PORT)
         super().__init__(name="RequestCoordinator", port=port, health_check_port=port + 1)
 
         self.context = zmq.Context()
         self._init_zmq_sockets()
+
+        # Error Bus PUB socket (connect to PC2 error bus)
+        self.error_bus_port = 7150  # Should match config on PC2
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        logger.info(f"Error Bus PUB socket connected to {self.error_bus_endpoint}")
 
         self.running = True
         self.start_time = time.time()
@@ -410,13 +422,14 @@ class RequestCoordinator(BaseAgent):
             self._handle_task_response(response)
             breaker.record_success()
         except Exception as e:
-            # Use BaseAgent's standardized error reporting
-            self.report_error(
-                error_type="task_processing_error",
-                message=f"Failed to process task {task.task_id}: {str(e)}",
-                severity=ErrorSeverity.ERROR,
-                context={"task_id": task.task_id, "service": target_service, "task_type": task_type}
-            )
+            # Use Error Bus for error reporting
+            error_data = {
+                "error_type": "task_processing_error",
+                "message": f"Failed to process task {task.task_id}: {str(e)}",
+                "severity": str(ErrorSeverity.ERROR),
+                "context": {"task_id": task.task_id, "service": target_service, "task_type": task_type}
+            }
+            self.report_error(error_data)
             logger.error(f"Failed to process task {task.task_id} with {target_service}: {e}")
             if breaker: breaker.record_failure()
 
@@ -426,32 +439,32 @@ class RequestCoordinator(BaseAgent):
         # Handle TTS if needed
         if response.speak and self.tts_socket:
             try:
-                # Use BaseAgent's standardized request method
                 self.send_request_to_agent(
                     agent_name="TTSConnector",
                     request={"text": response.speak}
                 )
             except Exception as e:
-                self.report_error(
-                    error_type="tts_request_error",
-                    message=f"Error sending TTS request: {str(e)}",
-                    severity=ErrorSeverity.WARNING
-                )
+                error_data = {
+                    "error_type": "tts_request_error",
+                    "message": f"Error sending TTS request: {str(e)}",
+                    "severity": str(ErrorSeverity.WARNING)
+                }
+                self.report_error(error_data)
                 
         # Handle memory storage if needed
         if response.memory_entry and self.memory_socket:
             try:
-                # Use BaseAgent's standardized request method
                 self.send_request_to_agent(
                     agent_name="MemoryOrchestrator",
                     request={"action": "save", "data": response.memory_entry}
                 )
             except Exception as e:
-                self.report_error(
-                    error_type="memory_storage_error",
-                    message=f"Error sending memory request: {str(e)}",
-                    severity=ErrorSeverity.WARNING
-                )
+                error_data = {
+                    "error_type": "memory_storage_error",
+                    "message": f"Error sending memory request: {str(e)}",
+                    "severity": str(ErrorSeverity.WARNING)
+                }
+                self.report_error(error_data)
 
     def _listen_for_interrupts(self):
         while self.running:
@@ -512,6 +525,15 @@ class RequestCoordinator(BaseAgent):
                 time.sleep(1)
         except KeyboardInterrupt:
             self.stop()
+
+    def report_error(self, error_data: dict):
+        """Publish error to the Error Bus (topic 'ERROR:')."""
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+            logger.info(f"Published error to Error Bus: {error_data}")
+        except Exception as e:
+            logger.error(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Request Coordinator Agent')

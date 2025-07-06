@@ -92,7 +92,7 @@ def find_available_port(start_port: int, end_port: int, max_attempts: int = 10) 
     raise RuntimeError(f"Could not find available port in range {start_port}-{end_port}")
 
 class StreamingLanguageAnalyzer(BaseAgent):
-    """Streaming Language Analyzer Agent for real-time language detection"""
+    """Streaming Language Analyzer Agent for real-time language detection Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self):
         """Initialize the language analyzer agent"""
@@ -108,7 +108,18 @@ class StreamingLanguageAnalyzer(BaseAgent):
         self.processed_streams_count = 0
         self.last_stream_time = 'N/A'
         
-        # Use provided port or default
+        # Use provided port or 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default
         self.pub_port = self.port if self.port else ZMQ_PUB_PORT
         logger.info(f"Using port {self.pub_port} for publishing")
         

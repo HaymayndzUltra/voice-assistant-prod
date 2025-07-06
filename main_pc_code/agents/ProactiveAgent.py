@@ -43,7 +43,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ProactiveAgent(BaseAgent):
+class ProactiveAgent(
+    """
+    ProactiveAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -93,7 +96,18 @@ class ProactiveAgent(BaseAgent):
 
         else:
 
-            self.port = 5624  # fallback default
+            self.port = 5624  # fallback 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+default
 
         self.context = zmq.Context()
 

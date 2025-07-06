@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple, cast
 import zmq
 from pathlib import Path
+import json
 
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
@@ -45,6 +46,9 @@ SECURE_ZMQ = is_secure_zmq_enabled()
 
 # --- GoalManager Class ---
 class GoalManager(BaseAgent):
+    """
+    GoalManager: Manages high-level goals and task breakdowns. This agent now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     def __init__(self, **kwargs):
         port = kwargs.get('port', DEFAULT_PORT)
         super().__init__(name="GoalManager", port=port, health_check_port=port + 1)
@@ -61,6 +65,12 @@ class GoalManager(BaseAgent):
         # Initialize circuit breakers
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
+        
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
         
         self._register_service()
         self._start_threads()
@@ -429,6 +439,19 @@ class GoalManager(BaseAgent):
                 time.sleep(1)
         except KeyboardInterrupt:
             self.stop()
+
+    def report_error(self, error_type, message, severity="ERROR", context=None):
+        error_data = {
+            "error_type": error_type,
+            "message": message,
+            "severity": severity,
+            "context": context or {}
+        }
+        try:
+            msg = json.dumps(error_data).encode('utf-8')
+            self.error_bus_pub.send_multipart([b"ERROR:", msg])
+        except Exception as e:
+            print(f"Failed to publish error to Error Bus: {e}")
 
 if __name__ == '__main__':
     import argparse

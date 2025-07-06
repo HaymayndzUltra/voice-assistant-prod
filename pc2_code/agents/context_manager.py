@@ -23,7 +23,10 @@ from main_pc_code.utils.config_loader import load_config
 config = Config().get_config()
 logger = logging.getLogger(__name__)
 
-class ContextManager(BaseAgent):
+class ContextManager(
+    """
+    ContextManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, min_size=5, max_size=20, initial_size=10):
         super().__init__(name="ContextManager", port=None)
 
@@ -51,7 +54,18 @@ class ContextManager(BaseAgent):
         ]
         logger.info(f"[ContextManager] Initialized with size range {min_size}-{max_size}, current: {initial_size}")
 
-    def add_to_context(self, text, speaker=None, metadata=None):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def add_to_context(self, text, speaker=None, metadata=None):
         if not text:
             return
         timestamp = time.time()

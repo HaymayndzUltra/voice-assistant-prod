@@ -88,7 +88,7 @@ class PrivacyZone:
     enabled: bool = True
 
 class KalmanTracker(object):
-    """Kalman filter-based tracker for smooth face tracking"""
+    """Kalman filter-based tracker for smooth face tracking Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self, measurement_noise=0.1, process_noise=0.01):
         self.kf = KalmanFilter(dim_x=4, dim_z=2)  # x, y, dx, dy
         self.kf.F = np.array([[1, 0, 1, 0],
@@ -103,7 +103,18 @@ class KalmanTracker(object):
         self.kf.x = np.zeros(4)
         self.last_update = time.time()
 
-    def update(self, bbox: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def update(self, bbox: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
         """Update tracker with new bbox"""
         center_x = (bbox[0] + bbox[2]) / 2
         center_y = (bbox[1] + bbox[3]) / 2

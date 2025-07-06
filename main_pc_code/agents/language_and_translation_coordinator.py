@@ -130,7 +130,18 @@ class PerformanceMonitor:
     """Monitors and tracks performance metrics for translation services."""
     
     def __init__(self, **kwargs):
-        self.service_latencies = defaultdict(list)
+        self.service_latencies = 
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+defaultdict(list)
         self.service_errors = defaultdict(int)
         self.service_successes = defaultdict(int)
         self.lock = threading.Lock()
@@ -1685,7 +1696,10 @@ class PerformanceMetrics:
         with self.lock:
             self.__init__()
 
-class LanguageAndTranslationCoordinator(BaseAgent):
+class LanguageAndTranslationCoordinator(
+    """
+    LanguageAndTranslationCoordinator:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self):
         """Initialize the Language and Translation Coordinator agent."""
         # Set required properties before calling super().__init__

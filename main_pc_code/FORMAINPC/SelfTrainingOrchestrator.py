@@ -35,7 +35,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class TrainingStatus(Enum):
+class TrainingStatus(
+    """
+    TrainingStatus:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """Enum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -123,7 +126,18 @@ class SelfTrainingOrchestrator(BaseAgent):
         
         logger.info(f"{self.name} initialized on port {self.port} (health: {self.health_port})")
 
-    def setup_zmq(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
             self.context = zmq.Context()

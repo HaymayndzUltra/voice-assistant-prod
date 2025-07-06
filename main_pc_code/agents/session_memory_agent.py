@@ -47,7 +47,18 @@ except Exception as import_error:
             self._agent_id = "stub"
             self._session_id = None
         # API mirrors expected methods but only logs actions.
-        def set_agent_id(self, agent_id):
+        
+
+            self.error_bus_port = 7150
+
+            self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+def set_agent_id(self, agent_id):
             self._agent_id = agent_id
         def set_session_id(self, session_id):
             self._session_id = session_id
@@ -85,7 +96,7 @@ SESSION_TIMEOUT = 3600  # Session timeout in seconds (1 hour)
 DB_PATH = "data/session_memory.db"  # SQLite database path
 
 class SessionMemoryAgent(BaseAgent):
-    """Agent for handling session memory and context management."""
+    """Agent for handling session memory and context management. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port: int = 5574, health_port: int = 6583):
         """Initialize the session memory agent."""

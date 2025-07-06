@@ -44,7 +44,10 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
-class HealthMonitorAgent(BaseAgent):
+class HealthMonitorAgent(
+    """
+    HealthMonitorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """BaseAgent):
     def __init__(self, port=7114, health_port=7115):
         super().__init__(name="HealthMonitorAgent", port=7114)
         # Record start time for uptime calculation
@@ -67,7 +70,18 @@ class HealthMonitorAgent(BaseAgent):
         self._init_thread.start()
         logger.info(f"HealthMonitorAgent starting on port {port} (health: {health_port})")
 
-    def _setup_sockets(self):
+    
+
+        self.error_bus_port = 7150
+
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+def _setup_sockets(self):
         try:
             self.socket = self.context.socket(zmq.REP)
             self.socket.bind(f"tcp://*:{self.port}")
