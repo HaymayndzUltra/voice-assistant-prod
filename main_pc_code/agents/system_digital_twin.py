@@ -552,6 +552,14 @@ def setup(self):
             return self.get_metrics_history()
         elif action == "get_all_agents":
             return {"status": "success", "agents": self.get_all_agent_statuses()}
+        elif action == "get_registered_agents":
+            # Return all registered agents for SystemHealthManager
+            return self._get_registered_agents()
+        elif action == "get_agent_info":
+            agent_name = request.get("agent_name")
+            if not agent_name or not isinstance(agent_name, str):
+                return {"status": "error", "error": "Missing or invalid agent_name parameter"}
+            return self._get_agent_info(agent_name)
         elif action == "simulate_load":
             load_type = request.get("load_type")
             value = request.get("value")
@@ -603,6 +611,89 @@ def setup(self):
             return self._update_vram_metrics(payload)
         else:
             return {"status": "error", "error": f"Unknown action: {action}"}
+
+    def _get_registered_agents(self) -> Dict[str, Any]:
+        """Get a list of all registered agents with their information.
+        
+        Returns:
+            Dictionary with status and list of agent information
+        """
+        try:
+            # Combine information from agent_registry and agent_endpoints
+            agents_list = []
+            
+            for agent_name, status_info in self.registered_agents.items():
+                agent_info = {
+                    "name": agent_name,
+                    "status": status_info.get("status", "unknown"),
+                    "location": status_info.get("location", "unknown"),
+                    "last_updated": status_info.get("timestamp", "")
+                }
+                
+                # Add endpoint information if available
+                if agent_name in self.agent_endpoints:
+                    endpoint = self.agent_endpoints[agent_name]
+                    agent_info.update({
+                        "host": endpoint.get("host", ""),
+                        "port": endpoint.get("port", 0),
+                        "health_check_port": endpoint.get("health_check_port", 0),
+                        "agent_type": endpoint.get("agent_type", ""),
+                        "capabilities": endpoint.get("capabilities", []),
+                        "script_path": endpoint.get("metadata", {}).get("script_path", "")
+                    })
+                
+                agents_list.append(agent_info)
+            
+            logger.info(f"Returning information for {len(agents_list)} registered agents")
+            return {
+                "status": "success",
+                "agents": agents_list
+            }
+        except Exception as e:
+            logger.error(f"Error getting registered agents: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
+    
+    def _get_agent_info(self, agent_name: str) -> Dict[str, Any]:
+        """Get detailed information about a specific agent.
+        
+        Args:
+            agent_name: Name of the agent to get information for
+            
+        Returns:
+            Dictionary with agent information
+        """
+        try:
+            if agent_name not in self.registered_agents:
+                return {"status": "error", "error": f"Agent {agent_name} not found in registry"}
+            
+            agent_info = {
+                "name": agent_name,
+                "status": self.registered_agents[agent_name].get("status", "unknown"),
+                "location": self.registered_agents[agent_name].get("location", "unknown"),
+                "last_updated": self.registered_agents[agent_name].get("timestamp", "")
+            }
+            
+            # Add endpoint information if available
+            if agent_name in self.agent_endpoints:
+                endpoint = self.agent_endpoints[agent_name]
+                agent_info.update({
+                    "host": endpoint.get("host", ""),
+                    "port": endpoint.get("port", 0),
+                    "health_check_port": endpoint.get("health_check_port", 0),
+                    "agent_type": endpoint.get("agent_type", ""),
+                    "capabilities": endpoint.get("capabilities", []),
+                    "metadata": endpoint.get("metadata", {}),
+                    "script_path": endpoint.get("metadata", {}).get("script_path", "")
+                })
+            
+            logger.info(f"Returning detailed information for agent {agent_name}")
+            return {
+                "status": "success",
+                "agent_info": agent_info
+            }
+        except Exception as e:
+            logger.error(f"Error getting agent info for {agent_name}: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
 
     def run(self):
         """Main run loop that handles incoming requests."""
