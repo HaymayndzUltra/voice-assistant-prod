@@ -36,7 +36,7 @@ from main_pc_code.utils.service_discovery_client import get_service_discovery_cl
 from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
-from main_pc_code.src.common.data_models import AgentRegistration, SystemEvent, ErrorReport
+from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 
 # Configure logging
 log_file_path = 'logs/system_digital_twin.log'
@@ -120,18 +120,13 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.last_update_time = datetime.now().isoformat()
         logger.info(f"{self.name} initialized.")
 
-    
-
         self.error_bus_port = 7150
-
         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.error_bus_pub = self.context.socket(zmq.PUB)
-
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def setup(self):
+
+    def setup(self):
         """Set up the agent's components after initialization."""
         try:
             self._setup_zmq()
@@ -387,10 +382,10 @@ def setup(self):
     # ===================================================================
     
     def register_agent(self, registration_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Register an agent with detailed information for service discovery.
+        """Register an agent with the system.
         
         Args:
-            registration_data: Agent registration information including endpoint details
+            registration_data: Agent registration information
             
         Returns:
             Response indicating success or failure
@@ -578,6 +573,8 @@ def setup(self):
             # Check if this is a detailed registration with registration_data
             if "registration_data" in request:
                 registration_data = request.get("registration_data")
+                if registration_data is None or not isinstance(registration_data, dict):
+                    return {"status": "error", "error": "Invalid registration_data, expected dictionary"}
                 return self.register_agent(registration_data)
             
             # Otherwise fall back to simple registration
