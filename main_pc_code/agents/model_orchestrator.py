@@ -7,8 +7,8 @@ import json
 import zmq
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from main_pc_code.src.common.data_models import TaskDefinition, TaskResult, TaskStatus
-from src.core.base_agent import BaseAgent
+from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus
+from common.core.base_agent import BaseAgent
 from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
 from main_pc_code.agents.request_coordinator import CircuitBreaker

@@ -22,7 +22,7 @@ except ImportError as e:
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level

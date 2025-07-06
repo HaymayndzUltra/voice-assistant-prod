@@ -5,7 +5,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
 import json
 import subprocess

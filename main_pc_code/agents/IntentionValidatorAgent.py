@@ -32,7 +32,7 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, List, Set, Tuple
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Parse command line arguments
@@ -52,15 +52,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class IntentionValidatorAgent(BaseAgent):
-    def __init__(self, port: int = None, name: str = None, host="localhost", taskrouter_host=None, taskrouter_port=None, **kwargs):
+    def __init__(self, port: int = None, name: str = None, host="localhost", request_coordinator_host=None, request_coordinator_port=None, **kwargs):
         """Initialize the IntentionValidatorAgent.
         
         Args:
             port: Port to bind to (default from _agent_args or 5572)
             name: Agent name (default from _agent_args or "IntentionValidator")
             host: Host to bind to (default: localhost)
-            taskrouter_host: Task router host (default: localhost)
-            taskrouter_port: Task router port (default: 5570)
+            request_coordinator_host: RequestCoordinator host (default: localhost)
+            request_coordinator_port: RequestCoordinator port (default: 5570)
         """
         self.initialization_status = {
             "is_initialized": False,
@@ -75,15 +75,15 @@ class IntentionValidatorAgent(BaseAgent):
         agent_name = config.get("name", 'IntentionValidatorAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         
-        # Get TaskRouter connection details from command line args (lowercase)
-        self.taskrouter_host = taskrouter_host or config.get("taskrouter_host", None) or "localhost"
-        self.taskrouter_port = taskrouter_port or config.get("taskrouter_port", None) or 5570
+        # Get RequestCoordinator connection details from command line args (lowercase)
+        self.request_coordinator_host = request_coordinator_host or config.get("request_coordinator_host", None) or "localhost"
+        self.request_coordinator_port = request_coordinator_port or config.get("request_coordinator_port", None) or 5570
         
         # Also check for uppercase variant for backward compatibility
-        if hasattr(_agent_args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
-            self.taskrouter_host = config.get("TaskRouter_host")
-        if hasattr(_agent_args, 'TaskRouter_port') and self.taskrouter_port == 5570:
-            self.taskrouter_port = config.get("TaskRouter_port")
+        if hasattr(_agent_args, 'RequestCoordinator_host') and self.request_coordinator_host == "localhost":
+            self.request_coordinator_host = config.get("RequestCoordinator_host")
+        if hasattr(_agent_args, 'RequestCoordinator_port') and self.request_coordinator_port == 5570:
+            self.request_coordinator_port = config.get("RequestCoordinator_port")
             
         self.db_path = os.path.join(MAIN_PC_CODE, "data", "intention_validation.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)

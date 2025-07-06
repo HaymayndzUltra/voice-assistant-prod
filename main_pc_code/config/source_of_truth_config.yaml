@@ -45,16 +45,15 @@ language_processing:
 # Memory System
 memory_system:
   - { name: SessionMemoryAgent , script_path: agents/session_memory_agent.py    , host: 0.0.0.0 , port: 5572 , dependencies: [CoordinatorAgent] , required: true }
-  - { name: MemoryManager     , script_path: agents/memory_manager.py          , host: 0.0.0.0 , port: 5712 , dependencies: [SessionMemoryAgent] , required: true }
+  - { name: MemoryClient     , script_path: agents/memory_client.py          , host: 0.0.0.0 , port: 5713 , dependencies: [] , required: true }
   - { name: MemoryOrchestrator, script_path: src/memory/memory_orchestrator.py , host: 0.0.0.0 , port: 5576 , required: true }
-  - { name: MemoryClient      , script_path: src/memory/memory_client.py       , host: 0.0.0.0 , port: 5577 , required: true }
   - { name: UnifiedMemoryReasoningAgent, script_path: agents/_referencefolderpc2/UnifiedMemoryReasoningAgent.py, host: 0.0.0.0, port: 5596, dependencies: [MemoryOrchestrator], required: true }
   - { name: EpisodicMemoryAgent, script_path: agents/_referencefolderpc2/EpisodicMemoryAgent.py, host: 0.0.0.0, port: 5596, dependencies: [UnifiedMemoryReasoningAgent], required: true }
 
 # Learning and Knowledge
 learning_knowledge:
-  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5579 , dependencies: [MemoryManager, CoordinatorAgent] , required: true }
-  - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: 0.0.0.0 , port: 5578 , dependencies: [MemoryManager] , required: true }
+  - { name: LearningManager    , script_path: agents/learning_manager.py        , host: 0.0.0.0 , port: 5579 , dependencies: [MemoryClient, CoordinatorAgent] , required: true }
+  - { name: KnowledgeBase      , script_path: agents/knowledge_base.py          , host: 0.0.0.0 , port: 5578 , dependencies: [MemoryClient] , required: true }
   - { name: MetaCognitionAgent , script_path: agents/MetaCognitionAgent.py      , host: 0.0.0.0 , port: 5630 , dependencies: [KnowledgeBase, CoordinatorAgent] , required: true }
   - { name: ActiveLearningMonitor, script_path: agents/active_learning_monitor.py, host: 0.0.0.0 , port: 5638 , dependencies: [LearningManager] , required: true }
 

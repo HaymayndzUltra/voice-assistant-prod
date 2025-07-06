@@ -7,7 +7,7 @@ import zmq
 import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
-from port_config import ENHANCED_MODEL_ROUTER_PORT
+from port_config import MODEL_ORCHESTRATOR_PORT
 
 # Add project root to Python path for common_utils import
 import sys
@@ -69,18 +69,17 @@ class AdvancedTutoringAgent(BaseAgent):
             logger.error(f"Failed to bind health check socket: {e}")
             raise
         
-        # Initialize ZMQ connection to EnhancedModelRouter
+        # Initialize ZMQ connection to ModelOrchestrator
         try:
-            logger.info("Initializing ZMQ connection to EnhancedModelRouter")
-            self.llm_socket = self.context.socket(zmq.REQ)
-            self.llm_socket.setsockopt(zmq.LINGER, 0)  # Don't wait on close
-            self.llm_socket.setsockopt(zmq.RCVTIMEO, 15000)  # 15 second timeout
-            self.llm_socket.connect(f"tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")
-            logger.info(f"Successfully connected to EnhancedModelRouter at tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")
-            self.llm_available = True
+            logger.info("Initializing ZMQ connection to ModelOrchestrator")
+            self.model_socket = self.context.socket(zmq.REQ)
+            self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.model_socket.connect(f"tcp://localhost:{MODEL_ORCHESTRATOR_PORT}")
+            logger.info(f"Successfully connected to ModelOrchestrator at tcp://localhost:{MODEL_ORCHESTRATOR_PORT}")
         except Exception as e:
-            logger.error(f"Failed to connect to EnhancedModelRouter: {e}")
-            self.llm_available = False
+            logger.error(f"Failed to connect to ModelOrchestrator: {e}")
+            raise
         
         # Start health check thread
         self._start_health_check()
@@ -133,8 +132,8 @@ class AdvancedTutoringAgent(BaseAgent):
             "cache_size": len(self.lesson_cache)
         }
 
-    def _generate_lesson_with_llm(self, topic: str, difficulty: str) -> Dict[str, Any]:
-        """Generate a lesson using the LLM via EnhancedModelRouter"""
+    def _generate_lesson(self, topic: str, difficulty: str, student_level: str) -> str:
+        """Generate a lesson using the LLM via ModelOrchestrator"""
         cache_key = f"{topic}_{difficulty}"
         
         # Check cache first
@@ -172,13 +171,13 @@ class AdvancedTutoringAgent(BaseAgent):
             
             # Send request to LLM
             logger.info(f"Requesting lesson from LLM for topic: {topic}, difficulty: {difficulty}")
-            self.llm_socket.send_json(prompt)
+            self.model_socket.send_json(prompt)
             
             # Wait for response with timeout
             poller = zmq.Poller()
-            poller.register(self.llm_socket, zmq.POLLIN)
+            poller.register(self.model_socket, zmq.POLLIN)
             if poller.poll(15000):  # 15 second timeout
-                response = self.llm_socket.recv_json()
+                response = self.model_socket.recv_json()
                 
                 if response.get("status") == "success" and "content" in response:
                     # Parse the LLM response - it might be a string containing JSON
@@ -187,7 +186,7 @@ class AdvancedTutoringAgent(BaseAgent):
                             # Try to extract JSON from the string
                             import re
                             
-from main_pc_code.src.core.base_agent import BaseAgentjson_match 
+from common.core.base_agent import BaseAgentjson_match 
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level

@@ -28,7 +28,7 @@ import psutil
 import GPUtil
 from collections import defaultdict
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Parse agent arguments

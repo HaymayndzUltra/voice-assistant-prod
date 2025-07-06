@@ -19,7 +19,7 @@ from main_pc_code.utils.path_manager import PathManager
 
 # Now that the path is set, we can use absolute imports
 from main_pc_code.utils.config_loader import parse_agent_args
-from main_pc_code.src.common.data_models import (
+from common.utils.data_models import (
     SystemEvent, ErrorReport, ErrorSeverity, AgentRegistration
 )
 

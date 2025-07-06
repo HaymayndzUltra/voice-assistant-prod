@@ -1,3 +1,5 @@
+# Use modify_file to replace the content of this file.
+# New content for main_pc_code/config/startup_config.yaml:
 # ===================================================================
 #         ADVANCED AI SYSTEM - STARTUP CONFIGURATION
 # ===================================================================
@@ -55,7 +57,7 @@ core_services:
     startup_priority: 3
 
   - name: PredictiveHealthMonitor
-    script_path: main_pc_code/src/agents/predictive_health_monitor.py
+    script_path: main_pc_code/agents/predictive_health_monitor.py
     port: 5613
     required: true
     dependencies: [SystemDigitalTwin]
@@ -99,13 +101,13 @@ core_services:
     script_path: main_pc_code/agents/goal_manager.py
     port: 7005
     required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, ModelOrchestrator, SystemDigitalTwin]
 
   - name: ModelOrchestrator
     script_path: main_pc_code/agents/model_orchestrator.py
     port: 7010
     required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
 
   - name: IntentionValidatorAgent
     script_path: main_pc_code/agents/IntentionValidatorAgent.py
@@ -191,7 +193,7 @@ main_pc_gpu_services:
     port: 5564
     required: true
     dependencies:
-      - MemoryOrchestrator
+      - MemoryClient # Updated dependency from MemoryOrchestrator
       - ModelManagerAgent
       - NLLBAdapter
       - FixedStreamingTranslation
@@ -245,29 +247,25 @@ emotion_system:
 # --- Memory System ---
 # Agents that manage short-term, long-term, and episodic memory.
 memory_system:
-  - name: MemoryOrchestrator
-    script_path: main_pc_code/src/memory/memory_orchestrator.py
-    port: 5575
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
   - name: SessionMemoryAgent
     script_path: main_pc_code/agents/session_memory_agent.py
     port: 5574
     required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin, MemoryClient] # Added MemoryClient dependency
 
-  - name: MemoryManager
-    script_path: main_pc_code/agents/memory_manager.py
-    port: 5712
+  - name: LearningManager
+    script_path: main_pc_code/agents/learning_manager.py
+    port: 5580
     required: true
-    dependencies: [SessionMemoryAgent, SystemDigitalTwin]
+    dependencies: [MemoryClient, RequestCoordinator, SystemDigitalTwin]
 
   - name: MemoryClient
-    script_path: main_pc_code/src/memory/memory_client.py
-    port: 5583
+    script_path: main_pc_code/agents/memory_client.py
+    port: 5713
+    health_check_port: 6713
     required: true
-    dependencies: [MemoryOrchestrator, SystemDigitalTwin]
+    dependencies: []
+    description: "A client for the central MemoryOrchestratorService on PC2."
 
 # --- Learning and Knowledge ---
 # Agents focused on knowledge acquisition, learning, and metacognition.
@@ -276,13 +274,7 @@ learning_knowledge:
     script_path: main_pc_code/agents/knowledge_base.py
     port: 5578
     required: true
-    dependencies: [MemoryManager, SystemDigitalTwin]
-
-  - name: LearningManager
-    script_path: main_pc_code/agents/learning_manager.py
-    port: 5580
-    required: true
-    dependencies: [MemoryManager, RequestCoordinator, SystemDigitalTwin]
+    dependencies: [MemoryClient, SystemDigitalTwin]
 
   - name: MetaCognitionAgent
     script_path: main_pc_code/agents/MetaCognitionAgent.py
@@ -299,11 +291,8 @@ learning_knowledge:
 # --- Planning and Execution ---
 # High-level agents for goal setting, planning, and task execution.
 planning_execution:
-  - name: UnifiedPlanningAgent
-    script_path: main_pc_code/agents/unified_planning_agent.py
-    port: 5634
-    required: true
-    dependencies: [GoalManager, IntentionValidatorAgent, SystemDigitalTwin]
+  # ModelOrchestrator is already defined in core_services
+  # and handles all planning and execution tasks as part of Phase 1 consolidation
 
 # --- TTS Services ---
 # Text-to-Speech pipeline components.
@@ -352,7 +341,7 @@ audio_processing:
     params: { env_vars: { USE_DUMMY_AUDIO: 'true' } }
 
   - name: FusedAudioPreprocessor
-    script_path: main_pc_code/src/audio/fused_audio_preprocessor.py
+    script_path: main_pc_code/agents/fused_audio_preprocessor.py
     port: 6578
     required: true
     dependencies: [AudioCapture, SystemDigitalTwin]
@@ -419,7 +408,7 @@ language_processing:
 # Agents for visual input processing.
 vision:
   - name: VisionCaptureAgent
-    script_path: main_pc_code/src/vision/vision_capture_agent.py
+    script_path: main_pc_code/agents/vision_capture_agent.py
     port: 5592
     required: true
     dependencies: [RequestCoordinator, SystemDigitalTwin]

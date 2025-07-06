@@ -191,3 +191,130 @@ A critical hardening pass was performed on the ModelOrchestrator agent to ensure
 4. **Enhanced Error Handling**: Centralized error handling in the new helper method and improved logging throughout the agent for maximum robustness and traceability.
 
 With these changes, the ModelOrchestrator is now fully robust, compliant, and ready for long-term production use. **Phase 1: Core Orchestration Consolidation is now truly complete and robust.**
+
+## Phase 2: Distributed Memory System Refactoring - IN PROGRESS
+
+### Summary
+Major refactoring and modernization of the distributed memory system, focusing on centralization, compliance, and advanced features. The following key changes have been implemented:
+
+- **EpisodicMemoryAgent Refactor:**
+  - Transformed EpisodicMemoryAgent into a pure ZMQ client of the central MemoryOrchestratorService.
+  - Removed all SQLite, sklearn, and custom data logic.
+  - Strictly follows the BaseAgent pattern and uses process_request for all request handling.
+  - All public methods now build a compliant request payload, send it via a single _send_to_orchestrator method, and return the orchestrator's response.
+  - The file is now clean, minimal, and fully compliant with system standards.
+
+- **MemoryOrchestratorService Refactor:**
+  - Achieved full Phase 0 compliance: standardized ZMQ communication, error reporting, and service registration.
+  - Added hierarchical memory support (parent_id) in schema, model, and API.
+  - Implemented distributed PUB/SUB for memory add/update/delete events.
+  - Integrated semantic search using a vector database and sentence-transformer embeddings, with graceful fallback if dependencies are missing.
+  - All string formatting is Python <3.12 compatible.
+  - ZMQ communication now uses BaseAgent's request loop, and service registration is handled by _register_with_digital_twin().
+  - All error reporting uses report_error('error_type', str(e)).
+
+These changes complete the transition to a robust, distributed, and standards-compliant memory system, ready for further expansion and integration across the platform.
+
+## Phase 2A: Create MemoryOrchestratorService
+
+**Summary:**
+A new MemoryOrchestratorService was created on PC2 as the central pillar of the distributed memory system. This service consolidates the ZMQ API logic from the main PC's MemoryOrchestrator, robust SQLite persistence from PC2's MemoryManager, and in-memory LRU caching inspired by CacheManager. It exposes a unified ZMQ REP API for add_memory, get_memory, search_memory, update_memory, and delete_memory, using Pydantic models for validation. The service is now the single source of truth for all memory operations, providing high performance and reliability. Startup configuration and manifests have been updated to reflect this new core service.
+
+**Note:** The service file was moved to `pc2_code/agents/memory_orchestrator_service.py` to maintain architectural consistency. All configuration and documentation now reference this location.
+
+# Refactor: Centralized 'common' Module
+
+**Summary:**
+A major refactor was performed to centralize all code shared between main_pc_code and pc2_code. A new top-level 'common' directory was created, with 'core' and 'utils' subdirectories. The foundational BaseAgent class was moved to common/core/base_agent.py, and the shared data_models.py was moved to common/utils/data_models.py. All import statements across the entire monorepo were updated to reference these new shared locations, ensuring a clean, maintainable, and containerization-friendly architecture. The old src/core and src/common directories were removed if empty.
+
+# Migration: All Agents to main_pc_code/agents/
+
+**Summary:**
+All remaining agent scripts were migrated from the legacy main_pc_code/src directory to the centralized main_pc_code/agents/ directory. The main_pc_code/config/startup_config.yaml and NEWPLAN/ALLINFOMAINAGENTS2_ORDERED.MD were updated to reflect the new script paths for PredictiveHealthMonitor, MemoryOrchestrator, MemoryClient, and FusedAudioPreprocessor. The now-empty legacy src subdirectories were removed, completing the migration and cleanup for a unified, maintainable agent structure.
+
+## Phase 2B: Memory System Refactoring - Unified MemoryClient and Deprecation of MemoryManager (2025-07-03)
+
+- Implemented a new `MemoryClient` agent on Main PC as the exclusive interface to the central `MemoryOrchestratorService` on PC2.
+- Deprecated and removed all legacy `MemoryManager` agents from both Main PC and PC2.
+- Updated all relevant configuration files (`startup_config.yaml` on both Main PC and PC2) to remove `MemoryManager` and add `MemoryClient`.
+- Performed a global search and refactor to replace all imports and usages of `MemoryManager` with `MemoryClient`, updating method calls to match the new API.
+- Deleted the old `memory_manager.py` files from both codebases.
+- Updated all documentation and architecture diagrams to reflect the new memory architecture.
+- This completes Phase 2B of the distributed memory system refactor, centralizing all memory operations through the orchestrator and its unified client.
+
+## Phase 2B - QA Hardening (2025-07-03)
+
+- Updated `main_pc_code/config/startup_config.yaml` to ensure the KnowledgeBase and LearningManager agents now depend on MemoryClient instead of the removed MemoryManager.
+- Updated `pc2_code/config/startup_config.yaml` to remove MemoryManager from the dependencies of ContextManager and EnhancedContextualMemory, leaving their dependencies empty.
+- Removed the obsolete MemoryOrchestrator entry from the Main PC agent manifest (`ALLINFOMAINAGENTS2_ORDERED.MD`).
+- Deleted the entire block for the legacy MemoryManager agent from the PC2 agent manifest (`ALLINFOPC2.MD`).
+- These changes ensure all configuration and documentation references are consistent with the new unified memory architecture and that no legacy dependencies remain.
+
+## Phase 2B - Final QA Fixes (2025-07-03)
+
+- Removed the obsolete MemoryOrchestrator agent configuration block from the Main PC startup configuration (main_pc_code/config/startup_config.yaml).
+- Updated the LearningManager agent's dependencies in the Main PC config to explicitly include MemoryClient for clarity and robustness.
+- Verified and ensured the legacy MemoryManager agent block is fully removed from the PC2 manifest (NEWPLAN/ALLINFOPC2.MD).
+- These changes resolve all remaining configuration and documentation inconsistencies, ensuring the system is fully aligned with the new unified memory architecture and ready for Phase 2C.
+
+## Phase 2C (2025-07-03): Advanced Memory Feature Integration and Legacy Agent Cleanup
+
+- Integrated advanced memory features (importance scoring, reinforcement, decay) from UnifiedMemoryReasoningAgent, MemoryDecayManager, and EnhancedContextualMemory into the centralized MemoryOrchestratorService on PC2.
+- Updated the database schema and all relevant methods in memory_orchestrator_service.py to support importance, access tracking, reinforcement, and periodic decay.
+- Removed configuration blocks for UnifiedMemoryReasoningAgent, MemoryDecayManager, and EnhancedContextualMemory from pc2_code/config/startup_config.yaml.
+- Removed documentation entries for the same agents from NEWPLAN/ALLINFOPC2.MD.
+- Deleted the legacy agent files: UnifiedMemoryReasoningAgent.py, memory_decay_manager.py, and enhanced_contextual_memory.py from pc2_code/agents/.
+- Performed a global search and confirmed removal of all critical dependencies on the deleted agents. Updated documentation and configs as needed to reflect the new architecture.
+- The distributed memory system is now fully unified, with all intelligent memory management centralized in the MemoryOrchestratorService on PC2, ready for further scaling and cross-PC consistency work.
+
+## Phase 2D Progress: `session_memory_agent.py` Refactoring
+
+- **Status:** COMPLETED
+- **Summary:** The file `/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py` has been completely rewritten.
+- **Key Changes:**
+  - Removed all local state (`self.sessions` dictionary) and SQLite dependencies, making the agent fully stateless.
+  - Replaced the legacy `MemoryClient` with direct ZMQ calls to the central `MemoryOrchestratorService`.
+  - Refactored the class structure to be fully compliant with the `BaseAgent` architecture, removing redundant `run()` and `cleanup()` methods.
+  - All public methods (`create_session`, `add_interaction`, `get_context`) are now implemented as pure client logic that delegates all operations to the orchestrator.
+  - API call payloads are now standardized to match the `MemoryRecord` model and the orchestrator's expected format.
+- **Next Step:** Proceed with the refactoring of `knowledge_base.py`.
+
+### Phase 2D Progress: `knowledge_base.py` Final Refactoring (Corrected)
+
+- **Status:** COMPLETED
+- **Summary:** The file `/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py` has been fully refactored into a compliant, stateless client.
+- **Key Changes:**
+  - **Full `BaseAgent` Compliance:** The class structure now strictly adheres to the `BaseAgent` architecture, removing all custom `run`, `health_check`, and `cleanup` methods.
+  - **Local Database Removed:** All `sqlite3` code and direct database access methods have been completely eliminated.
+  - **Exclusive `MemoryClient` Usage:** All data operations (`add`, `get`, `update`, `search`) are now exclusively and correctly handled by making calls to the `MemoryClient`.
+- **Conclusion:** All specialized memory agents have now been successfully migrated to a compliant, client-based architecture. Phase 2D is complete.
+- **Next Step:** Proceed with Phase 2E: Finalization and Cleanup.
+
+### Phase 2B Progress: `memory_client.py` Refactoring
+
+- **Status:** COMPLETED
+- **Summary:** The file `/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_client.py` has been fully refactored to correctly interface with the `MemoryOrchestratorService`.
+- **Key Changes:**
+  - **Correct API Calls:** All public methods now send requests in the exact format expected by the `MemoryOrchestratorService`.
+  - **BaseAgent Compliance:** The client now correctly inherits and utilizes the `BaseAgent` architecture.
+  - **Expanded Functionality:** Added methods for hierarchical and semantic search.
+  - **Service Discovery:** Uses service discovery for orchestrator address.
+- **Conclusion:** The standardized `MemoryClient` is now fully functional and compliant.
+
+## Phase 2E: Configuration Consistency Fixes (2025-07-04)
+
+- **Status:** COMPLETED
+- **Summary:** Fixed critical configuration inconsistencies in the distributed memory system implementation.
+- **Key Changes:**
+  - **Port Conflict Resolution:** Resolved port conflict between TaskScheduler and MemoryOrchestratorService by changing the MemoryOrchestratorService port from 7115 to 7140 in pc2_code/config/startup_config.yaml.
+  - **Redis Integration:** Modified MemoryOrchestratorService to use the Redis-based CacheManager for caching instead of its own LRU cache implementation, following the Phase 2 plan requirements.
+  - **Dependency Updates:** Updated TranslatorServer dependency from MemoryOrchestrator to MemoryClient in main_pc_code/config/startup_config.yaml.
+  - **Model Reference Updates:** Updated TutoringAgent to use ModelOrchestrator instead of the deprecated EnhancedModelRouter.
+  - **Duplicate Removal:** Removed the redundant TutorAgent entry from PC2 config that was causing confusion with TutoringAgent.
+  - **Legacy Agent Replacement:** Replaced UnifiedPlanningAgent with ModelOrchestrator in the Main PC config to align with Phase 1 refactoring.
+- **Benefits:**
+  - Eliminated port conflicts that could cause service startup failures
+  - Properly integrated with Redis-based caching as specified in the Phase 2 plan
+  - Ensured configuration consistency with code changes made during Phase 1 and Phase 2
+  - Removed duplicate and obsolete agent entries
+- **Conclusion:** The distributed memory system now has consistent configuration across all components and follows the phased implementation approach specified in the Phase 2 plan.

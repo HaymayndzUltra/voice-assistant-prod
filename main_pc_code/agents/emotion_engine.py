@@ -24,7 +24,7 @@ import signal
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from main_pc_code.utils.config_loader import load_config
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Configure logging
 logging.basicConfig(

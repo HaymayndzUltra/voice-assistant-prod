@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Union, Any
 from dataclasses import dataclass
 from enum import Enum
 from queue import PriorityQueue
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level

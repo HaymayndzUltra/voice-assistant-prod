@@ -3,7 +3,7 @@ import yaml
 import sys
 import os
 import json
-from datetime import datetime, timede
+from datetime import datetime, timedelta
 
 # Add the project's pc2_code directory to the Python path
 import sys
@@ -13,7 +13,6 @@ PC2_CODE_DIR = Path(__file__).resolve().parent.parent
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
-lta
 from typing import Dict, Any, Optional, List, Union
 import hashlib
 import logging
@@ -25,7 +24,7 @@ from pathlib import Path
 from collections import defaultdict
 
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
@@ -41,6 +40,7 @@ CACHE_CLEANUP_INTERVAL = 300  # 5 minutes
 # Setup logging
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger("CacheManager")
 
 class ResourceMonitor(BaseAgent):
     def __init__(self):
@@ -125,13 +125,29 @@ class ResourceMonitor(BaseAgent):
 
         return socket
 class CacheManager(BaseAgent):
-    def __init__(self, redis_host=REDIS_HOST, redis_port=REDIS_PORT, db=REDIS_DB, port: int = 7102):
-        super().__init__(name="CacheManager", port=port)
-        self.start_time = time.time()
-        self.running = True
-        self.request_count = 0
-        self.main_pc_connections = {}
-        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+    """
+    Centralized cache management service using Redis
+    """
+    def __init__(self, port: int = 7102, health_port: int = 8102):
+        super().__init__(name="CacheManager", port=port, health_check_port=health_port)
+        self.logger = logging.getLogger("CacheManager")
+        
+        # Redis connection
+        try:
+            self.redis = redis.Redis(
+                host=os.environ.get('REDIS_HOST', 'localhost'),
+                port=int(os.environ.get('REDIS_PORT', 6379)),
+                password=os.environ.get('REDIS_PASSWORD', None),
+                decode_responses=False  # Keep as bytes for compatibility
+            )
+            self.redis.ping()  # Test connection
+            self.logger.info("Connected to Redis server")
+            self.redis_available = True
+        except Exception as e:
+            self.logger.error(f"Failed to connect to Redis: {e}")
+            self.redis_available = False
+        
+        # Cache configuration - TTL and priorities
         self.cache_config = {
             'nlu_results': {
                 'ttl': timedelta(minutes=5),
@@ -152,299 +168,227 @@ class CacheManager(BaseAgent):
                 'ttl': timedelta(minutes=15),
                 'max_size': 1000,
                 'priority': 'low'
+            },
+            'memory': {
+                'ttl': timedelta(hours=12),  # Memory cache has longer TTL
+                'max_size': 5000,
+                'priority': 'high'
             }
         }
-        self.cache_stats = defaultdict(lambda: {
-            'hits': 0,
-            'misses': 0,
-            'evictions': 0,
-            'size': 0
-        })
-        self.resource_monitor = ResourceMonitor()
-        self._setup_logging()
-        try:
-            self.redis = redis.Redis(host=redis_host, port=redis_port, db=db)
-            # Test connection
-            self.redis.ping()
-            self.redis_available = True
-        except Exception as e:
-            self.logger.error(f"Redis connection error: {e}")
-            self.redis_available = False
-        # Setup monitoring threads after all attributes are initialized
-        self._setup_health_monitoring()
-        self._setup_cache_cleanup()
-
-    def _setup_logging(self):
-        """Setup logging configuration"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / 'cache_manager.log'),
-                logging.StreamHandler()
-            ]
-        )
-        self.logger = logging.getLogger('CacheManager')
-
-    def _setup_health_monitoring(self):
-        """Setup health monitoring thread"""
-        def monitor_health():
-            context = zmq.Context()
-            socket = context.socket(zmq.PUB)
-            socket.bind(f"tcp://*:{HEALTH_PORT}")
-            
-            while True:
-                try:
-                    stats = self.resource_monitor.get_stats()
-                    cache_stats = self._get_cache_stats()
-                    health_status = {
-                        'status': 'ok' if self.resource_monitor.check_resources() else 'degraded',
-                        'stats': stats,
-                        'cache_stats': cache_stats,
-                        'timestamp': datetime.now().isoformat()
-                    }
-                    socket.send_json(health_status)
-                    time.sleep(HEALTH_CHECK_INTERVAL)
-                except Exception as e:
-                    self.logger.error(f"Health monitoring error: {str(e)}")
-                    time.sleep(5)
-                    
-        thread = threading.Thread(target=monitor_health, daemon=True)
-        thread.start()
-
-    def _setup_cache_cleanup(self):
-        """Setup periodic cache cleanup"""
-        def cleanup_cache():
-            while True:
-                try:
-                    self._cleanup_expired_entries()
-                    self._enforce_size_limits()
-                    time.sleep(CACHE_CLEANUP_INTERVAL)
-                except Exception as e:
-                    self.logger.error(f"Cache cleanup error: {str(e)}")
-                    time.sleep(60)
-                    
-        thread = threading.Thread(target=cleanup_cache, daemon=True)
-        thread.start()
-
-    def _generate_cache_key(self, cache_type: str, data: Any) -> str:
-        """Generate a unique cache key based on data and type"""
-        key_data = json.dumps({
-            'type': cache_type,
-            'data': data,
-            'timestamp': datetime.now().isoformat()
-        }, sort_keys=True)
-        return f"cache:{hashlib.md5(key_data.encode()).hexdigest()}"
-
-    def _get_cache_stats(self) -> Dict[str, Any]:
-        """Get current cache statistics"""
-        return dict(self.cache_stats)
-
-    def _cleanup_expired_entries(self):
-        """Clean up expired cache entries"""
-        for cache_type, config in self.cache_config.items():
-            pattern = f"cache:{cache_type}:*"
-            for key in self.redis.scan_iter(match=pattern):
-                if not self.redis.ttl(key):
-                    self.redis.delete(key)
-                    self.cache_stats[cache_type]['evictions'] += 1
-
-    def _enforce_size_limits(self):
-        """Enforce size limits for each cache type"""
-        for cache_type, config in self.cache_config.items():
-            pattern = f"cache:{cache_type}:*"
-            keys = list(self.redis.scan_iter(match=pattern))
-            
-            if len(keys) > config.get('max_size'):
-                # Remove oldest entries
-                keys_to_remove = keys[:-config.get('max_size')]
-                for key in keys_to_remove:
-                    self.redis.delete(key)
-                    self.cache_stats[cache_type]['evictions'] += 1
-
-    def cache_nlu_result(self, user_input: str, intent: str, entities: Dict[str, Any]) -> None:
-        """Cache NLU processing results"""
-        if not self.resource_monitor.check_resources():
-            self.logger.warning("Resource constraints detected, skipping cache")
-            return
-        if not getattr(self, 'redis_available', True):
-            self.logger.warning("Redis unavailable, skipping cache")
-            return
-            
-        cache_key = self._generate_cache_key('nlu_results', user_input)
-        cache_data = {
-            'intent': intent,
-            'entities': entities,
-            'timestamp': datetime.now().isoformat()
-        }
         
-        try:
-            self.redis.setex(
-                cache_key,
-                self.cache_config.get('nlu_results')['ttl'],
-                json.dumps(cache_data)
-            )
-            self.cache_stats['nlu_results']['size'] += 1
-        except Exception as e:
-            self.logger.error(f"Error caching NLU result: {str(e)}")
-
-    def get_cached_nlu_result(self, user_input: str) -> Optional[Dict[str, Any]]:
-        """Get cached NLU results"""
-        cache_key = self._generate_cache_key('nlu_results', user_input)
-        try:
-            cached_data = self.redis.get(cache_key)
-            if cached_data:
-                self.cache_stats['nlu_results']['hits'] += 1
-                return json.loads(cached_data)
-            self.cache_stats['nlu_results']['misses'] += 1
-            return None
-        except Exception as e:
-            self.logger.error(f"Error retrieving cached NLU result: {str(e)}")
-            return None
-
-    def cache_model_decision(self, task_type: str, model_id: str) -> None:
-        """Cache model router decisions"""
-        if not self.resource_monitor.check_resources():
-            self.logger.warning("Resource constraints detected, skipping cache")
-            return
-            
-        cache_key = self._generate_cache_key('model_decisions', task_type)
-        cache_data = {
-            'model_id': model_id,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        try:
-            self.redis.setex(
-                cache_key,
-                self.cache_config.get('model_decisions')['ttl'],
-                json.dumps(cache_data)
-            )
-            self.cache_stats['model_decisions']['size'] += 1
-        except Exception as e:
-            self.logger.error(f"Error caching model decision: {str(e)}")
-
-    def get_cached_model_decision(self, task_type: str) -> Optional[str]:
-        """Get cached model decision"""
-        cache_key = self._generate_cache_key('model_decisions', task_type)
-        try:
-            cached_data = self.redis.get(cache_key)
-            if cached_data:
-                self.cache_stats['model_decisions']['hits'] += 1
-                return json.loads(cached_data)['model_id']
-            self.cache_stats['model_decisions']['misses'] += 1
-            return None
-        except Exception as e:
-            self.logger.error(f"Error retrieving cached model decision: {str(e)}")
-            return None
-
-    def cache_context_summary(self, session_id: str, summary: str) -> None:
-        """Cache context summaries"""
-        if not self.resource_monitor.check_resources():
-            self.logger.warning("Resource constraints detected, skipping cache")
-            return
-            
-        cache_key = self._generate_cache_key('context_summaries', session_id)
-        cache_data = {
-            'summary': summary,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        try:
-            self.redis.setex(
-                cache_key,
-                self.cache_config.get('context_summaries')['ttl'],
-                json.dumps(cache_data)
-            )
-            self.cache_stats['context_summaries']['size'] += 1
-        except Exception as e:
-            self.logger.error(f"Error caching context summary: {str(e)}")
-
-    def get_cached_context_summary(self, session_id: str) -> Optional[str]:
-        """Get cached context summary"""
-        cache_key = self._generate_cache_key('context_summaries', session_id)
-        try:
-            cached_data = self.redis.get(cache_key)
-            if cached_data:
-                self.cache_stats['context_summaries']['hits'] += 1
-                return json.loads(cached_data)['summary']
-            self.cache_stats['context_summaries']['misses'] += 1
-            return None
-        except Exception as e:
-            self.logger.error(f"Error retrieving cached context summary: {str(e)}")
-            return None
-
-    def cache_tool_response(self, tool_name: str, response: Any) -> None:
-        """Cache tool responses"""
-        if not self.resource_monitor.check_resources():
-            self.logger.warning("Resource constraints detected, skipping cache")
-            return
-            
-        cache_key = self._generate_cache_key('tool_responses', tool_name)
-        cache_data = {
-            'response': response,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        try:
-            self.redis.setex(
-                cache_key,
-                self.cache_config.get('tool_responses')['ttl'],
-                json.dumps(cache_data)
-            )
-            self.cache_stats['tool_responses']['size'] += 1
-        except Exception as e:
-            self.logger.error(f"Error caching tool response: {str(e)}")
-
-    def get_cached_tool_response(self, tool_name: str) -> Optional[Any]:
-        """Get cached tool response"""
-        cache_key = self._generate_cache_key('tool_responses', tool_name)
-        try:
-            cached_data = self.redis.get(cache_key)
-            if cached_data:
-                self.cache_stats['tool_responses']['hits'] += 1
-                return json.loads(cached_data)['response']
-            self.cache_stats['tool_responses']['misses'] += 1
-            return None
-        except Exception as e:
-            self.logger.error(f"Error retrieving cached tool response: {str(e)}")
-            return None
-
-    def invalidate_cache(self, cache_type: str, data: Any) -> None:
-        """Invalidate specific cache entry"""
-        cache_key = self._generate_cache_key(cache_type, data)
-        try:
-            self.redis.delete(cache_key)
-            if cache_type in self.cache_stats:
-                self.cache_stats[cache_type]['size'] = max(0, self.cache_stats[cache_type]['size'] - 1)
-        except Exception as e:
-            self.logger.error(f"Error invalidating cache: {str(e)}")
-
-    def clear_all_cache(self) -> None:
-        """Clear all cache entries"""
-        try:
-            self.redis.flushdb()
-            for cache_type in self.cache_stats:
-                self.cache_stats[cache_type]['size'] = 0
-        except Exception as e:
-            self.logger.error(f"Error clearing cache: {str(e)}")
-
+        # Start background maintenance thread
+        self.stop_event = threading.Event()
+        self.maintenance_thread = threading.Thread(target=self._run_maintenance, daemon=True)
+        self.maintenance_thread.start()
+    
     def run(self):
-        """Run the cache manager"""
-        self.logger.info("Cache Manager started")
+        """Main service loop"""
+        self.logger.info("CacheManager service started")
+        super().run()  # Use BaseAgent's request loop
+    
+    def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process incoming cache requests"""
+        action = request.get('action', '')
+        
+        # Handle health check requests
+        if action in ['ping', 'health', 'health_check']:
+            return {'status': 'success', 'message': 'CacheManager is healthy'}
+        
+        # Memory-specific cache operations
+        if action == 'get_cached_memory':
+            memory_id = request.get('memory_id')
+            if not memory_id:
+                return {'status': 'error', 'message': 'Missing memory_id parameter'}
+            return self.get_cached_memory(memory_id)
+            
+        elif action == 'cache_memory':
+            memory_id = request.get('memory_id')
+            data = request.get('data')
+            ttl = request.get('ttl', 3600)  # Default 1 hour TTL
+            if not memory_id or data is None:
+                return {'status': 'error', 'message': 'Missing required parameters'}
+            return self.cache_memory(memory_id, data, ttl)
+            
+        elif action == 'invalidate_memory_cache':
+            memory_id = request.get('memory_id')
+            if not memory_id:
+                return {'status': 'error', 'message': 'Missing memory_id parameter'}
+            return self.invalidate_memory_cache(memory_id)
+        
+        # General cache operations
+        elif action == 'get':
+            cache_type = request.get('cache_type', '')
+            key = request.get('key', '')
+            if not cache_type or not key:
+                return {'status': 'error', 'message': 'Missing cache_type or key parameter'}
+            return self.get_cache_entry(cache_type, key)
+            
+        elif action == 'put':
+            cache_type = request.get('cache_type', '')
+            key = request.get('key', '')
+            value = request.get('value')
+            ttl = request.get('ttl')
+            if not cache_type or not key or value is None:
+                return {'status': 'error', 'message': 'Missing required parameters'}
+            return self.put_cache_entry(cache_type, key, value, ttl)
+            
+        elif action == 'invalidate':
+            cache_type = request.get('cache_type', '')
+            key = request.get('key', '')
+            if not cache_type or not key:
+                return {'status': 'error', 'message': 'Missing cache_type or key parameter'}
+            return self.invalidate_cache_entry(cache_type, key)
+            
+        elif action == 'flush':
+            cache_type = request.get('cache_type', '')
+            if not cache_type:
+                return {'status': 'error', 'message': 'Missing cache_type parameter'}
+            return self.flush_cache(cache_type)
+            
+        else:
+            return {'status': 'error', 'message': f'Unknown action: {action}'}
+    
+    def get_cached_memory(self, memory_id: Union[int, str]) -> Dict[str, Any]:
+        """Get a memory from the cache"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
         try:
+            key = f"memory:{memory_id}"
+            data = self.redis.get(key)
+            if data:
+                return {'status': 'success', 'data': json.loads(data)}
+            return {'status': 'error', 'message': 'Cache miss', 'data': None}
+        except Exception as e:
+            self.logger.error(f"Error getting memory from cache: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def cache_memory(self, memory_id: Union[int, str], data: Dict[str, Any], ttl: int = 3600) -> Dict[str, Any]:
+        """Cache a memory"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            key = f"memory:{memory_id}"
+            serialized = json.dumps(data)
+            self.redis.setex(key, ttl, serialized)
+            return {'status': 'success', 'message': 'Memory cached successfully'}
+        except Exception as e:
+            self.logger.error(f"Error caching memory: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def invalidate_memory_cache(self, memory_id: Union[int, str]) -> Dict[str, Any]:
+        """Invalidate a memory in the cache"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            key = f"memory:{memory_id}"
+            deleted = self.redis.delete(key)
+            if deleted:
+                return {'status': 'success', 'message': 'Memory cache entry invalidated'}
+            return {'status': 'success', 'message': 'Memory cache entry not found'}
+        except Exception as e:
+            self.logger.error(f"Error invalidating memory cache: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def get_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
+        """Get an entry from the cache"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            redis_key = f"{cache_type}:{key}"
+            data = self.redis.get(redis_key)
+            if data:
+                return {'status': 'success', 'data': json.loads(data)}
+            return {'status': 'error', 'message': 'Cache miss', 'data': None}
+        except Exception as e:
+            self.logger.error(f"Error getting cache entry: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def put_cache_entry(self, cache_type: str, key: str, value: Any, ttl: Optional[int] = None) -> Dict[str, Any]:
+        """Put an entry in the cache"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            redis_key = f"{cache_type}:{key}"
+            serialized = json.dumps(value)
+            
+            # Use configured TTL if not specified
+            if ttl is None and cache_type in self.cache_config:
+                ttl = int(self.cache_config[cache_type]['ttl'].total_seconds())
+            elif ttl is None:
+                ttl = 3600  # Default 1 hour
+            
+            self.redis.setex(redis_key, ttl, serialized)
+            return {'status': 'success', 'message': 'Cache entry stored'}
+        except Exception as e:
+            self.logger.error(f"Error putting cache entry: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def invalidate_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
+        """Invalidate a cache entry"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            redis_key = f"{cache_type}:{key}"
+            deleted = self.redis.delete(redis_key)
+            if deleted:
+                return {'status': 'success', 'message': 'Cache entry invalidated'}
+            return {'status': 'success', 'message': 'Cache entry not found'}
+        except Exception as e:
+            self.logger.error(f"Error invalidating cache entry: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def flush_cache(self, cache_type: str) -> Dict[str, Any]:
+        """Flush all entries of a specific cache type"""
+        if not self.redis_available:
+            return {'status': 'error', 'message': 'Redis is not available'}
+        
+        try:
+            pattern = f"{cache_type}:*"
+            cursor = 0
+            deleted_count = 0
+            
             while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            self.logger.info("Cache Manager shutting down...")
-
-    def _get_health_status(self):
-        base_status = super()._get_health_status()
-        base_status.update({
-            'service': 'CacheManager',
-            'uptime': time.time() - self.start_time
-        })
-        return base_status
+                cursor, keys = self.redis.scan(cursor, pattern, 100)
+                if keys:
+                    deleted_count += self.redis.delete(*keys)
+                if cursor == 0:
+                    break
+            
+            return {'status': 'success', 'message': f'Flushed {deleted_count} cache entries'}
+        except Exception as e:
+            self.logger.error(f"Error flushing cache: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def _run_maintenance(self):
+        """Background thread for cache maintenance"""
+        while not self.stop_event.is_set():
+            try:
+                # Perform maintenance tasks here (e.g., cleanup, stats collection)
+                if self.redis_available:
+                    # Log cache stats periodically
+                    info = self.redis.info()
+                    self.logger.debug(f"Redis memory used: {info.get('used_memory_human', 'N/A')}")
+                    
+                    # TODO: Implement more sophisticated cache eviction policies
+                    # based on priority and access patterns if needed
+            except Exception as e:
+                self.logger.error(f"Error in cache maintenance: {e}")
+            
+            # Sleep for maintenance interval
+            time.sleep(300)  # 5 minutes
+    
+    def stop(self):
+        """Stop the service"""
+        self.stop_event.set()
+        if hasattr(self, 'maintenance_thread') and self.maintenance_thread.is_alive():
+            self.maintenance_thread.join(timeout=1.0)
+        super().stop()
 
 class CacheManagerHealth:
     def __init__(self, port=7102):

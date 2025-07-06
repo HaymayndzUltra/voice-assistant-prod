@@ -16,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -60,11 +60,11 @@ class DynamicIdentityAgent(BaseAgent):
         self.start_time = time.time()
         self.running = True
         
-        # Initialize TaskRouter connection variables
-        self.task_router_connection = None
-        self.task_router_connected = False
-        # Start a background thread to connect to TaskRouter when it becomes available
-        threading.Thread(target=self._connect_to_task_router, daemon=True).start()
+        # Initialize RequestCoordinator connection variables
+        self.request_coordinator_connection = None
+        self.request_coordinator_connected = False
+        # Start a background thread to connect to RequestCoordinator when it becomes available
+        threading.Thread(target=self._connect_to_request_coordinator, daemon=True).start()
         
         # Perform remaining initialization asynchronously so that health checks can succeed quickly
         threading.Thread(target=self._perform_initialization, daemon=True).start()
@@ -80,8 +80,8 @@ class DynamicIdentityAgent(BaseAgent):
         }
         return {"status": status, "details": details}
     
-    def _connect_to_task_router(self):
-        """Connect to TaskRouter using service discovery when it becomes available."""
+    def _connect_to_request_coordinator(self):
+        """Connect to RequestCoordinator using service discovery when it becomes available."""
         from main_pc_code.utils.service_discovery_client import get_service_address
         
         retry_count = 0
@@ -90,25 +90,25 @@ class DynamicIdentityAgent(BaseAgent):
         
         while retry_count < max_retries and self.running:
             try:
-                # Try to discover TaskRouter service
-                task_router_address = get_service_address("TaskRouter")
-                if task_router_address:
-                    logger.info(f"TaskRouter discovered at {task_router_address}")
-                    # Initialize connection to TaskRouter if needed
+                # Try to discover RequestCoordinator service
+                request_coordinator_address = get_service_address("RequestCoordinator")
+                if request_coordinator_address:
+                    logger.info(f"RequestCoordinator discovered at {request_coordinator_address}")
+                    # Initialize connection to RequestCoordinator if needed
                     # For now, we just mark it as connected since we don't need direct communication
-                    self.task_router_connected = True
+                    self.request_coordinator_connected = True
                     break
                 else:
-                    logger.warning("TaskRouter not found in service registry, will retry...")
+                    logger.warning("RequestCoordinator not found in service registry, will retry...")
             except Exception as e:
-                logger.error(f"Error discovering TaskRouter: {e}")
+                logger.error(f"Error discovering RequestCoordinator: {e}")
             
             # Wait before retrying
             retry_count += 1
             time.sleep(retry_delay)
         
-        if not self.task_router_connected:
-            logger.warning("Failed to connect to TaskRouter after maximum retries")
+        if not self.request_coordinator_connected:
+            logger.warning("Failed to connect to RequestCoordinator after maximum retries")
     
     def _perform_initialization(self):
         try:

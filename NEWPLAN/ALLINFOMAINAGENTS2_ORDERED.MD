@@ -7,10 +7,8 @@
 - **UnifiedSystemAgent**: Central command center for system orchestration, service discovery, maintenance, and monitoring.
 
 ## Data & Storage Services Container
-- **MemoryOrchestrator**: Provides centralized memory storage and retrieval services across the system.
 - **SessionMemoryAgent**: Manages conversation history and context for LLM prompts.
-- **MemoryManager**: Coordinates memory operations across the system and provides short-term memory services.
-- **MemoryClient**: Lightweight client interface to the Memory Orchestrator for memory storage and retrieval requests.
+- **MemoryClient**: Sole interface for all memory operations on Main PC, forwarding requests to the central MemoryOrchestratorService on PC2. Replaces all legacy memory managers.
 - **KnowledgeBase**: Manages the system's knowledge base using SQLite for storing, retrieving, and searching facts.
 - **TTSCache**: Provides caching functionality for text-to-speech operations to avoid redundant processing.
 
@@ -51,7 +49,7 @@
 - **EmotionSynthesisAgent**: Adds emotional nuance to text based on specified emotions.
 - **TTSAgent**: Handles text-to-speech synthesis requests with interrupt handling capability.
 - **StreamingAudioCapture**: Handles the critical first step in the audio processing pipeline for raw audio capture.
-- **FusedAudioPreprocessor**: Handles critical audio preprocessing functions including noise reduction and VAD.
+- **FusedAudioPreprocessor** (script_path: main_pc_code/agents/fused_audio_preprocessor.py): Handles critical audio preprocessing functions including noise reduction and VAD.
 - **WakeWordDetector**: Specializes in wake word detection to trigger system activation.
 - **ChitChatAgent**: Handles casual conversation interactions and maintains conversation history.
 - **FeedbackHandler**: Provides visual and voice confirmation feedback for command execution.
@@ -64,7 +62,7 @@
 - **AdvancedCommandHandler**: Extends basic command handling with advanced features like command sequences.
 
 ## Utilities & Support Services Container
-- **PredictiveHealthMonitor**: Advanced monitoring agent na gumagamit ng machine learning para i-predict ang potential failures.
+- **PredictiveHealthMonitor** (script_path: main_pc_code/agents/predictive_health_monitor.py): Advanced monitoring agent na gumagamit ng machine learning para i-predict ang potential failures.
 - **ConsolidatedTranslator**: Combines multiple translation engines with fallback mechanisms and caching.
 - **FixedStreamingTranslation**: Handles streaming translation with multiple fallback mechanisms.
 - **Executor**: Handles user command execution with security controls and authentication.

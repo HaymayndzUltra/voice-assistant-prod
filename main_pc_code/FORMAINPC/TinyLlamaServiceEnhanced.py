@@ -40,7 +40,7 @@ from datetime import datetime
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 # Import BaseAgent for standardized agent implementation
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 ZMQ_REQUEST_TIMEOUT = 5000  # Socket timeout in milliseconds
 

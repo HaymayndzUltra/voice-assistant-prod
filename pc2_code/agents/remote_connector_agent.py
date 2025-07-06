@@ -28,7 +28,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import base agent and config loaders
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load PC2 specific configuration system

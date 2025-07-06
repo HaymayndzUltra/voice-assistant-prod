@@ -45,16 +45,16 @@ class UnifiedSystemAgent(BaseAgent):
             # Core Agents
             'AutonomousWebAssistant': 5630,
             'EpisodicMemoryAgent': 5631,
-            'EnhancedModelRouter': 5632,
+            'ModelOrchestrator': 5632,
             'PerformanceLoggerAgent': 5633,
-            'CoordinatorAgent': 5634,
+            'RequestCoordinator': 5634,
             'EmpathyAgent': 5635,
             
             # Advanced Agents
             'DreamingModeAgent': 5640,
             'CognitiveModelAgent': 5641,
             'DreamWorldAgent': 5642,
-            'MultiAgentSwarmManager': 5643,
+            'GoalManager': 5643,
             'DynamicIdentityAgent': 5644
         }
         

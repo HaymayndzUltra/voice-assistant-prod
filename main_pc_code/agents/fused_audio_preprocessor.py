@@ -38,7 +38,7 @@ import librosa
 from main_pc_code.src.core.http_server import setup_health_check_server
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Load configuration at module level
 config = load_config()

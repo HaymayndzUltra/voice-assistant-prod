@@ -46,7 +46,7 @@ if str(project_root) not in sys.path:
 from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
 from main_pc_code.utils.network_utils import load_network_config, get_current_machine
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Import secure ZMQ utilities if available

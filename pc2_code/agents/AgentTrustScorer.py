@@ -20,7 +20,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level

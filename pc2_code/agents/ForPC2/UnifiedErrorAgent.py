@@ -13,7 +13,7 @@ import os
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
+project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
@@ -21,7 +21,7 @@ if str(project_root) not in sys.path:
 try:
     from pc2_code.utils.config_loader import parse_agent_args
     _agent_args = parse_agent_args()
-    from main_pc_code.src.core.base_agent import BaseAgent
+    from common.core.base_agent import BaseAgent
     from pc2_code.agents.utils.config_loader import Config
 
     # Load configuration at the module level
@@ -149,7 +149,34 @@ class UnifiedErrorAgent(BaseAgent):
             'timestamp': datetime.now().isoformat()
         }
         logger.warning(f"Alert triggered: {json.dumps(alert)}")
-        # TODO: Implement alert notification system
+        
+        # Forward critical alerts to SelfHealingAgent
+        if pattern['severity'] == 'critical' or pattern['severity'] == 'high':
+            self._forward_critical_alert_to_self_healing(error_type, pattern)
+    
+    def _forward_critical_alert_to_self_healing(self, error_type: str, pattern: Dict):
+        """Forward critical alerts to SelfHealingAgent."""
+        try:
+            # Prepare the critical alert payload
+            critical_alert = {
+                'action': 'critical_alert',
+                'source': 'UnifiedErrorAgent',
+                'error_type': error_type,
+                'severity': pattern['severity'],
+                'count': pattern['count'],
+                'timestamp': datetime.now().isoformat(),
+                'message': f"Critical error threshold exceeded: {error_type} ({pattern['count']} occurrences)"
+            }
+            
+            # Send to SelfHealingAgent using BaseAgent's method
+            response = self.send_request_to_agent("SelfHealingAgent", critical_alert)
+            if response:
+                logger.info(f"Critical alert forwarded to SelfHealingAgent. Response: {response}")
+            else:
+                logger.warning("No response received from SelfHealingAgent for critical alert")
+                
+        except Exception as e:
+            logger.error(f"Failed to forward critical alert to SelfHealingAgent: {e}", exc_info=True)
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
@@ -169,16 +196,31 @@ class UnifiedErrorAgent(BaseAgent):
         try:
             error_data = {
                 'type': request.get('error_type', 'unknown'),
-                'message': request.get('message', ''),
+                'message': request.get('reason', request.get('message', '')),
                 'severity': request.get('severity', 'low'),
                 'timestamp': datetime.now().isoformat(),
                 'source': request.get('source', 'unknown'),
                 'details': request.get('details', {})
             }
             
+            # Add additional fields from RCA_Agent if present
+            if 'target_agent' in request:
+                error_data['target_agent'] = request['target_agent']
+            if 'error_pattern' in request:
+                error_data['error_pattern'] = request['error_pattern']
+            if 'error_count' in request:
+                error_data['count'] = request['error_count']
+            
             self.error_history.append(error_data)
             # Keep only last 1000 errors
             self.error_history = self.error_history[-1000:]
+            
+            # Check if this is a critical error that needs immediate forwarding
+            if error_data['severity'] == 'critical':
+                self._forward_critical_alert_to_self_healing(
+                    error_data['type'], 
+                    {'severity': error_data['severity'], 'count': error_data.get('count', 1)}
+                )
             
             return {'status': 'success', 'message': 'Error reported successfully'}
         except Exception as e:

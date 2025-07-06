@@ -40,7 +40,7 @@ import functools
 import argparse
 
 # Import BaseAgent for agent implementation
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Import config parser for dynamic port support
 from main_pc_code.utils.config_loader import load_config

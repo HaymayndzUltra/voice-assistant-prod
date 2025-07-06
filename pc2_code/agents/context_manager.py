@@ -16,7 +16,7 @@ from pc2_code.agents.utils.config_loader import Config
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Load configuration at the module level

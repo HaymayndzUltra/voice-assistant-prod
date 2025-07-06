@@ -25,7 +25,7 @@ import argparse
 import threading
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -59,7 +59,7 @@ class PredictiveLoader(BaseAgent):
         self.host = host
 
     
-        self.task_router_port = task_router_port
+        self.request_coordinator_port = request_coordinator_port
 
     
         self.context = zmq.Context()
@@ -74,16 +74,16 @@ class PredictiveLoader(BaseAgent):
         logger.info(f"Predictive Loader initialized on port {port}")
 
     
-        # Setup connection to Task Router
+        # Setup connection to RequestCoordinator
 
     
-        self.task_router_socket = self.context.socket(zmq.REQ)
+        self.request_coordinator_socket = self.context.socket(zmq.REQ)
 
     
-        self.task_router_socket.connect(f"tcp://localhost:{task_router_port}")
+        self.request_coordinator_socket.connect(f"tcp://localhost:{request_coordinator_port}")
 
     
-        logger.info(f"Connected to Task Router on port {task_router_port}")
+        logger.info(f"Connected to RequestCoordinator on port {request_coordinator_port}")
 
     
         # Setup health check socket
@@ -118,17 +118,17 @@ class PredictiveLoader(BaseAgent):
     
         self._start_health_check()
         self.port = self.config.getint('predictive_loader.port', 5617)
-        self.task_router_port = self.config.getint('dependencies.task_router_port', 8571)
+        self.request_coordinator_port = self.config.getint('dependencies.request_coordinator_port', 8571)
         self.host = self.config.get('network.bind_address', '0.0.0.0')
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://{self.host}:{self.port}")
         logger.info(f"Predictive Loader initialized on port {self.port}")
         
-        # Setup connection to Task Router
-        self.task_router_socket = self.context.socket(zmq.REQ)
-        self.task_router_socket.connect(f"tcp://localhost:{self.task_router_port}")
-        logger.info(f"Connected to Task Router on port {self.task_router_port}")
+        # Setup connection to RequestCoordinator
+        self.request_coordinator_socket = self.context.socket(zmq.REQ)
+        self.request_coordinator_socket.connect(f"tcp://localhost:{self.request_coordinator_port}")
+        logger.info(f"Connected to RequestCoordinator on port {self.request_coordinator_port}")
         
         # Setup health check socket
         self.health_port = self.port + 1
@@ -210,7 +210,7 @@ class PredictiveLoader(BaseAgent):
             logger.error(f"Error in Predictive Loader: {e}")
         finally:
             self.socket.close()
-            self.task_router_socket.close()
+            self.request_coordinator_socket.close()
             self.context.term()
     
     def _prediction_loop(self):
@@ -245,15 +245,15 @@ class PredictiveLoader(BaseAgent):
         """Request model preloading from the model manager"""
         for model_id in model_ids:
             try:
-                # Notify Task Router about model prediction
+                # Notify RequestCoordinator about model prediction
                 message = {
                     "action": "preload_model",
                     "model_id": model_id,
                     "priority": "low",
                     "source": "PredictiveLoader"
                 }
-                self.task_router_socket.send_json(message)
-                response = self.task_router_socket.recv_json()
+                self.request_coordinator_socket.send_json(message)
+                response = self.request_coordinator_socket.recv_json()
                 logger.info(f"Preload request response: {response}")
             except Exception as e:
                 logger.error(f"Error requesting model preload: {e}")
@@ -306,9 +306,9 @@ class PredictiveLoader(BaseAgent):
             self.socket.close()
             logger.info("Main socket closed")
             
-        if hasattr(self, 'task_router_socket'):
-            self.task_router_socket.close()
-            logger.info("Task router socket closed")
+        if hasattr(self, 'request_coordinator_socket'):
+            self.request_coordinator_socket.close()
+            logger.info("RequestCoordinator socket closed")
             
         if hasattr(self, 'health_socket'):
             self.health_socket.close()

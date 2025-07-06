@@ -27,7 +27,7 @@ MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
 import psutil

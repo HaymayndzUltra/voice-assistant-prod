@@ -46,6 +46,7 @@ import time
 import logging
 import sys
 import os
+import yaml
 import traceback
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Set
@@ -64,7 +65,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import base agent and config loaders
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Import config parser utility with fallback
@@ -238,6 +239,8 @@ class SelfHealingAgent(BaseAgent): # Inherit from BaseAgent
             return self._handle_heartbeat(request)
         elif action == 'proactive_recommendation':
             return self._handle_proactive_recommendation(request)
+        elif action == 'critical_alert':
+            return self._handle_critical_alert(request)
         elif action == 'get_agent_status':
             return self._get_agent_status(request)
         else:
@@ -321,6 +324,62 @@ class SelfHealingAgent(BaseAgent): # Inherit from BaseAgent
         except Exception as e:
             logger.error(f"Error handling proactive recommendation: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
+
+    def _handle_critical_alert(self, alert: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle critical alert from UnifiedErrorAgent."""
+        try:
+            source = alert.get('source', 'unknown')
+            error_type = alert.get('error_type', 'unknown')
+            severity = alert.get('severity', 'critical')
+            message = alert.get('message', '')
+            target_agent = alert.get('target_agent')
+            
+            logger.warning(f"Received critical alert from {source}: {error_type} - {message} (Severity: {severity})")
+            
+            # Take immediate action based on the critical alert
+            if target_agent and target_agent in self.agent_registry:
+                agent_status = self.agent_registry[target_agent]
+                
+                # Mark agent as degraded
+                if agent_status.status != AGENT_STATUS_OFFLINE:
+                    agent_status.status = AGENT_STATUS_DEGRADED
+                    logger.warning(f"Marking agent {target_agent} as degraded due to critical alert")
+                
+                # TODO: Implement recovery action based on error type
+                # For now, just log the action we would take
+                recovery_action = self._determine_recovery_action(error_type, severity)
+                logger.info(f"Recovery action for {target_agent}: {recovery_action}")
+                
+                return {
+                    'status': 'success',
+                    'message': 'Critical alert processed',
+                    'action_taken': recovery_action
+                }
+            else:
+                # General system alert not targeting a specific agent
+                logger.warning(f"System-wide critical alert: {error_type} - {message}")
+                return {
+                    'status': 'success',
+                    'message': 'System-wide critical alert acknowledged',
+                    'action_taken': 'logged'
+                }
+        except Exception as e:
+            logger.error(f"Error handling critical alert: {e}", exc_info=True)
+            return {'status': 'error', 'message': str(e)}
+
+    def _determine_recovery_action(self, error_type: str, severity: str) -> str:
+        """Determine appropriate recovery action based on error type and severity."""
+        if severity == 'critical':
+            return RECOVERY_ACTION_RESTART
+        elif severity == 'high':
+            if 'memory' in error_type.lower():
+                return RECOVERY_ACTION_CLEAR_MEMORY
+            else:
+                return RECOVERY_ACTION_RESET
+        elif severity == 'medium':
+            return RECOVERY_ACTION_OPTIMIZE
+        else:
+            return RECOVERY_ACTION_NOTIFY
 
     def _get_agent_status(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Get status of all agents or a specific agent."""

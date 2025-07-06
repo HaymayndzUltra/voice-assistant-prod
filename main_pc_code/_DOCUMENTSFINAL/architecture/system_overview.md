@@ -33,7 +33,7 @@ flowchart TB
         subgraph MemorySystem1[Memory System (mainPC)]
             direction TB
             SessionMem[Session Memory\nPort 5574]
-            KnowledgeBase --> MemoryManager[Memory Manager]
+            KnowledgeBase --> MemoryClient[Memory Client]
             Coordinator <--> SessionMem
         end
 

@@ -33,7 +33,7 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 import psutil
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 # Import existing command handler as base
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
 from main_pc_code.utils.config_loader import load_config
@@ -46,7 +46,7 @@ logger = logging.getLogger("AdvancedCommandHandler")
 
 # ZMQ Configuration
 ZMQ_EXECUTOR_PORT = 6001  # Port for Executor Agent on Main PC
-ZMQ_COORDINATOR_PORT = 5590  # Port for Coordinator Agent
+ZMQ_COORDINATOR_PORT = 5590  # Port for RequestCoordinator
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Supported script types and their execution commands
@@ -70,7 +70,7 @@ class AdvancedCommandHandler(BaseAgent):
         Args:
             zmq_port: Port for Jarvis Memory Agent
             executor_port: Port for Executor Agent
-            coordinator_port: Port for Coordinator Agent
+            coordinator_port: Port for RequestCoordinator
         """
         # Standard BaseAgent initialization at the beginning
         self.config = _agent_args
@@ -102,7 +102,7 @@ class AdvancedCommandHandler(BaseAgent):
         self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.coordinator_socket.connect(f"tcp://{_host}:{coordinator_port}")
-        logger.info(f"Connected to Coordinator Agent on port {coordinator_port}")
+        logger.info(f"Connected to RequestCoordinator on port {coordinator_port}")
         
         # Track running background scripts/sequences
         self.running_processes = {}

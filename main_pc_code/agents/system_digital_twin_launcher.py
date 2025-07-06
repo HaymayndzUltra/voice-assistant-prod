@@ -26,7 +26,7 @@ from typing import Dict, Any, Optional, List, Union, cast
 
 # Import the agent class and base agent
 from main_pc_code.agents.system_digital_twin import SystemDigitalTwinAgent
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Configure logging
 logging.basicConfig(

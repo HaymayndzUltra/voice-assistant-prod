@@ -32,7 +32,7 @@ import tempfile
 import re
 import threading
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.agents.gguf_model_manager import GGUFModelManager

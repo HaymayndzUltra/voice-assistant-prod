@@ -14,7 +14,7 @@ NLU Agent
 Natural Language Understanding agent that analyzes user input and extracts intents and entities.
 """
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import os
 import zmq
 import json

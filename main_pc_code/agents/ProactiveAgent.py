@@ -16,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -129,7 +129,7 @@ class ProactiveAgent(BaseAgent):
 
         logger.info(f"ProactiveAgent initialized on port {self.port}")
         self.port = self.config.getint('proactive_agent.port', 5624)
-        self.coordinator_address = self.config.get('dependencies.coordinator_address', 'tcp://localhost:26002')
+        self.coordinator_address = self.config.get('dependencies.request_coordinator_address', 'tcp://localhost:26002')
         self.suggestion_interval = self.config.getint('proactive_agent.suggestion_interval_seconds', 60)
         
         self.context = zmq.Context()
@@ -162,7 +162,7 @@ class ProactiveAgent(BaseAgent):
             self.coordinator_socket = self.context.socket(zmq.REQ)
             self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.coordinator_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5621")  # CoordinatorAgent
+            self.coordinator_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5621")  # RequestCoordinator
             logger.info("Coordinator socket initialized successfully")
         except Exception as e:
             logger.error(f"Initialization error: {e}")
@@ -220,7 +220,7 @@ class ProactiveAgent(BaseAgent):
                 logger.warning("Coordinator socket not ready, skipping task execution")
                 return
                 
-            # Send task to CoordinatorAgent
+            # Send task to RequestCoordinator
             self.coordinator_socket.send_json({
                 'action': 'execute_task',
                 'task': task
@@ -246,7 +246,7 @@ class ProactiveAgent(BaseAgent):
                 logger.warning("Coordinator socket not ready, skipping reminder execution")
                 return
                 
-            # Send reminder to CoordinatorAgent
+            # Send reminder to RequestCoordinator
             self.coordinator_socket.send_json({
                 'action': 'send_reminder',
                 'reminder': reminder

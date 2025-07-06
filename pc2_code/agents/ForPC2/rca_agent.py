@@ -4,15 +4,15 @@ import yaml
 """
 Root Cause Analysis (RCA) Agent
 -------------------------------
-Analyzes log files for error patterns and provides proactive recommendations to the Self-Healing Agent.
+Analyzes log files for error patterns and provides proactive recommendations to the UnifiedErrorAgent.
 
 Responsibilities:
 - Periodically scans log files in the logs directory
 - Uses regex patterns to identify common error types
 - Tracks error frequency and patterns over time
 - Detects when error thresholds are exceeded
-- Generates proactive recommendations for the Self-Healing Agent
-- Communicates with the Self-Healing Agent via ZMQ
+- Generates error reports for the UnifiedErrorAgent
+- Communicates with the UnifiedErrorAgent via standard BaseAgent methods
 
 This agent helps the system transition from reactive to proactive self-healing by
 identifying potential issues before they cause critical failures.
@@ -30,9 +30,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import defaultdict, deque
-from main_pc_code.src.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
-from main_pc_code.utils.config_loader import load_config
+from common.core.base_agent import BaseAgent
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -40,15 +38,9 @@ project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# Import config parser utility with fallback
-try:
-    from pc2_code.utils.config_loader import parse_agent_args
-    # Config is loaded at the module level
-except ImportError as e:
-    print(f"Import error: {e}")
-    class DummyArgs:
-        host = 'localhost'
-    _agent_args = DummyArgs()
+# Import config utilities
+from pc2_code.utils.config_loader import parse_agent_args, load_config
+from pc2_code.agents.utils.config_loader import Config
 
 # Configure logging
 log_file_path = 'logs/rca_agent.log'
@@ -73,11 +65,9 @@ RCA_AGENT_HEALTH_PORT = pc2_config.get('rca_agent_health_port', 8121)
 
 # Constants
 LOGS_DIR = pc2_config.get('logs_dir', "logs")
-SELF_HEALING_PORT = pc2_config.get('self_healing_port', 5614)
 SCAN_INTERVAL = pc2_config.get('scan_interval', 60)
 ERROR_WINDOW = pc2_config.get('error_window', 600)
 ERROR_THRESHOLD = pc2_config.get('error_threshold', 5)
-PC2_IP = pc2_config.get('pc2_ip', "192.168.100.17")
 
 # Also load main PC configuration for cross-machine communication
 main_config = load_config()
@@ -108,30 +98,18 @@ class ErrorOccurrence:
 class RCA_Agent(BaseAgent):
     """Root Cause Analysis Agent for proactive system healing"""
     
-    def __init__(self, logs_dir: str = LOGS_DIR, self_healing_port: int = SELF_HEALING_PORT, 
-                 pc2_ip: str = PC2_IP, port: int = None, health_check_port: int = None):
+    def __init__(self, logs_dir: str = LOGS_DIR, port: int = None, health_check_port: int = None):
         """Initialize the RCA Agent"""
         # Call BaseAgent's __init__ first
         super().__init__(name="RCA_Agent", port=port if port is not None else RCA_AGENT_PORT)
         
         self.logs_dir = Path(logs_dir)
-        self.self_healing_port = self_healing_port
-        self.pc2_ip = pc2_ip
         
         # Set up ports - use self.port from BaseAgent for main_port
         self.main_port = self.port
         self.health_port = health_check_port if health_check_port is not None else RCA_AGENT_HEALTH_PORT
         
-        # Create ZMQ context and server socket - use BaseAgent's context
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
-        
-        # Create client socket for communicating with Self-Healing Agent
-        self.client_socket = self.context.socket(zmq.REQ)
-        self.client_socket.connect(f"tcp://{self.pc2_ip}:{self_healing_port}")
-        logger.info(f"Connected to Self-Healing Agent on {self.pc2_ip}:{self_healing_port}")
-        
-        # Define error patterns to look for
+        # Initialize data structures
         self.error_patterns = [
             ErrorPattern(
                 name="timeout_error",
@@ -204,17 +182,9 @@ class RCA_Agent(BaseAgent):
                 description="Module import error detected"
             )
         ]
-        
-        # Track file positions to avoid re-reading the same lines
-        self.file_positions = {}
-        
-        # Track error occurrences with timestamps
         self.error_occurrences = deque()
-        
-        # Track when recommendations were sent to avoid spamming
+        self.file_positions = {}
         self.sent_recommendations = {}
-        
-        # Flag to control background threads
         self.running = True
         
         # Start the log scanning thread
@@ -323,10 +293,6 @@ class RCA_Agent(BaseAgent):
             self.scan_thread.join(timeout=5)
         if hasattr(self, 'socket'):
             self.socket.close()
-        if hasattr(self, 'client_socket'):
-            self.client_socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
         logger.info("Cleanup complete")
     
     def stop(self):
@@ -436,14 +402,15 @@ class RCA_Agent(BaseAgent):
                             self.sent_recommendations[recommendation_key] = current_time
 
     def _send_recommendation(self, agent_name: str, pattern: ErrorPattern, count: int):
-        """Send a recommendation to the Self-Healing Agent"""
-        logger.info(f"Sending recommendation for {agent_name}: {pattern.name} ({count} occurrences)")
+        """Send a recommendation to the UnifiedErrorAgent"""
+        logger.info(f"Sending error report for {agent_name}: {pattern.name} ({count} occurrences)")
         
         try:
-            # Prepare the recommendation payload
-            recommendation = {
-                "action": "proactive_recommendation",
-                "recommendation": pattern.recommendation,
+            # Prepare the error report payload
+            error_report = {
+                "action": "report_error",
+                "source": "RCA_Agent",
+                "error_type": "log_pattern_detected",
                 "target_agent": agent_name,
                 "reason": f"High frequency of {pattern.name} detected ({count} occurrences in {ERROR_WINDOW/60} minutes). {pattern.description}",
                 "severity": pattern.severity,
@@ -451,28 +418,15 @@ class RCA_Agent(BaseAgent):
                 "error_count": count
             }
             
-            # Send the recommendation to the Self-Healing Agent
-            self.client_socket.send_json(recommendation)
-            
-            # Wait for response with timeout
-            poller = zmq.Poller()
-            poller.register(self.client_socket, zmq.POLLIN)
-            if poller.poll(5000):  # 5-second timeout
-                response = self.client_socket.recv_json()
-                logger.info(f"Received response from Self-Healing Agent: {response}")
+            # Send the error report to the UnifiedErrorAgent using BaseAgent's method
+            response = self.send_request_to_agent("UnifiedErrorAgent", error_report)
+            if response:
+                logger.info(f"Received response from UnifiedErrorAgent: {response}")
             else:
-                logger.warning("Timeout waiting for response from Self-Healing Agent")
-                # Reset the socket
-                self.client_socket.close()
-                self.client_socket = self.context.socket(zmq.REQ)
-                self.client_socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
-                
+                logger.warning("No response received from UnifiedErrorAgent")
+            
         except Exception as e:
-            logger.error(f"Error sending recommendation to Self-Healing Agent: {e}")
-            # Reset the socket
-            self.client_socket.close()
-            self.client_socket = self.context.socket(zmq.REQ)
-            self.client_socket.connect(f"tcp://{self.pc2_ip}:{self.self_healing_port}")
+            logger.error(f"Error sending error report to UnifiedErrorAgent: {e}")
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents

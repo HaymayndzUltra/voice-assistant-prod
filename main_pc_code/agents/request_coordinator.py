@@ -19,11 +19,11 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 # --- Imports from Project ---
-from src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
 from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
-from main_pc_code.src.common.data_models import (
+from common.utils.data_models import (
     TaskDefinition, TaskResult, TaskStatus, SystemEvent, ErrorReport, ErrorSeverity
 )
 from pydantic import BaseModel, Field

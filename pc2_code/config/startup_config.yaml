@@ -29,7 +29,7 @@ pc2_services:
       port: 7102,
       health_check_port: 8102,
       required: true,
-      dependencies: [AsyncProcessor],
+      dependencies: [MemoryOrchestratorService],
     }
   - {
       name: PerformanceMonitor,
@@ -57,7 +57,7 @@ pc2_services:
       host: 0.0.0.0,
       port: 7104,
       health_check_port: 8104,
-      dependencies: [UnifiedMemoryReasoningAgent],
+      dependencies: [MemoryOrchestratorService],
       required: true,
     }
   - {
@@ -66,16 +66,7 @@ pc2_services:
       host: 0.0.0.0,
       port: 7105,
       health_check_port: 8105,
-      dependencies: [CacheManager],
-      required: true,
-    }
-  - {
-      name: EpisodicMemoryAgent,
-      script_path: pc2_code/agents/EpisodicMemoryAgent.py,
-      host: 0.0.0.0,
-      port: 7106,
-      health_check_port: 8106,
-      dependencies: [UnifiedMemoryReasoningAgent],
+      dependencies: [MemoryOrchestratorService],
       required: true,
     }
   - {
@@ -93,26 +84,17 @@ pc2_services:
       host: 0.0.0.0,
       port: 7130,
       health_check_port: 8130,
+      dependencies: [MemoryOrchestratorService],
       required: true,
-      dependencies: [UnifiedMemoryReasoningAgent],
     }
 
-  - {
-      name: MemoryManager,
-      script_path: pc2_code/agents/memory_manager.py,
-      host: 0.0.0.0,
-      port: 7110,
-      health_check_port: 8110,
-      dependencies: [UnifiedMemoryReasoningAgent],
-      required: true,
-    }
   - {
       name: ContextManager,
       script_path: pc2_code/agents/context_manager.py,
       host: 0.0.0.0,
       port: 7111,
       health_check_port: 8111,
-      dependencies: [MemoryManager],
+      dependencies: [MemoryOrchestratorService],
       required: true,
     }
   - {
@@ -121,7 +103,7 @@ pc2_services:
       host: 0.0.0.0,
       port: 7112,
       health_check_port: 8112,
-      dependencies: [EpisodicMemoryAgent],
+      dependencies: [MemoryOrchestratorService],
       required: true,
     }
   - {
@@ -243,7 +225,7 @@ pc2_services:
       port: 7126,
       health_check_port: 8126,
       required: true,
-      dependencies: [FileSystemAssistantAgent, UnifiedMemoryReasoningAgent],
+      dependencies: [FileSystemAssistantAgent, MemoryOrchestratorService],
     }
   - {
       name: DreamingModeAgent,
@@ -283,51 +265,6 @@ pc2_services:
       dependencies: [TutoringServiceAgent],
       required: false,
     }
-  - {
-      name: UnifiedMemoryReasoningAgentAlt,
-      script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
-      host: 0.0.0.0,
-      port: 7132,
-      health_check_port: 8132,
-      dependencies: [CacheManager],
-      required: false,
-    }
-  - {
-      name: MemoryDecayManager,
-      script_path: pc2_code/agents/memory_decay_manager.py,
-      host: 0.0.0.0,
-      port: 7133,
-      health_check_port: 8133,
-      dependencies: [UnifiedMemoryReasoningAgent],
-      required: false,
-    }
-  - {
-      name: EnhancedContextualMemory,
-      script_path: pc2_code/agents/enhanced_contextual_memory.py,
-      host: 0.0.0.0,
-      port: 7134,
-      health_check_port: 8134,
-      dependencies: [MemoryManager],
-      required: false,
-    }
-  - {
-      name: AutoFixerAgent,
-      script_path: pc2_code/agents/auto_fixer_agent.py,
-      host: 0.0.0.0,
-      port: 7135,
-      health_check_port: 8135,
-      dependencies: [HealthMonitor],
-      required: false,
-    }
-  - {
-      name: AgentUtils,
-      script_path: pc2_code/agents/agent_utils.py,
-      host: 0.0.0.0,
-      port: 7136,
-      health_check_port: 8136,
-      dependencies: [UnifiedUtilsAgent],
-      required: false,
-    }
 
 # Environment variables for all agents
 environment:
@@ -357,3 +294,15 @@ pc2_network:
   health_check_ports:
     start: 8100
     end: 8199
+
+# Central Memory Orchestrator Service (PC2 Primary Persistence)
+core_services:
+  - name: MemoryOrchestratorService
+    script_path: pc2_code/agents/memory_orchestrator_service.py
+    module: agents.memory_orchestrator_service
+    class: MemoryOrchestratorService
+    port: 7140
+    health_check_port: 7141
+    required: true
+    startup_priority: 1
+    description: "Central memory service with direct Redis integration for caching and SQLite for persistence."

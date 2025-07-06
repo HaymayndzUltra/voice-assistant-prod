@@ -24,7 +24,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import psutil
 from datetime import datetime
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 # Step 1: ADD Standard Config Parser

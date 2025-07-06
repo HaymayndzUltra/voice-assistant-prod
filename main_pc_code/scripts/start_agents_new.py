@@ -80,7 +80,7 @@ AGENT_BATCHES: List[List[Dict[str, str | int]]] = [
     ],
     # Batch 3: Services dependent on Batch 2
     [
-        {"name": "MemoryManager", "script": "agents/memory_manager.py", "port": 5712},
+        {"name": "MemoryClient", "script": "agents/memory_client.py", "port": 5713},
         {"name": "EpisodicMemoryAgent", "script": "agents/_referencefolderpc2/EpisodicMemoryAgent.py", "port": 5597},
         {"name": "WakeWordDetector", "script": "agents/wake_word_detector.py", "port": 6577},
         {"name": "NLUAgent", "script": "agents/nlu_agent.py", "port": 5709}

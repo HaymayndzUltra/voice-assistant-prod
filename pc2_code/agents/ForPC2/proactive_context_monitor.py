@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Add the project root to Python path

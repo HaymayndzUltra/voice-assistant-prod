@@ -23,7 +23,7 @@ if str(project_root) not in sys.path:
 try:
     from pc2_code.utils.config_loader import parse_agent_args
     _agent_args = parse_agent_args()
-    from main_pc_code.src.core.base_agent import BaseAgent
+    from common.core.base_agent import BaseAgent
     from pc2_code.agents.utils.config_loader import Config
 
     # Load configuration at the module level

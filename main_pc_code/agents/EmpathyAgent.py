@@ -16,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging

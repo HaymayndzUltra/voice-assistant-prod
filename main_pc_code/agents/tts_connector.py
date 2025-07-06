@@ -18,10 +18,10 @@ for _p in (PROJECT_SRC_ROOT, PROJECT_ROOT):
         sys.path.insert(0, _p)
 
 try:
-    from main_pc_code.src.core.base_agent import BaseAgent
+    from common.core.base_agent import BaseAgent
 except ImportError:
     # Fallback when running from project root already containing 'main_pc_code'
-    from main_pc_code.src.core.base_agent import BaseAgent
+    from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
 """

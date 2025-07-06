@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -41,9 +41,9 @@ class ActiveLearningMonitor(BaseAgent):
         self.umra_socket.connect(f"tcp://localhost:{config.get('umra_port', 5701)}")
         self.umra_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
-        # Subscribe to Coordinator output
+        # Subscribe to RequestCoordinator output
         self.coordinator_socket = self.context.socket(zmq.SUB)
-        self.coordinator_socket.connect(f"tcp://localhost:{config.get('coordinator_port', 5702)}")
+        self.coordinator_socket.connect(f"tcp://localhost:{config.get('request_coordinator_port', 5702)}")
         self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Connect to SelfTrainingOrchestrator
@@ -144,14 +144,14 @@ class ActiveLearningMonitor(BaseAgent):
                 time.sleep(1)
     
     def _monitor_coordinator(self):
-        """Monitor Coordinator output for valuable interactions"""
+        """Monitor RequestCoordinator output for valuable interactions"""
         while self.running:
             try:
                 message = self.coordinator_socket.recv_json()
                 if message.get('type') == 'interaction':
                     self.interaction_buffer.append(message)
             except Exception as e:
-                logger.error(f"Error monitoring Coordinator: {str(e)}")
+                logger.error(f"Error monitoring RequestCoordinator: {str(e)}")
                 time.sleep(1)
     
     def _analyze_interactions(self):

@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union, cast
 from pathlib import Path
 from main_pc_code.utils.config_loader import load_config
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 config = load_config()
 
