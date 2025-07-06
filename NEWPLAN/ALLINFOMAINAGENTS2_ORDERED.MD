@@ -1,11 +1,9 @@
 # AGENTS ORDERED BY CONTAINER GROUPS
 
 ## Core Infrastructure Container
-- **CoordinatorAgent**: Central coordinator na namamahala sa flow ng information sa pagitan ng lahat ng agents.
+- **RequestCoordinator**: Unified central coordinator that handles the flow of information between all agents and routes tasks to appropriate services. Combines the functionality of the former CoordinatorAgent and TaskRouter. Fully compliant with Phase 0 standards, using Pydantic data models for type safety, BaseAgent helper methods for standardized communication, and dynamic service discovery.
 - **SystemDigitalTwin**: Central monitoring system na nagta-track ng system metrics at serves as a central registry for other agents.
-- **TaskRouter**: Central routing agent na namamahala sa flow ng tasks sa pagitan ng different cognitive agents.
 - **DynamicIdentityAgent**: Manages system identity and persona switching, connecting to multiple core services.
-- **EnhancedModelRouter**: Central intelligence hub for model routing, combining task classification and context-aware prompting.
 - **UnifiedSystemAgent**: Central command center for system orchestration, service discovery, maintenance, and monitoring.
 
 ## Data & Storage Services Container
@@ -61,9 +59,8 @@
 - **VisionCaptureAgent**: Serves as the first step in the vision pipeline for screen capture.
 
 ## High-Level Orchestration Container
-- **GoalOrchestratorAgent**: Namamahala ng user goals at tasks, nagta-track ng goal progress.
-- **UnifiedPlanningAgent**: Combines chain of thought reasoning, code execution, and task planning.
-- **MultiAgentSwarmManager**: Manages and coordinates a swarm of specialized agents for complex tasks.
+- **GoalManager**: Central authority for decomposing high-level goals, managing task dependencies, and coordinating swarms of specialized agents. Features priority-based task scheduling, circuit breaker pattern for resilient service connections, standardized communication using BaseAgent helpers, and comprehensive error handling. Fully compliant with Phase 0 standards, replacing the former GoalOrchestratorAgent and MultiAgentSwarmManager with a more robust, unified implementation.
+- **ModelOrchestrator**: The system's primary reasoning and model execution engine. Consolidates the planning, multi-step reasoning, model selection, and execution logic of the former EnhancedModelRouter and UnifiedPlanningAgent. Handles dynamic model selection (LLMs, vision, code, API), context management, and robust execution with circuit breaker resilience. All complex tasks from RequestCoordinator and GoalManager are routed here for planning and execution.
 - **AdvancedCommandHandler**: Extends basic command handling with advanced features like command sequences.
 
 ## Utilities & Support Services Container

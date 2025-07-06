@@ -33,8 +33,8 @@ core_services:
     dependencies: [SystemDigitalTwin]
     startup_priority: 2
 
-  - name: CoordinatorAgent
-    script_path: main_pc_code/agents/coordinator_agent.py
+  - name: RequestCoordinator
+    script_path: main_pc_code/agents/request_coordinator.py
     port: 26002
     required: true
     dependencies: [SystemDigitalTwin]
@@ -65,7 +65,7 @@ core_services:
     script_path: main_pc_code/agents/streaming_tts_agent.py
     port: 5562
     required: true
-    dependencies: [CoordinatorAgent, ModelManagerAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
     startup_priority: 4
 
   - name: StreamingInterruptHandler
@@ -75,35 +75,11 @@ core_services:
     dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
     startup_priority: 5
 
-  - name: TaskRouter
-    script_path: main_pc_code/src/core/task_router.py
-    port: 8571
-    required: true
-    dependencies:
-      - StreamingTTSAgent
-      - StreamingSpeechRecognition
-      - ChainOfThoughtAgent
-      - GoTToTAgent
-      - SystemDigitalTwin
-    params:
-      cot_host: '0.0.0.0'
-      cot_port: 5612
-      got_tot_host: '0.0.0.0'
-      got_tot_port: 5646
-      emr_host: '0.0.0.0'
-      emr_port: 5598
-      translator_host: '0.0.0.0'
-      translator_port: 5563
-      queue_max_size: 100
-      batch_max_size: 5
-      batch_timeout_ms: 200
-    startup_priority: 6
-
   - name: VRAMOptimizerAgent
     script_path: main_pc_code/agents/vram_optimizer_agent.py
     port: 5572
     required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin, TaskRouter]
+    dependencies: [ModelManagerAgent, SystemDigitalTwin, RequestCoordinator]
     params:
       critical_threshold: 0.85
       warning_threshold: 0.75
@@ -119,35 +95,41 @@ core_services:
       prediction_window: 3600
     startup_priority: 7
 
-  - name: GoalOrchestratorAgent
-    script_path: main_pc_code/agents/GoalOrchestratorAgent.py
-    port: 7001
+  - name: GoalManager
+    script_path: main_pc_code/agents/goal_manager.py
+    port: 7005
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
+
+  - name: ModelOrchestrator
+    script_path: main_pc_code/agents/model_orchestrator.py
+    port: 7010
+    required: true
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: IntentionValidatorAgent
     script_path: main_pc_code/agents/IntentionValidatorAgent.py
     port: 5701
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: DynamicIdentityAgent
     script_path: main_pc_code/agents/DynamicIdentityAgent.py
     port: 5802
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: ProactiveAgent
     script_path: main_pc_code/agents/ProactiveAgent.py
     port: 5624
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: PredictiveLoader
     script_path: main_pc_code/agents/predictive_loader.py
     port: 5617
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: GGUFModelManager
     script_path: main_pc_code/agents/gguf_model_manager.py
@@ -185,12 +167,6 @@ main_pc_gpu_services:
     port: 5584
     required: true
     dependencies: [ModelManagerAgent, SystemDigitalTwin]
-
-  - name: EnhancedModelRouter
-    script_path: main_pc_code/FORMAINPC/EnhancedModelRouter.py
-    port: 5598
-    required: true
-    dependencies: [ModelManagerAgent, ChainOfThoughtAgent, SystemDigitalTwin]
 
   - name: CognitiveModelAgent
     script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
@@ -264,7 +240,7 @@ emotion_system:
     script_path: main_pc_code/agents/emotion_synthesis_agent.py
     port: 5706
     required: true
-    dependencies: [CoordinatorAgent, ModelManagerAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
 
 # --- Memory System ---
 # Agents that manage short-term, long-term, and episodic memory.
@@ -273,13 +249,13 @@ memory_system:
     script_path: main_pc_code/src/memory/memory_orchestrator.py
     port: 5575
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: SessionMemoryAgent
     script_path: main_pc_code/agents/session_memory_agent.py
     port: 5574
     required: true
-    dependencies: [CoordinatorAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: MemoryManager
     script_path: main_pc_code/agents/memory_manager.py
@@ -306,13 +282,13 @@ learning_knowledge:
     script_path: main_pc_code/agents/learning_manager.py
     port: 5580
     required: true
-    dependencies: [MemoryManager, CoordinatorAgent, SystemDigitalTwin]
+    dependencies: [MemoryManager, RequestCoordinator, SystemDigitalTwin]
 
   - name: MetaCognitionAgent
     script_path: main_pc_code/agents/MetaCognitionAgent.py
     port: 5630
     required: true
-    dependencies: [KnowledgeBase, CoordinatorAgent, ChainOfThoughtAgent, SystemDigitalTwin]
+    dependencies: [KnowledgeBase, RequestCoordinator, ChainOfThoughtAgent, SystemDigitalTwin]
 
   - name: ActiveLearningMonitor
     script_path: main_pc_code/agents/active_learning_monitor.py
@@ -327,19 +303,7 @@ planning_execution:
     script_path: main_pc_code/agents/unified_planning_agent.py
     port: 5634
     required: true
-    dependencies: [GoalOrchestratorAgent, IntentionValidatorAgent, SystemDigitalTwin]
-
-  - name: MultiAgentSwarmManager
-    script_path: main_pc_code/agents/MultiAgentSwarmManager.py
-    port: 5639
-    required: true
-    dependencies: [UnifiedPlanningAgent, SystemDigitalTwin]
-
-  - name: UnifiedSystemAgent
-    script_path: main_pc_code/agents/unified_system_agent.py
-    port: 5640
-    required: true
-    dependencies: [UnifiedPlanningAgent, SystemDigitalTwin]
+    dependencies: [GoalManager, IntentionValidatorAgent, SystemDigitalTwin]
 
 # --- TTS Services ---
 # Text-to-Speech pipeline components.
@@ -348,7 +312,7 @@ tts_services:
     script_path: main_pc_code/agents/tts_connector.py
     port: 5582
     required: true
-    dependencies: [CoordinatorAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: TTSCache
     script_path: main_pc_code/agents/tts_cache.py
@@ -416,7 +380,7 @@ audio_processing:
     script_path: main_pc_code/agents/language_and_translation_coordinator.py
     port: 6581
     required: true
-    dependencies: [TaskRouter, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
 # --- Language Processing ---
 # Natural Language Understanding (NLU) and response generation.
@@ -458,13 +422,13 @@ vision:
     script_path: main_pc_code/src/vision/vision_capture_agent.py
     port: 5592
     required: true
-    dependencies: [CoordinatorAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   - name: FaceRecognitionAgent
     script_path: main_pc_code/agents/face_recognition_agent.py
     port: 5610
     required: true
-    dependencies: [TaskRouter, ModelManagerAgent, SystemDigitalTwin]
+    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
 
 # ===================================================================
 #         SECTION 2: GLOBAL SYSTEM SETTINGS

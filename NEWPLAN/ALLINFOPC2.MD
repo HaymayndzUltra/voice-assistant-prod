@@ -195,3 +195,5 @@ GROUP: Utilities & Support Services
 REASONING: This is not a standalone agent but a utility library providing shared functionality for other agents. It includes ZMQ communication helpers, a base agent class, logging utilities, and various helper functions. The module requires minimal resources as it primarily provides infrastructure rather than performing intensive operations itself, serving as a general utility.
 RESOURCES: Low (CPU, Memory)
 DEPENDENCIES: zmq, json, threading, uuid, logging.
+
+- **GoalManager**: Unified agent for goal decomposition, task assignment, and swarm coordination. Handles all high-level goal management and distributed task execution for PC2 as well.
