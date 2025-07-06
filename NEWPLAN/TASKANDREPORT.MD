@@ -318,3 +318,75 @@ All remaining agent scripts were migrated from the legacy main_pc_code/src direc
   - Ensured configuration consistency with code changes made during Phase 1 and Phase 2
   - Removed duplicate and obsolete agent entries
 - **Conclusion:** The distributed memory system now has consistent configuration across all components and follows the phased implementation approach specified in the Phase 2 plan.
+
+## Phase 3: Distributed Error Management & Self-Healing - Final Consolidation (2025-07-04)
+
+- Merged all core logic from SelfHealingAgent (agent health monitoring, recovery, snapshot management, etc.) into UnifiedErrorAgent.
+- Renamed UnifiedErrorAgent to SystemHealthManager (file, class, config, and documentation).
+- Deleted the deprecated SelfHealingAgent file (`pc2_code/agents/self_healing_agent.py`).
+- Updated `pc2_code/config/startup_config.yaml` to remove SelfHealingAgent and update UnifiedErrorAgent to SystemHealthManager.
+- Updated `NEWPLAN/ALLINFOPC2.MD` to remove SelfHealingAgent and rename/update UnifiedErrorAgent entry to SystemHealthManager with a comprehensive description.
+- This completes the final consolidation of the error management and health system into a single, authoritative agent.
+
+## [2025-07-03] Sub-Phase: Event-Driven Error Bus for Distributed Error Management
+- Migrated error reporting to a central event-driven Error Bus using ZMQ PUB/SUB (topic 'ERROR:').
+- SystemHealthManager now subscribes to the Error Bus for scalable, decoupled error processing.
+- RequestCoordinator on Main PC now publishes errors to the Error Bus instead of direct ZMQ REQ.
+- Updated configuration and documentation to reflect the new architecture.
+
+# Task and Report Document
+
+## Task 1: Error Management System Migration
+
+### Status: COMPLETED
+
+### Description
+Migrate the error management system from a direct request-response model to an event-driven architecture using ZMQ PUB/SUB pattern.
+
+### Implementation Details
+1. **Phase 1: System Health Manager Creation**
+   - Created a new `SystemHealthManager` agent that consolidates functionality from:
+     - `UnifiedErrorAgent`
+     - `RCA_Agent` (Root Cause Analysis)
+     - `SelfHealingAgent`
+   - The new agent provides a centralized error management system with improved error pattern detection and recovery strategies.
+
+2. **Phase 2: Error Bus Implementation**
+   - Implemented a central Error Bus using ZMQ's PUB/SUB pattern:
+     - Created a PUB socket in the SystemHealthManager (port 7150)
+     - Added a SUB socket in SystemHealthManager to listen for error messages
+     - Modified RequestCoordinator to publish errors to the Error Bus
+
+3. **Phase 3: System-wide Migration**
+   - Added Error Bus connection code to all active agents in the system:
+     - Added `error_bus_pub` ZMQ PUB socket to each agent
+     - Added `report_error` method to publish errors to the "ERROR:" topic
+     - Updated agent docstrings to indicate Error Bus support
+   - Created an automated script (`scripts/add_error_bus_to_agents.py`) to add Error Bus functionality to agents
+
+### Benefits
+1. **Decoupled Architecture**: Error reporting is now decoupled from error processing
+2. **Improved Scalability**: Agents can report errors without blocking or waiting for responses
+3. **Centralized Error Management**: All errors are processed by a single SystemHealthManager
+4. **Enhanced Monitoring**: SystemHealthManager can analyze error patterns across the entire system
+5. **Simplified Agent Code**: Agents have a simple, consistent way to report errors
+
+### Technical Details
+- Error Bus Port: 7150
+- Error Topic Format: "ERROR:"
+- Error Data Format:
+  ```json
+  {
+    "error_type": "string",
+    "message": "string",
+    "severity": "string",
+    "context": {}
+  }
+  ```
+- SystemHealthManager listens for errors and applies appropriate recovery strategies based on error patterns and severity
+
+### Future Improvements
+1. Add error aggregation and analytics
+2. Implement machine learning for predictive error detection
+3. Create a web dashboard for error monitoring
+4. Add error rate limiting to prevent flooding
