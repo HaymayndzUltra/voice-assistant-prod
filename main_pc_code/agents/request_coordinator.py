@@ -171,10 +171,15 @@ class RequestCoordinator(BaseAgent):
         self.start_time = time.time()
         self.interrupt_flag = threading.Event()
 
+        # Get parameters from startup config
+        params = kwargs.get('params', {})
+        self.enable_dynamic_prioritization = params.get('enable_dynamic_prioritization', False)
+        self.queue_max_size = params.get('queue_max_size', 100)
+        self.default_task_timeout = params.get('default_task_timeout', ZMQ_REQUEST_TIMEOUT)
+        
         self.task_queue = []
         self.queue_lock = threading.Lock()
-        self.queue_max_size = 100
-
+        
         self.circuit_breakers = {}
         self._init_circuit_breakers()
         
@@ -182,9 +187,29 @@ class RequestCoordinator(BaseAgent):
         self.inactivity_threshold = 300
         self.pending_suggestions = []
 
+        # --- Metrics and Monitoring ---
+        self.metrics = {
+            "requests_total": 0,
+            "requests_by_type": {"text": 0, "audio": 0, "vision": 0},
+            "success": 0,
+            "failure": 0,
+            "response_times": {"text": [], "audio": [], "vision": []},
+            "queue_sizes": [],
+            "last_updated": datetime.now().isoformat()
+        }
+        self.metrics_lock = threading.Lock()
+        self.metrics_file = "logs/request_coordinator_metrics.json"
+        self.last_metrics_log = time.time()
+        self.last_metrics_save = time.time()
+        self._load_metrics()
+        self.metrics_thread = threading.Thread(target=self._metrics_reporting_loop, daemon=True)
+        self.metrics_thread.start()
+
         self._register_service()
         self._start_threads()
         logger.info(f"RequestCoordinator initialized, listening on tcp://{BIND_ADDRESS}:{self.port}")
+        if self.enable_dynamic_prioritization:
+            logger.info("Dynamic prioritization enabled")
 
     def _init_zmq_sockets(self):
         self.main_socket = self.context.socket(zmq.REP)
@@ -259,45 +284,86 @@ class RequestCoordinator(BaseAgent):
             additional_info={"suggestion_port": self.suggestion_port}
         )
 
+    def _load_metrics(self):
+        try:
+            metrics_path = Path(self.metrics_file)
+            if metrics_path.exists():
+                with open(metrics_path, 'r') as f:
+                    saved_metrics = json.load(f)
+                    with self.metrics_lock:
+                        self.metrics.update(saved_metrics)
+        except Exception as e:
+            logger.warning(f"Failed to load metrics: {e}")
+
+    def _save_metrics(self):
+        try:
+            metrics_path = Path(self.metrics_file)
+            os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
+            with self.metrics_lock:
+                self.metrics["last_updated"] = datetime.now().isoformat()
+                metrics_to_save = dict(self.metrics)
+                # Only save last 100 response times and queue sizes
+                for k in ["response_times", "queue_sizes"]:
+                    if k in metrics_to_save:
+                        for t in metrics_to_save["response_times"]:
+                            metrics_to_save["response_times"][t] = metrics_to_save["response_times"][t][-100:]
+                        metrics_to_save["queue_sizes"] = metrics_to_save["queue_sizes"][-100:]
+                with open(metrics_path, 'w') as f:
+                    json.dump(metrics_to_save, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save metrics: {e}")
+
+    def _metrics_reporting_loop(self):
+        while True:
+            current_time = time.time()
+            if current_time - self.last_metrics_log >= 60:
+                self._log_metrics()
+                self.last_metrics_log = current_time
+            if current_time - self.last_metrics_save >= 300:
+                self._save_metrics()
+                self.last_metrics_save = current_time
+            time.sleep(5)
+
+    def _log_metrics(self):
+        with self.metrics_lock:
+            logger.info(f"[Metrics] Total Requests: {self.metrics['requests_total']}, Success: {self.metrics['success']}, Failure: {self.metrics['failure']}")
+            logger.info(f"[Metrics] Requests by Type: {self.metrics['requests_by_type']}")
+            avg_queue = sum(self.metrics['queue_sizes']) / len(self.metrics['queue_sizes']) if self.metrics['queue_sizes'] else 0
+            logger.info(f"[Metrics] Avg Queue Size: {avg_queue:.2f}")
+            for t in ["text", "audio", "vision"]:
+                times = self.metrics['response_times'][t]
+                avg_time = sum(times) / len(times) if times else 0
+                logger.info(f"[Metrics] Avg Response Time ({t}): {avg_time:.2f}s")
+
     def _handle_requests(self):
+        """
+        Main request handling loop - refactored for modularity and better maintainability.
+        Receives requests, validates them, and routes them to appropriate handlers.
+        """
         while self.running:
             try:
-                message_raw = self.main_socket.recv_json()
-                self.last_interaction_time = time.time()
-                
-                # Ensure message_raw is a dictionary before accessing with .get()
-                if not isinstance(message_raw, dict):
-                    logger.error(f"Received non-dictionary message: {message_raw}")
-                    error_response = AgentResponse(
-                        status="error",
-                        message="Invalid message format: expected dictionary",
-                        error="Invalid message format"
-                    )
-                    self.main_socket.send_json(error_response.model_dump())
+                # Step 1: Receive and validate message
+                message_raw = self._receive_and_validate_message()
+                if message_raw is None:
                     continue
-                    
+                
+                # Step 2: Process request based on type
                 request_type = message_raw.get('type')
+                start_time = time.time()
+                with self.metrics_lock:
+                    self.metrics["requests_total"] += 1
+                    if request_type in self.metrics["requests_by_type"]:
+                        self.metrics["requests_by_type"][request_type] += 1
+                    self.metrics["queue_sizes"].append(len(self.task_queue))
+                response = self._route_request_by_type(request_type, message_raw)
+                elapsed = time.time() - start_time
+                with self.metrics_lock:
+                    if request_type in self.metrics["response_times"]:
+                        self.metrics["response_times"][request_type].append(elapsed)
                 
-                if request_type == 'text':
-                    # Convert raw dict to Pydantic model
-                    request = TextRequest.model_validate(message_raw)
-                    response = self._process_text(request)
-                elif request_type == 'audio':
-                    # Convert raw dict to Pydantic model
-                    request = AudioRequest.model_validate(message_raw)
-                    response = self._process_audio(request)
-                elif request_type == 'vision':
-                    # Convert raw dict to Pydantic model
-                    request = VisionRequest.model_validate(message_raw)
-                    response = self._process_vision(request)
-                else:
-                    response = AgentResponse(
-                        status="error",
-                        message=f"Unknown request type: {request_type}"
-                    )
-                
-                # Convert Pydantic model to dict for ZMQ
+                # Step 3: Send response
                 self.main_socket.send_json(response.model_dump())
+                
             except Exception as e:
                 logger.error(f"Error in _handle_requests: {e}", exc_info=True)
                 if not self.main_socket.closed:
@@ -307,8 +373,108 @@ class RequestCoordinator(BaseAgent):
                         error=str(e)
                     )
                     self.main_socket.send_json(error_response.model_dump())
+    
+    def _receive_and_validate_message(self):
+        """
+        Receives and validates incoming messages.
+        Returns validated message or None if validation fails.
+        """
+        try:
+            message_raw = self.main_socket.recv_json()
+            self.last_interaction_time = time.time()
+            
+            # Ensure message_raw is a dictionary
+            if not isinstance(message_raw, dict):
+                logger.error(f"Received non-dictionary message: {message_raw}")
+                error_response = AgentResponse(
+                    status="error",
+                    message="Invalid message format: expected dictionary",
+                    error="Invalid message format"
+                )
+                self.main_socket.send_json(error_response.model_dump())
+                return None
+            
+            return message_raw
+        except Exception as e:
+            logger.error(f"Error receiving message: {e}")
+            return None
+    
+    def _route_request_by_type(self, request_type, message_raw):
+        """
+        Routes requests to appropriate handlers based on request type.
+        """
+        if request_type == 'text':
+            request = TextRequest.model_validate(message_raw)
+            return self._process_text(request)
+        elif request_type == 'audio':
+            request = AudioRequest.model_validate(message_raw)
+            return self._process_audio(request)
+        elif request_type == 'vision':
+            request = VisionRequest.model_validate(message_raw)
+            return self._process_vision(request)
+        else:
+            return AgentResponse(
+                status="error",
+                message=f"Unknown request type: {request_type}"
+            )
+
+    def _calculate_priority(self, task_type, request):
+        """
+        Dynamically calculates task priority based on multiple factors:
+        - Task type (base priority)
+        - User profile (if available)
+        - Urgency level (from request metadata)
+        - System load
+        
+        Returns an integer priority value (lower is higher priority)
+        """
+        # Base priority by task type
+        base_priority = {
+            'audio_processing': 1,  # Highest priority
+            'text_processing': 2,
+            'vision_processing': 3,
+            'background_task': 5    # Lowest priority
+        }.get(task_type, 3)  # Default priority
+        
+        # Adjust for user profile if available
+        user_id = request.user_id
+        user_priority_adjustment = 0
+        if user_id:
+            # In a real implementation, this would query a user profile service
+            # For now, we'll use a simple dictionary as placeholder
+            user_profiles = {
+                "admin": -2,        # Higher priority (lower number)
+                "premium": -1,
+                "standard": 0,
+                "guest": 1          # Lower priority (higher number)
+            }
+            # Get user type from metadata or default to standard
+            user_type = request.metadata.get("user_type", "standard")
+            user_priority_adjustment = user_profiles.get(user_type, 0)
+        
+        # Adjust for urgency level from metadata
+        urgency = request.metadata.get("urgency", "normal")
+        urgency_adjustment = {
+            "critical": -3,
+            "high": -1,
+            "normal": 0,
+            "low": 1
+        }.get(urgency, 0)
+        
+        # System load adjustment (simplified)
+        # In a real implementation, this would consider CPU, memory, queue length, etc.
+        system_load_adjustment = 0
+        if len(self.task_queue) > self.queue_max_size * 0.8:  # If queue is 80%+ full
+            system_load_adjustment = 1  # Lower priority for all tasks
+        
+        # Calculate final priority (lower is higher priority)
+        final_priority = base_priority + user_priority_adjustment + urgency_adjustment + system_load_adjustment
+        
+        # Ensure priority is within reasonable bounds
+        return max(1, min(10, final_priority))
 
     def _process_text(self, request: TextRequest) -> AgentResponse:
+        """Process text requests with dynamic prioritization."""
         logger.info(f"Queueing text request: {request.data[:50]}...")
         
         # Create standardized task using TaskDefinition
@@ -316,18 +482,19 @@ class RequestCoordinator(BaseAgent):
             task_id=f"task_{time.time()}",
             agent_id=self.name,
             task_type='text_processing',
-            priority=2,
+            priority=self._calculate_priority('text_processing', request),
             parameters={"request": request.model_dump()},
             created_at=datetime.now()
         )
         
-        self.add_task_to_queue(priority=2, task=task)
+        self.add_task_to_queue(priority=task.priority, task=task)
         return AgentResponse(
             status="success",
             message="Text request queued"
         )
 
     def _process_audio(self, request: AudioRequest) -> AgentResponse:
+        """Process audio requests with dynamic prioritization."""
         logger.info("Queueing audio request...")
         
         # Create standardized task using TaskDefinition
@@ -335,18 +502,19 @@ class RequestCoordinator(BaseAgent):
             task_id=f"task_{time.time()}",
             agent_id=self.name,
             task_type='audio_processing',
-            priority=1,
+            priority=self._calculate_priority('audio_processing', request),
             parameters={"request": request.model_dump()},
             created_at=datetime.now()
         )
         
-        self.add_task_to_queue(priority=1, task=task)
+        self.add_task_to_queue(priority=task.priority, task=task)
         return AgentResponse(
             status="success",
             message="Audio request queued"
         )
 
     def _process_vision(self, request: VisionRequest) -> AgentResponse:
+        """Process vision requests with dynamic prioritization."""
         logger.info("Queueing vision request...")
         
         # Create standardized task using TaskDefinition
@@ -354,12 +522,12 @@ class RequestCoordinator(BaseAgent):
             task_id=f"task_{time.time()}",
             agent_id=self.name,
             task_type='vision_processing',
-            priority=3,
+            priority=self._calculate_priority('vision_processing', request),
             parameters={"request": request.model_dump()},
             created_at=datetime.now()
         )
         
-        self.add_task_to_queue(priority=3, task=task)
+        self.add_task_to_queue(priority=task.priority, task=task)
         return AgentResponse(
             status="success",
             message="Vision request queued"
@@ -435,6 +603,11 @@ class RequestCoordinator(BaseAgent):
 
     def _handle_task_response(self, response: AgentResponse):
         logger.info(f"Handling response: {response.status}")
+        with self.metrics_lock:
+            if response.status == "success":
+                self.metrics["success"] += 1
+            else:
+                self.metrics["failure"] += 1
         
         # Handle TTS if needed
         if response.speak and self.tts_socket:
@@ -500,7 +673,7 @@ class RequestCoordinator(BaseAgent):
                 logger.error(f"Error in suggestion handler: {e}")
 
     def health_check(self):
-        return {
+        base = {
             "status": "healthy" if self.running else "stopped",
             "uptime": time.time() - self.start_time,
             "cpu_percent": psutil.cpu_percent(),
@@ -508,6 +681,19 @@ class RequestCoordinator(BaseAgent):
             "queue_size": len(self.task_queue),
             "circuit_breakers": {n: cb.get_status() for n, cb in self.circuit_breakers.items()}
         }
+        with self.metrics_lock:
+            base["metrics"] = {
+                "requests_total": self.metrics["requests_total"],
+                "requests_by_type": self.metrics["requests_by_type"],
+                "success": self.metrics["success"],
+                "failure": self.metrics["failure"],
+                "avg_queue_size": sum(self.metrics["queue_sizes"]) / len(self.metrics["queue_sizes"]) if self.metrics["queue_sizes"] else 0,
+                "avg_response_time": {
+                    t: (sum(self.metrics["response_times"][t]) / len(self.metrics["response_times"][t]) if self.metrics["response_times"][t] else 0)
+                    for t in ["text", "audio", "vision"]
+                }
+            }
+        return base
 
     def stop(self):
         self.running = False

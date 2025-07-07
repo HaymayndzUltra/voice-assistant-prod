@@ -1,88 +1,45 @@
+#!/usr/bin/env python3
 """
 Session Memory Agent
 ------------------
 Maintains context memory and session awareness:
-- 
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-Stores conversation history
+- Stores conversation history
 - Provides context for LLM prompts
 - Manages user sessions
 - Supports semantic search of past interactions
 """
 
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
 import zmq
 import json
 import logging
 import time
 import threading
-import os
-import sys
-import sqlite3
 import uuid
-import psutil
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-import numpy as np
+from typing import Dict, List, Any, Optional, Tuple, Union
+
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
-
-# Import the MemoryClient for new orchestrator
-try:
-    from main_pc_code.src.memory.memory_client import MemoryClient
-except Exception as import_error:
-    logging.warning(f"[SessionMemoryAgent] Falling back to stub MemoryClient due to import error: {import_error}")
-    class MemoryClient:  # type: ignore
-        """Lightweight stub when full MemoryClient cannot be imported."""
-        def __init__(self):
-            self._agent_id = "stub"
-            self._session_id = None
-        # API mirrors expected methods but only logs actions.
-        
-
-            self.error_bus_port = 7150
-
-            self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-def set_agent_id(self, agent_id):
-            self._agent_id = agent_id
-        def set_session_id(self, session_id):
-            self._session_id = session_id
-        def create_session(self, user_id, session_metadata=None, session_type="conversation"):
-            sid = self._session_id or str(uuid.uuid4())
-            return {"status": "success", "data": {"session_id": sid}}
-        def create_memory(self, memory_type, content, tags=None):
-            return {"status": "success"}
-        def batch_read(self, memory_type, limit=50, sort_field="created_at", sort_order="desc"):
-            return {"status": "success", "data": {"memories": []}}
-
-# Parse command line arguments
-config = load_config()
+from main_pc_code.agents.memory_client import MemoryClient
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('session_memory_agent.log'),
+        logging.FileHandler('logs/session_memory_agent.log'),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SessionMemoryAgent")
 
 # ZMQ Configuration
 ZMQ_MEMORY_PORT = 5574  # Port for session memory requests
@@ -93,116 +50,382 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 MAX_CONTEXT_TOKENS = 2000  # Maximum tokens for context
 MAX_SESSIONS = 100  # Maximum number of active sessions
 SESSION_TIMEOUT = 3600  # Session timeout in seconds (1 hour)
-DB_PATH = "data/session_memory.db"  # SQLite database path
 
 class SessionMemoryAgent(BaseAgent):
-    """Agent for handling session memory and context management. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    """
+    Agent for handling session memory and context management.
+    Now fully integrated with the central memory system via MemoryClient.
+    Also reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    """
     
     def __init__(self, port: int = 5574, health_port: int = 6583):
         """Initialize the session memory agent."""
         super().__init__(name="SessionMemoryAgent", port=port, health_check_port=health_port)
-        self.context = zmq.Context()
-        # Service discovery for orchestrator address (replace with actual discovery logic if needed)
-        orchestrator_host = "localhost"
-        orchestrator_port = 7115
-        self.orchestrator_socket = self.context.socket(zmq.REQ)
-        self.orchestrator_socket.connect(f"tcp://{orchestrator_host}:{orchestrator_port}")
-        self._register_service()
+        
+        # Initialize memory client for central memory system
+        self.memory_client = MemoryClient()
+        self.memory_client.set_agent_id(self.name)
+        
+        # Error bus configuration
+        self.error_bus_port = 7150
+        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
+        # Initialize active sessions tracking
+        self.active_sessions = {}
+        
+        logger.info("SessionMemoryAgent initialized successfully")
 
-    def _register_service(self):
-        # Optionally implement registration logic if needed
-        pass
-
-    def _send_to_orchestrator(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _report_error(self, error_type: str, error_message: str, severity: str = "ERROR"):
+        """Report errors to the central error bus"""
         try:
-            self.orchestrator_socket.send_json(request)
-            response = self.orchestrator_socket.recv_json()
-            if not isinstance(response, dict):
-                return {"data": response}
-            return response
+            error_data = {
+                "timestamp": time.time(),
+                "agent": self.name,
+                "error_type": error_type,
+                "message": error_message,
+                "severity": severity
+            }
+            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
+            logger.error(f"{error_type}: {error_message}")
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            logger.error(f"Failed to report error to error bus: {e}")
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process incoming requests based on action type"""
+        if not isinstance(request, dict):
+            return {"status": "error", "message": "Invalid request format"}
+            
         action = request.get("action")
-        if action == "create_session":
-            return self._create_session(request)
-        elif action == "add_interaction":
-            return self._add_interaction(request)
-        elif action == "get_context":
-            return self._get_context(request)
-        elif action == "delete_session":
-            return self._delete_session(request)
-        else:
-            return {"status": "error", "message": f"Unknown action: {action}"}
+        
+        try:
+            if action == "create_session":
+                return self._create_session(request)
+            elif action == "add_interaction":
+                return self._add_interaction(request)
+            elif action == "get_context":
+                return self._get_context(request)
+            elif action == "delete_session":
+                return self._delete_session(request)
+            elif action == "search_interactions":
+                return self._search_interactions(request)
+            elif action == "health_check":
+                return {"status": "success", "agent": self.name, "healthy": True}
+            else:
+                return {"status": "error", "message": f"Unknown action: {action}"}
+        except Exception as e:
+            error_msg = f"Error processing request: {str(e)}"
+            self._report_error("request_processing_error", error_msg)
+            return {"status": "error", "message": error_msg}
 
     def _create_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a new session in the memory system
+        
+        Args:
+            request: Dict containing 'user_id' and optional 'metadata'
+            
+        Returns:
+            Dict with status and session_id
+        """
         user_id = request.get("user_id", "default")
         metadata = request.get("metadata", {})
-        payload = {
-            "action": "add_memory",
-            "payload": {
-                "content": f"Session for user {user_id}",
-                "memory_type": "session",
-                "metadata": metadata,
-                "created_at": datetime.now().isoformat()
-            }
-        }
-        return self._send_to_orchestrator(payload)
+        session_type = request.get("session_type", "conversation")
+        
+        try:
+            # Create session in central memory system
+            response = self.memory_client.create_session(
+                user_id=user_id,
+                session_type=session_type,
+                session_metadata={
+                    **metadata,
+                    "created_at": datetime.now().isoformat(),
+                    "agent": self.name
+                }
+            )
+            
+            if response.get("status") == "success":
+                session_id = response.get("session_id")
+                
+                # Track active session
+                self.active_sessions[session_id] = {
+                    "user_id": user_id,
+                    "created_at": datetime.now(),
+                    "last_activity": datetime.now(),
+                    "metadata": metadata
+                }
+                
+                return {"status": "success", "session_id": session_id}
+            else:
+                error_msg = response.get("message", "Failed to create session")
+                self._report_error("create_session_error", error_msg)
+                return {"status": "error", "message": error_msg}
+                
+        except Exception as e:
+            error_msg = f"Exception creating session: {str(e)}"
+            self._report_error("create_session_exception", error_msg)
+            return {"status": "error", "message": error_msg}
 
     def _add_interaction(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add an interaction to an existing session
+        
+        Args:
+            request: Dict containing 'session_id', 'role', 'content', and optional 'metadata'
+            
+        Returns:
+            Dict with status and interaction_id
+        """
         session_id = request.get("session_id")
         role = request.get("role")
         content = request.get("content")
         metadata = request.get("metadata", {})
+        
         if not session_id or not role or not content:
             return {"status": "error", "message": "Missing required parameters"}
-        payload = {
-            "action": "add_memory",
-            "payload": {
-                "content": content,
-                "memory_type": "interaction",
-                "metadata": {**metadata, "role": role},
-                "parent_id": session_id,
-                "created_at": datetime.now().isoformat()
-            }
-        }
-        return self._send_to_orchestrator(payload)
+            
+        try:
+            # Update session activity timestamp
+            if session_id in self.active_sessions:
+                self.active_sessions[session_id]["last_activity"] = datetime.now()
+            
+            # Add interaction to central memory system
+            response = self.memory_client.add_memory(
+                content=content,
+                memory_type="interaction",
+                parent_id=session_id,
+                memory_tier="short",  # Interactions are typically short-term memories
+                importance=0.5,       # Default importance
+                metadata={
+                    **metadata, 
+                    "role": role,
+                    "timestamp": datetime.now().isoformat()
+                },
+                tags=[role.lower()]
+            )
+            
+            if response.get("status") == "success":
+                return {
+                    "status": "success", 
+                    "message": "Interaction added",
+                    "interaction_id": response.get("memory_id")
+                }
+            else:
+                error_msg = response.get("message", "Failed to add interaction")
+                self._report_error("add_interaction_error", error_msg)
+                return {"status": "error", "message": error_msg}
+                
+        except Exception as e:
+            error_msg = f"Exception adding interaction: {str(e)}"
+            self._report_error("add_interaction_exception", error_msg)
+            return {"status": "error", "message": error_msg}
 
     def _get_context(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get conversation context for a session
+        
+        Args:
+            request: Dict containing 'session_id' and optional 'limit'
+            
+        Returns:
+            Dict with status and interactions list
+        """
         session_id = request.get("session_id")
+        limit = request.get("limit", 20)
+        
         if not session_id:
             return {"status": "error", "message": "Missing session_id"}
-        payload = {
-            "action": "get_children",
-            "parent_id": session_id
-        }
-        return self._send_to_orchestrator(payload)
+            
+        try:
+            # Update session activity timestamp
+            if session_id in self.active_sessions:
+                self.active_sessions[session_id]["last_activity"] = datetime.now()
+            
+            # Get interactions from central memory system
+            response = self.memory_client.get_children(
+                parent_id=session_id,
+                limit=limit,
+                sort_field="created_at",
+                sort_order="asc"  # Chronological order
+            )
+            
+            if response.get("status") == "success":
+                interactions = response.get("results", [])
+                
+                # Format interactions for context
+                context = []
+                for interaction in interactions:
+                    metadata = interaction.get("metadata", {})
+                    role = metadata.get("role", "unknown")
+                    content = interaction.get("content", "")
+                    context.append({"role": role, "content": content})
+                
+                return {"status": "success", "context": context}
+            else:
+                error_msg = response.get("message", "Failed to get context")
+                self._report_error("get_context_error", error_msg)
+                return {"status": "error", "message": error_msg}
+                
+        except Exception as e:
+            error_msg = f"Exception getting context: {str(e)}"
+            self._report_error("get_context_exception", error_msg)
+            return {"status": "error", "message": error_msg}
 
     def _delete_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Delete a session and all its interactions
+        
+        Args:
+            request: Dict containing 'session_id'
+            
+        Returns:
+            Dict with status
+        """
         session_id = request.get("session_id")
+        
         if not session_id:
             return {"status": "error", "message": "Missing session_id"}
-        payload = {
-            "action": "delete_memory",
-            "memory_id": session_id
-        }
-        return self._send_to_orchestrator(payload)
+            
+        try:
+            # Remove from active sessions
+            if session_id in self.active_sessions:
+                del self.active_sessions[session_id]
+            
+            # Delete from central memory system (will cascade delete all children)
+            response = self.memory_client.delete_memory(memory_id=session_id)
+            
+            if response.get("status") == "success":
+                return {"status": "success", "message": "Session deleted"}
+            else:
+                error_msg = response.get("message", "Failed to delete session")
+                self._report_error("delete_session_error", error_msg)
+                return {"status": "error", "message": error_msg}
+                
+        except Exception as e:
+            error_msg = f"Exception deleting session: {str(e)}"
+            self._report_error("delete_session_exception", error_msg)
+            return {"status": "error", "message": error_msg}
+
+    def _search_interactions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Search for interactions matching a query
+        
+        Args:
+            request: Dict containing 'query', optional 'session_id', and 'limit'
+            
+        Returns:
+            Dict with status and search results
+        """
+        query = request.get("query", "")
+        session_id = request.get("session_id")
+        limit = request.get("limit", 10)
+        
+        if not query:
+            return {"status": "error", "message": "Missing query"}
+            
+        try:
+            # Try semantic search if available
+            try:
+                # If session_id provided, filter by parent_id
+                filters = {}
+                if session_id:
+                    filters["parent_id"] = session_id
+                
+                response = self.memory_client.semantic_search(
+                    query=query,
+                    filters=filters,
+                    k=limit
+                )
+                
+                if response.get("status") == "success" and response.get("results"):
+                    return {"status": "success", "results": response.get("results", [])}
+            except Exception as e:
+                logger.warning(f"Semantic search failed, falling back to text search: {e}")
+            
+            # Fall back to text search
+            search_params = {
+                "query": query,
+                "memory_type": "interaction",
+                "limit": limit
+            }
+            
+            if session_id:
+                search_params["parent_id"] = session_id
+                
+            response = self.memory_client.search_memory(**search_params)
+            
+            if response.get("status") == "success":
+                return {"status": "success", "results": response.get("results", [])}
+            else:
+                error_msg = response.get("message", "Search failed")
+                self._report_error("search_interactions_error", error_msg)
+                return {"status": "error", "message": error_msg}
+                
+        except Exception as e:
+            error_msg = f"Exception searching interactions: {str(e)}"
+            self._report_error("search_interactions_exception", error_msg)
+            return {"status": "error", "message": error_msg}
+    
+    def _cleanup_expired_sessions(self):
+        """Clean up expired sessions based on timeout"""
+        now = datetime.now()
+        expired_sessions = []
+        
+        for session_id, session_data in self.active_sessions.items():
+            last_activity = session_data.get("last_activity", session_data.get("created_at"))
+            if (now - last_activity).total_seconds() > SESSION_TIMEOUT:
+                expired_sessions.append(session_id)
+        
+        for session_id in expired_sessions:
+            logger.info(f"Cleaning up expired session: {session_id}")
+            del self.active_sessions[session_id]
+            
+            # Mark as expired in memory system
+            try:
+                self.memory_client.update_memory(
+                    memory_id=session_id,
+                    update_payload={"metadata": {"expired": True, "expired_at": now.isoformat()}}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to mark session {session_id} as expired: {e}")
+    
+    def run(self):
+        """Run the agent with session cleanup thread"""
+        # Start session cleanup thread
+        cleanup_thread = threading.Thread(target=self._run_cleanup_thread, daemon=True)
+        cleanup_thread.start()
+        
+        # Run normal agent loop
+        super().run()
+    
+    def _run_cleanup_thread(self):
+        """Run periodic session cleanup"""
+        while True:
+            try:
+                self._cleanup_expired_sessions()
+            except Exception as e:
+                logger.error(f"Error in session cleanup: {e}")
+            
+            # Sleep for 5 minutes
+            time.sleep(300)
+    
+    def cleanup(self):
+        """Clean up resources before shutdown"""
+        if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+            self.error_bus_pub.close()
+        super().cleanup()
 
 # Example usage
 if __name__ == "__main__":
-    # Standardized main execution block
-    agent = None
     try:
         agent = SessionMemoryAgent()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'}...")
+        logger.info("SessionMemoryAgent shutting down")
     except Exception as e:
-        import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
+        logger.critical(f"SessionMemoryAgent failed to start: {e}", exc_info=True)
     finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
+        if 'agent' in locals() and hasattr(agent, 'cleanup'):
             agent.cleanup()

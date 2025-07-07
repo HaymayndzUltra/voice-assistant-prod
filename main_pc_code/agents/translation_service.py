@@ -9,9 +9,14 @@ import hashlib
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import pybreaker
+from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
+from common.utils.data_models import ErrorSeverity
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+
+# Ito ang FINAL at PINAHUSAY na bersyon ng Translation Service.
+# Pinagsasama nito ang lahat ng translation-related features sa isang,
+# central, modular, at robust na ahente.
 
 # Helper function for ZMQ security
 def is_secure_zmq_enabled() -> bool:
@@ -456,15 +461,26 @@ class BaseEngineClient:
             return None
             
         try:
-            # Get socket from connection manager
+            text = payload.get('text', '')
+            timeout = self.timeout_manager.calculate_timeout(text)
+            self.logger.info(f"Sending request to {self.target_agent_name} with timeout {timeout} ms: {payload}")
+            
+            # Use agent's resilient send request if available
+            if hasattr(self.agent, '_resilient_send_request'):
+                response = self.agent._resilient_send_request(self.target_agent_name, payload)
+                if response:
+                    # We don't have actual elapsed time with _resilient_send_request
+                    # but we can still log the response
+                    self.logger.info(f"Received response from {self.target_agent_name} via resilient request")
+                    return response
+                return None
+            
+            # Fall back to direct socket communication if _resilient_send_request not available
             socket = self.connection_manager.get_socket(self.target_agent_name)
             if not socket:
                 self.logger.error(f"Failed to get socket for {self.target_agent_name}")
                 return None
                 
-            text = payload.get('text', '')
-            timeout = self.timeout_manager.calculate_timeout(text)
-            self.logger.info(f"Sending request to {self.target_agent_name} with timeout {timeout} ms: {payload}")
             socket.send_string(json.dumps(payload))
             
             poller = zmq.Poller()
@@ -596,6 +612,13 @@ class DictionaryEngineClient(BaseEngineClient):
 
 # --- Internal Modules (Placeholders) ---
 class LanguageDetector:
+    """
+    Handles multi-layered, advanced language detection.
+    
+    Ito ang module na responsible sa pag-detect ng wika ng input text.
+    Gumagamit ito ng multiple detection methods (langdetect, fastText, TagaBERTa)
+    para sa mas accurate na detection, lalo na para sa Taglish text.
+    """
     def __init__(self, agent):
         self.agent = agent
         self.logger = agent.logger
@@ -815,6 +838,15 @@ class LanguageDetector:
 
 # --- Refactor TranslationCache for persistent storage ---
 class TranslationCache:
+    """
+    Handles centralized, persistent caching via MemoryOrchestrator.
+    
+    Nag-iimplement ito ng two-level caching system:
+    1. Local cache (L1) - mabilis na in-memory cache
+    2. Persistent cache (L2) - gumagamit ng MemoryOrchestrator para sa persistent storage
+    
+    May built-in circuit breaker protection para sa mga failures sa MemoryOrchestrator.
+    """
     def __init__(self, agent):
         self.agent = agent
         self.logger = agent.logger
@@ -823,10 +855,7 @@ class TranslationCache:
         self.max_size = 1000
         self.ttl = 3600
         self.connection_manager = agent.connection_manager
-        # Initialize circuit breaker for memory reads
-        self.mem_read_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
 
-    @pybreaker.CircuitBreakerError
     def get(self, key: str) -> Optional[str]:
         hashed_key = self._hash_key(key)
         if hashed_key in self.cache:
@@ -839,11 +868,18 @@ class TranslationCache:
         # Not in local cache, try MemoryOrchestrator
         try:
             # Use circuit breaker to protect against remote service failures
-            return self.mem_read_breaker.call(self._read_from_memory, hashed_key)
-        except pybreaker.CircuitBreakerError:
-            self.logger.warning("Circuit open for MemoryOrchestrator, skipping read.")
+            cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
+            if cb and cb.allow_request():
+                result = self._read_from_memory(hashed_key)
+                if result:
+                    cb.record_success()
+                    return result
+                # No result is not a failure, just a cache miss
+                cb.record_success()
             return None
         except Exception as e:
+            if cb:
+                cb.record_failure()
             self.logger.error(f"Error getting translation from MemoryOrchestrator: {e}")
             return None
     
@@ -890,6 +926,11 @@ class TranslationCache:
     
     def _persist_entry_async(self, hashed_key, value):
         """Asynchronously persist cache entry to MemoryOrchestrator"""
+        cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
+        if not cb or not cb.allow_request():
+            self.logger.warning("Circuit open for MemoryOrchestrator, skipping cache persistence")
+            return
+            
         try:
             socket = self.connection_manager.get_socket("MemoryOrchestrator")
             if socket:
@@ -913,7 +954,12 @@ class TranslationCache:
                 
                 if poller.poll(5000):  # 5 second timeout
                     socket.recv_json()
+                    cb.record_success()
+                else:
+                    cb.record_failure()
+                    self.logger.warning("Timeout persisting cache to MemoryOrchestrator")
         except Exception as e:
+            cb.record_failure()
             self.logger.error(f"Error storing translation in MemoryOrchestrator: {e}")
 
     def clear(self):
@@ -932,6 +978,15 @@ class TranslationCache:
 
 # --- Refactor SessionManager for persistent storage ---
 class SessionManager:
+    """
+    Manages translation sessions and history.
+    
+    Nag-iimplement ito ng session management para sa translation requests,
+    na nagbibigay-daan sa pag-track ng translation history at context.
+    
+    Gumagamit ito ng MemoryOrchestrator para sa persistent storage ng sessions,
+    at may circuit breaker protection para sa mga failures.
+    """
     def __init__(self, agent):
         self.agent = agent
         self.logger = agent.logger
@@ -942,8 +997,6 @@ class SessionManager:
         self.last_cleanup_time = time.time()
         self.cleanup_interval = 300
         self.connection_manager = agent.connection_manager
-        # Initialize circuit breaker for memory reads
-        self.mem_read_breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=60)
 
     def update_session(self, session_id: str, entry: Dict[str, Any] = None) -> None:
         if not session_id:
@@ -951,32 +1004,27 @@ class SessionManager:
         current_time = time.time()
         if session_id not in self.sessions:
             # Try to get session from MemoryOrchestrator
-            try:
-                # Use circuit breaker to protect against remote service failures
-                session_data = self.mem_read_breaker.call(self._read_session_from_memory, session_id)
-                if session_data:
-                    self.sessions[session_id] = session_data
-                    self.session_last_accessed[session_id] = current_time
-                else:
-                    self.sessions[session_id] = {
-                        'history': [],
-                        'created_at': current_time,
-                        'updated_at': current_time
-                    }
-            except pybreaker.CircuitBreakerError:
-                self.logger.warning("Circuit open for MemoryOrchestrator, skipping session read.")
+            cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
+            session_data = None
+            
+            if cb and cb.allow_request():
+                try:
+                    session_data = self._read_session_from_memory(session_id)
+                    cb.record_success()
+                except Exception as e:
+                    cb.record_failure()
+                    self.logger.warning(f"Failed to retrieve session from MemoryOrchestrator: {e}")
+            
+            if session_data:
+                self.sessions[session_id] = session_data
+                self.session_last_accessed[session_id] = current_time
+            else:
                 self.sessions[session_id] = {
                     'history': [],
                     'created_at': current_time,
                     'updated_at': current_time
                 }
-            except Exception as e:
-                self.logger.warning(f"Failed to retrieve session from MemoryOrchestrator: {e}")
-                self.sessions[session_id] = {
-                    'history': [],
-                    'created_at': current_time,
-                    'updated_at': current_time
-                }
+                
         if entry and session_id in self.sessions:
             if 'history' not in self.sessions[session_id]:
                 self.sessions[session_id]['history'] = []
@@ -1020,6 +1068,11 @@ class SessionManager:
     
     def _persist_session_async(self, session_id, session_data):
         """Asynchronously persist session to MemoryOrchestrator"""
+        cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
+        if not cb or not cb.allow_request():
+            self.logger.warning("Circuit open for MemoryOrchestrator, skipping session persistence")
+            return
+            
         try:
             socket = self.connection_manager.get_socket("MemoryOrchestrator")
             if socket:
@@ -1042,7 +1095,12 @@ class SessionManager:
                 
                 if poller.poll(5000):  # 5 second timeout
                     socket.recv_json()
+                    cb.record_success()
+                else:
+                    cb.record_failure()
+                    self.logger.warning("Timeout persisting session to MemoryOrchestrator")
         except Exception as e:
+            cb.record_failure()
             self.logger.error(f"Failed to update session in MemoryOrchestrator: {e}")
         
     def add_translation(self, session_id: str, result: Dict[str, Any]) -> None:
@@ -1192,7 +1250,20 @@ class EmergencyWordEngineClient(BaseEngineClient):
 
 # --- In EngineManager, ensure LocalPatternEngineClient and EmergencyWordEngineClient are defined before use ---
 class EngineManager:
-    """Manages translation engines and implements the fallback chain."""
+    """
+    Manages translation engines and implements the fallback chain.
+    
+    Ito ang central component na namamahala sa lahat ng translation engines
+    at nagpapatupad ng fallback chain kapag may failures sa translation.
+    
+    Fallback order:
+    1. Dictionary (local)
+    2. NLLB (neural machine translation)
+    3. Streaming (real-time translation)
+    4. Google Remote (external API)
+    5. Local Pattern (pattern matching)
+    6. Emergency Word (word-by-word translation)
+    """
     def __init__(self, agent, connection_manager=None, timeout_manager=None):
         self.agent = agent
         self.logger = agent.logger
@@ -1249,7 +1320,20 @@ class EngineManager:
         }
 
 class TranslationService(BaseAgent):
-    """Unified translation service that orchestrates all translation requests and fallback logic."""
+    """
+    Unified translation service that orchestrates all translation requests and fallback logic.
+    
+    Ito ang central translation service na sumusunod sa Phase4 architecture plan.
+    Pinagsasama nito ang lahat ng translation-related features sa isang
+    modular, robust, at fault-tolerant na service.
+    
+    Key features:
+    - Modular architecture (language detection, caching, engines, sessions)
+    - Circuit breaker pattern para sa fault tolerance
+    - Persistent caching at session management
+    - Sophisticated fallback mechanisms
+    - Advanced language detection, lalo na para sa Taglish
+    """
     def __init__(self):
         """Initialize the Translation Service agent."""
         # Set required properties before calling super().__init__
@@ -1267,6 +1351,11 @@ class TranslationService(BaseAgent):
         
         # Initialize connection manager first
         self.connection_manager = ConnectionManager(self)
+        
+        # Initialize circuit breakers for downstream services
+        self.downstream_services = ["MemoryOrchestrator", "NLLBAdapter", "RemoteConnectorAgent"]
+        self.circuit_breakers = {}
+        self._init_circuit_breakers()
         
         # Initialize modular components
         self.timeout_manager = AdvancedTimeoutManager()
@@ -1286,6 +1375,62 @@ class TranslationService(BaseAgent):
         
         self.logger.info("Translation Service initialized")
         
+    def _init_circuit_breakers(self):
+        """Initialize circuit breakers for downstream services."""
+        for service in self.downstream_services:
+            self.circuit_breakers[service] = CircuitBreaker(name=service)
+            
+    def _resilient_send_request(self, agent_name: str, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """A resilient method to send requests using Circuit Breakers."""
+        cb = self.circuit_breakers.get(agent_name)
+        if not cb or not cb.allow_request():
+            self.logger.warning(f"Request to {agent_name} blocked by open circuit or missing CB.")
+            return None
+        try:
+            response = self.send_request_to_agent(agent_name, request, timeout=15000)  # 15 second timeout
+            cb.record_success()
+            return response
+        except Exception as e:
+            cb.record_failure()
+            self.logger.error(f"Failed to communicate with {agent_name}: {e}")
+            return None
+    
+    def send_request_to_agent(self, agent_name: str, request: Dict[str, Any], timeout: int = 5000) -> Optional[Dict[str, Any]]:
+        """Send a request to another agent using ZMQ REQ socket.
+        
+        Args:
+            agent_name: Name of the target agent
+            request: Request payload
+            timeout: Request timeout in milliseconds
+            
+        Returns:
+            Response from the agent or None if request failed
+        """
+        socket = self.connection_manager.get_socket(agent_name)
+        if not socket:
+            self.logger.error(f"Failed to get socket for {agent_name}")
+            return None
+            
+        try:
+            # Send request
+            socket.send_json(request)
+            
+            # Wait for response with timeout
+            poller = zmq.Poller()
+            poller.register(socket, zmq.POLLIN)
+            
+            if poller.poll(timeout):
+                response = socket.recv_json()
+                return response
+            else:
+                self.logger.error(f"Timeout waiting for response from {agent_name}")
+                self.connection_manager.reset_socket(agent_name)
+                return None
+        except Exception as e:
+            self.logger.error(f"Error communicating with {agent_name}: {e}")
+            self.connection_manager.reset_socket(agent_name)
+            return None
+    
     def _setup_sockets(self):
         """Set up ZMQ sockets with CurveZMQ security if enabled."""
         self.socket = self.context.socket(zmq.REP)
@@ -1357,7 +1502,27 @@ class TranslationService(BaseAgent):
                 })
                 
     def _process_translation(self, text: str, target_lang: str, source_lang: str = None, session_id: str = None) -> Dict[str, Any]:
-        """Process a translation request."""
+        """
+        Process a translation request.
+        
+        Ito ang core method na nagpoproseso ng translation requests.
+        Sumusunod ito sa tiered translation architecture:
+        1. Check cache
+        2. Detect language (kung hindi specified)
+        3. Skip kung pareho ang source at target language
+        4. Translate gamit ang EngineManager (with fallback chain)
+        5. Cache successful translations
+        6. Update session history
+        
+        Args:
+            text: Text to translate
+            target_lang: Target language code
+            source_lang: Source language code (optional, will be auto-detected if None)
+            session_id: Session ID for tracking translation history (optional)
+            
+        Returns:
+            Dictionary containing translation result and metadata
+        """
         try:
             # Check cache first
             cache_key = self.cache.generate_key(text, source_lang or "auto", target_lang)
@@ -1429,9 +1594,22 @@ class TranslationService(BaseAgent):
                 return result
             else:
                 # Translation failed
+                error_message = translation_result.get("message", "Translation failed")
+                self.logger.error(f"Translation error: {error_message}")
+                
+                # Report error to error bus if available
+                self._report_error(
+                    error_message=error_message,
+                    error_type="translation_failure",
+                    severity=ErrorSeverity.MEDIUM,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    engine=translation_result.get("engine_used")
+                )
+                
                 return {
                     "status": "error",
-                    "message": translation_result.get("message", "Translation failed"),
+                    "message": error_message,
                     "engine_used": translation_result.get("engine_used"),
                     "source_lang": source_lang,
                     "target_lang": target_lang,
@@ -1440,6 +1618,16 @@ class TranslationService(BaseAgent):
                 
         except Exception as e:
             self.logger.error(f"Error processing translation: {e}")
+            
+            # Report error to error bus if available
+            self._report_error(
+                error_message=str(e),
+                error_type="translation_processing_error",
+                severity=ErrorSeverity.HIGH,
+                source_lang=source_lang,
+                target_lang=target_lang
+            )
+            
             return {
                 "status": "error",
                 "message": f"Translation processing error: {str(e)}",
@@ -1483,13 +1671,85 @@ class TranslationService(BaseAgent):
         except Exception as e:
             self.logger.error(f"Error during cleanup: {e}")
             
+    def _report_error(self, error_message: str, error_type: str, severity: ErrorSeverity, **additional_data):
+        """
+        Report an error to the error bus.
+        
+        Ito ang method para sa pag-report ng errors sa distributed error bus
+        na sumusunod sa Phase3 error management architecture.
+        
+        Args:
+            error_message: Human-readable error message
+            error_type: Type of error (e.g., "translation_failure")
+            severity: Error severity level from ErrorSeverity enum
+            **additional_data: Additional context data about the error
+        """
+        try:
+            # Check if UnifiedErrorAgent is in the circuit breakers
+            if "UnifiedErrorAgent" not in self.circuit_breakers:
+                self.circuit_breakers["UnifiedErrorAgent"] = CircuitBreaker(name="UnifiedErrorAgent")
+            
+            cb = self.circuit_breakers.get("UnifiedErrorAgent")
+            if not cb or not cb.allow_request():
+                self.logger.warning("Circuit open for UnifiedErrorAgent, skipping error report")
+                return
+                
+            error_data = {
+                "agent": self.name,
+                "timestamp": time.time(),
+                "error_type": error_type,
+                "message": error_message,
+                "severity": severity.value,
+                "context": additional_data
+            }
+            
+            # Try to send error to UnifiedErrorAgent
+            socket = self.connection_manager.get_socket("UnifiedErrorAgent")
+            if socket:
+                socket.send_json({
+                    "action": "report_error",
+                    "error_data": error_data
+                })
+                
+                poller = zmq.Poller()
+                poller.register(socket, zmq.POLLIN)
+                
+                if poller.poll(1000):  # 1 second timeout
+                    response = socket.recv_json()
+                    if response.get("status") == "success":
+                        cb.record_success()
+                    else:
+                        cb.record_failure()
+                else:
+                    cb.record_failure()
+                    self.logger.warning("Timeout reporting error to UnifiedErrorAgent")
+            else:
+                self.logger.warning("Could not get socket for UnifiedErrorAgent")
+        except Exception as e:
+            self.logger.error(f"Failed to report error: {e}")
+            if cb:
+                cb.record_failure()
+    
     def _get_health_status(self):
-        """Get the current health status of the agent."""
+        """
+        Get the current health status of the agent.
+        
+        Ito ang method na nagbibigay ng komprehensibong health status ng agent,
+        kasama ang status ng mga circuit breaker at downstream services.
+        
+        Returns:
+            Dictionary containing health status information
+        """
         # Get the base health status from parent class
         base_status = super()._get_health_status()
         
         # Add agent-specific health metrics
         try:
+            # Collect circuit breaker status
+            circuit_breaker_status = {}
+            for service_name, cb in self.circuit_breakers.items():
+                circuit_breaker_status[service_name] = cb.get_status()
+            
             # Add metrics to base status
             base_status.update({
                 "agent_specific_metrics": {
@@ -1508,7 +1768,8 @@ class TranslationService(BaseAgent):
                     "engine_manager": {
                         "engines": list(self.engine_manager.engines.keys()),
                         "fallback_order": self.engine_manager.fallback_order
-                    }
+                    },
+                    "circuit_breakers": circuit_breaker_status
                 }
             })
             

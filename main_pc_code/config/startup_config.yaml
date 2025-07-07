@@ -1,487 +1,152 @@
-# Use modify_file to replace the content of this file.
-# New content for main_pc_code/config/startup_config.yaml:
-# ===================================================================
-#         ADVANCED AI SYSTEM - STARTUP CONFIGURATION
-# ===================================================================
-# Canonical source of truth for all system agents and services.
-#
-# Structure:
-#   - Functional Groups (e.g., core_services, memory_system)
-#   - Agent Definitions (name, script_path, port, etc.)
-#   - Global Settings (environment, resources, health_checks)
-#
-# -------------------------------------------------------------------
+# AI System Startup Configuration
+# Defines the startup sequence and dependencies for all agents
 
-# -------------------------------------------
-# SECTION 1: AGENT & SERVICE DEFINITIONS
-# -------------------------------------------
+# Global settings
+settings:
+  default_startup_timeout: 30  # seconds
+  health_check_interval: 15    # seconds
+  max_restart_attempts: 3
+  error_bus_port: 7150
+  error_bus_host: ${PC2_IP}
 
-# --- Core Services ---
-# The foundational agents required for the system to operate.
-core_services:
-  # SystemDigitalTwin must be started first for service discovery
-  - name: SystemDigitalTwin
-    script_path: main_pc_code/agents/system_digital_twin.py
-    port: 7120
-    required: true
-    params: { health_check_port: 8120 }
-    startup_priority: 1  # Highest priority (lowest number)
-
-  - name: ModelManagerAgent
-    script_path: main_pc_code/agents/model_manager_agent.py
-    port: 5570
-    required: true
-    params: { enable_pc2_services: true }
-    dependencies: [SystemDigitalTwin]
-    startup_priority: 2
-
-  - name: RequestCoordinator
-    script_path: main_pc_code/agents/request_coordinator.py
-    port: 26002
-    required: true
-    dependencies: [SystemDigitalTwin]
-    startup_priority: 2
-
-  - name: ChainOfThoughtAgent
-    script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
-    port: 5612
-    required: true
-    dependencies: [SystemDigitalTwin]
-    startup_priority: 3
-
-  - name: GoTToTAgent
-    script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
-    port: 5646
-    required: true
-    dependencies: [SystemDigitalTwin]
-    startup_priority: 3
-
-  - name: PredictiveHealthMonitor
-    script_path: main_pc_code/agents/predictive_health_monitor.py
-    port: 5613
-    required: true
-    dependencies: [SystemDigitalTwin]
-    startup_priority: 3
-
-  - name: StreamingTTSAgent
-    script_path: main_pc_code/agents/streaming_tts_agent.py
-    port: 5562
-    required: true
-    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
-    startup_priority: 4
-
-  - name: StreamingInterruptHandler
-    script_path: main_pc_code/agents/streaming_interrupt_handler.py
-    port: 5576
-    required: true
-    dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
-    startup_priority: 5
-
-  - name: VRAMOptimizerAgent
-    script_path: main_pc_code/agents/vram_optimizer_agent.py
-    port: 5572
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin, RequestCoordinator]
-    params:
-      critical_threshold: 0.85
-      warning_threshold: 0.75
-      safe_threshold: 0.5
-      mainpc_vram_budget_mb: 20000
-      pc2_vram_budget_mb: 10000
-      idle_timeout: 900
-      idle_check_interval: 60
-      defragmentation_threshold: 0.7
-      optimization_interval: 300
-      predictive_loading_enabled: true
-      lookahead_window: 300
-      prediction_window: 3600
-    startup_priority: 7
-
-  - name: GoalManager
-    script_path: main_pc_code/agents/goal_manager.py
-    port: 7005
-    required: true
-    dependencies: [RequestCoordinator, ModelOrchestrator, SystemDigitalTwin]
-
-  - name: ModelOrchestrator
-    script_path: main_pc_code/agents/model_orchestrator.py
-    port: 7010
-    required: true
-    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
-
-  - name: IntentionValidatorAgent
-    script_path: main_pc_code/agents/IntentionValidatorAgent.py
-    port: 5701
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: DynamicIdentityAgent
-    script_path: main_pc_code/agents/DynamicIdentityAgent.py
-    port: 5802
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: ProactiveAgent
-    script_path: main_pc_code/agents/ProactiveAgent.py
-    port: 5624
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: PredictiveLoader
-    script_path: main_pc_code/agents/predictive_loader.py
-    port: 5617
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: GGUFModelManager
-    script_path: main_pc_code/agents/gguf_model_manager.py
-    port: 5575
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
-    params:
-      models_dir: "models"
-      idle_timeout_seconds: 300
-      vram_monitoring_enabled: true
-
-# --- Main PC GPU Services ---
-# Services that heavily utilize the GPU for tasks like inference and training.
-main_pc_gpu_services:
-  - name: SelfTrainingOrchestrator
-    script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
-    port: 5644
-    required: true
-    dependencies: [SystemDigitalTwin]
-
-  - name: TinyLlamaService
-    script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
-    port: 5615
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
-
-  - name: NLLBAdapter
-    script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
-    port: 5581
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
-
-  - name: FixedStreamingTranslation
-    script_path: main_pc_code/agents/fixed_streaming_translation.py
-    port: 5584
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
-
-  - name: CognitiveModelAgent
-    script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
-    port: 5641
-    required: true
-    dependencies: [ChainOfThoughtAgent, SystemDigitalTwin]
-
-  - name: LearningAdjusterAgent
-    script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
-    port: 5643
-    required: true
-    dependencies: [SelfTrainingOrchestrator, SystemDigitalTwin]
-
-  - name: LocalFineTunerAgent
-    script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
-    port: 5645
-    required: true
-    dependencies: [SelfTrainingOrchestrator, SystemDigitalTwin]
-
-  - name: TranslatorServer
-    script_path: main_pc_code/FORMAINPC/consolidated_translator.py
-    port: 5564
-    required: true
-    dependencies:
-      - MemoryClient # Updated dependency from MemoryOrchestrator
-      - ModelManagerAgent
-      - NLLBAdapter
-      - FixedStreamingTranslation
-      - SystemDigitalTwin
-# DEPRECATED in Phase 4 - Replaced by TranslationService
-#  - name: TranslatorServer
-#    script_path: main_pc_code/FORMAINPC/consolidated_translator.py
-#    port: 5564
-#    required: true
-#    dependencies:
-#      - MemoryClient # Updated dependency from MemoryOrchestrator
-#      - ModelManagerAgent
-#      - NLLBAdapter
-#      - FixedStreamingTranslation
-#      - SystemDigitalTwin
-
-# --- Emotion System ---
-# Agents responsible for understanding and synthesizing emotion.
-emotion_system:
-  - name: EmotionEngine
-    script_path: main_pc_code/agents/emotion_engine.py
-    port: 5590
-    required: true
-    dependencies: [SystemDigitalTwin]
-
-  - name: MoodTrackerAgent
-    script_path: main_pc_code/agents/mood_tracker_agent.py
-    port: 5704
-    required: true
-    dependencies: [EmotionEngine, SystemDigitalTwin]
-
-  - name: HumanAwarenessAgent
-    script_path: main_pc_code/agents/human_awareness_agent.py
-    port: 5705
-    required: true
-    dependencies: [EmotionEngine, SystemDigitalTwin]
-
-  - name: ToneDetector
-    script_path: main_pc_code/agents/tone_detector.py
-    port: 5625
-    required: true
-    dependencies: [EmotionEngine, SystemDigitalTwin]
-
-  - name: VoiceProfiler
-    script_path: main_pc_code/agents/voice_profiling_agent.py
-    port: 5708
-    required: true
-    dependencies: [EmotionEngine, SystemDigitalTwin]
-
-  - name: EmpathyAgent
-    script_path: main_pc_code/agents/EmpathyAgent.py
-    port: 5703
-    required: true
-    dependencies: [EmotionEngine, SystemDigitalTwin]
-
-  - name: EmotionSynthesisAgent
-    script_path: main_pc_code/agents/emotion_synthesis_agent.py
-    port: 5706
-    required: true
-    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
-
-# --- Memory System ---
-# Agents that manage short-term, long-term, and episodic memory.
-memory_system:
-  - name: SessionMemoryAgent
-    script_path: main_pc_code/agents/session_memory_agent.py
-    port: 5574
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin, MemoryClient] # Added MemoryClient dependency
-
-  - name: LearningManager
-    script_path: main_pc_code/agents/learning_manager.py
-    port: 5580
-    required: true
-    dependencies: [MemoryClient, RequestCoordinator, SystemDigitalTwin]
-
-  - name: MemoryClient
-    script_path: main_pc_code/agents/memory_client.py
-    port: 5713
-    health_check_port: 6713
-    required: true
+# Core infrastructure agents (must start first)
+core_agents:
+  - name: ErrorBus
+    script: src/core/error_bus.py
+    port: 7150
     dependencies: []
-    description: "A client for the central MemoryOrchestratorService on PC2."
+    critical: true
+    
+  - name: ServiceRegistry
+    script: src/core/service_registry.py
+    port: 7151
+    dependencies: [ErrorBus]
+    critical: true
+    
+  - name: HealthMonitor
+    script: src/core/health_monitor.py
+    port: 7152
+    health_port: 7153
+    dependencies: [ErrorBus, ServiceRegistry]
+    critical: true
+    
+  - name: MemoryClient
+    script: agents/memory_client.py
+    port: 5713
+    dependencies: [ErrorBus, ServiceRegistry]
+    critical: true
 
-# --- Learning and Knowledge ---
-# Agents focused on knowledge acquisition, learning, and metacognition.
-learning_knowledge:
+# Memory system agents
+memory_agents:
+  - name: SessionMemoryAgent
+    script: agents/session_memory_agent.py
+    port: 5574
+    health_port: 6583
+    dependencies: [MemoryClient, ErrorBus]
+    critical: true
+    
   - name: KnowledgeBase
-    script_path: main_pc_code/agents/knowledge_base.py
-    port: 5578
-    required: true
-    dependencies: [MemoryClient, SystemDigitalTwin]
+    script: agents/knowledge_base.py
+    port: 5715
+    health_port: 6715
+    dependencies: [MemoryClient, ErrorBus]
+    critical: true
+    
+  - name: ContextManager
+    script: agents/context_manager.py
+    port: 5716
+    health_port: 6716
+    dependencies: [MemoryClient, ErrorBus, SessionMemoryAgent]
+    critical: true
 
-  - name: MetaCognitionAgent
-    script_path: main_pc_code/agents/MetaCognitionAgent.py
-    port: 5630
-    required: true
-    dependencies: [KnowledgeBase, RequestCoordinator, ChainOfThoughtAgent, SystemDigitalTwin]
+# Input processing agents
+input_agents:
+  - name: SpeechToText
+    script: agents/stt/dynamic_stt_manager.py
+    port: 5560
+    health_port: 6560
+    dependencies: [ErrorBus, ServiceRegistry]
+    critical: true
+    
+  - name: IntentRecognizer
+    script: agents/intent_recognizer.py
+    port: 5561
+    health_port: 6561
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient]
+    critical: true
+    
+  - name: InputProcessor
+    script: agents/input_processor.py
+    port: 5562
+    health_port: 6562
+    dependencies: [SpeechToText, IntentRecognizer, SessionMemoryAgent]
+    critical: true
 
-  - name: ActiveLearningMonitor
-    script_path: main_pc_code/agents/active_learning_monitor.py
-    port: 5638
-    required: true
-    dependencies: [LearningManager, SystemDigitalTwin]
+# Core processing agents
+processing_agents:
+  - name: RequestCoordinator
+    script: agents/request_coordinator.py
+    port: 5570
+    health_port: 6570
+    dependencies: [ErrorBus, ServiceRegistry, SessionMemoryAgent, ContextManager]
+    critical: true
+    
+  - name: ModelOrchestrator
+    script: agents/model_orchestrator.py
+    port: 5571
+    health_port: 6571
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient, ContextManager]
+    critical: true
+    
+  - name: GoalManager
+    script: agents/goal_manager.py
+    port: 5572
+    health_port: 6572
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient]
+    critical: true
 
-# --- Planning and Execution ---
-# High-level agents for goal setting, planning, and task execution.
-planning_execution:
-  # ModelOrchestrator is already defined in core_services
-  # and handles all planning and execution tasks as part of Phase 1 consolidation
-
-# --- TTS Services ---
-# Text-to-Speech pipeline components.
-tts_services:
-  - name: TTSConnector
-    script_path: main_pc_code/agents/tts_connector.py
-    port: 5582
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: TTSCache
-    script_path: main_pc_code/agents/tts_cache.py
-    port: 5628
-    required: true
-    dependencies: [StreamingTTSAgent, SystemDigitalTwin]
-
-  - name: TTSAgent
-    script_path: main_pc_code/agents/tts_agent.py
-    port: 5563
-    required: true
-    dependencies: [StreamingInterruptHandler, SystemDigitalTwin]
-
-# --- Code Generation Pipeline ---
-# Agents that can write and execute code.
-code_generation:
-  - name: CodeGenerator
-    script_path: main_pc_code/agents/code_generator_agent.py
-    port: 5604
-    required: true
-    dependencies: [ModelManagerAgent, SystemDigitalTwin]
-
-  - name: Executor
-    script_path: main_pc_code/agents/executor.py
-    port: 5606
-    required: true
-    dependencies: [CodeGenerator, SystemDigitalTwin]
-
-# --- Audio Processing ---
-# Pipeline for capturing and pre-processing audio input.
-audio_processing:
-  - name: AudioCapture
-    script_path: main_pc_code/agents/streaming_audio_capture.py
-    port: 6575
-    required: true
-    dependencies: [SystemDigitalTwin]
-    params: { env_vars: { USE_DUMMY_AUDIO: 'true' } }
-
-  - name: FusedAudioPreprocessor
-    script_path: main_pc_code/agents/fused_audio_preprocessor.py
-    port: 6578
-    required: true
-    dependencies: [AudioCapture, SystemDigitalTwin]
-
-  - name: WakeWordDetector
-    script_path: main_pc_code/agents/wake_word_detector.py
-    port: 6577
-    required: true
-    dependencies: [AudioCapture, FusedAudioPreprocessor, SystemDigitalTwin]
-
-  - name: StreamingSpeechRecognition
-    script_path: main_pc_code/agents/streaming_speech_recognition.py
-    port: 6580
-    required: true
-    dependencies: [FusedAudioPreprocessor, ModelManagerAgent, SystemDigitalTwin]
-    params: { model_config_path: 'config/model_config.json' }
-
-  - name: StreamingLanguageAnalyzer
-    script_path: main_pc_code/agents/streaming_language_analyzer.py
-    port: 5579
-    required: true
-    dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
-
-# --- Translation Services ---
-translation_services:
+# Output processing agents
+output_agents:
+  - name: ResponseGenerator
+    script: agents/response_generator.py
+    port: 5580
+    health_port: 6580
+    dependencies: [ModelOrchestrator, MemoryClient]
+    critical: true
+    
   - name: TranslationService
-    script_path: main_pc_code/agents/translation_service.py
-    port: 5595
-    required: true
-    dependencies:
-      - SystemDigitalTwin
-      - NLLBAdapter
-      - FixedStreamingTranslation
-    startup_priority: 3
+    script: agents/translation_service.py
+    port: 5581
+    health_port: 6581
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient]
+    critical: false
+    
+  - name: StreamingTTS
+    script: agents/core_speech_output/streaming_tts_agent.py
+    port: 5582
+    health_port: 6582
+    dependencies: [ErrorBus, ServiceRegistry]
+    critical: true
 
-# --- Language Processing ---
-# Natural Language Understanding (NLU) and response generation.
-language_processing:
-  - name: NLUAgent
-    script_path: main_pc_code/agents/nlu_agent.py
-    port: 5709
-    required: true
-    dependencies: [SystemDigitalTwin]
-
-  - name: AdvancedCommandHandler
-    script_path: main_pc_code/agents/advanced_command_handler.py
-    port: 5710
-    required: true
-    dependencies: [NLUAgent, CodeGenerator, SystemDigitalTwin]
-
-  - name: ChitchatAgent
-    script_path: main_pc_code/agents/chitchat_agent.py
-    port: 5711
-    required: true
-    dependencies: [NLUAgent, SystemDigitalTwin, TranslationService]
-
-  - name: FeedbackHandler
-    script_path: main_pc_code/agents/feedback_handler.py
-    port: 5636
-    required: true
-    dependencies: [NLUAgent, SystemDigitalTwin]
-
-  - name: Responder
-    script_path: main_pc_code/agents/responder.py
-    port: 5637
-    required: true
-    dependencies: [NLUAgent, EmotionEngine, SystemDigitalTwin]
-
-# --- Vision ---
-# Agents for visual input processing.
-vision:
-  - name: VisionCaptureAgent
-    script_path: main_pc_code/agents/vision_capture_agent.py
+# Utility agents
+utility_agents:
+  - name: SystemDigitalTwin
+    script: agents/system_digital_twin.py
+    port: 5590
+    health_port: 6590
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient]
+    critical: false
+    
+  - name: ActiveLearningMonitor
+    script: agents/active_learning_monitor.py
+    port: 5591
+    health_port: 6591
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient]
+    critical: false
+    
+  - name: ContextSummarizer
+    script: agents/core_memory/context_summarizer_agent.py
     port: 5592
-    required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
-
-  - name: FaceRecognitionAgent
-    script_path: main_pc_code/agents/face_recognition_agent.py
-    port: 5610
-    required: true
-    dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
-
-# ===================================================================
-#         SECTION 2: GLOBAL SYSTEM SETTINGS
-# ===================================================================
-# These settings apply to all agents unless overridden locally.
-
-# --- Global Environment Variables ---
-environment:
-  PYTHONPATH: '${PYTHONPATH}:${PWD}'
-  LOG_LEVEL: 'INFO'
-  DEBUG_MODE: 'false'
-  ENABLE_METRICS: 'true'
-  ENABLE_TRACING: 'true'
-  ENABLE_DATA_OPTIMIZER: 'true'
-  DATA_OPTIMIZER_METHOD: 'compressed_msgpack'
-
-# --- Global Resource Limits ---
-resource_limits:
-  cpu_percent: 80
-  memory_mb: 2048
-  max_threads: 4
-
-# --- Global Volume Mappings ---
-# For containerized environments like Docker.
-volumes:
-  - source: ./logs
-    target: /app/logs
-  - source: ./models
-    target: /app/models
-  - source: ./data
-    target: /app/data
-  - source: ./config
-    target: /app/config
-
-# --- Global Health Check Configuration ---
-health_checks:
-  interval_seconds: 30
-  timeout_seconds: 10
-  retries: 3
-  start_period_seconds: 300
-
-# --- Global Network Configuration ---
-# For containerized environments.
-network:
-  name: ai_system_network
-  driver: bridge
-  ipam:
-    driver: default
-    config:
-      - subnet: 172.20.0.0/16
+    health_port: 6592
+    dependencies: [ErrorBus, ServiceRegistry, MemoryClient, ContextManager]
+    critical: false
