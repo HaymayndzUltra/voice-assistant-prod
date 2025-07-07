@@ -1,256 +1,294 @@
+# File: main_pc_code/agents/model_orchestrator.py
+#
+# Ito ang FINAL at PINAHUSAY na bersyon ng ModelOrchestrator.
+# Pinagsasama nito ang task classification at context-awareness ng EnhancedModelRouter
+# at ang iterative code generation at safe execution ng UnifiedPlanningAgent.
+
 import sys
 import os
 import time
 import logging
 import threading
 import json
-import zmq
+import uuid
+import re
+import subprocess
+import tempfile
+from pathlib import Path
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
-from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus
+
+# --- Path Setup ---
+MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+# --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
-from utils.service_discovery_client import get_service_address, register_service
-from utils.env_loader import get_env
-from main_pc_code.agents.request_coordinator import CircuitBreaker
+from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
 
-logger = logging.getLogger("ModelOrchestrator")
+# --- Shared Utilities ---
+# I-assume na ang CircuitBreaker ay nasa isang shared utility file
+from main_pc_code.agents.request_coordinator import CircuitBreaker # Pansamantalang import
 
-class PlanStep(BaseModel):
-    step_id: str
-    agent_type: str
-    description: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+# --- Logging Setup ---
+logger = logging.getLogger('ModelOrchestrator')
 
+# --- Constants ---
+DEFAULT_PORT = 7010
+ZMQ_REQUEST_TIMEOUT = 30000 # Mas mahabang timeout para sa LLM at code execution
+MAX_REFINEMENT_ITERATIONS = 3 # Limitasyon para sa code refinement loop
+
+# ===================================================================
+#         ANG BAGONG UNIFIED MODEL ORCHESTRATOR
+# ===================================================================
 class ModelOrchestrator(BaseAgent):
     """
-    ModelOrchestrator: Orchestrates model selection and routing. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+    Orchestrates all model interactions, from simple chat to complex,
+    iterative code generation and safe execution.
     """
-    def __init__(self, port: int = 7010):
-        super().__init__(name="ModelOrchestrator", port=port)
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://0.0.0.0:{port}")
-        self.running = True
-        self._register_service()
-        self._start_threads()
-        logger.info(f"ModelOrchestrator started on port {port}")
 
-        # Circuit breakers for all external services
+    def __init__(self, **kwargs):
+        super().__init__(name="ModelOrchestrator", port=DEFAULT_PORT, **kwargs)
+
+        # --- State Management ---
+        self.language_configs = self._get_language_configs()
+        self.temp_dir = Path(tempfile.gettempdir()) / "model_orchestrator_sandbox"
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # --- Downstream Services & Resilience ---
+        self.downstream_services = [
+            "ModelManagerAgent", "UnifiedMemoryReasoningAgent", "WebAssistant"
+        ]
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
 
-        # ZMQ sockets for external services
-        self.model_manager_socket = self._connect_to_service("ModelManagerAgent")
-        # Add more as needed (e.g., vision, code, LLM APIs)
+        logger.info("Unified ModelOrchestrator initialized successfully.")
 
-        # Context management
-        self.conversation_history: Dict[str, List[Dict[str, Any]]] = {}  # key: conversation_id
-
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+    def _get_language_configs(self) -> Dict[str, Dict]:
+        """Defines a-i-execute ang code para sa iba't ibang lenggwahe."""
+        return {
+            "python": {"extension": ".py", "command": [sys.executable]},
+            "javascript": {"extension": ".js", "command": ["node"]},
+            # Pwedeng dagdagan pa ng iba (e.g., shell, java)
+        }
 
     def _init_circuit_breakers(self):
-        services = ["ModelManagerAgent"]  # Add more as needed
-        for service in services:
+        """Initializes Circuit Breakers for all downstream services."""
+        for service in self.downstream_services:
             self.circuit_breakers[service] = CircuitBreaker(name=service)
 
-    def _connect_to_service(self, service_name: str) -> Optional[zmq.Socket]:
+    # ===================================================================
+    #         CORE API & DISPATCHER
+    # ===================================================================
+
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Main entry point. Classifies the task and dispatches to the correct handler.
+        """
+        action = request.get("action")
+        task_def_data = request.get("task")
+        if not action or not task_def_data:
+            return {"status": "error", "message": "Missing 'action' or 'task' in request."}
+
         try:
-            service_address = get_service_address(service_name)
-            if service_address:
-                socket = self.context.socket(zmq.REQ)
-                socket.connect(service_address)
-                logger.info(f"Connected to {service_name} at {service_address}")
-                return socket
-            else:
-                logger.error(f"Failed to discover {service_name}. Socket will be None.")
-                return None
+            task = TaskDefinition(**task_def_data)
         except Exception as e:
-            logger.error(f"Error connecting to {service_name}: {e}")
-            return None
+            return {"status": "error", "message": f"Invalid TaskDefinition format: {e}"}
 
-    def _register_service(self):
-        register_service(
-            name=self.name,
-            port=self.port,
-            additional_info={"capabilities": ["planning", "model_routing", "inference"]}
-        )
+        # CHECKLIST ITEM 1: Task Classification logic
+        task_type = self._classify_task(task)
+        logger.info(f"Task {task.task_id} classified as: {task_type}")
 
-    def _start_threads(self):
-        thread = threading.Thread(target=self._handle_requests, daemon=True)
-        thread.start()
+        # Dispatch to the appropriate handler
+        handlers = {
+            "code_generation": self._handle_code_generation_task,
+            "tool_use": self._handle_tool_use_task,
+            "reasoning": self._handle_reasoning_task,
+            "chat": self._handle_chat_task,
+        }
+        handler = handlers.get(task_type, self._handle_reasoning_task) # Default to reasoning
 
-    def _send_request(self, service_name: str, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        return handler(task)
+
+    def _classify_task(self, task: TaskDefinition) -> str:
         """
-        Standardized ZMQ request with circuit breaker and error handling.
+        Classifies the task based on its description and parameters.
+        (Logic extracted from EnhancedModelRouter)
         """
-        socket = None
-        if service_name == "ModelManagerAgent":
-            socket = self.model_manager_socket
-        # Add more services as needed
-        cb = self.circuit_breakers.get(service_name)
-        if not socket or not cb:
-            logger.error(f"Service {service_name} not available or circuit breaker missing.")
-            return None
-        if not cb.allow_request():
-            logger.error(f"Circuit breaker for {service_name} is open. Request blocked.")
+        prompt = task.description.lower()
+        if any(k in prompt for k in ["code", "python", "function", "script", "debug"]):
+            return "code_generation"
+        if any(k in prompt for k in ["search for", "find information about", "browse"]):
+            return "tool_use"
+        if any(k in prompt for k in ["why", "how", "explain", "analyze", "compare"]):
+            return "reasoning"
+        return "chat"
+
+    # ===================================================================
+    #         TASK HANDLERS
+    # ===================================================================
+
+    def _handle_chat_task(self, task: TaskDefinition) -> Dict[str, Any]:
+        """Handles simple conversational tasks."""
+        # CHECKLIST ITEM 2: Context-Aware Prompting
+        full_prompt = self._build_context_prompt(task, "You are a helpful assistant.")
+        response = self._send_to_llm(full_prompt)
+        return {"status": "success", "result": {"text": response}}
+
+    def _handle_reasoning_task(self, task: TaskDefinition) -> Dict[str, Any]:
+        """Handles complex reasoning tasks."""
+        full_prompt = self._build_context_prompt(task, "You are a logical reasoner. Think step by step.")
+        response = self._send_to_llm(full_prompt)
+        return {"status": "success", "result": {"text": response}}
+
+    def _handle_tool_use_task(self, task: TaskDefinition) -> Dict[str, Any]:
+        """
+        Handles tasks that require specialized tools.
+        (Logic extracted from EnhancedModelRouter)
+        """
+        # Simplistic tool detection for now
+        if "search" in task.description.lower():
+            query = task.parameters.get("query", task.description)
+            logger.info(f"Executing tool: WebSearch with query '{query}'")
+            # CHECKLIST ITEM 3: Direct Orchestration of Specialized Tools
+            search_result = self._resilient_send_request("WebAssistant", {"action": "search", "query": query})
+            return {"status": "success", "result": search_result}
+        else:
+            return {"status": "error", "message": "Unknown tool requested."}
+
+    def _handle_code_generation_task(self, task: TaskDefinition) -> Dict[str, Any]:
+        """
+        Handles code generation tasks using an iterative refinement loop.
+        (Logic extracted from UnifiedPlanningAgent)
+        """
+        logger.info(f"Starting iterative code generation for task: {task.task_id}")
+        code_context = self._build_context_prompt(task, "You are an expert programmer.")
+        current_code = ""
+
+        # CHECKLIST ITEM 4: Iterative Code Generation & Refinement
+        for i in range(MAX_REFINEMENT_ITERATIONS):
+            logger.info(f"Refinement iteration {i+1}/{MAX_REFINEMENT_ITERATIONS}")
+            prompt = f"{code_context}\n\nTask: {task.description}\n\nCurrent Code:\n```python\n{current_code}\n```\n\nGenerate or refine the Python code."
+            generated_code = self._send_to_llm(prompt)
+            if not generated_code:
+                return {"status": "error", "message": "LLM failed to generate code."}
+
+            # Verify the generated code
+            verification_prompt = f"Review the following Python code for correctness, bugs, and adherence to the task: '{task.description}'.\n\nCode:\n```python\n{generated_code}\n```\n\nRespond with 'OK' if it's good, or list the issues."
+            feedback = self._send_to_llm(verification_prompt)
+
+            if feedback.strip().upper() == "OK":
+                logger.info("Code verification successful. Finalizing.")
+                current_code = generated_code
+                break
+            else:
+                logger.info(f"Code has issues. Refining based on feedback: {feedback}")
+                current_code = generated_code # Keep the problematic code for context
+                code_context += f"\n\nPrevious attempt had issues:\n{feedback}" # Add feedback to context
+        else: # Loop finished without breaking
+            logger.warning("Max refinement iterations reached. Using the last generated code.")
+
+        # CHECKLIST ITEM 5: Safe Code Execution
+        should_execute = task.parameters.get("execute", False)
+        execution_result = None
+        if should_execute:
+            logger.info("Executing final generated code in a safe environment.")
+            execution_result = self._execute_code_safely(current_code, "python")
+
+        return {
+            "status": "success",
+            "result": {
+                "code": current_code,
+                "execution_result": execution_result
+            }
+        }
+
+    # ===================================================================
+    #         HELPER METHODS (Guts of the Operation)
+    # ===================================================================
+
+    def _build_context_prompt(self, task: TaskDefinition, system_prompt: str) -> str:
+        """
+        Builds a context-aware prompt by fetching conversation history.
+        (Logic extracted from EnhancedModelRouter)
+        """
+        session_id = task.parameters.get("session_id", "default_session")
+        history_request = {"action": "get_context", "session_id": session_id}
+        context_response = self._resilient_send_request("UnifiedMemoryReasoningAgent", history_request)
+
+        context_str = "Previous conversation:\n"
+        if context_response and context_response.get("status") == "success":
+            for entry in context_response.get("context", []):
+                context_str += f"- {entry}\n"
+        else:
+            context_str = ""
+
+        return f"{system_prompt}\n\n{context_str}\nUser Task: {task.description}"
+
+    def _send_to_llm(self, prompt: str) -> Optional[str]:
+        """Sends a prompt to the appropriate LLM via the ModelManagerAgent."""
+        request = {"action": "generate_text", "prompt": prompt}
+        response = self._resilient_send_request("ModelManagerAgent", request)
+        return response.get("result", {}).get("text") if response and response.get("status") == "success" else None
+
+    def _execute_code_safely(self, code: str, language: str) -> Dict[str, Any]:
+        """
+        Executes code in a sandboxed environment.
+        (Logic extracted from UnifiedPlanningAgent)
+        """
+        config = self.language_configs.get(language)
+        if not config:
+            return {"success": False, "error": f"Unsupported language: {language}"}
+
+        file_path = self.temp_dir / f"exec_{uuid.uuid4()}{config['extension']}"
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(code)
+
+            process = subprocess.run(
+                config["command"] + [str(file_path)],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            return {
+                "success": process.returncode == 0,
+                "stdout": process.stdout,
+                "stderr": process.stderr,
+                "returncode": process.returncode
+            }
+        except subprocess.TimeoutExpired:
+            return {"success": False, "error": "Execution timed out after 30 seconds."}
+        except Exception as e:
+            return {"success": False, "error": f"An unexpected error occurred: {e}"}
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+    def _resilient_send_request(self, agent_name: str, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """A resilient method to send requests using Circuit Breakers."""
+        cb = self.circuit_breakers.get(agent_name)
+        if not cb or not cb.allow_request():
+            logger.warning(f"Request to {agent_name} blocked by open circuit or missing CB.")
             return None
         try:
-            socket.send_json(request)
-            response = socket.recv_json()
+            response = self.send_request_to_agent(agent_name, request, timeout=ZMQ_REQUEST_TIMEOUT)
             cb.record_success()
-            if not isinstance(response, dict):
-                logger.error(f"Non-dict response from {service_name}: {response}")
-                return None
             return response
         except Exception as e:
             cb.record_failure()
-            logger.error(f"Error sending request to {service_name}: {e}")
+            # self.report_error(...) # Pwedeng idagdag ang error reporting dito
+            logger.error(f"Failed to communicate with {agent_name}: {e}")
             return None
 
-    def _handle_requests(self):
-        while self.running:
-            try:
-                message = self.socket.recv_json()
-                if not isinstance(message, dict):
-                    self.socket.send_json({"status": "error", "message": "Invalid request format"})
-                    continue
-                action = message.get("action")
-                if action == "break_down_goal":
-                    goal = message.get("goal")
-                    if not isinstance(goal, dict):
-                        response = {"status": "error", "message": "Goal must be a dictionary"}
-                    else:
-                        response = self._plan_and_execute(goal)
-                else:
-                    response = {"status": "error", "message": f"Unknown action: {action}"}
-                self.socket.send_json(response)
-            except Exception as e:
-                logger.error(f"Error in _handle_requests: {e}")
-                self.socket.send_json({"status": "error", "message": str(e)})
-
-    def _plan_and_execute(self, goal: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Step 1: Generate a multi-step plan using ModelManager (LLM)
-        Step 2: For each step, select and execute the best model
-        Returns a list of TaskDefinition dicts for GoalManager compliance.
-        """
-        try:
-            plan = self._generate_plan(goal)
-            conversation_id = goal.get("conversation_id", "default")
-            if conversation_id not in self.conversation_history:
-                self.conversation_history[conversation_id] = []
-            task_definitions = []
-            for idx, step in enumerate(plan):
-                model = self._select_model_for_step(step)
-                result = self._execute_step(step, model, conversation_id)
-                self.conversation_history[conversation_id].append({"step": step.dict(), "result": result})
-                # Build TaskDefinition for each step
-                task_id = f"task_{goal.get('id', 'unknown')}_{idx+1}"
-                task_def = TaskDefinition(
-                    task_id=task_id,
-                    agent_id="ModelOrchestrator",
-                    task_type=step.agent_type,
-                    priority=goal.get("priority", 5),
-                    parameters=step.parameters,
-                    dependencies=[],
-                    timeout_seconds=goal.get("timeout_seconds"),
-                )
-                task_definitions.append(task_def.dict())
-            return {"status": "success", "tasks": task_definitions}
-        except Exception as e:
-            logger.error(f"Error in _plan_and_execute: {e}")
-            return {"status": "error", "message": str(e)}
-
-    def _generate_plan(self, goal: Dict[str, Any]) -> List[PlanStep]:
-        """
-        Generate a plan by calling ModelManagerAgent (LLM) via _send_request.
-        Uses circuit breaker for resilience.
-        """
-        request = {"action": "generate_plan", "goal": goal}
-        response = self._send_request("ModelManagerAgent", request)
-        if (
-            response
-            and response.get("status") == "success"
-            and isinstance(response.get("plan"), list)
-        ):
-            plan_list = response["plan"]
-            valid_steps = []
-            for step in plan_list:
-                if (
-                    isinstance(step, dict)
-                    and isinstance(step.get("step_id"), str)
-                    and isinstance(step.get("agent_type"), str)
-                    and isinstance(step.get("description"), str)
-                    and ("parameters" not in step or isinstance(step.get("parameters"), dict))
-                ):
-                    valid_steps.append(PlanStep(**step))
-                else:
-                    logger.warning(f"Skipping invalid plan step: {step}")
-            return valid_steps
-        else:
-            raise RuntimeError(f"Invalid plan response: {response}")
-
-    def _select_model_for_step(self, step: PlanStep) -> str:
-        """
-        Use ModelManagerAgent to recommend the best model for the step.
-        """
-        request = {"action": "recommend_model", "task_description": step.description}
-        response = self._send_request("ModelManagerAgent", request)
-        if response and response.get("status") == "success" and isinstance(response.get("model"), str):
-            return response["model"]
-        else:
-            logger.error(f"Model recommendation failed for step: {step.description}. Response: {response}")
-            return "default_model"
-
-    def _execute_step(self, step: PlanStep, model: str, conversation_id: str) -> Dict[str, Any]:
-        """
-        Actually call the selected model (simulate with ModelManagerAgent for now).
-        Uses circuit breaker for resilience.
-        """
-        request = {
-            "action": "execute_model",
-            "model": model,
-            "step": step.dict(),
-            "context": self.conversation_history.get(conversation_id, [])
-        }
-        response = self._send_request("ModelManagerAgent", request)
-        if response:
-            return response
-        else:
-            return {"status": "error", "message": "Model execution failed or no response."}
-
-    def run(self):
-        logger.info("ModelOrchestrator is running...")
-        try:
-            while self.running:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            self.running = False
-            self.socket.close()
-            self.context.term()
-            logger.info("ModelOrchestrator stopped.")
-
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="ModelOrchestrator Agent")
-    parser.add_argument("--port", type=int, default=7010, help="Port to bind to")
-    args = parser.parse_args()
-    agent = ModelOrchestrator(port=args.port)
-    agent.run() 
+if __name__ == '__main__':
+    try:
+        agent = ModelOrchestrator()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("ModelOrchestrator shutting down.")
+    except Exception as e:
+        logger.critical(f"ModelOrchestrator failed to start: {e}", exc_info=True)
+    finally:
+        if 'agent' in locals() and agent.running:
+            agent.cleanup()

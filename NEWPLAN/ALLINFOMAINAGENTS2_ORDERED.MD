@@ -35,7 +35,7 @@
 
 ## Language & Translation Services Container
 - **StreamingLanguageAnalyzer**: Analyzes transcribed text to determine language and calculate language ratios.
-- **LanguageAndTranslationCoordinator**: Coordinates language detection and translation services with multi-tier fallback.
+- **TranslationService**: Unified, modular translation service that orchestrates all translation requests and fallback logic. Depends on NLLBAdapter, FixedStreamingTranslation, and SystemDigitalTwin. (ADDED Phase 4)
 
 ## Human Interaction Pipeline Container
 - **UltimateTTSAgent**: Specialized agent para sa text-to-speech conversion na may 4-tier fallback system.
@@ -52,7 +52,7 @@
 - **StreamingAudioCapture**: Handles the critical first step in the audio processing pipeline for raw audio capture.
 - **FusedAudioPreprocessor** (script_path: main_pc_code/agents/fused_audio_preprocessor.py): Handles critical audio preprocessing functions including noise reduction and VAD.
 - **WakeWordDetector**: Specializes in wake word detection to trigger system activation.
-- **ChitChatAgent**: Handles casual conversation interactions and maintains conversation history.
+- **ChitChatAgent**: Handles casual conversation interactions and maintains conversation history. (Now uses TranslationService for all translation requests.)
 - **FeedbackHandler**: Provides visual and voice confirmation feedback for command execution.
 - **Responder**: Handles text-to-speech conversion and audio response generation with emotion-based modulation.
 - **VisionCaptureAgent**: Serves as the first step in the vision pipeline for screen capture.
@@ -64,7 +64,6 @@
 
 ## Utilities & Support Services Container
 - **PredictiveHealthMonitor** (script_path: main_pc_code/agents/predictive_health_monitor.py): Advanced monitoring agent na gumagamit ng machine learning para i-predict ang potential failures.
-- **ConsolidatedTranslator**: Combines multiple translation engines with fallback mechanisms and caching.
 - **FixedStreamingTranslation**: Handles streaming translation with multiple fallback mechanisms.
 - **Executor**: Handles user command execution with security controls and authentication.
 

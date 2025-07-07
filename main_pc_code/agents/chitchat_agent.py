@@ -67,13 +67,12 @@ class ChitchatAgent(BaseAgent):
         
     def __init__(self):
         """Initialize the chitchat agent."""
-        # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
+        # Use config loader for agent args or set defaults
+        self.config = load_config() if callable(load_config) else {}
         super().__init__(
             name=getattr(self.config, 'name', 'ChitchatAgent'),
-            port=getattr(self.config, 'port', None)
+            port=getattr(self.config, 'port', 5711)
         )
-        
         # Initialize state
         self.start_time = time.time()
         self.running = True
@@ -81,14 +80,11 @@ class ChitchatAgent(BaseAgent):
         self.health_thread = None
         self.conversations_handled = 0
         self.last_interaction_time = 'N/A'
-        
         # Determine ports
         self.chitchat_port = self.port
         self.health_port = self.port + 1
-        
         # Setup ZMQ sockets
-        self._setup_sockets()
-        
+        self._init_sockets()
         logger.info("Chitchat Agent initialized")
     
     
@@ -102,7 +98,7 @@ class ChitchatAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+    def _init_sockets(self):
         """Set up ZMQ sockets."""
         try:
             # Main REP socket for chitchat requests with fallback if port in use
@@ -428,6 +424,53 @@ def _setup_sockets(self):
         # Call parent cleanup
         super().cleanup()
         logger.info("ChitchatAgent cleanup complete")
+
+    def _get_translation(self, text, target_lang='en'):
+        """Request translation from the new TranslationService via ZMQ."""
+        try:
+            agent_info = self.discover_agent('TranslationService')
+            if not agent_info or not isinstance(agent_info, dict):
+                logger.error("Could not discover TranslationService.")
+                return None
+            # Remove any .get() calls on agent_info; only use direct dict access with fallback/defaults
+            port = agent_info['port'] if 'port' in agent_info else 5595
+            ip = agent_info['host'] if 'host' in agent_info else 'localhost'
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.LINGER, 0)
+            socket.setsockopt(zmq.RCVTIMEO, 5000)
+            socket.connect(f"tcp://{ip}:{port}")
+            payload = {
+                'text': text,
+                'target_lang': target_lang
+            }
+            # Optionally include session_id if available
+            if hasattr(self, 'current_session_id'):
+                payload['session_id'] = self.current_session_id
+            logger.info(f"Requesting translation from TranslationService: {payload}")
+            socket.send_json(payload)
+            poller = zmq.Poller()
+            poller.register(socket, zmq.POLLIN)
+            if poller.poll(5000):
+                response = socket.recv_json()
+                logger.info(f"Received translation response: {response}")
+                if response.get('status') == 'success' and response.get('result'):
+                    result = response['result']
+                    if isinstance(result, dict) and result.get('translation'):
+                        return result['translation']
+                    elif isinstance(result, str):
+                        return result
+                else:
+                    logger.error(f"TranslationService error: {response}")
+                    return None
+            else:
+                logger.error("Timeout waiting for TranslationService response.")
+                return None
+        except Exception as e:
+            logger.error(f"Error communicating with TranslationService: {e}")
+            return None
+        finally:
+            if 'socket' in locals() and not socket.closed:
+                socket.close()
 
 # Example usage
 if __name__ == "__main__":

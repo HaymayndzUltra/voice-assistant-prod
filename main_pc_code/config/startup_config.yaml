@@ -198,6 +198,17 @@ main_pc_gpu_services:
       - NLLBAdapter
       - FixedStreamingTranslation
       - SystemDigitalTwin
+# DEPRECATED in Phase 4 - Replaced by TranslationService
+#  - name: TranslatorServer
+#    script_path: main_pc_code/FORMAINPC/consolidated_translator.py
+#    port: 5564
+#    required: true
+#    dependencies:
+#      - MemoryClient # Updated dependency from MemoryOrchestrator
+#      - ModelManagerAgent
+#      - NLLBAdapter
+#      - FixedStreamingTranslation
+#      - SystemDigitalTwin
 
 # --- Emotion System ---
 # Agents responsible for understanding and synthesizing emotion.
@@ -365,11 +376,17 @@ audio_processing:
     required: true
     dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
 
-  - name: LanguageAndTranslationCoordinator
-    script_path: main_pc_code/agents/language_and_translation_coordinator.py
-    port: 6581
+# --- Translation Services ---
+translation_services:
+  - name: TranslationService
+    script_path: main_pc_code/agents/translation_service.py
+    port: 5595
     required: true
-    dependencies: [RequestCoordinator, SystemDigitalTwin]
+    dependencies:
+      - SystemDigitalTwin
+      - NLLBAdapter
+      - FixedStreamingTranslation
+    startup_priority: 3
 
 # --- Language Processing ---
 # Natural Language Understanding (NLU) and response generation.
@@ -378,7 +395,7 @@ language_processing:
     script_path: main_pc_code/agents/nlu_agent.py
     port: 5709
     required: true
-    dependencies: [LanguageAndTranslationCoordinator, SystemDigitalTwin]
+    dependencies: [SystemDigitalTwin]
 
   - name: AdvancedCommandHandler
     script_path: main_pc_code/agents/advanced_command_handler.py
@@ -390,7 +407,7 @@ language_processing:
     script_path: main_pc_code/agents/chitchat_agent.py
     port: 5711
     required: true
-    dependencies: [NLUAgent, SystemDigitalTwin]
+    dependencies: [NLUAgent, SystemDigitalTwin, TranslationService]
 
   - name: FeedbackHandler
     script_path: main_pc_code/agents/feedback_handler.py
