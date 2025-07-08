@@ -10,6 +10,11 @@ from typing import Dict, Any, Optional
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = load_config()# Configure logging
 logging.basicConfig(
@@ -23,7 +28,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class AgentTrustScorer(BaseAgent):
-    def __init__(self, port: int = 5626):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = 5626):
          super().__init__(name="AgentTrustScorer", port=5626)
 """Initialize the AgentTrustScorer with ZMQ socket and database."""
         self.port = port

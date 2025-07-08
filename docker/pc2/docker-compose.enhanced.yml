@@ -1,0 +1,354 @@
+version: '3.9'
+
+services:
+  # ==== Core Infrastructure Services ====
+  core-infrastructure:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:core-infrastructure
+    container_name: ai-system-pc2-core
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=core-infrastructure
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../common:/app/common
+    ports:
+      - "7150:7150" # ErrorBus
+      - "7113:7113" # ResourceManager
+      - "7114:7114" # HealthMonitor
+      - "7115:7115" # TaskScheduler
+      - "7103:7103" # PerformanceMonitor
+      - "7128:7128" # PerformanceLoggerAgent
+      - "7117:7117" # SystemHealthManager
+    networks:
+      - ai_system_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1024M
+    mem_limit: 1024m
+    memswap_limit: 1536m
+    oom_kill_disable: false
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.agents.error_bus_service &
+               python -m pc2_code.agents.resource_manager &
+               python -m pc2_code.agents.health_monitor &
+               python -m pc2_code.agents.task_scheduler &
+               python -m pc2_code.agents.performance_monitor &
+               python -m pc2_code.agents.PerformanceLoggerAgent &
+               python -m pc2_code.agents.ForPC2.system_health_manager &
+               tail -f /dev/null'"
+
+  # ==== Redis Database ====
+  redis:
+    image: redis:alpine
+    container_name: ai-system-pc2-redis
+    restart: unless-stopped
+    volumes:
+      - ../../data/redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - ai_system_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    mem_limit: 512m
+    memswap_limit: 768m
+    command: redis-server --appendonly yes --maxmemory 384mb --maxmemory-policy allkeys-lru
+
+  # ==== Memory System Services ====
+  memory-system:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:memory-system
+    container_name: ai-system-pc2-memory
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=memory-system
+      - REDIS_HOST=redis
+      - SQLITE_DIR=/app/data
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../models/memory:/app/models/memory:ro
+      - ../../config:/app/config
+      - ../../common:/app/common
+    tmpfs:
+      - /tmp:size=1g,exec,mode=1777
+    ports:
+      - "7140:7140" # MemoryOrchestratorService
+      - "7102:7102" # CacheManager
+      - "7112:7112" # ExperienceTracker
+      - "7111:7111" # ContextManager
+      - "7105:7105" # UnifiedMemoryReasoningAgent
+    networks:
+      - ai_system_network
+    depends_on:
+      - core-infrastructure
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+    mem_limit: 2048m
+    memswap_limit: 2560m
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.agents.memory_orchestrator_service &
+               python -m pc2_code.agents.cache_manager &
+               python -m pc2_code.agents.experience_tracker &
+               python -m pc2_code.agents.context_manager &
+               python -m pc2_code.agents.UnifiedMemoryReasoningAgent &
+               tail -f /dev/null'"
+
+  # ==== AI Models Services ====
+  ai-models:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:ai-models
+    container_name: ai-system-pc2-ai-models
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=ai-models
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+      - OMP_NUM_THREADS=4
+      - MALLOC_TRIM_THRESHOLD_=100000
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models/language:/app/models/language:ro
+      - ../../models/generative:/app/models/generative:ro
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../common:/app/common
+    tmpfs:
+      - /tmp:size=2g,exec,mode=1777
+    ports:
+      - "7129:7129" # AdvancedRouter
+      - "7100:7100" # TieredResponder
+      - "7101:7101" # AsyncProcessor
+      - "7104:7104" # DreamWorldAgent
+      - "7127:7127" # DreamingModeAgent
+    networks:
+      - ai_system_network
+    depends_on:
+      - core-infrastructure
+      - memory-system
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: 1
+    mem_limit: 4096m
+    memswap_limit: 4608m
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.agents.advanced_router &
+               python -m pc2_code.agents.tiered_responder &
+               python -m pc2_code.agents.async_processor &
+               python -m pc2_code.agents.DreamWorldAgent &
+               python -m pc2_code.agents.DreamingModeAgent &
+               tail -f /dev/null'"
+
+  # ==== User Services ====
+  user-services:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:user-services
+    container_name: ai-system-pc2-user-services
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=user-services
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data/users:/app/data/users
+      - ../../config:/app/config
+      - ../../common:/app/common
+    tmpfs:
+      - /tmp:size=512m,exec,mode=1777
+    ports:
+      - "7116:7116" # AuthenticationAgent
+      - "7118:7118" # UnifiedUtilsAgent
+      - "7123:7123" # FileSystemAssistantAgent
+      - "7126:7126" # UnifiedWebAgent
+      - "7108:7108" # TutorAgent
+      - "7130:7130" # TutoringServiceAgent
+      - "7131:7131" # TutoringAgent
+    networks:
+      - ai_system_network
+    depends_on:
+      - core-infrastructure
+      - memory-system
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1536M
+    mem_limit: 1536m
+    memswap_limit: 2048m
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.agents.ForPC2.AuthenticationAgent &
+               python -m pc2_code.agents.ForPC2.unified_utils_agent &
+               python -m pc2_code.agents.filesystem_assistant_agent &
+               python -m pc2_code.agents.unified_web_agent &
+               python -m pc2_code.agents.tutor_agent &
+               python -m pc2_code.agents.tutoring_service_agent &
+               python -m pc2_code.agents.tutoring_agent &
+               tail -f /dev/null'"
+
+  # ==== AI Monitoring Services ====
+  ai-monitoring:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:ai-monitoring
+    container_name: ai-system-pc2-ai-monitoring
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=ai-monitoring
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data/monitoring:/app/data/monitoring
+      - ../../models/vision:/app/models/vision:ro
+      - ../../config:/app/config
+      - ../../common:/app/common
+    ports:
+      - "7122:7122" # AgentTrustScorer
+      - "7119:7119" # ProactiveContextMonitor
+      - "7124:7124" # RemoteConnectorAgent
+      - "7150:7150" # VisionProcessingAgent
+    networks:
+      - ai_system_network
+    depends_on:
+      - core-infrastructure
+      - memory-system
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+    mem_limit: 2048m
+    memswap_limit: 2560m
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.agents.AgentTrustScorer &
+               python -m pc2_code.agents.ForPC2.proactive_context_monitor &
+               python -m pc2_code.agents.remote_connector_agent &
+               python -m pc2_code.agents.VisionProcessingAgent &
+               tail -f /dev/null'"
+
+  # ==== Translation Services (split for better resource allocation) ====
+  translation-services:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:translation
+    container_name: ai-system-pc2-translation
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - MAINPC_IP=192.168.100.10
+      - PC2_IP=192.168.100.17
+      - PC2_ROLE=translation
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models/translation:/app/models/translation:ro
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../common:/app/common
+    tmpfs:
+      - /tmp:size=1g,exec,mode=1777
+    ports:
+      - "5581:5581" # NLLBTranslator
+      - "5582:5582" # Optional other translator
+    networks:
+      - ai_system_network
+    depends_on:
+      - core-infrastructure
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1536M
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: 1
+    mem_limit: 1536m
+    memswap_limit: 2048m
+    command: >
+      bash -c "/app/memory_monitor.sh 'python -m pc2_code.translation_components.nllb_translator &
+               tail -f /dev/null'"
+
+  # ==== Model Download Service (runs once and exits) ====
+  model-download:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile
+    image: ai-system-pc2:model-download
+    container_name: ai-system-pc2-model-download
+    restart: "no"
+    environment:
+      - PYTHONPATH=/app
+      - MODEL_DIR=/app/models
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+      - MALLOC_TRIM_THRESHOLD_=100000
+    volumes:
+      - ../../models:/app/models
+    tmpfs:
+      - /tmp:size=2g,exec,mode=1777
+    networks:
+      - ai_system_network
+    mem_limit: 4096m
+    memswap_limit: 4608m
+    command: >
+      bash -c "python -m pc2_code.scripts.llm_model_manager --download nllb-200-distilled-600M"
+
+networks:
+  ai_system_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16 

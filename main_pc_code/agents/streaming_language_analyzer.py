@@ -97,10 +97,9 @@ class StreamingLanguageAnalyzer(BaseAgent):
     def __init__(self):
         """Initialize the language analyzer agent"""
         # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
         super().__init__(
-            name=getattr(self.config, 'name', 'StreamingLanguageAnalyzer'),
-            port=getattr(self.config, 'port', None)
+            name='StreamingLanguageAnalyzer',
+            port=int(config.get("port", 5577) or 5577)
         )
         
         # Initialize state
@@ -108,18 +107,23 @@ class StreamingLanguageAnalyzer(BaseAgent):
         self.processed_streams_count = 0
         self.last_stream_time = 'N/A'
         
+        # Initialize metrics tracking
+        self.metrics_lock = threading.RLock()
+        self.stats = {
+            "total_requests": 0,
+            "english_count": 0,
+            "tagalog_count": 0,
+            "taglish_count": 0,
+            "processing_times": []
+        }
+        
         # Use provided port or 
-
         self.error_bus_port = 7150
-
         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.error_bus_pub = self.context.socket(zmq.PUB)
-
         self.error_bus_pub.connect(self.error_bus_endpoint)
-default
+
         self.pub_port = self.port if self.port else ZMQ_PUB_PORT
         logger.info(f"Using port {self.pub_port} for publishing")
         
@@ -175,6 +179,11 @@ default
         self.tagabert_socket = None
         self.tagabert_available = False
         self._connect_to_tagabert()
+        
+        # Setup TranslationService connection
+        self.translation_socket = None
+        self.translation_available = False
+        self._connect_to_translation_service()
         
         # Optional fastText model
         self.fasttext_available = False
@@ -262,6 +271,41 @@ default
         except Exception as e:
             logger.warning(f"Could not connect to TagaBERTa service: {e}")
             self.tagabert_available = False
+
+    def _connect_to_translation_service(self):
+        """Connect to TranslationService using service discovery"""
+        try:
+            # Try to get the TranslationService address from service discovery
+            translation_address = get_service_address("TranslationService")
+            
+            if translation_address:
+                self.translation_socket = self.context.socket(zmq.REQ)
+                if SECURE_ZMQ:
+                    self.translation_socket = configure_secure_client(self.translation_socket)
+                    
+                self.translation_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                self.translation_socket.setsockopt(zmq.RCVTIMEO, 10000)  # 10 second timeout
+                self.translation_socket.connect(translation_address)
+                logger.info(f"Connected to TranslationService at {translation_address}")
+                self.translation_available = True
+            else:
+                logger.warning("TranslationService not found in service discovery, will try alternative connection")
+                # Try connecting to default address as fallback
+                default_address = "tcp://localhost:5595"
+                try:
+                    self.translation_socket = self.context.socket(zmq.REQ)
+                    if SECURE_ZMQ:
+                        self.translation_socket = configure_secure_client(self.translation_socket)
+                    self.translation_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+                    self.translation_socket.setsockopt(zmq.RCVTIMEO, 10000)
+                    self.translation_socket.connect(default_address)
+                    logger.info(f"Connected to TranslationService at {default_address}")
+                    self.translation_available = True
+                except Exception as fallback_error:
+                    logger.error(f"Failed to connect to TranslationService: {fallback_error}")
+        except Exception as e:
+            logger.error(f"Error connecting to TranslationService: {e}")
+            self.translation_available = False
 
     def _contains_potential_taglish_short_words(self, text):
         """
@@ -393,72 +437,98 @@ default
     
     def analyze_language(self, text, detected_language=None, whisper_detected_language=None):
         """
-        Enhanced language analysis with improved thresholds and Whisper integration.
-        Patched for testing: skips Tagaberta and all network calls.
+        Analyze language and determine language type
+        (English, Tagalog, Taglish, etc.)
+        
+        Args:
+            text (str): The text to analyze
+            detected_language (str): Optional language code detected by upstream services
+            whisper_detected_language (str): Optional language code detected by Whisper
+            
+        Returns:
+            dict: Analysis results containing language type and other metadata
         """
-        start_time = time.time()
-        # Patch: Always skip Tagaberta and network calls
-        sentiment_analysis = None
-        # First try using the most reliable detector: Whisper's detection
-        if whisper_detected_language and whisper_detected_language in ['tl', 'fil']:
-            logger.info(f"Using Whisper's language detection: {whisper_detected_language}")
-            self.stats["whisper_detection_used"] += 1
-            self.stats["tagalog_count"] += 1
-            processing_time = time.time() - start_time
-            self.stats["processing_times"].append(processing_time)
-            result = {
-                'language_type': 'tagalog',
-                'tagalog_ratio': 0.9,
-                'needs_translation': True,
-                'detection_source': 'whisper',
-                'processing_time': processing_time
-            }
+        if not text:
+            logger.warning("Empty text received for language analysis")
+            return {"language_type": "unknown", "confidence": 0.0}
+            
+        text = text.strip().lower()
+        result = {"original_text": text}
+        
+        # Check if we have a detected language from Whisper or other source
+        if detected_language:
+            if detected_language.lower() in ["en", "english"]:
+                result["language_type"] = "english"
+                result["confidence"] = 0.9
+                result["needs_translation"] = False
+                with self.metrics_lock:
+                    self.stats["english_count"] = self.stats.get("english_count", 0) + 1
+                return result
+            elif detected_language.lower() in ["tl", "tagalog", "filipino"]:
+                result["language_type"] = "tagalog"
+                result["confidence"] = 0.85
+                result["needs_translation"] = True
+                # Add sentiment analysis for Tagalog
+                sentiment = self.analyze_tagalog_sentiment(text)
+                if sentiment:
+                    result["sentiment"] = sentiment
+                with self.metrics_lock:
+                    self.stats["tagalog_count"] = self.stats.get("tagalog_count", 0) + 1
+                return result
+        
+        # Try TagaBERTa for Tagalog/Taglish classification
+        if self.tagabert_available:
+            try:
+                tagabert_result = self.analyze_tagalog_sentiment(text)
+                if tagabert_result:
+                    result["sentiment"] = tagabert_result
+            except Exception as e:
+                logger.error(f"TagaBERTa analysis error: {e}")
+
+        # 1. Heuristic check for Taglish
+        tagalog_word_count = 0
+        for word in re.findall(r'\b\w+\b', text):
+            if word.lower() in TAGALOG_WORDS:
+                tagalog_word_count += 1
+                
+        total_words = len(re.findall(r'\b\w+\b', text))
+        tagalog_ratio = tagalog_word_count / total_words if total_words > 0 else 0
+        
+        # Special check for short texts that might be Taglish greetings
+        if total_words <= 5 and tagalog_word_count == 0 and self._contains_potential_taglish_short_words(text):
+            result["language_type"] = "taglish"
+            result["confidence"] = 0.6
+            result["needs_translation"] = True
+            with self.metrics_lock:
+                self.stats["taglish_count"] = self.stats.get("taglish_count", 0) + 1
             return result
-        if whisper_detected_language and whisper_detected_language == 'en':
-            pass
-        words = re.findall(r'\b\w+\b', text.lower())
-        if not words:
-            return {'language_type': 'unknown', 'tagalog_ratio': 0.0, 'needs_translation': False}
-        tagalog_count = sum(1 for w in words if w in TAGALOG_WORDS)
-        tagalog_ratio = tagalog_count / len(words)
-        if tagalog_ratio > 0.75:
-            language_type = 'tagalog'
-            needs_translation = True
-        elif tagalog_ratio > 0.25:
-            language_type = 'taglish'
-            needs_translation = True
+            
+        # 2. Use word ratio to determine language
+        if tagalog_ratio > 0.4:
+            if tagalog_ratio > 0.8:
+                result["language_type"] = "tagalog"
+                result["confidence"] = min(0.9, tagalog_ratio)
+                result["needs_translation"] = True
+                with self.metrics_lock:
+                    self.stats["tagalog_count"] = self.stats.get("tagalog_count", 0) + 1
+            else:
+                result["language_type"] = "taglish"
+                result["confidence"] = 0.6 + (tagalog_ratio - 0.4) * 0.5  # Scale confidence based on ratio
+                result["needs_translation"] = True
+                with self.metrics_lock:
+                    self.stats["taglish_count"] = self.stats.get("taglish_count", 0) + 1
         else:
-            language_type = 'english'
-            needs_translation = False
-        if len(words) <= 2 and language_type == 'english' and self._contains_potential_taglish_short_words(text):
-            logger.info(f"Reclassifying short phrase as potentially Taglish: '{text}'")
-            language_type = 'taglish'
-            needs_translation = True
-        if detected_language in ['tl', 'fil'] and tagalog_ratio < 0.5:
-            logger.info(f"Using Whisper's detection over ratio analysis for '{text}'")
-            language_type = 'tagalog'
-            needs_translation = True
-        if language_type == 'english':
-            self.stats["english_count"] += 1
-        elif language_type == 'tagalog':
-            self.stats["tagalog_count"] += 1
-        elif language_type == 'taglish':
-            self.stats["taglish_count"] += 1
-        self.stats["ratio_analysis_used"] += 1
-        if len(words) <= 2:
-            self.stats["short_phrase_count"] += 1
-        processing_time = time.time() - start_time
-        self.stats["processing_times"].append(processing_time)
-        logger.info(f"Language: {language_type}, Tagalog ratio: {tagalog_ratio:.2f}, Needs translation: {needs_translation}")
-        # Patch: skip sentiment analysis
-        result = {
-            'language_type': language_type,
-            'tagalog_ratio': tagalog_ratio, 
-            'needs_translation': needs_translation,
-            'word_count': len(words),
-            'detection_source': 'ratio_analysis',
-            'processing_time': processing_time
-        }
+            result["language_type"] = "english"
+            result["confidence"] = 0.7 + (1 - tagalog_ratio) * 0.3  # Higher confidence for fewer Tagalog words
+            result["needs_translation"] = False
+            with self.metrics_lock:
+                self.stats["english_count"] = self.stats.get("english_count", 0) + 1
+                
+        # Add metadata
+        result["tagalog_words"] = tagalog_word_count
+        result["total_words"] = total_words
+        result["tagalog_ratio"] = tagalog_ratio
+        
         return result
 
     def start(self):
@@ -522,13 +592,17 @@ default
                 self.tagabert_socket.close()
                 logger.info("Closed TagaBERTa socket")
                 
+            if hasattr(self, 'translation_socket') and self.translation_socket:
+                self.translation_socket.close()
+                logger.info("Closed Translation socket")
+                
             if hasattr(self, 'context') and self.context:
                 self.context.term()
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")
             
-            # Call parent cleanup
+            # Call parent cleanup to handle BaseAgent resources
             super().cleanup()
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
@@ -542,27 +616,111 @@ default
                 msg = self.sub_socket.recv(flags=zmq.NOBLOCK)
                 print(f"[DEBUG] Analyzer received raw msg: {msg}")
                 logger.info(f"[DEBUG] Analyzer received raw msg: {msg}")
-                data = pickle.loads(msg)
-                if data.get('type') == 'transcription':
-                    text = data.get('transcription', '')
-                    detected_language = data.get('detected_language', None)
-                    whisper_detected_language = data.get('whisper_detected_language', None)
-                    analysis = self.analyze_language(text, detected_language, whisper_detected_language)
-                    out = {
-                        'type': 'language_analysis',
-                        'transcription': text,
-                        'detected_language': detected_language,
-                        'analysis': analysis,
-                        'timestamp': time.time(),
-                        'has_sentiment': 'sentiment' in analysis,
-                        'request_id': data.get('request_id')
-                    }
-                    self.pub_socket.send(pickle.dumps(out))
-                    
-                    # Update metrics
-                    self.stats["total_requests"] += 1
-                    self.processed_streams_count += 1
-                    self.last_stream_time = datetime.now().isoformat()
+                
+                # Handle different message formats - string or pickled data
+                if msg.startswith(b'TRANSCRIPTION:'):
+                    # It's a string message from StreamingSpeechRecognition
+                    text_data = msg.decode('utf-8').replace('TRANSCRIPTION: ', '')
+                    try:
+                        data = json.loads(text_data)
+                        text = data.get('text', '')
+                        detected_language = data.get('language', None)
+                        whisper_detected_language = data.get('language', None)
+                    except json.JSONDecodeError:
+                        # Simple string format fallback
+                        text = text_data
+                        detected_language = None
+                        whisper_detected_language = None
+                else:
+                    # Pickled data
+                    try:
+                        data = pickle.loads(msg)
+                        if data.get('type') == 'transcription':
+                            text = data.get('transcription', '')
+                            detected_language = data.get('detected_language', None)
+                            whisper_detected_language = data.get('whisper_detected_language', None)
+                        else:
+                            # Skip non-transcription messages
+                            continue
+                    except pickle.UnpicklingError:
+                        logger.error("Failed to unpickle message")
+                        continue
+                
+                # Analyze language
+                analysis = self.analyze_language(text, detected_language, whisper_detected_language)
+                
+                # Check if translation is needed
+                translated_text = None
+                translation_status = None
+                if analysis.get('needs_translation', False) and self.translation_available:
+                    try:
+                        # Request translation from TranslationService
+                        source_lang = analysis.get('language_type', 'tl')
+                        target_lang = 'en'  # Default target language is English
+                        
+                        # Map simple language codes to what TranslationService expects
+                        source_lang_map = {
+                            'tagalog': 'tl',
+                            'taglish': 'tl',
+                            'english': 'en',
+                            'tl': 'tl',
+                            'en': 'en'
+                        }
+                        source_lang = source_lang_map.get(source_lang.lower(), source_lang)
+                        
+                        # Prepare translation request
+                        translation_request = {
+                            "text": text,
+                            "source_lang": source_lang,
+                            "target_lang": target_lang
+                        }
+                        
+                        logger.info(f"Requesting translation: {text} ({source_lang} → {target_lang})")
+                        
+                        # Send request to TranslationService
+                        self.translation_socket.send_json(translation_request)
+                        
+                        # Wait for response with timeout
+                        if self.translation_socket.poll(10000):  # 10 second timeout
+                            translation_response = self.translation_socket.recv_json()
+                            if translation_response.get('status') == 'success':
+                                translated_text = translation_response.get('translation')
+                                translation_status = 'success'
+                                logger.info(f"Translation received: {translated_text}")
+                            else:
+                                translation_status = 'error'
+                                logger.error(f"Translation error: {translation_response.get('message')}")
+                        else:
+                            translation_status = 'timeout'
+                            logger.error("Translation request timed out")
+                    except Exception as e:
+                        translation_status = 'error'
+                        logger.error(f"Error requesting translation: {e}")
+                
+                # Prepare output with analysis results
+                out = {
+                    'type': 'language_analysis',
+                    'transcription': text,
+                    'detected_language': detected_language,
+                    'analysis': analysis,
+                    'timestamp': time.time(),
+                    'has_sentiment': 'sentiment' in analysis,
+                    'request_id': data.get('request_id')
+                }
+                
+                # Add translation results if available
+                if translated_text:
+                    out['translated_text'] = translated_text
+                    out['translation_status'] = translation_status
+                
+                # Send analysis output
+                self.pub_socket.send(pickle.dumps(out))
+                
+                # Update metrics
+                self.stats["total_requests"] += 1
+                self.processed_streams_count += 1
+                self.last_stream_time = datetime.now().isoformat()
+                
             except zmq.Again:
                 time.sleep(0.05)
 
@@ -575,7 +733,8 @@ default
             'service': 'language_analyzer',
             'components': {
                 'tagabert_available': self.tagabert_available,
-                'fasttext_available': self.fasttext_available
+                'fasttext_available': self.fasttext_available,
+                'translation_available': self.translation_available
             },
             'analyzer_status': "streaming",
             'processed_streams_count': self.processed_streams_count,

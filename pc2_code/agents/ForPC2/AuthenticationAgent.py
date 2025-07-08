@@ -100,18 +100,7 @@ class AuthenticationAgent(BaseAgent):
         self.cleanup_thread.daemon = True
         self.cleanup_thread.start()
         logger.info(f"Authentication Agent initialized on port {self.port}")
-    
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def _cleanup_sessions_loop(self):
         """Background thread for cleaning up expired sessions."""
         while self.running:

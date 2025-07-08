@@ -12,6 +12,7 @@ import heapq
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Union
+import pickle
 
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
@@ -263,18 +264,102 @@ class RequestCoordinator(BaseAgent):
         for service in services:
             self.circuit_breakers[service] = CircuitBreaker(name=service)
 
+    def _listen_for_language_analysis(self):
+        """Listen for language analysis results from StreamingLanguageAnalyzer"""
+        try:
+            # Create subscription socket
+            context = zmq.Context()
+            socket = context.socket(zmq.SUB)
+            if SECURE_ZMQ:
+                socket = configure_secure_client(socket)
+                
+            # Try to get the StreamingLanguageAnalyzer address from service discovery
+            analyzer_address = get_service_address("StreamingLanguageAnalyzer")
+            if not analyzer_address:
+                # Fall back to configured port
+                analyzer_address = f"tcp://localhost:5577"  # Default port for StreamingLanguageAnalyzer
+                
+            socket.connect(analyzer_address)
+            socket.setsockopt(zmq.SUBSCRIBE, b"")
+            logger.info(f"Connected to StreamingLanguageAnalyzer at {analyzer_address}")
+            
+            while self.running:
+                try:
+                    # Non-blocking receive with timeout
+                    if socket.poll(timeout=100, flags=zmq.POLLIN):
+                        data_raw = socket.recv()
+                        data = pickle.loads(data_raw)
+                        
+                        # Only process language_analysis messages
+                        if data.get('type') == 'language_analysis':
+                            logger.info(f"Received language analysis: {data.get('detected_language')} - {data.get('analysis')}")
+                            
+                            # Check if translated text is available and use it if present
+                            text = data.get('translated_text') if data.get('translated_text') else data.get('transcription')
+                            
+                            # Create a TextRequest from the analysis
+                            request = TextRequest(
+                                type="text",
+                                data=text,
+                                context={
+                                    "original_text": data.get('transcription'),
+                                    "language_analysis": data.get('analysis'),
+                                    "detected_language": data.get('detected_language')
+                                },
+                                metadata={
+                                    "source": "speech_recognition",
+                                    "was_translated": data.get('translated_text') is not None,
+                                    "translation_status": data.get('translation_status'),
+                                    "original_language": data.get('detected_language')
+                                }
+                            )
+                            
+                            # Process the text request
+                            self._process_text(request)
+                except zmq.Again:
+                    # No messages available, continue loop
+                    continue
+                except Exception as e:
+                    logger.error(f"Error processing language analysis: {e}", exc_info=True)
+                    
+                # Small sleep to prevent CPU spinning
+                time.sleep(0.01)
+                
+        except Exception as e:
+            logger.error(f"Error in language analysis listener: {e}", exc_info=True)
+        finally:
+            # Clean up socket resources
+            try:
+                if socket:
+                    socket.close()
+                if context:
+                    context.term()
+            except Exception as cleanup_error:
+                logger.error(f"Error cleaning up language analysis socket: {cleanup_error}")
+                
     def _start_threads(self):
-        threads = {
-            "request_handler": self._handle_requests,
-            "suggestion_handler": self._handle_proactive_suggestions,
-            "inactivity_checker": self._check_inactivity,
-            "interrupt_listener": self._listen_for_interrupts,
-            "task_dispatcher": self._dispatch_loop,
-        }
-        for name, target in threads.items():
-            thread = threading.Thread(target=target, daemon=True)
-            thread.start()
-            logger.info(f"Started {name} thread.")
+        """Start all required background threads"""
+        # Start the dispatch thread
+        self.dispatch_thread = threading.Thread(target=self._dispatch_loop, daemon=True)
+        self.dispatch_thread.start()
+        
+        # Start the metrics reporting thread
+        self.metrics_thread = threading.Thread(target=self._metrics_reporting_loop, daemon=True)
+        self.metrics_thread.start()
+        
+        # Start inactivity check thread
+        self.inactivity_thread = threading.Thread(target=self._check_inactivity, daemon=True)
+        self.inactivity_thread.start()
+        
+        # Start proactive suggestions thread
+        self.proactive_thread = threading.Thread(target=self._handle_proactive_suggestions, daemon=True)
+        self.proactive_thread.start()
+        
+        # Start language analysis listener thread
+        self.language_analysis_thread = threading.Thread(target=self._listen_for_language_analysis, daemon=True)
+        self.language_analysis_thread.start()
+        
+        logger.info("All background threads started")
 
     def _register_service(self):
         """Register this agent with the service discovery system."""

@@ -151,7 +151,7 @@ pc2_services:
       port: 7117,
       health_check_port: 8117,
       required: true,
-      dependencies: [HealthMonitor],
+      dependencies: [], # Removed HealthMonitor dependency to break circular reference
     }
   - {
       name: UnifiedUtilsAgent,
@@ -225,7 +225,7 @@ pc2_services:
       port: 7128,
       health_check_port: 8128,
       required: true,
-      dependencies: [SystemHealthManager],
+      dependencies: [], # Removed SystemHealthManager dependency to break circular reference
     }
   - {
       name: AdvancedRouter,

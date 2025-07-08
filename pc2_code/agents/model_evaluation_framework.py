@@ -36,6 +36,11 @@ from common.utils.learning_models import PerformanceMetric, ModelEvaluationScore
 # Import config loader
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -58,7 +63,9 @@ except Exception as e:
     config = {}
 
 class ModelEvaluationFramework(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     ModelEvaluationFramework: Serves as the central hub for performance tracking and model evaluation.
     Collects metrics from all agents, analyzes them, and calculates trust scores for models.
     """

@@ -65,7 +65,9 @@ TASK_ROUTER_PORT = config.get('zmq.task_router_port', 5558)
 
 class RemoteConnectorAgent(BaseAgent):
 
-    def __init__(self, port: int = None):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = None):
 
         super().__init__(name="RemoteConnectorAgent", port=port)
 
@@ -462,6 +464,11 @@ class RemoteConnectorAgent(BaseAgent):
         """Handle model status updates from the 
 from main_pc_code.src.core.base_agent import BaseAgentmodel manager
 from main_pc_code.utils.config_loader import load_config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
 
 # Load configuration at the module level
 config = load_config()"""

@@ -1,0 +1,79 @@
+# PC2 Models Download Guide
+
+This document outlines all the models needed for the PC2 machine with RTX 3060 (12GB VRAM).
+
+## Translation Models
+
+1. **NLLB (No Language Left Behind) Models:**
+   - Download the distilled versions which are more efficient for deployment
+   ```bash
+   # From Python
+   python -c 'from transformers import AutoModelForSeq2SeqLM, AutoTokenizer; AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M"); AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M")'
+   
+   # Optional: Download the larger version if you have enough VRAM
+   python -c 'from transformers import AutoModelForSeq2SeqLM, AutoTokenizer; AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-1.3B"); AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-1.3B")'
+   ```
+
+2. **Bergamot Models (Optional):**
+   - For efficient CPU-based translation when GPU is under heavy load
+   ```bash
+   git clone https://github.com/browsermt/bergamot-translator
+   cd bergamot-translator
+   pip install -e .
+   python -c 'from bergamot import TranslationModel; TranslationModel.get("en-tl")'
+   ```
+
+## LLM Models
+
+1. **TinyLlama:**
+   - Lightweight model for quick responses and fallbacks
+   ```bash
+   # From Python
+   python -c 'from transformers import AutoModelForCausalLM, AutoTokenizer; AutoModelForCausalLM.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0"); AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")'
+   ```
+
+2. **Mistral-7B:**
+   - Primary language model for PC2
+   ```bash
+   # From Python
+   python -c 'from transformers import AutoModelForCausalLM, AutoTokenizer; AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2"); AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.2")'
+   ```
+
+## Model Placement and Configuration
+
+1. **Directory Structure:**
+   - Place all models in the `models/` directory
+   - Translation models: `models/translation/`
+   - LLM models: `models/llm/`
+
+2. **Configuration:**
+   - Update the `pc2_code/config/model_config.yaml` file to point to the correct model paths
+   - Ensure the VRAM budget is properly set to avoid OOM errors
+
+## Model Management
+
+The system will automatically handle model loading/unloading based on:
+1. Priority settings in configuration
+2. Available VRAM
+3. Usage patterns
+
+## Testing Models
+
+After downloading, test each model:
+
+1. **Test NLLB Translation:**
+   ```bash
+   python -m pc2_code.scripts.test_nllb_translator --text "Magandang araw sa iyo" --src_lang "tl" --tgt_lang "en"
+   ```
+
+2. **Test LLM:**
+   ```bash
+   python -m pc2_code.scripts.test_llm --model "mistral" --prompt "Explain in one sentence what AI is"
+   ```
+
+## Note on VRAM Usage
+
+- Mistral-7B requires approximately 8GB VRAM (4-bit quantized)
+- NLLB-200-600M requires about 2GB VRAM
+- Keep at least 1GB VRAM free for system operations
+- Use the VRAMOptimizerAgent to automatically manage model loading 

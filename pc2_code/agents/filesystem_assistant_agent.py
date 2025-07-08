@@ -31,6 +31,11 @@ if str(project_root) not in sys.path:
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config # Assuming this is used for general PC2 config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Import common utilities if available
 try:
     # Assuming this module exists and provides `create_socket`
@@ -89,7 +94,9 @@ logger = logging.getLogger("FilesystemAssistant")
 
 
 class FileSystemAssistantAgent(BaseAgent):
-    """Filesystem Assistant Agent that provides file operations via ZMQ
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Filesystem Assistant Agent that provides file operations via ZMQ
     
     This agent allows other components in the system to interact with the filesystem
     in a controlled and secure manner. It provides operations such as listing directories,
@@ -103,17 +110,8 @@ class FileSystemAssistantAgent(BaseAgent):
 
         # Use the port determined by BaseAgent or passed in
         self.port = self.port if self.port else zmq_port
-        self.health_port = self.port + 1 # Consistent health port 
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.health_port = self.port + 1 # Consistent health port
+        self.error_bus = setup_error_reporting(self)
 definition
 
         logger.info("=" * 80)

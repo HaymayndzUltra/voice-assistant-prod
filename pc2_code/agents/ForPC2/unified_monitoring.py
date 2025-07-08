@@ -11,6 +11,11 @@ from pc2_code.agents.agent_utils import AgentBase
 from pc2_code.src.core.base_agent import BaseAgent
 import signal
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 class UnifiedMonitor(AgentBase):
     def __init__(self, port: Optional[int] = None, **kwargs):
         super().__init__(port=port, name="UnifiedMonitor")
@@ -188,7 +193,25 @@ class UnifiedMonitor(AgentBase):
         }
 
 class OrchestratorAgent(BaseAgent):
-    # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with UnifiedMonitor)
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()# (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with UnifiedMonitor)
     pass
 
 # ... existing code ... 
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }

@@ -15,6 +15,11 @@ from collections import defaultdict
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = load_config()# Constants
 REDIS_HOST = 'localhost'
@@ -30,7 +35,9 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
 class ResourceMonitor(BaseAgent):
-    def __init__(self):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self):
          super().__init__(name="ResourceMonitor", port=None)
 self.memory_threshold = 80  # percentage
         self.last_check = time.time()

@@ -27,7 +27,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("TutoringAgent")
 
 class AdvancedTutoringAgent(BaseAgent):
-    def __init__(self, user_profile: Dict[str, Any], port: int = 5650):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, user_profile: Dict[str, Any], port: int = 5650):
          super().__init__(name="AdvancedTutoringAgent", port=5650)
 self.user_profile = user_profile
         self.lesson_history = []
@@ -186,6 +188,11 @@ self.user_profile = user_profile
                             
 from main_pc_code.src.core.base_agent import BaseAgentjson_match 
 from main_pc_code.utils.config_loader import load_config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
 
 # Load configuration at the module level
 config = load_config()= re.search(r'({.*})', response["content"], re.DOTALL)

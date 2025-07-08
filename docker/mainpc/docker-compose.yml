@@ -1,184 +1,464 @@
 version: '3.8'
 
-# MAINPC ONLY - Docker Compose for Voice Pipeline Components
-
 services:
-  # System Digital Twin - Service Registry
-  system-digital-twin:
+  # Core services - fundamental agents that most others depend on
+  core-services:
     build:
-      context: ../..
+      context: ../../
       dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-system-digital-twin
-    container_name: mainpc-system-digital-twin
-    command: python -m main_pc_code.agents.system_digital_twin
-    env_file:
-      - ./config/env.mainpc
-    environment:
-      - SERVICE_NAME=SystemDigitalTwin
-      - PORT=7120
-    ports:
-      - "7120:7120"
+    image: ai-system/core-services:latest
+    container_name: core-services
+    restart: unless-stopped
     volumes:
       - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
-    networks:
-      - mainpc-network
-      - ai-shared-network
-    healthcheck:
-      test: ["CMD", "python", "scripts/docker_health_check.py", "--service", "system-digital-twin"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-  # Task Router
-  task-router:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-task-router
-    container_name: mainpc-task-router
-    command: python -m main_pc_code.src.core.task_router
-    env_file:
-      - ./config/env.mainpc
-    environment:
-      - SERVICE_NAME=TaskRouter
-      - PORT=8571
-    ports:
-      - "8571:8571"
-      - "8572:8572"
-    volumes:
-      - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
-    networks:
-      - mainpc-network
-      - ai-shared-network
-    depends_on:
-      system-digital-twin:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "scripts/docker_health_check.py", "--service", "task-router"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-  # Streaming Interrupt Handler
-  streaming-interrupt-handler:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-streaming-interrupt-handler
-    container_name: mainpc-streaming-interrupt-handler
-    command: python -m main_pc_code.agents.streaming_interrupt_handler
-    env_file:
-      - ./config/env.mainpc
-    environment:
-      - SERVICE_NAME=StreamingInterruptHandler
-      - PORT=5576
-    ports:
-      - "5576:5576"
-    volumes:
-      - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
-    networks:
-      - mainpc-network
-      - ai-shared-network
-    depends_on:
-      system-digital-twin:
-        condition: service_healthy
-
-  # Streaming TTS Agent
-  streaming-tts-agent:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-streaming-tts-agent
-    container_name: mainpc-streaming-tts-agent
-    command: python -m main_pc_code.agents.streaming_tts_agent
-    env_file:
-      - ./config/env.mainpc
-    environment:
-      - SERVICE_NAME=StreamingTtsAgent
-      - PORT=5562
-    ports:
-      - "5562:5562"
-    volumes:
-      - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
-      - ../../voice_samples:/app/voice_samples
       - ../../models:/app/models
-    networks:
-      - mainpc-network
-      - ai-shared-network
-    depends_on:
-      system-digital-twin:
-        condition: service_healthy
-      streaming-interrupt-handler:
-        condition: service_started
-
-  # TTS Agent
-  tts-agent:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-tts-agent
-    container_name: mainpc-tts-agent
-    command: python -m main_pc_code.agents.tts_agent
-    env_file:
-      - ./config/env.mainpc
+      - ../../data:/app/data
+      - ../../config:/app/config
     environment:
-      - SERVICE_NAME=TTSAgent
-      - PORT=5563
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=core_services
+      - DEBUG_MODE=false
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.2
     ports:
-      - "5563:5563"
+      - "7120:7120"  # SystemDigitalTwin
+      - "8120:8120"  # SystemDigitalTwin health
+      - "26002:26002"  # RequestCoordinator
+      - "27002:27002"  # RequestCoordinator health
+      - "7125:7125"  # UnifiedSystemAgent
+      - "8125:8125"  # UnifiedSystemAgent health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Memory system services
+  memory-system:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/memory-system:latest
+    container_name: memory-system
+    restart: unless-stopped
+    depends_on:
+      - core-services
     volumes:
       - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
-      - ../../voice_samples:/app/voice_samples
       - ../../models:/app/models
-    networks:
-      - mainpc-network
-      - ai-shared-network
-    depends_on:
-      system-digital-twin:
-        condition: service_healthy
-      streaming-interrupt-handler:
-        condition: service_started
-
-  # Responder Agent
-  responder:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile
-    image: ai-system/mainpc-responder
-    container_name: mainpc-responder
-    command: python -m main_pc_code.agents.responder
-    env_file:
-      - ./config/env.mainpc
+      - ../../data:/app/data
+      - ../../config:/app/config
     environment:
-      - SERVICE_NAME=ResponderAgent
-      - PORT=5637
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=memory_system
+      - DEBUG_MODE=false
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.3
     ports:
-      - "5637:5637"
+      - "5713:5713"  # MemoryClient
+      - "6713:6713"  # MemoryClient health
+      - "5574:5574"  # SessionMemoryAgent
+      - "6574:6574"  # SessionMemoryAgent health
+      - "5715:5715"  # KnowledgeBase
+      - "6715:6715"  # KnowledgeBase health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Utility services - required by many agents
+  utility-services:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/utility-services:latest
+    container_name: utility-services
+    restart: unless-stopped
+    depends_on:
+      - core-services
     volumes:
       - ../../logs:/app/logs
-      - ../../certificates:/app/certificates
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=utility_services
+      - DEBUG_MODE=false
     networks:
-      - mainpc-network
-      - ai-shared-network
+      ai_system_network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - "5650:5650"  # CodeGenerator
+      - "6650:6650"  # CodeGenerator health
+      - "5655:5655"  # LLMService
+      - "6655:6655"  # LLMService health
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "6660:6660"  # SelfTrainingOrchestrator health
+      - "5665:5665"  # PC2Services
+      - "6665:6665"  # PC2Services health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # AI models and GPU services
+  ai-models-gpu-services:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/gpu-services:latest
+    container_name: ai-models-gpu-services
+    restart: unless-stopped
     depends_on:
-      system-digital-twin:
-        condition: service_healthy
-      streaming-tts-agent:
-        condition: service_started
-      tts-agent:
-        condition: service_started
-      streaming-interrupt-handler:
-        condition: service_started
+      - core-services
+      - utility-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=ai_models_gpu_services
+      - DEBUG_MODE=false
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+    # Device access for GPU (RTX 4090)
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+      - /dev/nvidiactl:/dev/nvidiactl
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+              device_ids: ['0']
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.5
+    ports:
+      - "5575:5575"  # GGUFModelManager
+      - "6575:6575"  # GGUFModelManager health
+      - "5570:5570"  # ModelManagerAgent
+      - "6570:6570"  # ModelManagerAgent health
+      - "5572:5572"  # VRAMOptimizerAgent
+      - "6572:6572"  # VRAMOptimizerAgent health
+      - "5617:5617"  # PredictiveLoader
+      - "6617:6617"  # PredictiveLoader health
+      - "5610:5610"  # FaceRecognitionAgent
+      - "6610:6610"  # FaceRecognitionAgent health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Learning and knowledge
+  learning-knowledge:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/learning-knowledge:latest
+    container_name: learning-knowledge
+    restart: unless-stopped
+    depends_on:
+      - core-services
+      - memory-system
+      - utility-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=learning_knowledge
+      - DEBUG_MODE=false
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.6
+    ports:
+      - "7220:7220"  # ModelEvaluationFramework
+      - "7221:7221"  # ModelEvaluationFramework health
+      - "7210:7210"  # LearningOrchestrationService
+      - "7211:7211"  # LearningOrchestrationService health
+      - "7200:7200"  # LearningOpportunityDetector
+      - "7201:7201"  # LearningOpportunityDetector health
+      - "5580:5580"  # LearningManager
+      - "6580:6580"  # LearningManager health
+      - "5638:5638"  # ActiveLearningMonitor
+      - "6638:6638"  # ActiveLearningMonitor health
+      - "5643:5643"  # LearningAdjusterAgent
+      - "6643:6643"  # LearningAdjusterAgent health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Language processing services
+  language-processing:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/language-processing:latest
+    container_name: language-processing
+    restart: unless-stopped
+    depends_on:
+      - core-services
+      - memory-system
+      - utility-services
+      - ai-models-gpu-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=language_processing
+      - DEBUG_MODE=false
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    # Also needs GPU access for LLMs
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+      - /dev/nvidiactl:/dev/nvidiactl
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+              device_ids: ['0']
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.7
+    ports:
+      - "7010:7010"  # ModelOrchestrator
+      - "8010:8010"  # ModelOrchestrator health
+      - "7005:7005"  # GoalManager
+      - "8005:8005"  # GoalManager health
+      - "5701:5701"  # IntentionValidatorAgent
+      - "6701:6701"  # IntentionValidatorAgent health
+      - "5709:5709"  # NLUAgent
+      - "6709:6709"  # NLUAgent health
+      - "5710:5710"  # AdvancedCommandHandler
+      - "6710:6710"  # AdvancedCommandHandler health
+      - "5711:5711"  # ChitchatAgent
+      - "6711:6711"  # ChitchatAgent health
+      - "5636:5636"  # FeedbackHandler
+      - "6636:6636"  # FeedbackHandler health
+      - "5637:5637"  # Responder
+      - "6637:6637"  # Responder health
+      - "5595:5595"  # TranslationService
+      - "6595:6595"  # TranslationService health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Audio processing services
+  audio-processing:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/audio-processing:latest
+    container_name: audio-processing
+    restart: unless-stopped
+    depends_on:
+      - core-services
+      - ai-models-gpu-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=audio_processing
+      - DEBUG_MODE=false
+    # Device access for audio
+    devices:
+      - /dev/snd:/dev/snd
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.8
+    ports:
+      - "6575:6575"  # AudioCapture
+      - "6576:6576"  # AudioCapture health
+      - "6578:6578"  # FusedAudioPreprocessor
+      - "6581:6581"  # FusedAudioPreprocessor health
+      - "5576:5576"  # StreamingInterruptHandler
+      - "6577:6577"  # StreamingInterruptHandler health
+      - "6580:6580"  # StreamingSpeechRecognition
+      - "6582:6582"  # StreamingSpeechRecognition health
+      - "5562:5562"  # StreamingTTSAgent
+      - "6562:6562"  # StreamingTTSAgent health
+      - "6577:6577"  # WakeWordDetector
+      - "6578:6578"  # WakeWordDetector health
+      - "5579:5579"  # StreamingLanguageAnalyzer
+      - "5597:5597"  # StreamingLanguageAnalyzer health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Emotion system services
+  emotion-system:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/emotion-system:latest
+    container_name: emotion-system
+    restart: unless-stopped
+    depends_on:
+      - core-services
+      - ai-models-gpu-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=emotion_system
+      - DEBUG_MODE=false
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.9
+    ports:
+      - "5590:5590"  # EmotionEngine
+      - "6590:6590"  # EmotionEngine health
+      - "5704:5704"  # MoodTrackerAgent
+      - "6704:6704"  # MoodTrackerAgent health
+      - "5705:5705"  # HumanAwarenessAgent
+      - "6705:6705"  # HumanAwarenessAgent health
+      - "5625:5625"  # ToneDetector
+      - "6625:6625"  # ToneDetector health
+      - "5708:5708"  # VoiceProfilingAgent
+      - "6708:6708"  # VoiceProfilingAgent health
+      - "5703:5703"  # EmpathyAgent
+      - "6703:6703"  # EmpathyAgent health
+      - "5706:5706"  # EmotionSynthesisAgent
+      - "6706:6706"  # EmotionSynthesisAgent health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Utilities and support services
+  utilities-support:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/utilities-support:latest
+    container_name: utilities-support
+    restart: unless-stopped
+    depends_on:
+      - core-services
+      - utility-services
+      - ai-models-gpu-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=utilities_support
+      - DEBUG_MODE=false
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.10
+    ports:
+      - "5613:5613"  # PredictiveHealthMonitor
+      - "6613:6613"  # PredictiveHealthMonitor health
+      - "5584:5584"  # FixedStreamingTranslation
+      - "6584:6584"  # FixedStreamingTranslation health
+      - "5606:5606"  # Executor
+      - "6606:6606"  # Executor health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+  # Security and authentication
+  security-auth:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile
+    image: ai-system/security-auth:latest
+    container_name: security-auth
+    restart: unless-stopped
+    depends_on:
+      - core-services
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../certificates:/app/certificates:ro
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CONTAINER_GROUP=security_auth
+      - DEBUG_MODE=false
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "5702:5702"  # AuthenticationAgent
+      - "6702:6702"  # AuthenticationAgent health
+    healthcheck:
+      test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
 
 networks:
-  mainpc-network:
+  ai_system_network:
     driver: bridge
-  ai-shared-network:
-    external: true 
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16 

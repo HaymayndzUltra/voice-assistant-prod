@@ -5,6 +5,7 @@ import uuid
 import json
 import re
 import os
+import random
 import hashlib
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
@@ -13,6 +14,21 @@ from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+
+# Try importing optional dependencies
+try:
+    import langdetect
+    from langdetect import detect
+    from langdetect.lang_detect_exception import LangDetectException
+    LANGDETECT_AVAILABLE = True
+except ImportError:
+    LANGDETECT_AVAILABLE = False
+    
+try:
+    import fasttext
+    FASTTEXT_AVAILABLE = True
+except ImportError:
+    FASTTEXT_AVAILABLE = False
 
 # Ito ang FINAL at PINAHUSAY na bersyon ng Translation Service.
 # Pinagsasama nito ang lahat ng translation-related features sa isang,
@@ -342,97 +358,109 @@ class AdvancedTimeoutManager:
 
 # --- Connection Management System ---
 class ConnectionManager:
-    """Centralized manager for all ZMQ socket connections to external services."""
+    """
+    Manages ZMQ connections to various services with circuit breaker integration.
+    
+    This class handles:
+    - Creating and maintaining connections to multiple services
+    - Automatic reconnection
+    - Socket configuration
+    - Error handling with circuit breakers
+    """
     
     def __init__(self, agent):
-        """Initialize the connection manager.
-        
-        Args:
-            agent: The parent agent instance
-        """
+        """Initialize connection manager with reference to parent agent"""
         self.agent = agent
         self.logger = agent.logger
-        self.context = agent.context
-        self.sockets = {}  # Dictionary to hold all active sockets
-        self.secure_zmq = is_secure_zmq_enabled()
-        self.logger.info("ConnectionManager initialized")
-    
+        self.sockets = {}
+        self.addresses = {}
+        
     def _create_socket(self, service_name):
-        """Create a ZMQ socket for a given service.
+        """
+        Create a ZMQ socket for the specified service
         
         Args:
-            service_name: The name of the service to connect to
-            
+            service_name: Name of the service to connect to
+        
         Returns:
-            The connected socket or None if connection failed
+            Configured ZMQ socket or None if creation failed
         """
         try:
-            # Discover the service's address
-            agent_info = self.agent.discover_agent(service_name)
-            if not agent_info:
-                self.logger.error(f"Could not discover {service_name}.")
+            # Try to get the service address
+            service_address = self.agent.get_service_address(service_name)
+            if not service_address:
+                self.logger.warning(f"Could not find address for {service_name}")
                 return None
                 
-            port = agent_info['port']
-            # Determine target IP based on service
-            target_ip = "localhost"
-            if service_name == "RemoteConnectorAgent":
-                target_ip = self.agent.get_config("pc2_ip", "localhost")
-                
             # Create socket
-            socket = self.context.socket(zmq.REQ)
-            socket.setsockopt(zmq.LINGER, 0)
-            socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5-second timeout
+            socket = self.agent.context.socket(zmq.REQ)
             
-            # Apply CurveZMQ security if enabled
-            if self.secure_zmq:
-                self.logger.info(f"Applying CurveZMQ security to {service_name} socket")
-                configure_secure_client(socket)
+            # Configure socket
+            if is_secure_zmq_enabled():
+                socket = configure_secure_client(socket)
             
-            # Connect socket
-            socket.connect(f"tcp://{target_ip}:{port}")
-            self.logger.info(f"Connected to {service_name} at {target_ip}:{port}")
+            # Set timeouts
+            socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 seconds send timeout
+            socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 seconds receive timeout
+            socket.setsockopt(zmq.LINGER, 0)       # Don't wait for pending messages on close
+            
+            # Connect
+            socket.connect(service_address)
+            self.addresses[service_name] = service_address
+            self.logger.info(f"Connected to {service_name} at {service_address}")
+            
             return socket
-        
         except Exception as e:
-            self.logger.error(f"Failed to initialize socket for {service_name}: {e}")
+            self.logger.error(f"Error creating socket for {service_name}: {e}")
             return None
-    
+        
     def get_socket(self, service_name):
-        """Get a socket for a given service, creating it if it doesn't exist.
+        """
+        Get or create a socket for the specified service
         
         Args:
-            service_name: The name of the service to connect to
+            service_name: Name of the service to connect to
             
         Returns:
-            The connected socket or None if connection failed
+            ZMQ socket or None if not available
         """
-        if not service_name:
-            return None
-            
-        # Return existing socket if it exists
-        if service_name in self.sockets:
+        # Check if we already have a socket
+        if service_name in self.sockets and self.sockets[service_name]:
             return self.sockets[service_name]
             
+        # No socket, create new one
+        socket = self._create_socket(service_name)
+        if socket:
+            self.sockets[service_name] = socket
+            
+        return socket
+        
+    def reset_socket(self, service_name):
+        """
+        Reset the connection to a service by closing and recreating the socket
+        
+        Args:
+            service_name: Name of the service to reconnect to
+            
+        Returns:
+            New ZMQ socket or None if reset failed
+        """
+        if service_name in self.sockets and self.sockets[service_name]:
+            try:
+                self.sockets[service_name].close()
+            except Exception as e:
+                self.logger.warning(f"Error closing socket for {service_name}: {e}")
+                
         # Create new socket
         socket = self._create_socket(service_name)
         if socket:
             self.sockets[service_name] = socket
-        return socket
-    
-    def reset_socket(self, service_name):
-        """Reset a socket connection after an error or timeout.
-        
-        Args:
-            service_name: The name of the service to reset
-        """
-        try:
+        else:
+            # If socket creation failed, remove from sockets dict
             if service_name in self.sockets:
-                self.sockets[service_name].close()
-                del self.sockets[service_name]
-            self.logger.info(f"Socket for {service_name} has been reset")
-        except Exception as e:
-            self.logger.error(f"Error resetting socket for {service_name}: {e}")
+                self.sockets.pop(service_name)
+                
+        return self.sockets.get(service_name)
     
     def cleanup(self):
         """Close all sockets and clean up resources."""
@@ -839,142 +867,333 @@ class LanguageDetector:
 # --- Refactor TranslationCache for persistent storage ---
 class TranslationCache:
     """
-    Handles centralized, persistent caching via MemoryOrchestrator.
-    
-    Nag-iimplement ito ng two-level caching system:
-    1. Local cache (L1) - mabilis na in-memory cache
-    2. Persistent cache (L2) - gumagamit ng MemoryOrchestrator para sa persistent storage
-    
-    May built-in circuit breaker protection para sa mga failures sa MemoryOrchestrator.
+    Enhanced caching system for translations with tiered storage:
+    - In-memory LRU cache for fastest access to common translations
+    - File-based persistent cache for less common but still valuable translations
+    - Automatic cache entry expiration
+    - Metrics tracking for cache hits/misses
+    - Memory usage monitoring to prevent excessive RAM consumption
     """
+    
     def __init__(self, agent):
+        """Initialize the translation cache with both in-memory and persistent storage"""
         self.agent = agent
-        self.logger = agent.logger
-        self.cache = {}
-        self.timestamps = {}
-        self.max_size = 1000
-        self.ttl = 3600
-        self.connection_manager = agent.connection_manager
-
+        self.logger = logging.getLogger(f"{self.agent.name}.TranslationCache")
+        
+        # Configure cache sizes and expiration
+        self.memory_cache_max_size = 10000  # Maximum number of in-memory cache entries
+        self.memory_cache_max_bytes = 20 * 1024 * 1024  # 20 MB max memory usage
+        self.disk_cache_max_entries = 100000  # Maximum number of disk cache entries
+        self.cache_entry_ttl = 7 * 24 * 60 * 60  # 7 days in seconds
+        
+        # Initialize in-memory cache using an OrderedDict for LRU behavior
+        self.memory_cache = {}
+        self.memory_cache_access_order = []
+        self.estimated_memory_usage = 0
+        
+        # Initialize disk cache
+        self.cache_dir = Path("cache/translation_cache")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize metrics
+        self.metrics = {
+            "memory_hits": 0,
+            "disk_hits": 0, 
+            "misses": 0,
+            "memory_entries": 0,
+            "disk_entries": 0,
+            "memory_bytes": 0,
+            "evictions": 0,
+            "writes": 0
+        }
+        
+        # Cache maintenance
+        self._load_cache_stats()
+        self.thread_pool = ThreadPoolExecutor(max_workers=2)
+        
+        # Load existing cache stats
+        try:
+            self._cleanup_expired_entries()
+        except Exception as e:
+            self.logger.warning(f"Error during initial cache cleanup: {e}")
+    
     def get(self, key: str) -> Optional[str]:
+        """
+        Get a cached translation.
+        
+        Args:
+            key: Cache key, typically a hash of text+source_lang+target_lang
+            
+        Returns:
+            The cached translation or None if not found
+        """
+        # First, try memory cache (fastest)
         hashed_key = self._hash_key(key)
-        if hashed_key in self.cache:
-            if time.time() - self.timestamps[hashed_key] > self.ttl:
-                del self.cache[hashed_key]
-                del self.timestamps[hashed_key]
+        
+        # Check memory cache first (fastest)
+        if hashed_key in self.memory_cache:
+            entry = self.memory_cache[hashed_key]
+            
+            # Check if expired
+            if time.time() - entry['timestamp'] > self.cache_entry_ttl:
+                # Expired, remove from memory cache
+                self._remove_from_memory_cache(hashed_key)
+                self.metrics["evictions"] += 1
+                self.metrics["memory_entries"] -= 1
+                self.metrics["misses"] += 1
                 return None
-            return self.cache[hashed_key]
+                
+            # Update access order for LRU
+            self._update_access_order(hashed_key)
+            
+            # Update metrics
+            self.metrics["memory_hits"] += 1
+            
+            # Return cached translation
+            return entry['value']
+            
+        # Not in memory cache, try disk cache
+        disk_value = self._read_from_memory(hashed_key)
+        if disk_value:
+            # Found in disk cache, add to memory cache for faster future access
+            self._add_to_memory_cache(hashed_key, disk_value)
+            
+            # Update metrics
+            self.metrics["disk_hits"] += 1
+            
+            return disk_value
         
-        # Not in local cache, try MemoryOrchestrator
-        try:
-            # Use circuit breaker to protect against remote service failures
-            cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
-            if cb and cb.allow_request():
-                result = self._read_from_memory(hashed_key)
-                if result:
-                    cb.record_success()
-                    return result
-                # No result is not a failure, just a cache miss
-                cb.record_success()
-            return None
-        except Exception as e:
-            if cb:
-                cb.record_failure()
-            self.logger.error(f"Error getting translation from MemoryOrchestrator: {e}")
-            return None
-    
-    def _read_from_memory(self, hashed_key):
-        """Protected method to read from memory orchestrator"""
-        socket = self.connection_manager.get_socket("MemoryOrchestrator")
-        if socket:
-            cache_key = f"translation_cache:{hashed_key}"
-            request = {
-                "action": "read",
-                "request_id": str(uuid.uuid4()),
-                "payload": {"memory_id": cache_key}
-            }
-            socket.send_json(request)
-            
-            poller = zmq.Poller()
-            poller.register(socket, zmq.POLLIN)
-            
-            if poller.poll(5000):  # 5 second timeout
-                response = socket.recv_json()
-                if response.get("status") == "success":
-                    memory_data = response.get("data", {}).get("memory", {})
-                    if memory_data:
-                        content = memory_data.get("content", {})
-                        value = content.get("value")
-                        created_at = memory_data.get("created_at")
-                        if created_at and (time.time() - created_at <= self.ttl):
-                            self.cache[hashed_key] = value
-                            self.timestamps[hashed_key] = created_at
-                            return value
+        # Not found in any cache
+        self.metrics["misses"] += 1
         return None
-
-    def set(self, key: str, value: str):
-        hashed_key = self._hash_key(key)
-        if len(self.cache) >= self.max_size:
-            oldest_key = min(self.timestamps.items(), key=lambda x: x[1])[0]
-            del self.cache[oldest_key]
-            del self.timestamps[oldest_key]
-        self.cache[hashed_key] = value
-        self.timestamps[hashed_key] = time.time()
         
-        # Submit the task to thread pool for async execution
-        self.agent.memory_executor.submit(self._persist_entry_async, hashed_key, value)
-    
-    def _persist_entry_async(self, hashed_key, value):
-        """Asynchronously persist cache entry to MemoryOrchestrator"""
-        cb = self.agent.circuit_breakers.get("MemoryOrchestrator")
-        if not cb or not cb.allow_request():
-            self.logger.warning("Circuit open for MemoryOrchestrator, skipping cache persistence")
-            return
+    def _read_from_memory(self, hashed_key):
+        """
+        Read a cached translation from disk
+        
+        Args:
+            hashed_key: Hashed cache key
             
+        Returns:
+            The cached translation or None if not found
+        """
         try:
-            socket = self.connection_manager.get_socket("MemoryOrchestrator")
-            if socket:
-                cache_key = f"translation_cache:{hashed_key}"
-                content = {"value": value}
-                request = {
-                    "action": "create",
-                    "request_id": str(uuid.uuid4()),
-                    "payload": {
-                        "memory_type": "translation_cache",
-                        "memory_id": cache_key,
-                        "content": content,
-                        "tags": ["translation"],
-                        "ttl": self.ttl
-                    }
-                }
-                socket.send_json(request)
+            cache_file = self.cache_dir / f"{hashed_key}.json"
+            if not cache_file.exists():
+                return None
                 
-                poller = zmq.Poller()
-                poller.register(socket, zmq.POLLIN)
+            # Read and parse cache entry
+            with open(cache_file, 'r') as f:
+                entry = json.load(f)
                 
-                if poller.poll(5000):  # 5 second timeout
-                    socket.recv_json()
-                    cb.record_success()
-                else:
-                    cb.record_failure()
-                    self.logger.warning("Timeout persisting cache to MemoryOrchestrator")
+            # Check if expired
+            if time.time() - entry['timestamp'] > self.cache_entry_ttl:
+                # Expired, remove cache file
+                cache_file.unlink(missing_ok=True)
+                self.metrics["disk_entries"] -= 1
+                return None
+                
+            return entry['value']
         except Exception as e:
-            cb.record_failure()
-            self.logger.error(f"Error storing translation in MemoryOrchestrator: {e}")
-
-    def clear(self):
-        """Clear the cache."""
-        self.cache = {}
-        self.timestamps = {}
-        self.logger.info("Translation cache cleared")
+            self.logger.warning(f"Error reading from disk cache: {e}")
+            return None
+            
+    def _add_to_memory_cache(self, hashed_key, value):
+        """
+        Add an entry to the memory cache with LRU eviction if needed
+        
+        Args:
+            hashed_key: Hashed cache key
+            value: Value to cache
+        """
+        # Estimate memory size of this entry
+        entry_size = len(hashed_key) + len(value) * 2  # Rough estimate
+        
+        # Check if we need to evict entries to stay under memory limit
+        while (len(self.memory_cache) >= self.memory_cache_max_size or 
+               self.estimated_memory_usage + entry_size > self.memory_cache_max_bytes):
+            if not self.memory_cache_access_order:
+                break
+                
+            # Evict least recently used entry
+            lru_key = self.memory_cache_access_order[0]
+            lru_entry = self.memory_cache[lru_key]
+            lru_size = len(lru_key) + len(lru_entry['value']) * 2
+            
+            # Remove from memory cache
+            self._remove_from_memory_cache(lru_key)
+            self.metrics["evictions"] += 1
+        
+        # Add new entry
+        self.memory_cache[hashed_key] = {
+            'value': value,
+            'timestamp': time.time()
+        }
+        self.memory_cache_access_order.append(hashed_key)
+        
+        # Update estimated memory usage
+        self.estimated_memory_usage += entry_size
+        self.metrics["memory_bytes"] = self.estimated_memory_usage
+        self.metrics["memory_entries"] += 1
+        
+    def _update_access_order(self, hashed_key):
+        """Update LRU access order for a cache key"""
+        if hashed_key in self.memory_cache_access_order:
+            self.memory_cache_access_order.remove(hashed_key)
+        self.memory_cache_access_order.append(hashed_key)
+        
+    def _remove_from_memory_cache(self, hashed_key):
+        """Remove an entry from memory cache"""
+        if hashed_key in self.memory_cache:
+            entry = self.memory_cache[hashed_key]
+            entry_size = len(hashed_key) + len(entry['value']) * 2
+            
+            # Remove from cache and access order
+            del self.memory_cache[hashed_key]
+            if hashed_key in self.memory_cache_access_order:
+                self.memory_cache_access_order.remove(hashed_key)
+                
+            # Update estimated memory usage
+            self.estimated_memory_usage -= entry_size
+            self.metrics["memory_bytes"] = self.estimated_memory_usage
     
+    def set(self, key: str, value: str):
+        """
+        Set a cached translation
+        
+        Args:
+            key: Cache key, typically a hash of text+source_lang+target_lang
+            value: Translation to cache
+        """
+        hashed_key = self._hash_key(key)
+        
+        # Add to memory cache
+        self._add_to_memory_cache(hashed_key, value)
+        
+        # Persist to disk cache asynchronously
+        self.thread_pool.submit(self._persist_entry_async, hashed_key, value)
+        self.metrics["writes"] += 1
+        
+    def _persist_entry_async(self, hashed_key, value):
+        """
+        Persist a cache entry to disk asynchronously
+        
+        Args:
+            hashed_key: Hashed cache key
+            value: Value to cache
+        """
+        try:
+            # Create cache entry
+            cache_entry = {
+                'value': value,
+                'timestamp': time.time()
+            }
+            
+            # Write to disk
+            cache_file = self.cache_dir / f"{hashed_key}.json"
+            with open(cache_file, 'w') as f:
+                json.dump(cache_entry, f)
+                
+            # Update metrics
+            self.metrics["disk_entries"] += 1
+            
+            # Periodically clean up expired entries
+            if random.random() < 0.05:  # 5% chance on each write
+                self.thread_pool.submit(self._cleanup_expired_entries)
+        except Exception as e:
+            self.logger.warning(f"Error persisting to disk cache: {e}")
+            
+    def _cleanup_expired_entries(self):
+        """Clean up expired cache entries"""
+        try:
+            # Get all cache files
+            cache_files = list(self.cache_dir.glob("*.json"))
+            
+            # Randomly sample a subset of files to check (for efficiency)
+            sample_size = min(100, len(cache_files))
+            files_to_check = random.sample(cache_files, sample_size) if len(cache_files) > sample_size else cache_files
+            
+            # Check each file
+            now = time.time()
+            for cache_file in files_to_check:
+                try:
+                    with open(cache_file, 'r') as f:
+                        entry = json.load(f)
+                        
+                    # Check if expired
+                    if now - entry['timestamp'] > self.cache_entry_ttl:
+                        # Remove expired file
+                        cache_file.unlink(missing_ok=True)
+                        self.metrics["disk_entries"] -= 1
+                except Exception as e:
+                    # File might be corrupted, remove it
+                    self.logger.warning(f"Error checking cache file {cache_file}: {e}")
+                    try:
+                        cache_file.unlink(missing_ok=True)
+                    except:
+                        pass
+        except Exception as e:
+            self.logger.warning(f"Error during cache cleanup: {e}")
+            
+    def _load_cache_stats(self):
+        """Load cache statistics"""
+        try:
+            # Count disk entries
+            cache_files = list(self.cache_dir.glob("*.json"))
+            self.metrics["disk_entries"] = len(cache_files)
+        except Exception as e:
+            self.logger.warning(f"Error loading cache stats: {e}")
+        
+    def clear(self):
+        """Clear the entire cache"""
+        # Clear memory cache
+        self.memory_cache.clear()
+        self.memory_cache_access_order.clear()
+        self.estimated_memory_usage = 0
+        
+        # Clear disk cache
+        try:
+            for cache_file in self.cache_dir.glob("*.json"):
+                cache_file.unlink(missing_ok=True)
+        except Exception as e:
+            self.logger.warning(f"Error clearing disk cache: {e}")
+            
+        # Reset metrics
+        self.metrics["memory_hits"] = 0
+        self.metrics["disk_hits"] = 0
+        self.metrics["misses"] = 0
+        self.metrics["memory_entries"] = 0
+        self.metrics["disk_entries"] = 0
+        self.metrics["memory_bytes"] = 0
+        self.metrics["evictions"] = 0
+        self.metrics["writes"] = 0
+        
     def _hash_key(self, key: str) -> str:
-        """Hash a cache key using SHA-256."""
-        return hashlib.sha256(key.encode('utf-8')).hexdigest()
+        """Hash a key for storage"""
+        return hashlib.md5(key.encode('utf-8')).hexdigest()
         
     def generate_key(self, text: str, source_lang: str, target_lang: str) -> str:
-        """Generate a unique cache key for a translation request."""
-        return f"{text}:{source_lang}:{target_lang}"
+        """Generate a cache key from text and language pair"""
+        # Normalize text to prevent near-duplicate cache entries
+        normalized_text = re.sub(r'\s+', ' ', text.strip().lower())
+        return f"{source_lang}:{target_lang}:{normalized_text}"
+        
+    def get_metrics(self):
+        """Get cache metrics"""
+        # Calculate hit rate
+        total_requests = self.metrics["memory_hits"] + self.metrics["disk_hits"] + self.metrics["misses"]
+        hit_rate = (self.metrics["memory_hits"] + self.metrics["disk_hits"]) / total_requests if total_requests > 0 else 0
+        memory_hit_rate = self.metrics["memory_hits"] / total_requests if total_requests > 0 else 0
+        
+        # Create a copy of metrics to avoid modifying the original
+        result_metrics = dict(self.metrics)
+        
+        # Add calculated metrics separately
+        result_metrics["hit_rate"] = f"{hit_rate:.2%}"
+        result_metrics["memory_hit_rate"] = f"{memory_hit_rate:.2%}"
+        result_metrics["memory_usage_mb"] = f"{self.metrics['memory_bytes'] / (1024 * 1024):.2f} MB"
+        
+        return result_metrics
 
 # --- Refactor SessionManager for persistent storage ---
 class SessionManager:
@@ -1376,10 +1595,119 @@ class TranslationService(BaseAgent):
         self.logger.info("Translation Service initialized")
         
     def _init_circuit_breakers(self):
-        """Initialize circuit breakers for downstream services."""
-        for service in self.downstream_services:
-            self.circuit_breakers[service] = CircuitBreaker(name=service)
+        """
+        Initialize circuit breakers for all connected services
+        Circuit breakers prevent cascading failures by stopping requests to failing services
+        """
+        self.circuit_breakers = {}
+        
+        # Circuit breaker for main services
+        main_services = [
+            "NLLBEngine", 
+            "GoogleTranslateEngine",
+            "StreamingEngine",
+            "TagaBERTaService",
+            "LanguageDetector",
+            "EmergencyWordEngine"
+        ]
+        
+        # Create circuit breakers for all services with different thresholds
+        for service in main_services:
+            # Critical services need more sensitive circuit breakers
+            if service in ["NLLBEngine", "GoogleTranslateEngine"]:
+                # More sensitive thresholds for critical services
+                self.circuit_breakers[service] = CircuitBreaker(
+                    name=service,
+                    failure_threshold=3,  # Break after 3 failures
+                    reset_timeout=60,     # Wait 60 seconds before retrying
+                    half_open_timeout=10  # Allow one test request after 10 seconds
+                )
+            else:
+                # Standard thresholds for other services
+                self.circuit_breakers[service] = CircuitBreaker(
+                    name=service,
+                    failure_threshold=5,  # Break after 5 failures
+                    reset_timeout=30,     # Wait 30 seconds before retrying
+                    half_open_timeout=5   # Allow one test request after 5 seconds
+                )
+        
+        # Log circuit breakers initialization
+        self.logger.info(f"Initialized {len(self.circuit_breakers)} circuit breakers for translation services")
+        
+    def _get_fallback_translation(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
+        """
+        Provide fallback translation when primary methods fail
+        Uses multiple layers of fallback:
+        1. Dictionary-based translation for common words/phrases
+        2. Pattern-based simple translation for basic sentences
+        3. Emergency word-by-word translation for last resort
+        
+        Args:
+            text: Text to translate
+            source_lang: Source language code
+            target_lang: Target language code
             
+        Returns:
+            Dictionary with translation result or error
+        """
+        self.logger.warning(f"Using fallback translation for {text[:30]}...")
+        
+        # Check if we have a circuit breaker for DictionaryEngine
+        dict_cb = self.circuit_breakers.get("EmergencyWordEngine")
+        if dict_cb and not dict_cb.allow_request():
+            # Even the emergency engine is failing, return an error
+            self.logger.error("All translation engines have failed including fallbacks")
+            return {
+                "status": "error",
+                "message": "All translation engines have failed",
+                "translation": None,
+                "engine": "none"
+            }
+            
+        try:
+            # Try dictionary-based translation first (for common phrases)
+            for engine_client in [self.engine_manager.local_pattern_engine, self.engine_manager.emergency_word_engine]:
+                if engine_client:
+                    try:
+                        # Apply the translation
+                        result = engine_client.translate(text, source_lang, target_lang)
+                        
+                        if result.get("status") == "success" and result.get("translation"):
+                            # Update the circuit breaker
+                            if dict_cb:
+                                dict_cb.record_success()
+                                
+                            return {
+                                "status": "success",
+                                "message": "Fallback translation completed",
+                                "translation": result.get("translation"),
+                                "engine": "fallback",
+                                "quality": "low",
+                                "fallback_used": True
+                            }
+                    except Exception as e:
+                        self.logger.error(f"Error in fallback translation: {e}")
+                        if dict_cb:
+                            dict_cb.record_failure()
+            
+            # If we get here, all fallbacks failed
+            return {
+                "status": "error",
+                "message": "All translation engines have failed",
+                "translation": None,
+                "engine": "none"
+            }
+        except Exception as e:
+            if dict_cb:
+                dict_cb.record_failure()
+            self.logger.error(f"Error in _get_fallback_translation: {e}")
+            return {
+                "status": "error", 
+                "message": f"Fallback translation error: {str(e)}",
+                "translation": None,
+                "engine": "none"
+            }
+    
     def _resilient_send_request(self, agent_name: str, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """A resilient method to send requests using Circuit Breakers."""
         cb = self.circuit_breakers.get(agent_name)
@@ -1503,138 +1831,158 @@ class TranslationService(BaseAgent):
                 
     def _process_translation(self, text: str, target_lang: str, source_lang: str = None, session_id: str = None) -> Dict[str, Any]:
         """
-        Process a translation request.
-        
-        Ito ang core method na nagpoproseso ng translation requests.
-        Sumusunod ito sa tiered translation architecture:
-        1. Check cache
-        2. Detect language (kung hindi specified)
-        3. Skip kung pareho ang source at target language
-        4. Translate gamit ang EngineManager (with fallback chain)
-        5. Cache successful translations
-        6. Update session history
+        Process a translation request with enhanced error handling, caching, and fallbacks.
         
         Args:
             text: Text to translate
             target_lang: Target language code
-            source_lang: Source language code (optional, will be auto-detected if None)
-            session_id: Session ID for tracking translation history (optional)
+            source_lang: Source language code (optional)
+            session_id: Session identifier (optional)
             
         Returns:
-            Dictionary containing translation result and metadata
+            Dictionary with translation result
         """
+        start_time = time.time()
+        
         try:
-            # Check cache first
-            cache_key = self.cache.generate_key(text, source_lang or "auto", target_lang)
-            cached_result = self.cache.get(cache_key)
-            if cached_result:
-                self.logger.info("Cache hit for translation request")
-                result = {
-                    "status": "success",
-                    "translation": cached_result,
-                    "engine_used": "cache",
-                    "source_lang": source_lang,
-                    "target_lang": target_lang,
-                    "text": text
-                }
-                
-                # Add to session history if session_id provided
-                if session_id:
-                    self.session_manager.add_translation(session_id, result)
-                    
-                return result
-            
-            # Detect language if not provided
-            if not source_lang or source_lang == "auto":
-                self.logger.info("Detecting language...")
-                source_lang = self.language_detector.detect_language(text)
-                self.logger.info(f"Detected language: {source_lang}")
-            
-            # Skip translation if source and target languages are the same
-            if source_lang == target_lang:
-                self.logger.info("Source and target languages are the same, skipping translation")
-                result = {
-                    "status": "success",
-                    "translation": text,
-                    "engine_used": "none",
-                    "source_lang": source_lang,
-                    "target_lang": target_lang,
-                    "text": text
-                }
-                
-                # Add to session history if session_id provided
-                if session_id:
-                    self.session_manager.add_translation(session_id, result)
-                    
-                return result
-            
-            # Translate
-            self.logger.info(f"Translating from {source_lang} to {target_lang}...")
-            translation_result = self.engine_manager.translate(text, source_lang, target_lang)
-            
-            # Process result
-            if translation_result.get("status") == "success":
-                # Cache successful translation
-                self.cache.set(cache_key, translation_result.get("translation"))
-                
-                # Create result
-                result = {
-                    "status": "success",
-                    "translation": translation_result.get("translation"),
-                    "engine_used": translation_result.get("engine_used"),
-                    "source_lang": source_lang,
-                    "target_lang": target_lang,
-                    "text": text
-                }
-                
-                # Add to session history if session_id provided
-                if session_id:
-                    self.session_manager.add_translation(session_id, result)
-                    
-                return result
-            else:
-                # Translation failed
-                error_message = translation_result.get("message", "Translation failed")
-                self.logger.error(f"Translation error: {error_message}")
-                
-                # Report error to error bus if available
-                self._report_error(
-                    error_message=error_message,
-                    error_type="translation_failure",
-                    severity=ErrorSeverity.MEDIUM,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    engine=translation_result.get("engine_used")
-                )
-                
-                return {
+            # Input validation
+            if not text or not text.strip():
+                error_result = {
                     "status": "error",
-                    "message": error_message,
-                    "engine_used": translation_result.get("engine_used"),
+                    "message": "Empty text provided",
+                    "translation": None,
+                    "engine": None
+                }
+                self._update_metrics(start_time, error_result, text, source_lang, target_lang)
+                return error_result
+                
+            if not target_lang:
+                error_result = {
+                    "status": "error",
+                    "message": "Target language not specified",
+                    "translation": None,
+                    "engine": None
+                }
+                self._update_metrics(start_time, error_result, text, source_lang, target_lang)
+                return error_result
+                
+            # Text preprocessing - normalize whitespace
+            text = text.strip()
+                
+            # Detect source language if not provided
+            if not source_lang:
+                try:
+                    source_lang = self.language_detector.detect_language(text)
+                    self.logger.info(f"Detected language: {source_lang}")
+                except Exception as e:
+                    self.logger.error(f"Language detection failed: {e}")
+                    source_lang = "en"  # Default to English
+                    
+            # Check if the translation is necessary
+            if source_lang == target_lang:
+                result = {
+                    "status": "success",
+                    "message": "No translation needed (same languages)",
+                    "translation": text,
+                    "engine": "none",
                     "source_lang": source_lang,
                     "target_lang": target_lang,
-                    "text": text
                 }
+                self._update_metrics(start_time, result, text, source_lang, target_lang)
+                return result
+                
+            # Check cache first
+            cache_key = self.translation_cache.generate_key(text, source_lang, target_lang)
+            cached_translation = self.translation_cache.get(cache_key)
+            
+            if cached_translation:
+                self.logger.info(f"Cache hit for {source_lang}->{target_lang}")
+                result = {
+                    "status": "success",
+                    "message": "Translation retrieved from cache",
+                    "translation": cached_translation,
+                    "engine": "cache",
+                    "source_lang": source_lang,
+                    "target_lang": target_lang,
+                    "cached": True
+                }
+                self._update_metrics(start_time, result, text, source_lang, target_lang)
+                return result
+                
+            # Not in cache, perform translation
+            try:
+                # Use the engine manager to select the best engine and perform translation
+                translation_result = self.engine_manager.translate(text, source_lang, target_lang)
+                
+                # Handle successful translation
+                if translation_result.get("status") == "success" and translation_result.get("translation"):
+                    # Cache the successful translation
+                    self.translation_cache.set(cache_key, translation_result["translation"])
+                    
+                    # Update session history if session_id provided
+                    if session_id:
+                        self.session_manager.add_translation(session_id, {
+                            "original_text": text,
+                            "translated_text": translation_result["translation"],
+                            "source_lang": source_lang,
+                            "target_lang": target_lang,
+                            "engine": translation_result.get("engine", "unknown"),
+                            "timestamp": time.time()
+                        })
+                        
+                    # Update metrics and return result
+                    self._update_metrics(start_time, translation_result, text, source_lang, target_lang)
+                    return translation_result
+                else:
+                    # Translation failed, try fallback
+                    self.logger.warning(f"Primary translation failed: {translation_result.get('message')}")
+                    fallback_result = self._get_fallback_translation(text, source_lang, target_lang)
+                    
+                    # If fallback succeeded, cache the result
+                    if fallback_result.get("status") == "success" and fallback_result.get("translation"):
+                        self.translation_cache.set(cache_key, fallback_result["translation"])
+                        
+                        # Update session history if session_id provided
+                        if session_id:
+                            self.session_manager.add_translation(session_id, {
+                                "original_text": text,
+                                "translated_text": fallback_result["translation"],
+                                "source_lang": source_lang,
+                                "target_lang": target_lang,
+                                "engine": "fallback",
+                                "timestamp": time.time()
+                            })
+                    
+                    # Update metrics and return fallback result
+                    self._update_metrics(start_time, fallback_result, text, source_lang, target_lang)
+                    return fallback_result
+                    
+            except Exception as e:
+                self.logger.error(f"Translation failed with error: {e}")
+                fallback_result = self._get_fallback_translation(text, source_lang, target_lang)
+                self._update_metrics(start_time, fallback_result, text, source_lang, target_lang)
+                return fallback_result
                 
         except Exception as e:
-            self.logger.error(f"Error processing translation: {e}")
+            # Unexpected error in translation process
+            error_message = f"Unexpected error in translation process: {str(e)}"
+            self.logger.error(error_message, exc_info=True)
             
-            # Report error to error bus if available
-            self._report_error(
-                error_message=str(e),
-                error_type="translation_processing_error",
-                severity=ErrorSeverity.HIGH,
-                source_lang=source_lang,
-                target_lang=target_lang
-            )
-            
-            return {
-                "status": "error",
-                "message": f"Translation processing error: {str(e)}",
-                "source_lang": source_lang,
-                "target_lang": target_lang,
-                "text": text
-            }
+            # Try emergency fallback as a last resort
+            try:
+                emergency_result = self._get_fallback_translation(text, source_lang or "en", target_lang)
+                self._update_metrics(start_time, emergency_result, text, source_lang, target_lang)
+                return emergency_result
+            except:
+                # All translation options have failed
+                error_result = {
+                    "status": "error",
+                    "message": error_message,
+                    "translation": None,
+                    "engine": "none"
+                }
+                self._update_metrics(start_time, error_result, text, source_lang, target_lang)
+                return error_result
     
     def cleanup(self):
         """Clean up resources."""
@@ -1732,52 +2080,124 @@ class TranslationService(BaseAgent):
     
     def _get_health_status(self):
         """
-        Get the current health status of the agent.
-        
-        Ito ang method na nagbibigay ng komprehensibong health status ng agent,
-        kasama ang status ng mga circuit breaker at downstream services.
+        Get detailed health status and metrics for the TranslationService
         
         Returns:
-            Dictionary containing health status information
+            Dict with health status and detailed metrics
         """
-        # Get the base health status from parent class
-        base_status = super()._get_health_status()
+        base_health = super()._get_health_status()
         
-        # Add agent-specific health metrics
         try:
-            # Collect circuit breaker status
-            circuit_breaker_status = {}
-            for service_name, cb in self.circuit_breakers.items():
-                circuit_breaker_status[service_name] = cb.get_status()
+            # Calculate uptime
+            uptime_seconds = time.time() - self.start_time
+            uptime_str = f"{int(uptime_seconds // 86400)}d {int((uptime_seconds % 86400) // 3600)}h {int((uptime_seconds % 3600) // 60)}m {int(uptime_seconds % 60)}s"
             
-            # Add metrics to base status
-            base_status.update({
-                "agent_specific_metrics": {
-                    "language_detector": {
-                        "langdetect_available": self.language_detector.has_langdetect,
-                        "fasttext_available": self.language_detector.has_fasttext,
-                        "tagabert_available": self.language_detector.tagabert_available
-                    },
-                    "cache": {
-                        "size": len(self.cache.cache),
-                        "max_size": self.cache.max_size
-                    },
-                    "session_manager": {
-                        "active_sessions": len(self.session_manager.sessions)
-                    },
-                    "engine_manager": {
-                        "engines": list(self.engine_manager.engines.keys()),
-                        "fallback_order": self.engine_manager.fallback_order
-                    },
-                    "circuit_breakers": circuit_breaker_status
-                }
-            })
+            # Get circuit breaker status
+            circuit_status = {}
+            for name, cb in self.circuit_breakers.items():
+                circuit_status[name] = cb.get_status()
+            
+            # Get cache metrics
+            cache_metrics = {}
+            if hasattr(self, 'translation_cache') and self.translation_cache:
+                cache_metrics = self.translation_cache.get_metrics()
+            
+            # Get engine usage metrics
+            if hasattr(self, 'engine_manager') and self.engine_manager and hasattr(self.engine_manager, 'metrics'):
+                engine_metrics = self.engine_manager.metrics
+            else:
+                engine_metrics = {}
+                
+            # Compile all metrics
+            detailed_metrics = {
+                "uptime": uptime_str,
+                "total_requests": self.metrics.get("total_requests", 0),
+                "successful_translations": self.metrics.get("successful_translations", 0),
+                "failed_translations": self.metrics.get("failed_translations", 0),
+                "average_latency_ms": self.metrics.get("average_latency_ms", 0),
+                "success_rate": f"{(self.metrics.get('successful_translations', 0) / max(1, self.metrics.get('total_requests', 1))) * 100:.1f}%",
+                "fallback_used_count": self.metrics.get("fallback_used", 0),
+                "language_distribution": self.metrics.get("language_distribution", {}),
+                "engine_usage": engine_metrics.get("engine_usage", {}),
+                "circuit_breakers": circuit_status,
+                "cache": cache_metrics,
+                "last_error": self.metrics.get("last_error", "None")
+            }
+            
+            # Add detailed metrics to base health status
+            base_health["metrics"] = detailed_metrics
+            
+            # Update overall status based on circuit breaker states
+            open_circuits = [name for name, status in circuit_status.items() if status.get("state") == "open"]
+            if open_circuits:
+                base_health["status"] = "degraded"
+                base_health["warnings"] = [f"Circuit open for: {', '.join(open_circuits)}"]
+                
+            return base_health
             
         except Exception as e:
-            self.logger.error(f"Error collecting health metrics: {e}")
-            base_status.update({"health_metrics_error": str(e)})
+            self.logger.error(f"Error generating health status: {e}")
+            base_health["status"] = "warning"
+            base_health["warnings"] = [f"Error generating detailed health metrics: {str(e)}"]
+            return base_health
+            
+    def _update_metrics(self, start_time, result, text, source_lang, target_lang):
+        """
+        Update metrics after a translation operation
         
-        return base_status
+        Args:
+            start_time: Time when translation started
+            result: Translation result
+            text: Original text
+            source_lang: Source language code
+            target_lang: Target language code
+        """
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        processing_time_ms = int(processing_time * 1000)
+        
+        # Initialize metrics if needed
+        if not hasattr(self, 'metrics'):
+            self.metrics = {
+                "total_requests": 0,
+                "successful_translations": 0,
+                "failed_translations": 0,
+                "total_latency_ms": 0,
+                "average_latency_ms": 0,
+                "fallback_used": 0,
+                "language_distribution": {},
+                "last_error": None,
+                "last_request_time": time.time()
+            }
+            
+        # Update request count
+        self.metrics["total_requests"] = self.metrics.get("total_requests", 0) + 1
+        
+        # Update language distribution
+        lang_pair = f"{source_lang}->{target_lang}"
+        if "language_distribution" not in self.metrics:
+            self.metrics["language_distribution"] = {}
+        if lang_pair not in self.metrics["language_distribution"]:
+            self.metrics["language_distribution"][lang_pair] = 0
+        self.metrics["language_distribution"][lang_pair] += 1
+        
+        # Update success/failure metrics
+        if result.get("status") == "success":
+            self.metrics["successful_translations"] = self.metrics.get("successful_translations", 0) + 1
+            
+            # Update latency metrics
+            self.metrics["total_latency_ms"] = self.metrics.get("total_latency_ms", 0) + processing_time_ms
+            self.metrics["average_latency_ms"] = self.metrics["total_latency_ms"] / self.metrics["successful_translations"]
+            
+            # Check if fallback was used
+            if result.get("fallback_used"):
+                self.metrics["fallback_used"] = self.metrics.get("fallback_used", 0) + 1
+        else:
+            self.metrics["failed_translations"] = self.metrics.get("failed_translations", 0) + 1
+            self.metrics["last_error"] = result.get("message", "Unknown error")
+            
+        # Update last request time
+        self.metrics["last_request_time"] = time.time()
 
 # Add standardized __main__ block
 if __name__ == "__main__":

@@ -31,7 +31,9 @@ LOG_DIR.mkdir(exist_ok=True)
 
 class ResourceManager(BaseAgent):
 
-    def __init__(self, port: int = None):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = None):
 
         super().__init__(name="ResourceManager", port=port)
 
@@ -320,6 +322,11 @@ class TieredResponder:
         """Get detailed response from deep 
 from main_pc_code.src.core.base_agent import BaseAgentmodel
 from main_pc_code.utils.config_loader import load_config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
 
 # Load configuration at the module level
 config = load_config()"""

@@ -30,6 +30,11 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # --- Logging Setup ---
 logger = logging.getLogger('MemoryOrchestratorService')
 
@@ -390,7 +395,9 @@ class MemoryStorageManager:
 #         MEMORY ORCHESTRATOR (Ang Final, Unified Agent)
 # ===================================================================
 class MemoryOrchestratorService(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     The central, unified memory system.
     - Manages all memory types (interaction, episodic, knowledge).
     - Implements a hierarchical, tiered storage system (short, medium, long).
@@ -986,3 +993,19 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup()
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }

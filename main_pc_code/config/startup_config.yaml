@@ -5,10 +5,19 @@
 # Grouped for clarity and future containerization.
 # Generated and verified on: [AUTO-GENERATED]
 # ===================================================================
+# Important Notes:
+# - ErrorBus has been removed from MainPC config as it's a centralized service on PC2
+# - MainPC agents connect directly to ErrorBus on PC2 via ZMQ PUB socket
+# - Fixed duplicate entries for FaceRecognitionAgent and IntentionValidatorAgent
+# - Fixed incorrect dependencies (ChitchatAgent uses LLMService, not TranslationService)
+# - Fixed circular dependencies for containerization with Podman
+# - Added missing services required by other agents
+# - Fixed port conflicts for health check endpoints
+# ===================================================================
 
 global_settings:
   environment:
-    PYTHONPATH: '${PYTHONPATH}:${PWD}'
+    PYTHONPATH: '/app'  # Fixed for container paths
     LOG_LEVEL: 'INFO'
     DEBUG_MODE: 'false'
     ENABLE_METRICS: 'true'
@@ -48,116 +57,138 @@ agent_groups:
       port: 7120
       health_check_port: 8120
       required: true
-      dependencies: [ErrorBus]
+      dependencies: []
     RequestCoordinator:
       script_path: main_pc_code/agents/request_coordinator.py
       port: 26002
       health_check_port: 27002
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
-    ErrorBus:
-      script_path: documentation/error_management/verify_error_bus_integration.py
-      port: 7150
-      health_check_port: 8150
-      required: true
-      dependencies: []
+      dependencies: [SystemDigitalTwin]
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
       port: 7125
       health_check_port: 8125
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
 
   memory_system:
-    SessionMemoryAgent:
-      script_path: main_pc_code/agents/session_memory_agent.py
-      port: 5574
-      health_check_port: 6574
-      required: true
-      dependencies: [RequestCoordinator, SystemDigitalTwin, MemoryClient, ErrorBus]
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
       port: 5713
       health_check_port: 6713
       required: true
-      dependencies: [ErrorBus]
+      dependencies: [SystemDigitalTwin]
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: true
+      dependencies: [RequestCoordinator, SystemDigitalTwin, MemoryClient]
     KnowledgeBase:
       script_path: main_pc_code/agents/knowledge_base.py
       port: 5715
       health_check_port: 6715
       required: true
-      dependencies: [MemoryClient, SystemDigitalTwin, ErrorBus]
+      dependencies: [MemoryClient, SystemDigitalTwin]
     # MemoryOrchestratorService is a PC2 agent, not a MainPC agent. It should be defined in pc2_code/config/startup_config.yaml
 
+  utility_services:
+    CodeGenerator:
+      script_path: main_pc_code/agents/code_generator.py
+      port: 5650
+      health_check_port: 6650
+      required: true
+      dependencies: [SystemDigitalTwin, ModelManagerAgent]
+    LLMService:
+      script_path: main_pc_code/agents/llm_service.py
+      port: 5655
+      health_check_port: 6655
+      required: true
+      dependencies: [SystemDigitalTwin, ModelManagerAgent]
+    SelfTrainingOrchestrator:
+      script_path: main_pc_code/agents/self_training_orchestrator.py
+      port: 5660
+      health_check_port: 6660
+      required: true
+      dependencies: [SystemDigitalTwin, ModelManagerAgent]
+    PC2Services:
+      script_path: main_pc_code/agents/pc2_services_connector.py
+      port: 5665
+      health_check_port: 6665
+      required: true
+      dependencies: [SystemDigitalTwin]
+
   ai_models_gpu_services:
-    ModelManagerAgent:
-      script_path: main_pc_code/agents/model_manager_agent.py
-      port: 5570
-      health_check_port: 6570
-      required: true
-      dependencies: [GGUFModelManager, SystemDigitalTwin, PC2Services, VRAMOptimizerAgent, ErrorBus]
-    VRAMOptimizerAgent:
-      script_path: main_pc_code/agents/vram_optimizer_agent.py
-      port: 5572
-      health_check_port: 6572
-      required: true
-      dependencies: [ModelManagerAgent, SystemDigitalTwin, RequestCoordinator, ErrorBus]
     GGUFModelManager:
       script_path: main_pc_code/agents/gguf_model_manager.py
       port: 5575
       health_check_port: 6575
       required: true
-      dependencies: [ModelManagerAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
+    ModelManagerAgent:
+      script_path: main_pc_code/agents/model_manager_agent.py
+      port: 5570
+      health_check_port: 6570
+      required: true
+      dependencies: [GGUFModelManager, SystemDigitalTwin, PC2Services]
+    VRAMOptimizerAgent:
+      script_path: main_pc_code/agents/vram_optimizer_agent.py
+      port: 5572
+      health_check_port: 6572
+      required: true
+      dependencies: [SystemDigitalTwin, RequestCoordinator]
     PredictiveLoader:
       script_path: main_pc_code/agents/predictive_loader.py
       port: 5617
       health_check_port: 6617
       required: true
-      dependencies: [RequestCoordinator, SystemDigitalTwin, ErrorBus]
+      dependencies: [RequestCoordinator, SystemDigitalTwin]
+
+  vision_system:
     FaceRecognitionAgent:
       script_path: main_pc_code/agents/face_recognition_agent.py
       port: 5610
       health_check_port: 6610
       required: true
-      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
 
   learning_knowledge:
-    LearningOpportunityDetector:
-      script_path: main_pc_code/agents/learning_opportunity_detector.py
-      port: 7200
-      health_check_port: 7201
-      required: true
-      dependencies: [LearningOrchestrationService, MemoryClient, ErrorBus]
-    LearningOrchestrationService:
-      script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: 7210
-      health_check_port: 7211
-      required: true
-      dependencies: [ModelEvaluationFramework, ErrorBus]
     ModelEvaluationFramework:
       script_path: main_pc_code/agents/model_evaluation_framework.py
       port: 7220
       health_check_port: 7221
       required: true
-      dependencies: [ErrorBus]
+      dependencies: [SystemDigitalTwin]
+    LearningOrchestrationService:
+      script_path: main_pc_code/agents/learning_orchestration_service.py
+      port: 7210
+      health_check_port: 7211
+      required: true
+      dependencies: [ModelEvaluationFramework, SystemDigitalTwin]
+    LearningOpportunityDetector:
+      script_path: main_pc_code/agents/learning_opportunity_detector.py
+      port: 7200
+      health_check_port: 7201
+      required: true
+      dependencies: [LearningOrchestrationService, MemoryClient, SystemDigitalTwin]
     LearningManager:
       script_path: main_pc_code/agents/learning_manager.py
       port: 5580
       health_check_port: 6580
       required: true
-      dependencies: [MemoryClient, RequestCoordinator, SystemDigitalTwin, ErrorBus]
+      dependencies: [MemoryClient, RequestCoordinator, SystemDigitalTwin]
     ActiveLearningMonitor:
       script_path: main_pc_code/agents/active_learning_monitor.py
       port: 5638
       health_check_port: 6638
       required: true
-      dependencies: [LearningManager, SystemDigitalTwin, ErrorBus]
+      dependencies: [LearningManager, SystemDigitalTwin]
     LearningAdjusterAgent:
       script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
       port: 5643
       health_check_port: 6643
       required: true
-      dependencies: [SelfTrainingOrchestrator, SystemDigitalTwin, ErrorBus]
+      dependencies: [SelfTrainingOrchestrator, SystemDigitalTwin]
 
   language_processing:
     ModelOrchestrator:
@@ -165,93 +196,99 @@ agent_groups:
       port: 7010
       health_check_port: 8010
       required: true
-      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
     GoalManager:
       script_path: main_pc_code/agents/goal_manager.py
       port: 7005
       health_check_port: 8005
       required: true
-      dependencies: [RequestCoordinator, ModelOrchestrator, SystemDigitalTwin, MemoryClient, ErrorBus]
+      dependencies: [RequestCoordinator, ModelOrchestrator, SystemDigitalTwin, MemoryClient]
     IntentionValidatorAgent:
       script_path: main_pc_code/agents/IntentionValidatorAgent.py
       port: 5701
       health_check_port: 6701
       required: true
-      dependencies: [RequestCoordinator, SystemDigitalTwin, ErrorBus]
+      dependencies: [RequestCoordinator, SystemDigitalTwin]
     NLUAgent:
       script_path: main_pc_code/agents/nlu_agent.py
       port: 5709
       health_check_port: 6709
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
     AdvancedCommandHandler:
       script_path: main_pc_code/agents/advanced_command_handler.py
       port: 5710
       health_check_port: 6710
       required: true
-      dependencies: [NLUAgent, CodeGenerator, SystemDigitalTwin, ErrorBus]
+      dependencies: [NLUAgent, CodeGenerator, SystemDigitalTwin]
     ChitchatAgent:
       script_path: main_pc_code/agents/chitchat_agent.py
       port: 5711
       health_check_port: 6711
       required: true
-      dependencies: [NLUAgent, SystemDigitalTwin, TranslationService, ErrorBus]
+      dependencies: [NLUAgent, SystemDigitalTwin, LLMService]
     FeedbackHandler:
       script_path: main_pc_code/agents/feedback_handler.py
       port: 5636
       health_check_port: 6636
       required: true
-      dependencies: [NLUAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [NLUAgent, SystemDigitalTwin]
     Responder:
       script_path: main_pc_code/agents/responder.py
       port: 5637
       health_check_port: 6637
       required: true
-      dependencies: [NLUAgent, EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [NLUAgent, EmotionEngine, SystemDigitalTwin]
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: 5595
+      health_check_port: 6595
+      required: true
+      dependencies: [SystemDigitalTwin]
 
   audio_processing:
-    StreamingTTSAgent:
-      script_path: main_pc_code/agents/streaming_tts_agent.py
-      port: 5562
-      health_check_port: 6562
-      required: true
-      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, StreamingInterruptHandler, UnifiedSystemAgent, ErrorBus]
-    StreamingInterruptHandler:
-      script_path: main_pc_code/agents/streaming_interrupt_handler.py
-      port: 5576
-      health_check_port: 6576
-      required: true
-      dependencies: [StreamingSpeechRecognition, StreamingTTSAgent, ErrorBus]
-    StreamingSpeechRecognition:
-      script_path: main_pc_code/agents/streaming_speech_recognition.py
-      port: 6580
-      health_check_port: 6582
-      required: true
-      dependencies: [FusedAudioPreprocessor, ModelManagerAgent, SystemDigitalTwin, ErrorBus]
-    FusedAudioPreprocessor:
-      script_path: main_pc_code/agents/fused_audio_preprocessor.py
-      port: 6578
-      health_check_port: 6581
-      required: true
-      dependencies: [AudioCapture, SystemDigitalTwin, ErrorBus]
     AudioCapture:
       script_path: main_pc_code/agents/streaming_audio_capture.py
       port: 6575
       health_check_port: 6576
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
+    FusedAudioPreprocessor:
+      script_path: main_pc_code/agents/fused_audio_preprocessor.py
+      port: 6578
+      health_check_port: 6581
+      required: true
+      dependencies: [AudioCapture, SystemDigitalTwin]
+    StreamingInterruptHandler:
+      script_path: main_pc_code/agents/streaming_interrupt_handler.py
+      port: 5576
+      health_check_port: 6577  # Fixed port conflict
+      required: true
+      dependencies: [StreamingSpeechRecognition, StreamingTTSAgent]
+    StreamingSpeechRecognition:
+      script_path: main_pc_code/agents/streaming_speech_recognition.py
+      port: 6580
+      health_check_port: 6582
+      required: true
+      dependencies: [FusedAudioPreprocessor, ModelManagerAgent, SystemDigitalTwin]
+    StreamingTTSAgent:
+      script_path: main_pc_code/agents/streaming_tts_agent.py
+      port: 5562
+      health_check_port: 6562
+      required: true
+      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, UnifiedSystemAgent]
     WakeWordDetector:
       script_path: main_pc_code/agents/wake_word_detector.py
       port: 6577
       health_check_port: 6578
       required: true
-      dependencies: [AudioCapture, FusedAudioPreprocessor, SystemDigitalTwin, ErrorBus]
+      dependencies: [AudioCapture, FusedAudioPreprocessor, SystemDigitalTwin]
     StreamingLanguageAnalyzer:
       script_path: main_pc_code/agents/streaming_language_analyzer.py
       port: 5579
       health_check_port: 5597
       required: true
-      dependencies: [StreamingSpeechRecognition, SystemDigitalTwin, ErrorBus]
+      dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
 
   emotion_system:
     EmotionEngine:
@@ -259,57 +296,43 @@ agent_groups:
       port: 5590
       health_check_port: 6590
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
     MoodTrackerAgent:
       script_path: main_pc_code/agents/mood_tracker_agent.py
       port: 5704
       health_check_port: 6704
       required: true
-      dependencies: [EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [EmotionEngine, SystemDigitalTwin]
     HumanAwarenessAgent:
       script_path: main_pc_code/agents/human_awareness_agent.py
       port: 5705
       health_check_port: 6705
       required: true
-      dependencies: [EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [EmotionEngine, SystemDigitalTwin]
     ToneDetector:
       script_path: main_pc_code/agents/tone_detector.py
       port: 5625
       health_check_port: 6625
       required: true
-      dependencies: [EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [EmotionEngine, SystemDigitalTwin]
     VoiceProfilingAgent:
       script_path: main_pc_code/agents/voice_profiling_agent.py
       port: 5708
       health_check_port: 6708
       required: true
-      dependencies: [EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [EmotionEngine, SystemDigitalTwin]
     EmpathyAgent:
       script_path: main_pc_code/agents/EmpathyAgent.py
       port: 5703
       health_check_port: 6703
       required: true
-      dependencies: [EmotionEngine, SystemDigitalTwin, ErrorBus]
+      dependencies: [EmotionEngine, SystemDigitalTwin]
     EmotionSynthesisAgent:
       script_path: main_pc_code/agents/emotion_synthesis_agent.py
       port: 5706
       health_check_port: 6706
       required: true
-      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, ErrorBus]
-
-  vision:
-    VisionCaptureAgent:
-      script_path: main_pc_code/agents/vision_capture_agent.py
-      port: 5592
-      health_check_port: 6592
-      required: true
-      dependencies: [RequestCoordinator, SystemDigitalTwin, ErrorBus]
-    FaceRecognitionAgent:
-      script_path: main_pc_code/agents/face_recognition_agent.py
-      port: 5610
-      health_check_port: 6610
-      required: true
-      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin]
 
   utilities_support:
     PredictiveHealthMonitor:
@@ -317,24 +340,24 @@ agent_groups:
       port: 5613
       health_check_port: 6613
       required: true
-      dependencies: [SystemDigitalTwin, ErrorBus]
+      dependencies: [SystemDigitalTwin]
     FixedStreamingTranslation:
       script_path: main_pc_code/agents/fixed_streaming_translation.py
       port: 5584
       health_check_port: 6584
       required: true
-      dependencies: [ModelManagerAgent, SystemDigitalTwin, ErrorBus]
+      dependencies: [ModelManagerAgent, SystemDigitalTwin]
     Executor:
       script_path: main_pc_code/agents/executor.py
       port: 5606
       health_check_port: 6606
       required: true
-      dependencies: [CodeGenerator, SystemDigitalTwin, ErrorBus]
+      dependencies: [CodeGenerator, SystemDigitalTwin]
 
   security_auth:
-    IntentionValidatorAgent:
-      script_path: main_pc_code/agents/IntentionValidatorAgent.py
-      port: 5701
-      health_check_port: 6701
+    AuthenticationAgent:
+      script_path: main_pc_code/agents/authentication_agent.py
+      port: 5702
+      health_check_port: 6702
       required: true
-      dependencies: [RequestCoordinator, SystemDigitalTwin, ErrorBus] 
+      dependencies: [SystemDigitalTwin] 

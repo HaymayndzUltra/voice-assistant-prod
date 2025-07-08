@@ -93,7 +93,9 @@ BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 class UnifiedWebAgent(BaseAgent):
 
     
-    def __init__(self, port: int = None):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = None):
 
     
         super().__init__(name="UnifiedWebAgent", port=port)
@@ -1774,6 +1776,11 @@ class UnifiedWebAgent(BaseAgent):
         """Extract data relevant to the context from page 
 from main_pc_code.src.core.base_agent import BaseAgentcontent
 from main_pc_code.utils.config_loader import load_config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
 
 # Load configuration at the module level
 config = load_config()"""

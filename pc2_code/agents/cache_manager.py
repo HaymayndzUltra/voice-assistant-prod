@@ -27,6 +27,11 @@ from collections import defaultdict
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = Config().get_config()# Constants
 REDIS_HOST = 'localhost'
@@ -51,18 +56,7 @@ class ResourceMonitor(
         self.memory_threshold = 80  # percentage
         self.last_check = time.time()
         self.stats_history = []
-        
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def get_stats(self) -> Dict[str, Any]:
         """Get current resource statistics"""
         stats = {
@@ -139,7 +133,9 @@ def get_stats(self) -> Dict[str, Any]:
 
         return socket
 class CacheManager(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     Centralized cache management service using Redis
     """
     def __init__(self, port: int = 7102, health_port: int = 8102):
@@ -470,5 +466,22 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }
 if __name__ == "__main__":
     main()

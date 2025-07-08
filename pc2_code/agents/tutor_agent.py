@@ -29,6 +29,11 @@ from common.core.base_agent import BaseAgent
 # Import config loader
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
@@ -111,18 +116,7 @@ class AdaptiveLearningEngine:
         self.scaler = StandardScaler()
         self.difficulty_model = self._init_difficulty_model()
         self.learning_style_model = self._init_learning_style_model()
-        
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def _init_difficulty_model(self) -> nn.Module:
         """Initialize neural network for difficulty prediction"""
         model = nn.Sequential(
@@ -403,7 +397,9 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
-    """Main tutor agent that coordinates all tutoring functionality Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Main tutor agent that coordinates all tutoring functionality Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Get port from config
         port = TUTOR_CONFIG.get('port', 5605)

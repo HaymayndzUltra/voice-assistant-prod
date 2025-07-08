@@ -22,6 +22,11 @@ from pc2_code.config.system_config import get_service_host, get_service_port
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -75,18 +80,7 @@ class MCTSNode:
         self.uncertainty = 1.0
         self.causal_links = []
         self.counterfactuals = []
-    
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def add_child(self, state: Dict[str, Any], action: Dict[str, Any]) -> 'MCTSNode':
         """Add a child node to this node."""
         child = MCTSNode(state, parent=self, action=action)
@@ -110,7 +104,9 @@ def add_child(self, state: Dict[str, Any], action: Dict[str, Any]) -> 'MCTSNode'
         return exploitation + exploration * uncertainty_factor
 
 class DreamWorldAgent(BaseAgent):
-    def __init__(self, port: int = 7104):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = 7104):
         super().__init__(name="DreamWorldAgent", port=port)
         self.start_time = time.time()
         self.context = zmq.Context()

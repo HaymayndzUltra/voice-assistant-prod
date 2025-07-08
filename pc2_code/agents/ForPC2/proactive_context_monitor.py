@@ -75,18 +75,7 @@ class ProactiveContextMonitor(BaseAgent):
         self._init_zmq()
         self._start_background_threads()
         logger.info(f"Proactive Context Monitor initialized on port {self.main_port}")
-    
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def _init_zmq(self):
         """Initialize ZMQ sockets."""
         try:

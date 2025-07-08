@@ -616,6 +616,23 @@ class HealthMonitor:
         except Exception as e:
             logger.error(f"Error monitoring {stream_name} for agent {agent_name}: {e}")
 
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }
 if __name__ == "__main__":
     # Create and run the health monitor agent
     monitor = HealthMonitor()

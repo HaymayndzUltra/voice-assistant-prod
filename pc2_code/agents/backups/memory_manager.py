@@ -15,6 +15,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = load_config()# Configure logging
 logging.basicConfig(
@@ -28,7 +33,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class MemoryManager(BaseAgent):
-    def __init__(self, port: int = 7110, health_port: int = 7111):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = 7110, health_port: int = 7111):
          super().__init__(name="MemoryManager", port=7110)
 """Initialize the MemoryManager with ZMQ socket and database."""
         self.port = port

@@ -28,6 +28,11 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # --- Logging Setup ---
 logger = logging.getLogger('ErrorManagementSystem')
 
@@ -377,7 +382,9 @@ class RecoveryManagerModule:
 #         UNIFIED ERROR MANAGEMENT SYSTEM (Ang Final, Merged Agent)
 # ===================================================================
 class ErrorManagementSystem(BaseAgent):
-    """The central, unified system for error management, health monitoring, and self-healing."""
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""The central, unified system for error management, health monitoring, and self-healing."""
 
     def __init__(self, **kwargs):
         super().__init__(name="ErrorManagementSystem", port=DEFAULT_PORT, **kwargs)
@@ -538,3 +545,19 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup()
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }

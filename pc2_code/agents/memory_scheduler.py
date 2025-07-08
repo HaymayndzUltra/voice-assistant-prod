@@ -33,6 +33,11 @@ if ROOT_DIR.as_posix() not in sys.path:
 
 from common.core.base_agent import BaseAgent
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +50,9 @@ logging.basicConfig(
 logger = logging.getLogger("MemoryScheduler")
 
 class MemoryScheduler(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     Memory Scheduler Agent
     
     Handles scheduled memory operations to maintain the health and efficiency
@@ -375,6 +382,23 @@ class MemoryScheduler(BaseAgent):
             self.error_bus_pub.close()
         super().cleanup()
 
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }
 if __name__ == "__main__":
     try:
         scheduler = MemoryScheduler()

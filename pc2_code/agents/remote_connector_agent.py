@@ -31,6 +31,11 @@ if str(project_root) not in sys.path:
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load PC2 specific configuration system
 # Removed 'from pc2_code.config.system_config import config' to avoid potential conflicts
 # and rely on the Config().get_config() pattern used elsewhere in the project.
@@ -92,7 +97,9 @@ MODEL_MANAGER_HOST = app_config.get('zmq.model_manager_host', '192.168.100.16') 
 TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this snippet
 
 class RemoteConnectorAgent(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     RemoteConnectorAgent: Handles remote model/API connections. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
     """
     def __init__(self, port: int = None):
@@ -173,11 +180,7 @@ class RemoteConnectorAgent(BaseAgent):
         self.cache_misses = 0
 
         # New attributes for error reporting
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 
         logger.info("Remote Connector Agent initialized")
         logger.info(f"Cache enabled: {self.cache_enabled}")

@@ -16,6 +16,11 @@ from main_pc_code.src.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 import traceback
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -48,7 +53,9 @@ except Exception as e:
     config = {}
 
 class LearningAdjusterAgent(BaseAgent):
-    def __init__(self, port: int = None):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = None):
         # Get port from config
         actual_port = config.get('services', {}).get('learning_adjuster', {}).get('port', 5643) if port is None else port
         

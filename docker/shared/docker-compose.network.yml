@@ -1,12 +1,31 @@
-version: '3.8'
+version: '3.9'
 
-# Shared Network Configuration for MainPC and PC2 Communication
+# This file defines the shared networks for the AI system
+# It should be included in all docker-compose setups
 
 networks:
-  ai-shared-network:
+  ai_system_network:
     driver: bridge
     ipam:
       driver: default
       config:
-        - subnet: 172.28.0.0/16
-          gateway: 172.28.0.1 
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+
+  # Separate network for more sensitive services
+  ai_internal_network:
+    driver: bridge
+    internal: true  # This network has no external connectivity
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/16
+
+  # External-facing network for web services
+  ai_external_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1 

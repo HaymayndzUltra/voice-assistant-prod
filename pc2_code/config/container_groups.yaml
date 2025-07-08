@@ -1,0 +1,152 @@
+# PC2 Container Groups Configuration
+# Defines logical grouping of agents for containerization
+
+# Core Infrastructure Container
+# Essential services that other containers depend on
+core_infrastructure:
+  name: "pc2-core-infrastructure"
+  image: "pc2/core-infrastructure:1.0"
+  agents:
+    - ErrorBusService
+    - HealthMonitor
+    - ResourceManager
+    - TaskScheduler
+    - PerformanceMonitor
+    - PerformanceLoggerAgent
+    - SystemHealthManager
+  environment:
+    PC2_ROLE: "core-infrastructure"
+    LOG_LEVEL: "INFO"
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./data
+      target: /app/data
+  mem_limit: "1024m"
+  cpu_limit: "0.5"
+
+# Memory System Container
+# Services related to memory persistence and retrieval
+memory_system:
+  name: "pc2-memory-system"
+  image: "pc2/memory-system:1.0"
+  agents:
+    - MemoryOrchestratorService
+    - CacheManager
+    - ExperienceTracker
+    - ContextManager
+    - UnifiedMemoryReasoningAgent
+  environment:
+    PC2_ROLE: "memory-system"
+    LOG_LEVEL: "INFO"
+    REDIS_HOST: "pc2-redis"
+    SQLITE_DIR: "/app/data"
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./data
+      target: /app/data
+    - source: ./models/memory
+      target: /app/models/memory
+  mem_limit: "2048m"
+  cpu_limit: "1.0"
+  depends_on:
+    - "pc2-core-infrastructure"
+    - "pc2-redis"
+
+# AI Models Container
+# Services that use AI models for various tasks
+ai_models:
+  name: "pc2-ai-models"
+  image: "pc2/ai-models:1.0"
+  agents:
+    - AdvancedRouter
+    - TieredResponder
+    - AsyncProcessor
+    - DreamWorldAgent
+    - DreamingModeAgent
+  environment:
+    PC2_ROLE: "ai-models"
+    LOG_LEVEL: "INFO"
+    CUDA_VISIBLE_DEVICES: "0"
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./models/language
+      target: /app/models/language
+    - source: ./models/generative
+      target: /app/models/generative
+  mem_limit: "4096m"
+  cpu_limit: "2.0"
+  gpu_limit: "1"
+  depends_on:
+    - "pc2-core-infrastructure"
+    - "pc2-memory-system"
+
+# User Services Container
+# Services that interact directly with users
+user_services:
+  name: "pc2-user-services"
+  image: "pc2/user-services:1.0"
+  agents:
+    - AuthenticationAgent
+    - UnifiedUtilsAgent
+    - FileSystemAssistantAgent
+    - UnifiedWebAgent
+    - TutorAgent
+    - TutoringServiceAgent
+    - TutoringAgent
+  environment:
+    PC2_ROLE: "user-services"
+    LOG_LEVEL: "INFO"
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./data/users
+      target: /app/data/users
+  mem_limit: "1536m"
+  cpu_limit: "1.0"
+  depends_on:
+    - "pc2-core-infrastructure"
+    - "pc2-memory-system"
+
+# AI Monitoring & Tools Container
+# Services for AI system monitoring and specialized tools
+ai_monitoring:
+  name: "pc2-ai-monitoring"
+  image: "pc2/ai-monitoring:1.0"
+  agents:
+    - AgentTrustScorer
+    - ProactiveContextMonitor
+    - RemoteConnectorAgent
+    - VisionProcessingAgent
+  environment:
+    PC2_ROLE: "ai-monitoring"
+    LOG_LEVEL: "INFO"
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./data/monitoring
+      target: /app/data/monitoring
+    - source: ./models/vision
+      target: /app/models/vision
+  mem_limit: "2048m"
+  cpu_limit: "1.0"
+  depends_on:
+    - "pc2-core-infrastructure"
+    - "pc2-memory-system"
+
+# Database Services Container
+# Redis for caching and other database services
+database_services:
+  name: "pc2-redis"
+  image: "redis:alpine"
+  environment:
+    LOG_LEVEL: "NOTICE"
+  volumes:
+    - source: ./data/redis
+      target: /data
+  mem_limit: "512m"
+  cpu_limit: "0.5"
+  ports:
+    - "6379:6379" 

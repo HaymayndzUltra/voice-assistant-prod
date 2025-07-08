@@ -29,6 +29,11 @@ from main_pc_code.src.core.base_agent import BaseAgent
 # Import config loader
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
@@ -392,7 +397,9 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
-    """Main tutor agent that coordinates all tutoring functionality"""
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Main tutor agent that coordinates all tutoring functionality"""
     def __init__(self):
         # Get port from config
         port = TUTOR_CONFIG.get('port', 5605)

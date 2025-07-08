@@ -36,7 +36,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class LearningAdjusterAgent(BaseAgent):
-    def __init__(self, port: int = None):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = None):
          super().__init__(name="LearningAdjusterAgent", port=None)
 """Initialize the LearningAdjusterAgent with ZMQ sockets."""
         self.context = zmq.Context()
@@ -168,6 +170,11 @@ class LearningAdjusterAgent(BaseAgent):
 config = load_config()
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
         try:
             end_time = datetime.now()
             start_time = end_time - timedelta(hours=hours)

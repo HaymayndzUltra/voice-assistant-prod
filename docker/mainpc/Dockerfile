@@ -1,36 +1,57 @@
-# MAINPC ONLY - Dockerfile for MainPC Voice Pipeline Components
-
-FROM python:3.10-slim
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libzmq3-dev \
-    portaudio19-dev \
-    libsndfile1 \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
-COPY docker/mainpc/requirements.mainpc.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Create necessary directories
-RUN mkdir -p /app/logs /app/cache /app/models /app/voice_samples /app/certificates
-
-# Copy the application code
-COPY main_pc_code /app/main_pc_code
-COPY config /app/config
-COPY scripts /app/scripts
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
-ENV PYTHONPATH=/app
-ENV SECURE_ZMQ=1
-ENV MACHINE_TYPE=MAINPC
-ENV LOG_LEVEL=INFO
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-setuptools \
+    python3-dev \
+    build-essential \
+    curl \
+    git \
+    libportaudio2 \
+    libsndfile1 \
+    portaudio19-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1-mesa-glx \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Create application directory
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+
+# Install llama-cpp-python with CUDA support specifically for RTX 4090
+RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=89" pip install --no-cache-dir llama-cpp-python==0.2.23
+
+# Copy application code
+COPY . /app/
+
+# Make scripts executable
+RUN chmod +x /app/docker/mainpc/agent_starter.py \
+    && chmod +x /app/main_pc_code/scripts/container_healthcheck.py
+
+# Create necessary directories if they don't exist
+RUN mkdir -p /app/logs /app/data /app/models /app/config
 
 # Default command - will be overridden by docker-compose
-CMD ["python", "-m", "main_pc_code.src.core.task_router"] 
+ENTRYPOINT ["python", "/app/docker/mainpc/agent_starter.py"] 

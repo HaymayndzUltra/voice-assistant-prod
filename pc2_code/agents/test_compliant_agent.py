@@ -17,6 +17,11 @@ from main_pc_code.src.core.base_agent import BaseAgent
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at module level
 config = Config().get_config()
 
@@ -28,7 +33,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class TestCompliantAgent(BaseAgent):
-    """Test agent that demonstrates compliance with PC2 architectural standards."""
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Test agent that demonstrates compliance with PC2 architectural standards."""
     
     def __init__(self, port: Optional[int] = None):
         """Initialize the agent.

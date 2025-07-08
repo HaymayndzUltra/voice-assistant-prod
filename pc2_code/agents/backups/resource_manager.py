@@ -25,6 +25,11 @@ logging.basicConfig
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = load_config()(
     level=logging.INFO,
@@ -37,7 +42,9 @@ config = load_config()(
 logger = logging.getLogger(__name__)
 
 class ResourceManager(BaseAgent):
-    def __init__(self, port=7113, health_port=7114):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port=7113, health_port=7114):
          super().__init__(name="ResourceManager", port=7113)
 self.port = port
         self.health_port = health_port

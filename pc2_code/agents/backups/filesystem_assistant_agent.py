@@ -60,7 +60,9 @@ logging.basicConfig(
 logger = logging.getLogger("FilesystemAssistant")
 
 class FileSystemAssistantAgent(BaseAgent):
-    """Filesystem Assistant Agent that provides file operations via ZMQ
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Filesystem Assistant Agent that provides file operations via ZMQ
     
     This agent allows other components in the system to interact with the filesystem
     in a controlled and secure manner. It provides operations such as listing directories,
@@ -161,6 +163,11 @@ self.name = "FileSystemAssistantAgent"
             
 from main_pc_code.src.core.base_agent import BaseAgentaction 
 from main_pc_code.utils.config_loader import load_config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
 
 # Load configuration at the module level
 config = load_config()= query.get("action")

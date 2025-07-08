@@ -49,6 +49,11 @@ from main_pc_code.utils.env_loader import get_env
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Import secure ZMQ utilities if available
 try:
     from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server, start_auth
@@ -88,7 +93,9 @@ TIMEOUT = 30  # seconds
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 class UnifiedWebAgent(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     Unified Web Agent
     ----------------
     An enhanced agent capable of proactive web browsing, information gathering,
@@ -234,19 +241,7 @@ class UnifiedWebAgent(BaseAgent):
         self._start_interrupt_thread()
 
         logger.info(f"Unified Web Agent initialized successfully on port {self.port}")
-
-
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def _load_config(self):
         """Load configuration from startup_config.yaml"""
         try:

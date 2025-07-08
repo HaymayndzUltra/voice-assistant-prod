@@ -28,6 +28,11 @@ except ImportError as e:
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = Config().get_config()
 
@@ -43,7 +48,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class PerformanceLoggerAgent(BaseAgent):
-    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""
     PerformanceLoggerAgent: Logs performance metrics. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
     """
 
@@ -55,11 +62,7 @@ class PerformanceLoggerAgent(BaseAgent):
         self.port = port
         self.health_port = self.port + 1
         self.context = zmq.Context()
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
         # Start health check thread
         self._start_health_check()
         # Main REP socket for handling requests

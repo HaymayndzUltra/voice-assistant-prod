@@ -28,6 +28,11 @@ import numpy as np
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = Config().get_config()# Constants
 METRICS_PORT = 5619
@@ -56,18 +61,7 @@ class ResourceMonitor(
         self.memory_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.gpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.last_check = time.time()
-        
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def get_stats(self) -> Dict[str, Any]:
         """Get current resource statistics"""
         stats = {
@@ -157,7 +151,9 @@ def get_stats(self) -> Dict[str, Any]:
 
         return socket
 class PerformanceMonitor(BaseAgent):
-    def __init__(self, port: int = 7103):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = 7103):
         super().__init__(name="PerformanceMonitor", port=port)
         self.start_time = time.time()
         self._setup_logging()

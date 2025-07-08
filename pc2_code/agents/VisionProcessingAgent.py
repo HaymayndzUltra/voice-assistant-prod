@@ -27,6 +27,11 @@ if PC2_CODE_DIR not in sys.path:
 from agents.agent_utils import BaseAgent
 import psutil
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -39,7 +44,9 @@ logging.basicConfig(
 logger = logging.getLogger("VisionProcessingAgent")
 
 class VisionProcessingAgent(BaseAgent):
-    """Agent for processing images and providing descriptions Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()"""Agent for processing images and providing descriptions Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
 
     def __init__(self, **kwargs):
         """Initialize the Vision Processing Agent."""
@@ -59,18 +66,7 @@ class VisionProcessingAgent(BaseAgent):
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
-
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""
         request_type = request.get("type", "")
@@ -152,6 +148,23 @@ def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
             }
 
 # -------------------- Agent Entrypoint --------------------
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        return {
+            "status": "ok",
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        }
 if __name__ == "__main__":
     # Standardized main execution block
     agent = None

@@ -30,6 +30,11 @@ import json
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+
 # Load configuration at the module level
 config = Config().get_config()
 
@@ -113,23 +118,7 @@ class ResourceManager(
         self._setup_health_monitoring()
 
         self.start_time = time.time()
-
-    
-
-
-        self.error_bus_port = 7150
-
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.error_bus = setup_error_reporting(self)
 def __init__(self):
         self.cpu_threshold = 80  # percentage
         self.memory_threshold = 80  # percentage
@@ -298,7 +287,9 @@ class TaskQueue:
         }
 
 class AsyncProcessor(BaseAgent):
-    def __init__(self, port: int = 7101):
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()def __init__(self, port: int = 7101):
         super().__init__(name="AsyncProcessor", port=port)
         self.start_time = time.time()
         self.context = zmq.Context()

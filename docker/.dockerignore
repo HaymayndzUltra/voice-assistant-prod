@@ -1,0 +1,97 @@
+# Docker ignore file for PC2 containers
+# This file lists patterns to exclude from Docker builds
+
+# Version control
+.git
+.gitignore
+.svn
+.hg
+
+# Python cache files
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+**/.pytest_cache
+**/.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Virtual environments
+**/venv
+**/env
+**/.env
+**/.venv
+**/ENV
+**/env.bak/
+**/venv.bak/
+**/pythonenv*
+
+# IDE files
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+**/.spyderproject
+**/.spyproject
+**/.ropeproject
+.DS_Store
+
+# Local development files
+*.log
+logs/*
+!logs/.gitkeep
+**/.env.local
+**/.env.development
+**/.env.test
+**/.env.production
+
+# Build artifacts
+**/*.egg-info/
+**/*.egg
+**/dist/
+**/build/
+
+# Sensitive files
+**/*.pem
+**/*.key
+**/*.crt
+**/*_secret
+**/*.env
+certificates/
+
+# Large/unnecessary data directories
+cache/
+**/node_modules
+temp/
+temp_test_context/
+training_data/
+test_reports/
+log_archives/
+**/*.zip
+**/*.tar
+**/*.gz
+**/*.rar
+**/*.7z
+
+# Model files (these should be mounted at runtime, not built into image)
+models/*/
+python_files_backup_*/
+
+# Documentation
+docs/
+*.md
+README*
+LICENSE*
+CONTRIBUTING*
+
+# Docker files themselves (avoid recursive copying)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Specific large directories to exclude
+fine_tuned_models/
+output/
+artifacts/ 
