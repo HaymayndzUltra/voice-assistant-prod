@@ -24,6 +24,17 @@
 - **LocalFineTunerAgent**: Manages model fine-tuning and artifact management with direct GPU usage.
 - **StreamingSpeechRecognition**: Performs speech-to-text conversion using Whisper models with heavy CPU/GPU usage.
 - **FaceRecognitionAgent**: Provides comprehensive face analysis capabilities with GPU acceleration.
+- **ModelEvaluationFramework (MEF)**: Centralized agent for model performance tracking, evaluation, and feedback.
+  - **Port**: 7220
+  - **Health Check Port**: 7221
+  - **Dependencies**: BaseAgent, zmq, sqlite3, threading, pydantic, config_loader, CircuitBreaker
+  - **Key Functions**:
+    - Logs and queries standardized performance metrics (PerformanceMetric)
+    - Logs and queries model evaluation scores (ModelEvaluationScore)
+    - Provides feedback to the learning pipeline
+    - Reports errors via the Error Bus (ZMQ PUB/SUB, port 7150)
+  - **Config**: All ports/paths are dynamic via config_loader
+  - **Extensibility**: Modular, ready for distributed operation
 
 ## Cognitive Frameworks Container
 - **ChainOfThoughtAgent**: Specialized AI reasoning agent na nagde-decompose ng complex problems into steps.
@@ -74,6 +85,29 @@
 - **LearningAdjusterAgent**: Manages and optimizes learning parameters for agents.
 - **LearningManager**: Responsible for managing the learning process of the AI system.
 - **ActiveLearningMonitor**: Monitors interactions between users and the system for learning opportunities.
+- **LearningOpportunityDetector (LOD)**: Detects and prioritizes valuable learning opportunities from user interactions for the learning pipeline.
+  - **Port**: 7200
+  - **Health Check Port**: 7201
+  - **Dependencies**: BaseAgent, zmq, sqlite3, threading, pydantic, config_loader, CircuitBreaker
+  - **Key Functions**:
+    - Monitors user/agent interactions for learning signals
+    - Scores and categorizes opportunities using shared Pydantic models
+    - Publishes to LearningOrchestrationService
+    - Reports errors via the Error Bus (ZMQ PUB/SUB, port 7150)
+  - **Config**: All ports/paths are dynamic via config_loader
+  - **Extensibility**: Modular, ready for distributed operation
+
+- **LearningOrchestrationService (LOS)**: Central manager for training cycles, resource allocation, and learning pipeline coordination.
+  - **Port**: 7210
+  - **Health Check Port**: 7211
+  - **Dependencies**: BaseAgent, zmq, sqlite3, threading, pydantic, config_loader, CircuitBreaker
+  - **Key Functions**:
+    - Manages training cycles and resource allocation
+    - Receives learning opportunities from LOD
+    - Tracks training progress and results using shared Pydantic models
+    - Reports errors via the Error Bus (ZMQ PUB/SUB, port 7150)
+  - **Config**: All ports/paths are dynamic via config_loader
+  - **Extensibility**: Modular, ready for distributed operation
 
 # Main PC Agents Documentation
 

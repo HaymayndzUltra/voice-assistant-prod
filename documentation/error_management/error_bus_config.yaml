@@ -1,0 +1,103 @@
+# Error Bus Configuration
+# This file contains configuration for the Error Bus and Error Management System
+
+# Error Bus settings
+error_bus:
+  # Main Error Bus settings
+  port: 7150
+  topic: "ERROR:"
+  bind_address: "0.0.0.0"
+  
+  # Cross-machine communication
+  mainpc_ip: ${MAINPC_IP}
+  pc2_ip: ${PC2_IP}
+  mainpc_endpoint: "tcp://${MAINPC_IP}:7150"
+  pc2_endpoint: "tcp://${PC2_IP}:7150"
+  
+  # Connection settings
+  connect_timeout: 5000  # milliseconds
+  reconnect_interval: 10000  # milliseconds
+  high_water_mark: 1000  # maximum number of messages to queue
+  
+  # Security settings
+  use_encryption: false  # Enable ZMQ curve encryption
+  key_directory: "certificates"  # Directory containing ZMQ curve certificates
+
+# Error Management System settings
+error_management:
+  # Database settings
+  db_path: "data/error_system.db"
+  
+  # Recovery settings
+  max_recovery_attempts: 3
+  recovery_interval: 60  # seconds
+  
+  # Log scanning settings
+  logs_dir: "logs"
+  scan_interval: 300  # seconds
+  
+  # Error patterns
+  error_patterns:
+    - pattern: ".*Connection refused.*"
+      error_type: "connection_error"
+      severity: "ERROR"
+    - pattern: ".*Timeout.*"
+      error_type: "timeout_error"
+      severity: "WARNING"
+    - pattern: ".*Out of memory.*"
+      error_type: "resource_error"
+      severity: "CRITICAL"
+  
+  # SystemDigitalTwin integration
+  system_digital_twin:
+    host: ${MAINPC_IP}
+    port: 5590
+    endpoint: "tcp://${MAINPC_IP}:5590"
+    
+# Error Bus database schema
+database_schema:
+  tables:
+    - name: "errors"
+      columns:
+        - name: "id"
+          type: "INTEGER PRIMARY KEY AUTOINCREMENT"
+        - name: "timestamp"
+          type: "REAL"
+        - name: "agent"
+          type: "TEXT"
+        - name: "error_type"
+          type: "TEXT"
+        - name: "message"
+          type: "TEXT"
+        - name: "severity"
+          type: "TEXT"
+        - name: "context"
+          type: "TEXT"
+    
+    - name: "agent_health"
+      columns:
+        - name: "id"
+          type: "INTEGER PRIMARY KEY AUTOINCREMENT"
+        - name: "agent"
+          type: "TEXT"
+        - name: "status"
+          type: "TEXT"
+        - name: "last_heartbeat"
+          type: "REAL"
+        - name: "error_count"
+          type: "INTEGER"
+    
+    - name: "recovery_actions"
+      columns:
+        - name: "id"
+          type: "INTEGER PRIMARY KEY AUTOINCREMENT"
+        - name: "timestamp"
+          type: "REAL"
+        - name: "agent"
+          type: "TEXT"
+        - name: "action"
+          type: "TEXT"
+        - name: "success"
+          type: "INTEGER"
+        - name: "details"
+          type: "TEXT" 

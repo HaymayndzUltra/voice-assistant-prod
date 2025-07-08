@@ -16,6 +16,8 @@ import sqlite3
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from collections import defaultdict, deque
+import subprocess
+import zmq
 
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
@@ -167,6 +169,8 @@ class RecoveryManagerModule:
         self.recovery_thread = threading.Thread(target=self._process_recovery_queue, daemon=True)
         self.heartbeat_thread.start()
         self.recovery_thread.start()
+        self.recovery_attempts = {}  # Track recovery attempts per agent
+        self.max_recovery_attempts = 3  # Maximum number of recovery attempts
 
     def receive_heartbeat(self, agent_name: str):
         if agent_name not in self.agent_registry:
@@ -190,23 +194,184 @@ class RecoveryManagerModule:
                         info['status'] = 'offline'
                         self.add_recovery_task({"action": "restart", "target": agent_name, "reason": "Missed heartbeats"})
             time.sleep(HEARTBEAT_INTERVAL)
-
+            
     def _process_recovery_queue(self):
-        logger.info("Recovery Processor thread started.")
+        """Process the recovery task queue."""
+        logger.info("Recovery task processor thread started.")
         while self.system.running:
             if self.recovery_queue:
                 task = self.recovery_queue.popleft()
-                self._execute_recovery(task)
+                action = task.get("action")
+                target = task.get("target")
+                reason = task.get("reason", "Unknown reason")
+                
+                logger.info(f"Processing recovery task: {action} for {target} due to {reason}")
+                
+                if action == "restart" and target:
+                    success = self._restart_agent(target)
+                    if success:
+                        logger.info(f"Successfully restarted agent {target}")
+                        # Reset recovery attempts on success
+                        self.recovery_attempts[target] = 0
+                    else:
+                        logger.error(f"Failed to restart agent {target}")
+                        # Increment recovery attempts and retry if under max attempts
+                        attempts = self.recovery_attempts.get(target, 0) + 1
+                        self.recovery_attempts[target] = attempts
+                        if attempts < self.max_recovery_attempts:
+                            logger.warning(f"Scheduling another restart attempt for {target} (attempt {attempts+1}/{self.max_recovery_attempts})")
+                            self.add_recovery_task(task)
+                        else:
+                            logger.error(f"Maximum restart attempts ({self.max_recovery_attempts}) reached for {target}")
+                            # Record this in the system's error log
+                            self.system.collector.add_error(
+                                source="RecoveryManager",
+                                error_type="recovery_failed",
+                                message=f"Failed to restart {target} after {self.max_recovery_attempts} attempts",
+                                severity="critical"
+                            )
+            time.sleep(1)  # Check queue every second
+    
+    def _restart_agent(self, agent_name: str) -> bool:
+        """Restart an agent using SystemDigitalTwin to find its details.
+        
+        Args:
+            agent_name: Name of the agent to restart
+            
+        Returns:
+            bool: True if restart was successful, False otherwise
+        """
+        try:
+            # Get agent details from SystemDigitalTwin
+            agent_info = self._get_agent_info_from_digital_twin(agent_name)
+            
+            if not agent_info or "script_path" not in agent_info:
+                logger.error(f"Cannot restart {agent_name}: No script path found")
+                return False
+            
+            script_path = agent_info["script_path"]
+            
+            # Kill any existing process first
+            self._kill_existing_process(agent_name)
+            
+            # Execute the restart command
+            logger.info(f"Restarting {agent_name} using script: {script_path}")
+            
+            # Use subprocess to start the agent in the background
+            process = subprocess.Popen(
+                ["python3", script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                start_new_session=True  # Detach from parent process
+            )
+            
+            # Wait briefly to see if process starts successfully
+            time.sleep(2)
+            if process.poll() is None:  # Process is still running
+                logger.info(f"Successfully started {agent_name} process")
+                
+                # Record this recovery action in the system's database
+                self.system._record_recovery_action(
+                    agent_name=agent_name,
+                    action_type="restart",
+                    reason="Agent recovery",
+                    success=True
+                )
+                return True
             else:
-                time.sleep(1)
-
-    def _execute_recovery(self, task: Dict):
-        action = task.get("action")
-        target = task.get("target")
-        logger.info(f"Executing recovery action '{action}' on target '{target}'")
-        # Dito ilalagay ang actual na logic para mag-restart ng ahente,
-        # posibleng sa pamamagitan ng pagtawag sa isang external script o orchestrator.
-        # Halimbawa: os.system(f"restart_agent.sh {target}")
+                stderr = process.stderr.read() if process.stderr else "No error output"
+                logger.error(f"Failed to start {agent_name}: Process exited immediately with code {process.returncode}. Error: {stderr}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error restarting {agent_name}: {str(e)}")
+            return False
+    
+    def _kill_existing_process(self, agent_name: str) -> bool:
+        """Kill any existing process for the given agent.
+        
+        Args:
+            agent_name: Name of the agent process to kill
+            
+        Returns:
+            bool: True if process was killed or not found, False on error
+        """
+        try:
+            # Try to find and kill the process by name
+            import psutil
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if cmdline and len(cmdline) > 1:
+                        cmd_str = ' '.join(cmdline)
+                        if agent_name in cmd_str and 'python' in cmd_str.lower():
+                            logger.info(f"Killing existing process for {agent_name}: PID {proc.info['pid']}")
+                            psutil.Process(proc.info['pid']).terminate()
+                            try:
+                                psutil.Process(proc.info['pid']).wait(timeout=5)
+                            except psutil.TimeoutExpired:
+                                psutil.Process(proc.info['pid']).kill()
+                            return True
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+            return True  # No process found to kill is still a success
+        except Exception as e:
+            logger.error(f"Error killing existing process for {agent_name}: {str(e)}")
+            return False
+    
+    def _get_agent_info_from_digital_twin(self, agent_name: str) -> Dict[str, Any]:
+        """Get agent information from SystemDigitalTwin.
+        
+        Args:
+            agent_name: Name of the agent to get info for
+            
+        Returns:
+            Dict: Agent information including script_path, or empty dict if not found
+        """
+        try:
+            # Create a ZMQ REQ socket to connect to SystemDigitalTwin
+            context = zmq.Context()
+            socket = context.socket(zmq.REQ)
+            socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
+            
+            # Get SystemDigitalTwin address from environment or use default
+            sdt_host = os.environ.get('MAINPC_IP', '192.168.100.10')
+            sdt_port = int(os.environ.get('SYSTEM_DIGITAL_TWIN_PORT', 7120))
+            socket.connect(f"tcp://{sdt_host}:{sdt_port}")
+            
+            # Send request for agent info
+            request = {
+                "action": "get_agent_info",
+                "agent_name": agent_name
+            }
+            socket.send_json(request)
+            
+            # Wait for response
+            response = socket.recv_json()
+            
+            # Check if response is a dictionary and has the expected fields
+            if isinstance(response, dict) and response.get("status") == "success":
+                agent_info = response.get("agent_info")
+                if isinstance(agent_info, dict):
+                    return agent_info
+                else:
+                    logger.error(f"Invalid agent_info format for {agent_name} from SystemDigitalTwin")
+                    return {}
+            else:
+                error_msg = "Unknown error"
+                if isinstance(response, dict) and "error" in response:
+                    error_msg = response.get("error", "Unknown error")
+                logger.error(f"Failed to get info for {agent_name} from SystemDigitalTwin: {error_msg}")
+                return {}
+        except Exception as e:
+            logger.error(f"Error getting agent info from SystemDigitalTwin: {str(e)}")
+            return {}
+        finally:
+            if 'socket' in locals():
+                socket.close()
+            if 'context' in locals():
+                context.term()
 
 # ===================================================================
 #         UNIFIED ERROR MANAGEMENT SYSTEM (Ang Final, Merged Agent)
@@ -251,8 +416,54 @@ class ErrorManagementSystem(BaseAgent):
                     details TEXT
                 )
             ''')
+            
+            # Add recovery_actions table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS recovery_actions (
+                    action_id TEXT PRIMARY KEY,
+                    agent_name TEXT,
+                    action_type TEXT,
+                    reason TEXT,
+                    timestamp REAL,
+                    success INTEGER,
+                    details TEXT
+                )
+            ''')
+            
             conn.commit()
             conn.close()
+            
+    def _record_recovery_action(self, agent_name: str, action_type: str, reason: str, success: bool, details: str = ""):
+        """Record a recovery action in the database.
+        
+        Args:
+            agent_name: Name of the agent that was recovered
+            action_type: Type of recovery action (restart, reset, etc.)
+            reason: Reason for the recovery action
+            success: Whether the recovery was successful
+            details: Additional details about the recovery
+        """
+        try:
+            action_id = str(uuid.uuid4())
+            timestamp = time.time()
+            
+            with self.db_lock:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''
+                    INSERT INTO recovery_actions 
+                    (action_id, agent_name, action_type, reason, timestamp, success, details)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                    (action_id, agent_name, action_type, reason, timestamp, 1 if success else 0, details)
+                )
+                conn.commit()
+                conn.close()
+                
+            logger.info(f"Recorded recovery action for {agent_name}: {action_type} - {'Success' if success else 'Failed'}")
+        except Exception as e:
+            logger.error(f"Error recording recovery action: {str(e)}")
 
     def _listen_error_bus(self):
         """Listens to the central error bus for reported errors."""

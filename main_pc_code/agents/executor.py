@@ -89,10 +89,12 @@ USER_PERMISSIONS = {
 }
 
 
-class ExecutorAgent(
+class ExecutorAgent(BaseAgent):
     """
     ExecutorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    
+    Containerization Note: Interactive password prompts are not supported. Passwords must be provided as part of the command request payload (JSON field 'password').
+    """
     def __init__(self, port=None):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5709)) if port is None else port
@@ -145,9 +147,10 @@ class ExecutorAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def authenticate_user(self, user):
+
+    def authenticate_user(self, user, password=None):
         """
-        Prompt for user password and check against stored credentials in user_profile.json.
+        Authenticate user by checking provided password against stored credentials in user_profile.json.
         Returns True if authenticated, False otherwise.
         """
         import os
@@ -167,8 +170,10 @@ def authenticate_user(self, user):
                 logging.warning(f"[Executor] No password set for user '{user}'.")
                 return False
             password_actual = users[user]["password"]
-            password_input = input(f"Enter password for user '{user}': ")
-            if password_input == password_actual:
+            if password is None:
+                logging.warning(f"[Executor] No password provided for user '{user}'.")
+                return False
+            if password == password_actual:
                 logging.info(f"[Executor] Authentication success for user '{user}'.")
                 return True
             else:
@@ -178,7 +183,7 @@ def authenticate_user(self, user):
             logging.error(f"[Executor] Error during authentication: {e}")
             return False
 
-    def execute_command(self, command, user="default"):
+    def execute_command(self, command, user="default", password=None):
         # Permission check
         allowed = False
         if user in USER_PERMISSIONS:
@@ -194,7 +199,7 @@ def authenticate_user(self, user):
                 log_usage_analytics(user, command, status)
                 return
             # --- User authentication for sensitive commands ---
-            if not self.authenticate_user(user):
+            if not self.authenticate_user(user, password):
                 logging.warning(f"[Executor] Authentication failed for user '{user}' on sensitive command: {command}")
                 status = "auth_failed"
                 self.command_history.append({"command": command, "user": user, "status": status, "timestamp": time.time()})
@@ -249,11 +254,12 @@ def authenticate_user(self, user):
                         data = json.loads(msg)
                         command = data.get("command", "").strip().lower()
                         user = data.get("user", "default")
+                        password = data.get("password", None)
                         logging.info(f"[Executor] Received command: {command} from user: {user}")
                         self.last_command = command
                         
                         # Execute the command
-                        self.execute_command(command, user)
+                        self.execute_command(command, user, password)
                         
                         # Send acknowledgement to the client
                         self.command_socket.send_string(json.dumps({"status": "processed"}))

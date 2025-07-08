@@ -1,0 +1,56 @@
+# Error Management System Configuration
+# This file contains the configuration for the Error Management System
+# It can be used separately without modifying the startup_config.yaml files
+
+error_management_system:
+  # Basic settings
+  name: ErrorManagementSystem
+  script: agents/ForPC2/Error_Management_System.py
+  port: 7125
+  health_port: 7126
+  dependencies: [ErrorBus, ServiceRegistry, HealthMonitor]
+  critical: true
+  
+  # Environment variables
+  env:
+    ERROR_BUS_PORT: 7150
+    ERROR_BUS_HOST: ${PC2_IP}
+    SYSTEM_DIGITAL_TWIN_PORT: 5590
+    SYSTEM_DIGITAL_TWIN_HOST: ${MAINPC_IP}
+    DB_PATH: data/error_system.db
+    LOGS_DIR: logs
+  
+  # Integration settings
+  integration:
+    # Error Bus settings
+    error_bus:
+      port: 7150
+      topic: "ERROR:"
+      endpoint: "tcp://${PC2_IP}:7150"
+    
+    # SystemDigitalTwin integration
+    system_digital_twin:
+      port: 5590
+      endpoint: "tcp://${MAINPC_IP}:5590"
+    
+    # Cross-machine communication
+    network:
+      mainpc_ip: ${MAINPC_IP}
+      pc2_ip: ${PC2_IP}
+  
+  # Recovery settings
+  recovery:
+    max_attempts: 3
+    interval: 60  # seconds
+    timeout: 30   # seconds
+    
+  # Database settings
+  database:
+    path: "data/error_system.db"
+    tables:
+      - name: errors
+        schema: "id INTEGER PRIMARY KEY, timestamp REAL, agent TEXT, error_type TEXT, message TEXT, severity TEXT, context TEXT"
+      - name: agent_health
+        schema: "id INTEGER PRIMARY KEY, agent TEXT, status TEXT, last_heartbeat REAL, error_count INTEGER"
+      - name: recovery_actions
+        schema: "id INTEGER PRIMARY KEY, timestamp REAL, agent TEXT, action TEXT, success INTEGER, details TEXT" 
