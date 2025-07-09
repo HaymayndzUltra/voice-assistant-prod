@@ -1,0 +1,48 @@
+# MainPC Container Groups Configuration
+# This file defines how MainPC agents are grouped into containers
+
+# Core services - essential system services
+core_services:
+  - SystemDigitalTwin
+  - RequestCoordinator
+  - ErrorBusService
+
+# Memory system - memory management and storage
+memory_system:
+  - MemoryOrchestrator
+  - MemoryClient
+  - ContextSummarizerAgent
+  - MemoryPruningAgent
+
+# Utility services - support services
+utility_services:
+  - LoggingService
+  - ConfigManager
+  - NetworkMonitor
+  - HealthCheckManager
+  - PerformanceTracker
+
+# AI models with GPU acceleration
+ai_models_gpu_services:
+  - ModelRouter
+  - DeepLearningAgent
+  - ImageGenerationAgent
+  - VideoProcessingAgent
+  - ChainOfThoughtAgent
+  - CognitiveModelAgent
+
+# Language processing services
+language_processing:
+  - TranslationAgent
+  - ConsolidatedTranslator
+  - NLLBTranslator
+  - SpeechToTextAgent
+  - TextToSpeechAgent
+
+# Map container names to agent groups
+container_mapping:
+  core-services: core_services
+  memory-system: memory_system
+  utility-services: utility_services
+  ai-models-gpu-services: ai_models_gpu_services
+  language-processing: language_processing 
