@@ -67,7 +67,7 @@ fi
 # Create podman network if it doesn't exist
 if ! podman network inspect ai_system_network &> /dev/null; then
     echo -e "${GREEN}Creating podman network: ai_system_network${NC}"
-    podman network create --subnet 172.20.0.0/16 ai_system_network
+    podman network create --subnet 192.168.100.0/24 ai_system_network
 else
     echo -e "${GREEN}Network ai_system_network already exists${NC}"
 fi
@@ -78,7 +78,8 @@ cp "$DOCKER_DIR/requirements.txt" "$PROJECT_ROOT/requirements.txt"
 
 # Build base image with NVIDIA CUDA support
 echo -e "\n${GREEN}Building base image with CUDA support for RTX 4090...${NC}"
-podman build -t ai-system/base:latest -f "$DOCKER_DIR/Dockerfile.base" "$PROJECT_ROOT"
+echo -e "${YELLOW}This may take some time. Please be patient...${NC}"
+podman build --format docker -t ai-system/base:latest -f "$DOCKER_DIR/Dockerfile.base" "$PROJECT_ROOT"
 
 # Function to build image for a specific group
 build_group_image() {

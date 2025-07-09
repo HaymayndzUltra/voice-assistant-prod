@@ -23,19 +23,19 @@ accelerate>=0.25.0
 bitsandbytes>=0.41.1
 optimum>=1.14.0
 onnx>=1.14.0
-onnxruntime-gpu>=1.16.0
+# onnxruntime-gpu>=1.16.0  # COMMENTED OUT: often fails in container builds, add manually if needed
 sentencepiece>=0.1.99
 tokenizers>=0.13.3
-xformers>=0.0.22
-flash-attn>=2.3.4
+# xformers>=0.0.22         # COMMENTED OUT: often fails in container builds, add manually if needed
+# flash-attn>=2.3.4        # COMMENTED OUT: often fails in container builds, add manually if needed
 
 # LLM specific dependencies
 huggingface-hub>=0.17.3
 peft>=0.6.0
 einops>=0.7.0
 vllm>=0.2.5
-deepspeed>=0.11.0
-triton>=2.1.0
+# deepspeed>=0.11.0        # COMMENTED OUT: often fails in container builds, add manually if needed
+# triton>=2.1.0            # COMMENTED OUT: often fails in container builds, add manually if needed
 
 # Text processing
 nltk>=3.8.1
@@ -56,7 +56,6 @@ uvicorn>=0.23.2
 sqlalchemy>=2.0.20
 python-dotenv>=1.0.0
 redis>=4.6.0
-sqlite3>=0.0.1
 
 # Utilities
 tqdm>=4.66.1

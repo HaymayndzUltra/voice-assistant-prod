@@ -1,9 +1,28 @@
-# Git
-.git
-.gitignore
-.github
+# Exclude logs, cache, and other large directories
+logs/
+log_archives/
+cache/
+models/
+fine_tuned_models/
+data/
+output/
+artifacts/
+temp/
+temp_test_context/
+test_reports/
+python_files_backup_20250627_230225/
 
-# Python
+# Exclude git files
+.git/
+.gitignore
+
+# Exclude editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -24,93 +43,10 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-venv/
-.venv/
-.env/
 
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*
-docker/
-
-# Logs
-logs/
-*.log
-
-# Certificates (will be mounted as volumes)
+# Exclude certificates and sensitive files
 certificates/
-
-# Cache
-cache/
-.cache/
-**/cache/
-
-# Temporary files
-.tmp/
-tmp/
-temp/
-
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Large files and directories
-models/
-voice_samples/
-output/
-
-# Documentation
-docs/
-*.md
-LICENSE
-README*
-
-# Test files
-tests/
-test_*/
-*_test.py
-*_tests.py
-
-# Archives
-*.tar
-*.gz
-*.zip
-*.rar
-*.7z
-
-# Data files
-*.csv
-*.json
-*.yaml
-*.yml
-!config/*.yaml
-!config/*.yml
-!docker/config/*.yaml
-!docker/config/*.yml
-
-# Media files
-*.mp3
-*.wav
-*.mp4
-*.avi
-*.mov
-*.flac
-*.ogg
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.ico
-
-# Exclude specific directories
-pc2_code/
-main_pc_code/_DOCUMENTSFINAL/
-main_pc_code/agents/_archive/
-main_pc_code/agents/_referencefolderpc2/
-main_pc_code/agents/_trash_2025-06-13/ 
+*.key_secret
+*.pem
+*.key
+*.crt 
