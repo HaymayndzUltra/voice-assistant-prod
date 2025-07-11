@@ -99,24 +99,12 @@ agent_groups:
       health_check_port: 6650
       required: true
       dependencies: [SystemDigitalTwin, ModelManagerAgent]
-    LLMService:
-      script_path: main_pc_code/agents/llm_service.py
-      port: 5655
-      health_check_port: 6655
-      required: true
-      dependencies: [SystemDigitalTwin, ModelManagerAgent]
     SelfTrainingOrchestrator:
-      script_path: main_pc_code/agents/self_training_orchestrator.py
+      script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
       port: 5660
       health_check_port: 6660
       required: true
       dependencies: [SystemDigitalTwin, ModelManagerAgent]
-    PC2Services:
-      script_path: main_pc_code/agents/pc2_services_connector.py
-      port: 5665
-      health_check_port: 6665
-      required: true
-      dependencies: [SystemDigitalTwin]
 
   ai_models_gpu_services:
     GGUFModelManager:
@@ -130,7 +118,7 @@ agent_groups:
       port: 5570
       health_check_port: 6570
       required: true
-      dependencies: [GGUFModelManager, SystemDigitalTwin, PC2Services]
+      dependencies: [GGUFModelManager, SystemDigitalTwin]
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
       port: 5572
@@ -226,7 +214,7 @@ agent_groups:
       port: 5711
       health_check_port: 6711
       required: true
-      dependencies: [NLUAgent, SystemDigitalTwin, LLMService]
+      dependencies: [NLUAgent, SystemDigitalTwin]
     FeedbackHandler:
       script_path: main_pc_code/agents/feedback_handler.py
       port: 5636
@@ -353,11 +341,43 @@ agent_groups:
       health_check_port: 6606
       required: true
       dependencies: [CodeGenerator, SystemDigitalTwin]
-
-  security_auth:
-    AuthenticationAgent:
-      script_path: main_pc_code/agents/authentication_agent.py
-      port: 5702
-      health_check_port: 6702
+    TinyLlamaServiceEnhanced:
+      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+      port: 5615
+      health_check_port: 6615
+      required: false
+      dependencies: [ModelManagerAgent, SystemDigitalTwin]
+    LocalFineTunerAgent:
+      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+      port: 5642
+      health_check_port: 6642
       required: true
-      dependencies: [SystemDigitalTwin] 
+      dependencies: [SelfTrainingOrchestrator, SystemDigitalTwin]
+    NLLBAdapter:
+      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+      port: 5581
+      health_check_port: 6581
+      required: true
+      dependencies: [SystemDigitalTwin]
+
+  reasoning_services:
+    ChainOfThoughtAgent:
+      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+      port: 5612
+      health_check_port: 6612
+      required: true
+      dependencies: [ModelManagerAgent, SystemDigitalTwin]
+    GoTToTAgent:
+      script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+      port: 5646
+      health_check_port: 6646
+      required: false
+      dependencies: [ModelManagerAgent, SystemDigitalTwin, ChainOfThoughtAgent]
+    CognitiveModelAgent:
+      script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
+      port: 5641
+      health_check_port: 6641
+      required: false
+      dependencies: [ChainOfThoughtAgent, SystemDigitalTwin]
+
+ 
