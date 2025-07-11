@@ -21,6 +21,7 @@ import sys
 import os
 from typing import Dict, Any, Optional
 from pathlib import Path
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 class AgentHealthValidator:
     def __init__(self):
@@ -98,7 +99,7 @@ class AgentHealthValidator:
             socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5 second timeout
             
             # Connect to health port
-            socket.connect(f"tcp://localhost:{health_port}")
+            socket.connect(get_zmq_connection_string({health_port}, "localhost")))
             
             # Send health check request
             request = {'action': 'health_check'}

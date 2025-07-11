@@ -14,6 +14,7 @@ from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils.config_loader import load_config
 
 # Try importing optional dependencies
 try:
@@ -2210,6 +2211,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

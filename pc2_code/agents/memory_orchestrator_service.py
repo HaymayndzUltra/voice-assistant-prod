@@ -31,8 +31,13 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+from pc2_code.agents.utils.config_loader import Config
+
+# Load configuration at the module level
+config = Config().get_config()
+
 
 
 # --- Logging Setup ---
@@ -397,7 +402,9 @@ class MemoryStorageManager:
 class MemoryOrchestratorService(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+
+    """
     The central, unified memory system.
     - Manages all memory types (interaction, episodic, knowledge).
     - Implements a hierarchical, tiered storage system (short, medium, long).
@@ -450,6 +457,47 @@ class MemoryOrchestratorService(BaseAgent):
         self.lifecycle_thread.start()
 
         logger.info("Unified MemoryOrchestratorService initialized successfully.")
+
+    # -------------------------------------------------
+    # Health check override with real DB/Redis/ZMQ tests
+    # -------------------------------------------------
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Return detailed health diagnostics including database, cache and ZMQ checks."""
+        base_status = super()._get_health_status()
+
+        # SQLite check
+        db_connected = False
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=2)
+            conn.execute("SELECT 1")
+            conn.close()
+            db_connected = True
+        except Exception as db_err:
+            logger.error(f"Health check: SQLite connection error: {db_err}")
+
+        # Redis check
+        redis_connected = False
+        if self.redis_conn:
+            try:
+                self.redis_conn.ping()
+                redis_connected = True
+            except Exception as redis_err:
+                logger.error(f"Health check: Redis ping failed: {redis_err}")
+
+        # Error bus (ZMQ) PUB socket presence
+        error_bus_ready = self.error_bus_pub is not None
+
+        # Aggregate status
+        overall_status = "ok" if all([db_connected, redis_connected, error_bus_ready]) else "degraded"
+
+        # Add details
+        base_status.update({
+            "status": overall_status,
+            "db_connected": db_connected,
+            "redis_connected": redis_connected,
+            "error_bus_ready": error_bus_ready,
+        })
+        return base_status
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Main entry point. Dispatches requests to the correct handler."""
@@ -993,19 +1041,39 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup()
-    def _get_health_status(self) -> Dict[str, Any]:
-        """
-        Get the health status of the agent.
-        
-        Returns:
-            Dict[str, Any]: Health status information
-        """
-        return {
-            "status": "ok",
-            "uptime": time.time() - self.start_time,
-            "name": self.name,
-            "version": getattr(self, "version", "1.0.0"),
-            "port": self.port,
-            "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
-        }
+
+
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = MemoryOrchestratorService()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

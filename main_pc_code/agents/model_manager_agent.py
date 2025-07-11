@@ -38,6 +38,7 @@ import socket
 import errno
 import psutil
 import GPUtil
+import yaml
 
 # Add the parent directory to sys.path to import the config module
 
@@ -158,14 +159,18 @@ config = load_config()
 # Move this import to the top of the file
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
 
-class ModelManagerAgent(
-    """
-    ModelManagerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-    def __init__(self, **kwargs):
+class ModelManagerAgent(BaseAgent):
+    def __init__(self, config_path=None, **kwargs):
         agent_port = config.get("port", MODEL_MANAGER_PORT)
         agent_name = config.get("name", 'ModelManagerAgent')
         super().__init__(name=agent_name, port=agent_port)
+        # Store the loaded configuration as an instance attribute so that
+        # other helper methods (e.g. _init_model_registry, verify_pc2_services)
+        # can safely access self.config without raising AttributeError.
+        # NOTE: this must be done IMMEDIATELY after the super().__init__ call
+        # because background threads (started by BaseAgent) may reference
+        # self.config very early in their execution.
+        self.config = config if isinstance(config, dict) else {}
         self.enable_pc2_services = config.get("enable_pc2_services", False)
         self.vram_budget_percentage = config.get("vram_budget_percentage", 80)
         self.memory_check_interval = config.get("memory_check_interval", 5)
@@ -199,6 +204,9 @@ class ModelManagerAgent(
         self.logger.info("Model Manager Agent initialized successfully.")
         self.start_time = time.time()
         self.running = True
+        # Load LLM config for routing
+        self.llm_config_path = config_path or os.environ.get('LLM_CONFIG_PATH') or os.path.join(os.path.dirname(__file__), '../config/llm_config.yaml')
+        self.llm_config = self._load_llm_config()
     
     
 
@@ -211,7 +219,7 @@ class ModelManagerAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _get_health_status(self):
+    def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
         # This can be expanded with more specific checks later.
         # Use "ok" status to match BaseAgent and health checker expectations
@@ -509,6 +517,7 @@ def _get_health_status(self):
             except Exception as e:
                 self.vram_logger.error(f"Error in memory management loop: {e}")
                 import traceback
+                from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
                 self.vram_logger.error(traceback.format_exc())
                 time.sleep(1)
     
@@ -3029,7 +3038,7 @@ def _get_health_status(self):
             socket = context.socket(zmq.REQ)
             socket.setsockopt(zmq.LINGER, 0)
             socket.setsockopt(zmq.RCVTIMEO, 120000)  # 120 second timeout for code generation
-            socket.connect(f"tcp://localhost:{cga_port}")
+            socket.connect(get_zmq_connection_string(cga_port, "localhost"))
             
             # Send the request
             logger.info(f"Sending code generation request to CGA: {json.dumps(cga_request)}")
@@ -3099,10 +3108,29 @@ def _get_health_status(self):
         """
         if not isinstance(request, dict):
             return {"status": "ERROR", "message": "Request must be a dictionary"}
+        
+        # New API format: Check for "action" field first (new unified API format)
+        action = request.get("action")
+        if action:
+            self.logger.info(f"Received action: {action}")
             
+            # Handle the new "generate" action
+            if action == "generate":
+                return self._handle_generate_action(request)
+            
+            # Handle the new "status" action
+            elif action == "status":
+                return self._handle_status_action(request)
+            
+            # Unknown action
+            else:
+                self.logger.warning(f"Unknown action: {action}")
+                return {"status": "error", "message": f"Unknown action: {action}"}
+            
+        # Legacy API format: Check for "command" field (old API format)
         command = request.get("command")
         if not command:
-            return {"status": "ERROR", "message": "Missing 'command' field"}
+            return {"status": "ERROR", "message": "Missing 'command' or 'action' field"}
             
         logger.info(f"Received command: {command}")
         
@@ -3133,6 +3161,106 @@ def _get_health_status(self):
                 return {"status": "ERROR", "message": str(e)}
         else:
             return {"status": "ERROR", "message": f"Unknown command: {command}"}
+
+    def _handle_generate_action(self, request):
+        """
+        Handle the new 'generate' action for the unified API.
+        
+        Args:
+            request: The request dictionary containing model_pref, prompt, and params
+            
+        Returns:
+            Response dictionary with generated text
+        """
+        model_pref = request.get("model_pref", "fast")
+        prompt = request.get("prompt")
+        params = request.get("params", {})
+        
+        if not prompt:
+            self.logger.error("Missing 'prompt' field in generate request")
+            return {"status": "error", "message": "Missing 'prompt' field"}
+        
+        # Load the LLM config to get the model mapping
+        try:
+            with open(os.path.join("main_pc_code", "config", "llm_config.yaml"), 'r') as f:
+                llm_config = yaml.safe_load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to load LLM config: {e}")
+            llm_config = {'load_policy': {}, 'models': {}}
+            
+        load_policy = llm_config.get("load_policy", {})
+        
+        # Map the preference to a model name
+        model_name = load_policy.get(model_pref)
+        if not model_name:
+            self.logger.warning(f"Unknown model preference: {model_pref}, falling back to 'fast'")
+            model_name = load_policy.get("fast")
+            
+            # If still no model found, return error
+            if not model_name:
+                self.logger.error(f"No model found for preference: {model_pref}")
+                return {"status": "error", "message": f"No model found for preference: {model_pref}"}
+        
+        self.logger.info(f"Routing '{model_pref}' preference to model: {model_name}")
+        
+        # TODO: In the future, implement actual model inference here
+        # For now, return a placeholder response to prove routing works
+        placeholder_response = f"Placeholder response for prompt: {prompt[:50]}..."
+        
+        return {
+            "status": "ok",
+            "response_text": placeholder_response,
+            "model_used": model_name,
+            "timestamp": time.time()
+        }
+    
+    def _handle_status_action(self, request):
+        """
+        Handle the new 'status' action for the unified API.
+        
+        Args:
+            request: The request dictionary
+            
+        Returns:
+            Response dictionary with model registry status
+        """
+        try:
+            # Use existing method to get loaded models status
+            result = self._handle_get_loaded_models_status({})
+            if result.get('status') != 'SUCCESS':
+                return {
+                    'status': 'error',
+                    'message': 'Failed to get loaded models status',
+                    'details': result
+                }
+                
+            # Try to load LLM config for routing information
+            try:
+                with open(os.path.join("main_pc_code", "config", "llm_config.yaml"), 'r') as f:
+                    llm_config = yaml.safe_load(f)
+            except Exception as e:
+                self.logger.error(f"Failed to load LLM config: {e}")
+                llm_config = {'load_policy': {}, 'models': {}}
+            
+            # Transform the response to match the new API format
+            return {
+                'status': 'ok',
+                'loaded_models': result.get('loaded_models', {}),
+                'total_models': result.get('total_models', 0),
+                'total_vram_used_mb': result.get('total_vram_used_mb', 0),
+                'total_vram_mb': result.get('total_vram_mb', 0),
+                'routing_policy': llm_config.get('load_policy', {}),
+                'health': 'ok',
+                'timestamp': time.time()
+            }
+        
+        except Exception as e:
+            self.logger.error(f"Error handling status action: {e}")
+            self.logger.error(traceback.format_exc())
+            return {
+                'status': 'error',
+                'message': f'Failed to get status: {str(e)}'
+            }
 
     def _handle_load_model_command(self, request):
         """
@@ -3337,10 +3465,10 @@ def _get_health_status(self):
                     from main_pc_code.utils.service_discovery_client import get_service_address
                     sdt_address = get_service_address("SystemDigitalTwin")
                     if not sdt_address:
-                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                        sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 except Exception as e:
                     logger.warning(f"Service discovery failed: {e}, using default address")
-                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                    sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 
                 # Apply secure ZMQ if enabled
                 secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -3363,10 +3491,10 @@ def _get_health_status(self):
                     from main_pc_code.utils.service_discovery_client import get_service_address
                     sdt_address = get_service_address("SystemDigitalTwin")
                     if not sdt_address:
-                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                        sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 except Exception as e:
                     logger.warning(f"Service discovery failed: {e}, using default address")
-                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                    sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 
                 # Connect and send the report
                 socket.connect(sdt_address)
@@ -4061,10 +4189,10 @@ def _get_health_status(self):
                     from main_pc_code.utils.service_discovery_client import get_service_address
                     sdt_address = get_service_address("SystemDigitalTwin")
                     if not sdt_address:
-                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                        sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 except Exception as e:
                     logger.warning(f"Service discovery failed: {e}, using default address")
-                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                    sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 
                 # Apply secure ZMQ if enabled
                 secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -4086,10 +4214,10 @@ def _get_health_status(self):
                     from main_pc_code.utils.service_discovery_client import get_service_address
                     sdt_address = get_service_address("SystemDigitalTwin")
                     if not sdt_address:
-                        sdt_address = "tcp://localhost:7120"  # Default fallback
+                        sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 except Exception as e:
                     logger.warning(f"Service discovery failed: {e}, using default address")
-                    sdt_address = "tcp://localhost:7120"  # Default fallback
+                    sdt_address = get_zmq_connection_string(7120, "localhost")  # Default fallback
                 
                 # Connect and send the report
                 socket.connect(sdt_address)
@@ -4116,6 +4244,7 @@ def _get_health_status(self):
         except Exception as e:
             logger.error(f"Error reporting VRAM metrics to SystemDigitalTwin: {e}")
             import traceback
+            from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
             logger.error(traceback.format_exc())
 
     def _unload_model(self, model_id: str) -> None:
@@ -4156,6 +4285,15 @@ def _get_health_status(self):
         # Publish status update
         self._publish_status_update()
 
+    def _load_llm_config(self):
+        try:
+            with open(self.llm_config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            return config
+        except Exception as e:
+            print(f"[MMA] Failed to load LLM config: {e}")
+            return {'load_policy': {}, 'models': {}}
+
 # --- PATCH: Attach standalone functions to ModelManagerAgent class (ensures methods are available before main is executed) ---
 # --- END PATCH ---
 
@@ -4176,6 +4314,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+        from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

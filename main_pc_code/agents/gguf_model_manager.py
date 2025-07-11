@@ -22,6 +22,7 @@ import json
 import logging
 import threading
 from typing import Dict, Optional, Any, Union, List
+import zmq
 import traceback
 import torch
 
@@ -91,12 +92,15 @@ class GGUFModelManager(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _load_model_metadata(self):
+
+    def _load_model_metadata(self):
         """Load model metadata from config files"""
+        from main_pc_code.utils.config_loader import load_config
+        config = load_config()
+
         try:
             # Add the parent directory to sys.path to import the config module
             from main_pc_code.config.system_config import Config
-            
             config = Config()
             machine_config = config.get_all().get('main_pc_settings', {})
             
@@ -623,11 +627,20 @@ if __name__ == "__main__":
     # Clean up
     manager.cleanup()
 
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
+    def _get_health_status(self) -> dict:
+        """Return health status information with ZMQ readiness aggregated."""
+        base_status = super()._get_health_status()
+
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+        specific_metrics = {
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': getattr(self, 'request_count', 0),
+            'zmq_ready': zmq_ready
+        }
+        overall_status = 'ok' if zmq_ready else 'degraded'
+        base_status.update({
+            'status': overall_status,
+            'agent_specific_metrics': specific_metrics
+        })
+        return base_status

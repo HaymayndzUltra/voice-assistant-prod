@@ -1,0 +1,19 @@
+# Defines which model to use for each quality preference.
+# The ModelManagerAgent will use this table for routing.
+load_policy:
+  fast: phi-3-mini-128k-instruct
+  quality: Mistral-7B-Instruct-v0.2
+  fallback: phi-2
+
+# Model-specific details (to be used later)
+models:
+  phi-3-mini-128k-instruct:
+    repo_id: "microsoft/phi-3-mini-128k-instruct"
+    type: "huggingface"
+  Mistral-7B-Instruct-v0.2:
+    repo_id: "mistralai/Mistral-7B-Instruct-v0.2"
+    type: "huggingface"
+  phi-2:
+    repo_id: "TheBloke/phi-2-GGUF"
+    filename: "phi-2.Q4_0.gguf"
+    type: "gguf" 

@@ -29,10 +29,10 @@ from pc2_code.agents.utils.config_loader import Config
 config = Config().get_config()
 logger = logging.getLogger(__name__)
 
-class ResourceManager(
+class ResourceManager(BaseAgent):
     """
     ResourceManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     def __init__(self, port=7113, health_port=7114):
          super().__init__(name="ResourceManager", port=7113)
 

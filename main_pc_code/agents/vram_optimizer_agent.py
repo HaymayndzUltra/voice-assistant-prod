@@ -38,10 +38,7 @@ config = load_config()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("VRAMOptimizerAgent")
 
-class VRAMOptimizerAgent(
-    """
-    VRAMOptimizerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class VramOptimizerAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         agent_port = config.get("port", 5000) if port is None else port
         agent_name = config.get("name", 'VRAMOptimizerAgent') if name is None else name
@@ -74,8 +71,7 @@ class VRAMOptimizerAgent(
 
         # Advanced management
         self.memory_pool = {}
-        self.
-
+        # TODO: Fix incomplete statement
         self.error_bus_port = 7150
 
         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
@@ -85,7 +81,9 @@ class VRAMOptimizerAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
+
+        # Defragmentation threshold configuration
+        self.defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
         self.usage_patterns = defaultdict(list)
         self.prediction_window = self.config.get('vram_optimizer.prediction_window', 3600)
         self.optimization_interval = self.config.get('vram_optimizer.optimization_interval', 300)
@@ -215,29 +213,52 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
             self.mma_socket.connect(mma_address)
             logger.info(f"Connected to ModelManagerAgent at {mma_address}")
             
-            # Get TaskRouter connection (if available, for predictive loading)
-            tr_info = discover_service("TaskRouter")
-            if tr_info.get("status") == "SUCCESS":
-                tr_address = f"tcp://{tr_info['payload']['ip']}:{tr_info['payload']['port']}"
-                logger.info(f"Found TaskRouter at {tr_address}")
-                
-                # Connect to TaskRouter
-                self.tr_socket = self.context.socket(zmq.REQ)
-                self.tr_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
-                self.tr_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
-                
-                # Apply secure ZMQ if enabled
-                if secure_zmq:
-                    self.tr_socket = configure_secure_client(self.tr_socket)
-                    logger.info("Using secure ZMQ for TaskRouter connection")
-                
-                self.tr_socket.connect(tr_address)
-                logger.info(f"Connected to TaskRouter at {tr_address}")
-                self.task_router_available = True
+            # Get RequestCoordinator connection (if available, for predictive loading)
+            rc_info = discover_service("RequestCoordinator")
+            if rc_info and rc_info.get("status") == "SUCCESS":
+                rc_address = f"tcp://{rc_info['payload']['ip']}:{rc_info['payload']['port']}"
+                logger.info(f"Found RequestCoordinator at {rc_address}")
+                # Connect to RequestCoordinator
+                try:
+                    self.rc_socket = self.context.socket(zmq.REQ)
+                    if secure_zmq:
+                        logger.info("Using secure ZMQ for RequestCoordinator connection")
+                        configure_secure_client(self.rc_socket)
+                    self.rc_socket.connect(rc_address)
+                    logger.info(f"Connected to RequestCoordinator at {rc_address}")
+                    self.request_coordinator_available = True  # Assuming RC now handles this
+                except Exception as e:
+                    logger.error(f"Failed to connect to RequestCoordinator: {e}")
+                    self.request_coordinator_available = False
             else:
-                logger.warning("TaskRouter not found via service discovery, predictive loading will be limited")
-                self.task_router_available = False
-                self.tr_socket = None
+                logger.warning("RequestCoordinator not found via service discovery, predictive loading will be limited")
+                self.request_coordinator_available = False
+                self.rc_socket = None
+
+            # --- Model Evaluation Framework ---
+            mef_info = discover_service("ModelEvaluationFramework")
+            if mef_info.get("status") == "SUCCESS":
+                mef_address = f"tcp://{mef_info['payload']['ip']}:{mef_info['payload']['port']}"
+                logger.info(f"Found ModelEvaluationFramework at {mef_address}")
+            else:
+                logger.warning("ModelEvaluationFramework not found via service discovery, using default")
+                mef_port = config.get("mef_port", 5000)
+                mef_host = config.get("mef_host", 'localhost')
+                mef_address = f"tcp://{mef_host}:{mef_port}"
+            
+            # Connect to ModelEvaluationFramework
+            self.mef_socket = self.context.socket(zmq.REQ)
+            self.mef_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+            self.mef_socket.setsockopt(zmq.SNDTIMEO, 5000)  # 5s timeout
+            
+            # Apply secure ZMQ if enabled
+            if secure_zmq:
+                self.mef_socket = configure_secure_client(self.mef_socket)
+                logger.info("Using secure ZMQ for ModelEvaluationFramework connection")
+            
+            self.mef_socket.connect(mef_address)
+            logger.info(f"Connected to ModelEvaluationFramework at {mef_address}")
+            self.model_evaluation_framework_available = True
             
         except ImportError as e:
             print(f"Import error: {e}")
@@ -279,9 +300,13 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
             logger.error(f"Failed to connect to ModelManagerAgent: {e}")
             self.mma_socket = None
         
-        # No TaskRouter in fallback mode
-        self.tr_socket = None
-        self.task_router_available = False
+        # No RequestCoordinator in fallback mode
+        self.rc_socket = None
+        self.request_coordinator_available = False
+
+        # No ModelEvaluationFramework in fallback mode
+        self.mef_socket = None
+        self.model_evaluation_framework_available = False
     
     def start_monitoring(self):
         """Start VRAM monitoring thread"""
@@ -362,7 +387,7 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
                 except Exception as e:
                     # Fallback to local connection
-                    self.sdt_socket.connect("tcp://localhost:5585")
+                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost")))
                     logger.info("Reconnected to local SystemDigitalTwinAgent.")
                 return {"recommendation": "proceed"}
         except Exception as e:
@@ -764,11 +789,58 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
             
         while self.running:
             try:
-                # First approach: Use TaskRouter queue (if available)
-                if self.task_router_available and self.tr_socket:
-                    self._predict_from_task_router()
-                
-                # Second approach: Use historical usage patterns
+                # Fallback mode
+                if not self.request_coordinator_available:
+                    logger.warning("Predictive loading disabled: RequestCoordinator not available.")
+                    time.sleep(60) # Wait a bit before trying again
+                    continue
+
+                # --- Predictive Loading Logic ---
+                # First approach: Use RequestCoordinator queue (if available)
+                if self.predictive_loading_enabled and self.rc_socket:
+                    # This logic needs to be adapted based on what RequestCoordinator exposes
+                    # For now, we assume it has a 'get_queue_status' action
+                    logger.info("Attempting to predict from RequestCoordinator queue...")
+                    try:
+                        # Prepare request for RequestCoordinator
+                        request = {"action": "get_queue_status"}
+                        
+                        # Send request to RequestCoordinator
+                        self.rc_socket.send_json(request)
+                        
+                        # Wait for response
+                        if self.rc_socket.poll(5000): # 5s timeout
+                            response = self.rc_socket.recv_json()
+                            
+                            if response.get("status") == "success":
+                                queue_snapshot = response.get("queue", [])
+                                # Process snapshot to predict model needs
+                                for task in queue_snapshot:
+                                    task_type = task.get("task_type")
+                                    
+                                    # Map task type to model (simplified example)
+                                    if task_type == "asr":
+                                        model_to_preload = "whisper-large-v3"
+                                    elif task_type == "chat":
+                                        model_to_preload = "gpt-3.5-turbo"
+                                    elif task_type == "image_generation":
+                                        model_to_preload = "stable-diffusion-xl"
+                                    else:
+                                        continue
+                                    
+                                    # Check if model is already loaded
+                                    if model_to_preload not in self.loaded_models:
+                                        logger.info(f"Predictive loading: preloading {model_to_preload} for upcoming {task_type} task")
+                                        self._request_model_load(model_to_preload)
+                                        break  # Only preload one model at a time
+                            else:
+                                logger.warning(f"Failed to get queue status from RequestCoordinator: {response.get('message', 'Unknown error')}")
+                        else:
+                            logger.warning("Timeout waiting for response from RequestCoordinator")
+                    except Exception as e:
+                        logger.error(f"Error predicting from RequestCoordinator: {e}")
+
+                # Second approach: Use historical data (if predictive loading is enabled)
                 self._predict_from_usage_patterns()
                 
                 # Sleep before next prediction
@@ -1219,8 +1291,11 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
         if hasattr(self, 'mma_socket') and self.mma_socket:
             self.mma_socket.close()
         
-        if hasattr(self, 'tr_socket') and self.tr_socket:
-            self.tr_socket.close()
+        if hasattr(self, 'rc_socket') and self.rc_socket:
+            self.rc_socket.close()
+        
+        if hasattr(self, 'mef_socket') and self.mef_socket:
+            self.mef_socket.close()
         
         # Wait for threads to finish
         if hasattr(self, 'monitor_thread') and self.monitor_thread:
@@ -1341,8 +1416,34 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
         except Exception:
             mma_reachable = False
         
+        # Check if we can communicate with the RequestCoordinator
+        rc_reachable = False
+        try:
+            request = {"action": "ping"}
+            self.rc_socket.send_json(request)
+            poller = zmq.Poller()
+            poller.register(self.rc_socket, zmq.POLLIN)
+            if poller.poll(5000):
+                response = self.rc_socket.recv_json()
+                rc_reachable = response.get("status") == "success"
+        except Exception:
+            rc_reachable = False
+
+        # Check if we can communicate with the ModelEvaluationFramework
+        mef_reachable = False
+        try:
+            request = {"command": "HEALTH_CHECK"}
+            self.mef_socket.send_json(request)
+            poller = zmq.Poller()
+            poller.register(self.mef_socket, zmq.POLLIN)
+            if poller.poll(5000):
+                response = self.mef_socket.recv_json()
+                mef_reachable = response.get("status") == "SUCCESS"
+        except Exception:
+            mef_reachable = False
+        
         # Build health status
-        status = "HEALTHY" if sdt_reachable and mma_reachable else "UNHEALTHY"
+        status = "HEALTHY" if sdt_reachable and mma_reachable and rc_reachable and mef_reachable else "UNHEALTHY"
         
         return {
             "status": "SUCCESS",
@@ -1350,11 +1451,14 @@ defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_thre
                 "status": status,
                 "sdt_reachable": sdt_reachable,
                 "mma_reachable": mma_reachable,
+                "rc_reachable": rc_reachable,
+                "mef_reachable": mef_reachable,
                 "uptime_seconds": int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
                 "connected_services": {
                     "SystemDigitalTwin": sdt_reachable,
                     "ModelManagerAgent": mma_reachable,
-                    "TaskRouter": self.task_router_available and hasattr(self, 'tr_socket') and self.tr_socket is not None
+                    "RequestCoordinator": rc_reachable,
+                    "ModelEvaluationFramework": mef_reachable
                 }
             }
         }
@@ -1404,6 +1508,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

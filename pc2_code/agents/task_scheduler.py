@@ -44,10 +44,10 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
-class TaskSchedulerAgent(
+class TaskSchedulerAgent(BaseAgent):
     """
     TaskSchedulerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     def __init__(self, port=7115, health_port=7116, async_processor_port=5555):
         super().__init__(name="TaskSchedulerAgent", port=7115)
         # Record start time for uptime calculation
@@ -98,7 +98,7 @@ def _setup_sockets(self):
             raise
         # Socket to communicate with AsyncProcessor
         self.async_socket = self.context.socket(zmq.REQ)
-        self.async_socket.connect(f"tcp://localhost:{self.async_processor_port}")
+        self.async_socket.connect(get_zmq_connection_string({self.async_processor_port}, "localhost")))
 
     def _start_health_check(self):
         def health_check_loop():
@@ -216,6 +216,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

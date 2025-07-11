@@ -23,31 +23,26 @@ from collections import deque
 from pathlib import Path
 import sys
 
-# Add parent directory to path for config import
-sys.path.append(str(Path(__file__).parent.parent))
+# Add parent directory to path for imports
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from common.core.base_agent import BaseAgent
 from pc2_code.config.system_config import config
-
-# Constants
-LOG_PATH = "logs/unified_memory_reasoning_agent.log"
-CONTEXT_STORE_PATH = "memory_store.json"
-ERROR_PATTERNS_PATH = "error_patterns.json"
-TWIN_STORE_PATH = "digital_twin_store.json"  # Added for digital twin storage
-ZMQ_PORT = 7105  # Updated to expected port
-HEALTH_CHECK_PORT = 7106  # Updated to expected health check port
-
-# Ensure logs directory exists
-os.makedirs("logs", exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
+        logging.FileHandler("logs/unified_memory_reasoning_agent.log", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger("UnifiedMemoryReasoning")
+
+# Define default constants (will be overridden by config)
+DEFAULT_CONTEXT_STORE_PATH = "memory_store.json"
+DEFAULT_ERROR_PATTERNS_PATH = "error_patterns.json"
+DEFAULT_TWIN_STORE_PATH = "digital_twin_store.json"
 
 # Memory agent registry for coordination
 MEMORY_AGENT_REGISTRY = {
@@ -244,32 +239,34 @@ class ContextManager:
         if items_to_remove:
             logger.debug(f"[ContextManager] Pruned {len(items_to_remove[:max_to_remove])} low-importance items")
 
-class UnifiedMemoryReasoningAgent:
-    def __init__(self, zmq_port=ZMQ_PORT, health_check_port=HEALTH_CHECK_PORT):
+class UnifiedMemoryReasoningAgent(BaseAgent):
+    """Unified Memory and Reasoning Agent that handles context, digital twins, and error patterns"""
+    
+    def __init__(self, zmq_port=7105, health_check_port=7106):
         """Initialize the unified memory and reasoning agent"""
-        # ZMQ setup
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.health_socket = self.context.socket(zmq.REP)
+        # Initialize BaseAgent first
+        super().__init__(name="UnifiedMemoryReasoningAgent", port=zmq_port, 
+                         health_check_port=health_check_port)
+                         
+        # Initialize lock for thread safety
+        self.lock = threading.Lock()
         
-        try:
-            self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
-            self.health_socket.bind(f"tcp://0.0.0.0:{health_check_port}")
-            logger.info(f"Agent bound to ports {zmq_port} (main) and {health_check_port} (health)")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Error binding to ports: {e}")
-            raise RuntimeError(f"Cannot bind to ports {zmq_port}/{health_check_port}")
+        # Define storage paths
+        self.context_store_path = config.get("context_store_path", DEFAULT_CONTEXT_STORE_PATH)
+        self.error_patterns_path = config.get("error_patterns_path", DEFAULT_ERROR_PATTERNS_PATH)
+        self.twin_store_path = config.get("twin_store_path", DEFAULT_TWIN_STORE_PATH)
+        
+        # Ensure logs directory exists
+        os.makedirs("logs", exist_ok=True)
         
         # Initialize basic state
         self.initialized = False
         self.initialization_error = None
-        self.lock = threading.Lock()
-        self.running = True
         
         # Memory configuration
-        self.max_session_history = 50
-        self.token_budget_default = 2000
-        self.token_compression_ratio = 0.8
+        self.max_session_history = config.get("max_session_history", 50)
+        self.token_budget_default = config.get("token_budget_default", 2000)
+        self.token_compression_ratio = config.get("token_compression_ratio", 0.8)
         
         # Memory hierarchy
         self.memory_hierarchy = {
@@ -278,12 +275,19 @@ class UnifiedMemoryReasoningAgent:
             "long_term": 1000    # Historical
         }
         
+        # Initialize empty data structures
+        self.context_store = {"sessions": {}, "summaries": {}}
+        self.error_patterns = {"patterns": {}, "history": []}
+        self.twins = {}
+        self.context_manager = None
+        self.memory_agent_sockets = {}
+        self.active_operations = {}
+        
         # Statistics
         self.total_requests = 0
         self.successful_requests = 0
         self.failed_requests = 0
         self.health_check_requests = 0
-        self.start_time = time.time()
         self.request_count = 0
         self.error_count = 0
         self.last_request_time = None
@@ -294,19 +298,15 @@ class UnifiedMemoryReasoningAgent:
         self.successful_updates = 0
         self.failed_updates = 0
         
-        # Start initialization in background thread
-        self._init_thread = threading.Thread(target=self._initialize_background, daemon=True)
-        self._init_thread.start()
-        
-        logger.info("Unified Memory and Reasoning Agent starting initialization...")
+        logger.info("Unified Memory and Reasoning Agent initialized")
     
-    def _initialize_background(self):
+    def _perform_initialization(self):
         """Initialize agent components in background thread."""
         try:
             # Memory stores
             self.context_store = self.load_context_store()
             self.error_patterns = self.load_error_patterns()
-            self.twins = self.load_twins()  # Added for digital twin storage
+            self.twins = self.load_twins()
             
             # Context management
             self.context_manager = ContextManager()
@@ -332,36 +332,37 @@ class UnifiedMemoryReasoningAgent:
         except Exception as e:
             self.initialization_error = str(e)
             logger.error(f"Unified Memory and Reasoning Agent initialization failed: {str(e)}")
+            self.report_error("initialization_error", str(e), context={"agent": self.name})
     
     def load_context_store(self):
         """Load context store from file"""
-        if os.path.exists(CONTEXT_STORE_PATH):
-            with open(CONTEXT_STORE_PATH, "r", encoding="utf-8") as f:
+        if os.path.exists(self.context_store_path):
+            with open(self.context_store_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"sessions": {}, "summaries": {}}
     
     def save_context_store(self):
         """Save context store to file"""
-        with open(CONTEXT_STORE_PATH, "w", encoding="utf-8") as f:
+        with open(self.context_store_path, "w", encoding="utf-8") as f:
             json.dump(self.context_store, f, ensure_ascii=False, indent=2)
     
     def load_error_patterns(self):
         """Load error patterns from file"""
-        if os.path.exists(ERROR_PATTERNS_PATH):
-            with open(ERROR_PATTERNS_PATH, "r", encoding="utf-8") as f:
+        if os.path.exists(self.error_patterns_path):
+            with open(self.error_patterns_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {"patterns": {}, "history": []}
     
     def save_error_patterns(self):
         """Save error patterns to file"""
-        with open(ERROR_PATTERNS_PATH, "w", encoding="utf-8") as f:
+        with open(self.error_patterns_path, "w", encoding="utf-8") as f:
             json.dump(self.error_patterns, f, ensure_ascii=False, indent=2)
     
     def load_twins(self):
         """Load digital twins from the store file"""
         try:
-            if os.path.exists(TWIN_STORE_PATH):
-                with open(TWIN_STORE_PATH, "r", encoding="utf-8") as f:
+            if os.path.exists(self.twin_store_path):
+                with open(self.twin_store_path, "r", encoding="utf-8") as f:
                     twins = json.load(f)
                 logger.info(f"Loaded {len(twins)} digital twins from store")
                 return twins
@@ -369,17 +370,19 @@ class UnifiedMemoryReasoningAgent:
             return {}
         except Exception as e:
             logger.error(f"Error loading twin store: {e}")
+            self.report_error("twin_store_error", f"Error loading twin store: {e}")
             return {}
 
     def save_twins(self):
         """Save digital twins to the store file"""
         try:
-            with open(TWIN_STORE_PATH, "w", encoding="utf-8") as f:
+            with open(self.twin_store_path, "w", encoding="utf-8") as f:
                 json.dump(self.twins, f, ensure_ascii=False, indent=2)
             logger.info(f"Saved {len(self.twins)} digital twins to store")
             return True
         except Exception as e:
             logger.error(f"Error saving twin store: {e}")
+            self.report_error("twin_store_error", f"Error saving twin store: {e}")
             return False
 
     def update_twin(self, user_id, twin_data):
@@ -583,47 +586,37 @@ class UnifiedMemoryReasoningAgent:
                 "solution": solution
             })
             
-            # Keep history manageable
-            if len(self.error_patterns["history"]) > 1000:
-                self.error_patterns["history"] = self.error_patterns["history"][-1000:]
-            
             self.save_error_patterns()
             return True
     
     def get_error_solution(self, error_message):
         """Get solution for an error pattern"""
-        for error_type, data in self.error_patterns["patterns"].items():
-            if re.search(data["pattern"], error_message, re.IGNORECASE):
-                # Update occurrence count
-                data["occurrence_count"] += 1
-                data["last_seen"] = time.time()
-                self.save_error_patterns()
-                return data["solution"]
-        return None
+        try:
+            for error_type, data in self.error_patterns.get("patterns", {}).items():
+                if re.search(data["pattern"], error_message, re.IGNORECASE):
+                    # Update occurrence count
+                    data["occurrence_count"] += 1
+                    data["last_seen"] = time.time()
+                    self.save_error_patterns()
+                    return data["solution"]
+            return None
+        except Exception as e:
+            logger.error(f"Error getting error solution: {e}")
+            return None
     
     def get_context_summary(self, session_id, max_tokens=None):
         """Get context summary for a session"""
         try:
             if "summaries" not in self.context_store or session_id not in self.context_store["summaries"]:
-                # Generate new summary if needed
-                summary = self._update_session_summary(session_id)
+                # For simplicity, return a basic summary
+                return {
+                    "last_updated": time.time(),
+                    "session_id": session_id,
+                    "context": f"New session: {session_id}"
+                }
             else:
                 summary = self.context_store["summaries"][session_id]
-            
-            if not summary:
-                return None
-            
-            # Apply token limit if specified
-            if max_tokens:
-                # Simple token estimation (rough)
-                total_tokens = len(str(summary)) // 4
-                if total_tokens > max_tokens:
-                    # Compress summary
-                    compression_ratio = max_tokens / total_tokens
-                    summary = self._compress_summary(summary, compression_ratio)
-            
-            return summary
-            
+                return summary
         except Exception as e:
             logger.error(f"Error getting context summary: {e}")
             return None
@@ -692,9 +685,14 @@ class UnifiedMemoryReasoningAgent:
             self.active_operations[op_id] = {'priority': new_priority}
             return True
 
+    # Override handle_request method from BaseAgent
     def handle_request(self, request):
         """Handle incoming requests"""
         try:
+            # If it's a health check, use BaseAgent's health check
+            if request.get("action") in ["health_check", "ping", "health"]:
+                return self._get_health_status()
+            
             action = request.get("action")
             user_id = request.get("user_id", "default")
             
@@ -703,12 +701,8 @@ class UnifiedMemoryReasoningAgent:
                 self.request_count += 1
                 self.last_request_time = time.time()
             
-            if action == "health_check":
-                self.health_check_count += 1
-                return self.get_status()
-            
             # Digital Twin Actions
-            elif action == "update_twin":
+            if action == "update_twin":
                 self.update_count += 1
                 twin_data = request.get("twin_data")
                 if not twin_data:
@@ -773,57 +767,26 @@ class UnifiedMemoryReasoningAgent:
                 solution = self.get_error_solution(error_message)
                 return {"status": "ok", "solution": solution}
             
-            elif action == "get_all_memories":
-                # Return all memories (interactions) from all sessions as a flat list
-                all_memories = []
-                with self.lock:
-                    sessions = self.context_store.get("sessions", {})
-                    for session_id, interactions in sessions.items():
-                        for interaction in interactions:
-                            # Add type, freshness_score, timestamp for decay manager
-                            memory = {
-                                "type": interaction.get("metadata", {}).get("memory_type", "short_term"),
-                                "freshness_score": interaction.get("metadata", {}).get("freshness_score", 1.0),
-                                "timestamp": datetime.fromtimestamp(interaction.get("timestamp", time.time())).isoformat(),
-                                "session_id": session_id,
-                                "content": interaction.get("content", "")
-                            }
-                            all_memories.append(memory)
-                return {"status": "success", "memories": all_memories}
-            
-            # Add priority and conflict resolution logic
-            op_id = request.get('op_id', hashlib.md5(json.dumps(request, sort_keys=True).encode()).hexdigest())
-            priority = request.get('priority', 'normal')
-            # Conflict resolution
-            if not self.resolve_conflict(op_id, priority):
-                return {'status': 'error', 'error': 'Operation conflict: lower priority'}
-            # Memory coordination example
-            if request.get('coordinate_with'):
-                agent = request['coordinate_with']
-                operation = request.get('operation', 'read')
-                data = request.get('data', {})
-                coord_result = self.coordinate_memory(agent, operation, data, priority)
-                return {'status': 'coordinated', 'result': coord_result}
-            
             else:
                 return {"status": "error", "reason": "Unknown action"}
                 
         except Exception as e:
             logger.error(f"[UMRA] Error handling request: {e}")
+            self.report_error("request_handling_error", str(e), context={"request": request})
             with self.lock:
                 self.error_count += 1
             return {"status": "error", "reason": str(e)}
     
-    def get_status(self):
+    # Override get_health_status to add our own metrics
+    def _get_health_status(self):
         """Get the current status of the Unified Memory Reasoning Agent"""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
         with self.lock:
-            uptime = time.time() - self.start_time
-            status = {
-                "status": "ok" if self.initialized else "initializing",
+            # Add our own metrics
+            agent_status = {
                 "service": "unified_memory_reasoning_agent",
-                "initialization_status": "complete" if self.initialized else "in_progress",
-                "timestamp": time.time(),
-                "uptime_seconds": uptime,
                 "request_count": self.request_count,
                 "error_count": self.error_count,
                 "last_request_time": self.last_request_time,
@@ -833,54 +796,51 @@ class UnifiedMemoryReasoningAgent:
                 "delete_count": self.delete_count,
                 "successful_updates": self.successful_updates,
                 "failed_updates": self.failed_updates,
-                "bind_address": f"tcp://0.0.0.0:{ZMQ_PORT}",
-                "health_check_address": f"tcp://0.0.0.0:{HEALTH_CHECK_PORT}"
             }
             
             # Add initialization error if present
             if self.initialization_error:
-                status["initialization_error"] = self.initialization_error
+                agent_status["initialization_error"] = self.initialization_error
             
             # Add memory statistics if initialized
             if self.initialized:
-                status.update({
-                    "total_twins": len(self.twins),
-                    "total_sessions": len(self.context_store),
-                    "total_error_patterns": len(self.error_patterns)
+                agent_status.update({
+                    "total_twins": len(self.twins) if hasattr(self, 'twins') else 0,
+                    "total_sessions": len(self.context_store.get("sessions", {})) if hasattr(self, 'context_store') else 0,
+                    "total_error_patterns": len(self.error_patterns.get("patterns", {})) if hasattr(self, 'error_patterns') else 0
                 })
-            
-            return status
-    
-    def run(self):
-        """Main service loop"""
-        logger.info("Starting main service loop")
         
-        while self.running:
-            try:
-                # Check main socket
-                if self.socket.poll(timeout=100) == zmq.POLLIN:
-                    msg = self.socket.recv_string()
-                    request = json.loads(msg)
-                    response = self.handle_request(request)
-                    self.socket.send_string(json.dumps(response))
-                
-                # Check health socket
-                if self.health_socket.poll(timeout=100) == zmq.POLLIN:
-                    msg = self.health_socket.recv_string()
-                    response = self.get_status()
-                    self.health_socket.send_string(json.dumps(response))
-                
-            except Exception as e:
-                logger.error(f"Error in service loop: {e}")
-                time.sleep(1)  # Prevent tight loop on error
+        # Update base status with our metrics
+        base_status.update(agent_status)
+        return base_status
     
-    def stop(self):
-        """Stop the agent"""
-        self.running = False
-        self.socket.close()
-        self.health_socket.close()
-        self.context.term()
-        logger.info("Agent stopped")
+    def cleanup(self):
+        """Clean up resources before shutdown"""
+        logger.info("Cleaning up resources...")
+        
+        # Save any unsaved data
+        try:
+            if hasattr(self, 'context_store'):
+                self.save_context_store()
+            if hasattr(self, 'error_patterns'):
+                self.save_error_patterns()
+            if hasattr(self, 'twins'):
+                self.save_twins()
+        except Exception as e:
+            logger.error(f"Error saving data during cleanup: {e}")
+        
+        # Close memory agent sockets
+        if hasattr(self, 'memory_agent_sockets'):
+            for agent, socket in self.memory_agent_sockets.items():
+                try:
+                    socket.close()
+                    logger.debug(f"Closed socket for memory agent {agent}")
+                except Exception as e:
+                    logger.error(f"Error closing socket for memory agent {agent}: {e}")
+        
+        # Call parent class cleanup to handle standard sockets
+        super().cleanup()
+        logger.info("Cleanup complete")
 
 def main():
     """Main entry point"""

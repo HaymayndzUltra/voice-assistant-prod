@@ -289,27 +289,41 @@ class LearningOrchestrationService(BaseAgent):
             return {'status': 'error', 'message': str(e)}
 
     def _get_health_status(self):
-        uptime = time.time() - self.start_time
-        db_status = 'ok'
+        """Return standardized health status with SQLite and ZMQ readiness checks."""
+        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
+
+        db_connected = False
+        cycle_count = -1
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, timeout=1)
             cursor = conn.cursor()
             cursor.execute('SELECT COUNT(*) FROM training_cycles')
-            count = cursor.fetchone()[0]
+            cycle_count = cursor.fetchone()[0]
             conn.close()
+            db_connected = True
         except Exception as e:
-            db_status = f'error: {e}'
-            count = -1
-        return {
-            'status': 'healthy' if db_status == 'ok' else 'degraded',
+            logger.error(f"Health check DB error: {e}")
+
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
+        uptime = time.time() - self.start_time if hasattr(self, 'start_time') else 0
+
+        specific_metrics = {
             'uptime_sec': uptime,
-            'cycles_created': self.metrics['cycles_created'],
-            'cycles_completed': self.metrics['cycles_completed'],
-            'cycles_failed': self.metrics['cycles_failed'],
-            'opportunities_received': self.metrics['opportunities_received'],
-            'training_cycle_count': count,
-            'db_status': db_status
+            'cycles_created': getattr(self, 'metrics', {}).get('cycles_created', 0),
+            'cycles_completed': getattr(self, 'metrics', {}).get('cycles_completed', 0),
+            'cycles_failed': getattr(self, 'metrics', {}).get('cycles_failed', 0),
+            'opportunities_received': getattr(self, 'metrics', {}).get('opportunities_received', 0),
+            'training_cycle_count': cycle_count,
+            'db_connected': db_connected,
+            'zmq_ready': zmq_ready
         }
+        overall_status = 'ok' if all([db_connected, zmq_ready]) else 'degraded'
+        base_status.update({
+            'status': overall_status,
+            'agent_specific_metrics': specific_metrics
+        })
+        return base_status
 
     def report_error(self, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR):
         try:
@@ -348,4 +362,18 @@ if __name__ == '__main__':
         logger.critical(f"Learning Orchestration Service failed to start: {e}", exc_info=True)
     finally:
         if 'agent' in locals() and agent.running:
+            agent.cleanup()
+
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = LearningOrchestrationService()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
             agent.cleanup()

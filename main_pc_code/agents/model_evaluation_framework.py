@@ -328,30 +328,45 @@ class ModelEvaluationFramework(BaseAgent):
             return {'status': 'error', 'message': str(e)}
 
     def _get_health_status(self):
-        uptime = time.time() - self.start_time
-        db_status = 'ok'
+        """Return standardized health status with DB and ZMQ readiness checks."""
+        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
+
+        # SQLite connectivity
+        db_connected = False
+        perf_count = eval_count = -1
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, timeout=1)
             cursor = conn.cursor()
             cursor.execute('SELECT COUNT(*) FROM performance_metrics')
             perf_count = cursor.fetchone()[0]
             cursor.execute('SELECT COUNT(*) FROM model_evaluation_scores')
             eval_count = cursor.fetchone()[0]
             conn.close()
+            db_connected = True
         except Exception as e:
-            db_status = f'error: {e}'
-            perf_count = -1
-            eval_count = -1
-        return {
-            'status': 'healthy' if db_status == 'ok' else 'degraded',
+            logger.error(f"Health check DB error: {e}")
+
+        # ZMQ readiness (use self.health_socket or any socket attribute)
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
+        uptime = time.time() - self.start_time if hasattr(self, 'start_time') else 0
+
+        specific_metrics = {
             'uptime_sec': uptime,
-            'performance_logs': self.metrics['performance_logs'],
-            'trust_score_updates': self.metrics['trust_score_updates'],
-            'models_tracked': self.metrics['models_tracked'],
-            'performance_metric_count': perf_count,
-            'model_evaluation_count': eval_count,
-            'db_status': db_status
+            'performance_logs': getattr(self, 'metrics', {}).get('performance_logs', 0),
+            'trust_score_updates': getattr(self, 'metrics', {}).get('trust_score_updates', 0),
+            'models_tracked': getattr(self, 'metrics', {}).get('models_tracked', 0),
+            'db_connected': db_connected,
+            'perf_count': perf_count,
+            'eval_count': eval_count,
+            'zmq_ready': zmq_ready
         }
+        overall_status = 'ok' if all([db_connected, zmq_ready]) else 'degraded'
+        base_status.update({
+            'status': overall_status,
+            'agent_specific_metrics': specific_metrics
+        })
+        return base_status
 
     def report_error(self, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR):
         try:
@@ -391,3 +406,16 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup() 
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = ModelEvaluationFramework()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()

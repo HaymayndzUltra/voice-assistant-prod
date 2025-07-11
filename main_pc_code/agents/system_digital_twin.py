@@ -24,9 +24,12 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 import time
 import json
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import threading
 import zmq
 import psutil
+import sqlite3
+import redis
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union, cast, TypeVar
 
@@ -60,6 +63,12 @@ BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 ZMQ_REQUEST_TIMEOUT = 5000
 DEFAULT_PORT = 7120
 DEFAULT_HEALTH_PORT = 8120
+# Database & Cache Defaults
+DB_PATH = os.environ.get('MEMORY_DB_PATH', 'data/unified_memory.db')
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_DB = int(os.environ.get('REDIS_DB', 0))
+
 DEFAULT_CONFIG = {
     "prometheus_url": "http://prometheus:9090",
     "metrics_poll_interval": 5,
@@ -110,6 +119,16 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         vram_capacity = self.config.get("vram_capacity_mb", 24000)
         pc2_vram_capacity = self.config.get("pc2_vram_capacity_mb", 12000)
+        # --- Redis connection (optional) ---
+        self.redis_conn: Optional[redis.Redis] = None
+        try:
+            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, socket_connect_timeout=2)
+            self.redis_conn.ping()
+            logger.info("Successfully connected to Redis cache.")
+        except Exception as r_err:
+            logger.warning(f"Redis connection failed: {r_err}. Health checks will report degraded cache connectivity.")
+            self.redis_conn = None
+
         self.vram_metrics = {
             "mainpc_vram_total_mb": vram_capacity, "mainpc_vram_used_mb": 0,
             "mainpc_vram_free_mb": vram_capacity, "pc2_vram_total_mb": pc2_vram_capacity,
@@ -119,12 +138,10 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         self.last_update_time = datetime.now().isoformat()
         logger.info(f"{self.name} initialized.")
+        # Initialise unified error publisher
+        self.error_publisher = ErrorPublisher(self.name)
 
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Deprecated direct ZMQ PUB socket removed – handled by ErrorPublisher
 
     def setup(self):
         """Set up the agent's components after initialization."""
@@ -138,6 +155,7 @@ class SystemDigitalTwinAgent(BaseAgent):
             return True
         except Exception as e:
             logger.error(f"Error during setup: {e}", exc_info=True)
+            self.error_publisher.publish_error(error_type="setup_failure", severity="critical", details=str(e))
             return False
     
     def _setup_zmq(self):
@@ -154,6 +172,7 @@ class SystemDigitalTwinAgent(BaseAgent):
                 logger.info("Secure ZMQ configured successfully.")
             except Exception as e:
                 logger.error(f"Failed to configure secure ZMQ: {e}, continuing with standard ZMQ.")
+                self.error_publisher.publish_error(error_type="secure_zmq_setup", severity="medium", details=str(e))
         
         socket_address = f"tcp://{self.bind_address}:{self.main_port}"
         self.socket.bind(socket_address)
@@ -172,6 +191,7 @@ class SystemDigitalTwinAgent(BaseAgent):
             logger.info("Successfully registered with service registry.")
         except Exception as e:
             logger.error(f"Error registering service: {e}")
+            self.error_publisher.publish_error(error_type="service_registration", severity="high", details=str(e))
             raise
 
     def _setup_prometheus(self):
@@ -334,13 +354,44 @@ class SystemDigitalTwinAgent(BaseAgent):
         """Get the current health status of the agent."""
         base_status = super()._get_health_status()
         try:
+            # Database connectivity test (SQLite)
+            db_connected = False
+            try:
+                conn = sqlite3.connect(DB_PATH, timeout=1)
+                conn.execute("SELECT 1")
+                conn.close()
+                db_connected = True
+            except Exception as db_err:
+                    logger.error(f"Health check DB error: {db_err}")
+
+            # Redis connectivity test
+            redis_connected = False
+            if self.redis_conn:
+                try:
+                    self.redis_conn.ping()
+                    redis_connected = True
+                except Exception as redis_err:
+                    logger.error(f"Health check Redis ping error: {redis_err}")
+
+            # ZMQ socket status
+            zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
             specific_metrics = {
                 "twin_status": "active" if self.running else "inactive",
                 "registered_agents_count": len(self.registered_agents),
                 "prometheus_connected": self.prom is not None and self._check_prometheus_connection(),
-                "system_metrics": {"cpu_percent": psutil.cpu_percent(), "memory_percent": psutil.virtual_memory().percent}
+                "system_metrics": {"cpu_percent": psutil.cpu_percent(), "memory_percent": psutil.virtual_memory().percent},
+                "db_connected": db_connected,
+                "redis_connected": redis_connected,
+                "zmq_ready": zmq_ready
             }
-            base_status.update({"agent_specific_metrics": specific_metrics})
+            # Aggregate overall status
+            # Aggregate overall status
+            overall_status = "ok" if all([db_connected, redis_connected, zmq_ready]) else "degraded"
+            base_status.update({
+                "agent_specific_metrics": specific_metrics,
+                "status": overall_status
+            })
         except Exception as e:
             logger.error(f"Error collecting health metrics: {e}")
             base_status.update({"health_metrics_error": str(e)})
@@ -606,11 +657,28 @@ class SystemDigitalTwinAgent(BaseAgent):
             if not error:
                 return {"status": "error", "error": "Missing required parameter: error"}
             return self.report_error(error)
+        elif action == "get_ok_agents":
+            return self._get_ok_agents()
         elif action == "update_vram_metrics":
             payload = request.get("payload", {})
             return self._update_vram_metrics(payload)
         else:
             return {"status": "error", "error": f"Unknown action: {action}"}
+
+    def _get_ok_agents(self) -> Dict[str, Any]:
+        """Return a list of agents whose health status is strictly 'ok'."""
+        try:
+            ok_agents = [name for name, info in self.registered_agents.items() if str(info.get("status", "")).lower() == "ok"]
+            logger.info(f"Found {len(ok_agents)} agent(s) reporting OK health")
+            return {
+                "status": "success",
+                "count": len(ok_agents),
+                "agents": ok_agents
+            }
+        except Exception as e:
+            logger.error(f"Error getting OK agents: {e}")
+            self.error_publisher.publish_error(error_type="get_ok_agents", severity="medium", details=str(e))
+            return {"status": "error", "error": str(e)}
 
     def _get_registered_agents(self) -> Dict[str, Any]:
         """Get a list of all registered agents with their information.

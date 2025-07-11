@@ -95,7 +95,7 @@ class MetaCognitionAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _perform_initialization(self):
+    def _perform_initialization(self):
         try:
             # Place all blocking init here
             self._init_components()
@@ -171,9 +171,9 @@ def _perform_initialization(self):
         # Start observation threads
         self.observation_threads = []
         
-        # Connect to KnowledgeBase and CoordinatorAgent using service discovery
+        # Connect to KnowledgeBase and RequestCoordinator using service discovery
         self.kb_socket = self._create_service_socket("KnowledgeBase")
-        self.coordinator_socket = self._create_service_socket("CoordinatorAgent")
+        self.request_coordinator_socket = self._create_service_socket("RequestCoordinator")
         
         # Initialize learning analysis components
         self.learning_metrics = defaultdict(list)
@@ -233,8 +233,8 @@ def _perform_initialization(self):
         except Exception as e:
             logger.error(f"Error registering service: {e}")
     
-    def _create_service_socket(self, service_name):
-        """Create a socket connected to a service using service discovery"""
+    def _create_service_socket(self, service_name: str) -> Optional[zmq.Socket]:
+        """Helper to create a REQ socket to a discovered service."""
         try:
             socket = self.context.socket(zmq.REQ)
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -703,8 +703,8 @@ def _perform_initialization(self):
                 self.kb_socket.close()
                 logger.debug("Closed knowledge base socket")
             
-            if hasattr(self, 'coordinator_socket'):
-                self.coordinator_socket.close()
+            if hasattr(self, 'request_coordinator_socket'):
+                self.request_coordinator_socket.close()
                 logger.debug("Closed coordinator socket")
         except Exception as e:
             logger.error(f"Error during socket cleanup: {e}")
@@ -873,52 +873,70 @@ def _perform_initialization(self):
             confidence,
             json.dumps(metadata)
         ))
-        
-        conn.commit()
-        conn.close()
 
     def _get_health_status(self) -> Dict[str, Any]:
-        """Overrides the base method to add agent-specific health metrics."""
-        return {
-            'status': 'ok',
-            'ready': True,
-            'initialized': True,
-            'service': 'meta_cognition',
-            'components': {
-                'database_connected': hasattr(self, 'db_path'),
-                'observation_threads': len(getattr(self, 'observation_threads', [])),
-                'knowledge_graph_size': len(getattr(self, 'knowledge_graph', {}))
-            },
-            'status_detail': 'active',
+        """Return standardized health status with SQLite and ZMQ readiness checks."""
+        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
+
+        # SQLite connectivity
+        db_connected = False
+        try:
+            conn = sqlite3.connect(self.db_path, timeout=1)
+            conn.execute("SELECT 1")
+            conn.close()
+            db_connected = True
+        except Exception as e:
+            logger.error(f"Health check DB error: {e}")
+
+        # ZMQ readiness
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
+        specific_metrics = {
+            'db_connected': db_connected,
+            'zmq_ready': zmq_ready,
+            'observation_threads': len(getattr(self, 'observation_threads', [])),
+            'knowledge_graph_size': len(getattr(self, 'knowledge_graph', {})),
             'processed_items': getattr(self, 'processed_items', 0),
             'meta_operations': getattr(self, 'meta_operations', 0),
-            'uptime': time.time() - self.start_time
+            'uptime_sec': time.time() - self.start_time if hasattr(self, 'start_time') else 0
         }
 
+        overall_status = 'ok' if all([db_connected, zmq_ready]) else 'degraded'
+        base_status.update({
+            'status': overall_status,
+            'agent_specific_metrics': specific_metrics
+        })
+        return base_status
+
     def cleanup(self):
-        """Gracefully shutdown the agent"""
+        """Gracefully shutdown the agent."""
         logger.info("Cleaning up MetaCognitionAgent")
         self.running = False
-        
-        # Close sockets
-        if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'cot_sub'):
-            self.cot_sub.close()
-        if hasattr(self, 'voting_sub'):
-            self.voting_sub.close()
-        if hasattr(self, 'kb_socket'):
-            self.kb_socket.close()
-        if hasattr(self, 'coordinator_socket'):
-            self.coordinator_socket.close()
-            
-        # Wait for threads to finish
+
+        # Close sockets safely
+        for sock_attr in (
+            'socket',
+            'cot_sub',
+            'voting_sub',
+            'kb_socket',
+            'request_coordinator_socket',
+        ):
+            sock = getattr(self, sock_attr, None)
+            if sock is not None:
+                try:
+                    sock.close()
+                except Exception as sock_err:
+                    logger.warning(f"Error closing {sock_attr}: {sock_err}")
+
+        # Wait for observation threads to finish
         for thread in getattr(self, 'observation_threads', []):
             if thread.is_alive():
                 thread.join(timeout=1.0)
-            
-        # Call parent cleanup
-        super().cleanup()
+
+        # Call parent cleanup if available
+        if hasattr(super(), 'cleanup'):
+            super().cleanup()
+
         logger.info("MetaCognitionAgent cleanup complete")
 
 # Example usage

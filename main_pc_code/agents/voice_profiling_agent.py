@@ -27,18 +27,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger('VoiceProfilingAgent')
 
-class VoiceProfilingAgent(
-    """
-    VoiceProfilingAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class VoiceProfilingAgent(BaseAgent):
     def __init__(self):
         """Initialize the Voice Profiling Agent"""
-        # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
-        super().__init__(
-            name=self.config.get('name', 'VoiceProfilingAgent'),
-            port=self.config.getint('port', None)
-        )
+        # Get configuration
+        config_dict = load_config()
+        
+        # Initialize basic parameters
+        agent_name = config_dict.get('name', 'VoiceProfilingAgent')
+        agent_port = int(config_dict.get('port', 5600))
+        
+        # Call BaseAgent's __init__
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Store configuration
+        self.config = config_dict
         
         # Initialize running state
         self.running = True
@@ -59,20 +62,16 @@ class VoiceProfilingAgent(
         self.voice_profiles = {}
         self.load_voice_profiles()
         
+        # Setup error bus
+        self.error_bus_port = int(config_dict.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config_dict.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         logger.info(f"Voice Profiling Agent initialized on port {self.port}")
         
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def load_config(self):
+    def load_config(self):
         """Load voice personalization configuration"""
         try:
             # Attempt to import from python module
@@ -321,12 +320,43 @@ def load_config(self):
                 logger.error(f"Error in main loop: {e}")
     
     def cleanup(self):
-        """Gracefully shutdown the agent"""
-        logger.info("Shutting down Voice Profiling Agent")
+        """Clean up resources when the agent is stopping."""
+        logger.info("Cleaning up resources...")
+        
+        # Set running flag to False to stop threads
         self.running = False
-        time.sleep(0.5)  # Give threads time to exit
+        
+        try:
+            # Close all ZMQ sockets
+            for socket_name in ['socket', 'error_bus_pub']:
+                if hasattr(self, socket_name) and getattr(self, socket_name):
+                    try:
+                        getattr(self, socket_name).close()
+                        logger.info(f"{socket_name} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
+            
+            # Terminate ZMQ context
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    logger.info("ZMQ context terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+            
+            # Save any pending voice profile updates
+            for user_id, profile in self.voice_profiles.items():
+                try:
+                    self.save_voice_profile(user_id, profile)
+                except Exception as e:
+                    logger.error(f"Error saving voice profile for {user_id}: {e}")
+            
+            logger.info("Cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        
+        # Call parent cleanup method
         super().cleanup()
-        logger.info("Voice Profiling Agent shutdown complete")
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Overrides the base method to add agent-specific health metrics."""
@@ -343,6 +373,41 @@ def load_config(self):
             'last_profile_time': getattr(self, 'last_profile_time', 'N/A'),
             'uptime': time.time() - self.start_time
         }
+
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = self.running  # Assume healthy if running
+            
+            # Check if the voice profiles are loaded
+            if not hasattr(self, 'voice_profiles') or not isinstance(self.voice_profiles, dict):
+                is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "voice_profiles_count": len(self.voice_profiles),
+                    "profile_storage_path": self.profile_storage_path,
+                    "enable_continuous_learning": self.config.get("voice_learning_and_adaptation", {}).get("enable_continuous_learning", False)
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
 
 if __name__ == "__main__":
     # Standardized main execution block

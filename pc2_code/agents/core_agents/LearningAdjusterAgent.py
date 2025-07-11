@@ -17,6 +17,7 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -44,7 +45,7 @@ class LearningAdjusterAgent:
         # Initialize ZMQ context and socket
         self.context = zmq.Context()
         self.trust_socket = self.context.socket(zmq.REQ)
-        self.trust_socket.connect("tcp://localhost:5590")  # AgentTrustScorer
+        self.trust_socket.connect(get_zmq_connection_string(5590, "localhost")))  # AgentTrustScorer
         
         # Initialize agent state
         self.running = True

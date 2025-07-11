@@ -37,10 +37,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('EmotionEngine')
 
-class EmotionEngine(
-    """
-    EmotionEngine:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class EmotionEngine(BaseAgent):
     def __init__(self, config=None, **kwargs):
         """Initialize the Emotion Engine with proper template compliance."""
         # Ensure config is a dictionary
@@ -123,21 +120,17 @@ class EmotionEngine(
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
 
+        # Setup error bus
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         # Initialization complete
         logger.info(f"{self.name} initialized on port {self.port} (health: {self.health_port}, pub: {self.pub_port})")
 
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _signal_handler(self, sig, frame):
+    def _signal_handler(self, sig, frame):
         """Handle signals for graceful termination"""
         logger.info(f"Received signal {sig}, shutting down")
         self.running = False
@@ -405,6 +398,44 @@ def _signal_handler(self, sig, frame):
         except Exception as e:
             logger.error(f"Error updating emotional state: {e}")
             return self.current_emotional_state
+    
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = self.running  # Assume healthy if running
+            
+            # Check if sockets are initialized
+            if not hasattr(self, 'socket') or not self.socket:
+                is_healthy = False
+            if not hasattr(self, 'health_socket') or not self.health_socket:
+                is_healthy = False
+            if not hasattr(self, 'pub_socket') or not self.pub_socket:
+                is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "current_emotional_state": self.current_emotional_state,
+                    "emotion_thresholds": self.emotion_thresholds
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
     
     def cleanup(self):
         """Clean up resources with proper error handling"""

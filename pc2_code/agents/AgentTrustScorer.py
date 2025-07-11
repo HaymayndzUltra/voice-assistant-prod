@@ -5,74 +5,123 @@ import os
 import json
 import time
 import logging
-import sqlit
+import sqlite3
+from datetime import datetime
+from typing import Dict, Any, Optional
+from pathlib import Path
 
 # Add the project's pc2_code directory to the Python path
-import sys
-import os
-from pathlib import Path
 PC2_CODE_DIR = Path(__file__).resolve().parent.parent
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
-e3
-from datetime import datetime
-from typing import Dict, Any, Optional
-
-
+# Import required modules
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
 config = Config().get_config()
 
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "agent_trust_scorer": int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
+        }
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('agent_trust_scorer.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-class AgentTrustScorer(
+# Load network configuration
+network_config = load_network_config()
+
+# Get configuration values
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+AGENT_TRUST_SCORER_PORT = network_config.get("ports", {}).get("agent_trust_scorer", int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+
+class AgentTrustScorer(BaseAgent):
     """
-    AgentTrustScorer:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-    def __init__(self, port: int = 5626):
-        super().__init__(name="AgentTrustScorer", port=5626)
-        # Record start time for uptime calculation
-        self.start_time = time.time()
-        # Initialize agent state
+    AgentTrustScorer: Tracks and scores the reliability of AI models based on performance metrics.
+    """
+    def __init__(self, port: int = None):
+        # Initialize state before BaseAgent
         self.running = True
         self.request_count = 0
-        # Set up connection to main PC if needed
         self.main_pc_connections = {}
-        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {{'PC2_IP' if 'PC2_IP' in globals() else 'unknown'}}) port {self.port}")
-        # Initialize the AgentTrustScorer with ZMQ socket and database.
-        self.port = port
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{port}")
+        self.start_time = time.time()
+        
+        # Initialize BaseAgent with proper parameters
+        super().__init__(
+            name="AgentTrustScorer", 
+            port=port if port is not None else AGENT_TRUST_SCORER_PORT
+        )
+        
         # Initialize database
-        self.db_path = "agent_trust_scores.db"
+        self.db_path = os.path.join(os.environ.get("DB_PATH", "cache"), "agent_trust_scores.db")
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
-        logger.info(f"AgentTrustScorer initialized on port {port}")
+        
+        # Setup error reporting
+        self.setup_error_reporting()
+        
+        logger.info(f"AgentTrustScorer initialized on port {self.port}")
     
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
     
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _init_database(self):
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+    
+    def _init_database(self):
         """Initialize SQLite database for trust scores."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -229,73 +278,108 @@ def _init_database(self):
                 'history': history
             }
             
+        elif action == 'health_check':
+            return self._get_health_status()
+            
         else:
             return {
                 'status': 'error',
                 'message': f'Unknown action: {action}'
             }
 
-
     def _get_health_status(self) -> dict:
-
         """Return health status information."""
-
         base_status = super()._get_health_status()
 
         # Add any additional health information specific to AgentTrustScorer
-
         base_status.update({
-
+            'status': 'ok',
             'service': 'AgentTrustScorer',
-
             'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-
             'additional_info': {}
-
         })
 
         return base_status
 
-
     def cleanup(self):
-
         """Clean up resources before shutdown."""
-
         logger.info("Cleaning up resources...")
-
-        # Add specific cleanup code here
-
-        super().cleanup()
+        
+        # Close all connections
+        if hasattr(self, 'socket'):
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Close any connections to other services
+        for service_name, socket in self.main_pc_connections.items():
+            try:
+                socket.close()
+                logger.info(f"Closed connection to {service_name}")
+            except Exception as e:
+                logger.error(f"Error closing connection to {service_name}: {e}")
+        
+        # Call parent cleanup
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
+        
+        logger.info("Cleanup complete")
     
     def run(self):
         """Main loop for handling requests."""
         logger.info("AgentTrustScorer started")
         
-        while True:
+        while self.running:
             try:
-                # Wait for next request
-                message = self.socket.recv_json()
-                logger.debug(f"Received request: {message}")
-                
-                # Process request
-                response = self.handle_request(message)
-                
-                # Send response
-                self.socket.send_json(response)
-                logger.info(f"Sent response: {response}")
+                # Wait for next request with timeout
+                if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                    message = self.socket.recv_json()
+                    logger.debug(f"Received request: {message}")
+                    
+                    # Process request
+                    response = self.handle_request(message)
+                    
+                    # Send response
+                    self.socket.send_json(response)
+                    logger.info(f"Sent response: {response}")
+                    self.request_count += 1
+                    
+            except zmq.error.ZMQError as e:
+                logger.error(f"ZMQ error: {e}")
+                self.report_error("ZMQ_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'message': str(e)
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
                 
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
-                self.socket.send_json({
-                    'status': 'error',
-                    'message': str(e)
-                })
-
-
-
-
-
-
+                self.report_error("PROCESSING_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'message': str(e)
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -313,28 +397,3 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()
-
-# Load network configuration
-def load_network_config():
-    """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network config: {e}")
-        # Default fallback values
-        return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
-            "secure_zmq": False
-        }
-
-# Load both configurations
-network_config = load_network_config()
-
-# Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

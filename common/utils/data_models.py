@@ -40,7 +40,19 @@ class TaskDefinition(BaseModel):
     timeout_seconds: Optional[int] = Field(default=None, description="Maximum time allowed for task execution")
     created_at: datetime = Field(default_factory=datetime.now, description="Task creation timestamp")
     scheduled_for: Optional[datetime] = Field(default=None, description="When the task should be executed")
-    
+
+    # Added computed helper property for backward-compatibility with older code that used task.description
+    @property
+    def description(self) -> str:  # type: ignore[override]
+        """Return a human-readable task description.
+        Looks for 'description', 'prompt', or 'text' inside parameters.
+        This avoids AttributeError in legacy code while keeping the model immutable.
+        """
+        return str(self.parameters.get("description") or
+                   self.parameters.get("prompt") or
+                   self.parameters.get("text") or
+                   "")
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -71,7 +83,7 @@ class TaskResult(BaseModel):
     metrics: Dict[str, Any] = Field(default_factory=dict, description="Performance metrics for the task")
     started_at: datetime = Field(default_factory=datetime.now, description="When task execution started")
     completed_at: Optional[datetime] = Field(default=None, description="When task execution completed")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -101,7 +113,7 @@ class SystemEvent(BaseModel):
     data: Dict[str, Any] = Field(default_factory=dict, description="Event-specific data")
     propagate: bool = Field(default=False, description="Whether this event should be propagated to other machines")
     ttl: int = Field(default=3, description="Time-to-live for propagated events (hop count)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -133,7 +145,7 @@ class ErrorReport(BaseModel):
     related_task_id: Optional[str] = Field(default=None, description="ID of related task if applicable")
     recovery_attempted: bool = Field(default=False, description="Whether recovery was attempted")
     recovery_successful: Optional[bool] = Field(default=None, description="Whether recovery was successful")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -166,7 +178,7 @@ class PerformanceMetric(BaseModel):
     unit: Optional[str] = Field(default=None, description="Unit of measurement")
     dimensions: Dict[str, str] = Field(default_factory=dict, description="Metric dimensions for aggregation")
     tags: List[str] = Field(default_factory=list, description="Tags for categorization")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -196,7 +208,7 @@ class AgentRegistration(BaseModel):
     capabilities: List[str] = Field(default_factory=list, description="List of agent capabilities")
     dependencies: List[str] = Field(default_factory=list, description="List of dependencies on other agents")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional agent metadata")
-    
+
     class Config:
         json_schema_extra = {
             "example": {

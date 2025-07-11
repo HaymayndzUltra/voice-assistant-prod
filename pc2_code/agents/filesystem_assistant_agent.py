@@ -5,7 +5,7 @@ FileSystem Assistant Agent
 This agent provides a ZMQ service for file system operations, allowing other agents
 to perform controlled file operations across the distributed system.
 
-The agent runs on port 5606 with a REP socket pattern to handle requests and provide responses.
+The agent runs with a REP socket pattern to handle requests and provide responses.
 """
 
 import zmq
@@ -15,11 +15,11 @@ import sys
 import threading
 import logging
 import shutil
+import yaml
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 import time
-import yaml # Added for network config loading
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -29,12 +29,10 @@ if str(project_root) not in sys.path:
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config # Assuming this is used for general PC2 config
+from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
-
 
 # Import common utilities if available
 try:
@@ -56,110 +54,123 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
-            "ports": {} # Ensure ports key exists for .get("ports", {})
+            "ports": {
+                "filesystem_agent": int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)),
+                "filesystem_health": int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
         }
 
-network_config = load_network_config()
-
-# Get machine IPs from network config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
-
-# Load PC2 specific configuration (if any specific config needed from Config class)
-# config = Config().get_config() # This was here in the original, but not explicitly used in this agent's logic snippet.
-                               # Keeping it commented if it's not directly needed by this agent.
-
-# Updated port as requested
-ZMQ_FILESYSTEM_AGENT_PORT = 5606  # Using REP socket on port 5606 as specified
-
-# Setup logging
+# Setup logging before any other imports that might use logging
 LOG_DIR = project_root / "logs" # Use project_root for consistency
 LOG_DIR.mkdir(exist_ok=True)
-LOG_PATH = LOG_DIR / "filesystem_assistant_agent.log"
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger("FilesystemAssistant")
 
+# Load network configuration
+network_config = load_network_config()
+
+# Get machine IPs from network config
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+
+# Get port configuration from network config
+ZMQ_FILESYSTEM_AGENT_PORT = network_config.get("ports", {}).get("filesystem_agent", int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)))
+ZMQ_FILESYSTEM_HEALTH_PORT = network_config.get("ports", {}).get("filesystem_health", int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+
 
 class FileSystemAssistantAgent(BaseAgent):
-    
-    # Parse agent arguments
-    _agent_args = parse_agent_args()"""Filesystem Assistant Agent that provides file operations via ZMQ
+    """Filesystem Assistant Agent that provides file operations via ZMQ
     
     This agent allows other components in the system to interact with the filesystem
     in a controlled and secure manner. It provides operations such as listing directories,
     reading files, writing files, checking file existence, and more.
     
-    The agent uses a ZMQ REP socket to receive requests and send responses. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    The agent uses a ZMQ REP socket to receive requests and send responses.
+    """
     
-    def __init__(self, zmq_port=ZMQ_FILESYSTEM_AGENT_PORT):
-        # Call BaseAgent's constructor first. This sets self.name, self.port, self.running, self.start_time.
-        super().__init__(name="FileSystemAssistantAgent", port=zmq_port)
-
-        # Use the port determined by BaseAgent or passed in
-        self.port = self.port if self.port else zmq_port
-        self.health_port = self.port + 1 # Consistent health port
-        self.error_bus = setup_error_reporting(self)
-definition
-
-        logger.info("=" * 80)
-        logger.info(f"Initializing {self.name} on port {self.port}")
-        logger.info("=" * 80)
-
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        
-        # Initialize health check socket
-        try:
-            if USE_COMMON_UTILS:
-                # Assuming create_socket signature takes bind_address
-                self.health_socket = create_socket(self.context, zmq.REP, server=True, bind_address=f"tcp://0.0.0.0:{self.health_port}")
-            else:
-                self.health_socket = self.context.socket(zmq.REP)
-                self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout for polling
-                self.health_socket.bind(f"tcp://0.0.0.0:{self.health_port}")
-            logger.info(f"Health check socket bound to port {self.health_port}")
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to bind health check socket to {self.health_port}: {e}")
-            raise # Critical error, agent cannot start properly
-        except Exception as e:
-            logger.error(f"Unexpected error during health socket setup: {e}", exc_info=True)
-            raise
-
-        # Bind the main REP socket
-        self.socket.bind(f"tcp://0.0.0.0:{self.port}")
-        logger.info(f"{self.name} main socket bound to port {self.port} with REP socket")
-
-        self.lock = threading.Lock()
-        # self.running is managed by BaseAgent
-        # self.start_time is managed by BaseAgent (time.time())
-
-        # Track usage statistics
+    # Parse agent arguments
+    _agent_args = parse_agent_args()
+    
+    def __init__(self, zmq_port=None):
+        # Initialize state before BaseAgent
+        self.running = True
         self.request_count = 0
         self.error_count = 0
         self.last_request_time = None
+        self.start_time = time.time()
+        self.main_pc_connections = {}
+        
+        # Call BaseAgent's constructor with proper parameters
+        super().__init__(
+            name="FileSystemAssistantAgent", 
+            port=zmq_port if zmq_port is not None else ZMQ_FILESYSTEM_AGENT_PORT,
+            health_check_port=ZMQ_FILESYSTEM_HEALTH_PORT
+        )
+        
+        logger.info("=" * 80)
+        logger.info(f"Initializing {self.name} on port {self.port}")
+        logger.info("=" * 80)
+        
+        # Set up thread lock for synchronization
+        self.lock = threading.Lock()
+        
+        # Setup error reporting
+        self.setup_error_reporting()
         
         # Start health check thread
-        self._start_health_check_thread() # Renamed to be consistent with BaseAgent pattern
-
+        self._start_health_check_thread()
+        
         logger.info(f"{self.name} initialized successfully.")
         logger.info(f"Working directory: {os.getcwd()}")
 
-    def _start_health_check_thread(self): # Renamed for clarity and consistency
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+    
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+
+    def _start_health_check_thread(self):
         """Start health check thread."""
-        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True) # Ensure it's a daemon thread
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
         logger.info("Health check thread started")
     
@@ -167,7 +178,7 @@ definition
         """Background loop to handle health check requests."""
         logger.info("Health check loop started")
         
-        while self.running: # Use self.running from BaseAgent
+        while self.running:
             try:
                 # Check for health check requests with timeout
                 if self.health_socket.poll(100) == 0: # 100ms timeout, zmq.POLLIN is default for poll()
@@ -186,6 +197,7 @@ definition
                 pass
             except Exception as e:
                 logger.error(f"Error in health check loop: {e}", exc_info=True)
+                self.report_error("HEALTH_CHECK_ERROR", str(e))
                 time.sleep(1) # Sleep longer on error
 
     def _get_health_status(self) -> Dict[str, Any]:
@@ -193,7 +205,7 @@ definition
         base_status = super()._get_health_status() # Get base status from BaseAgent
         
         # Add FileSystemAssistantAgent specific health info
-        uptime_seconds = time.time() - self.start_time # Use time.time() for uptime calculation
+        uptime_seconds = time.time() - self.start_time
         
         base_status.update({
             "agent": self.name,
@@ -210,7 +222,7 @@ definition
         })
         return base_status
 
-    def handle_query(self, query: Dict[str, Any]) -> Dict[str, Any]: # Added type hints for clarity
+    def handle_query(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming file operation requests"""
         try:
             self.request_count += 1
@@ -246,6 +258,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error listing directory '{path}': {e}", exc_info=True)
+                    self.report_error("LIST_DIR_ERROR", f"Error listing directory '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
             
             # File reading operation
@@ -262,6 +275,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error reading file '{path}': {e}", exc_info=True)
+                    self.report_error("READ_FILE_ERROR", f"Error reading file '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
             
             # Write file operation
@@ -301,6 +315,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error writing file '{path}' in mode '{mode}': {e}", exc_info=True)
+                    self.report_error("WRITE_FILE_ERROR", f"Error writing file '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
             
             # File existence check
@@ -343,6 +358,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error deleting path '{path}': {e}", exc_info=True)
+                    self.report_error("DELETE_ERROR", f"Error deleting path '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
                 
             # Get file info
@@ -372,6 +388,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error getting file info for '{path}': {e}", exc_info=True)
+                    self.report_error("FILE_INFO_ERROR", f"Error getting file info for '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
             
             # Copy file operation
@@ -405,6 +422,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error copying from '{source}' to '{destination}': {e}", exc_info=True)
+                    self.report_error("COPY_ERROR", f"Error copying from '{source}' to '{destination}': {e}")
                     return {"status": "error", "reason": str(e)}
 
             # Move/Rename file or directory
@@ -423,6 +441,7 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error moving '{source}' to '{destination}': {e}", exc_info=True)
+                    self.report_error("MOVE_ERROR", f"Error moving '{source}' to '{destination}': {e}")
                     return {"status": "error", "reason": str(e)}
 
             # Create directory
@@ -436,7 +455,12 @@ definition
                 except Exception as e:
                     self.error_count += 1
                     logger.error(f"Error creating directory '{path}': {e}", exc_info=True)
+                    self.report_error("CREATE_DIR_ERROR", f"Error creating directory '{path}': {e}")
                     return {"status": "error", "reason": str(e)}
+            
+            # Health check
+            elif action == "health_check":
+                return self._get_health_status()
             
             # Unknown action
             else:
@@ -445,138 +469,142 @@ definition
         except Exception as e:
             self.error_count += 1
             logger.error(f"Unexpected error in handle_query: {e}", exc_info=True)
-            return {"status": "error", "reason": f"Unexpected error: {str(e)}"}
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get agent status information. Alias for _get_health_status."""
-        return self._get_health_status()
-        
-    def run(self):
-        """Main request handling loop. Overrides BaseAgent's run method."""
-        logger.info(f"{self.name} Starting main request handling loop on port {self.port}")
-        
-        while self.running: # Use self.running from BaseAgent
-            try:
-                # Wait for next request (timeout for graceful shutdown)
-                request_json = self.socket.recv_string(flags=zmq.NOBLOCK) # Use NOBLOCK and poll to allow exit
-                # If no message, continue (timeout will be handled by poll)
-                
-                logger.info(f"Received request: {request_json[:100]}..." 
-                           if len(request_json) > 100 else f"Received request: {request_json}")
-                
-                # Parse request
-                request = json.loads(request_json)
-                
-                # Process request
-                response = self.handle_query(request)
-                
-                # Send response
-                self.socket.send_string(json.dumps(response))
-            
-            except zmq.Again: # No message received within timeout
-                # This is normal when using NOBLOCK with no pending messages
-                time.sleep(0.01) # Small sleep to prevent tight loop
-                continue
-            except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON received: {e}", exc_info=True)
-                self.error_count += 1
-                try: # Attempt to send error response
-                    self.socket.send_string(json.dumps({"status": "error", "reason": "Invalid JSON format"}))
-                except zmq.error.ZMQError as send_error:
-                    logger.error(f"Failed to send JSON error response: {send_error}")
-            except Exception as e:
-                logger.error(f"Error in main request handling loop: {e}", exc_info=True)
-                self.error_count += 1
-                try: # Attempt to send error response
-                    self.socket.send_string(json.dumps({"status": "error", "reason": f"Unexpected server error: {str(e)}"}))
-                except zmq.error.ZMQError as send_error:
-                    logger.error(f"Failed to send error response: {send_error}")
-        logger.info(f"{self.name} main request handling loop exited.")
-    
-    def cleanup(self):
-        """Clean up resources before shutdown. Overrides BaseAgent's cleanup method."""
-        logger.info(f"Cleaning up {self.name} resources...")
-        self.running = False # Signal threads to stop
+            self.report_error("QUERY_ERROR", f"Unexpected error in handle_query: {e}")
+            return {"status": "error", "reason": f"Server error: {str(e)}"}
 
-        # Wait for health thread to finish
-        if hasattr(self, 'health_thread') and self.health_thread and self.health_thread.is_alive():
-            logger.info("Waiting for health check thread to terminate...")
-            self.health_thread.join(timeout=2)
-            if self.health_thread.is_alive():
-                logger.warning("Health check thread did not terminate gracefully.")
+    def get_status(self) -> Dict[str, Any]:
+        """Get current agent status (mainly for debug)"""
+        return self._get_health_status()
+
+    def run(self):
+        """Main execution loop for the agent."""
+        logger.info(f"Starting {self.name} main loop")
         
-        # Close ZMQ sockets
+        while self.running:
+            try:
+                # Wait for a request with timeout
+                if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                    # Receive and parse request
+                    message = self.socket.recv_json()
+                    
+                    # Process request
+                    response = self.handle_query(message)
+                    
+                    # Send response
+                    self.socket.send_json(response)
+                
+            except zmq.error.ZMQError as e:
+                logger.error(f"ZMQ error in main loop: {e}")
+                self.report_error("ZMQ_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'reason': f'ZMQ communication error: {str(e)}'
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
+                
+            except Exception as e:
+                logger.error(f"Unexpected error in main loop: {e}", exc_info=True)
+                self.report_error("RUNTIME_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'reason': f'Internal server error: {str(e)}'
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
+                
+        logger.info(f"{self.name} main loop ended")
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"Cleaning up {self.name} resources")
+        self.running = False
+        
+        # Close main socket
+        if hasattr(self, 'socket'):
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close health socket
+        if hasattr(self, 'health_socket'):
+            try:
+                self.health_socket.close()
+                logger.info("Closed health socket")
+            except Exception as e:
+                logger.error(f"Error closing health socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Close any connections to other services
+        for service_name, socket in getattr(self, 'main_pc_connections', {}).items():
+            try:
+                socket.close()
+                logger.info(f"Closed connection to {service_name}")
+            except Exception as e:
+                logger.error(f"Error closing connection to {service_name}: {e}")
+        
+        # Join threads
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            try:
+                # Don't join daemon thread, it will terminate when process exits
+                logger.info("Health thread will terminate with process")
+            except Exception as e:
+                logger.error(f"Error with health thread cleanup: {e}")
+        
+        # Call parent cleanup
         try:
-            for sock in [self.socket, self.health_socket]:
-                if hasattr(self, 'context') and sock and not sock.closed:
-                    sock.close()
-                    logger.info(f"Closed ZMQ socket: {sock}")
+            super().cleanup()
+            logger.info("Called parent cleanup")
         except Exception as e:
-            logger.error(f"Error closing ZMQ sockets: {e}", exc_info=True)
+            logger.error(f"Error in parent cleanup: {e}")
         
-        # Terminate ZMQ context
-        try:
-            if hasattr(self, 'context') and self.context and not self.context.closed:
-                self.context.term()
-                logger.info("ZMQ context terminated.")
-        except Exception as e:
-            logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)
-        
-        logger.info(f"{self.name} cleanup complete.")
-        super().cleanup() # Call parent's cleanup
+        logger.info(f"{self.name} cleanup complete")
 
     def stop(self):
-        """Stop the agent gracefully. Alias for cleanup."""
-        logger.info(f"{self.name} Stopping agent (calling cleanup)...")
-        self.cleanup()
+        """Stop the agent gracefully."""
+        logger.info(f"Stopping {self.name}")
+        self.running = False
+        # Cleanup is handled in the finally block of main
 
     def connect_to_main_pc_service(self, service_name: str) -> Optional[zmq.Socket]:
-        """
-        Connect to a service on the main PC using the network configuration.
-        
-        Args:
-            service_name: Name of the service in the network config ports section
-        
-        Returns:
-            ZMQ socket connected to the service, or None if connection fails or service not found.
-        """
-        if not hasattr(self, 'main_pc_connections'):
-            self.main_pc_connections = {} # Initialize if not exists
-            
-        if service_name not in network_config.get("ports", {}):
-            logger.error(f"Service {service_name} not found in network configuration ports section.")
-            return None
-            
-        port = network_config.get("ports")[service_name]
-        
-        # Check if a connection already exists
-        if service_name in self.main_pc_connections:
-            # For simplicity, return existing socket. In production, add validation if it's still active.
-            return self.main_pc_connections[service_name]
-            
-        # Create a new socket for this connection
-        socket = self.context.socket(zmq.REQ)
-        
-        # Apply secure ZMQ if available and enabled (assuming secure ZMQ setup is handled globally)
-        # from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
-        # This agent needs to know if secure ZMQ is enabled globally and configure it.
-        # For this example, assuming it's not explicitly managed in FileSystemAssistantAgent.
-        
+        """Connect to a service on the main PC."""
         try:
-            # Connect to the service
-            connect_address = f"tcp://{MAIN_PC_IP}:{port}"
-            socket.connect(connect_address)
-            logger.info(f"Connected to {service_name} on MainPC at {connect_address}")
+            # Get service details from config
+            service_ports = network_config.get('ports', {})
+            if service_name not in service_ports:
+                logger.error(f"Service '{service_name}' not found in network configuration")
+                return None
+            
+            # Create socket
+            socket = self.context.socket(zmq.REQ)
+            
+            # Connect to service
+            port = service_ports[service_name]
+            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+            logger.info(f"Connected to {service_name} at {MAIN_PC_IP}:{port}")
+            
+            # Store socket
+            if not hasattr(self, 'main_pc_connections'):
+                self.main_pc_connections = {}
             self.main_pc_connections[service_name] = socket
+            
             return socket
-        except zmq.error.ZMQError as e:
-            logger.error(f"Failed to connect to {service_name} at {connect_address}: {e}", exc_info=True)
-            socket.close() # Close the socket if connection fails
-            return None
         except Exception as e:
-            logger.error(f"An unexpected error occurred while connecting to {service_name}: {e}", exc_info=True)
-            if socket and not socket.closed:
-                socket.close()
+            logger.error(f"Error connecting to service '{service_name}': {e}")
+            self.report_error("CONNECTION_ERROR", f"Failed to connect to {service_name}: {e}")
             return None
 
 
@@ -587,16 +615,12 @@ if __name__ == "__main__":
         agent = FileSystemAssistantAgent()
         agent.run()
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'} on PC2 due to keyboard interrupt...")
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
-        if agent: # Check if agent object was successfully created
-            # The agent's cleanup method will now be called by the run() method's finally block,
-            # or directly if run() was interrupted earlier.
-            # We call it explicitly here as a safeguard if the agent object was created but run() wasn't entered.
-            # It's also safe to call cleanup() multiple times as it checks if sockets are closed.
+        if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()

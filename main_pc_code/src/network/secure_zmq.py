@@ -16,8 +16,8 @@ import threading
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_parser import parse_agent_args
 
-# Parse agent arguments
-_agent_args = parse_agent_args()
+if __name__ == "__main__":
+    _agent_args = parse_agent_args()
 
 # Configure logging
 logger = logging.getLogger("SecureZMQ")
@@ -26,7 +26,11 @@ logger = logging.getLogger("SecureZMQ")
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 
 # Get certificates directory from _agent_args or use default
-CERTIFICATES_DIR = getattr(_agent_args, 'certificates_dir', project_root / "certificates")
+_agent_args = None
+try:
+    CERTIFICATES_DIR = getattr(_agent_args, 'certificates_dir', project_root / "certificates")
+except Exception:
+    CERTIFICATES_DIR = project_root / "certificates"
 
 logger.info(f"Using certificates directory: {CERTIFICATES_DIR}")
 

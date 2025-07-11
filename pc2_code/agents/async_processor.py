@@ -3,17 +3,7 @@ from typing import Dict, Any, Optional
 import yaml
 import sys
 import os
-import threa
-
-# Add the project's pc2_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-PC2_CODE_DIR = Path(__file__).resolve().parent.parent
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
-
-ding
+import threading
 from typing import Callable, Any, Dict, List, Optional
 from functools import wraps
 import time
@@ -26,14 +16,18 @@ import asyncio
 from pathlib import Path
 import json
 
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
-
-# Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.utils.config_loader import Config
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
-
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -53,73 +47,14 @@ TASK_PRIORITIES = {
 # Setup logging
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger("AsyncProcessor")
 
-class ResourceManager(
+class ResourceManager:
     """
-    ResourceManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-
-    def __init__(self, port: int = None):
-
-        super().__init__(name="ResourceManager", port=port)
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.task_queue = TaskQueue()
-
-
-        self._setup_sockets()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.task_queue = TaskQueue()
-
-
-        self._setup_sockets()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.task_queue = TaskQueue()
-
-
-        self._setup_sockets()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-        self.start_time = time.time()
-        self.error_bus = setup_error_reporting(self)
-def __init__(self):
+    ResourceManager: Monitors system resources for the AsyncProcessor.
+    """
+    
+    def __init__(self):
         self.cpu_threshold = 80  # percentage
         self.memory_threshold = 80  # percentage
         self.gpu_threshold = 80  # percentage if available
@@ -160,97 +95,6 @@ def __init__(self):
             
         return True
 
-
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-
-        """
-
-
-        Connect to a service on the main PC using the network configuration.
-
-
-        
-
-
-        Args:
-
-
-            service_name: Name of the service in the network config ports section
-
-
-        
-
-
-        Returns:
-
-
-            ZMQ socket connected to the service
-
-
-        """
-
-
-        if not hasattr(self, 'main_pc_connections'):
-
-
-            self.main_pc_connections = {}
-
-
-            
-
-
-        if service_name not in network_config.get("ports", {}):
-
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-
-            return None
-
-
-            
-
-
-        port = network_config.get("ports")[service_name]
-
-
-        
-
-
-        # Create a new socket for this connection
-
-
-        socket = self.context.socket(zmq.REQ)
-
-
-        
-
-
-        # Connect to the service
-
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-
-        
-
-
-        # Store the connection
-
-
-        self.main_pc_connections[service_name] = socket
-
-
-        
-
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-
-        return socket
 class TaskQueue:
     def __init__(self):
         self.queues = {
@@ -289,28 +133,46 @@ class TaskQueue:
 class AsyncProcessor(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()def __init__(self, port: int = 7101):
+    _agent_args = parse_agent_args()
+    
+    def __init__(self, port: int = 7101):
         super().__init__(name="AsyncProcessor", port=port)
         self.start_time = time.time()
         self.context = zmq.Context()
         self.resource_manager = ResourceManager()
         self.task_queue = TaskQueue()
+        
+        # Load configuration
+        self.config = load_config()
+        
+        # Set up error reporting
+        self.error_bus = setup_error_reporting(self)
+        
+        # Set up components
         self._setup_sockets()
         self._setup_logging()
         self._setup_health_monitoring()
+        self._start_task_processor()
         
     def _setup_sockets(self):
+        # Get port values from config or use defaults
+        pull_port = self.config.get("ports", {}).get("async_processor_pull", PULL_PORT)
+        push_port = self.config.get("ports", {}).get("async_processor_push", PUSH_PORT)
+        health_port = self.config.get("ports", {}).get("async_processor_health", HEALTH_PORT)
+        
         # REP socket for receiving tasks and health checks
         self.pull_socket = self.context.socket(zmq.REP)
-        self.pull_socket.bind(f"tcp://*:{PULL_PORT}")
+        self.pull_socket.bind(f"tcp://*:{pull_port}")
         
         # Push socket for sending tasks
         self.push_socket = self.context.socket(zmq.PUSH)
-        self.push_socket.bind(f"tcp://*:{PUSH_PORT}")
+        self.push_socket.bind(f"tcp://*:{push_port}")
         
         # Health monitoring socket (PUB)
         self.health_socket = self.context.socket(zmq.PUB)
-        self.health_socket.bind(f"tcp://*:{HEALTH_PORT}")
+        self.health_socket.bind(f"tcp://*:{health_port}")
+        
+        logger.info(f"AsyncProcessor sockets initialized on ports: {pull_port}, {push_port}, {health_port}")
         
     def _setup_logging(self):
         logging.basicConfig(
@@ -340,13 +202,15 @@ class AsyncProcessor(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
+                    if self.error_bus:
+                        report_error(self.error_bus, "health_monitoring_error", str(e))
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
         thread.start()
 
     def _start_task_processor(self):
-        """Start blocking loop to process tasks and health checks (like SimpleTestAgent)"""
+        """Start blocking loop to process tasks and health checks"""
         def process_requests():
             while True:
                 try:
@@ -358,7 +222,10 @@ class AsyncProcessor(BaseAgent):
                         self._process_task(message)
                 except Exception as e:
                     self.logger.error(f"Error processing request: {str(e)}")
+                    if self.error_bus:
+                        report_error(self.error_bus, "request_processing_error", str(e))
                     time.sleep(1)
+                    
         thread = threading.Thread(target=process_requests, daemon=True)
         thread.start()
 
@@ -374,13 +241,33 @@ class AsyncProcessor(BaseAgent):
                 # Process the task asynchronously
                 self._handle_task(task_type, data)
                 success = True
+                
+                # Send success response
+                self.pull_socket.send_json({
+                    'status': 'success',
+                    'message': f'Task {task_type} processed successfully'
+                })
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
+                if self.error_bus:
+                    report_error(self.error_bus, "task_processing_error", str(e))
                 success = False
+                
+                # Send error response
+                self.pull_socket.send_json({
+                    'status': 'error',
+                    'error': str(e)
+                })
                 
             # Update task statistics
             duration = time.time() - start_time
             self.task_queue.update_stats(task_type, success, duration)
+        else:
+            # Handle invalid task format
+            self.pull_socket.send_json({
+                'status': 'error',
+                'error': 'Invalid task format. Required fields: type, data'
+            })
 
     def _handle_task(self, task_type: str, data: Any):
         """Handle specific task types"""
@@ -392,6 +279,7 @@ class AsyncProcessor(BaseAgent):
             self._handle_memory(data)
         else:
             self.logger.warning(f"Unknown task type: {task_type}")
+            raise ValueError(f"Unknown task type: {task_type}")
 
     def _handle_logging(self, log_data: Any):
         """Handle logging tasks"""
@@ -406,6 +294,7 @@ class AsyncProcessor(BaseAgent):
         self.logger.info(f"Processing memory data: {memory_data}")
 
     def _handle_health_check(self, request: Dict[str, Any]):
+        """Handle health check requests"""
         try:
             stats = self.resource_manager.get_stats()
             queue_stats = self.task_queue.get_stats()
@@ -419,6 +308,8 @@ class AsyncProcessor(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
+            if self.error_bus:
+                report_error(self.error_bus, "health_check_error", str(e))
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -439,29 +330,48 @@ class AsyncProcessor(BaseAgent):
     def run(self):
         """Start the async processor"""
         self.logger.info("Async Processor started")
-        self._start_task_processor()
         try:
             while True:
                 time.sleep(1)  # Keep the main thread alive
         except KeyboardInterrupt:
             self.logger.info("Async Processor shutting down...")
         finally:
-            self.pull_socket.close()
-            self.push_socket.close()
-            self.health_socket.close()
+            self.cleanup()
 
     def _get_health_status(self):
         base_status = super()._get_health_status()
         base_status.update({
             'service': 'AsyncProcessor',
-            'uptime': time.time() - self.start_time
+            'uptime': time.time() - self.start_time,
+            'queue_stats': self.task_queue.get_stats(),
+            'resources': self.resource_manager.get_stats()
         })
         return base_status
+    
+    def health_check(self):
+        """Return the health status of the agent"""
+        return self._get_health_status()
 
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info("Cleaning up resources...")
-        # Add specific cleanup code here
+        
+        # Close all sockets
+        if hasattr(self, 'pull_socket'):
+            self.pull_socket.close()
+        
+        if hasattr(self, 'push_socket'):
+            self.push_socket.close()
+            
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
+            
+        # Clean up error reporting
+        if hasattr(self, 'error_bus') and self.error_bus:
+            from pc2_code.agents.error_bus_template import cleanup_error_reporting
+            cleanup_error_reporting(self.error_bus)
+        
+        # Call parent cleanup
         super().cleanup()
 
 def async_task(task_type: str, priority: str = 'medium'):

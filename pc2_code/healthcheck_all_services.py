@@ -1,6 +1,7 @@
 import zmq
 import json
 import time
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 # List of agents from start_all_pc2_agents.bat with likely ports
 SOT = [
@@ -32,7 +33,7 @@ for entry in SOT:
     name = entry["service_name"]
     port = entry["port"]
     payload = entry["health_check_payload"]
-    addr = f"tcp://127.0.0.1:{port}"
+    addr = get_zmq_connection_string({port}, "localhost")
     sock = context.socket(zmq.REQ)
     sock.setsockopt(zmq.LINGER, 0)
     sock.setsockopt(zmq.RCVTIMEO, 2000)

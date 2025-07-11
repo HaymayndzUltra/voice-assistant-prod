@@ -4,6 +4,8 @@ Feedback Handler Module
 Provides visual and voice confirmation feedback for command execution
 """
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
+import os
 import zmq
 import pickle
 import threading
@@ -56,9 +58,11 @@ class FeedbackHandler(BaseAgent):
         self.start_time = time.time()
         self.name = "FeedbackHandler"
         self.running = True
+        # Initialise error publisher early
+        self.error_publisher = ErrorPublisher(self.name)
         self.feedback_received_count = 0
         self.last_feedback_time = None
-        super().__init__()
+        super().__init__(name=self.name, port=self.port)
         self.context = zmq.Context()
         
         # Socket for GUI feedback (visual)
@@ -79,6 +83,7 @@ class FeedbackHandler(BaseAgent):
             logger.info(f"Connected to voice feedback socket on port 5574")
         except Exception as e:
             logger.warning(f"Could not connect to voice feedback socket: {e}")
+            self.error_publisher.publish_error(error_type="socket_connection", severity="medium", details=str(e))
         
         # Connection status
         self.gui_connected = True
@@ -89,9 +94,13 @@ class FeedbackHandler(BaseAgent):
         self.last_voice_reconnect = 0
         self.reconnect_cooldown = 5  # seconds
         
+        # Initialise error publisher
         # Start health check thread
         self.health_thread = threading.Thread(target=self._check_connections, daemon=True)
         self.health_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.health_thread)
     
     
 
@@ -101,10 +110,10 @@ class FeedbackHandler(BaseAgent):
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 
-        self.error_bus_pub = self.context.socket(zmq.PUB)
+        # Deprecated direct PUB socket removed – handled by ErrorPublisher
 
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def send_visual_feedback(self, message: str, status: str = "success", 
+        
+    def send_visual_feedback(self, message: str, status: str = "success", 
                             data: Dict[str, Any] = None, timeout: int = None) -> bool:
         """Send visual feedback to the GUI
         
@@ -121,6 +130,7 @@ def send_visual_feedback(self, message: str, status: str = "success",
             self._try_reconnect_gui()
             if not self.gui_connected:
                 logger.warning("Cannot send visual feedback: GUI socket not connected")
+                self.error_publisher.publish_error(error_type="gui_socket", severity="low", details="GUI not connected")
                 return False
         
         # Get style information
@@ -163,7 +173,8 @@ def send_visual_feedback(self, message: str, status: str = "success",
         if not self.voice_connected:
             self._try_reconnect_voice()
             if not self.voice_connected:
-                logger.warning("Cannot send voice feedback: Voice socket not connected")
+                logger.warning("Cannot send voice feedback: voice socket not connected")
+                self.error_publisher.publish_error(error_type="voice_socket", severity="low", details="Voice socket not connected")
                 return False
         
         # Create feedback data
@@ -412,3 +423,24 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

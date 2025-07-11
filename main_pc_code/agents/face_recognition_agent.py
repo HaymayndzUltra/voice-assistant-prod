@@ -103,18 +103,7 @@ class KalmanTracker(object):
         self.kf.x = np.zeros(4)
         self.last_update = time.time()
 
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def update(self, bbox: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    def update(self, bbox: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
         """Update tracker with new bbox"""
         center_x = (bbox[0] + bbox[2]) / 2
         center_y = (bbox[1] + bbox[3]) / 2
@@ -726,3 +715,23 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             logging.info(f"Cleaning up {agent.name}...")
             agent.cleanup()
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

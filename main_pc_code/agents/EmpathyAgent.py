@@ -20,12 +20,13 @@ from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
-import threading
 import time
-from typing import Dict, Any, Tuple, Optional
-import numpy as np
 from datetime import datetime
+from typing import Dict, Any, List, Optional
+import threading
 from main_pc_code.utils.config_loader import load_config
+from main_pc_code.utils.service_discovery_client import get_service_address, register_service
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -42,173 +43,93 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class EmpathyAgent(
-    """
-    EmpathyAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-    def __init__(self, port: int = None, name: str = None, **kwargs):
-        """Initialize the EmpathyAgent with ZMQ sockets.
-        
-        Args:
-            port: Port for receiving requests
-            name: Name of the agent
-            emotion_engine_port: Port for subscribing to EmotionEngine broadcasts
-            tts_connector_port: Port for sending voice settings to TTSConnector
-        """
-        # Get port and name from _agent_args with fallbacks
-        agent_port = config.get("port", 5585) if port is None else port
-        agent_name = config.get("name", 'EmpathyAgent') if name is None else name
-        agent_port = config.get("port", 5000) if port is None else port
-        agent_name = config.get("name", 'EmpathyAgent') if name is None else name
+class EmpathyAgent(BaseAgent):
+    def __init__(self, port: int = None, **kwargs):
+        # Default port and name from config
+        agent_port = config.get("port", 5703) if port is None else port
+        agent_name = config.get("name", 'EmpathyAgent')
+
         super().__init__(port=agent_port, name=agent_name)
-        
-        # Retrieve ports from command-line/args or 
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-default values
-        emotion_engine_port = config.get("emotionengine_port", 5582)
-        tts_connector_port = config.get("ttsconnector_port", 5582)
-        self.emotion_engine_port = emotion_engine_port
-        self.tts_connector_port = tts_connector_port
-        
-        # Initialize ZMQ context and sockets
         self.context = zmq.Context()
+        self.tts_socket = None
         
-        # REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{self.port}")
-        
-        # SUB socket for subscribing to EmotionEngine broadcasts
-        self.emotion_sub_socket = self.context.socket(zmq.SUB)
-        # Determine host from args or default
-        if isinstance(_agent_args, dict):
-            _host = config.get("get")('host', 'localhost')
-        else:
-            _host = config.get("host", 'localhost')
-        self.emotion_sub_socket.connect(f"tcp://{_host}:{emotion_engine_port}")
-        self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
-        
-        # REQ socket for TTSConnector
-        self.tts_socket = self.context.socket(zmq.REQ)
-        self.tts_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.connect(f"tcp://{_host}:{tts_connector_port}")
-        
-        # Initialize poller for non-blocking socket operations
-        self.poller = zmq.Poller()
-        self.poller.register(self.emotion_sub_socket, zmq.POLLIN)
-        self.poller.register(self.tts_socket, zmq.POLLIN)
-        
-        # Set timeout for requests (in milliseconds)
-        self.request_timeout = 5000  # 5 seconds
-        
-        # Initialize current emotional state
-        self.current_emotional_state = {
-            'tone': 'neutral',
-            'sentiment': 0.0,
-            'intensity': 0.5,
-            'dominant_emotion': 'neutral',
-            'combined_emotion': 'neutral',
-            'timestamp': time.time()
-        }
-        
-        # Voice settings for different emotions
-        self.voice_settings = {
-            'neutral': {
-                'pitch': 0.0,      # Default pitch
-                'speed': 1.0,      # Default speed
-                'volume': 1.0,     # Default volume
-                'stability': 0.5,  # Default stability
-                'clarity': 0.5     # Default clarity
-            },
-            'happy': {
-                'pitch': 0.3,      # Higher pitch
-                'speed': 1.15,     # Slightly faster
-                'volume': 1.1,     # Slightly louder
-                'stability': 0.6,  # More stable
-                'clarity': 0.7     # More clear
-            },
-            'sad': {
-                'pitch': -0.2,     # Lower pitch
-                'speed': 0.9,      # Slower
-                'volume': 0.9,     # Quieter
-                'stability': 0.4,  # Less stable
-                'clarity': 0.4     # Less clear
-            },
-            'angry': {
-                'pitch': 0.1,      # Slightly higher pitch
-                'speed': 1.1,      # Slightly faster
-                'volume': 1.2,     # Louder
-                'stability': 0.3,  # Less stable
-                'clarity': 0.6     # More clear
-            },
-            'frustrated': {
-                'pitch': 0.0,      # Normal pitch
-                'speed': 1.05,     # Slightly faster
-                'volume': 1.1,     # Slightly louder
-                'stability': 0.4,  # Less stable
-                'clarity': 0.5     # Normal clarity
-            },
-            'fearful': {
-                'pitch': 0.2,      # Higher pitch
-                'speed': 1.1,      # Faster
-                'volume': 0.9,     # Quieter
-                'stability': 0.3,  # Less stable
-                'clarity': 0.4     # Less clear
-            },
-            'surprised': {
-                'pitch': 0.4,      # Much higher pitch
-                'speed': 1.2,      # Faster
-                'volume': 1.2,     # Louder
-                'stability': 0.5,  # Normal stability
-                'clarity': 0.6     # More clear
-            },
-            'disgusted': {
-                'pitch': -0.1,     # Slightly lower pitch
-                'speed': 0.95,     # Slightly slower
-                'volume': 1.0,     # Normal volume
-                'stability': 0.4,  # Less stable
-                'clarity': 0.5     # Normal clarity
-            },
-            'excited': {
-                'pitch': 0.3,      # Higher pitch
-                'speed': 1.2,      # Faster
-                'volume': 1.2,     # Louder
-                'stability': 0.6,  # More stable
-                'clarity': 0.7     # More clear
-            },
-            'calm': {
-                'pitch': -0.1,     # Slightly lower pitch
-                'speed': 0.9,      # Slower
-                'volume': 0.9,     # Quieter
-                'stability': 0.7,  # More stable
-                'clarity': 0.6     # More clear
-            }
-        }
-        
-        # Start emotion monitoring thread
-        self.emotion_thread = threading.Thread(target=self._monitor_emotions)
-        self.emotion_thread.daemon = True
-        self.emotion_thread.start()
-        
-        # Track agent start time
-        self.start_time = time.time()
         self.running = True
+        self.start_time = time.time()
+        
+        # Profile stores the emotional state and corresponding voice settings
+        self.current_profile = {
+            "persona": "neutral",
+            "voice_settings": {"speed": 1.0, "pitch": 1.0, "volume": 1.0}
+        }
+        
+        self.initialization_status = {"is_initialized": False, "error": None}
+        threading.Thread(target=self._initialize_connections, daemon=True).start()
         
         logger.info(f"EmpathyAgent initialized on port {self.port}")
-        logger.info(f"Subscribed to EmotionEngine on port {emotion_engine_port}")
-        logger.info(f"Connected to TTSConnector on port {tts_connector_port}")
-    
+
+    def _initialize_connections(self):
+        """Initialize connections to dependent services."""
+        try:
+            # Connect to StreamingTTSAgent
+            tts_address = get_service_address("StreamingTTSAgent")
+            if tts_address:
+                self.tts_socket = self.context.socket(zmq.REQ)
+                if is_secure_zmq_enabled():
+                    configure_secure_client(self.tts_socket)
+                self.tts_socket.setsockopt(zmq.RCVTIMEO, 5000)
+                self.tts_socket.setsockopt(zmq.SNDTIMEO, 5000)
+                self.tts_socket.connect(tts_address)
+                logger.info(f"Connected to StreamingTTSAgent at {tts_address}")
+            else:
+                logger.warning("StreamingTTSAgent not found in service discovery. Voice settings will not be sent.")
+
+            self.initialization_status["is_initialized"] = True
+        except Exception as e:
+            logger.error(f"Initialization error: {e}")
+            self.initialization_status["error"] = str(e)
+            
+    def update_emotional_profile(self, profile: Dict[str, Any]) -> Dict[str, Any]:
+        """Update the agent's emotional profile and forward voice settings."""
+        logger.info(f"Updating emotional profile to: {profile}")
+        self.current_profile = profile
+        
+        # Forward voice settings to TTS
+        if self.tts_socket:
+            return self.send_voice_settings_to_tts()
+        else:
+            msg = "Cannot send voice settings: StreamingTTSAgent not connected."
+            logger.warning(msg)
+            return {'status': 'warning', 'message': msg}
+
+    def send_voice_settings_to_tts(self) -> Dict[str, Any]:
+        """Send current voice settings to StreamingTTSAgent."""
+        if not self.tts_socket:
+            return {'status': 'error', 'message': 'TTS socket not available.'}
+            
+        try:
+            request = {
+                'action': 'update_voice_settings',
+                'settings': self.current_profile.get('voice_settings', {})
+            }
+            self.tts_socket.send_json(request)
+            
+            response = self.tts_socket.recv_json()
+            if response.get('status') == 'success':
+                logger.info("Voice settings successfully sent to StreamingTTSAgent.")
+            else:
+                logger.warning(f"StreamingTTSAgent reported error: {response.get('message')}")
+            return response
+            
+        except zmq.Again:
+            msg = "Timeout waiting for response from StreamingTTSAgent"
+            logger.warning(msg)
+            return {'status': 'error', 'message': msg}
+        except Exception as e:
+            msg = f"Error sending voice settings to StreamingTTSAgent: {e}"
+            logger.error(msg)
+            return {'status': 'error', 'message': str(e)}
+
     def _monitor_emotions(self):
         """Monitor emotional state updates from EmotionEngine."""
         logger.info("Starting emotion monitoring thread")
@@ -236,14 +157,12 @@ default values
             emotional_state: New emotional state from EmotionEngine
         """
         if emotional_state:
-            self.current_emotional_state = emotional_state
-            logger.info(f"Updated emotional state: {self.current_emotional_state}")
-            
-            # Determine new voice settings based on updated emotional state
-            voice_settings = self.determine_voice_settings()
+            self.current_profile['persona'] = emotional_state.get('dominant_emotion', 'neutral')
+            self.current_profile['voice_settings'] = self.determine_voice_settings()
+            logger.info(f"Updated emotional state: {self.current_profile}")
             
             # Send updated voice settings to TTSConnector
-            self._send_voice_settings_to_tts(voice_settings)
+            self.send_voice_settings_to_tts()
     
     def determine_voice_settings(self) -> Dict[str, Any]:
         """Determine voice settings based on current emotional state.
@@ -253,14 +172,11 @@ default values
         """
         try:
             # Extract emotional state information
-            dominant_emotion = self.current_emotional_state.get('dominant_emotion', 'neutral')
-            combined_emotion = self.current_emotional_state.get('combined_emotion', dominant_emotion)
-            intensity = self.current_emotional_state.get('intensity', 0.5)
+            dominant_emotion = self.current_profile['persona']
+            intensity = 0.5 # Placeholder, actual intensity would come from emotional_state
             
             # Get base settings for the dominant emotion
-            if combined_emotion in self.voice_settings:
-                base_settings = self.voice_settings[combined_emotion].copy()
-            elif dominant_emotion in self.voice_settings:
+            if dominant_emotion in self.voice_settings:
                 base_settings = self.voice_settings[dominant_emotion].copy()
             else:
                 base_settings = self.voice_settings['neutral'].copy()
@@ -290,7 +206,6 @@ default values
             
             # Add metadata
             base_settings['emotion'] = dominant_emotion
-            base_settings['combined_emotion'] = combined_emotion
             base_settings['intensity'] = intensity
             base_settings['timestamp'] = time.time()
             
@@ -309,6 +224,10 @@ default values
         Args:
             voice_settings: Voice settings to send
         """
+        if not self.initialization_status["is_initialized"]:
+            logger.warning("Agent not fully initialized, cannot send voice settings.")
+            return
+
         try:
             # Prepare request
             request = {
@@ -325,15 +244,15 @@ default values
                 response = self.tts_socket.recv_json()
                 
                 if response.get('status') == 'success':
-                    logger.info("Voice settings successfully sent to TTSConnector")
+                    logger.info("Voice settings successfully sent to StreamingTTSAgent")
                 else:
-                    logger.warning(f"TTSConnector reported error: {response.get('message')}")
+                    logger.warning(f"StreamingTTSAgent reported error: {response.get('message')}")
             else:
                 # Socket timed out
-                logger.warning("Timeout waiting for response from TTSConnector")
+                logger.warning("Timeout waiting for response from StreamingTTSAgent")
                 
         except Exception as e:
-            logger.error(f"Error sending voice settings to TTSConnector: {e}")
+            logger.error(f"Error sending voice settings to StreamingTTSAgent: {e}")
     
     def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
@@ -517,3 +436,37 @@ def _perform_initialization(self):
     except Exception as e:
         logger.error(f"Initialization error: {e}")
         raise
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = EmpathyAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

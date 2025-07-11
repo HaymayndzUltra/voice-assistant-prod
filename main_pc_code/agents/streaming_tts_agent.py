@@ -62,7 +62,7 @@ logging.basicConfig(
 logger = logging.getLogger("UltimateTTSAgent")
 
 # Add custom XTTS path
-xtts_path = r'C:\Users\haymayndz\Desktop\xtts-local'
+xtts_path = os.environ.get("XTTS_PATH", "models/xtts-local")
 if os.path.exists(xtts_path):
     logger.info(f"Added custom XTTS path: {xtts_path}")
 
@@ -130,7 +130,7 @@ class UltimateTTSAgent(BaseAgent):
         usa_address = get_service_address("UnifiedSystemAgent")
         if not usa_address:
             # Fall back to configured port
-            usa_address = f"tcp://localhost:{self.unified_system_port}"
+            usa_address = get_zmq_connection_string({self.unified_system_port}, "localhost")
         
         self.system_socket.connect(usa_address)
         logger.info(f"Connected to UnifiedSystemAgent at {usa_address}")
@@ -153,7 +153,7 @@ class UltimateTTSAgent(BaseAgent):
             logger.info(f"Created voice samples directory at {self.voice_samples_dir}")
             
         # Check for Tetey voice sample (from deprecated version)
-        tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
+        tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
         if os.path.exists(tetey_voice_path):
             self.speaker_wav = tetey_voice_path
             logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
@@ -198,7 +198,7 @@ class UltimateTTSAgent(BaseAgent):
         interrupt_address = get_service_address("StreamingInterruptHandler")
         if not interrupt_address:
             # Fall back to configured port
-            interrupt_address = f"tcp://localhost:{self.interrupt_port}"
+            interrupt_address = get_zmq_connection_string({self.interrupt_port}, "localhost")
         
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -247,33 +247,18 @@ class UltimateTTSAgent(BaseAgent):
             print("\n==== XTTS INITIALIZATION DEBUG ====")
             
             # Set up voice sample
-            tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
-            untitled_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/untitled1.wav"
-            
-            # Check which voice samples exist
-            print("Checking available voice samples:")
+            tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
             if os.path.exists(tetey_voice_path):
-                print(f"  - Found tetey1.wav at: {tetey_voice_path}")
                 self.speaker_wav = tetey_voice_path
+                logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
             
-            if os.path.exists(untitled_voice_path):
-                print(f"  - Found untitled1.wav at: {untitled_voice_path}")
-                self.speaker_wav = untitled_voice_path  # Prefer this one if both exist
+            # Find the XTTS model path
+            model_path = xtts_path # Use the path defined at the top of the file
             
-            # Look for any wav files in the voice samples directory
-            voice_samples = [f for f in os.listdir(self.voice_samples_dir) 
-                            if f.endswith(".wav")]
-            if voice_samples:
-                sample_path = os.path.join(self.voice_samples_dir, voice_samples[0])
-                print(f"  - Found sample in voice_samples dir: {sample_path}")
-                # Only use if no other samples found
-                if not self.speaker_wav:
-                    self.speaker_wav = sample_path
-            
-            if not self.speaker_wav:
-                print("  - No voice samples found!")
-            else:
-                print(f"Using voice sample: {self.speaker_wav}")
+            # Check if model exists
+            if not os.path.exists(model_path):
+                print(f"XTTS model not found at {model_path}. Will use default XTTS model.")
+                logger.warning(f"XTTS model not found at {model_path}. Will use default XTTS model.")
             
             try:
                 from TTS.api import TTS
@@ -296,6 +281,7 @@ class UltimateTTSAgent(BaseAgent):
                 except Exception as e:
                     print(f"Failed to initialize XTTS: {e}")
                     import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
                     print("--- DETAILED XTTS INITIALIZATION ERROR ---")
                     traceback.print_exc()
                     print("------------------------------------------")
@@ -308,6 +294,7 @@ class UltimateTTSAgent(BaseAgent):
                 logger.error(f"Tier 1 (XTTS) failed during initialization: {e}")
                 print(f"CRITICAL ERROR in XTTS initialization: {e}")
                 import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
                 print("--- DETAILED XTTS INITIALIZATION ERROR ---")
                 traceback.print_exc()
                 print("------------------------------------------")
@@ -472,7 +459,7 @@ class UltimateTTSAgent(BaseAgent):
                 if not self.speaker_wav or not os.path.exists(self.speaker_wav):
                     print("WARNING: No valid speaker_wav found for XTTS!")
                     # Try to find any available voice sample
-                    tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
+                    tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
                     untitled_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/untitled1.wav"
                     
                     if os.path.exists(untitled_voice_path):
@@ -531,6 +518,7 @@ class UltimateTTSAgent(BaseAgent):
             except Exception as e:
                 print(f"XTTS generation failed: {e}")
                 import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
                 traceback.print_exc()
                 # Fall back to SAPI
                 return self._speak_with_sapi(text)
@@ -908,9 +896,30 @@ if __name__ == "__main__":
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'UltimateTTSAgent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
             logger.info(f"Cleaning up {agent.name}...")
             agent.cleanup()
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

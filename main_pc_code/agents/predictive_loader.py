@@ -80,7 +80,7 @@ class PredictiveLoader(BaseAgent):
         self.request_coordinator_socket = self.context.socket(zmq.REQ)
 
     
-        self.request_coordinator_socket.connect(f"tcp://localhost:{request_coordinator_port}")
+        self.request_coordinator_socket.connect(get_zmq_connection_string({request_coordinator_port}, "localhost")))
 
     
         logger.info(f"Connected to RequestCoordinator on port {request_coordinator_port}")
@@ -127,7 +127,7 @@ class PredictiveLoader(BaseAgent):
         
         # Setup connection to RequestCoordinator
         self.request_coordinator_socket = self.context.socket(zmq.REQ)
-        self.request_coordinator_socket.connect(f"tcp://localhost:{self.request_coordinator_port}")
+        self.request_coordinator_socket.connect(get_zmq_connection_string({self.request_coordinator_port}, "localhost")))
         logger.info(f"Connected to RequestCoordinator on port {self.request_coordinator_port}")
         
         # Setup health check socket
@@ -160,7 +160,8 @@ class PredictiveLoader(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _get_health_status(self):
+
+    def _get_health_status(self):
         # Standard health check.
         return {'status': 'ok', 'running': self.running}
     
@@ -342,6 +343,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

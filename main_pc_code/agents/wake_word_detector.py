@@ -1,16 +1,8 @@
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from main_pc_code.utils.service_discovery_client import discover_service, register_service
 
 """
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
 Wake Word Detector
 ----------------
 Integrates with existing streaming pipeline:
@@ -32,7 +24,6 @@ import time
 import pickle
 from datetime import datetime
 from typing import Optional, Dict, Any
-from main_pc_code.utils.env_loader import get_env
 import psutil
 
 # Load configuration at module level
@@ -43,27 +34,23 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('wake_word_detector.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# ZMQ Configuration
-ZMQ_PUB_PORT = int(config.get("port", 6577))
-ZMQ_HEALTH_PORT = 6579
-ZMQ_AUDIO_PORT = 6575  # Port for receiving audio from streaming_audio_capture.py
-ZMQ_VAD_PORT = 6579    # Port for receiving VAD events
+# ZMQ Configuration from config with fallbacks
+ZMQ_PUB_PORT = int(config.get("pub_port", 6577))
+ZMQ_HEALTH_PORT = int(config.get("health_port", 6579))
+ZMQ_AUDIO_PORT = int(config.get("audio_port", 6575))  # Port for receiving audio from streaming_audio_capture.py
+ZMQ_VAD_PORT = int(config.get("vad_port", 6579))    # Port for receiving VAD events
 
-class WakeWordDetectorAgent(
-    """
-    WakeWordDetectorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class WakeWordDetector(BaseAgent):
     def __init__(self, port=None, wake_word_path=None, sensitivity=0.5, energy_threshold=300):
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5705)) if port is None else port
         agent_name = config.get("name", "WakeWordDetectorAgent")
-        bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
+        bind_address = config.get("bind_address", os.environ.get('BIND_ADDRESS', '0.0.0.0'))
         zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
         # Call BaseAgent's __init__ with proper parameters
@@ -82,9 +69,9 @@ class WakeWordDetectorAgent(
             sensitivity: Wake word detection sensitivity (0.0 to 1.0)
             energy_threshold: Voice activity detection energy threshold
         """
-        self.wake_word_path = wake_word_path
-        self.sensitivity = sensitivity
-        self.energy_threshold = energy_threshold
+        self.wake_word_path = wake_word_path or config.get("wake_word_path", "path/to/default_wake_word.ppn")
+        self.sensitivity = sensitivity or float(config.get("sensitivity", 0.5))
+        self.energy_threshold = energy_threshold or int(config.get("energy_threshold", 300))
         
         # Load API key
         self._load_api_key()
@@ -92,12 +79,13 @@ class WakeWordDetectorAgent(
         # Initialize state
         self.is_running = False
         self.last_detection_time = 0
-        self.detection_cooldown = 0.5  # Cooldown period in seconds
+        self.detection_cooldown = float(config.get("detection_cooldown", 0.5))  # Cooldown period in seconds
         self.vad_speech_active = False  # Track if VAD has detected speech
         self.vad_confidence = 0.0       # Current VAD confidence
         self.vad_last_update = 0        # Last time VAD status was updated
         
         # Initialize ZMQ
+        self.zmq_context = zmq.Context()
         self._init_zmq()
         
         # Initialize Porcupine
@@ -106,37 +94,36 @@ class WakeWordDetectorAgent(
         # Set running flag
         self.running = True
         
+        # Initialize error bus
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.zmq_context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         logger.info("Wake word detector initialized")
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _load_api_key(self):
+    def _load_api_key(self):
         """Load Porcupine API key from config file."""
         try:
             config_path = os.path.join('config', 'api_keys.json')
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-            self.access_key = config.get('PORCUPINE_ACCESS_KEY')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    api_config = json.load(f)
+                self.access_key = api_config.get('PORCUPINE_ACCESS_KEY')
+            else:
+                self.access_key = os.environ.get('PORCUPINE_ACCESS_KEY', config.get('porcupine_access_key', ''))
+            
             if not self.access_key:
-                raise ValueError("PORCUPINE_ACCESS_KEY not found in config")
+                logger.warning("PORCUPINE_ACCESS_KEY not found in config, using demo key")
+                self.access_key = ''  # Demo key (limited functionality)
         except Exception as e:
             logger.error(f"Error loading API key: {str(e)}")
-            raise
+            self.access_key = ''
     
     def _init_zmq(self):
         """Initialize ZMQ context and sockets."""
         try:
-            self.zmq_context = zmq.Context()
-            
             # Create SUB socket for audio
             self.audio_socket = self.zmq_context.socket(zmq.SUB)
             self.audio_socket.connect(f"tcp://{self.bind_address}:{ZMQ_AUDIO_PORT}")
@@ -356,13 +343,10 @@ def _load_api_key(self):
                 self.health_thread.join()
             
             # Clean up resources
-            self.porcupine.delete()
+            if hasattr(self, 'porcupine') and self.porcupine:
+                self.porcupine.delete()
             
-            # Close ZMQ sockets
-            self.audio_socket.close()
-            self.pub_socket.close()
-            self.health_socket.close()
-            self.zmq_context.term()
+            self.cleanup()
             
             logger.info("Wake word detector stopped")
     
@@ -384,50 +368,77 @@ def _load_api_key(self):
             logger.error(f"Initialization error: {e}")
             raise
 
-
     def health_check(self):
         '''
         Performs a health check on the agent, returning a dictionary with its status.
         '''
         try:
             # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.is_running  # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+            # Add agent-specific health checks
+            if hasattr(self, 'porcupine') and not self.porcupine:
+                is_healthy = False
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "vad_speech_active": self.vad_speech_active,
+                    "vad_confidence": self.vad_confidence,
+                    "last_detection_time": self.last_detection_time
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 
-
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
+        """Get the current health status of the agent."""
         status = "HEALTHY" if self.running else "UNHEALTHY"
         details = {
             "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            "uptime_seconds": time.time() - self.start_time
         }
         return {"status": status, "details": details}
+    
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        try:
+            # Close ZMQ sockets
+            if hasattr(self, 'audio_socket') and self.audio_socket:
+                self.audio_socket.close()
+            
+            if hasattr(self, 'pub_socket') and self.pub_socket:
+                self.pub_socket.close()
+            
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.close()
+            
+            if hasattr(self, 'vad_socket') and self.vad_socket:
+                self.vad_socket.close()
+            
+            if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+                self.error_bus_pub.close()
+            
+            # Terminate ZMQ context after all sockets are closed
+            if hasattr(self, 'zmq_context') and self.zmq_context:
+                self.zmq_context.term()
+            
+            logger.info("Resources cleaned up")
+        except Exception as e:
+            logger.error(f"Error in cleanup: {str(e)}")
 
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
@@ -443,7 +454,7 @@ if __name__ == "__main__":
         energy_threshold = int(config.get("energy_threshold", 300))
         
         logger.info("Starting WakeWordDetectorAgent...")
-        agent = WakeWordDetectorAgent(
+        agent = WakeWordDetector(
             wake_word_path=wake_word_path,
             sensitivity=sensitivity,
             energy_threshold=energy_threshold

@@ -53,7 +53,8 @@ import zmq
 ZMQ_LOG_PORT = 5600  # Central log collector port
 log_context = zmq.Context()
 log_socket = log_context.socket(zmq.PUB)
-log_socket.connect(f"tcp://127.0.0.1:{ZMQ_LOG_PORT}")
+log_collector_host = os.environ.get('LOG_COLLECTOR_HOST', 'localhost')
+log_socket.connect(f"tcp://{log_collector_host}:{ZMQ_LOG_PORT}")
 
 def send_log(level, msg):
     log_msg = json.dumps({"agent": "executor", "level": level, "message": msg, "timestamp": time.time()})

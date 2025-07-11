@@ -23,6 +23,7 @@ import subprocess
 import threading
 import traceback
 import zmq
+from main_pc_code.utils.network import get_host
 import datetime
 import statistics
 import http.server
@@ -117,7 +118,8 @@ telemetry_history = []  # List of historical telemetry snapshots
 zmq_context = zmq.Context()
 health_socket = zmq.Socket(zmq_context, zmq.PUB)
 try:
-    health_socket.connect(f"tcp://localhost:{ZMQ_HEALTH_PORT}")
+    health_host = get_host("ZMQ_HEALTH_HOST", "zmq.health_host")
+    health_socket.connect(f"tcp://{health_host}:{ZMQ_HEALTH_PORT}")
     logger.info(f"Connected to health dashboard on port {ZMQ_HEALTH_PORT}")
 except Exception as e:
     logger.warning(f"Could not connect to health dashboard: {e}")

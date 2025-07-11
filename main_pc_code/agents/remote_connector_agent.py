@@ -70,7 +70,9 @@ class RemoteConnectorAgent(BaseAgent):
         self.receiver = self.context.socket(zmq.REP)
         self.receiver.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.receiver.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.receiver.bind(f"tcp://127.0.0.1:{REMOTE_CONNECTOR_PORT}")
+        # Determine bind host from configuration or environment variable
+        bind_host = config.get('network.bind_address', os.environ.get('BIND_ADDRESS', '0.0.0.0'))
+        self.receiver.bind(f"tcp://{bind_host}:{REMOTE_CONNECTOR_PORT}")
         logger.info(f"Remote Connector bound to port {REMOTE_CONNECTOR_PORT}")
         
         # Socket to communicate with task router (previously model manager)
@@ -78,13 +80,16 @@ class RemoteConnectorAgent(BaseAgent):
         self.task_router.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.task_router.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         task_router_port = config.get('zmq.task_router_port', 8570)
-        self.task_router.connect(f"tcp://localhost:{task_router_port}")
+        # Determine task-router host (typically the same container or docker-compose service name)
+        task_router_host = config.get('network.task_router_host', os.environ.get('TASK_ROUTER_HOST', 'localhost'))
+        self.task_router.connect(f"tcp://{task_router_host}:{task_router_port}")
         logger.info(f"Connected to Task Router on port {task_router_port}")
         
         # Socket to subscribe to model status updates
         self.model_status = self.context.socket(zmq.SUB)
         model_status_port = task_router_port + 10  # Publisher port is base + 10
-        self.model_status.connect(f"tcp://localhost:{model_status_port}")
+        # Use the same resolved host for the publisher connection
+        self.model_status.connect(f"tcp://{task_router_host}:{model_status_port}")
         self.model_status.setsockopt_string(zmq.SUBSCRIBE, "")
         logger.info(f"Subscribed to Task Router status updates on port {model_status_port}")
         

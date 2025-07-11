@@ -7,6 +7,9 @@ the null byte issues. It focuses on proper encoding/decoding for ZMQ communicati
 """
 
 import zmq
+import sqlite3
+from typing import Optional
+import redis
 import json
 import logging
 import time
@@ -29,6 +32,10 @@ logger = logging.getLogger("MemoryOrchestrator")
 config = load_config()
 
 # Configuration
+DB_PATH = os.getenv("MEMORY_DB_PATH", "pc2_memory_orchestrator.db")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 ZMQ_PORT = int(config.get("port", 5576))
 HEALTH_PORT = int(config.get("health_check_port", 5586))  # Use explicit health_check_port from config
 BIND_ADDRESS = config.get("bind_address", "0.0.0.0")
@@ -53,6 +60,17 @@ class MemoryOrchestrator(BaseAgent):
         # Call BaseAgent's __init__ with proper parameters
         super().__init__(name=agent_name, port=agent_port, **kwargs)
         
+        # Initialize Redis connection for health checks
+        self.redis_conn: Optional[redis.Redis] = None
+        try:
+            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, socket_connect_timeout=2)
+            # test connection
+            self.redis_conn.ping()
+            logger.info("Connected to Redis for health monitoring")
+        except Exception as redis_err:
+            logger.warning(f"Redis connection failed: {redis_err}")
+            self.redis_conn = None
+
         # Setup health check socket
         try:
             self.health_socket = self.context.socket(zmq.REP)
@@ -77,14 +95,44 @@ class MemoryOrchestrator(BaseAgent):
         logger.info(f"Memory Orchestrator initialized, listening on port {self.port}")
     
     def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
+        """Overrides the base method to add agent-specific health metrics with real backend checks."""
         base_status = super()._get_health_status()
+
+        # SQLite connectivity
+        db_connected = False
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=1)
+            conn.execute("SELECT 1")
+            conn.close()
+            db_connected = True
+        except Exception as db_err:
+            logger.error(f"Health check DB error: {db_err}")
+
+        # Redis connectivity
+        redis_connected = False
+        if self.redis_conn:
+            try:
+                self.redis_conn.ping()
+                redis_connected = True
+            except Exception as redis_err:
+                logger.error(f"Health check Redis ping error: {redis_err}")
+
+        # ZMQ socket readiness
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
         specific_metrics = {
-            "orchestrator_status": "active",
-            "memory_backends_connected": getattr(self, 'memory_backends_connected', 0),
+            "orchestrator_status": "active" if self._running else "inactive",
+            "db_connected": db_connected,
+            "redis_connected": redis_connected,
+            "zmq_ready": zmq_ready,
             "total_memory_entries": len(self.memories)
         }
-        base_status.update(specific_metrics)
+
+        overall_status = "ok" if all([db_connected, redis_connected, zmq_ready]) else "degraded"
+        base_status.update({
+            "status": overall_status,
+            "agent_specific_metrics": specific_metrics
+        })
         return base_status
     
     def run(self):

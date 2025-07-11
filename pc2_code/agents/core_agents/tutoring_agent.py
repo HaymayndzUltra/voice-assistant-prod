@@ -18,6 +18,7 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -63,7 +64,7 @@ class AdvancedTutoringAgent:
             self.llm_socket = self.context.socket(zmq.REQ)
             self.llm_socket.setsockopt(zmq.LINGER, 0)  # Don't wait on close
             self.llm_socket.setsockopt(zmq.RCVTIMEO, 15000)  # 15 second timeout
-            self.llm_socket.connect(f"tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")
+            self.llm_socket.connect(get_zmq_connection_string({ENHANCED_MODEL_ROUTER_PORT}, "localhost")))
             logging.info(f"[LLM] Successfully connected to EnhancedModelRouter at tcp://localhost:{ENHANCED_MODEL_ROUTER_PORT}")
             self.llm_available = True  # FORCE TRUE FOR TESTING
         except Exception as e:

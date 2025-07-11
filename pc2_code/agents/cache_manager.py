@@ -3,7 +3,16 @@ import yaml
 import sys
 import os
 import json
+import threading
+import time
+import logging
+import psutil
+import zmq
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List, Union
+import hashlib
+from pathlib import Path
+from collections import defaultdict
 
 # Add the project's pc2_code directory to the Python path
 import sys
@@ -13,27 +22,15 @@ PC2_CODE_DIR = Path(__file__).resolve().parent.parent
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
-from typing import Dict, Any, Optional, List, Union
-import hashlib
-import logging
-import psutil
-import zmq
-import threading
-import time
-from pathlib import Path
-from collections import defaultdict
-
-
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
-
-# Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.utils.config_loader import Config
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
-
 # Load configuration at the module level
-config = Config().get_config()# Constants
+config = Config().get_config()
+
+# Constants
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_DB = 0
@@ -47,17 +44,16 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 logger = logging.getLogger("CacheManager")
 
-class ResourceMonitor(
+class ResourceMonitor:
     """
-    ResourceMonitor:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    ResourceMonitor: Monitors system resources.
+    """
     def __init__(self):
-        super().__init__(name="ResourceMonitor", port=None)
         self.memory_threshold = 80  # percentage
         self.last_check = time.time()
         self.stats_history = []
-        self.error_bus = setup_error_reporting(self)
-def get_stats(self) -> Dict[str, Any]:
+        
+    def get_stats(self) -> Dict[str, Any]:
         """Get current resource statistics"""
         stats = {
             'memory_percent': psutil.virtual_memory().percent,
@@ -71,76 +67,27 @@ def get_stats(self) -> Dict[str, Any]:
         stats = self.get_stats()
         return stats['memory_percent'] <= self.memory_threshold
 
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config.get("ports")[service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket
 class CacheManager(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+    
+    """
     Centralized cache management service using Redis
     """
     def __init__(self, port: int = 7102, health_port: int = 8102):
         super().__init__(name="CacheManager", port=port, health_check_port=health_port)
+        self.start_time = time.time()
         self.logger = logging.getLogger("CacheManager")
+        
+        # Set up resource monitoring
+        self.resource_monitor = ResourceMonitor()
+        
+        # Load configuration
+        self.config = load_config()
+        
+        # Set up error reporting
+        self.error_bus = setup_error_reporting(self)
         
         # Redis connection
         try:
@@ -155,6 +102,8 @@ class CacheManager(BaseAgent):
             self.redis_available = True
         except Exception as e:
             self.logger.error(f"Failed to connect to Redis: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "redis_connection_error", str(e))
             self.redis_available = False
         
         # Cache configuration - TTL and priorities
@@ -196,13 +145,17 @@ class CacheManager(BaseAgent):
         self.logger.info("CacheManager service started")
         super().run()  # Use BaseAgent's request loop
     
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Override BaseAgent's handle_request to process cache requests"""
+        return self.process_request(request)
+    
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming cache requests"""
         action = request.get('action', '')
         
         # Handle health check requests
         if action in ['ping', 'health', 'health_check']:
-            return {'status': 'success', 'message': 'CacheManager is healthy'}
+            return self._get_health_status()
         
         # Memory-specific cache operations
         if action == 'get_cached_memory':
@@ -271,6 +224,8 @@ class CacheManager(BaseAgent):
             return {'status': 'error', 'message': 'Cache miss', 'data': None}
         except Exception as e:
             self.logger.error(f"Error getting memory from cache: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_get_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def cache_memory(self, memory_id: Union[int, str], data: Dict[str, Any], ttl: int = 3600) -> Dict[str, Any]:
@@ -285,6 +240,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Memory cached successfully'}
         except Exception as e:
             self.logger.error(f"Error caching memory: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_set_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def invalidate_memory_cache(self, memory_id: Union[int, str]) -> Dict[str, Any]:
@@ -300,6 +257,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Memory cache entry not found'}
         except Exception as e:
             self.logger.error(f"Error invalidating memory cache: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_delete_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def get_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
@@ -315,6 +274,8 @@ class CacheManager(BaseAgent):
             return {'status': 'error', 'message': 'Cache miss', 'data': None}
         except Exception as e:
             self.logger.error(f"Error getting cache entry: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_get_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def put_cache_entry(self, cache_type: str, key: str, value: Any, ttl: Optional[int] = None) -> Dict[str, Any]:
@@ -336,6 +297,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Cache entry stored'}
         except Exception as e:
             self.logger.error(f"Error putting cache entry: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_set_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def invalidate_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
@@ -351,6 +314,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Cache entry not found'}
         except Exception as e:
             self.logger.error(f"Error invalidating cache entry: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_delete_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def flush_cache(self, cache_type: str) -> Dict[str, Any]:
@@ -373,6 +338,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': f'Flushed {deleted_count} cache entries'}
         except Exception as e:
             self.logger.error(f"Error flushing cache: {e}")
+            if self.error_bus:
+                report_error(self.error_bus, "cache_flush_error", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def _run_maintenance(self):
@@ -389,6 +356,8 @@ class CacheManager(BaseAgent):
                     # based on priority and access patterns if needed
             except Exception as e:
                 self.logger.error(f"Error in cache maintenance: {e}")
+                if self.error_bus:
+                    report_error(self.error_bus, "cache_maintenance_error", str(e))
             
             # Sleep for maintenance interval
             time.sleep(300)  # 5 minutes
@@ -399,31 +368,75 @@ class CacheManager(BaseAgent):
         if hasattr(self, 'maintenance_thread') and self.maintenance_thread.is_alive():
             self.maintenance_thread.join(timeout=1.0)
         super().stop()
-
-class CacheManagerHealth:
-    def __init__(self, port=7102):
-        self.port = port
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.running = True
-    def start(self):
-        print(f"Starting CacheManagerHealth on port {self.port}")
-        self.socket.bind(f"tcp://*:{self.port}")
-        while self.running:
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """
+        Get the health status of the agent.
+        
+        Returns:
+            Dict[str, Any]: Health status information
+        """
+        base_status = super()._get_health_status()
+        base_status.update({
+            "status": "ok" if self.redis_available else "degraded",
+            "redis_available": self.redis_available,
+            "uptime": time.time() - self.start_time,
+            "name": self.name,
+            "version": getattr(self, "version", "1.0.0"),
+            "port": self.port,
+            "health_port": getattr(self, "health_port", None),
+            "error_reporting": bool(getattr(self, "error_bus", None))
+        })
+        
+        # Add Redis info if available
+        if self.redis_available:
             try:
-                request = self.socket.recv_json()
-                if request.get('action') == 'health_check':
-                    response = {'status': 'ok', 'service': 'CacheManager', 'port': self.port, 'timestamp': time.time()}
-                else:
-                    response = {'status': 'unknown_action', 'message': f"Unknown action: {request.get('action', 'none')}"}
-                self.socket.send_json(response)
+                info = self.redis.info()
+                base_status["redis_info"] = {
+                    "memory_used": info.get("used_memory_human", "N/A"),
+                    "clients_connected": info.get("connected_clients", 0),
+                    "uptime": info.get("uptime_in_seconds", 0)
+                }
             except Exception as e:
-                print(f"Error: {e}")
-                time.sleep(1)
-    def stop(self):
-        self.running = False
-        self.socket.close()
-        self.context.term()
+                self.logger.error(f"Error getting Redis info: {e}")
+                
+        return base_status
+    
+    def health_check(self):
+        """Return the health status of the agent"""
+        return self._get_health_status()
+    
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        self.logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        
+        # Stop maintenance thread
+        self.stop()
+        
+        # Close Redis connection
+        if hasattr(self, 'redis') and self.redis:
+            try:
+                self.redis.close()
+                self.logger.info("Redis connection closed")
+            except Exception as e:
+                self.logger.error(f"Error closing Redis connection: {e}")
+        
+        # Clean up error reporting
+        if hasattr(self, 'error_bus') and self.error_bus:
+            from pc2_code.agents.error_bus_template import cleanup_error_reporting
+            cleanup_error_reporting(self.error_bus)
+        
+        # Close ZMQ sockets if they exist
+        if hasattr(self, 'socket') and self.socket:
+            self.socket.close()
+        
+        if hasattr(self, 'context') and self.context:
+            self.context.term()
+            
+        # Call parent cleanup
+        super().cleanup()
+            
+        self.logger.info(f"{self.__class__.__name__} cleanup completed")
 
 def main():
     agent = None
@@ -434,6 +447,7 @@ def main():
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
@@ -466,22 +480,5 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
-
-    def _get_health_status(self) -> Dict[str, Any]:
-        """
-        Get the health status of the agent.
-        
-        Returns:
-            Dict[str, Any]: Health status information
-        """
-        return {
-            "status": "ok",
-            "uptime": time.time() - self.start_time,
-            "name": self.name,
-            "version": getattr(self, "version", "1.0.0"),
-            "port": self.port,
-            "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
-        }
 if __name__ == "__main__":
     main()

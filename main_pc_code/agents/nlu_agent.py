@@ -20,6 +20,7 @@ import zmq
 import json
 import time
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import re
 import threading
 import traceback
@@ -49,8 +50,8 @@ class NLUAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the NLU Agent."""
         # Get port and name from config with fallbacks
-        agent_port = config.get("port", 5558) if port is None else port
-        agent_name = config.get("name", 'NLUAgent') if name is None else name
+        agent_port = int(config.get("port", 5558)) if port is None else int(port)
+        agent_name = str(config.get("name", 'NLUAgent')) if name is None else str(name)
         super().__init__(port=agent_port, name=agent_name)
         
         # Initialize basic state
@@ -98,24 +99,22 @@ class NLUAgent(BaseAgent):
         }
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.init_thread)
         
         # Record start time for uptime calculation
         self.start_time = time.time()
         
         logger.info("NLUAgent basic initialization complete")
+        self.error_publisher = ErrorPublisher(self.name)
     
     
 
         self.error_bus_port = 7150
-
         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _perform_initialization(self):
+    def _perform_initialization(self):
         """Perform ZMQ initialization in background."""
         try:
             # Create ZMQ context and socket
@@ -124,6 +123,9 @@ def _perform_initialization(self):
             self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
+            # Initialize Error Bus publisher after context creation
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
             
             # Mark as initialized
             self.initialization_status.update({
@@ -138,6 +140,7 @@ def _perform_initialization(self):
                 "progress": 0.0
             })
             logger.error(f"ZMQ initialization failed: {e}")
+            self.error_publisher.publish_error(error_type="initialization", severity="critical", details=str(e))
     
     def start(self):
         """Start the NLU Agent."""

@@ -2,6 +2,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import os
 import sys
 import yaml
@@ -65,10 +66,18 @@ class UnifiedSystemAgent(BaseAgent):
         # Start background initialization thread
         self.init_thread = threading.Thread(target=self._initialize_background, daemon=True)
         self.init_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.init_thread)
         
         # Start service monitoring thread
         self.monitor_thread = threading.Thread(target=self._monitor_services, daemon=True)
         self.monitor_thread.start()
+        # Initialise error publisher
+        self.error_publisher = ErrorPublisher(self.name)
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.monitor_thread)
         
         logger.info("UnifiedSystemAgent initialized")
     
@@ -88,6 +97,7 @@ class UnifiedSystemAgent(BaseAgent):
             
         except Exception as e:
             logger.error(f"Error in background initialization: {str(e)}")
+            self.error_publisher.publish_error(error_type="background_init", severity="high", details=str(e))
             # Even if initialization fails, we'll still respond to health checks
     
     def _load_config(self) -> Dict:
@@ -101,8 +111,6 @@ class UnifiedSystemAgent(BaseAgent):
             # Import the configuration module
             import system_config
 
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             
             # Get the configuration
             config = {
@@ -369,6 +377,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             
         except Exception as e:
             logger.error(f"Error getting service status: {str(e)}")
+            self.error_publisher.publish_error(error_type="service_status", severity="medium", details=str(e))
             return {
                 "status": "error",
                 "error": str(e)

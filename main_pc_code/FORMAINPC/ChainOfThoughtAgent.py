@@ -21,6 +21,7 @@ from main_pc_code.utils.config_loader import load_config
 config = load_config()
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 # === PHASE A: BASEAGENT INHERITANCE ===
 
@@ -38,8 +39,8 @@ config = load_config()
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
 logs_dir.mkdir(exist_ok=True)
 LOG_PATH = logs_dir / "chain_of_thought_agent.log"
-ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
-REMOTE_CONNECTOR_PORT = 5557  # Remote Connector Agent port for model inference
+ZMQ_CHAIN_OF_THOUGHT_PORT = config.get("chain_of_thought_port", 5612)
+REMOTE_CONNECTOR_PORT = config.get("remote_connector_port", 5557)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,15 +52,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ChainOfThoughtAgent")
 
-class ChainOfThoughtAgent(
-    """
-    ChainOfThoughtAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-    def __init__(self, port: int = 5612, name: str = "ChainOfThoughtAgent", **kwargs):
+class ChainOfThoughtAgent(BaseAgent):
+    def __init__(self, port: int = None, name: str = None, **kwargs):
         # Use _agent_args if port or name are not provided
         agent_port = port if port is not None else config.get("port", 5612)
         agent_name = name if name is not None else config.get("name", 'ChainOfThoughtAgent')
-        super().__init__(name=str(agent_name), port=int(agent_port))
+        health_check_port = config.get("health_check_port", 6612)
+        super().__init__(name=str(agent_name), port=int(agent_port), health_check_port=int(health_check_port))
         logger.info("=" * 80)
         logger.info("Initializing Chain of Thought Agent")
         logger.info("=" * 80)
@@ -82,27 +81,38 @@ class ChainOfThoughtAgent(
         self.successful_requests = 0
         self.failed_requests = 0
         
+        # Setup error bus connection
+        self.error_bus_port = config.get("error_bus_port", 7150)
+        self.error_bus_endpoint = get_zmq_connection_string(self.error_bus_port, "pc2")
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         logger.info(f"Chain of Thought Agent started on port {agent_port}")
         logger.info(f"Remote Connector port: {self.llm_router_port}")
         logger.info("=" * 80)
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def connect_llm_router(self):
+    def connect_llm_router(self):
         """Establish connection to the Remote Connector Agent for model inference"""
         if self.llm_router_socket is None:
             self.llm_router_socket = self.llm_router_context.socket(zmq.REQ)
-            self.llm_router_socket.connect(f"tcp://127.0.0.1:{self.llm_router_port}")
-            logger.info(f"[ChainOfThought] Connected to Remote Connector Agent on port {self.llm_router_port}")
+            connection_string = get_zmq_connection_string(self.llm_router_port, "localhost")
+            self.llm_router_socket.connect(connection_string)
+            logger.info(f"[ChainOfThought] Connected to Remote Connector Agent at {connection_string}")
+    
+    def report_error(self, error_message, severity="WARNING", context=None):
+        """Report an error to the error bus"""
+        try:
+            error_data = {
+                "source": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "severity": severity,
+                "message": error_message,
+                "context": context or {}
+            }
+            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
+            logger.error(f"Reported error: {error_message}")
+        except Exception as e:
+            logger.error(f"Failed to report error to error bus: {e}")
     
     def send_to_llm(self, prompt, model=None, max_tokens=None):
         """
@@ -147,13 +157,16 @@ def connect_llm_router(self):
                 else:
                     error_msg = result.get("error", "Unknown error from Remote Connector")
                     logger.error(f"[ChainOfThought] Error from Remote Connector: {error_msg}")
+                    self.report_error(f"Error from Remote Connector: {error_msg}")
                     return f"Error: {error_msg}"
             else:
                 logger.error("[ChainOfThought] Timeout waiting for Remote Connector response")
+                self.report_error("Timeout waiting for Remote Connector response")
                 return "Error: Timeout waiting for model response"
                 
         except Exception as e:
             logger.error(f"[ChainOfThought] Error sending to Remote Connector: {str(e)}")
+            self.report_error(f"Error sending to Remote Connector: {str(e)}")
             return f"Error: {str(e)}"
     
     def generate_problem_breakdown(self, user_request, code_context=None):
@@ -380,160 +393,90 @@ def connect_llm_router(self):
             "timestamp": time.time()
         }
     
-    def _get_health_status(self):
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
-        }
-        return {"status": status, "details": details}
-
-    def handle_query(self, query):
-        """Handle incoming ZMQ requests"""
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
         try:
-            logger.info(f"Received request: {json.dumps(query)}")
-            self.total_requests += 1
+            logger.info("Cleaning up ChainOfThoughtAgent")
             
-            request_type = query.get("request_type", "")
+            # Stop all background threads
+            self.running = False
             
-            if request_type == "health_check":
-                logger.info("Processing health check request")
-                response = self._get_health_status()
-                logger.info(f"Health check response: {json.dumps(response)}")
-                return response
+            # Close LLM router connection if open
+            if hasattr(self, 'llm_router_socket') and self.llm_router_socket:
+                self.llm_router_socket.close()
+                logger.info("Closed LLM router connection")
             
-            elif request_type == "generate":
-                # Handle code generation request
-                user_request = query.get("prompt", "")
-                code_context = query.get("code_context")
-                
-                logger.info(f"Processing code generation request - prompt length: {len(user_request)}")
-                if code_context:
-                    logger.info(f"Code context provided - length: {len(code_context)}")
-                
-                result = self.generate_with_cot(user_request, code_context)
-                
-                if result.get("status") == "success":
-                    self.successful_requests += 1
-                else:
-                    self.failed_requests += 1
-                
-                logger.info(f"Code generation completed - status: {result.get('status')}")
-                return result
+            # Close error bus socket if open
+            if hasattr(self, 'error_bus_pub'):
+                try:
+                    self.error_bus_pub.close()
+                    logger.info("Closed error bus connection")
+                except Exception as e:
+                    logger.error(f"Error closing error bus connection: {e}")
             
-            else:
-                error_msg = f"Unknown request type: {request_type}"
-                logger.error(error_msg)
-                self.failed_requests += 1
-                return {"status": "error", "message": error_msg}
-                
+            # Close contexts
+            if hasattr(self, 'llm_router_context'):
+                self.llm_router_context.term()
+            
+            logger.info("ChainOfThoughtAgent cleanup completed successfully")
         except Exception as e:
-            error_msg = f"Error processing request: {str(e)}"
-            logger.error(error_msg)
-            logger.error(traceback.format_exc())
-            self.failed_requests += 1
-            return {"status": "error", "message": error_msg}
-    
-    def run(self):
-        """Run the Chain of Thought Agent"""
-        logger.info("Starting Chain of Thought Agent main loop")
-        while self.running:
-            try:
-                # Use a timeout to allow checking for shutdown
-                if self.socket.poll(1000) == 0:  # 1 second timeout
-                    continue
-                
-                # Receive request
-                request_str = self.socket.recv_string()
-                logger.debug(f"Received raw request: {request_str}")
-                
-                try:
-                    request = json.loads(request_str)
-                except json.JSONDecodeError:
-                    error_msg = "Invalid JSON in request"
-                    logger.error(error_msg)
-                    self.socket.send_string(json.dumps({
-                        "status": "error",
-                        "message": error_msg
-                    }))
-                    continue
-                
-                # Process request
-                response = self.handle_query(request)
-                
-                # Send response
-                logger.debug(f"Sending response: {json.dumps(response)}")
-                self.socket.send_string(json.dumps(response))
-                
-            except zmq.error.Again:
-                # Socket timeout, continue
-                continue
-            except Exception as e:
-                error_msg = f"Error in main loop: {str(e)}"
-                logger.error(error_msg)
-                logger.error(traceback.format_exc())
-                try:
-                    self.socket.send_string(json.dumps({
-                        "status": "error",
-                        "message": error_msg
-                    }))
-                except:
-                    pass
-    
-    def stop(self):
-        """Stop the agent"""
-        self.running = False
-        if self.llm_router_socket:
-            self.llm_router_socket.close()
-        logger.info(f"[ChainOfThought] Agent stopping")
+            logger.error(f"Error during cleanup: {e}")
+        
+        # Always call parent's cleanup to ensure complete resource release
+        super().cleanup()
 
-# Helper function to send requests to the agent
-def send_cot_request(request, port=ZMQ_CHAIN_OF_THOUGHT_PORT):
-    """
-    Send a request to the Chain of Thought Agent
+    def _get_health_status(self):
+        """Get health status including component statuses."""
+        base_status = super()._get_health_status()
+        
+        specific_metrics = {
+            "total_requests": self.total_requests,
+            "successful_requests": self.successful_requests,
+            "failed_requests": self.failed_requests,
+            "success_rate": self.successful_requests / self.total_requests if self.total_requests > 0 else 0,
+            "llm_router_connected": self.llm_router_socket is not None
+        }
+        
+        base_status.update(specific_metrics)
+        return base_status
     
-    Args:
-        request (dict): The request to send
-        port (int): The port to connect to
-    
-    Returns:
-        dict: The response from the agent
-    """
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.connect(f"tcp://127.0.0.1:{port}")
-    
-    socket.send_string(json.dumps(request))
-    response = socket.recv_string()
-    
-    socket.close()
-    context.term()
-    
-    return json.loads(response)
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # Agent-specific health checks
+            if not hasattr(self, 'running') or not self.running:
+                is_healthy = False
 
-# Helper functions for other agents to use
-def generate_code_with_cot(user_request, code_context=None):
-    """
-    Generate code using Chain of Thought reasoning
-    
-    Args:
-        user_request (str): The user's code generation request
-        code_context (str, optional): Any relevant code context
-    
-    Returns:
-        str: The generated code solution
-    """
-    request = {
-        "action": "generate",
-        "request": user_request,
-        "code_context": code_context
-    }
-    
-    response = send_cot_request(request)
-    if response.get("status") == "ok":
-        return response.get("result", {}).get("solution", "")
-    else:
-        return f"Error: {response.get('message', 'Unknown error')}"
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "total_requests": self.total_requests,
+                    "successful_requests": self.successful_requests,
+                    "failed_requests": self.failed_requests,
+                    "llm_router_connected": hasattr(self, 'llm_router_socket') and self.llm_router_socket is not None
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
 
 if __name__ == "__main__":
     # Standardized main execution block

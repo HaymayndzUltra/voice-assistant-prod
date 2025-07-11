@@ -11,18 +11,16 @@ import sys
 import zmq
 import json
 import threading
+import time
 
-
-import time# Add the project root to Python path
+# Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
+project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import config parser utility
 try:
-    from pc2_code.utils.config_loader import parse_agent_args
-    _agent_args = parse_agent_args()
     from common.core.base_agent import BaseAgent
     from pc2_code.agents.utils.config_loader import Config
 
@@ -30,66 +28,108 @@ try:
     config = Config().get_config()
 except ImportError as e:
     print(f"Import error: {e}")
-    class DummyArgs:
-        host = 'localhost'
-    _agent_args = DummyArgs()
+    config = None
 
 # Configure logging
-log_file_path = 'logs/unified_utils_agent.log'
-log_directory = os.path.dirname(log_file_path)
+log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file_path),
-        logging.StreamHandler()
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger('UnifiedUtilsAgent')
 
-# Default ZMQ ports (will be overridden by configuration)
-UTILS_AGENT_PORT = 7118  # Default, will be overridden by configuration
-UTILS_AGENT_HEALTH_PORT = 8118  # Default health check port
+# Load configuration at the module level
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "utils_agent": int(os.environ.get("UTILS_AGENT_PORT", 7118)),
+                "utils_health": int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
+        }
 
-class UnifiedUtilsAgent(
+# Load network configuration
+network_config = load_network_config()
+
+# Get configuration values
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+UTILS_AGENT_PORT = network_config.get("ports", {}).get("utils_agent", int(os.environ.get("UTILS_AGENT_PORT", 7118)))
+UTILS_AGENT_HEALTH_PORT = network_config.get("ports", {}).get("utils_health", int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+
+class UnifiedUtilsAgent(BaseAgent):
     """
-    UnifiedUtilsAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    UnifiedUtilsAgent: Provides utility functions for system maintenance and cleanup.
+    """
     def __init__(self, port=None, health_check_port=None, host="0.0.0.0"):
-        # Call BaseAgent's constructor first
-        super().__init__(name="UnifiedUtilsAgent", port=port if port else UTILS_AGENT_PORT)
-        
-        # Record start time for uptime calculation
-        self.start_time = time.time()
-        # Initialize agent state
+        # Initialize agent state before BaseAgent
         self.running = True
         self.request_count = 0
-        # Set up connection to main PC if needed
         self.main_pc_connections = {}
+        self.start_time = time.time()
         
-        # Set up ports - use self.port from BaseAgent
-        self.main_port = self.port
-        self.health_port = health_check_port if health_check_port is not None else UTILS_AGENT_HEALTH_PORT
+        # Call BaseAgent's constructor
+        super().__init__(
+            name="UnifiedUtilsAgent", 
+            port=port if port else UTILS_AGENT_PORT,
+            health_check_port=health_check_port if health_check_port else UTILS_AGENT_HEALTH_PORT
+        )
         
-        # Set up ZMQ socket - use BaseAgent's context
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
+        # Set up error reporting
+        self.setup_error_reporting()
         
-        logger.info(f"UnifiedUtilsAgent initialized on port {self.main_port}")
+        logger.info(f"UnifiedUtilsAgent initialized on port {self.port}")
 
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
     
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
+    def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
         """Clean up temporary files."""
         result = {"files_removed": 0, "errors": []}
         try:
@@ -104,6 +144,7 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
             logging.info(f"Temp files cleaned: {result['files_removed']} files removed.")
         except Exception as e:
             result["errors"].append(str(e))
+            self.report_error("TEMP_FILES_CLEANUP_ERROR", str(e))
         return result
 
     def cleanup_logs(self, log_dir: str = "agents/logs", days_old: int = 7) -> dict:
@@ -122,6 +163,7 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
             logging.info(f"Old logs cleaned: {result['files_removed']} files removed.")
         except Exception as e:
             result["errors"].append(str(e))
+            self.report_error("LOGS_CLEANUP_ERROR", str(e))
         return result
 
     def cleanup_cache(self, cache_dir: str = "agents/cache", days_old: int = 1) -> dict:
@@ -140,6 +182,7 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
             logging.info(f"Cache cleaned: {result['files_removed']} files removed.")
         except Exception as e:
             result["errors"].append(str(e))
+            self.report_error("CACHE_CLEANUP_ERROR", str(e))
         return result
 
     def cleanup_browser_cache(self) -> dict:
@@ -185,6 +228,7 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
             logging.info(f"Browser caches cleaned: {result['browsers_cleaned']} browsers, {result['files_removed']} files removed, {result['bytes_freed']} bytes freed.")
         except Exception as e:
             result["errors"].append(str(e))
+            self.report_error("BROWSER_CACHE_CLEANUP_ERROR", str(e))
         return result
 
     def _get_dir_size(self, dir_path: str) -> int:
@@ -211,10 +255,12 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
             result["errors"].append(str(e))
+            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e))
         except Exception as e:
             result["status"] = "error"
             result["message"] = f"Error running Windows Disk Cleanup: {str(e)}"
             result["errors"].append(str(e))
+            self.report_error("WINDOWS_DISK_CLEANUP_ERROR", str(e))
         return result
 
     def cleanup_system(self) -> dict:
@@ -236,16 +282,15 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
         
         # Add UnifiedUtilsAgent specific health info
         base_status.update({
+            'status': 'ok',
             'agent': 'UnifiedUtilsAgent',
             'timestamp': datetime.now().isoformat(),
-            'port': self.main_port
+            'port': self.port,
+            'uptime_seconds': time.time() - self.start_time,
+            'request_count': self.request_count
         })
         
         return base_status
-
-    def _health_check(self) -> dict:
-        """Legacy health check method for backward compatibility."""
-        return self._get_health_status()
 
     def handle_request(self, request: dict) -> dict:
         action = request.get('action', '')
@@ -262,31 +307,37 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
         elif action == 'cleanup_system':
             return self.cleanup_system()
         elif action == 'health_check':
-            return self._health_check()
+            return self._get_health_status()
         else:
             return {'status': 'error', 'message': f'Unknown action: {action}'}
 
     def run(self):
-        logger.info(f"UnifiedUtilsAgent starting on port {self.main_port}")
+        logger.info(f"UnifiedUtilsAgent starting on port {self.port}")
         try:
             while self.running:
                 try:
-                    request = self.socket.recv_json()
-                    logger.debug(f"Received request: {request}")
-                    response = self.handle_request(request)
-                    self.socket.send_json(response)
+                    if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                        request = self.socket.recv_json()
+                        logger.debug(f"Received request: {request}")
+                        response = self.handle_request(request)
+                        self.socket.send_json(response)
+                        self.request_count += 1
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error in run loop: {e}")
+                    self.report_error("ZMQ_ERROR", str(e))
                     try:
                         self.socket.send_json({'status': 'error', 'error': str(e)})
                     except:
                         pass
+                    time.sleep(1)  # Avoid tight loop on error
                 except Exception as e:
                     logger.error(f"Error in run loop: {e}")
+                    self.report_error("RUN_LOOP_ERROR", str(e))
                     try:
                         self.socket.send_json({'status': 'error', 'error': str(e)})
                     except:
                         pass
+                    time.sleep(1)  # Avoid tight loop on error
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         finally:
@@ -295,10 +346,38 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
     def cleanup(self):
         logger.info("Cleaning up resources...")
         self.running = False
+        
+        # Close main socket
         if hasattr(self, 'socket'):
-            self.socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Close any connections to other services
+        for service_name, socket in self.main_pc_connections.items():
+            try:
+                socket.close()
+                logger.info(f"Closed connection to {service_name}")
+            except Exception as e:
+                logger.error(f"Error closing connection to {service_name}: {e}")
+        
+        # Call parent cleanup
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
+        
         logger.info("Cleanup complete")
 
     def stop(self):
@@ -307,22 +386,19 @@ def cleanup_temp_files(self, temp_dir: str = "agents/temp") -> dict:
     def connect_to_main_pc_service(self, service_name: str):
         if not hasattr(self, 'main_pc_connections'):
             self.main_pc_connections = {}
-        ports = network_config.get("ports") if network_config and isinstance(network_config.get("ports"), dict) else {}
-        if service_name not in ports:
+            
+        # Get service details from config
+        service_ports = network_config.get('ports', {})
+        if service_name not in service_ports:
             logger.error(f"Service {service_name} not found in network configuration")
             return None
-        port = ports[service_name]
+            
+        port = service_ports[service_name]
         socket = self.context.socket(zmq.REQ)
         socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
         self.main_pc_connections[service_name] = socket
         logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
         return socket
-
-
-
-
-
-
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -340,28 +416,3 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()
-
-# Load network configuration
-def load_network_config():
-    """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network config: {e}")
-        # Default fallback values
-        return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
-            "secure_zmq": False
-        }
-
-# Load both configurations
-network_config = load_network_config()
-
-# Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

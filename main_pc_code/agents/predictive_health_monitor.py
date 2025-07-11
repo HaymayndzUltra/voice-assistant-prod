@@ -21,6 +21,8 @@ nitors system resources and agent performance
 import logging
 import socket
 import zmq
+
+from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time
 import sys
@@ -296,14 +298,16 @@ class PredictiveHealthMonitor(BaseAgent):
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
-        self.receiver.bind(f"tcp://127.0.0.1:{HEALTH_MONITOR_PORT}")
+        bind_address = get_bind_address()
+        self.receiver.bind(f"tcp://{bind_address}:{HEALTH_MONITOR_PORT}")
         logger.info(f"Predictive Health Monitor bound to port {HEALTH_MONITOR_PORT}")
         
         # Socket to communicate with self-healing agent
         self.self_healing = self.context.socket(zmq.REQ)
         self.self_healing.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.self_healing.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.self_healing.connect(f"tcp://localhost:{SELF_HEALING_PORT}")
+        healing_host = get_host("SELF_HEALING_HOST", "zmq.self_healing_host")
+        self.self_healing.connect(f"tcp://{healing_host}:{SELF_HEALING_PORT}")
         logger.info(f"Connected to Self-Healing Agent on port {SELF_HEALING_PORT}")
         
         # Initialize discovery service if enabled
@@ -1590,3 +1594,23 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup() 
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

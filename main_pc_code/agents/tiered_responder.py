@@ -2,6 +2,7 @@ import zmq
 import json
 from typing import Dict, Any, Callable, List
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 from datetime import datetime
 import asyncio
 import time
@@ -143,6 +144,8 @@ class TieredResponder:
             ]
         )
         self.logger = logging.getLogger('TieredResponder')
+        # Setup error publisher
+        self.error_publisher = ErrorPublisher(self.name)
         
     def _setup_health_monitoring(self):
         """Setup health monitoring thread"""
@@ -160,14 +163,20 @@ class TieredResponder:
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
+                    self.error_publisher.publish_error(error_type="health_monitor", severity="high", details=str(e))
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
         thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(thread)
 
     def start(self):
         """Start the tiered responder"""
         self.logger.info("Tiered Responder started")
+        # Ensure publisher connection warms up
+        time.sleep(0.1)
         self._start_response_processor()
         
     def _start_response_processor(self):
@@ -184,10 +193,14 @@ class TieredResponder:
                     self._handle_query(query)
                 except Exception as e:
                     self.logger.error(f"Error processing query: {str(e)}")
+                    self.error_publisher.publish_error(error_type="query_processing", severity="high", details=str(e))
                     time.sleep(1)
 
         thread = threading.Thread(target=process_queries, daemon=True)
         thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(thread)
 
     def _handle_query(self, query: Dict[str, Any]):
         """Handle incoming query and route to appropriate tier"""

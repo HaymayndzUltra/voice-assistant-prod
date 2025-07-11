@@ -18,6 +18,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 # Standard PC2 configuration setup
 def get_pc2_config():
@@ -99,7 +100,7 @@ def setup_zmq_socket(port, socket_type=zmq.REP, bind=True):
     if bind:
         socket.bind(f"tcp://*:{port}")
     else:
-        socket.connect(f"tcp://localhost:{port}")
+        socket.connect(get_zmq_connection_string({port}, "localhost")))
     
     return context, socket
 

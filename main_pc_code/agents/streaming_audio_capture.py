@@ -33,6 +33,7 @@ try:
 except ImportError:
     pyaudio = None  # PyAudio may not be installed; handled via dummy mode
 import socket
+import psutil
 
 # Add project root to the Python path to allow for absolute imports
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
@@ -109,10 +110,7 @@ def find_available_port(start_port, max_attempts=10):
             continue
     raise RuntimeError(f"Could not find available port after {max_attempts} attempts")
 
-class StreamingAudioCaptureAgent(
-    """
-    StreamingAudioCaptureAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class StreamingAudioCapture(BaseAgent):
     def __init__(self, config=None, **kwargs):
         """Initialize the StreamingAudioCapture agent with audio processing capabilities and robust template compliance."""
         config = config or {}
@@ -196,7 +194,7 @@ class StreamingAudioCaptureAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def setup_zmq(self):
+    def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
             self.context = zmq.Context()
@@ -207,6 +205,14 @@ def setup_zmq(self):
             self.health_socket = self.context.socket(zmq.REP)
             self.health_socket.setsockopt(zmq.LINGER, 0)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
+            
+            # Error bus setup
+            self.error_bus_port = int(config.get("error_bus_port", 7150))
+            self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            
             # Bind sockets with retry logic
             self._bind_socket_with_retry(self.pub_socket, self.pub_port)
             self._bind_socket_with_retry(self.health_socket, self.health_port)
@@ -924,6 +930,113 @@ def setup_zmq(self):
             # self.running should be primarily controlled by __exit__ or an explicit stop method.
             # Stream stopping/closing and PyAudio termination are handled in __exit__.
 
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = self.running  # Assume healthy if running
+            
+            # Check if audio stream is active
+            if not self.dummy_mode and hasattr(self, 'stream') and self.stream:
+                try:
+                    is_healthy = is_healthy and self.stream.is_active()
+                except Exception as e:
+                    logger.warning(f"Error checking stream active status: {e}")
+                    is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "dummy_mode": self.dummy_mode,
+                    "wake_word_enabled": self.wake_word_enabled,
+                    "wake_word_active": self.wake_word_active if hasattr(self, 'wake_word_active') else False,
+                    "activation_count": self.activation_count if hasattr(self, 'activation_count') else 0,
+                    "error_count": self.error_count if hasattr(self, 'error_count') else 0
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+    
+    def cleanup(self):
+        """Clean up all resources to prevent leaks"""
+        logger.info("Starting resource cleanup...")
+        
+        # Set running flag to False to stop any threads
+        self.running = False
+        
+        try:
+            # Stop and close the audio stream
+            if hasattr(self, 'stream') and self.stream:
+                try:
+                    if self.stream.is_active():
+                        self.stream.stop_stream()
+                    self.stream.close()
+                    logger.info("Audio stream closed")
+                except Exception as e:
+                    logger.error(f"Error closing audio stream: {e}")
+
+            # Terminate PyAudio instance
+            if hasattr(self, 'p') and self.p:
+                try:
+                    self.p.terminate()
+                    logger.info("PyAudio terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating PyAudio: {e}")
+
+            # Stop HTTP server if running
+            if hasattr(self, 'http_server') and self.http_server:
+                try:
+                    self.http_server.shutdown()
+                    logger.info("HTTP server shut down")
+                except Exception as e:
+                    logger.error(f"Error shutting down HTTP server: {e}")
+
+            # Close ZMQ sockets
+            for socket_name in ['pub_socket', 'health_socket', 'error_bus_pub']:
+                if hasattr(self, socket_name) and getattr(self, socket_name):
+                    try:
+                        getattr(self, socket_name).close()
+                        logger.info(f"{socket_name} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
+
+            # Terminate ZMQ context
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    logger.info("ZMQ context terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+
+            # Join any running threads
+            if hasattr(self, 'health_thread') and self.health_thread and self.health_thread.is_alive():
+                try:
+                    self.health_thread.join(timeout=2.0)
+                    logger.info("Health check thread joined")
+                except Exception as e:
+                    logger.error(f"Error joining health check thread: {e}")
+
+            logger.info("Cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+            
+        # Call parent cleanup method
+        super().cleanup()
+
     def _get_health_status(self):
         """Get the current health status of the agent.
         
@@ -971,7 +1084,7 @@ if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        agent = StreamingAudioCaptureAgent()
+        agent = StreamingAudioCapture()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")

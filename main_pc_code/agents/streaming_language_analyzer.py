@@ -23,7 +23,9 @@ from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+from main_pc_code.utils import model_client
 
 # Parse command line arguments
 config = load_config()
@@ -136,7 +138,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
             # Fall back to configured port
-            stt_address = f"tcp://localhost:{ZMQ_SUB_PORT}"
+            stt_address = get_zmq_connection_string(ZMQ_SUB_PORT, "localhost")
             
         self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -167,7 +169,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         health_address = get_service_address("HealthMonitor")
         if not health_address:
             # Fall back to configured port
-            health_address = f"tcp://localhost:{ZMQ_HEALTH_PORT}"
+            health_address = get_zmq_connection_string(ZMQ_HEALTH_PORT, "localhost")
             
         try:
             self.health_socket.connect(health_address)
@@ -258,7 +260,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
                 self.tagabert_available = True
             else:
                 # Fall back to default port if service discovery fails
-                fallback_address = f"tcp://localhost:6010"
+                fallback_address = get_zmq_connection_string(6010, "localhost")
                 self.tagabert_socket = self.context.socket(zmq.REQ)
                 if SECURE_ZMQ:
                     self.tagabert_socket = configure_secure_client(self.tagabert_socket)
@@ -291,7 +293,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
             else:
                 logger.warning("TranslationService not found in service discovery, will try alternative connection")
                 # Try connecting to default address as fallback
-                default_address = "tcp://localhost:5595"
+                default_address = get_zmq_connection_string(5595, "localhost")
                 try:
                     self.translation_socket = self.context.socket(zmq.REQ)
                     if SECURE_ZMQ:
@@ -412,20 +414,27 @@ class StreamingLanguageAnalyzer(BaseAgent):
                 "action": "analyze_sentiment",
                 "text": text
             }
-            
             # Send request
-            self.tagabert_socket.send_json(request)
-            
+            if self.tagabert_socket is not None:
+                self.tagabert_socket.send_json(request)
+            else:
+                logger.warning("tagabert_socket is None, cannot send request.")
+                return None
             # Get response with timeout
             response = self.tagabert_socket.recv_json()
-            
-            if response.get("success"):
+            if isinstance(response, dict) and response.get("success"):
                 self.stats["tagabert_used"] += 1
                 sentiment_result = response.get("result", {})
-                logger.info(f"TagaBERTa sentiment: {sentiment_result.get('label')}, score: {sentiment_result.get('score'):.2f}")
+                if isinstance(sentiment_result, dict):
+                    logger.info(f"TagaBERTa sentiment: {sentiment_result.get('label')}, score: {sentiment_result.get('score'):.2f}")
+                else:
+                    logger.info(f"TagaBERTa sentiment: {sentiment_result}")
                 return sentiment_result
             else:
-                logger.warning(f"TagaBERTa service error: {response.get('error')}")
+                if isinstance(response, dict):
+                    logger.warning(f"TagaBERTa service error: {response.get('error')}")
+                else:
+                    logger.warning(f"TagaBERTa service error: {response}")
                 return None
                 
         except zmq.error.Again:
@@ -530,6 +539,24 @@ class StreamingLanguageAnalyzer(BaseAgent):
         result["tagalog_ratio"] = tagalog_ratio
         
         return result
+
+    def analyze_with_llm(self, prompt_text):
+        """Use the new model_client to get analysis from the LLM service."""
+        try:
+            logger.info(f"Sending prompt to model service: {prompt_text[:50]}...")
+            response_dict = model_client.generate(prompt=prompt_text, quality="fast")
+            
+            if response_dict and response_dict.get("status") == "ok":
+                analysis_result = response_dict.get("response_text")
+                logger.info(f"Received successful analysis from model service")
+                return analysis_result
+            else:
+                error_msg = response_dict.get("message", "Unknown error") if response_dict else "No response"
+                logger.error(f"Failed to get analysis from model service: {error_msg}")
+                return "Error: Could not analyze."
+        except Exception as e:
+            logger.error(f"Exception during LLM analysis: {str(e)}")
+            return "Error: Could not analyze."
 
     def start(self):
         """Start the language analyzer"""
@@ -678,21 +705,24 @@ class StreamingLanguageAnalyzer(BaseAgent):
                         logger.info(f"Requesting translation: {text} ({source_lang} → {target_lang})")
                         
                         # Send request to TranslationService
-                        self.translation_socket.send_json(translation_request)
-                        
-                        # Wait for response with timeout
-                        if self.translation_socket.poll(10000):  # 10 second timeout
-                            translation_response = self.translation_socket.recv_json()
-                            if translation_response.get('status') == 'success':
-                                translated_text = translation_response.get('translation')
-                                translation_status = 'success'
-                                logger.info(f"Translation received: {translated_text}")
+                        if self.translation_socket is not None:
+                            self.translation_socket.send_json(translation_request)
+                            # Wait for response with timeout
+                            if self.translation_socket.poll(10000):  # 10 second timeout
+                                translation_response = self.translation_socket.recv_json()
+                                if isinstance(translation_response, dict) and translation_response.get('status') == 'success':
+                                    translated_text = translation_response.get('translation')
+                                    translation_status = 'success'
+                                    logger.info(f"Translation received: {translated_text}")
+                                else:
+                                    translation_status = 'error'
+                                    logger.error(f"Translation error: {translation_response.get('message') if isinstance(translation_response, dict) else translation_response}")
                             else:
-                                translation_status = 'error'
-                                logger.error(f"Translation error: {translation_response.get('message')}")
+                                translation_status = 'timeout'
+                                logger.error("Translation request timed out")
                         else:
-                            translation_status = 'timeout'
-                            logger.error("Translation request timed out")
+                            translation_status = 'error'
+                            logger.error("translation_socket is None, cannot send translation request.")
                     except Exception as e:
                         translation_status = 'error'
                         logger.error(f"Error requesting translation: {e}")

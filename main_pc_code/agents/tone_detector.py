@@ -82,10 +82,7 @@ TONE_CATEGORIES = {
     "tired": "fatigued, exhausted, low-energy"
 }
 
-class ToneDetector(
-    """
-    ToneDetector:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class ToneDetector(BaseAgent):
     def __init__(self):
         # Initialize with proper parameters before calling super().__init__()
         self.port = config.get("port", 5625)
@@ -104,24 +101,20 @@ class ToneDetector(
         self.tagalog_analyzer = None
         self.whisper_model = None
         
+        # Setup error bus
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         # Start tone monitoring in background
         self.tone_thread = threading.Thread(target=self._start_tone_monitor, daemon=True)
         self.tone_thread.start()
         
         logger.info(f"ToneDetector initialized on port {self.port}")
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _start_tone_monitor(self):
+    def _start_tone_monitor(self):
         """Start tone monitoring in background thread."""
         try:
             # Connect to the Whisper stream
@@ -542,10 +535,55 @@ def _start_tone_monitor(self):
         super().stop()
     
     def cleanup(self):
-        """Cleanup resources before shutdown"""
-        logger.info("Cleaning up ToneDetector resources")
+        """Clean up resources when the agent is stopping."""
+        logger.info("Cleaning up resources...")
+        
+        # Set running flag to False to stop threads
         self.running = False
-        # Add any specific cleanup code here
+        
+        try:
+            # Join tone thread if it exists and is alive
+            if hasattr(self, 'tone_thread') and self.tone_thread and self.tone_thread.is_alive():
+                try:
+                    self.tone_thread.join(timeout=2.0)
+                    logger.info("Tone detection thread joined")
+                except Exception as e:
+                    logger.error(f"Error joining tone detection thread: {e}")
+            
+            # Close all ZMQ sockets
+            for socket_name in ['whisper_socket', 'tagalog_analyzer', 'socket', 'error_bus_pub']:
+                if hasattr(self, socket_name) and getattr(self, socket_name):
+                    try:
+                        getattr(self, socket_name).close()
+                        logger.info(f"{socket_name} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
+            
+            # Terminate ZMQ context
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    logger.info("ZMQ context terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+            
+            # Clean up whisper model if it exists
+            if hasattr(self, 'whisper_model') and self.whisper_model:
+                try:
+                    # Free memory used by the model
+                    if WHISPER_AVAILABLE and torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    del self.whisper_model
+                    logger.info("Whisper model resources freed")
+                except Exception as e:
+                    logger.error(f"Error cleaning up Whisper model: {e}")
+            
+            logger.info("Cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        
+        # Call parent cleanup method
+        super().cleanup()
 
     def _get_health_status(self):
         """Overrides the base method to add agent-specific health metrics."""
@@ -559,35 +597,44 @@ def _start_tone_monitor(self):
         return base_status
 
     def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
+        """Performs a health check on the agent, returning a dictionary with its status."""
         try:
             # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.running  # Assume healthy if running
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+            # Check if tone detection thread is functioning
+            if hasattr(self, 'tone_thread') and not self.tone_thread.is_alive():
+                is_healthy = False
+                
+            # Check if any sockets are initialized
+            if hasattr(self, 'whisper_socket') and self.whisper_socket is None and \
+               hasattr(self, 'whisper_model') and self.whisper_model is None:
+                is_healthy = False
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "dev_mode": self.dev_mode,
+                    "processed_audio_chunks": self.processed_audio_chunks,
+                    "last_detection_time": self.last_detection_time,
+                    "whisper_connected": self.whisper_socket is not None,
+                    "whisper_model_loaded": self.whisper_model is not None
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 

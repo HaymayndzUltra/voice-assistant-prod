@@ -9,6 +9,8 @@ from datetime import datetime
 from collections import deque
 from main_pc_code.utils.config_loader import load_config
 import psutil
+from typing import Any, Dict, cast
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -36,24 +38,25 @@ class ActiveLearningMonitor(BaseAgent):
         self.running = True
         self.processed_items = 0
         self.monitored_events = 0
-        super().__init__()
-        self.context = zmq.Context()
+        # Initialize BaseAgent with explicit port and name to ensure deterministic binding
+        super().__init__(port=self.port, name=self.name)
+        # Use the context created by BaseAgent; no need to reinitialize
         
         # Subscribe to UMRA output
         self.umra_socket = self.context.socket(zmq.SUB)
-        self.umra_socket.connect(f"tcp://localhost:{config.get('umra_port', 5701)}")
+        self.umra_socket.connect(get_zmq_connection_string(5701))
         self.umra_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Subscribe to RequestCoordinator output
         self.coordinator_socket = self.context.socket(zmq.SUB)
-        self.coordinator_socket.connect(f"tcp://localhost:{config.get('request_coordinator_port', 5702)}")
+        self.coordinator_socket.connect(get_zmq_connection_string(5702))
         self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Connect to SelfTrainingOrchestrator
         self.orchestrator_socket = self.context.socket(zmq.REQ)
         self.orchestrator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.orchestrator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.orchestrator_socket.connect(f"tcp://localhost:{config.get('orchestrator_port', 5703)}")
+        self.orchestrator_socket.connect(get_zmq_connection_string(5703))
         
         self.training_data = []
         self.interaction_buffer = deque(maxlen=1000)  # Store last 1000 interactions
@@ -132,11 +135,15 @@ class ActiveLearningMonitor(BaseAgent):
                 }
             })
             
-            response = self.orchestrator_socket.recv_json()
-            if response['status'] == 'started':
-                logger.info(f"Triggered fine-tuning job {response['job_id']}")
+            response_any = self.orchestrator_socket.recv_json()
+            if isinstance(response_any, dict):
+                response: Dict[str, Any] = cast(Dict[str, Any], response_any)
+                if response.get('status') == 'started':
+                    logger.info(f"Triggered fine-tuning job {response.get('job_id')}")
+                else:
+                    logger.error(f"Failed to trigger fine-tuning: {response.get('error')}")
             else:
-                logger.error(f"Failed to trigger fine-tuning: {response.get('error')}")
+                logger.error(f"Failed to trigger fine-tuning: invalid response type ({type(response_any).__name__})")
                 
         except Exception as e:
             logger.error(f"Error saving training data: {str(e)}")
@@ -193,14 +200,21 @@ class ActiveLearningMonitor(BaseAgent):
         logger.info("ActiveLearningMonitor shutdown complete")
 
     def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
+        """Overrides the base method to add agent-specific health metrics with ZMQ readiness check."""
         base_status = super()._get_health_status()
+
+        zmq_ready = hasattr(self, 'orchestrator_socket') and self.orchestrator_socket is not None
         specific_metrics = {
-            "status_detail": "active",
+            "status_detail": "active" if getattr(self, 'running', True) else "inactive",
             "processed_items": getattr(self, 'processed_items', 0),
-            "monitored_events": getattr(self, 'monitored_events', 0)
+            "monitored_events": getattr(self, 'monitored_events', 0),
+            "zmq_ready": zmq_ready
         }
-        base_status.update(specific_metrics)
+        overall_status = "ok" if zmq_ready else "degraded"
+        base_status.update({
+            "status": overall_status,
+            "agent_specific_metrics": specific_metrics
+        })
         return base_status
 
     def health_check(self):

@@ -36,7 +36,9 @@ class ProactiveAgent(BaseAgent):
         super().__init__(port=port, name="Proactive")
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
-        self.socket.connect(f"tcp://127.0.0.1:{zmq_port}")
+        # Use configurable host for ZMQ responder
+        zmq_host = os.environ.get('RESPONDER_HOST', 'localhost')
+        self.socket.connect(f"tcp://{zmq_host}:{zmq_port}")
         self.running = True
         logging.info(f"[Proactive] Ready. Checking reminders every {REMINDER_CHECK_INTERVAL} seconds.")
 

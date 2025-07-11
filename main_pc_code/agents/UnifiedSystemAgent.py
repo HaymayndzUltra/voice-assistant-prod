@@ -2,6 +2,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import time
 import threading
 from datetime import datetime
@@ -71,6 +72,11 @@ class UnifiedSystemAgent(BaseAgent):
         self.health_check_thread = threading.Thread(target=self._health_check_loop)
         self.health_check_thread.daemon = True
         self.health_check_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.health_check_thread)
+        # Initialise error publisher
+        self.error_publisher = ErrorPublisher(self.name)
         
         logger.info("Unified System Agent initialized")
     
@@ -90,6 +96,7 @@ class UnifiedSystemAgent(BaseAgent):
             
         except Exception as e:
             logger.error(f"Error checking health of {agent}: {str(e)}")
+            self.error_publisher.publish_error(error_type="health_check", severity="medium", details=f"{agent}: {str(e)}")
             return False
     
     def _health_check_loop(self):

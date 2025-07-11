@@ -63,7 +63,8 @@ class ModelVotingAdapter(BaseAgent):
         self.pc2_socket = self.context.socket(zmq.REQ)
         self.pc2_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.pc2_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.pc2_socket.connect(f"tcp://192.168.1.2:{pc2_router_port}")
+        pc2_host = os.environ.get('PC2_IP', config.get('network.pc2_ip', '192.168.1.2'))
+        self.pc2_socket.connect(f"tcp://{pc2_host}:{pc2_router_port}")
         logger.info(f"Connected to PC2's Enhanced Model Router on port {pc2_router_port}")
         
         # Initialize voting system

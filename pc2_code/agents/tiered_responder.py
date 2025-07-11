@@ -1,8 +1,19 @@
 import zmq
-from typing import Dict, Any, Optional
 import yaml
+import sys
+import os
 import json
-from typing import Di
+import time
+import logging
+import sqlite3
+import psutil
+import torch
+import threading
+from collections import deque
+from pathlib import Path
+from typing import Dict, Any, Callable, List, Optional
+from datetime import datetime
+import asyncio
 
 # Add the project's pc2_code directory to the Python path
 import sys
@@ -12,31 +23,16 @@ PC2_CODE_DIR = Path(__file__).resolve().parent.parent
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
-ct, Any, Callable, List
-import logging
-from datetime import datetime
-import asyncio
-import time
-import threading
-import psutil
-import torch
-from collections import deque
-import os
-import sys
-from pathlib import Path
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
-
-# Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.utils.config_loader import Config
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
+# Load configuration at the module level
+config = Config().get_config()
 
 # Constants
-ZMQ_PULL_PORT = 7110
-ZMQ_PUSH_PORT = 7111
-ZMQ_HEALTH_PORT = 7112
-MAX_QUEUE_SIZE = 1000
+MAX_QUEUE_SIZE = 100
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_RESPONSE_TIME = {
     'instant': 0.1,  # 100ms
@@ -47,82 +43,14 @@ MAX_RESPONSE_TIME = {
 # Setup logging directory
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger("TieredResponder")
 
-class ResourceManager(
+class ResourceManager:
     """
-    ResourceManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
-
-    def __init__(self, port: int = None):
-
-        super().__init__(name="ResourceManager", port=port)
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
-
-
-        self._setup_sockets()
-
-
-        self._setup_tiers()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
-
-
-        self._setup_sockets()
-
-
-        self._setup_tiers()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-
-        self.context = zmq.Context()
-
-
-        self.resource_manager = ResourceManager()
-
-
-        self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
-
-
-        self._setup_sockets()
-
-
-        self._setup_tiers()
-
-
-        self._setup_logging()
-
-
-        self._setup_health_monitoring()
-
-        self.start_time = time.time()
-        self.error_bus = setup_error_reporting(self)
-def __init__(self):
+    ResourceManager: Monitors system resources for the TieredResponder.
+    """
+    
+    def __init__(self):
         self.cpu_threshold = 80  # percentage
         self.memory_threshold = 80  # percentage
         self.gpu_threshold = 80  # percentage if available
@@ -182,106 +110,25 @@ def __init__(self):
         return avg_stats
 
 
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-
-        """
-
-
-        Connect to a service on the main PC using the network configuration.
-
-
-        
-
-
-        Args:
-
-
-            service_name: Name of the service in the network config ports section
-
-
-        
-
-
-        Returns:
-
-
-            ZMQ socket connected to the service
-
-
-        """
-
-
-        if not hasattr(self, 'main_pc_connections'):
-
-
-            self.main_pc_connections = {}
-
-
-            
-
-
-        if service_name not in network_config.get("ports", {}):
-
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-
-            return None
-
-
-            
-
-
-        port = network_config.get("ports")[service_name]
-
-
-        
-
-
-        # Create a new socket for this connection
-
-
-        socket = self.context.socket(zmq.REQ)
-
-
-        
-
-
-        # Connect to the service
-
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-
-        
-
-
-        # Store the connection
-
-
-        self.main_pc_connections[service_name] = socket
-
-
-        
-
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-
-        return socket
-
 class TieredResponder(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()def __init__(self, port: int = 7100):
+    _agent_args = parse_agent_args()
+    
+    def __init__(self, port: int = 7100):
         super().__init__(name="TieredResponder", port=port)
         self.start_time = time.time()
         self.context = zmq.Context()
         self.resource_manager = ResourceManager()
         self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
+        
+        # Load configuration
+        self.config = load_config()
+        
+        # Set up error reporting
+        self.error_bus = setup_error_reporting(self)
+        
+        # Set up components
         self._setup_sockets()
         self._setup_tiers()
         self._setup_logging()
@@ -289,16 +136,24 @@ class TieredResponder(BaseAgent):
         
     def _setup_sockets(self):
         # Socket for receiving user queries and health checks
-        self.pull_socket = self.context.socket(zmq.REP)  # Changed to REP to handle requests
-        self.pull_socket.bind(f"tcp://*:{ZMQ_PULL_PORT}")
+        # Get port values from config or use defaults
+        zmq_pull_port = self.config.get("ports", {}).get("tiered_responder_pull", 7101)
+        zmq_push_port = self.config.get("ports", {}).get("tiered_responder_push", 7102)
+        zmq_health_port = self.config.get("ports", {}).get("tiered_responder_health", 7103)
+        
+        # Socket for receiving user queries and health checks
+        self.pull_socket = self.context.socket(zmq.REP)
+        self.pull_socket.bind(f"tcp://*:{zmq_pull_port}")
         
         # Socket for sending responses
         self.push_socket = self.context.socket(zmq.PUSH)
-        self.push_socket.bind(f"tcp://*:{ZMQ_PUSH_PORT}")
+        self.push_socket.bind(f"tcp://*:{zmq_push_port}")
         
         # Socket for health monitoring
         self.health_socket = self.context.socket(zmq.PUB)
-        self.health_socket.bind(f"tcp://*:{ZMQ_HEALTH_PORT}")
+        self.health_socket.bind(f"tcp://*:{zmq_health_port}")
+        
+        logger.info(f"Tiered Responder sockets initialized on ports: {zmq_pull_port}, {zmq_push_port}, {zmq_health_port}")
         
     def _setup_tiers(self):
         self.tiers = [
@@ -361,6 +216,8 @@ class TieredResponder(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
+                    if self.error_bus:
+                        report_error(self.error_bus, "health_monitoring_error", str(e))
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
@@ -393,6 +250,8 @@ class TieredResponder(BaseAgent):
                         
                 except Exception as e:
                     self.logger.error(f"Error processing request: {str(e)}")
+                    if self.error_bus:
+                        report_error(self.error_bus, "request_processing_error", str(e))
                     time.sleep(1)
 
         thread = threading.Thread(target=process_requests, daemon=True)
@@ -538,6 +397,8 @@ class TieredResponder(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
+            if self.error_bus:
+                report_error(self.error_bus, "health_check_error", str(e))
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -554,43 +415,47 @@ class TieredResponder(BaseAgent):
         except KeyboardInterrupt:
             self.logger.info("Tiered Responder shutting down...")
         finally:
-            self.pull_socket.close()
-            self.push_socket.close()
-            self.health_socket.close()
+            self.cleanup()
 
     def _get_health_status(self):
         base_status = super()._get_health_status()
         base_status.update({
             'service': 'TieredResponder',
-            'uptime': time.time() - self.start_time
+            'uptime': time.time() - self.start_time,
+            'queue_size': len(self.response_queue),
+            'resources': self.resource_manager.get_average_stats()
         })
         return base_status
+
+    def health_check(self):
+        """Return the health status of the agent"""
+        return self._get_health_status()
 
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info("Cleaning up resources...")
-        # Add specific cleanup code here
+        
+        # Close all sockets
+        if hasattr(self, 'pull_socket'):
+            self.pull_socket.close()
+        
+        if hasattr(self, 'push_socket'):
+            self.push_socket.close()
+            
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
+            
+        # Clean up error reporting
+        if hasattr(self, 'error_bus') and self.error_bus:
+            from pc2_code.agents.error_bus_template import cleanup_error_reporting
+            cleanup_error_reporting(self.error_bus)
+            
+        # Call parent cleanup
         super().cleanup()
 
 def main():
     responder = TieredResponder()
     responder.run()
-
-if __name__ == "__main__":
-    agent = None
-    try:
-        agent = TieredResponder()
-        agent.run()
-    except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'}...")
-    except Exception as e:
-        import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
 
 # Load network configuration
 def load_network_config():
@@ -617,4 +482,19 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
-config = Config().get_config()
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = TieredResponder()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'}...")
+    except Exception as e:
+        import traceback
+
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup()

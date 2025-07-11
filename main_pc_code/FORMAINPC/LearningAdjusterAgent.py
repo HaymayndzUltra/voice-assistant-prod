@@ -57,10 +57,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ParameterType(
+class ParameterType(Enum):
     """
     ParameterType:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """Enum):
+    """
     LEARNING_RATE = "learning_rate"
     BATCH_SIZE = "batch_size"
     OPTIMIZER = "optimizer"
@@ -129,7 +129,7 @@ class LearningAdjusterAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _init_db(self):
+    def _init_db(self):
         """Initialize the SQLite database."""
         try:
             conn = sqlite3.connect(self.db_path)

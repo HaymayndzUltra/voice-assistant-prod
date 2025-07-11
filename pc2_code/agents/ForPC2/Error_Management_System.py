@@ -305,6 +305,7 @@ class RecoveryManagerModule:
         try:
             # Try to find and kill the process by name
             import psutil
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = proc.info['cmdline']
@@ -402,7 +403,7 @@ class ErrorManagementSystem(BaseAgent):
         # --- Error Bus (ZMQ PUB/SUB) ---
         # CHECKLIST ITEM: Error Bus Enhancement
         self.error_bus_sub = self.context.socket(zmq.SUB)
-        self.error_bus_sub.connect(f"tcp://localhost:{ERROR_BUS_PORT}")
+        self.error_bus_sub.connect(get_zmq_connection_string({ERROR_BUS_PORT}, "localhost")))
         self.error_bus_sub.setsockopt(zmq.SUBSCRIBE, b"ERROR:")
         self.error_bus_listener_thread = threading.Thread(target=self._listen_error_bus, daemon=True)
         self.error_bus_listener_thread.start()

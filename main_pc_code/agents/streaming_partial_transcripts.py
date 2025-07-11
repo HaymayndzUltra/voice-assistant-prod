@@ -17,6 +17,7 @@ import pickle
 import numpy as np
 import whisper
 import time
+from main_pc_code.agents.error_publisher import ErrorPublisher
 import threading
 import logging
 import hashlib
@@ -53,6 +54,8 @@ class StreamingPartialTranscripts(BaseAgent):
         self.buffer = deque()
         self.buffer_times = deque()
         self.running = True
+        # Initialise error publisher
+        self.error_publisher = ErrorPublisher(self.name)
         self.lock = threading.Lock()
         self.last_chunk_hash = None
         
@@ -67,6 +70,11 @@ class StreamingPartialTranscripts(BaseAgent):
                     self.buffer.append(chunk)
                     self.buffer_times.append(timestamp)
             except zmq.Again:
+                # No message available yet
+                pass
+            except Exception as e:
+                logger.error(f"Audio receive error: {e}")
+                self.error_publisher.publish_error(error_type="receive_audio", severity="medium", details=str(e))
                 time.sleep(0.01)
     
     def process_partials(self):
@@ -103,8 +111,6 @@ class StreamingPartialTranscripts(BaseAgent):
                                         target_length = int(len(audio) * 16000 / SAMPLE_RATE)
                                         # Use scipy's resample
                                         from scipy import signal
-import psutil
-from datetime import datetime
                                         audio_resampled = signal.resample(audio, target_length)
                                     except ImportError:
                                         # Fallback if scipy not available
@@ -142,9 +148,11 @@ from datetime import datetime
                                     self.pub_socket.send(msg)
                             except Exception as e:
                                 logger.error(f"Error in partial transcription: {str(e)}")
+                                self.error_publisher.publish_error(error_type="partial_transcription", severity="medium", details=str(e))
                                 # Don't clear buffer, let main transcription handle it
             except Exception as e:
                 logger.error(f"Error in partial processing loop: {str(e)}")
+                self.error_publisher.publish_error(error_type="process_partials_loop", severity="high", details=str(e))
             
             # Sleep longer between partials to reduce CPU usage
             time.sleep(0.2)
@@ -154,6 +162,9 @@ from datetime import datetime
         process_thread = threading.Thread(target=self.process_partials, daemon=True)
         recv_thread.start()
         process_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.extend([recv_thread, process_thread])
         logger.info("Streaming partial transcripts running...")
         try:
             while self.running:

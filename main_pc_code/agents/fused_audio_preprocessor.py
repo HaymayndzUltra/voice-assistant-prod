@@ -39,6 +39,7 @@ from main_pc_code.src.core.http_server import setup_health_check_server
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service
 from common.core.base_agent import BaseAgent
+import psutil
 
 # Load configuration at module level
 config = load_config()
@@ -96,10 +97,7 @@ AGC_ATTACK_TIME = 0.01  # Attack time in seconds
 AGC_RELEASE_TIME = 0.1  # Release time in seconds
 AGC_FRAME_SIZE_MS = 10  # Frame size for AGC processing in milliseconds
 
-class FusedAudioPreprocessorAgent(
-    """
-    FusedAudioPreprocessorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class FusedAudioPreprocessor(BaseAgent):
     def __init__(self, config=None, **kwargs):
         # Ensure config is a dictionary
         config = config or {}
@@ -107,11 +105,11 @@ class FusedAudioPreprocessorAgent(
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5703))
         agent_name = kwargs.get('name', "FusedAudioPreprocessorAgent")
-        bind_address = config.get("bind_address", '<BIND_ADDR>')
+        bind_address = config.get("bind_address", os.environ.get('BIND_ADDRESS', '0.0.0.0'))
         zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
         # Call BaseAgent's __init__ with proper parameters
-        super().__init__(port=agent_port, **kwargs)
+        super().__init__(port=agent_port, name=agent_name, **kwargs)
         
         # Store important attributes
         self.bind_address = bind_address
@@ -123,6 +121,13 @@ class FusedAudioPreprocessorAgent(
         
         # Initialize ZMQ context
         self.zmq_context = zmq.Context()
+        
+        # Initialize error bus
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.zmq_context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
         
         # Initialize sockets
         self._init_sockets()
@@ -154,18 +159,7 @@ class FusedAudioPreprocessorAgent(
         
         logger.info("Fused Audio Preprocessor initialized")
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _load_config(self):
+    def _load_config(self):
         """Load configuration from config file if available."""
         try:
             config_path = Path("config/audio_preprocessing.json")
@@ -835,64 +829,96 @@ def _load_config(self):
                 logger.error(f"Error in audio processing loop: {str(e)}")
                 time.sleep(0.1)  # Sleep briefly on error to avoid tight loop
     
-    def _get_health_status(self):
-        """Overrides the base method to add agent-specific health metrics."""
-        base_status = super()._get_health_status()
-        specific_metrics = {
-            "processor_status": "active" if getattr(self, '_running', False) else "inactive",
-            "input_buffer_fill": getattr(self, 'input_buffer_fill_rate', 'N/A'),
-            "output_buffer_fill": getattr(self, 'output_buffer_fill_rate', 'N/A')
-        }
-        base_status.update(specific_metrics)
-        return base_status
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = self._running  # Assume healthy if running
+            
+            # Check connections to ZMQ sockets
+            if not hasattr(self, 'sub_socket') or not self.sub_socket:
+                is_healthy = False
+            if not hasattr(self, 'clean_audio_pub_socket') or not self.clean_audio_pub_socket:
+                is_healthy = False
+            if not hasattr(self, 'vad_pub_socket') or not self.vad_pub_socket:
+                is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "noise_profile_collected": self.noise_profile is not None,
+                    "speech_active": self.speech_active,
+                    "aec_enabled": AEC_ENABLED,
+                    "agc_enabled": AGC_ENABLED,
+                    "adaptive_threshold": self.adaptive_threshold
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
     
-    def start(self):
-        """Start the fused audio preprocessor."""
-        if self._running:
-            logger.warning("Fused Audio Preprocessor is already running")
-            return
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        logger.info("Cleaning up resources...")
         
-        # Set running flag
-        self._running = True
-        
-        # Start processing thread
-        self._thread = threading.Thread(target=self.process_audio_loop)
-        self._thread.daemon = True
-        self._thread.start()
-        
-        logger.info("Fused Audio Preprocessor started")
-    
-    def stop(self):
-        """Stop the fused audio preprocessor."""
-        if not self._running:
-            logger.warning("Fused Audio Preprocessor is not running")
-            return
-        
-        # Clear running flag
+        # Set running flag to False to stop threads
         self._running = False
         
-        # Wait for threads to complete
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=2.0)
-        
-        # Close ZMQ sockets
         try:
-            if hasattr(self, 'sub_socket'):
-                self.sub_socket.close()
-            if hasattr(self, 'clean_audio_pub_socket'):
-                self.clean_audio_pub_socket.close()
-            if hasattr(self, 'vad_pub_socket'):
-                self.vad_pub_socket.close()
+            # Join thread if it exists and is alive
+            if hasattr(self, '_thread') and self._thread and self._thread.is_alive():
+                try:
+                    self._thread.join(timeout=2.0)
+                    logger.info("Processing thread joined")
+                except Exception as e:
+                    logger.error(f"Error joining processing thread: {e}")
+            
+            # Close all ZMQ sockets
+            for socket_name in ['sub_socket', 'clean_audio_pub_socket', 'vad_pub_socket', 'error_bus_pub']:
+                if hasattr(self, socket_name) and getattr(self, socket_name):
+                    try:
+                        getattr(self, socket_name).close()
+                        logger.info(f"{socket_name} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
             
             # Terminate ZMQ context
-            if hasattr(self, 'zmq_context'):
-                self.zmq_context.term()
-                
-            logger.info("All ZMQ sockets closed and context terminated")
+            if hasattr(self, 'zmq_context') and self.zmq_context:
+                try:
+                    self.zmq_context.term()
+                    logger.info("ZMQ context terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+            
+            # Clean up VAD model if it exists
+            if hasattr(self, 'model') and self.model:
+                try:
+                    # Free memory used by the model
+                    if hasattr(self, 'device') and self.device and torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    del self.model
+                    logger.info("VAD model resources freed")
+                except Exception as e:
+                    logger.error(f"Error cleaning up VAD model: {e}")
+            
+            logger.info("Cleanup completed successfully")
         except Exception as e:
-            logger.error(f"Error closing ZMQ sockets: {e}")
+            logger.error(f"Error during cleanup: {e}")
         
-        # At the end of this method, call super().cleanup()
+        # Call parent cleanup method
         super().cleanup()
         
         logger.info("Fused Audio Preprocessor stopped")
@@ -923,7 +949,7 @@ if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        agent = FusedAudioPreprocessorAgent()
+        agent = FusedAudioPreprocessor()
         logger.info(f"Starting FusedAudioPreprocessorAgent on port {agent.port}")
         agent.run()
     except KeyboardInterrupt:
@@ -936,3 +962,17 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             logger.info("Cleaning up FusedAudioPreprocessorAgent...")
             agent.cleanup() 
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': self.request_count if hasattr(self, 'request_count') else 0,
+            'status': 'HEALTHY'
+        })
+        
+        return base_status

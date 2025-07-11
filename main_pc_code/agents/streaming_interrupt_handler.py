@@ -82,7 +82,7 @@ class StreamingInterruptHandler(BaseAgent):
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
             # Fall back to configured port
-            stt_address = f"tcp://localhost:{ZMQ_SUB_PORT}"
+            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, "localhost")
             
         self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -112,7 +112,7 @@ class StreamingInterruptHandler(BaseAgent):
         tts_address = get_service_address("StreamingTtsAgent")
         if not tts_address:
             # Fall back to configured port
-            tts_address = f"tcp://localhost:{TTS_PORT}"
+            tts_address = get_zmq_connection_string({TTS_PORT}, "localhost")
             
         self.tts_socket.connect(tts_address)
         logger.info(f"Connected to TTS agent at {tts_address}")
@@ -338,6 +338,7 @@ if __name__ == "__main__":
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
         traceback.print_exc()
     finally:

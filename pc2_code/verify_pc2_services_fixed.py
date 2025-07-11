@@ -20,6 +20,7 @@ from pathlib import Path
 import threading
 import colorama
 from colorama import Fore, Style
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 # Initialize colorama for colored terminal output
 colorama.init()
@@ -156,7 +157,7 @@ def verify_service(service, context):
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.LINGER, 0)
     socket.setsockopt(zmq.RCVTIMEO, REQUEST_TIMEOUT)
-    socket.connect(f"tcp://localhost:{service['port']}")
+    socket.connect(get_zmq_connection_string({service[, "localhost"))port']}")
     
     # Measure response time
     start_time = time.time()

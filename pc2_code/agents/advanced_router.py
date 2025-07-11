@@ -13,11 +13,13 @@ import json
 import logging
 import zmq
 import time
+import os
+import sys
+import threading
 from datetime import datetime
 # TODO: web_automation.py not found. Feature disabled.
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory
 from typing import Dict, Any, List, Set, Tuple, Optional, Union
-import sys
 from pathlib import Path
 
 # Add the project root to Python path
@@ -33,13 +35,52 @@ from pc2_code.agents.utils.config_loader import Config
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            import yaml
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "advanced_router": int(os.environ.get("ADVANCED_ROUTER_PORT", 5555)),
+                "advanced_router_health": int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
+        }
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("AdvancedRouter")
 
 # Load configuration at the module level
 config = Config().get_config()
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("AdvancedRouter")
+# Load network configuration
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+
+# Get port configuration
+ADVANCED_ROUTER_PORT = network_config.get("ports", {}).get("advanced_router", int(os.environ.get("ADVANCED_ROUTER_PORT", 5555)))
+ADVANCED_ROUTER_HEALTH_PORT = network_config.get("ports", {}).get("advanced_router_health", int(os.environ.get("ADVANCED_ROUTER_HEALTH_PORT", 5556)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
 
 # Task type constants
 TASK_TYPE_CODE = "code"
@@ -94,8 +135,7 @@ CODE_PATTERNS = [
     r"class\s+\w+(\s*\(.*?\))?:", # Python class definitions
     r"import\s+[\w\.,\s]+",      # Import statements
     r"from\s+[\w\.]+\s+import",  # From import statements
-    
-"function\s+\w+\s*\(.*?\)", # JavaScript function
+    r"function\s+\w+\s*\(.*?\)", # JavaScript function
     r"var\s+\w+\s*=|let\s+\w+\s*=|const\s+\w+\s*=", # Variable declarations
     r"<\w+[^>]*>.*?</\w+>",      # HTML tags
     r"\[\s*[\w\s,\"\']*\s*\]",   # Array notation
@@ -229,87 +269,291 @@ def map_task_to_model_capabilities(task_type: str) -> List[str]:
     return capability_mapping.get(task_type, ["text-generation"])
 
 class AdvancedRouterAgent(BaseAgent):
+    """Advanced Router Agent for task classification and routing."""
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""Advanced Router Agent for task classification and routing Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    _agent_args = parse_agent_args()
     
-    def __init__(self, port=5555):
-        super().__init__(name="AdvancedRouterAgent", port=port)
+    def __init__(self, port=None):
+        # Initialize state before BaseAgent
         self.start_time = time.time()
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.port}")
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://*:{self.port + 1}")
         self.running = True
-        logger.info(f"AdvancedRouterAgent initialized on port {self.port}")
-        self.error_bus = setup_error_reporting(self)
-def _get_health_status(self) -> Dict[str, Any]:
-        """Return health status information."""
-        return {
-            'status': 'success',
-            'agent': 'AdvancedRouterAgent',
-            'timestamp': datetime.now().isoformat(),
-            'uptime': time.time() - self.start_time
+        self.request_count = 0
+        self.task_type_counts = {
+            TASK_TYPE_CODE: 0,
+            TASK_TYPE_REASONING: 0,
+            TASK_TYPE_CHAT: 0,
+            TASK_TYPE_CREATIVE: 0,
+            TASK_TYPE_FACTUAL: 0,
+            TASK_TYPE_MATH: 0,
+            TASK_TYPE_GENERAL: 0
         }
+        
+        # Initialize BaseAgent with proper parameters
+        super().__init__(
+            name="AdvancedRouterAgent", 
+            port=port if port is not None else ADVANCED_ROUTER_PORT,
+            health_check_port=ADVANCED_ROUTER_HEALTH_PORT
+        )
+        
+        # Setup error reporting
+        self.setup_error_reporting()
+        
+        # Start health check thread
+        self._start_health_check_thread()
+        
+        logger.info(f"AdvancedRouterAgent initialized on port {self.port}")
+    
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+    
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+    
+    def _start_health_check_thread(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check(self) -> Dict[str, Any]:
+        """Legacy health check method for backward compatibility."""
+        return self._get_health_status()
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        base_status = super()._get_health_status()
+        
+        # Add AdvancedRouterAgent specific health info
+        base_status.update({
+            'status': 'ok',
+            'uptime': time.time() - self.start_time,
+            'request_count': self.request_count,
+            'task_type_counts': self.task_type_counts
+        })
+        
+        return base_status
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming routing requests."""
         try:
-            if 'prompt' not in request:
-                return {"status": "error", "message": "Missing 'prompt' field in request"}
+            self.request_count += 1
             
-            prompt = request['prompt']
-            task_type = detect_task_type(prompt)
-            capabilities = map_task_to_model_capabilities(task_type)
+            if not isinstance(request, dict):
+                logger.error(f"Invalid request format: {type(request)}")
+                self.report_error("REQUEST_FORMAT_ERROR", f"Invalid request format: {type(request)}")
+                return {
+                    "status": "error",
+                    "error": "Invalid request format",
+                    "timestamp": datetime.now().isoformat()
+                }
             
-            return {
-                "status": "success",
-                "task_type": task_type,
-                "capabilities": capabilities
-            }
+            action = request.get('action', '')
+            
+            if action == 'health_check':
+                return self._get_health_status()
+            
+            elif action == 'detect_task_type':
+                prompt = request.get('prompt', '')
+                if not prompt:
+                    logger.warning("Empty prompt received")
+                    self.report_error("EMPTY_PROMPT", "Empty prompt received", "WARNING")
+                    return {
+                        "status": "error",
+                        "error": "Empty prompt",
+                        "timestamp": datetime.now().isoformat()
+                    }
+                
+                task_type = detect_task_type(prompt)
+                self.task_type_counts[task_type] += 1
+                
+                capabilities = map_task_to_model_capabilities(task_type)
+                
+                return {
+                    "status": "success",
+                    "task_type": task_type,
+                    "capabilities": capabilities,
+                    "confidence": 0.8,  # TODO: Implement confidence scoring
+                    "timestamp": datetime.now().isoformat(),
+                    "request_id": self.request_count
+                }
+            
+            elif action == 'get_model_capabilities':
+                task_type = request.get('task_type', TASK_TYPE_GENERAL)
+                capabilities = map_task_to_model_capabilities(task_type)
+                
+                return {
+                    "status": "success",
+                    "capabilities": capabilities,
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            elif action == 'get_task_type_stats':
+                return {
+                    "status": "success",
+                    "task_type_counts": self.task_type_counts,
+                    "total_requests": self.request_count,
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            else:
+                logger.warning(f"Unknown action requested: {action}")
+                self.report_error("UNKNOWN_ACTION", f"Unknown action requested: {action}", "WARNING")
+                return {
+                    "status": "error",
+                    "error": f"Unknown action: {action}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                
         except Exception as e:
             logger.error(f"Error handling request: {e}")
-            return {"status": "error", "message": str(e)}
+            self.report_error("REQUEST_HANDLING_ERROR", str(e))
+            return {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
     
     def run(self):
-        """Run the agent's main loop."""
-        logger.info("AdvancedRouterAgent starting...")
+        """Main execution loop for the agent."""
+        logger.info(f"AdvancedRouterAgent starting on port {self.port}")
+        
+        try:
+            import threading
+            
+            while self.running:
+                try:
+                    # Wait for a request with timeout
+                    if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                        # Receive and parse request
+                        message = self.socket.recv_json()
+                        
+                        # Process request
+                        response = self.handle_request(message)
+                        
+                        # Send response
+                        self.socket.send_json(response)
+                    
+                except zmq.error.ZMQError as e:
+                    logger.error(f"ZMQ error in main loop: {e}")
+                    self.report_error("ZMQ_ERROR", str(e))
+                    try:
+                        self.socket.send_json({
+                            'status': 'error',
+                            'message': f'ZMQ communication error: {str(e)}'
+                        })
+                    except:
+                        pass
+                    time.sleep(1)  # Avoid tight loop on error
+                    
+                except Exception as e:
+                    logger.error(f"Unexpected error in main loop: {e}")
+                    self.report_error("RUNTIME_ERROR", str(e))
+                    try:
+                        self.socket.send_json({
+                            'status': 'error',
+                            'message': f'Internal server error: {str(e)}'
+                        })
+                    except:
+                        pass
+                    time.sleep(1)  # Avoid tight loop on error
+                    
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received, stopping AdvancedRouterAgent")
+        except Exception as e:
+            logger.error(f"Error in main loop: {e}")
+            self.report_error("FATAL_ERROR", str(e))
+        finally:
+            self.running = False
+            self.cleanup()
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
         
         while self.running:
             try:
-                # Handle main socket requests
-                if self.socket.poll(100, zmq.POLLIN):
-                    request = self.socket.recv_json()
-                    logger.info(f"Received request: {request}")
-                    response = self.handle_request(request)
-                    self.socket.send_json(response)
-                
-                # Handle health check requests
+                # Check for health check requests with timeout
                 if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
                     _ = self.health_socket.recv()
+                    
+                    # Get health data
                     health_data = self._get_health_status()
+                    
+                    # Send response
                     self.health_socket.send_json(health_data)
-                
-                time.sleep(0.01)  # Small sleep to prevent CPU hogging
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
                 
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
+                logger.error(f"Error in health check loop: {e}")
+                self.report_error("HEALTH_CHECK_ERROR", str(e))
                 time.sleep(1)  # Sleep longer on error
     
     def cleanup(self):
-        """Clean up resources."""
+        """Clean up resources before shutdown."""
         logger.info("Cleaning up resources...")
-        self.running = False
-        if hasattr(self, 'socket') and self.socket:
-            self.socket.close()
-        if hasattr(self, 'health_socket') and self.health_socket:
-            self.health_socket.close()
-        if hasattr(self, 'context') and self.context:
-            self.context.term()
+        
+        # Close all sockets
+        if hasattr(self, 'socket'):
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close health socket
+        if hasattr(self, 'health_socket'):
+            try:
+                self.health_socket.close()
+                logger.info("Closed health socket")
+            except Exception as e:
+                logger.error(f"Error closing health socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Call parent cleanup
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
+        
         logger.info("Cleanup complete")
 
-# Example usage demonstration
+
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
@@ -317,10 +561,12 @@ if __name__ == "__main__":
         agent = AdvancedRouterAgent()
         agent.run()
     except KeyboardInterrupt:
-        print("Agent stopped by user")
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            print("Cleaning up...")
+            print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()

@@ -274,7 +274,7 @@ class AgentBase:
         
         # Socket to communicate with autogen framework
         self.framework = self.context.socket(zmq.REQ)
-        self.framework.connect(f"tcp://localhost:{config.get('zmq.autogen_framework_port', 5600)}")
+        self.framework.connect(get_zmq_connection_string({config.get(, "localhost"))zmq.autogen_framework_port', 5600)}")
         logger.info(f"Connected to AutoGen Framework on port {config.get('zmq.autogen_framework_port', 5600)}")
         
         # Running flag
@@ -290,7 +290,7 @@ class AgentBase:
             self.framework.send_string(json.dumps({
                 "request_type": "register_agent",
                 "agent_id": self.agent_id,
-                "endpoint": f"tcp://localhost:{self.port}",
+                "endpoint": fget_zmq_connection_string({self.port}, "localhost"),
                 "capabilities": self.capabilities
             }))
             
@@ -458,9 +458,7 @@ def get_agent_port(agent_name: str) -> int:
 def get_agent_endpoint(agent_name: str) -> str:
     """Get the endpoint for an agent"""
     port = get_agent_port(agent_name)
-    return f"tcp://localhost:{port}"
-
-def is_port_in_use(port: int) -> bool:
+    return fget_zmq_connection_string({port}, "localhost")def is_port_in_use(port: int) -> bool:
     """Check if a port is in use"""
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -495,6 +493,7 @@ def get_system_info() -> Dict[str, Any]:
     # Add psutil information if available
     try:
         import psutil
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
     except ImportError as e:
         print(f"Import error: {e}")
         

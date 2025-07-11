@@ -399,7 +399,11 @@ class ParentDashboard:
 class TutorAgent(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""Main tutor agent that coordinates all tutoring functionality Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    _agent_args = parse_agent_args()
+
+    """Main tutor agent that coordinates all tutoring functionality Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+
+    """
     def __init__(self):
         # Get port from config
         port = TUTOR_CONFIG.get('port', 5605)

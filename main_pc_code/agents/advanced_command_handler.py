@@ -58,7 +58,7 @@ SCRIPT_TYPES = {
     ".js": "node"
 }
 
-class AdvancedCommandHandler(BaseAgent):
+class AdvancedCommandHandler(BaseAgent, CustomCommandHandler):
     """
     Extends the custom command handler with advanced features for Phase 4 Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
@@ -72,19 +72,23 @@ class AdvancedCommandHandler(BaseAgent):
             coordinator_port: Port for RequestCoordinator
         """
         # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
-        super().__init__(
-            name=self.config.get('name', 'AdvancedCommandHandler'),
-            port=self.config.getint('port', None)
-        )
+        self.config = config  # loaded YAML/dict configuration
+
+        # Extract basic settings with safe casting
+        agent_name = str(self.config.get("name", "AdvancedCommandHandler"))
+        agent_port = int(self.config.get("port", 5598))
+
+        # Initialise parent (CustomCommandHandler) which already subclasses BaseAgent
+        super().__init__(port=agent_port)
+        self.name = agent_name
         
         # Initialize running state
         self.running = True
         self.start_time = time.time()
         
         # Determine ports and host
-        executor_port = self.config.getint('executor_port', ZMQ_EXECUTOR_PORT)
-        coordinator_port = self.config.getint('coordinator_port', ZMQ_COORDINATOR_PORT)
+        executor_port = int(self.config.get('executor_port', ZMQ_EXECUTOR_PORT))
+        coordinator_port = int(self.config.get('coordinator_port', ZMQ_COORDINATOR_PORT))
         _host = self.config.get('host', 'localhost')
 
         # Base class initialization done; self.context is ready
@@ -93,7 +97,9 @@ class AdvancedCommandHandler(BaseAgent):
         self.executor_socket = self.context.socket(zmq.REQ)
         self.executor_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.executor_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.executor_socket.connect(f"tcp://192.168.1.27:{executor_port}")  # Main PC
+        # Use service discovery or configured host instead of hardcoded IP
+        executor_host = os.environ.get('EXECUTOR_HOST', _host)
+        self.executor_socket.connect(f"tcp://{executor_host}:{executor_port}")
         logger.info(f"Connected to Executor Agent on port {executor_port}")
         
         # Connect to Coordinator Agent for parallel execution
@@ -136,7 +142,7 @@ class AdvancedCommandHandler(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def load_domain_modules(self):
+    def load_domain_modules(self):
         """Load domain-specific command modules"""
         domains_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

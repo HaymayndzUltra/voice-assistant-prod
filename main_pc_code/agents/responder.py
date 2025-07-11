@@ -28,7 +28,7 @@ import pickle
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, setup_curve_client, configure_secure_client, configure_secure_server
+from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 config = load_config()
 
 # Get the directory of the current file for the log
@@ -36,6 +36,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Ensure appropriate directories exist
 os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
+
+# Define default log path before logging setup
+LOG_PATH = os.path.join(current_dir, "../logs/responder.log")
 
 # Import common Tagalog phrases module
 try:
@@ -167,17 +170,14 @@ logger = logging.getLogger("ResponderAgent")
 # Get interrupt port from args or use default
 # INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))
 
-class ResponderAgent(
-    """
-    ResponderAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class Responder(BaseAgent):
     def __init__(self):
-        self.port = config.get("get")('port')
-        self.voice = config.get("get")('voice')
-        self.bind_address = config.get("get")('bind_address')
-        self.ZMQ_REQUEST_TIMEOUT = int(config.get("get")('zmq_request_timeout', 5000))
-        self.VISUAL_FEEDBACK_ENABLED = bool(config.get("get")('visual_feedback_enabled', False))
-        super().__init__(_agent_args)
+        self.port = int(config.get('port', 5637))
+        self.voice = config.get('voice', 'default')
+        self.bind_address = config.get('bind_address', '0.0.0.0')
+        self.ZMQ_REQUEST_TIMEOUT = int(config.get('zmq_request_timeout', 5000))
+        self.VISUAL_FEEDBACK_ENABLED = bool(config.get('visual_feedback_enabled', False))
+        super().__init__(name="Responder", port=self.port)
         self.context = zmq.Context()
         
         # Set up main socket for receiving TTS requests
@@ -197,8 +197,8 @@ class ResponderAgent(
             self.interrupt_socket = configure_secure_client(self.interrupt_socket)
             
         # Try to get the interrupt handler address from service discovery
-        interrupt_host = config.get("get")('interrupt_host', 'localhost')
-        interrupt_port = config.get("get")('streaming_interrupt_handler_port')
+        interrupt_host = config.get('interrupt_host', 'localhost')
+        interrupt_port = int(config.get('streaming_interrupt_handler_port', 5576))
         interrupt_address = f"tcp://{interrupt_host}:{interrupt_port}"
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -218,7 +218,7 @@ class ResponderAgent(
             "connections": {
                 "tts": False,
                 "tts_cache": False,
-                "tts_connector": False,
+                "tts_agent": False,
                 "face_recognition": False
             }
         }
@@ -258,6 +258,23 @@ class ResponderAgent(
         self.tts_socket = None
         self.streaming_tts_socket = None
         self.tts_connector_socket = None
+        self.model_manager_socket = None
+
+        # Connect to StreamingTTSAgent
+        tts_address = get_service_address("StreamingTTSAgent")
+        if tts_address:
+            self.tts_socket = self.context.socket(zmq.REQ)
+            if is_secure_zmq_enabled():
+                self.tts_socket = configure_secure_client(self.tts_socket)
+            self.tts_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
+            self.tts_socket.connect(tts_address)
+            logger.info(f"Connected to StreamingTTSAgent at {tts_address}")
+            self.health_status["connections"]["tts_agent"] = True
+        else:
+            logger.warning("StreamingTTSAgent not found in service discovery")
+
+        # Other sockets (if needed for more complex responses)
+        self.emotion_socket = None
         
         logger.info("ResponderAgent initialized")
 
@@ -272,7 +289,7 @@ class ResponderAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _connect_to_services(self):
+    def _connect_to_services(self):
         """Connect to required services using service discovery"""
         try:
             # Defensive: ensure health_status is a dict with 'connections' dict
@@ -284,7 +301,7 @@ def _connect_to_services(self):
                     "connections": {
                         "tts": False,
                         "tts_cache": False,
-                        "tts_connector": False,
+                        "tts_agent": False,
                         "face_recognition": False
                     }
                 }
@@ -292,7 +309,7 @@ def _connect_to_services(self):
             face_service = discover_service("FaceRecognitionAgent")
             if face_service and face_service.get("status") == "SUCCESS":
                 face_info = face_service.get("payload", {})
-                face_host = face_info.get("ip", config.get("get")('face_host', 'localhost'))
+                face_host = face_info.get("ip", config.get('face_host', 'localhost'))
                 face_port = face_info.get("port", 5610)  # Default port
                 
                 self.face_socket = self.context.socket(zmq.SUB)
@@ -330,7 +347,7 @@ def _connect_to_services(self):
                     "connections": {
                         "tts": False,
                         "tts_cache": False,
-                        "tts_connector": False,
+                        "tts_agent": False,
                         "face_recognition": False
                     }
                 }
@@ -361,17 +378,17 @@ def _connect_to_services(self):
                 logger.warning("TTSCache not found in service discovery")
             
             # Connect to TTSConnector
-            tts_connector_address = get_service_address("TTSConnector")
+            tts_connector_address = get_service_address("StreamingTTSAgent")
             if tts_connector_address:
-                self.tts_connector_socket = self.context.socket(zmq.REQ)
+                self.tts_socket = self.context.socket(zmq.REQ)
                 if is_secure_zmq_enabled():
-                    self.tts_connector_socket = configure_secure_client(self.tts_connector_socket)
-                self.tts_connector_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
-                self.tts_connector_socket.connect(tts_connector_address)
-                logger.info(f"Connected to TTSConnector at {tts_connector_address}")
-                self.health_status["connections"]["tts_connector"] = True
+                    self.tts_socket = configure_secure_client(self.tts_socket)
+                self.tts_socket.setsockopt(zmq.RCVTIMEO, self.ZMQ_REQUEST_TIMEOUT)
+                self.tts_socket.connect(tts_connector_address)
+                logger.info(f"Connected to StreamingTTSAgent at {tts_connector_address}")
+                self.health_status["connections"]["tts_agent"] = True
             else:
-                logger.warning("TTSConnector not found in service discovery")
+                logger.warning("StreamingTTSAgent not found in service discovery")
                 
         except Exception as e:
             logger.error(f"Error connecting to TTS services: {e}")
@@ -828,9 +845,9 @@ def _connect_to_services(self):
                 self.tts_connector_socket.send_json({"action": "health_check"})
                 if self.tts_connector_socket.poll(HEALTH_CHECK_TIMEOUT * 1000):
                     response = self.tts_connector_socket.recv_json()
-                    self.health_status["connections"]["tts_connector"] = response.get("status") == "ok"
+                    self.health_status["connections"]["tts_agent"] = response.get("status") == "ok"
                 else:
-                    self.health_status["connections"]["tts_connector"] = False
+                    self.health_status["connections"]["tts_agent"] = False
                 
                 # Update overall health status
                 all_healthy = all(self.health_status["connections"].values())
@@ -865,7 +882,7 @@ if __name__ == "__main__":
     # Standardized main execution block
     agent = None
     try:
-        agent = ResponderAgent()
+        agent = Responder()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
@@ -877,3 +894,23 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

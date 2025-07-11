@@ -62,12 +62,11 @@ class LearningManager(BaseAgent):
     
     def __init__(self):
         """Initialize the learning manager."""
-        # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
-        super().__init__(
-            name=getattr(self.config, 'name', 'LearningManager'),
-            port=getattr(self.config, 'port', None)
-        )
+        # Load configuration once
+        self.config = config
+        agent_name = self.config.get('name', 'LearningManager')
+        agent_port = self.config.get('port', ZMQ_LEARNING_PORT)
+        super().__init__(name=agent_name, port=agent_port)
         
         # Initialize state
         self.start_time = time.time()
@@ -93,19 +92,15 @@ class LearningManager(BaseAgent):
         logger.info("LearningManager basic init complete, async init started")
         
         self.health_thread = None
-    
-    
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
+        # Error Bus setup
+        self.error_bus_port = int(os.environ.get('ERROR_BUS_PORT', 7150))
+        self.error_bus_host = os.environ.get('ERROR_BUS_HOST', os.environ.get('PC2_IP', 'localhost'))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.error_bus_pub = self.context.socket(zmq.PUB)
-
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _perform_initialization(self):
+
+    def _perform_initialization(self):
         try:
             self._init_components()
             self.initialization_status["components"]["core"] = True

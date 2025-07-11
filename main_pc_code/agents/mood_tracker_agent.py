@@ -40,22 +40,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class MoodTrackerAgent(
-    """
-    MoodTrackerAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class MoodTrackerAgent(BaseAgent):
     def __init__(self):
         """Initialize the MoodTrackerAgent (refactored for compliance)."""
         # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
+        config = load_config()
+        self.config = config
         super().__init__(
-            name=self.config.get('name', 'MoodTrackerAgent'),
-            port=self.config.getint('port', None)
+            name=config.get('name', 'MoodTrackerAgent'),
+            port=int(config.get('port', 5580))
         )
         
-        # All config values are loaded from _agent_args
-        self.emotion_engine_port = self.config.getint('emotionengine_port')
-        self.history_size = self.config.getint('history_size', 100)
+        # All config values are loaded from config
+        self.emotion_engine_port = int(config.get('emotionengine_port', 5592))
+        self.history_size = int(config.get('history_size', 100))
         
         # Initialize running state
         self.running = True
@@ -63,7 +61,7 @@ class MoodTrackerAgent(
         
         # SUB socket for subscribing to EmotionEngine broadcasts
         self.emotion_sub_socket = self.context.socket(zmq.SUB)
-        _host = self.config.get('host', 'localhost')
+        _host = config.get('host', os.environ.get('HOST', '127.0.0.1'))
         self.emotion_sub_socket.connect(f"tcp://{_host}:{self.emotion_engine_port}")
         self.emotion_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
         
@@ -95,6 +93,13 @@ class MoodTrackerAgent(
             'frustrated': 'helpful'
         }
         
+        # Setup error bus
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         # Start monitoring threads
         self.emotion_thread = threading.Thread(target=self._monitor_emotions)
         self.emotion_thread.daemon = True
@@ -104,18 +109,7 @@ class MoodTrackerAgent(
         logger.info(f"Subscribed to EmotionEngine on port {self.emotion_engine_port}")
         logger.info(f"Mood history size: {self.history_size}")
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _monitor_emotions(self):
+    def _monitor_emotions(self):
         """Monitor emotional state updates from EmotionEngine."""
         logger.info("Starting emotion monitoring thread")
         while self.running:
@@ -367,6 +361,43 @@ def _monitor_emotions(self):
             'current_mood': self.current_mood,
             'uptime': time.time() - self.start_time
         }
+    
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = self.running  # Assume healthy if running
+            
+            # Check if sockets are initialized and connected
+            if not hasattr(self, 'emotion_sub_socket') or not self.emotion_sub_socket:
+                is_healthy = False
+            if not hasattr(self, 'socket') or not self.socket:
+                is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "current_mood": self.current_mood,
+                    "mood_history_size": len(self.mood_history),
+                    "most_recent_emotions": [mood.get('user_emotion') for mood in list(self.mood_history)[-3:]] if self.mood_history else []
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
     
     def run(self):
         """Run the main agent loop."""

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from typing import Dict, Any, Optional
-import yaml
 """
 Dreaming Mode Agent
 ------------------
@@ -13,8 +11,6 @@ Features:
 - Provides dreaming insights and recommendations
 - Handles dream world state transitions
 - Manages dream memory and learning cycles
-
-This agent uses ZMQ REP socket on port 7127 to receive commands and coordinate with other agents.
 """
 
 import zmq
@@ -24,6 +20,7 @@ import time
 import threading
 import sys
 import os
+import yaml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -43,50 +40,64 @@ from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 
-# Load configuration at the module level
-config = Config().get_config()
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "dreaming_mode": int(os.environ.get("DREAMING_MODE_PORT", 7127)),
+                "dreaming_health": int(os.environ.get("DREAMING_HEALTH_PORT", 7128)),
+                "dream_world": int(os.environ.get("DREAM_WORLD_PORT", 7104)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
+        }
 
 # Configure logging
-log_file_path = 'logs/dreaming_mode_agent.log'
-log_directory = os.path.dirname(log_file_path)
-os.makedirs(log_directory, exist_ok=True)
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file_path),
-        logging.StreamHandler()
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger("DreamingModeAgent")
 
-# ZMQ ports
-DREAMING_MODE_PORT = 7127
-DREAMING_MODE_HEALTH_PORT = 7128
-DREAM_WORLD_PORT = 7104  # DreamWorldAgent port
+# Load configuration at the module level
+config = Config().get_config()
+
+# Load network configuration
+network_config = load_network_config()
+
+# Get machine IPs from config
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+
+# Get port configuration
+DREAMING_MODE_PORT = network_config.get("ports", {}).get("dreaming_mode", int(os.environ.get("DREAMING_MODE_PORT", 7127)))
+DREAMING_MODE_HEALTH_PORT = network_config.get("ports", {}).get("dreaming_health", int(os.environ.get("DREAMING_HEALTH_PORT", 7128)))
+DREAM_WORLD_PORT = network_config.get("ports", {}).get("dream_world", int(os.environ.get("DREAM_WORLD_PORT", 7104)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
 
 class DreamingModeAgent(BaseAgent):
+    """Dreaming Mode Agent for coordinating system dreaming cycles."""
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""Dreaming Mode Agent for coordinating system dreaming cycles Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    _agent_args = parse_agent_args()
+
     def __init__(self, port=None):
-        super().__init__(name="DreamingModeAgent", port=port)
-        self.main_port = port if port else DREAMING_MODE_PORT
-        self.health_port = self.main_port + 1
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.main_port}")
-        self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://*:{self.health_port}")
-        logger.info(f"DreamingModeAgent health socket bound to port {self.health_port}")
-        self.dreamworld_socket = self.context.socket(zmq.REQ)
-        try:
-            self.dreamworld_socket.connect(f"tcp://localhost:{DREAM_WORLD_PORT}")
-            logger.info(f"Connected to DreamWorldAgent on port {DREAM_WORLD_PORT}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to DreamWorldAgent: {e}")
-            self.dreamworld_socket = None
+        # Initialize state before BaseAgent
         self.is_dreaming = False
         self.dream_thread = None
         self.running = True
@@ -99,24 +110,99 @@ class DreamingModeAgent(BaseAgent):
         self.dream_memory = []
         self.dream_success_rate = 0.0
         self.avg_dream_quality = 0.0
-        logger.info(f"DreamingModeAgent initialized on port {self.main_port}")
-        self.error_bus = setup_error_reporting(self)
-def _health_check(self) -> Dict[str, Any]:
-        return {
-            'status': 'success',
-            'agent': 'DreamingModeAgent',
-            'timestamp': datetime.now().isoformat(),
+        
+        # Initialize BaseAgent with proper parameters
+        super().__init__(
+            name="DreamingModeAgent", 
+            port=port if port is not None else DREAMING_MODE_PORT,
+            health_check_port=DREAMING_MODE_HEALTH_PORT
+        )
+        
+        # Connect to DreamWorldAgent
+        self.dreamworld_socket = self.context.socket(zmq.REQ)
+        try:
+            self.dreamworld_socket.connect(f"tcp://{BIND_ADDRESS}:{DREAM_WORLD_PORT}")
+            logger.info(f"Connected to DreamWorldAgent on port {DREAM_WORLD_PORT}")
+        except Exception as e:
+            logger.warning(f"Failed to connect to DreamWorldAgent: {e}")
+            self.dreamworld_socket = None
+        
+        # Setup error reporting
+        self.setup_error_reporting()
+        
+        # Start background threads
+        self._start_health_check_thread()
+        self._start_scheduler_thread()
+        
+        logger.info(f"DreamingModeAgent initialized on port {self.port}")
+    
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+    
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+    
+    def _start_health_check_thread(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _start_scheduler_thread(self):
+        """Start dream scheduler thread."""
+        self.scheduler_thread = threading.Thread(target=self._dream_scheduler_loop, daemon=True)
+        self.scheduler_thread.start()
+        logger.info("Dream scheduler thread started")
+    
+    def _health_check(self) -> Dict[str, Any]:
+        """Legacy health check method for backward compatibility."""
+        return self._get_health_status()
+    
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent."""
+        base_status = super()._get_health_status()
+        
+        # Add DreamingModeAgent specific health info
+        base_status.update({
+            'status': 'ok',
             'is_dreaming': self.is_dreaming,
             'dream_count': self.dream_count,
             'total_dream_time': self.total_dream_time,
             'dream_success_rate': self.dream_success_rate,
             'avg_dream_quality': self.avg_dream_quality,
             'uptime': time.time() - self.start_time,
-            'port': self.main_port,
             'dreamworld_connected': self.dreamworld_socket is not None
-        }
+        })
+        
+        return base_status
 
     def start_dreaming(self) -> Dict[str, Any]:
+        """Start a dreaming cycle."""
         if self.is_dreaming:
             return {"status": "error", "message": "Already dreaming"}
         self.is_dreaming = True
@@ -128,6 +214,7 @@ def _health_check(self) -> Dict[str, Any]:
         return {"status": "success", "message": f"Dream cycle #{self.dream_count} started", "dream_id": self.dream_count, "start_time": dream_start_time}
 
     def stop_dreaming(self) -> Dict[str, Any]:
+        """Stop the current dreaming cycle."""
         if not self.is_dreaming:
             return {"status": "error", "message": "Not currently dreaming"}
         self.is_dreaming = False
@@ -135,6 +222,7 @@ def _health_check(self) -> Dict[str, Any]:
         return {"status": "success", "message": "Dream cycle stopped"}
 
     def _dream_cycle(self):
+        """Execute a dream cycle."""
         try:
             dream_start = time.time()
             if self.dreamworld_socket:
@@ -148,12 +236,15 @@ def _health_check(self) -> Dict[str, Any]:
                             self._record_dream_result(True, response.get("quality", 0.5))
                         else:
                             logger.warning(f"Dream simulation failed: {response.get('error', 'Unknown error')}")
+                            self.report_error("DREAM_SIMULATION_ERROR", response.get('error', 'Unknown error'))
                             self._record_dream_result(False, 0.0)
                     else:
                         logger.warning("Dream simulation timeout")
+                        self.report_error("DREAM_TIMEOUT", "Dream simulation timeout")
                         self._record_dream_result(False, 0.0)
                 except Exception as e:
                     logger.error(f"Error communicating with DreamWorldAgent: {e}")
+                    self.report_error("DREAMWORLD_COMMUNICATION_ERROR", str(e))
                     self._record_dream_result(False, 0.0)
             else:
                 logger.info("DreamWorldAgent not available, simulating dream cycle")
@@ -164,11 +255,13 @@ def _health_check(self) -> Dict[str, Any]:
             logger.info(f"Dream cycle completed in {dream_duration:.2f} seconds")
         except Exception as e:
             logger.error(f"Error in dream cycle: {e}")
+            self.report_error("DREAM_CYCLE_ERROR", str(e))
             self._record_dream_result(False, 0.0)
         finally:
             self.is_dreaming = False
 
     def _record_dream_result(self, success: bool, quality: float):
+        """Record the result of a dream cycle."""
         dream_record = {"timestamp": time.time(), "success": success, "quality": quality, "duration": self.dream_duration}
         self.dream_memory.append(dream_record)
         if len(self.dream_memory) > 100:
@@ -179,6 +272,7 @@ def _health_check(self) -> Dict[str, Any]:
         self.avg_dream_quality = total_quality / len(self.dream_memory) if self.dream_memory else 0.0
 
     def get_dream_status(self) -> Dict[str, Any]:
+        """Get the current status of dreaming cycles."""
         return {
             "status": "success",
             "is_dreaming": self.is_dreaming,
@@ -193,6 +287,7 @@ def _health_check(self) -> Dict[str, Any]:
         }
 
     def set_dream_interval(self, interval: int) -> Dict[str, Any]:
+        """Set the interval between dream cycles."""
         if interval < 60:
             return {"status": "error", "message": "Dream interval must be at least 60 seconds"}
         self.dream_interval = interval
@@ -200,6 +295,7 @@ def _health_check(self) -> Dict[str, Any]:
         return {"status": "success", "message": f"Dream interval updated to {interval} seconds", "new_interval": interval}
 
     def optimize_dream_schedule(self) -> Dict[str, Any]:
+        """Optimize the dream schedule based on past results."""
         if not self.dream_memory:
             return {"status": "error", "message": "No dream data available for optimization"}
         if self.dream_success_rate < 0.5:
@@ -216,10 +312,11 @@ def _health_check(self) -> Dict[str, Any]:
         return {"status": "success", "message": "Dream schedule optimized", "optimization_type": optimization_type, "new_interval": self.dream_interval, "success_rate": self.dream_success_rate}
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests."""
         try:
             action = request.get('action', '')
             if action == 'health_check':
-                return self._health_check()
+                return self._get_health_status()
             elif action == 'start_dreaming':
                 return self.start_dreaming()
             elif action == 'stop_dreaming':
@@ -235,97 +332,151 @@ def _health_check(self) -> Dict[str, Any]:
                 return {'status': 'error', 'message': f'Unknown action: {action}'}
         except Exception as e:
             logger.error(f"Error handling request: {e}")
+            self.report_error("REQUEST_HANDLING_ERROR", str(e))
             return {'status': 'error', 'error': str(e)}
 
     def run(self):
-        logger.info(f"DreamingModeAgent starting on port {self.main_port}")
-        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
-        health_thread.start()
-        scheduler_thread = threading.Thread(target=self._dream_scheduler_loop, daemon=True)
-        scheduler_thread.start()
+        """Main execution loop for the agent."""
+        logger.info(f"DreamingModeAgent starting on port {self.port}")
+        
         try:
             while self.running:
                 try:
-                    if self.socket.poll(1000) == 0:
-                        continue
-                    message = self.socket.recv_json()
-                    logger.debug(f"Received request: {message}")
-                    response = self.handle_request(message)
-                    self.socket.send_json(response)
+                    # Wait for a request with timeout
+                    if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                        # Receive and parse request
+                        message = self.socket.recv_json()
+                        
+                        # Process request
+                        response = self.handle_request(message)
+                        
+                        # Send response
+                        self.socket.send_json(response)
+                    
                 except zmq.error.ZMQError as e:
-                    if e.errno == zmq.EAGAIN:
-                        continue
                     logger.error(f"ZMQ error in main loop: {e}")
+                    self.report_error("ZMQ_ERROR", str(e))
+                    try:
+                        self.socket.send_json({
+                            'status': 'error',
+                            'message': f'ZMQ communication error: {str(e)}'
+                        })
+                    except:
+                        pass
+                    time.sleep(1)  # Avoid tight loop on error
+                    
                 except Exception as e:
-                    logger.error(f"Error in main loop: {e}")
+                    logger.error(f"Unexpected error in main loop: {e}")
+                    self.report_error("RUNTIME_ERROR", str(e))
+                    try:
+                        self.socket.send_json({
+                            'status': 'error',
+                            'message': f'Internal server error: {str(e)}'
+                        })
+                    except:
+                        pass
+                    time.sleep(1)  # Avoid tight loop on error
+                    
         except KeyboardInterrupt:
-            logger.info("Received shutdown signal")
+            logger.info("KeyboardInterrupt received, stopping DreamingModeAgent")
+        except Exception as e:
+            logger.error(f"Error in main loop: {e}")
+            self.report_error("FATAL_ERROR", str(e))
         finally:
+            self.running = False
             self.cleanup()
-
+    
     def _health_check_loop(self):
-        logger.info("Starting health check loop")
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
         while self.running:
             try:
-                if self.health_socket.poll(1000) == 0:
-                    continue
-                message = self.health_socket.recv_json()
-                if message.get("action") == "health_check":
-                    response = self._health_check()
-                else:
-                    response = {"status": "error", "error": "Invalid health check request"}
-                self.health_socket.send_json(response)
-            except zmq.error.ZMQError as e:
-                if e.errno == zmq.EAGAIN:
-                    continue
-                logger.error(f"ZMQ error in health check loop: {e}")
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
+                    
+                    # Get health data
+                    health_data = self._get_health_status()
+                    
+                    # Send response
+                    self.health_socket.send_json(health_data)
+                    
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
             except Exception as e:
                 logger.error(f"Error in health check loop: {e}")
+                self.report_error("HEALTH_CHECK_ERROR", str(e))
+                time.sleep(1)  # Sleep longer on error
 
     def _dream_scheduler_loop(self):
-        logger.info("Starting dream scheduler loop")
+        """Background loop for scheduling dream cycles."""
+        logger.info("Dream scheduler loop started")
+        
         while self.running:
             try:
                 current_time = time.time()
-                if (not self.is_dreaming and current_time - self.last_dream_time >= self.dream_interval):
-                    logger.info("Scheduled dream time reached, starting dream cycle")
+                if not self.is_dreaming and current_time - self.last_dream_time > self.dream_interval:
+                    logger.info("Scheduled dream cycle starting")
                     self.start_dreaming()
                     self.last_dream_time = current_time
-                time.sleep(60)
+                time.sleep(60)  # Check every minute
             except Exception as e:
-                logger.error(f"Error in dream scheduler loop: {e}")
-                time.sleep(60)
+                logger.error(f"Error in dream scheduler: {e}")
+                self.report_error("SCHEDULER_ERROR", str(e))
+                time.sleep(60)  # Sleep longer on error
 
     def cleanup(self):
-        logger.info("Cleaning up DreamingModeAgent resources...")
-        self.running = False
-        if self.is_dreaming:
-            self.stop_dreaming()
+        """Clean up resources before shutdown."""
+        logger.info("Cleaning up resources...")
+        
+        # Close all sockets
         if hasattr(self, 'socket'):
-            self.socket.close()
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close health socket
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-        if hasattr(self, 'dreamworld_socket'):
-            self.dreamworld_socket.close()
-        if hasattr(self, 'context'):
-            self.context.term()
+            try:
+                self.health_socket.close()
+                logger.info("Closed health socket")
+            except Exception as e:
+                logger.error(f"Error closing health socket: {e}")
+        
+        # Close dreamworld socket
+        if hasattr(self, 'dreamworld_socket') and self.dreamworld_socket:
+            try:
+                self.dreamworld_socket.close()
+                logger.info("Closed dreamworld socket")
+            except Exception as e:
+                logger.error(f"Error closing dreamworld socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Call parent cleanup
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
+        
         logger.info("Cleanup complete")
 
-    def _get_health_status(self) -> dict:
-        """Return health status information."""
-        base_status = super()._get_health_status()
-
-        # Add any additional health information specific to DreamingModeAgent
-        base_status.update({
-            'service': 'DreamingModeAgent',
-            'uptime': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
-            'additional_info': {}
-        })
-
-        return base_status
-
     def stop(self):
+        """Stop the agent gracefully."""
         self.running = False
+        logger.info("Stopping DreamingModeAgent")
+
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -343,28 +494,3 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()
-
-# Load network configuration
-def load_network_config():
-    """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network config: {e}")
-        # Default fallback values
-        return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
-            "secure_zmq": False
-        }
-
-# Load both configurations
-network_config = load_network_config()
-
-# Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

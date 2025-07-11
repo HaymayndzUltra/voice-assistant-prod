@@ -23,10 +23,10 @@ from main_pc_code.utils.config_loader import load_config
 config = Config().get_config()
 logger = logging.getLogger(__name__)
 
-class ContextManager(
+class ContextManager(BaseAgent):
     """
     ContextManager:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     def __init__(self, min_size=5, max_size=20, initial_size=10):
         super().__init__(name="ContextManager", port=None)
 

@@ -31,10 +31,10 @@ except Exception as e:
     logger.error(f"Failed to load config: {e}")
     config = {}
 
-class TutoringServiceAgent(
+class TutoringServiceAgent(BaseAgent):
     """
     TutoringServiceAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     def __init__(self):
         # Get host and port from config
         self.host = config.get('services', {}).get('tutoring_service', {}).get('host', '0.0.0.0')

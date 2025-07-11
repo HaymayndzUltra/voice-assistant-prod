@@ -34,10 +34,7 @@ logger = logging.getLogger(__name__)
 # Load configuration at module level
 config = load_config()
 
-class HumanAwarenessAgent(
-    """
-    HumanAwarenessAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class HumanAwarenessAgent(BaseAgent):
     def __init__(self, port=None):
         # Get port from config with fallback
         agent_port = config.get("port", 5642) if port is None else port
@@ -71,18 +68,16 @@ class HumanAwarenessAgent(
         # Record start time for uptime calculation
         self.start_time = time.time()
         
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
+        # Setup error bus
+        import zmq
+        self.context = zmq.Context()
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.error_bus_pub = self.context.socket(zmq.PUB)
-
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _load_config(self) -> Dict:
+        
+    def _load_config(self) -> Dict:
         """Load agent configuration."""
         try:
             config_path = os.path.join('config', 'system_config.json')
@@ -223,6 +218,46 @@ def _load_config(self) -> Dict:
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }
+
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        logger.info("Cleaning up resources...")
+        
+        # Set running flag to False to stop threads
+        self.running = False
+        
+        try:
+            # Join init thread if it exists and is alive
+            if hasattr(self, 'init_thread') and self.init_thread and self.init_thread.is_alive():
+                try:
+                    self.init_thread.join(timeout=2.0)
+                    logger.info("Initialization thread joined")
+                except Exception as e:
+                    logger.error(f"Error joining initialization thread: {e}")
+            
+            # Close all ZMQ sockets
+            for socket_name in ['socket', 'error_bus_pub']:
+                if hasattr(self, socket_name) and getattr(self, socket_name):
+                    try:
+                        getattr(self, socket_name).close()
+                        logger.info(f"{socket_name} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing {socket_name}: {e}")
+            
+            # Terminate ZMQ context
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    logger.info("ZMQ context terminated")
+                except Exception as e:
+                    logger.error(f"Error terminating ZMQ context: {e}")
+            
+            logger.info("Cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        
+        # Call parent cleanup method
+        super().cleanup()
 
 if __name__ == "__main__":
     # Standardized main execution block

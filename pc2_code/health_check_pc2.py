@@ -3,6 +3,7 @@
 import zmq
 import json
 import sys
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 services = [
     ("primary_translator", 5563, {"action": "health_check"}),
     ("fallback_translator", 5564, {"action": "health_check"}),
@@ -25,7 +26,7 @@ for name, port, payload in services:
     status = "UNKNOWN"
     resp = None
     try:
-        sock.connect(f"tcp://localhost:{port}")
+        sock.connect(get_zmq_connection_string({port}, "localhost")))
         sock.send_json(payload)
         resp = sock.recv_json()
         status = "ONLINE"

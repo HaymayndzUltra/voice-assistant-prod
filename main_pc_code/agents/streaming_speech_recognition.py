@@ -1,18 +1,4 @@
 """
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-# Define PROJECT_ROOT properly
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 Enhanced Streaming Speech Recognition Module
 Combines features from both streaming_speech_recognition.py and streaming_whisper_asr.py
 Features:
@@ -60,8 +46,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(os.path.join(PROJECT_ROOT, "logs/streaming_speech_recognition.log"))
+        logging.StreamHandler()
     ])
 logger = logging.getLogger("StreamingSpeechRecognition")
 
@@ -76,77 +61,56 @@ ZMQ_WAKE_WORD_PORT = int(config.get("wake_word_port", 6577))  # Wake word events
 ZMQ_VAD_PORT = int(config.get("vad_port", 6579))  # VAD events
 
 # Audio Settings
-SAMPLE_RATE = 48000
-CHUNK_DURATION = 0.2  # seconds
-BUFFER_SECONDS = 2.0  # Audio buffer for inference
-MIN_TRANSCRIBE_SECONDS = 0.5
-MAX_BUFFER_SECONDS = 2.0
-SILENCE_THRESHOLD = 0.02
-SILENCE_RESET_TIME = 0.5
+SAMPLE_RATE = int(config.get("sample_rate", 48000))
+CHUNK_DURATION = float(config.get("chunk_duration", 0.2))  # seconds
+BUFFER_SECONDS = float(config.get("buffer_seconds", 2.0))  # Audio buffer for inference
+MIN_TRANSCRIBE_SECONDS = float(config.get("min_transcribe_seconds", 0.5))
+MAX_BUFFER_SECONDS = float(config.get("max_buffer_seconds", 2.0))
+SILENCE_THRESHOLD = float(config.get("silence_threshold", 0.02))
+SILENCE_RESET_TIME = float(config.get("silence_reset_time", 0.5))
 
 # Noise Reduction Settings
-NOISE_REDUCTION_ENABLED = True
-NOISE_REDUCTION_STRENGTH = 0.75
-NOISE_REDUCTION_FREQ_MIN = 20
-NOISE_REDUCTION_FREQ_MAX = 20000
+NOISE_REDUCTION_ENABLED = config.get("noise_reduction_enabled", True)
+NOISE_REDUCTION_STRENGTH = float(config.get("noise_reduction_strength", 0.75))
+NOISE_REDUCTION_FREQ_MIN = int(config.get("noise_reduction_freq_min", 20))
+NOISE_REDUCTION_FREQ_MAX = int(config.get("noise_reduction_freq_max", 20000))
 
 # Language Detection Settings
-SUPPORTED_LANGUAGES = ["en", "tl", "fil"]  # English, Tagalog, Filipino
-LANGUAGE_DETECTION_CONFIDENCE_THRESHOLD = 0.5
+SUPPORTED_LANGUAGES = config.get("supported_languages", ["en", "tl", "fil"])  # English, Tagalog, Filipino
+LANGUAGE_DETECTION_CONFIDENCE_THRESHOLD = float(config.get("language_detection_confidence_threshold", 0.5))
 
 # Resource management config (should be loaded from config in production)
-DEFAULT_BATCH_SIZE = 8
-MAX_BATCH_SIZE = 16
-ENABLE_DYNAMIC_QUANTIZATION = True
-TENSORRT_ENABLED = False  # Placeholder for future TensorRT integration
+DEFAULT_BATCH_SIZE = int(config.get("default_batch_size", 8))
+MAX_BATCH_SIZE = int(config.get("max_batch_size", 16))
+ENABLE_DYNAMIC_QUANTIZATION = config.get("enable_dynamic_quantization", True)
+TENSORRT_ENABLED = config.get("tensorrt_enabled", False)  # Placeholder for future TensorRT integration
 
 class ResourceManager:
     def __init__(self):
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
+        self.default_batch_size = DEFAULT_BATCH_SIZE
+        self.max_batch_size = MAX_BATCH_SIZE
+        self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
+        self.context = zmq.Context()
+        
+        # Error bus connection
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.error_bus_pub = self.context.socket(zmq.PUB)
-
         self.error_bus_pub.connect(self.error_bus_endpoint)
-default_batch_size = DEFAULT_BATCH_SIZE
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-max_batch_size = MAX_BATCH_SIZE
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
 
     def get_system_load(self):
         cpu = psutil.cpu_percent()
         mem = psutil.virtual_memory().percent
         try:
             import torch
+            if torch.cuda.is_available():
+                gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100 if torch.cuda.max_memory_allocated() > 0 else 0
+            else:
+                gpu = 0
         except ImportError as e:
-            print(f"Import error: {e}")
-            gpu = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
+            logger.warning(f"Import error: {e}")
+            gpu = 0
         except Exception:
             gpu = 0
         return cpu, mem, gpu
@@ -172,637 +136,89 @@ enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
     def use_tensorrt(self):
         return TENSORRT_ENABLED
 
-class StreamingSpeechRecognitionAgent(
-    """
-    StreamingSpeechRecognitionAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class StreamingSpeechRecognition(BaseAgent):
     def __init__(self):
         """Initialize the enhanced speech recognition system."""
         # Call BaseAgent's __init__ first with proper arguments
-        super().__init__(name="StreamingSpeechRecognition")
+        agent_name = config.get("name", "StreamingSpeechRecognition")
+        agent_port = int(config.get("port", 5707))
+        super().__init__(name=agent_name, port=agent_port)
 
-        """Initialize the enhanced speech recognition system."""
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_running = False
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_thread = None
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-health_thread = None
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-process_thread = None
+        # Initialize state variables
+        self._running = False
+        self._thread = None
+        self.health_thread = None
+        self.process_thread = None
 
         # Initialize ZMQ context
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-zmq_context = zmq.Context()
+        self.zmq_context = zmq.Context()
 
         # Initialize sockets
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_init_sockets()
+        self._init_sockets()
 
         # Initialize audio processing
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-audio_queue = Queue()
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-buffer = []
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
+        self.audio_queue = Queue()
+        self.buffer = []
+        self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
 
         # Model management is now delegated to ModelManagerAgent
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-model_manager_socket = None
+        self.model_manager_socket = None
 
         # Initialize state
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-wake_word_detected = False
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-last_wake_word_time = 0
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-wake_word_timeout = 5.0  # seconds
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-current_language = 'en'
+        self.wake_word_detected = False
+        self.last_wake_word_time = 0
+        self.wake_word_timeout = float(config.get("wake_word_timeout", 5.0))  # seconds
+        self.current_language = config.get("default_language", 'en')
 
         # VAD integration
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_speech_active = False
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_confidence = 0.0
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_last_update = 0
+        self.vad_speech_active = False
+        self.vad_confidence = 0.0
+        self.vad_last_update = 0
 
         # Initialize ResourceManager
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-resource_manager = ResourceManager()
+        self.resource_manager = ResourceManager()
         
         # Initialize RequestCoordinator connection variables
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-request_coordinator_connection = None
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-request_coordinator_connected = False
+        self.request_coordinator_connection = None
+        self.request_coordinator_connected = False
         # Start a background thread to connect to RequestCoordinator when it becomes available
         threading.Thread(target=self._connect_to_request_coordinator, daemon=True).start()
 
         # Initialize connection to ModelManagerAgent
-
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_connect_to_model_manager()
+        self._connect_to_model_manager()
 
         logger.info("Enhanced Streaming Speech Recognition initialized")
         
         # Get configuration from agent args
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-port = int(config.get("port", 5707))
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-bind_address = config.get("bind_address", '<BIND_ADDR>')
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-zmq_timeout = int(config.get("zmq_request_timeout", 5000))
+        self.port = int(config.get("port", 5707))
+        self.bind_address = config.get("bind_address", os.environ.get('BIND_ADDRESS', '0.0.0.0'))
+        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
-        self.
+        self._running = False
+        self.start_time = time.time()
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_running = False
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_thread = None
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-health_thread = None
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-process_thread = None
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-start_time = time.time()  # Track start time for health reporting
-        
-        # Initialize ZMQ context
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-zmq_context = zmq.Context()
-        
-        # Initialize sockets
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_init_sockets()
-        
-        # Initialize audio processing
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-audio_queue = Queue()
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-buffer = []
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
-        
-        # Model management is now delegated to ModelManagerAgent
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-model_manager_socket = None
-        
-        # Initialize state
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-wake_word_detected = False
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-last_wake_word_time = 0
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-wake_word_timeout = 5.0  # seconds
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-current_language = 'en'
-        
-        # VAD integration
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_speech_active = False
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_confidence = 0.0
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-vad_last_update = 0
-        
-        # Initialize ResourceManager
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-resource_manager = ResourceManager()
-        
-        # Initialize connection to ModelManagerAgent
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_connect_to_model_manager()
-        
-        logger.info("Enhanced Streaming Speech Recognition initialized")
-    
     def _connect_to_request_coordinator(self):
-        """Connect to RequestCoordinator using service discovery when it becomes available."""
-        from main_pc_code.utils.service_discovery_client import get_service_address
-        
-        retry_count = 0
-        max_retries = 10
-        retry_delay = 5  # seconds
-        
-        while retry_count < max_retries and self._running:
+        """Attempt to connect to the RequestCoordinator service."""
+        while not self.request_coordinator_connected and self._running:
             try:
-                # Try to discover RequestCoordinator service
-                request_coordinator_address = get_service_address("RequestCoordinator")
-                if request_coordinator_address:
-                    logger.info(f"RequestCoordinator discovered at {request_coordinator_address}")
-                    # Initialize connection to RequestCoordinator if needed
-                    # For now, we just mark it as connected since we don't need direct communication
+                # Use service discovery to find the RequestCoordinator
+                coordinator_info = discover_service("RequestCoordinator")
+                if coordinator_info:
+                    host = coordinator_info["host"]
+                    port = coordinator_info["port"]
+                    
+                    # Initialize connection
+                    self.request_coordinator_connection = self.zmq_context.socket(zmq.REQ)
+                    self.request_coordinator_connection.connect(f"tcp://{host}:{port}")
                     self.request_coordinator_connected = True
-                    break
+                    logger.info(f"Connected to RequestCoordinator at {host}:{port}")
                 else:
-                    logger.warning("RequestCoordinator not found in service registry, will retry...")
+                    logger.warning("RequestCoordinator not found via service discovery, retrying in 10 seconds")
+                    time.sleep(10)
             except Exception as e:
-                logger.error(f"Error discovering RequestCoordinator: {e}")
-            
-            # Wait before retrying
-            retry_count += 1
-            time.sleep(retry_delay)
-        
-        if not self.request_coordinator_connected:
-            logger.warning("Failed to connect to RequestCoordinator after maximum retries")
-    
+                logger.error(f"Error connecting to RequestCoordinator: {str(e)}")
+                time.sleep(10)
+
     def _init_sockets(self):
         """Initialize all ZMQ sockets."""
         try:
@@ -1331,7 +747,7 @@ _connect_to_model_manager()
                 health_data = {
                     "component": "StreamingSpeechRecognition",
                     "status": "healthy",
-                    "model_loaded": hasattr(self, 'model_manager_socket') and len(self.model_manager_socket) > 0,
+                    "model_loaded": hasattr(self, 'model_manager_socket') and self.model_manager_socket is not None,
                     "timestamp": time.time(),
                     "metrics": {
                         "pub_port": ZMQ_PUB_PORT,
@@ -1356,179 +772,105 @@ _connect_to_model_manager()
             logger.warning("Speech recognition is already running")
             return
             
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_running = True
+        self._running = True
         
         # Start processing thread
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-process_thread = threading.Thread(target=self.process_audio_loop)
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-process_thread.daemon = True
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-process_thread.start()
+        self.process_thread = threading.Thread(target=self.process_audio_loop)
+        self.process_thread.daemon = True
+        self.process_thread.start()
         
         # Start health monitoring thread
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-health_thread = threading.Thread(target=self.health_broadcast_loop)
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-health_thread.daemon = True
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-health_thread.start()
+        self.health_thread = threading.Thread(target=self.health_broadcast_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
         
         logger.info("Speech recognition started")
     
     def stop(self):
         """Stop the speech recognition system."""
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-_running = False
+        self._running = False
         
         if self.process_thread:
             self.process_thread.join(timeout=5)
         if self.health_thread:
             self.health_thread.join(timeout=5)
         
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-cleanup()
+        self.cleanup()
         logger.info("Speech recognition stopped")
     
-    def cleanup(self):
-        """Clean up resources."""
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
         try:
-            # Close ZMQ sockets
-            if hasattr(self, 'sub_socket'):
-                self.sub_socket.close()
+            # Basic health check logic
+            is_healthy = self._running  # Assume healthy if running
             
-            if hasattr(self, 'pub_socket'):
-                self.pub_socket.close()
-                
-            if hasattr(self, 'health_socket'):
-                self.health_socket.close()
-                
-            if hasattr(self, 'wake_word_socket'):
-                self.wake_word_socket.close()
-                
-            if hasattr(self, 'vad_socket'):
-                self.vad_socket.close()
-                
-            if hasattr(self, 'model_manager_socket'):
-                # Notify ModelManagerAgent that we're shutting down
-                try:
-                    request = {
-                        "command": "AGENT_SHUTDOWN",
-                        "agent": "StreamingSpeechRecognition",
-                        "timestamp": time.time()
-                    }
-                    self.model_manager_socket.send_json(request)
-                    # Don't wait for response during shutdown
-                except Exception as e:
-                    logger.warning(f"Error notifying ModelManagerAgent of shutdown: {e}")
-                
-                self.model_manager_socket.close()
-            
-            # Terminate ZMQ context - do this after all sockets are closed
-            if hasattr(self, 'zmq_context'):
-                self.zmq_context.term()
-            
-            logger.info("Resources cleaned up")
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "wake_word_detected": self.wake_word_detected,
+                    "vad_speech_active": self.vad_speech_active,
+                    "current_language": self.current_language
+                }
+            }
+            return status_report
         except Exception as e:
-            logger.error(f"Error in cleanup: {str(e)}")
-            # Even if there's an error, try to terminate the context
-            try:
-                if hasattr(self, 'zmq_context') and not self.zmq_context.closed:
-                    self.zmq_context.term()
-            except Exception as term_error:
-                logger.error(f"Error terminating ZMQ context: {str(term_error)}")
-    
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        self._running = False
+        
+        # Stop and join threads
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+        
+        if self.health_thread and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+        
+        if self.process_thread and self.process_thread.is_alive():
+            self.process_thread.join(timeout=2.0)
+        
+        # Close all ZMQ sockets
+        if hasattr(self, 'pub_socket') and self.pub_socket:
+            self.pub_socket.close()
+        
+        if hasattr(self, 'sub_socket') and self.sub_socket:
+            self.sub_socket.close()
+        
+        if hasattr(self, 'wake_word_socket') and self.wake_word_socket:
+            self.wake_word_socket.close()
+        
+        if hasattr(self, 'vad_socket') and self.vad_socket:
+            self.vad_socket.close()
+        
+        if hasattr(self, 'health_socket') and self.health_socket:
+            self.health_socket.close()
+        
+        if hasattr(self, 'model_manager_socket') and self.model_manager_socket:
+            self.model_manager_socket.close()
+        
+        if hasattr(self, 'request_coordinator_connection') and self.request_coordinator_connection:
+            self.request_coordinator_connection.close()
+        
+        # Terminate ZMQ context
+        if self.zmq_context:
+            self.zmq_context.term()
+        
+        logger.info("StreamingSpeechRecognition cleaned up successfully")
+
     def run(self):
         """Main run loop."""
         logger.info("Starting speech recognition system...")
@@ -1691,42 +1033,11 @@ cleanup()
         finally:
             self.process_thread = None
 
-    def _get_health_status(self):
-        """Get the current health status of the agent.
-        
-        Returns:
-            dict: A dictionary containing health status information
-        """
-        # Basic health check logic
-        is_healthy = self._running
-        
-        # Check ZMQ socket health
-        zmq_healthy = hasattr(self, 'sub_socket') and self.sub_socket is not None
-        if not zmq_healthy:
-            is_healthy = False
-        
-        status_report = {
-            "status": "healthy" if is_healthy else "unhealthy",
-            "agent_name": "StreamingSpeechRecognition",
-            "timestamp": datetime.utcnow().isoformat(),
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-            "details": {
-                "running": self._running,
-                "zmq_socket_healthy": zmq_healthy,
-                "wake_word_detected": getattr(self, 'wake_word_detected', False),
-                "current_language": getattr(self, 'current_language', 'en'),
-                "vad_speech_active": getattr(self, 'vad_speech_active', False),
-                "vad_confidence": getattr(self, 'vad_confidence', 0.0)
-            }
-        }
-        
-        return status_report
-
 # Add standardized __main__ block
 if __name__ == "__main__":
     agent = None
     try:
-        agent = StreamingSpeechRecognitionAgent()
+        agent = StreamingSpeechRecognition()
         agent.run()
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -1737,3 +1048,17 @@ if __name__ == "__main__":
     finally:
         if agent and hasattr(agent, 'cleanup'):
             agent.cleanup()
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': self.request_count if hasattr(self, 'request_count') else 0,
+            'status': 'HEALTHY'
+        })
+        
+        return base_status

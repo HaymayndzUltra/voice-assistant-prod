@@ -27,6 +27,12 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
 from main_pc_code.agents.memory_client import MemoryClient
 
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()
+
+
 # --- Shared Utilities ---
 # I-assume na ang CircuitBreaker ay nasa isang shared utility file
 # Halimbawa: from common.utils.resilience import CircuitBreaker
@@ -125,6 +131,10 @@ class GoalManager(BaseAgent):
         for name, target in threads.items():
             thread = threading.Thread(target=target, name=f"{self.name}-{name}", daemon=True)
             thread.start()
+            # Register thread for graceful shutdown
+            if not hasattr(self, "_background_threads"):
+                self._background_threads = []
+            self._background_threads.append(thread)
         logger.info(f"Started {len(threads)} background threads.")
         
     def _load_active_goals(self):
@@ -631,6 +641,21 @@ class GoalManager(BaseAgent):
                 circuit.record_failure()
             logger.error(f"Error sending request to {agent_name}: {e}")
             return None
+
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+
+        # Add GoalManager-specific health fields
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'goal_count': len(self.goals),
+            'task_queue_size': len(self.task_queue),
+            'status': 'HEALTHY'
+        })
+        return base_status
 
     def report_error(self, error_type: str, message: str, severity: ErrorSeverity, **kwargs):
         """Report an error to the central error bus."""

@@ -1,22 +1,5 @@
 import sys
 import os
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
-
-from common.core.base_agent import BaseAgent
 import zmq
 import json
 import logging
@@ -24,160 +7,107 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import threading
-from main_pc_code.utils.config_loader import load_config
 import psutil
 import traceback
 
-# ZMQ timeout settings
-ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+from common.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+
+# Load configuration
 config = load_config()
+
+# ZMQ timeout settings from config
+ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout", 5000))  # 5 seconds timeout for requests
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('proactive_agent.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-class ProactiveAgent(
-    """
-    ProactiveAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class ProactiveAgent(BaseAgent):
     def __init__(self, **kwargs):
-        super().__init__()
-
         """Initialize the ProactiveAgent with ZMQ sockets."""
-
-        config_port = None
-
-        # Try to load from config if needed
-
-        try:
-
-            config_path = os.path.join('config', 'system_config.json')
-
-            if os.path.exists(config_path):
-
-                with open(config_path, 'r', encoding='utf-8-sig') as f:
-
-                    config = json.load(f)
-
-                if 'agents' in config and 'proactive_agent' in config.get('agents'):
-
-                    config_port = config.get('agents')['proactive_agent'].get('port')
-
-                elif 'agents' in config and 'memory_decay' in config.get('agents'):
-
-                    # fallback: use memory_decay port if that's the intended mapping
-
-                    config_port = config.get('agents')['memory_decay'].get('port')
-
-        except Exception as e:
-
-            logger.warning(f"Could not load port from config: {e}")
-
-        # Port selection logic
-
-        if port is not None:
-
-            self.port = port
-
-        elif hasattr(args, 'port') and args.port is not None:
-
-            self.port = int(args.port)
-
-        elif config_port is not None:
-
-            self.port = int(config_port)
-
-        else:
-
-            self.port = 5624  # fallback 
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-default
-
-        self.context = zmq.Context()
-
-        # Main REP socket for handling requests
-
-        self.socket = self.context.socket(zmq.REP)
-
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-
-        self.socket.bind(f"tcp://*:{self.port}")
-
-        # Store tasks and reminders
-
-        self.tasks_file = "tasks.json"
-
-        self.tasks = self._load_tasks()
-
-        # Initialize coordinator socket (will be set up in async initialization)
-
-        self.coordinator_socket = None
-
-        # Start monitoring thread
-
-        self.running = True
-
-        self.monitor_thread = threading.Thread(target=self._monitor_tasks)
-
-        self.monitor_thread.daemon = True
-
-        self.monitor_thread.start()
-
-        logger.info(f"ProactiveAgent initialized on port {self.port}")
-        self.port = self.config.getint('proactive_agent.port', 5624)
-        self.coordinator_address = self.config.get('dependencies.request_coordinator_address', 'tcp://localhost:26002')
-        self.suggestion_interval = self.config.getint('proactive_agent.suggestion_interval_seconds', 60)
+        # Get configuration values with fallbacks
+        agent_port = kwargs.get('port') or int(config.get("port", 5624))
+        agent_name = kwargs.get('name') or config.get("name", "ProactiveAgent")
         
+        # Call BaseAgent's __init__ with proper parameters
+        super().__init__(name=agent_name, port=agent_port)
+        
+        # Initialize configuration values
+        self.coordinator_address = config.get("coordinator_address", get_zmq_connection_string(26002, "localhost"))
+        self.suggestion_interval = int(config.get("suggestion_interval_seconds", 60))
+        self.tasks_file = config.get("tasks_file", "tasks.json")
+        
+        # Initialize ZMQ
         self.context = zmq.Context()
+        
         # Main REP socket for handling requests
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
+        
         # Store tasks and reminders
-        self.tasks_file = "tasks.json"
         self.tasks = self._load_tasks()
+        
         # Initialize coordinator socket (will be set up in async initialization)
         self.coordinator_socket = None
+        
+        # Error bus connection
+        self.error_bus_port = int(config.get("error_bus_port", 7150))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         # Start monitoring thread
         self.running = True
         self.start_time = time.time()
         self.monitor_thread = threading.Thread(target=self._monitor_tasks)
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
+        
+        # Initialize the coordinator connection in a background thread
+        threading.Thread(target=self._init_coordinator, daemon=True).start()
+        
         logger.info(f"ProactiveAgent initialized on port {self.port}")
     
+    def _init_coordinator(self):
+        """Initialize connection to the RequestCoordinator."""
+        try:
+            # Try to discover coordinator via service discovery
+            coordinator_info = discover_service("RequestCoordinator")
+            if coordinator_info:
+                host = coordinator_info.get("host", "localhost")
+                port = coordinator_info.get("port", 5621)
+                self.coordinator_address = f"tcp://{host}:{port}"
+            
+            # Set up coordinator socket
+            self.coordinator_socket = self.context.socket(zmq.REQ)
+            self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            self.coordinator_socket.connect(self.coordinator_address)
+            logger.info(f"Coordinator socket initialized at {self.coordinator_address}")
+        except Exception as e:
+            logger.error(f"Coordinator initialization error: {e}")
+    
     def _get_health_status(self):
-        # Standard health check.
+        """Get the current health status of the agent."""
         return {'status': 'ok', 'running': self.running}
     
     def _perform_initialization(self):
         """Initialize agent components asynchronously."""
         try:
-            # Set up coordinator socket
-            self.coordinator_socket = self.context.socket(zmq.REQ)
-            self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.coordinator_socket.connect(f"tcp://{getattr(args, 'host', 'localhost')}:5621")  # RequestCoordinator
-            logger.info("Coordinator socket initialized successfully")
+            # Already handled in __init__ and _init_coordinator
+            pass
         except Exception as e:
             logger.error(f"Initialization error: {e}")
             raise
@@ -363,7 +293,7 @@ default
         """Main loop for handling requests."""
         logger.info("ProactiveAgent started")
         
-        while True:
+        while self.running:
             try:
                 # Wait for next request
                 message = self.socket.recv_json()
@@ -376,24 +306,50 @@ default
                 self.socket.send_json(response)
                 logger.debug(f"Sent response: {response}")
                 
+            except zmq.error.Again:
+                # Socket timeout, continue loop
+                continue
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
-                self.socket.send_json({
-                    'status': 'error',
-                    'message': str(e)
-                })
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'message': str(e)
+                    })
+                except zmq.error.Again:
+                    pass  # Can't send response due to timeout
     
     def stop(self):
         """Stop the agent and clean up resources."""
+        logger.info("Stopping ProactiveAgent...")
         self.running = False
-        self.monitor_thread.join()
         
-        if self.coordinator_socket:
-            self.coordinator_socket.linger = 0
-            self.coordinator_socket.close()
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=5.0)
         
-        super().cleanup()
+        self.cleanup()
+        logger.info("ProactiveAgent stopped")
 
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        try:
+            # Close ZMQ sockets
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
+                self.coordinator_socket.close()
+            
+            if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+                self.error_bus_pub.close()
+            
+            # Terminate ZMQ context
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+            
+            logger.info("Resources cleaned up")
+        except Exception as e:
+            logger.error(f"Error in cleanup: {str(e)}")
 
     def health_check(self):
         '''
@@ -401,30 +357,34 @@ default
         '''
         try:
             # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
+            is_healthy = self.running  # Assume healthy unless a check fails
             
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
+            # Check coordinator connection if needed
+            if self.coordinator_socket is None:
+                logger.warning("Coordinator socket not initialized")
+                # Don't mark as unhealthy, it might still be initializing
 
             status_report = {
                 "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "uptime_seconds": time.time() - self.start_time,
                 "system_metrics": {
                     "cpu_percent": psutil.cpu_percent(),
                     "memory_percent": psutil.virtual_memory().percent
                 },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
+                "agent_specific_metrics": {
+                    "tasks_count": len(self.tasks.get('tasks', [])),
+                    "reminders_count": len(self.tasks.get('reminders', [])),
+                    "coordinator_connected": self.coordinator_socket is not None
+                }
             }
             return status_report
         except Exception as e:
             # It's crucial to catch exceptions to prevent the health check from crashing
             return {
                 "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "agent_name": self.name,
                 "error": f"Health check failed with exception: {str(e)}"
             }
 

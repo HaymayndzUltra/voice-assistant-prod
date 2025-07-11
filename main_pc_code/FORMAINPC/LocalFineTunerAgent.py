@@ -66,10 +66,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class TuningStatus(
+class TuningStatus(Enum):
     """
     TuningStatus:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """Enum):
+    """
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -96,8 +96,8 @@ class TuningJob:
 
 class LocalFineTunerAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
-        agent_port = config.get("get")('port', 5000) if port is None else port
-        agent_name = config.get("get")('name', 'LocalFineTunerAgent') if name is None else name
+        agent_port = config.get('port', 5000) if port is None else port
+        agent_name = config.get('name', 'LocalFineTunerAgent') if name is None else name
         super().__init__(port=agent_port, name=agent_name)
         # ZMQ setup
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -140,7 +140,8 @@ class LocalFineTunerAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _init_db(self):
+        
+    def _init_db(self):
         """Initialize the SQLite database."""
         try:
             conn = sqlite3.connect(self.db_path)

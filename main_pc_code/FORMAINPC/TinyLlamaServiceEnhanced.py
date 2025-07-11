@@ -73,7 +73,7 @@ logging.basicConfig(
 logger = logging.getLogger("TinyLlamaService")
 
 class ModelState(Enum):
-    """Model state enum Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    """Model state enum."""
     UNLOADED = "unloaded"
     LOADING = "loading"
     LOADED = "loaded"
@@ -103,18 +103,7 @@ class ResourceManager:
         self.vram_threshold = 0.9 if self.device == "cuda" else None
         self.last_cleanup = time.time()
         self.cleanup_interval = 300  # 5 minutes
-        self.
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-default_batch_size = DEFAULT_BATCH_SIZE
+        self.default_batch_size = DEFAULT_BATCH_SIZE
         self.max_batch_size = MAX_BATCH_SIZE
         self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
     
@@ -205,71 +194,43 @@ default_batch_size = DEFAULT_BATCH_SIZE
 
 class TinyLlamaService(BaseAgent):
     """Enhanced TinyLlama Service with resource management"""
-
-
     
     def _start_health_check(self):
-
-    
-            """Start health check thread."""
-
-    
-            self.health_thread = threading.Thread(target=self._health_check_loop)
-
-    
-            self.health_thread.daemon = True
-
-    
-            self.health_thread.start()
-
-    
-            logger.info("Health check thread started")
-
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop)
+        self.health_thread.daemon = True
+        self.health_thread.start()
+        logger.info("Health check thread started")
     
     def _health_check_loop(self):
-    
-            """Background loop to handle health check requests."""
-    
-            logger.info("Health check loop started")
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
         
-    
-            while self.running:
-    
-                try:
-    
-                    # Check for health check requests with timeout
-    
-                    if self.health_socket.poll(100, zmq.POLLIN):
-    
-                        # Receive request (don't care about content)
-    
-                        _ = self.health_socket.recv()
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100, zmq.POLLIN):
+                    # Receive request (don't care about content)
+                    _ = self.health_socket.recv()
                     
-    
-                        # Get health data
-    
-                        health_data = self._get_health_status()
+                    # Get health data
+                    health_data = self._get_health_status()
                     
-    
-                        # Send response
-    
-                        self.health_socket.send_json(health_data)
-                    
-    
-                    time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                    # Send response
+                    self.health_socket.send_json(health_data)
                 
-    
-                except Exception as e:
-    
-                    logger.error(f"Error in health check loop: {e}")
-    
-                    time.sleep(1)
+                time.sleep(0.1)  # Small sleep to prevent CPU hogging
+                
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}")
+                time.sleep(1)
     
     def __init__(self, port: int = None, name: str = None, **kwargs):
         # Standardized port and name handling with fallback to 5615 for port
         agent_port = config.get("port", 5615) if port is None else port
         agent_name = config.get("name", 'TinyLlamaService') if name is None else name
-        super().__init__(port=agent_port, name=agent_name)
+        health_check_port = config.get("health_check_port", 6615)
+        super().__init__(port=agent_port, name=agent_name, health_check_port=health_check_port)
         
         logger.info("=" * 80)
         logger.info("Initializing Enhanced TinyLlama Service")
@@ -279,8 +240,15 @@ class TinyLlamaService(BaseAgent):
         self.resource_manager = ResourceManager()
         self.model_state = ModelState.UNLOADED
         
+        # Setup error reporting
+        self.error_bus_port = config.get("error_bus_port", 7150)
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         # Model configuration
-        self.model_name = "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf"
+        self.model_name = config.get("model_name", "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf")
         self.model = None
         self.tokenizer = None
         
@@ -293,6 +261,10 @@ class TinyLlamaService(BaseAgent):
             'model_configs.tinylama-service-zmq.idle_timeout_seconds', 30
         )
         
+        # Start health check
+        self.running = True
+        self._start_health_check()
+        
         # Start monitoring thread
         self.monitor_thread = threading.Thread(target=self._monitor_resources)
         self.monitor_thread.daemon = True
@@ -302,6 +274,21 @@ class TinyLlamaService(BaseAgent):
         logger.info(f"Model name: {self.model_name}")
         logger.info(f"Idle timeout: {self.service_idle_timeout_seconds} seconds")
         logger.info("=" * 80)
+    
+    def report_error(self, error_message, severity="WARNING", context=None):
+        """Report an error to the error bus"""
+        try:
+            error_data = {
+                "source": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "severity": severity,
+                "message": error_message,
+                "context": context or {}
+            }
+            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
+            logger.error(f"Reported error: {error_message}")
+        except Exception as e:
+            logger.error(f"Failed to report error to error bus: {e}")
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Override BaseAgent's health status to include TinyLlamaService-specific info."""
@@ -326,6 +313,7 @@ class TinyLlamaService(BaseAgent):
         
         if not self.resource_manager.check_resources():
             logger.warning("Insufficient resources for model loading")
+            self.report_error("Insufficient resources for model loading")
             return False
         
         try:
@@ -355,6 +343,7 @@ class TinyLlamaService(BaseAgent):
             
         except Exception as e:
             logger.error(f"Error loading TinyLlama model: {e}")
+            self.report_error(f"Error loading TinyLlama model: {e}")
             self.model_state = ModelState.ERROR
             return False
     
@@ -522,6 +511,19 @@ class TinyLlamaService(BaseAgent):
         if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
             self.monitor_thread.join(timeout=2.0)
             logger.info("Monitor thread joined")
+        
+        # Wait for health check thread to finish
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            self.health_thread.join(timeout=2.0)
+            logger.info("Health check thread joined")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus connection")
+            except Exception as e:
+                logger.error(f"Error closing error bus connection: {e}")
         
         # Unload model if loaded
         self._unload_model()

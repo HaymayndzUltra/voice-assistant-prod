@@ -224,6 +224,42 @@ def is_local_mode() -> bool:
     
     return False
 
+def get_zmq_connection_string(port: int, machine: str = "localhost", bind_address: str = "0.0.0.0") -> str:
+    """
+    Get a ZeroMQ connection string with proper IP address from the network configuration.
+    
+    Args:
+        port: Port number for the connection
+        machine: Target machine ('mainpc', 'pc2', 'localhost', or specific IP)
+        bind_address: Address to bind to if creating a server socket (default '0.0.0.0')
+    
+    Returns:
+        Connection string in format 'tcp://IP:PORT' 
+    """
+    # For binding sockets (servers), use the bind_address
+    if machine.lower() == "bind":
+        return f"tcp://{bind_address}:{port}"
+    
+    # For localhost, use IP from network configuration
+    if machine.lower() == "localhost" or machine.lower() == "127.0.0.1":
+        # In local mode, use actual localhost
+        if is_local_mode():
+            return f"tcp://127.0.0.1:{port}"
+        
+        # Otherwise, use the MainPC IP from configuration 
+        # (since we're typically connecting from PC2 to MainPC in this case)
+        ip = get_machine_ip("mainpc")
+        return f"tcp://{ip}:{port}"
+    
+    # For specific machines, use their configured IP
+    elif machine.lower() in ("mainpc", "pc2"):
+        ip = get_machine_ip(machine)
+        return f"tcp://{ip}:{port}"
+    
+    # If a specific IP is provided, use it directly
+    else:
+        return f"tcp://{machine}:{port}"
+
 if __name__ == '__main__':
     # Configure logging for the test
     logging.basicConfig(level=logging.INFO, 
@@ -241,5 +277,3 @@ if __name__ == '__main__':
         print(f"MainPC SDT address: {get_machine_ip()}")
         print(f"PC2 UMR address: {get_machine_ip('pc2')}")
         print(f"Current machine: {get_current_machine()}")
-    else:
-        print("Failed to load network configuration")

@@ -41,10 +41,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class DynamicIdentityAgent(
-    """
-    DynamicIdentityAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class DynamicIdentityAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
         # Get port and name from _agent_args with fallbacks
         agent_port = config.get("port", 5802) if port is None else port
@@ -84,7 +81,7 @@ class DynamicIdentityAgent(
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _get_health_status(self):
+    def _get_health_status(self):
         # Default health status: Agent is running if its main loop is active.
         # This can be expanded with more specific checks later.
         status = "HEALTHY" if self.running else "UNHEALTHY"
@@ -150,12 +147,12 @@ def _get_health_status(self):
             personas_path = agent_config.get('personas_path')
             with open(personas_path, 'r', encoding='utf-8-sig') as f:
                 self.personas = json.load(f)
-            # REQ socket for EnhancedModelRouter
+            # REQ socket for ModelOrchestrator
             self.model_socket = self.context.socket(zmq.REQ)
             self.model_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.model_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             _host = config.get("host", 'localhost')
-            self.model_socket.connect(f"tcp://{_host}:{self.emr_port}")
+            self.model_socket.connect(f"tcp://{_host}:{self.emr_port}") # Note: Port might need updating
             # REQ socket for EmpathyAgent
             self.empathy_socket = self.context.socket(zmq.REQ)
             self.empathy_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -176,8 +173,11 @@ def _get_health_status(self):
             })
             logger.error(f"Initialization error: {e}")
     
-    def _update_model_router(self, persona: str) -> Dict[str, Any]:
-        """Update the EnhancedModelRouter with new persona settings."""
+    def _update_model_orchestrator(self, persona: str) -> Dict[str, Any]:
+        """Update the ModelOrchestrator with new persona settings."""
+        if not self.model_socket:
+            return {'status': 'error', 'message': 'ModelOrchestrator not connected'}
+            
         try:
             self.model_socket.send_json({
                 'action': 'update_system_prompt',
@@ -186,11 +186,11 @@ def _get_health_status(self):
             
             response = self.model_socket.recv_json()
             if response['status'] != 'success':
-                logger.error(f"Error updating model router: {response['message']}")
-                return response
+                logger.error(f"Error updating model orchestrator: {response['message']}")
+            return response
                 
         except Exception as e:
-            logger.error(f"Error in _update_model_router: {str(e)}")
+            logger.error(f"Error in _update_model_orchestrator: {str(e)}")
             return {
                 'status': 'error',
                 'message': str(e)
@@ -227,8 +227,8 @@ def _get_health_status(self):
                 'message': f'Unknown persona: {persona}'
             }
         
-        # Update model router
-        model_response = self._update_model_router(persona)
+        # Update model orchestrator
+        model_response = self._update_model_orchestrator(persona)
         if model_response['status'] != 'success':
             return model_response
         
@@ -362,3 +362,37 @@ if __name__ == '__main__':
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = DynamicIdentityAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

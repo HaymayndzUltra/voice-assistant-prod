@@ -83,8 +83,11 @@ class BaseAgent:
             raise RuntimeError(f"{name}: Unable to bind health socket after {max_attempts} attempts starting from {port + 1}")
         
         # Start health check thread
+        # Store background threads for graceful shutdown
+        self._background_threads: list[threading.Thread] = []
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
+        self._background_threads.append(self.health_thread)
         
         logger.info(f"{name} initialized with main port {self.port} and health check port {self.health_port}")
         
@@ -182,10 +185,41 @@ class BaseAgent:
                 logger.error(f"Error in main loop: {e}")
                 time.sleep(1)
                 
-    def stop(self):
-        """Stop the agent and clean up resources."""
+    def stop(self, timeout: int = 10):
+        """Gracefully stop the agent and join background threads.
+
+        Args:
+            timeout: Max seconds to wait for each thread to join.
+        """
         self.running = False
-        self.socket.close()
-        self.health_socket.close()
-        self.context.term()
-        logger.info(f"{self.name} stopped") 
+
+        # Attempt to join all known background threads
+        joined = set()
+        for t in getattr(self, "_background_threads", []):
+            if t and t.is_alive():
+                t.join(timeout=timeout)
+                joined.add(t)
+
+        # Fallback heuristic: join attributes that look like threads
+        for attr_name in dir(self):
+            if attr_name.endswith("_thread") or attr_name.endswith("_threads"):
+                attr = getattr(self, attr_name)
+                if isinstance(attr, threading.Thread) and attr not in joined:
+                    if attr.is_alive():
+                        attr.join(timeout=timeout)
+                elif isinstance(attr, list):
+                    for item in attr:
+                        if isinstance(item, threading.Thread) and item not in joined:
+                            if item.is_alive():
+                                item.join(timeout=timeout)
+                                joined.add(item)
+
+        # Close sockets & context after threads have finished
+        try:
+            self.socket.close()
+            self.health_socket.close()
+            self.context.term()
+        except Exception as e:
+            logger.error(f"{self.name}: error while closing sockets/context: {e}")
+
+        logger.info(f"{self.name} stopped. Joined {len(joined)} thread(s).") 

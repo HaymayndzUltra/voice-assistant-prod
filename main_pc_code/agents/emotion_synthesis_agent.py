@@ -40,17 +40,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class EmotionSynthesisAgent(
-    """
-    EmotionSynthesisAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+class EmotionSynthesisAgent(BaseAgent):
     def __init__(self, port=None):
         # Get port and name from config with fallbacks
         agent_port = config.get("port", 5643) if port is None else port
         agent_name = config.get("name", "EmotionSynthesisAgent")
+        health_check_port = config.get("health_check_port", 6643)
         
         # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=agent_name, port=agent_port)
+        super().__init__(name=agent_name, port=agent_port, health_check_port=health_check_port)
         
         # Emotional markers for different emotions
         self.emotion_markers = {
@@ -91,20 +89,16 @@ class EmotionSynthesisAgent(
         self.last_synthesis_time = None
         self.start_time = time.time()
         
+        # Setup error bus connection
+        self.error_bus_port = config.get("error_bus_port", 7150)
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        self.error_bus_pub = self.context.socket(zmq.PUB)
+        self.error_bus_pub.connect(self.error_bus_endpoint)
+        
         logger.info(f"EmotionSynthesisAgent initialized on port {self.port}")
     
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _add_emotional_markers(self, text, emotion, intensity=0.5):
+    def _add_emotional_markers(self, text, emotion, intensity=0.5):
         """Add emotional markers to the text based on the emotion and intensity"""
         if emotion not in self.emotion_markers:
             return text
@@ -163,6 +157,7 @@ def _add_emotional_markers(self, text, emotion, intensity=0.5):
             }
         except Exception as e:
             logger.error(f"Error synthesizing emotion: {str(e)}")
+            self.report_error(f"Error synthesizing emotion: {str(e)}")
             return {
                 'status': 'error',
                 'message': str(e)
@@ -181,9 +176,33 @@ def _add_emotional_markers(self, text, emotion, intensity=0.5):
         else:
             return super().handle_request(request)
     
+    def report_error(self, error_message, severity="WARNING", context=None):
+        """Report an error to the error bus"""
+        try:
+            error_data = {
+                "source": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "severity": severity,
+                "message": error_message,
+                "context": context or {}
+            }
+            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
+            logger.error(f"Reported error: {error_message}")
+        except Exception as e:
+            logger.error(f"Failed to report error to error bus: {e}")
+    
     def cleanup(self):
         """Gracefully shutdown the agent"""
         logger.info("Shutting down EmotionSynthesisAgent")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus connection")
+            except Exception as e:
+                logger.error(f"Error closing error bus connection: {e}")
+        
         # Call BaseAgent's cleanup method
         super().cleanup()
 

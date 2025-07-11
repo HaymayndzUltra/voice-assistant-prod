@@ -3,11 +3,17 @@ from main_pc_code.src.core.base_agent import BaseAgent
 # Other agents (Jarvis Memory, Digital Twin, Learning Mode) can use this to send proactive events
 import zmq
 import json
+import os
+
+from main_pc_code.utils.network import get_host
 
 def send_proactive_event(event_type, text, user=None, emotion="neutral", extra=None):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
-    socket.connect("tcp://127.0.0.1:5558")  # Proactive agent PUB port
+    # Determine host/port from environment or config
+    host = get_host("PROACTIVE_HOST", "zmq.proactive_host")
+    port = int(os.getenv("PROACTIVE_PORT", 5558))
+    socket.connect(f"tcp://{host}:{port}")
     msg = {
         "type": event_type,  # 'reminder', 'suggestion', 'context', etc.
         "text": text,

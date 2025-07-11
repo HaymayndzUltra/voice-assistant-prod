@@ -102,6 +102,7 @@ class LearningOpportunityDetector(BaseAgent):
         """Register this agent with the service discovery system if available."""
         try:
             from main_pc_code.utils.service_discovery_client import get_service_discovery_client
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
             client = get_service_discovery_client()
             self.service_registry[self.name] = {
                 "name": self.name,
@@ -122,15 +123,15 @@ class LearningOpportunityDetector(BaseAgent):
     def _setup_zmq_connections(self):
         try:
             self.umra_socket = self.context.socket(zmq.SUB)
-            self.umra_socket.connect(f"tcp://localhost:{self.config.get('umra_port', 5701)}")
+            self.umra_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))umra_port', 5701)}")
             self.umra_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             self.coordinator_socket = self.context.socket(zmq.SUB)
-            self.coordinator_socket.connect(f"tcp://localhost:{self.config.get('request_coordinator_port', 5702)}")
+            self.coordinator_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))request_coordinator_port', 5702)}")
             self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             self.los_socket = self.context.socket(zmq.REQ)
             self.los_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.los_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.los_socket.connect(f"tcp://localhost:{self.config.get('los_port', 7210)}")
+            self.los_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))los_port', 7210)}")
             logger.info("ZMQ connections established successfully")
         except Exception as e:
             logger.error(f"Error setting up ZMQ connections: {e}")
@@ -601,3 +602,16 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup() 
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = LearningOpportunityDetector()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()

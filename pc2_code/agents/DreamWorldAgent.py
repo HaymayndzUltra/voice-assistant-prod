@@ -38,10 +38,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ScenarioType(
+class ScenarioType(BaseAgent):
     """
     ScenarioType:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     ETHICAL = "ethical"
     RESOURCE = "resource"
     SOCIAL = "social"

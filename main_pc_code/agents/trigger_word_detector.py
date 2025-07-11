@@ -17,6 +17,9 @@ Trigger Word Detector
 """
 import zmq
 import json
+import os
+
+from main_pc_code.utils.network import get_host, get_bind_address
 import time
 import logging
 import sys
@@ -61,13 +64,15 @@ class TriggerWordDetector(BaseAgent):
         
         # Socket to receive transcribed speech from listener
         self.listener_sub = self.context.socket(zmq.SUB)
-        self.listener_sub.connect(f"tcp://localhost:{LISTENER_PORT}")
+        listener_host = get_host("LISTENER_HOST", "zmq.listener_host")
+        self.listener_sub.connect(f"tcp://{listener_host}:{LISTENER_PORT}")
         self.listener_sub.setsockopt_string(zmq.SUBSCRIBE, "")
         logger.info(f"Connected to Listener on port {LISTENER_PORT}")
         
         # Socket to publish triggered commands
         self.publisher = self.context.socket(zmq.PUB)
-        self.publisher.bind(f"tcp://127.0.0.1:{TRIGGER_DETECTOR_PORT}")
+        bind_address = get_bind_address()
+        self.publisher.bind(f"tcp://{bind_address}:{TRIGGER_DETECTOR_PORT}")
         logger.info(f"Publishing on port {TRIGGER_DETECTOR_PORT}")
         
         # Define trigger phrases (in both English and Filipino)
@@ -354,8 +359,9 @@ class TriggerWordDetector(BaseAgent):
 
 if __name__ == "__main__":
     import argparse
-import psutil
-from datetime import datetime
+    import psutil
+    from datetime import datetime
+
     parser = argparse.ArgumentParser(description="Trigger Word Detector: Detects trigger words/phrases in transcribed speech.")
     parser.add_argument('--passive', action='store_true', help='Run in passive mode, processing all speech')
     parser.add_argument('--active', action='store_true', help='Run in active mode, only processing triggered speech')
@@ -374,12 +380,3 @@ from datetime import datetime
     
     # Run the detector
     detector.run()
-
-    def _perform_initialization(self):
-        """Initialize agent components."""
-        try:
-            # Add your initialization code here
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise

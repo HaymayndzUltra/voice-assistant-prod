@@ -7,6 +7,7 @@ import logging
 import threading
 import argparse
 import zmq
+from main_pc_code.utils.network import get_host
 import psutil
 import heapq
 from pathlib import Path
@@ -28,6 +29,12 @@ from common.utils.data_models import (
     TaskDefinition, TaskResult, TaskStatus, SystemEvent, ErrorReport, ErrorSeverity
 )
 from pydantic import BaseModel, Field
+
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()
+
 
 # --- Standardized Request/Response Models ---
 class TextRequest(BaseModel):
@@ -230,7 +237,8 @@ class RequestCoordinator(BaseAgent):
             logger.info(f"Connected to InterruptService at {interrupt_address}")
         else:
             # Fall back to default address if service discovery fails
-            fallback_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            interrupt_host = get_host("INTERRUPT_HOST", "zmq.interrupt_host")
+            fallback_address = f"tcp://{interrupt_host}:{INTERRUPT_PORT}"
             self.interrupt_socket.connect(fallback_address)
             logger.warning(f"InterruptService not found in discovery. Falling back to default address: {fallback_address}")
         
@@ -239,7 +247,7 @@ class RequestCoordinator(BaseAgent):
 
         # Connect to all required downstream services
         self.memory_socket = self._connect_to_service("MemoryOrchestrator")
-        self.tts_socket = self._connect_to_service("TTSConnector")
+        self.tts_socket = self._connect_to_service("StreamingTTSAgent")
         self.cot_socket = self._connect_to_service("ChainOfThoughtAgent")
         self.got_tot_socket = self._connect_to_service("GOT_TOTAgent")
 
@@ -277,7 +285,8 @@ class RequestCoordinator(BaseAgent):
             analyzer_address = get_service_address("StreamingLanguageAnalyzer")
             if not analyzer_address:
                 # Fall back to configured port
-                analyzer_address = f"tcp://localhost:5577"  # Default port for StreamingLanguageAnalyzer
+                analyzer_host = get_host("SLA_HOST", "zmq.streaming_language_analyzer_host")
+                analyzer_address = f"tcp://{analyzer_host}:5577"  # Default port for StreamingLanguageAnalyzer
                 
             socket.connect(analyzer_address)
             socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -698,7 +707,7 @@ class RequestCoordinator(BaseAgent):
         if response.speak and self.tts_socket:
             try:
                 self.send_request_to_agent(
-                    agent_name="TTSConnector",
+                    agent_name="StreamingTTSAgent",
                     request={"text": response.speak}
                 )
             except Exception as e:
@@ -813,3 +822,52 @@ if __name__ == '__main__':
     
     agent = RequestCoordinator(port=args.port)
     agent.run()
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': self.request_count if hasattr(self, 'request_count') else 0,
+            'status': 'HEALTHY'
+        })
+        
+        return base_status
+
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = RequestCoordinator()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

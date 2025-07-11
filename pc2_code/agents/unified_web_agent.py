@@ -95,7 +95,9 @@ BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 class UnifiedWebAgent(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+
+    """
     Unified Web Agent
     ----------------
     An enhanced agent capable of proactive web browsing, information gathering,
@@ -181,7 +183,7 @@ class UnifiedWebAgent(BaseAgent):
         interrupt_address = get_service_address("StreamingInterruptHandler")
         if not interrupt_address:
             # Fall back to configured port
-            interrupt_address = f"tcp://localhost:{INTERRUPT_PORT}"
+            interrupt_address = get_zmq_connection_string({INTERRUPT_PORT}, "localhost")
         try:
             self.interrupt_socket.connect(interrupt_address)
             self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -242,7 +244,8 @@ class UnifiedWebAgent(BaseAgent):
 
         logger.info(f"Unified Web Agent initialized successfully on port {self.port}")
         self.error_bus = setup_error_reporting(self)
-def _load_config(self):
+
+    def _load_config(self):
         """Load configuration from startup_config.yaml"""
         try:
             config_path = project_root / "pc2_code" / "config" / "startup_config.yaml"
@@ -705,7 +708,9 @@ def _load_config(self):
 
             # Summarize findings
             if results:
-                summary_prompt = f"""
+                summary_prompt = f
+
+                """
                 Summarize the key findings from these search results:
 
                 {json.dumps(results, indent=2)}
@@ -1109,7 +1114,7 @@ def _load_config(self):
             memory_address = get_service_address("UnifiedMemoryReasoningAgent")
             if not memory_address:
                 # Fall back to configured port
-                memory_address = f"tcp://localhost:5596"
+                memory_address = get_zmq_connection_string(5596, "localhost")
 
             self.memory_socket.connect(memory_address)
             logger.info(f"Connected to memory agent at {memory_address}")

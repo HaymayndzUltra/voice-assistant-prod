@@ -183,10 +183,11 @@ def parse_agent_args(argv: List[str] | None = None):
         arg_type = int if flag.endswith("_port") else str
         parser.add_argument(arg_name, dest=flag, type=arg_type)
 
-    # Parse
+    # Parse known args to avoid errors with unrelated argv entries (e.g., pytest arguments)
     try:
-        parsed = parser.parse_args(argv)
+        parsed, _ = parser.parse_known_args(argv)
     except SystemExit as e:  # pragma: no cover – convert to ValueError to avoid sys.exit
+        # Convert parsing failures to ValueError to maintain non-exiting behavior
         raise ValueError(f"Argument parsing failed: {e}")
 
     return parsed 

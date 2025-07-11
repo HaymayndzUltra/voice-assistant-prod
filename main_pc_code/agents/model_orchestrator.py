@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pickle
 from datetime import datetime
+import psutil # Added for health check
 
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
@@ -28,28 +29,30 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
-
-# --- Shared Utilities ---
-# I-assume na ang CircuitBreaker ay nasa isang shared utility file
+from main_pc_code.utils.config_loader import load_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker # Pansamantalang import
 
 # --- Logging Setup ---
 logger = logging.getLogger('ModelOrchestrator')
 
+# Load configuration at the module level
+config = load_config()
+
 # --- Constants ---
-DEFAULT_PORT = 7010
-ZMQ_REQUEST_TIMEOUT = 30000 # Mas mahabang timeout para sa LLM at code execution
-MAX_REFINEMENT_ITERATIONS = 3 # Limitasyon para sa code refinement loop
+DEFAULT_PORT = config.get('model_orchestrator_port', 7010)
+HEALTH_CHECK_PORT = config.get('model_orchestrator_health_port', 8010)
+ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 30000) # Mas mahabang timeout para sa LLM at code execution
+MAX_REFINEMENT_ITERATIONS = config.get('max_refinement_iterations', 3) # Limitasyon para sa code refinement loop
 
 # --- Embedding Model Constants ---
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"  # Lightweight but effective sentence embedding model
-EMBEDDING_CACHE_FILE = "data/task_embeddings_cache.pkl"
+EMBEDDING_MODEL_NAME = config.get('embedding_model', "all-MiniLM-L6-v2")  # Lightweight but effective sentence embedding model
+EMBEDDING_CACHE_FILE = config.get('embedding_cache_file', "data/task_embeddings_cache.pkl")
 EMBEDDING_DIMENSION = 384  # Dimension of embeddings from the model
 
 # --- Metrics Constants ---
-METRICS_LOG_INTERVAL = 60  # Log metrics every 60 seconds
-METRICS_SAVE_INTERVAL = 300  # Save metrics to file every 5 minutes
-METRICS_FILE = "logs/model_orchestrator_metrics.json"
+METRICS_LOG_INTERVAL = config.get('metrics_log_interval', 60)  # Log metrics every 60 seconds
+METRICS_SAVE_INTERVAL = config.get('metrics_save_interval', 300)  # Save metrics to file every 5 minutes
+METRICS_FILE = config.get('metrics_file', "logs/model_orchestrator_metrics.json")
 
 # ===================================================================
 #         ANG BAGONG UNIFIED MODEL ORCHESTRATOR
@@ -61,7 +64,8 @@ class ModelOrchestrator(BaseAgent):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(name="ModelOrchestrator", port=DEFAULT_PORT, **kwargs)
+        super().__init__(name="ModelOrchestrator", port=DEFAULT_PORT, 
+                         health_check_port=HEALTH_CHECK_PORT, **kwargs)
 
         # --- State Management ---
         self.language_configs = self._get_language_configs()
@@ -113,7 +117,11 @@ class ModelOrchestrator(BaseAgent):
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
 
+        # --- Setup Error Reporting ---
+        self.error_bus = self.setup_error_reporting()
+
         # --- Start Background Threads ---
+        self.running = True
         self.metrics_thread = threading.Thread(target=self._metrics_reporting_loop, daemon=True)
         self.metrics_thread.start()
 
@@ -147,6 +155,38 @@ class ModelOrchestrator(BaseAgent):
         except Exception as e:
             logger.error(f"Error loading embedding model: {e}")
             self.embedding_model = None
+
+    def setup_error_reporting(self):
+        """Set up error reporting to the central error bus."""
+        try:
+            # Import here to avoid circular imports
+            from main_pc_code.agents.error_bus_client import ErrorBusClient
+            error_bus = ErrorBusClient(
+                component_name=self.name,
+                component_type="agent",
+                max_retry=3
+            )
+            logger.info("Error reporting set up successfully")
+            return error_bus
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+            return None
+
+    def report_error(self, error_message, severity=ErrorSeverity.WARNING, 
+                    context=None, exception=None):
+        """Report an error to the error bus."""
+        if self.error_bus:
+            try:
+                self.error_bus.report_error(
+                    error_message=error_message,
+                    severity=severity,
+                    context=context or {},
+                    exception=exception
+                )
+            except Exception as e:
+                logger.error(f"Failed to report error to error bus: {e}")
+        else:
+            logger.error(f"Error bus not available. Error: {error_message}")
 
     def _load_task_embeddings(self):
         """Load or initialize task type embeddings."""
@@ -632,14 +672,95 @@ class ModelOrchestrator(BaseAgent):
         base_status["metrics"] = metrics_summary
         return base_status
 
-if __name__ == '__main__':
+    def health_check(self):
+        """Performs a health check on the agent, returning a dictionary with its status."""
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # Check if embedding model is initialized if it should be
+            if not self.embedding_model and self.metrics["classification"]["embedding_based"] > 0:
+                is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {
+                    "requests_total": self.metrics["requests_total"],
+                    "embedding_model_loaded": self.embedding_model is not None,
+                    "circuit_breaker_states": {name: cb.state for name, cb in self.circuit_breakers.items()}
+                }
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            logger.error(f"Health check failed with exception: {str(e)}")
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+    def cleanup(self):
+        """Clean up resources when the agent is stopping."""
+        try:
+            # Stop all background threads
+            self.running = False
+            
+            # Join metrics thread if it exists and is alive
+            if hasattr(self, 'metrics_thread') and self.metrics_thread and self.metrics_thread.is_alive():
+                self.metrics_thread.join(timeout=2.0)
+            
+            # Save final metrics before shutting down
+            self._save_metrics()
+            
+            # Close all ZMQ sockets if they exist
+            for service_name, circuit_breaker in self.circuit_breakers.items():
+                if hasattr(circuit_breaker, 'socket') and circuit_breaker.socket:
+                    try:
+                        circuit_breaker.socket.close()
+                    except Exception as e:
+                        logger.error(f"Error closing circuit breaker socket for {service_name}: {e}")
+            
+            # Close error bus connection if it exists
+            if hasattr(self, 'error_bus') and self.error_bus:
+                try:
+                    self.error_bus.close()
+                except Exception as e:
+                    logger.error(f"Error closing error bus connection: {e}")
+            
+            # Clean up any temporary files
+            try:
+                if hasattr(self, 'temp_dir') and self.temp_dir.exists():
+                    for temp_file in self.temp_dir.glob('*'):
+                        if temp_file.is_file():
+                            temp_file.unlink()
+                    logger.info(f"Cleaned up temporary files in {self.temp_dir}")
+            except Exception as e:
+                logger.error(f"Error cleaning up temporary files: {e}")
+            
+            logger.info("ModelOrchestrator cleanup completed successfully")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+            
+        # Always call parent's cleanup to ensure complete resource release
+        super().cleanup()
+
+if __name__ == "__main__":
+    agent = None
     try:
         agent = ModelOrchestrator()
         agent.run()
     except KeyboardInterrupt:
-        logger.info("ModelOrchestrator shutting down.")
+        logger.info("Keyboard interrupt received, shutting down...")
     except Exception as e:
-        logger.critical(f"ModelOrchestrator failed to start: {e}", exc_info=True)
+        logger.error(f"Error in main: {e}", exc_info=True)
     finally:
-        if 'agent' in locals() and agent.running:
+        if agent and hasattr(agent, 'cleanup'):
             agent.cleanup()

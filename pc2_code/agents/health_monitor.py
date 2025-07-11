@@ -44,10 +44,10 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
-class HealthMonitorAgent(
+class HealthMonitorAgent(BaseAgent):
     """
     HealthMonitorAgent:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    """
     def __init__(self, port=7114, health_port=7115):
         super().__init__(name="HealthMonitorAgent", port=7114)
         # Record start time for uptime calculation

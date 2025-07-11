@@ -3,12 +3,13 @@ import json
 import zmq
 import time
 from pc2_code.config.system_config import pc2_settings
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 def check_agent_health(agent_name, port):
     """Check agent health using ZMQ"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect(f"tcp://127.0.0.1:{port}")
+    socket.connect(get_zmq_connection_string({port}, "localhost")))
     
     try:
         socket.send_json({"action": "health_check"})

@@ -50,7 +50,9 @@ logger = logging.getLogger(__name__)
 class PerformanceLoggerAgent(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+
+    """
     PerformanceLoggerAgent: Logs performance metrics. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
     """
 

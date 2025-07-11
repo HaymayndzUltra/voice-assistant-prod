@@ -6,12 +6,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pc2_code.config.system_config import pc2_settings
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 
 def check_agent_health(port, timeout=2):
     """Check agent health using ZMQ"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect(f"tcp://127.0.0.1:{port}")
+    socket.connect(get_zmq_connection_string({port}, "localhost")))
     socket.setsockopt(zmq.RCVTIMEO, timeout * 1000)
     
     try:

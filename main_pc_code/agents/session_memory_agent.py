@@ -396,6 +396,9 @@ class SessionMemoryAgent(BaseAgent):
         # Start session cleanup thread
         cleanup_thread = threading.Thread(target=self._run_cleanup_thread, daemon=True)
         cleanup_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(cleanup_thread)
         
         # Run normal agent loop
         super().run()
@@ -429,3 +432,17 @@ if __name__ == "__main__":
     finally:
         if 'agent' in locals() and hasattr(agent, 'cleanup'):
             agent.cleanup()
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': self.request_count if hasattr(self, 'request_count') else 0,
+            'status': 'HEALTHY'
+        })
+        
+        return base_status

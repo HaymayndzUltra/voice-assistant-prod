@@ -29,8 +29,13 @@ if ROOT_DIR.as_posix() not in sys.path:
 from common.core.base_agent import BaseAgent
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+
+from pc2_code.agents.utils.config_loader import Config
+
+# Load configuration at the module level
+config = Config().get_config()
+
 
 
 # Configure logging
@@ -47,7 +52,9 @@ logger = logging.getLogger("SystemHealthManager")
 class SystemHealthManager(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+
+    """
     System Health Manager
     
     Monitors the health of all system components and services,

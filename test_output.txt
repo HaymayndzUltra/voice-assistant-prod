@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-7.4.3, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/haymayndz/AI_System_Monorepo/main_pc_code
+plugins: anyio-3.7.1, asyncio-0.21.1, typeguard-4.4.3
+asyncio: mode=strict
+collecting ... collected 1 item
+
+main_pc_code/tests/test_pilot_migration_sla.py::test_sla_migration_and_performance FAILED [100%]

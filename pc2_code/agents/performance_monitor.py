@@ -4,16 +4,6 @@ import yaml
 import sys
 import os
 import json
-
-
-# Add the project's pc2_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-PC2_CODE_DIR = Path(__file__).resolve().parent.parent
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
-
 import time
 import psutil
 import threading
@@ -24,17 +14,23 @@ from collections import defaultdict, deque
 from pathlib import Path
 import numpy as np
 
+# Add the project's pc2_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+if PC2_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
-
-# Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.agents.utils.config_loader import Config
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
-
 # Load configuration at the module level
-config = Config().get_config()# Constants
+config = Config().get_config()
+
+# Constants
 METRICS_PORT = 5619
 HEALTH_PORT = 5620
 BROADCAST_INTERVAL = 5  # seconds
@@ -50,19 +46,19 @@ ALERT_THRESHOLDS = {
 # Setup logging
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger("PerformanceMonitor")
 
-class ResourceMonitor(
+class ResourceMonitor:
     """
-    ResourceMonitor:  Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
-    """BaseAgent):
+    ResourceMonitor: Monitors system resources.
+    """
     def __init__(self):
-        super().__init__(name="ResourceMonitor", port=None)
         self.cpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.memory_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.gpu_history = deque(maxlen=METRICS_HISTORY_SIZE)
         self.last_check = time.time()
-        self.error_bus = setup_error_reporting(self)
-def get_stats(self) -> Dict[str, Any]:
+        
+    def get_stats(self) -> Dict[str, Any]:
         """Get current resource statistics"""
         stats = {
             'cpu_percent': psutil.cpu_percent(interval=1),
@@ -89,73 +85,22 @@ def get_stats(self) -> Dict[str, Any]:
         return (stats['cpu_percent'] <= ALERT_THRESHOLDS['cpu_percent'] and
                 stats['memory_percent'] <= ALERT_THRESHOLDS['memory_percent'])
 
-
-
-    def connect_to_main_pc_service(self, service_name: str):
-
-        """
-
-        Connect to a service on the main PC using the network configuration.
-
-        
-
-        Args:
-
-            service_name: Name of the service in the network config ports section
-
-        
-
-        Returns:
-
-            ZMQ socket connected to the service
-
-        """
-
-        if not hasattr(self, 'main_pc_connections'):
-
-            self.main_pc_connections = {}
-
-            
-
-        if service_name not in network_config.get("ports", {}):
-
-            logger.error(f"Service {service_name} not found in network configuration")
-
-            return None
-
-            
-
-        port = network_config.get("ports")[service_name]
-
-        
-
-        # Create a new socket for this connection
-
-        socket = self.context.socket(zmq.REQ)
-
-        
-
-        # Connect to the service
-
-        socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-
-        
-
-        # Store the connection
-
-        self.main_pc_connections[service_name] = socket
-
-        
-
-        logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
-
-        return socket
 class PerformanceMonitor(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()def __init__(self, port: int = 7103):
+    _agent_args = parse_agent_args()
+    
+    def __init__(self, port: int = 7103):
         super().__init__(name="PerformanceMonitor", port=port)
         self.start_time = time.time()
+        
+        # Load configuration
+        self.config = load_config()
+        
+        # Set up error reporting
+        self.error_bus = setup_error_reporting(self)
+        
+        # Set up components
         self._setup_logging()
         self._setup_zmq()
         self._setup_metrics()
@@ -178,13 +123,19 @@ class PerformanceMonitor(BaseAgent):
         """Setup ZMQ sockets for metrics and health monitoring"""
         self.context = zmq.Context()
         
+        # Get port values from config or use defaults
+        metrics_port = self.config.get("ports", {}).get("performance_metrics", METRICS_PORT)
+        health_port = self.config.get("ports", {}).get("performance_health", HEALTH_PORT)
+        
         # Metrics publisher
         self.metrics_socket = self.context.socket(zmq.PUB)
-        self.metrics_socket.bind(f"tcp://*:{METRICS_PORT}")
+        self.metrics_socket.bind(f"tcp://*:{metrics_port}")
         
         # Health publisher
         self.health_socket = self.context.socket(zmq.PUB)
-        self.health_socket.bind(f"tcp://*:{HEALTH_PORT}")
+        self.health_socket.bind(f"tcp://*:{health_port}")
+        
+        self.logger.info(f"Performance Monitor sockets initialized on ports: {metrics_port}, {health_port}")
         
     def _setup_metrics(self):
         """Initialize metrics tracking"""
@@ -224,6 +175,8 @@ class PerformanceMonitor(BaseAgent):
                 time.sleep(BROADCAST_INTERVAL)
             except Exception as e:
                 self.logger.error(f"Error broadcasting metrics: {str(e)}")
+                if self.error_bus:
+                    report_error(self.error_bus, "metrics_broadcast_error", str(e))
                 time.sleep(5)
                 
     def _monitor_health(self):
@@ -235,6 +188,8 @@ class PerformanceMonitor(BaseAgent):
                 time.sleep(BROADCAST_INTERVAL)
             except Exception as e:
                 self.logger.error(f"Error monitoring health: {str(e)}")
+                if self.error_bus:
+                    report_error(self.error_bus, "health_monitoring_error", str(e))
                 time.sleep(5)
                 
     def _calculate_metrics(self) -> Dict[str, Any]:
@@ -331,6 +286,8 @@ class PerformanceMonitor(BaseAgent):
                     
         except Exception as e:
             self.logger.error(f"Error logging metric: {str(e)}")
+            if self.error_bus:
+                report_error(self.error_bus, "metric_logging_error", str(e))
             
     def get_service_metrics(self, service: str) -> Dict[str, Any]:
         """Get metrics for a specific service"""
@@ -346,6 +303,8 @@ class PerformanceMonitor(BaseAgent):
             }
         except Exception as e:
             self.logger.error(f"Error getting service metrics: {str(e)}")
+            if self.error_bus:
+                report_error(self.error_bus, "service_metrics_error", str(e))
             return {}
             
     def get_alerts(self) -> List[Dict[str, Any]]:
@@ -383,86 +342,71 @@ class PerformanceMonitor(BaseAgent):
                 })
                 
         return alerts
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests"""
+        action = request.get("action", "")
+        
+        if action in ["ping", "health", "health_check"]:
+            return self._get_health_status()
+            
+        elif action == "get_metrics":
+            service = request.get("service")
+            if service:
+                return {"status": "success", "metrics": self.get_service_metrics(service)}
+            else:
+                return {"status": "success", "metrics": self._calculate_metrics()}
+                
+        elif action == "get_alerts":
+            return {"status": "success", "alerts": self.get_alerts()}
+            
+        elif action == "log_metric":
+            service = request.get("service")
+            metric_type = request.get("metric_type")
+            value = request.get("value")
+            
+            if not service or not metric_type or value is None:
+                return {"status": "error", "message": "Missing required parameters"}
+                
+            self.log_metric(service, metric_type, value)
+            return {"status": "success", "message": "Metric logged"}
+            
+        return {"status": "error", "message": f"Unknown action: {action}"}
         
     def run(self):
         """Run the performance monitor"""
         self.logger.info("Performance Monitor started")
         try:
-            while True:
-                time.sleep(1)
+            super().run()  # Use BaseAgent's request loop
         except KeyboardInterrupt:
             self.logger.info("Performance Monitor shutting down...")
+        finally:
+            self.cleanup()
 
-class PerformanceMonitorHealth:
-    def __init__(self, port=7103):
-
-        # Record start time for uptime calculation
-
-        self.start_time = time.time()
-
-        
-
-        # Initialize agent state
-
-        self.running = True
-
-        self.request_count = 0
-
-        
-
-        # Set up connection to main PC if needed
-
-        self.main_pc_connections = {}
-
-        
-
-        logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
-
-        self.port = port
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
-        self.running = True
-    def start(self):
-        print(f"Starting PerformanceMonitorHealth on port {self.port}")
-        self.socket.bind(f"tcp://*:{self.port}")
-        while self.running:
-            try:
-                request = self.socket.recv_json()
-                if request.get('action') == 'health_check':
-                    response = {'status': 'ok', 'service': 'PerformanceMonitor', 'port': self.port, 'timestamp': time.time()}
-                else:
-                    response = {'status': 'unknown_action', 'message': f"Unknown action: {request.get('action', 'none')}"}
-                self.socket.send_json(response)
-            except Exception as e:
-                print(f"Error: {e}")
-                time.sleep(1)
-    def stop(self):
-        self.running = False
-        self.socket.close()
-        self.context.term()
-
+    def health_check(self):
+        """Return the health status of the agent"""
+        return self._get_health_status()
 
     def cleanup(self):
-
         """Clean up resources before shutdown."""
-
-        logger.info("Cleaning up resources...")
-
-        # Add specific cleanup code here
-
+        self.logger.info("Cleaning up resources...")
+        
+        # Close all sockets
+        if hasattr(self, 'metrics_socket'):
+            self.metrics_socket.close()
+        
+        if hasattr(self, 'health_socket'):
+            self.health_socket.close()
+            
+        # Clean up error reporting
+        if hasattr(self, 'error_bus') and self.error_bus:
+            from pc2_code.agents.error_bus_template import cleanup_error_reporting
+            cleanup_error_reporting(self.error_bus)
+        
+        # Call parent cleanup
         super().cleanup()
 
 def main():
-    monitor = PerformanceMonitor()
-    monitor.run()
-
-
-
-
-
-
-
-if __name__ == "__main__":
     agent = None
     try:
         agent = PerformanceMonitor()
@@ -471,6 +415,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
@@ -502,3 +447,6 @@ network_config = load_network_config()
 MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
+
+if __name__ == "__main__":
+    main()

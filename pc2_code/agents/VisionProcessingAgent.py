@@ -28,7 +28,6 @@ from agents.agent_utils import BaseAgent
 import psutil
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 
@@ -46,7 +45,11 @@ logger = logging.getLogger("VisionProcessingAgent")
 class VisionProcessingAgent(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""Agent for processing images and providing descriptions Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    _agent_args = parse_agent_args()
+
+    """Agent for processing images and providing descriptions Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
+
+    """
 
     def __init__(self, **kwargs):
         """Initialize the Vision Processing Agent."""
@@ -176,9 +179,35 @@ if __name__ == "__main__":
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+from pc2_code.agents.utils.config_loader import Config
+
+# Load configuration at the module level
+config = Config().get_config()
+
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'VisionProcessingAgent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
             logger.info(f"Cleaning up {agent.name}...")
             agent.cleanup() 
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

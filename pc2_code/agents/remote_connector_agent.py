@@ -99,7 +99,9 @@ TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this
 class RemoteConnectorAgent(BaseAgent):
     
     # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    _agent_args = parse_agent_args()
+
+    """
     RemoteConnectorAgent: Handles remote model/API connections. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:').
     """
     def __init__(self, port: int = None):

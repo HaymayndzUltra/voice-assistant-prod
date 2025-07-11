@@ -1,6 +1,4 @@
 """
-from typing import Dict, Any, Optional
-import yaml
 Authentication Agent
 - Handles user authentication and authorization
 - Manages user sessions and tokens
@@ -14,94 +12,134 @@ import time
 import hashlib
 import os
 import sys
+import yaml
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
+project_root = current_dir.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import config module
 try:
+    from common.core.base_agent import BaseAgent
     from pc2_code.agents.utils.config_loader import Config
-    config = Config()  # Instantiate the global config object
+    config = Config().get_config()
 except ImportError as e:
     print(f"Import error: {e}")
     # Fallback if config not available
     config = None
 
-# Import system_config for per-machine settings
-try:
-    from pc2_code.config import system_config
-except ImportError:
-    system_config = {}
-
-try:
-    from pc2_code.utils.config_loader import parse_agent_args
-    _agent_args = parse_agent_args() 
-    from common.core.base_agent import BaseAgent
-    from pc2_code.agents.utils.config_loader import Config
-
-    # Load configuration at the module level
-    config = Config().get_config()
-except ImportError as e:
-    print(f"Import error: {e}")
-    # Fallback if config parser not available
-    class DummyArgs:
-        host = 'localhost'
-    _agent_args = DummyArgs()
-
 # Configure logging
-log_file_path = 'logs/authentication_agent.log'
-log_directory = os.path.dirname(log_file_path)
+log_directory = os.path.join('logs')
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file_path),
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger('AuthenticationAgent')
 
-# Default ZMQ ports (will be overridden by configuration)
-AUTH_PORT = 7116  # Default, will be overridden by configuration
-AUTH_HEALTH_PORT = 8116  # Default health check port
+# Load configuration at the module level
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "auth_agent": int(os.environ.get("AUTH_PORT", 7116)),
+                "auth_health": int(os.environ.get("AUTH_HEALTH_PORT", 8116))
+            }
+        }
+
+# Load network configuration
+network_config = load_network_config()
+
+# Get configuration values
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+AUTH_PORT = network_config.get("ports", {}).get("auth_agent", int(os.environ.get("AUTH_PORT", 7116)))
+AUTH_HEALTH_PORT = network_config.get("ports", {}).get("auth_health", int(os.environ.get("AUTH_HEALTH_PORT", 8116)))
+ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 
 class AuthenticationAgent(BaseAgent):
-    """Authentication Agent for system-wide authentication and authorization. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
+    """Authentication Agent for system-wide authentication and authorization."""
     
     def __init__(self, port: int = None, health_check_port: int = None, **kwargs):
-        # Initialize BaseAgent with proper name and port
-        super().__init__(name="AuthenticationAgent", port=port if port is not None else AUTH_PORT, **kwargs)
-
-        # Record start time for uptime calculation
-        self.start_time = time.time()
-
-        # Initialize agent state
-        self.running = True
-        self.request_count = 0
-        
-        # Set up connection to main PC if needed
-        self.main_pc_connections = {}
-        
-        logger.info(f"{self.__class__.__name__} initialized on PC2 port {self.port}")
-        # Initialize authentication data
+        # Initialize agent state before BaseAgent
         self.users = {}
         self.sessions = {}
         self.token_expiry = timedelta(hours=24)
+        self.request_count = 0
+        self.main_pc_connections = {}
+        self.running = True
+        self.start_time = time.time()
+        
+        # Initialize BaseAgent with proper name and port
+        super().__init__(
+            name="AuthenticationAgent", 
+            port=port if port is not None else AUTH_PORT,
+            health_check_port=health_check_port if health_check_port is not None else AUTH_HEALTH_PORT,
+            **kwargs
+        )
         
         # Start session cleanup thread
         self.cleanup_thread = threading.Thread(target=self._cleanup_sessions_loop)
         self.cleanup_thread.daemon = True
         self.cleanup_thread.start()
+        
+        # Set up error reporting
+        self.setup_error_reporting()
+        
         logger.info(f"Authentication Agent initialized on port {self.port}")
-        self.error_bus = setup_error_reporting(self)
-def _cleanup_sessions_loop(self):
+
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+    
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+    
+    def _cleanup_sessions_loop(self):
         """Background thread for cleaning up expired sessions."""
         while self.running:
             try:
@@ -109,6 +147,7 @@ def _cleanup_sessions_loop(self):
                 time.sleep(300)  # Clean up every 5 minutes
             except Exception as e:
                 logger.error(f"Error in cleanup loop: {e}")
+                self.report_error("CLEANUP_ERROR", f"Error in session cleanup: {e}")
     
     def _cleanup_expired_sessions(self):
         """Remove expired sessions."""
@@ -171,7 +210,7 @@ def _cleanup_sessions_loop(self):
         elif action == 'validate_token':
             return self._handle_token_validation(request)
         elif action == 'health_check':
-            return self._health_check()
+            return self._get_health_status()
         else:
             return {'status': 'error', 'message': f'Unknown action: {action}'}
     
@@ -196,6 +235,7 @@ def _cleanup_sessions_loop(self):
             return {'status': 'success', 'message': 'User registered successfully'}
         except Exception as e:
             logger.error(f"Error handling registration: {e}")
+            self.report_error("REGISTRATION_ERROR", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def _handle_login(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -227,6 +267,7 @@ def _cleanup_sessions_loop(self):
             }
         except Exception as e:
             logger.error(f"Error handling login: {e}")
+            self.report_error("LOGIN_ERROR", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def _handle_logout(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -244,6 +285,7 @@ def _cleanup_sessions_loop(self):
                 return {'status': 'error', 'message': 'Invalid token'}
         except Exception as e:
             logger.error(f"Error handling logout: {e}")
+            self.report_error("LOGOUT_ERROR", str(e))
             return {'status': 'error', 'message': str(e)}
     
     def _handle_token_validation(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -262,11 +304,8 @@ def _cleanup_sessions_loop(self):
                 return {'status': 'success', 'valid': False}
         except Exception as e:
             logger.error(f"Error handling token validation: {e}")
+            self.report_error("TOKEN_VALIDATION_ERROR", str(e))
             return {'status': 'error', 'message': str(e)}
-    
-    def _health_check(self) -> Dict[str, Any]:
-        """Legacy health check method."""
-        return self._get_health_status()
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -275,10 +314,12 @@ def _cleanup_sessions_loop(self):
         
         # Add agent-specific health information
         status.update({
+            "status": "ok",
             "agent_type": "authentication",
             "active_sessions": len(self.sessions),
             "registered_users": len(self.users),
-            "cleanup_thread_alive": self.cleanup_thread.is_alive() if hasattr(self, 'cleanup_thread') else False
+            "cleanup_thread_alive": self.cleanup_thread.is_alive() if hasattr(self, 'cleanup_thread') else False,
+            "uptime_seconds": time.time() - self.start_time
         })
         
         return status
@@ -304,9 +345,11 @@ def _cleanup_sessions_loop(self):
                         
                 except zmq.error.ZMQError as e:
                     logger.error(f"ZMQ error: {e}")
+                    self.report_error("ZMQ_ERROR", str(e))
                     time.sleep(1)  # Sleep to avoid tight loop on error
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
+                    self.report_error("PROCESSING_ERROR", str(e))
                     # Try to send error response
                     try:
                         self.socket.send_json({
@@ -329,14 +372,42 @@ def _cleanup_sessions_loop(self):
         
         # Close ZMQ sockets
         if hasattr(self, 'socket'):
-            self.socket.close()
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Close any connections to other services
+        for service_name, socket in self.main_pc_connections.items():
+            try:
+                socket.close()
+                logger.info(f"Closed connection to {service_name}")
+            except Exception as e:
+                logger.error(f"Error closing connection to {service_name}: {e}")
         
         # Join threads
         if hasattr(self, 'cleanup_thread'):
-            self.cleanup_thread.join(timeout=2.0)
+            try:
+                self.cleanup_thread.join(timeout=2.0)
+                logger.info("Joined cleanup thread")
+            except Exception as e:
+                logger.error(f"Error joining cleanup thread: {e}")
         
         # Call parent cleanup
-        super().cleanup()
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
         
         logger.info("Authentication Agent cleanup complete")
     
@@ -347,16 +418,9 @@ def _cleanup_sessions_loop(self):
     def connect_to_main_pc_service(self, service_name: str):
         """Connect to a service on the main PC."""
         try:
-            # Load network configuration
-            network_config = load_network_config()
-            
-            if not network_config:
-                logger.error("Failed to load network configuration")
-                return False
-            
-            # Get service details
-            service_config = network_config.get('services', {}).get(service_name)
-            if not service_config:
+            # Get service details from config
+            service_ports = network_config.get('ports', {})
+            if service_name not in service_ports:
                 logger.error(f"Service '{service_name}' not found in network configuration")
                 return False
             
@@ -364,14 +428,9 @@ def _cleanup_sessions_loop(self):
             socket = self.context.socket(zmq.REQ)
             
             # Connect to service
-            host = service_config.get('host', 'localhost')
-            port = service_config.get('port')
-            if not port:
-                logger.error(f"No port specified for service '{service_name}'")
-                return False
-            
-            socket.connect(f"tcp://{host}:{port}")
-            logger.info(f"Connected to {service_name} at {host}:{port}")
+            port = service_ports[service_name]
+            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+            logger.info(f"Connected to {service_name} at {MAIN_PC_IP}:{port}")
             
             # Store socket
             self.main_pc_connections[service_name] = socket
@@ -379,23 +438,14 @@ def _cleanup_sessions_loop(self):
             return True
         except Exception as e:
             logger.error(f"Error connecting to service '{service_name}': {e}")
+            self.report_error("CONNECTION_ERROR", f"Failed to connect to {service_name}: {e}")
             return False
-
-def load_network_config():
-    """Load network configuration from file."""
-    try:
-        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'network_config.yaml')
-        with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network configuration: {e}")
-        return None
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
     agent = None
     try:
-        agent = DummyArgs()
+        agent = AuthenticationAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
@@ -407,28 +457,3 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name} on PC2...")
             agent.cleanup()
-
-# Load network configuration
-def load_network_config():
-    """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
-    try:
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Error loading network config: {e}")
-        # Default fallback values
-        return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
-            "bind_address": "0.0.0.0",
-            "secure_zmq": False
-        }
-
-# Load both configurations
-network_config = load_network_config()
-
-# Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
-BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

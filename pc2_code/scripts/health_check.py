@@ -128,11 +128,12 @@ def check_agent_health_zmq(agent: Dict[str, Any]) -> bool:
     """Check health of a single agent using ZMQ health check."""
     try:
         import zmq
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.setsockopt(zmq.LINGER, 0)
         socket.setsockopt(zmq.RCVTIMEO, 2000)
-        socket.connect(f"tcp://localhost:{agent['health_check_port']}")
+        socket.connect(get_zmq_connection_string({agent[, "localhost"))health_check_port']}")
         
         # Send health check request
         socket.send_json({"action": "health_check"})

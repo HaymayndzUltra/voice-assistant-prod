@@ -14,6 +14,12 @@ import time
 from typing import Dict, Any, Optional, List, Union
 from common.core.base_agent import BaseAgent
 
+from main_pc_code.utils.config_loader import load_config
+
+# Load configuration at the module level
+config = load_config()
+
+
 logger = logging.getLogger("MemoryClient")
 
 def get_service_address(service_name: str) -> str:
@@ -640,3 +646,52 @@ class MemoryClient(BaseAgent):
             return self.reset_circuit_breaker()
         else:
             return {"status": "error", "message": "This client does not accept remote commands"} 
+    def _get_health_status(self) -> dict:
+        """Return health status information."""
+        # Get base health status from parent class
+        base_status = super()._get_health_status()
+        
+        # Add agent-specific health information
+        base_status.update({
+            'service': self.__class__.__name__,
+            'uptime_seconds': int(time.time() - self.start_time) if hasattr(self, 'start_time') else 0,
+            'request_count': self.request_count if hasattr(self, 'request_count') else 0,
+            'status': 'HEALTHY'
+        })
+        
+        return base_status
+
+
+if __name__ == "__main__":
+    agent = None
+    try:
+        agent = MemoryClient()
+        agent.run()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt received, shutting down...")
+    except Exception as e:
+        logger.error(f"Error in main: {e}", exc_info=True)
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)
