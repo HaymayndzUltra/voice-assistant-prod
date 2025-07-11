@@ -233,30 +233,36 @@ agent_groups:
       health_check_port: 6595
       required: true
       dependencies: [SystemDigitalTwin]
+    DynamicIdentityAgent:
+      script_path: main_pc_code/agents/DynamicIdentityAgent.py
+      port: 5802
+      health_check_port: 6802
+      required: true
+      dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   audio_processing:
     AudioCapture:
       script_path: main_pc_code/agents/streaming_audio_capture.py
-      port: 6575
-      health_check_port: 6576
+      port: 6550
+      health_check_port: 7550
       required: true
       dependencies: [SystemDigitalTwin]
     FusedAudioPreprocessor:
       script_path: main_pc_code/agents/fused_audio_preprocessor.py
-      port: 6578
-      health_check_port: 6581
+      port: 6551
+      health_check_port: 7551
       required: true
       dependencies: [AudioCapture, SystemDigitalTwin]
     StreamingInterruptHandler:
       script_path: main_pc_code/agents/streaming_interrupt_handler.py
       port: 5576
-      health_check_port: 6577  # Fixed port conflict
+      health_check_port: 6576  # port+1000 rule
       required: true
       dependencies: [StreamingSpeechRecognition, StreamingTTSAgent]
     StreamingSpeechRecognition:
       script_path: main_pc_code/agents/streaming_speech_recognition.py
-      port: 6580
-      health_check_port: 6582
+      port: 6553
+      health_check_port: 7553
       required: true
       dependencies: [FusedAudioPreprocessor, ModelManagerAgent, SystemDigitalTwin]
     StreamingTTSAgent:
@@ -267,8 +273,8 @@ agent_groups:
       dependencies: [RequestCoordinator, ModelManagerAgent, SystemDigitalTwin, UnifiedSystemAgent]
     WakeWordDetector:
       script_path: main_pc_code/agents/wake_word_detector.py
-      port: 6577
-      health_check_port: 6578
+      port: 6552
+      health_check_port: 7552
       required: true
       dependencies: [AudioCapture, FusedAudioPreprocessor, SystemDigitalTwin]
     StreamingLanguageAnalyzer:
@@ -277,6 +283,12 @@ agent_groups:
       health_check_port: 5597
       required: true
       dependencies: [StreamingSpeechRecognition, SystemDigitalTwin]
+    ProactiveAgent:
+      script_path: main_pc_code/agents/ProactiveAgent.py
+      port: 5624
+      health_check_port: 6624
+      required: true
+      dependencies: [RequestCoordinator, SystemDigitalTwin]
 
   emotion_system:
     EmotionEngine:
