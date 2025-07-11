@@ -1,51 +1,86 @@
 import time
-import logging
+import statistics
+from main_pc_code.utils import model_client
 
-# Basic logger setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Define a set of prompts to test different scenarios
+TEST_PROMPTS = [
+    {"id": "short_greeting", "prompt": "Hello"},
+    {"id": "simple_question", "prompt": "What is the capital of France?"},
+    {"id": "code_generation", "prompt": "Write a python function to calculate the factorial of a number."},
+    {"id": "long_reasoning", "prompt": "Explain the theory of relativity in three paragraphs."},
+]
 
-def measure_llm_latency_and_tps():
+def run_benchmark():
     """
-    Placeholder to measure LLM performance.
-    This will eventually call the ModelManagerAgent to get a response.
+    Runs the performance benchmark and prints the results.
     """
-    logging.info("Measuring LLM baseline... (placeholder)")
-    # TODO: Implement a ZMQ REQ call to the current ModelManagerAgent
-    #       with a standard prompt and measure time-to-first-token and tokens/sec.
-    time_to_first_token = 0.5  # Dummy value
-    tokens_per_second = 50.0   # Dummy value
-    logging.info(f"LLM Latency (TTFT): {time_to_first_token:.2f}s, Throughput: {tokens_per_second:.2f} tokens/s")
-    return {"llm_ttft_s": time_to_first_token, "llm_tps": tokens_per_second}
+    print("--- Starting Performance Benchmark ---")
+    results = []
 
-def measure_voice_loop_latency():
-    """
-    Placeholder to measure the full STT -> LLM -> TTS voice loop latency.
-    """
-    logging.info("Measuring Voice Loop baseline... (placeholder)")
-    # TODO: Implement a full voice loop test:
-    # 1. Send dummy audio bytes to the STT service.
-    # 2. Take the transcribed text and send to the LLM service.
-    # 3. Take the LLM response and send to the TTS service.
-    # 4. Measure total time from step 1 to receiving final audio bytes.
-    total_latency = 1.8  # Dummy value
-    logging.info(f"End-to-end Voice Loop Latency: {total_latency:.2f}s")
-    return {"voice_loop_latency_s": total_latency}
+    for test in TEST_PROMPTS:
+        prompt_id = test["id"]
+        prompt_text = test["prompt"]
+        
+        print(f"\n[Testing: {prompt_id}]")
+        
+        try:
+            start_time = time.perf_counter()
+            
+            # Use the model_client to call the MMA router
+            response = model_client.generate(prompt_text, quality="fast")
+            
+            end_time = time.perf_counter()
 
-def main():
-    """
-    Run all baseline benchmarks and print the results.
-    """
-    logging.info("--- Starting Baseline Performance Snapshot ---")
-    llm_results = measure_llm_latency_and_tps()
-    voice_results = measure_voice_loop_latency()
+            # Handle different response formats
+            if isinstance(response, dict):
+                status_val = response.get("status")
+                if status_val not in ("ok", "SUCCESS", "success"):
+                    # Something went wrong according to the MMA
+                    print(f"  ERROR: model_client returned error status → {response}")
+                    continue
+                response_text = response.get("response_text") or response.get("text") or ""
+            elif isinstance(response, str):
+                response_text = response
+            else:
+                print("  ERROR: Unsupported response type from model_client.")
+                continue
 
-    # In a real CI environment, this would write to a JSON or artifact file.
-    # For now, we just print it.
-    print("\n--- Benchmark Results ---")
-    print(f"LLM Time-to-First-Token (s): {llm_results['llm_ttft_s']}")
-    print(f"LLM Tokens/Second: {llm_results['llm_tps']}")
-    print(f"Voice Loop Latency (s): {voice_results['voice_loop_latency_s']}")
-    print("-------------------------")
+            if not response_text:
+                print("  ERROR: Empty response_text from model_client.")
+                continue
+
+            latency = end_time - start_time
+            response_tokens = len(response_text.split())  # Simple token count by splitting words
+            tokens_per_second = response_tokens / latency if latency > 0 else float('inf')
+
+            result_data = {
+                "id": prompt_id,
+                "latency_s": latency,
+                "tokens_per_s": tokens_per_second,
+                "response_length_tokens": response_tokens
+            }
+            results.append(result_data)
+            
+            print(f"  Latency: {latency:.4f} s")
+            print(f"  Tokens/s: {tokens_per_second:.2f}")
+            print(f"  Response Length: {response_tokens} tokens")
+
+        except Exception as e:
+            print(f"  ERROR during benchmark for '{prompt_id}': {e}")
+
+    if not results:
+        print("\n--- Benchmark finished with no successful results. ---")
+        return
+
+    # Calculate and print summary statistics
+    avg_latency = statistics.mean([r["latency_s"] for r in results])
+    avg_tps = statistics.mean([r["tokens_per_s"] for r in results])
+
+    print("\n--- Benchmark Summary ---")
+    print(f"Average Latency: {avg_latency:.4f} s")
+    print(f"Average Tokens/s: {avg_tps:.2f}")
+    print("-----------------------")
+
 
 if __name__ == "__main__":
-    main() 
+    run_benchmark() 

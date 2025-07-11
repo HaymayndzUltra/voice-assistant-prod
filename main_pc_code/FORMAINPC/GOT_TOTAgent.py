@@ -23,8 +23,16 @@ import zmq
 import threading
 import random
 from collections import deque
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+# NOTE: direct HF loaders will be removed; keep optional torch for device detection
+try:
+    import torch
+except ImportError:
+    torch = None  # type: ignore
+
+# Remove direct model loading; transformers now optional
+# from transformers import AutoTokenizer, AutoModelForCausalLM
+
+from main_pc_code.utils import model_client
 import sys
 import os
 
@@ -123,37 +131,11 @@ class GoTToTAgent(BaseAgent):
         return {"status": status, "details": details}
     
     def _load_reasoning_model(self):
-        """Load the reasoning model"""
-        try:
-            logger.info("Attempting to load reasoning model...")
-            # Define the path to the local HuggingFace model directory (not .gguf file)
-            model_path = "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/phi-2.Q4_0.gguf"
-            fallback_model = "microsoft/phi-2"
-
-            # Try local directory (must be a directory with config.json, etc.)
-            if os.path.isdir(model_path):
-                logger.info(f"Trying to load local HuggingFace model directory: {model_path}")
-                self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-                self.model = AutoModelForCausalLM.from_pretrained(model_path)
-                logger.info(f"Loaded local model from {model_path}")
-            else:
-                logger.warning(f"Local model directory not found or not valid at {model_path}. Trying HuggingFace Hub model: {fallback_model}")
-                self.tokenizer = AutoTokenizer.from_pretrained(fallback_model)
-                self.model = AutoModelForCausalLM.from_pretrained(fallback_model)
-                logger.info(f"Loaded HuggingFace Hub model: {fallback_model}")
-
-            # Move to GPU if available
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            if self.model:
-                self.model.to(self.device)
-                logger.info(f"Reasoning model loaded on {self.device}")
-
-        except Exception as e:
-            logger.error(f"Error loading reasoning model: {str(e)}")
-            self.model = None
-            self.tokenizer = None
-            logger.info("Fallback mode initialized - health checks will pass but model generation will be limited")
-            return
+        """Stub: No local model loading. Uses centralized MMA via model_client."""
+        self.model = None  # legacy placeholders retained for backwards compatibility
+        self.tokenizer = None
+        self.device = None
+        logger.info("Reasoning model loading skipped – routed via model_client.generate() instead.")
     
     def _process_loop(self):
         """Main processing loop (poller-based, safe REP pattern)"""
@@ -263,38 +245,30 @@ class GoTToTAgent(BaseAgent):
         return leaves
     
     def _generate_reasoning_step(self, state: Dict, step: int, branch: int) -> Dict:
-        """Generate a reasoning step using the model"""
+        """Generate a reasoning step using centralized LLM router."""
         try:
-            if not self.model or not self.tokenizer:
-                # Fallback to simple state update
-                return self._fallback_reasoning_step(state, step, branch)
-            
-            # Prepare prompt
             prompt = self._create_reasoning_prompt(state, step, branch)
-            
-            # Generate reasoning
-            inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(self.device)
-            
-            with torch.no_grad():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_length=200,
-                    num_return_sequences=1,
-                    temperature=self.temperature,
-                    top_p=self.top_p
-                )
-            
-            reasoning = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
-            # Update state
+
+            # Call ModelManagerAgent via model_client
+            response = model_client.generate(prompt, quality="fast", max_tokens=200, temperature=self.temperature, top_p=self.top_p)
+
+            if isinstance(response, dict):
+                reasoning = response.get("response_text", "")
+            else:
+                reasoning = str(response)
+
+            if not reasoning:
+                logger.warning("Empty reasoning response – falling back")
+                return self._fallback_reasoning_step(state, step, branch)
+
             new_state = state.copy()
             new_state['context'] = state['context'] + [reasoning]
             new_state['last_step'] = reasoning
-            
+
             return new_state
-            
+
         except Exception as e:
-            logger.error(f"Error generating reasoning step: {str(e)}")
+            logger.error(f"Error via model_client.generate: {e}")
             return self._fallback_reasoning_step(state, step, branch)
     
     def _fallback_reasoning_step(self, state: Dict, step: int, branch: int) -> Dict:

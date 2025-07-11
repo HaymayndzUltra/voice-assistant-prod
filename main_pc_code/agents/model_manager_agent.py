@@ -3203,15 +3203,52 @@ class ModelManagerAgent(BaseAgent):
         
         self.logger.info(f"Routing '{model_pref}' preference to model: {model_name}")
         
-        # TODO: In the future, implement actual model inference here
-        # For now, return a placeholder response to prove routing works
-        placeholder_response = f"Placeholder response for prompt: {prompt[:50]}..."
-        
+        # --- Actual model inference (GGUF integration) ---
+        model_info = llm_config.get('models', {}).get(model_name, {})
+        model_type = model_info.get('type', 'placeholder')
+
+        # Only GGUF models are supported for now
+        if model_type == 'gguf':
+            try:
+                from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+                gguf_manager = get_gguf_manager()
+
+                # Ensure model is loaded (load_model handles caching)
+                gguf_manager.load_model(model_name)
+
+                gen_result = gguf_manager.generate_text(
+                    model_id=model_name,
+                    prompt=prompt,
+                    max_tokens=params.get('max_tokens', 256),
+                    temperature=params.get('temperature', 0.7),
+                    top_p=params.get('top_p', 0.95)
+                )
+
+                # If the manager returns an error, fall back to placeholder
+                if isinstance(gen_result, dict) and gen_result.get('error'):
+                    raise RuntimeError(gen_result['error'])
+
+                response_text = gen_result.get('text') if isinstance(gen_result, dict) else str(gen_result)
+
+                return {
+                    'status': 'ok',
+                    'response_text': response_text,
+                    'model_used': model_name,
+                    'timestamp': time.time()
+                }
+
+            except Exception as e:
+                self.logger.error(f"GGUF inference failed: {e}")
+                # Fall back to placeholder so that client still gets a response
+
+        # Fallback placeholder response when actual inference is not available
+        placeholder_response = f"[MMA-Placeholder] {prompt[:50]}..."
+
         return {
-            "status": "ok",
-            "response_text": placeholder_response,
-            "model_used": model_name,
-            "timestamp": time.time()
+            'status': 'ok',
+            'response_text': placeholder_response,
+            'model_used': model_name,
+            'timestamp': time.time()
         }
     
     def _handle_status_action(self, request):
@@ -3726,6 +3763,10 @@ class ModelManagerAgent(BaseAgent):
             dict: Response message with status and model information
         """
         try:
+            # Unified API quick path — handle `{action: "generate"}` requests here
+            if isinstance(request_data, dict) and request_data.get("action") == "generate":
+                return self._handle_generate_action(request_data)
+
             model_id = request_data.get("model_id")
             request_id = request_data.get("request_id")
             context = request_data.get("context", {})

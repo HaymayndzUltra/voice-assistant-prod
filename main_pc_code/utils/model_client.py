@@ -15,7 +15,8 @@ MMA_PORT = os.environ.get('MODEL_MANAGER_PORT', '5588') # Default to test port, 
 MMA_ADDRESS = f"tcp://{MMA_HOST}:{MMA_PORT}"
 
 # Network settings
-REQUEST_TIMEOUT = 5000  # 5 seconds
+# Allow override of timeout via env variable, default to 15000ms (15s)
+REQUEST_TIMEOUT = int(os.environ.get("MODEL_CLIENT_TIMEOUT_MS", "15000"))  # in milliseconds
 REQUEST_RETRIES = 3
 
 # --- ZMQ Context Management ---

@@ -1,7 +1,7 @@
 # Defines which model to use for each quality preference.
 # The ModelManagerAgent will use this table for routing.
 load_policy:
-  fast: phi-3-mini-128k-instruct
+  fast: phi-2
   quality: Mistral-7B-Instruct-v0.2
   fallback: phi-2
 

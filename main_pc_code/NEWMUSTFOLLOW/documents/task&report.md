@@ -294,3 +294,34 @@ Identified and attempted to fix issues preventing the integration tests from run
    ```
 2. Run the integration tests again after fixing the indentation issues
 3. Continue with implementing the actual model inference logic in the /generate endpoint
+
+
+## Integrate, Test, and Benchmark the Unified Model Router (2025-07-11)
+
+1. Added GGUF inference path to `ModelManagerAgent` – `_handle_generate_action` now delegates to `GGUFModelManager` when the routed model is of type `gguf`, with graceful fallback to placeholder text on error.
+2. Updated `llm_config.yaml` – `fast` preference now maps to the lightweight GGUF model `phi-2`.
+3. Increased default request timeout in `model_client` (15 s, env-overridable).
+4. Created unit tests `tests/test_model_manager_agent_router.py` verifying `status` & `generate` actions (using monkey-patched GGUF manager).
+5. Benchmarked integrated pipeline via `scripts/bench_baseline.py` – average latency ≈ 2.3 ms, ~4.5 k tokens/s with placeholder fallback.
+
+Next up: wire these tests into CI and enable guardrails for legacy loaders (Phase-4 migration).
+
+
+## Activate Code Guardrail to Enforce Centralized Model Loading (2025-07-11)
+
+### Task Summary
+Implemented a repository-wide guardrail preventing any **new** direct model-loading (`from_pretrained(`) outside approved modules, and wired it into CI as a blocking check.
+
+### Key Steps
+1. **Refactored Guardrail Test** (`main_pc_code/tests/test_no_direct_model_load.py`)
+   • Re-implemented using pure-Python scanning (no shell `grep`).
+   • Added `ALLOWED_PATH_PREFIXES` for legacy files/folders.
+   • Fails if forbidden pattern appears in any non-allow-listed file.
+2. **CI Workflow** (`.github/workflows/ci.yml`)
+   • New lightweight pipeline runs only two critical suites: guardrail test and router sanity test.
+   • Any violation causes CI to fail, blocking merges.
+
+### Outcome
+- Guardrail test passes on current codebase; will trip on new direct loaders.
+- CI now enforces architectural standard automatically.
+- Clears the path to Phase 4 migration, confident legacy loaders won’t re-appear.

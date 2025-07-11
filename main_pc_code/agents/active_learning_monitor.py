@@ -279,3 +279,24 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+                
+            # Close any open file handles
+            # [Add specific resource cleanup here]
+            
+            # Call parent class cleanup if it exists
+            super().cleanup()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)

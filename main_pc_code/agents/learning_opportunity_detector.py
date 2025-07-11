@@ -539,26 +539,37 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
             }
     
     def _get_health_status(self):
-        """Return detailed health status for monitoring."""
-        uptime = time.time() - self.start_time
-        db_status = 'ok'
+        """Return standardized health status with SQLite and ZMQ readiness checks."""
+        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
+
+        db_connected = False
+        opportunity_count = -1
         try:
-            conn = sqlite3.connect(OPPORTUNITY_DB_PATH)
+            conn = sqlite3.connect(OPPORTUNITY_DB_PATH, timeout=1)
             cursor = conn.cursor()
             cursor.execute('SELECT COUNT(*) FROM learning_opportunities')
-            count = cursor.fetchone()[0]
+            opportunity_count = cursor.fetchone()[0]
             conn.close()
+            db_connected = True
         except Exception as e:
-            db_status = f'error: {e}'
-            count = -1
-        return {
-            "status": "healthy" if db_status == 'ok' else "degraded",
-            "uptime_sec": uptime,
-            "buffer_size": len(self.interaction_buffer),
-            "db_status": db_status,
-            "opportunity_count": count,
-            "valuable_opportunities": self.valuable_opportunities
+            logger.error(f"Health check DB error: {e}")
+
+        zmq_ready = hasattr(self, 'socket') and self.socket is not None
+
+        specific_metrics = {
+            'uptime_sec': time.time() - self.start_time if hasattr(self, 'start_time') else 0,
+            'buffer_size': len(self.interaction_buffer),
+            'db_connected': db_connected,
+            'opportunity_count': opportunity_count,
+            'valuable_opportunities': self.valuable_opportunities,
+            'zmq_ready': zmq_ready
         }
+        overall_status = 'ok' if all([db_connected, zmq_ready]) else 'degraded'
+        base_status.update({
+            'status': overall_status,
+            'agent_specific_metrics': specific_metrics
+        })
+        return base_status
 
     def health_check(self):
         """Expose health check endpoint."""

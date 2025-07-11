@@ -1,0 +1,62 @@
+* [33m074b028[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m WIP: Save all current changes before merging branches
+* [33mdeecf08[m[33m ([m[1;32mllm_unify[m[33m)[m Update startup_config.yaml
+* [33mac2048d[m NEW
+* [33m3f4d359[m[33m ([m[1;31morigin/main[m[33m)[m Add containerization_package and related scripts
+* [33mcb61cb9[m Add containerization_package and related scripts
+* [33m1cf4e07[m PODMAN SUCCESFULL
+* [33m60ea66c[m READY CONTAINER
+* [33m8f0043c[m[33m ([m[1;31morigin/testing-branch[m[33m, [m[1;32mtesting-branch[m[33m)[m PHASE 2
+* [33m7fc1e32[m PHASE 4
+* [33me912815[m Fix linter errors in SystemDigitalTwin: update import path and fix type checking
+* [33m78d664c[m Add get_registered_agents and get_agent_info methods to SystemDigitalTwin to support SystemHealthManager's dynamic agent discovery
+* [33mca5ad5b[m Update documentation with SystemHealthManager and SystemDigitalTwin integration details
+* [33m1be1652[m Integrate SystemHealthManager with SystemDigitalTwin for dynamic agent discovery and health monitoring
+* [33m56a50a1[m Add Error Bus architecture documentation with diagram
+* [33m9658113[m Update agent documentation with Error Bus architecture details
+* [33m76f0ee1[m Update task report with Error Bus migration details
+* [33m0e2d292[m Implement event-driven Error Bus across all agents
+* [33mcdd0738[m phase 3
+* [33m5152db9[m Phase 1 complete: ModelOrchestrator hardening, full system integration, and documentation updates for robust orchestration compliance.
+* [33m2c9397a[m Phase 0: Foundation & Standardization - Implement standardized data models, enhance BaseAgent, refactor SystemDigitalTwin, and update startup config
+* [33m6584679[m NEW
+* [33mbd5edb5[m Add syntax checking and fixing scripts
+* [33md2e5981[m Fix syntax errors in model_manager_agent.py and streaming_tts_agent.py
+* [33m7c567f9[m Fix circular dependencies: Remove direct dependencies between TaskRouter, DynamicIdentityAgent, and StreamingSpeechRecognition and implement service discovery-based connections
+* [33mc942721[m Fix port conflicts: Change MemoryClient port from 5578 to 5583 and TieredResponder health check port from 8110 to 8131
+* [33mc1c7a77[m Updated end-to-end test to include all 28 PC2 agents and added check_ports.py utility
+* [33m23f09d4[m Made all PC2 agents compliant with architectural standards while preserving functionality
+* [33ma14be9c[m Implement cross-machine communication for PC2 agents with proper network configuration
+* [33ma1794aa[m refactor(agents): streaming_audio_capture.py,streaming_speech_recognition.py at language_and_translation_coordinator.py
+* [33m991b1e6[m refactor(agents): MultiAgentSwarmManager at code_generator_agent compliant
+* [33m67e316d[m refactor(agents): SessionMemoryAgent,LearningManager,MetaCognitionAgent compliant
+* [33m0289da8[m refactor(agent): Make AdvancedCommandHandler, ChitchatAgent, StreamingLanguageAnalyzer fully compliant
+* [33mb145235[m Refactor VoiceProfilingAgent.py for compliance with architectural standards
+* [33m9e0a3d0[m Refactor MoodTrackerAgent.py for compliance with architectural standards
+* [33m0c07d73[m refactor(agent): Make EmotionEngine fully compliant
+* [33m5767951[m refactor(agent): Make ConsolidatedTranslator fully compliant
+* [33m103b086[m refactor(agent): Make LocalFineTunerAgent fully compliant
+* [33m101fe6b[m refactor(agent): Make LearningAdjusterAgent fully compliant
+* [33m8c24801[m refactor(agent): Make NLLBAdapter fully compliant
+* [33m04b0507[m refactor(agent): Make PredictiveLoader fully compliant
+* [33m03d1ae7[m refactor(agent): Make ProactiveAgent fully compliant
+* [33m382d43e[m refactor(agent): Make GoalOrchestratorAgent fully compliant
+* [33m44af3ef[m refactor(agent): Make CoordinatorAgent AND OTHER fully compliant
+* [33m4fe60d1[m refactor(config): Standardize config loading for TaskRouter
+* [33m7b5baee[m NATAPOS NA ANG HEALTH CHECK AT IBA PA SISIGURADUHIN NALANG
+* [33m7e72719[m CORRECTIVE COMMIT: Reverting to the correct state from PC2. Overwriting bad commit from MainPC.
+* [33m99f6b18[m Initial commit from Main PC
+* [33m0946c2b[m July242025
+* [33m25e9c6d[m v2.1: unify env_loader, finalize health REP, remove legacy folders, update system launchers
+* [33m269ab6f[m July242025
+* [33mcd34ece[m Refactor EnhancedModelRouter and CoordinatorAgent to use service discovery and secure ZMQ
+* [33m9d4b8d8[m Pre-Dockerization Audit: Saving current state after Phase 4 completion and before deep scan.
+* [33m35ce24f[m Feat: Add all agents and system files
+* [33ma54d206[m Update all host bindings from localhost to 0.0.0.0 in source_of_truth_config.yaml
+* [33m6ceb9e3[m Dockerization prep: Standardize network config and service discovery across MainPC/PC2 + remove Zone.Identifier files
+* [33m0fb3028[m Pre-Dockerization Audit: Saving current state after Phase 4 completion and before deep scan.
+* [33m1e6a421[m Pre-Dockerization Audit: Saving current state after Phase 4 completion and before deep scan.
+* [33mfc2f391[m Completed Phase 1 (System Stabilization) and foundational Phase 2 (Network & Service Discovery). Ready for cross-machine testing.
+* [33mc86c64d[m fix(repo): Remove invalid Zone.Identifier files
+* [33m51046e1[m feat(pc2_code): Overhaul startup architecture
+* [33m7da920b[m Add new project files and configurations
+* [33m1ace9f9[m Initial commit of the clean and unified monorepo

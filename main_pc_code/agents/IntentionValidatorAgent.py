@@ -187,32 +187,31 @@ default from _agent_args or 5572)
             raise
         
     def _get_health_status(self) -> dict:
-        """Get detailed health status."""
-        status = super()._get_health_status()
-        
-        # Add agent-specific metrics
-        status["initialization_status"] = self.initialization_status
+        """Return standardized health status with SQLite connectivity and ZMQ readiness checks."""
+        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
+
+        # SQLite metrics
+        db_connected = False
+        history_count = -1
+        total = 0
+        successful = 0
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, timeout=1)
             cursor = conn.cursor()
-            
-            # Get validation history count
             cursor.execute("SELECT COUNT(*) FROM validation_history")
             history_count = cursor.fetchone()[0]
-            
-            # Get recent validation success rate
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT 
-                    COUNT(*) as total,
+                    COUNT(*)  as total,
                     SUM(CASE WHEN validation_result = 1 THEN 1 ELSE 0 END) as successful
                 FROM validation_history 
                 WHERE timestamp > datetime('now', '-1 hour')
-            """)
+                """
+            )
             total, successful = cursor.fetchone()
-            success_rate = (successful / total * 100) if total > 0 else 0
-            
             conn.close()
-            
+            db_connected = True
             status.update({
                 "validation_history_count": history_count,
                 "recent_success_rate": f"{success_rate:.1f}%",
