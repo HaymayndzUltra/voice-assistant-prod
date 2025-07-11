@@ -39,6 +39,7 @@ import errno
 import psutil
 import GPUtil
 import yaml
+import numpy as np
 
 # Add the parent directory to sys.path to import the config module
 
@@ -3175,6 +3176,12 @@ class ModelManagerAgent(BaseAgent):
         model_pref = request.get("model_pref", "fast")
         prompt = request.get("prompt")
         params = request.get("params", {})
+        conversation_id = request.get("conversation_id")
+        batch_mode = params.get("batch_mode", False)
+        
+        # Handle batch transcription requests
+        if batch_mode and "batch_data" in params:
+            return self._process_batch_transcription(params, model_pref)
         
         if not prompt:
             self.logger.error("Missing 'prompt' field in generate request")
@@ -3221,7 +3228,8 @@ class ModelManagerAgent(BaseAgent):
                     prompt=prompt,
                     max_tokens=params.get('max_tokens', 256),
                     temperature=params.get('temperature', 0.7),
-                    top_p=params.get('top_p', 0.95)
+                    top_p=params.get('top_p', 0.95),
+                    conversation_id=conversation_id
                 )
 
                 # If the manager returns an error, fall back to placeholder
@@ -3230,12 +3238,19 @@ class ModelManagerAgent(BaseAgent):
 
                 response_text = gen_result.get('text') if isinstance(gen_result, dict) else str(gen_result)
 
-                return {
+                response_dict = {
                     'status': 'ok',
                     'response_text': response_text,
                     'model_used': model_name,
                     'timestamp': time.time()
                 }
+                
+                # Include conversation_id in response if provided
+                if conversation_id:
+                    response_dict['conversation_id'] = conversation_id
+                    response_dict['using_kv_cache'] = True
+                
+                return response_dict
 
             except Exception as e:
                 self.logger.error(f"GGUF inference failed: {e}")
@@ -3244,12 +3259,241 @@ class ModelManagerAgent(BaseAgent):
         # Fallback placeholder response when actual inference is not available
         placeholder_response = f"[MMA-Placeholder] {prompt[:50]}..."
 
-        return {
+        response_dict = {
             'status': 'ok',
             'response_text': placeholder_response,
             'model_used': model_name,
             'timestamp': time.time()
         }
+        
+        # Include conversation_id in response if provided
+        if conversation_id:
+            response_dict['conversation_id'] = conversation_id
+            response_dict['using_kv_cache'] = False
+        
+        return response_dict
+
+    def _process_batch_transcription(self, params, model_pref="quality"):
+        """
+        Process a batch transcription request.
+        
+        Args:
+            params: Dictionary containing batch_data and other parameters
+            model_pref: Model preference (quality, fast, etc.)
+            
+        Returns:
+            Dictionary with batch transcription results
+        """
+        # Ensure params is a dictionary
+        if not isinstance(params, dict):
+            self.logger.error("Invalid params type in batch transcription request")
+            return {"status": "error", "message": "Invalid params type"}
+            
+        batch_data = params.get("batch_data", [])
+        if not batch_data:
+            self.logger.error("Empty batch_data in batch transcription request")
+            return {"status": "error", "message": "Empty batch_data"}
+            
+        batch_size = len(batch_data)
+        self.logger.info(f"Processing batch transcription request with {batch_size} items")
+        
+        # Start timing
+        start_time = time.time()
+        
+        # Load the LLM config to get the model mapping
+        try:
+            with open(os.path.join("main_pc_code", "config", "llm_config.yaml"), 'r') as f:
+                llm_config = yaml.safe_load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to load LLM config: {e}")
+            llm_config = {'load_policy': {}, 'models': {}}
+            
+        load_policy = llm_config.get("load_policy", {})
+        
+        # Get the STT model
+        stt_model_name = load_policy.get("stt")
+        if not stt_model_name:
+            self.logger.error("No STT model defined in load_policy")
+            return {"status": "error", "message": "No STT model defined"}
+            
+        # Check if model is loaded
+        if stt_model_name not in self.loaded_models:
+            self.logger.info(f"Loading STT model {stt_model_name} for batch processing")
+            success = self.load_model(stt_model_name)
+            if not success:
+                self.logger.error(f"Failed to load STT model {stt_model_name}")
+                return {"status": "error", "message": f"Failed to load STT model {stt_model_name}"}
+                
+        # Update last used timestamp
+        self.model_last_used[stt_model_name] = time.time()
+        
+        # Process each item in the batch
+        results = []
+        try:
+            # Get the model instance
+            model_info = self.models.get(stt_model_name, {})
+            model_type = model_info.get("type")
+            
+            if model_type == "huggingface":
+                # Process using batched inference for Hugging Face models
+                results = self._process_huggingface_batch(stt_model_name, batch_data)
+            else:
+                # Process each item individually for other model types
+                for item in batch_data:
+                    audio_data = item.get("audio_data")
+                    if audio_data is None:
+                        results.append({"text": "", "confidence": 0.0, "error": "Missing audio_data"})
+                        continue
+                        
+                    # Process individual item
+                    result = self._process_single_transcription(stt_model_name, item)
+                    results.append(result)
+                    
+            # Calculate and log performance metrics
+            duration = time.time() - start_time
+            avg_time = duration / batch_size if batch_size > 0 else 0
+            self.logger.info(f"Batch transcription complete: {batch_size} items in {duration:.2f}s (avg: {avg_time:.4f}s per item)")
+            
+            return {
+                "status": "success",
+                "results": results,
+                "batch_size": batch_size,
+                "processing_time": duration,
+                "model_used": stt_model_name
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error processing batch transcription: {e}")
+            self.logger.error(traceback.format_exc())
+            return {
+                "status": "error",
+                "message": str(e),
+                "partial_results": results
+            }
+    
+    def _process_huggingface_batch(self, model_id, batch_data):
+        """
+        Process a batch of audio data using a Hugging Face model with batched inference.
+        
+        Args:
+            model_id: The model ID to use
+            batch_data: List of dictionaries with audio_data and metadata
+            
+        Returns:
+            List of transcription results
+        """
+        self.logger.info(f"Processing batch with Hugging Face model {model_id}")
+        
+        try:
+            # Get the model instance
+            model_instance = self.loaded_models.get(model_id)
+            if not model_instance:
+                self.logger.error(f"Model {model_id} not loaded")
+                return [{"text": "", "confidence": 0.0, "error": f"Model {model_id} not loaded"}] * len(batch_data)
+                
+            # Prepare batch inputs
+            audio_arrays = []
+            for item in batch_data:
+                audio_data = item.get("audio_data")
+                if audio_data is None:
+                    # Use empty array as placeholder
+                    audio_arrays.append(np.zeros(1600, dtype=np.float32))
+                else:
+                    # Convert to numpy array if needed
+                    if not isinstance(audio_data, np.ndarray):
+                        audio_data = np.array(audio_data, dtype=np.float32)
+                    audio_arrays.append(audio_data)
+            
+            # Process batch with the model
+            with torch.no_grad():
+                # Convert to tensor if using PyTorch
+                if hasattr(model_instance, "forward") or hasattr(model_instance, "__call__"):
+                    # Get batch transcription
+                    batch_results = model_instance(audio_arrays)
+                    
+                    # Format results
+                    transcriptions = []
+                    if isinstance(batch_results, dict):
+                        # Handle dictionary output format
+                        texts = batch_results.get("text", [])
+                        for i, text in enumerate(texts):
+                            transcriptions.append({
+                                "text": text,
+                                "confidence": batch_results.get("confidence", [0.9] * len(texts))[i],
+                            })
+                    elif isinstance(batch_results, list):
+                        # Handle list output format
+                        for result in batch_results:
+                            if isinstance(result, dict):
+                                transcriptions.append({
+                                    "text": result.get("text", ""),
+                                    "confidence": result.get("confidence", 0.9),
+                                })
+                            else:
+                                transcriptions.append({
+                                    "text": str(result),
+                                    "confidence": 0.9,
+                                })
+                    else:
+                        # Handle unexpected output format
+                        self.logger.warning(f"Unexpected batch result format: {type(batch_results)}")
+                        transcriptions = [{"text": str(batch_results), "confidence": 0.5}] * len(batch_data)
+                        
+                    return transcriptions
+                else:
+                    # Fallback to individual processing
+                    self.logger.warning(f"Model {model_id} doesn't support batch processing, falling back to individual processing")
+                    return [self._process_single_transcription(model_id, item) for item in batch_data]
+                    
+        except Exception as e:
+            self.logger.error(f"Error in batch processing with Hugging Face model: {e}")
+            self.logger.error(traceback.format_exc())
+            return [{"text": "", "confidence": 0.0, "error": str(e)}] * len(batch_data)
+    
+    def _process_single_transcription(self, model_id, item):
+        """
+        Process a single audio transcription.
+        
+        Args:
+            model_id: The model ID to use
+            item: Dictionary with audio_data and metadata
+            
+        Returns:
+            Dictionary with transcription result
+        """
+        try:
+            audio_data = item.get("audio_data")
+            if audio_data is None:
+                return {"text": "", "confidence": 0.0, "error": "Missing audio_data"}
+                
+            # Convert to numpy array if needed
+            if not isinstance(audio_data, np.ndarray):
+                audio_data = np.array(audio_data)
+                
+            # Get the model instance
+            model_instance = self.loaded_models.get(model_id)
+            if not model_instance:
+                return {"text": "", "confidence": 0.0, "error": f"Model {model_id} not loaded"}
+                
+            # Process with the model
+            with torch.no_grad():
+                result = model_instance(audio_data)
+                
+                # Format result
+                if isinstance(result, dict):
+                    return {
+                        "text": result.get("text", ""),
+                        "confidence": result.get("confidence", 0.9),
+                    }
+                else:
+                    return {
+                        "text": str(result),
+                        "confidence": 0.9,
+                    }
+                    
+        except Exception as e:
+            self.logger.error(f"Error processing single transcription: {e}")
+            return {"text": "", "confidence": 0.0, "error": str(e)}
     
     def _handle_status_action(self, request):
         """
@@ -3763,9 +4007,13 @@ class ModelManagerAgent(BaseAgent):
             dict: Response message with status and model information
         """
         try:
-            # Unified API quick path — handle `{action: "generate"}` requests here
-            if isinstance(request_data, dict) and request_data.get("action") == "generate":
+                    # Unified API quick path — handle `{action: "generate"}` requests here
+        if isinstance(request_data, dict):
+            action = request_data.get("action")
+            if action == "generate":
                 return self._handle_generate_action(request_data)
+            elif action == "clear_conversation":
+                return self._handle_clear_conversation_action(request_data)
 
             model_id = request_data.get("model_id")
             request_id = request_data.get("request_id")
@@ -3956,15 +4204,196 @@ class ModelManagerAgent(BaseAgent):
                     logger.warning(f"MMA: VRAM still under pressure after unloading {model_id}")
 
     def _apply_quantization(self, model_id, model_type):
-        quantization_type = self.vram_management_config.get('quantization_options_per_model_type', {}).get(
-            model_type,
-            self.vram_management_config.get('default_quantization', 'float16')
+        """
+        Apply quantization to a model based on its type.
+        
+        Args:
+            model_id (str): The ID of the model to quantize
+            model_type (str): The type of the model (e.g., 'gguf', 'huggingface')
+            
+        Returns:
+            bool: True if quantization was successful, False otherwise
+        """
+        self.quant_logger.info(f"Applying quantization for model {model_id}")
+        self.quant_logger.info(f"Model type: {model_type}")
+        
+        # Get quantization settings from config
+        quantization_config = self.config.get('quantization_config', {})
+        default_quantization = quantization_config.get('default_quantization', 'float16')
+        
+        # Get model-specific quantization type or use default
+        quantization_type = quantization_config.get('quantization_options_per_model_type', {}).get(
+            model_type, default_quantization
         )
         
-        logger.info(f"MMA: Applying quantization for model {model_id}")
-        logger.info(f"MMA: Model type: {model_type}, Selected quantization: {quantization_type}")
+        # Check if model is Phi-3 (special handling for 4-bit quantization)
+        is_phi3_model = 'phi-3' in model_id.lower()
         
-        # ... rest of quantization code ...
+        # If model is Phi-3, use 4-bit quantization by default
+        if is_phi3_model:
+            self.quant_logger.info(f"Detected Phi-3 model: {model_id}, applying 4-bit quantization")
+            quantization_type = 'int4'
+        
+        self.quant_logger.info(f"Selected quantization: {quantization_type}")
+        
+        try:
+            if model_type == 'gguf':
+                return self._apply_gguf_quantization(model_id, quantization_type)
+            elif model_type == 'huggingface':
+                return self._apply_huggingface_quantization(model_id, quantization_type)
+            else:
+                self.quant_logger.warning(f"Quantization not supported for model type: {model_type}")
+                return False
+        except Exception as e:
+            self.quant_logger.error(f"Error applying quantization to model {model_id}: {e}")
+            self.quant_logger.error(traceback.format_exc())
+            return False
+    
+    def _apply_gguf_quantization(self, model_id, quantization_type):
+        """
+        Apply quantization to a GGUF model.
+        
+        Args:
+            model_id (str): The ID of the model to quantize
+            quantization_type (str): The type of quantization to apply
+            
+        Returns:
+            bool: True if quantization was successful, False otherwise
+        """
+        self.quant_logger.info(f"Applying GGUF quantization for model {model_id}: {quantization_type}")
+        
+        try:
+            # Import and use the GGUF Model Manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Check if model is loaded
+            if model_id not in gguf_manager.loaded_models:
+                self.quant_logger.warning(f"Model {model_id} not loaded, cannot apply quantization")
+                return False
+            
+            # Get model info
+            model_info = self.models.get(model_id, {})
+            if not model_info:
+                self.quant_logger.warning(f"No model info found for {model_id}")
+                return False
+            
+            # Update model info with quantization type
+            model_info['quantization'] = quantization_type
+            
+            # Unload the model
+            self.quant_logger.info(f"Unloading model {model_id} for requantization")
+            gguf_manager.unload_model(model_id)
+            
+            # Reload the model with new quantization
+            self.quant_logger.info(f"Reloading model {model_id} with {quantization_type} quantization")
+            
+            # For 4-bit quantization, we need to specify additional parameters
+            if quantization_type == 'int4':
+                # Update model path to use 4-bit quantized version if available
+                model_path = model_info.get('model_path', '')
+                if not model_path.endswith('.q4_0.gguf') and not model_path.endswith('.q4_1.gguf'):
+                    # Try to find a 4-bit quantized version
+                    base_path = model_path.rsplit('.', 1)[0]
+                    q4_path = f"{base_path}.q4_0.gguf"
+                    if os.path.exists(q4_path):
+                        model_info['model_path'] = q4_path
+                        self.quant_logger.info(f"Using 4-bit quantized model: {q4_path}")
+                    else:
+                        self.quant_logger.warning(f"No 4-bit quantized version found for {model_id}")
+            
+            # Reload with updated model info
+            success = gguf_manager.load_model(model_id)
+            
+            if success:
+                self.quant_logger.info(f"Successfully applied {quantization_type} quantization to {model_id}")
+                # Update model info in self.models
+                self.models[model_id] = model_info
+                return True
+            else:
+                self.quant_logger.error(f"Failed to reload model {model_id} after quantization")
+                return False
+                
+        except Exception as e:
+            self.quant_logger.error(f"Error applying GGUF quantization to model {model_id}: {e}")
+            self.quant_logger.error(traceback.format_exc())
+            return False
+    
+    def _apply_huggingface_quantization(self, model_id, quantization_type):
+        """
+        Apply quantization to a Hugging Face model.
+        
+        Args:
+            model_id (str): The ID of the model to quantize
+            quantization_type (str): The type of quantization to apply
+            
+        Returns:
+            bool: True if quantization was successful, False otherwise
+        """
+        self.quant_logger.info(f"Applying Hugging Face quantization for model {model_id}: {quantization_type}")
+        
+        try:
+            # Get model info
+            model_info = self.models.get(model_id, {})
+            if not model_info:
+                self.quant_logger.warning(f"No model info found for {model_id}")
+                return False
+            
+            # Check if model is loaded
+            if model_id not in self.loaded_models:
+                self.quant_logger.warning(f"Model {model_id} not loaded, cannot apply quantization")
+                return False
+            
+            # Update model info with quantization type
+            model_info['quantization'] = quantization_type
+            
+            # For Hugging Face models, we need to unload and reload with quantization config
+            self.quant_logger.info(f"Unloading model {model_id} for requantization")
+            self._unload_model(model_id)
+            
+            # Prepare quantization config
+            quantization_config = {}
+            
+            if quantization_type == 'int8':
+                quantization_config = {
+                    'load_in_8bit': True,
+                    'device_map': 'auto'
+                }
+            elif quantization_type == 'int4':
+                quantization_config = {
+                    'load_in_4bit': True,
+                    'bnb_4bit_compute_dtype': 'float16',
+                    'bnb_4bit_quant_type': 'nf4',
+                    'bnb_4bit_use_double_quant': True,
+                    'device_map': 'auto'
+                }
+            elif quantization_type == 'float16':
+                quantization_config = {
+                    'torch_dtype': 'float16',
+                    'device_map': 'auto'
+                }
+            
+            # Update model info with quantization config
+            model_info['quantization_config'] = quantization_config
+            
+            # Update model in self.models
+            self.models[model_id] = model_info
+            
+            # Reload the model
+            self.quant_logger.info(f"Reloading model {model_id} with {quantization_type} quantization")
+            success = self.load_model(model_id)
+            
+            if success:
+                self.quant_logger.info(f"Successfully applied {quantization_type} quantization to {model_id}")
+                return True
+            else:
+                self.quant_logger.error(f"Failed to reload model {model_id} after quantization")
+                return False
+                
+        except Exception as e:
+            self.quant_logger.error(f"Error applying Hugging Face quantization to model {model_id}: {e}")
+            self.quant_logger.error(traceback.format_exc())
+            return False
 
     def _init_vram_management(self):
         """Initialize VRAM management settings and tracking."""
@@ -4334,6 +4763,56 @@ class ModelManagerAgent(BaseAgent):
         except Exception as e:
             print(f"[MMA] Failed to load LLM config: {e}")
             return {'load_policy': {}, 'models': {}}
+
+    def _handle_clear_conversation_action(self, request):
+        """
+        Handle the 'clear_conversation' action to clear KV caches for a specific conversation.
+        
+        Args:
+            request: The request dictionary containing conversation_id
+            
+        Returns:
+            Response dictionary with status
+        """
+        conversation_id = request.get("conversation_id")
+        
+        if not conversation_id:
+            self.logger.error("Missing 'conversation_id' field in clear_conversation request")
+            return {"status": "error", "message": "Missing 'conversation_id' field"}
+        
+        self.logger.info(f"Clearing KV cache for conversation: {conversation_id}")
+        
+        try:
+            # Import and use the GGUF Model Manager
+            from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+            gguf_manager = get_gguf_manager()
+            
+            # Clear KV cache
+            success = gguf_manager.clear_kv_cache(conversation_id)
+            
+            if success:
+                self.logger.info(f"Successfully cleared KV cache for conversation: {conversation_id}")
+                return {
+                    "status": "ok",
+                    "message": f"Cleared KV cache for conversation: {conversation_id}",
+                    "conversation_id": conversation_id
+                }
+            else:
+                self.logger.warning(f"No KV cache found for conversation: {conversation_id}")
+                return {
+                    "status": "ok",
+                    "message": f"No KV cache found for conversation: {conversation_id}",
+                    "conversation_id": conversation_id
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error clearing KV cache for conversation {conversation_id}: {e}")
+            self.logger.error(traceback.format_exc())
+            return {
+                "status": "error",
+                "message": f"Error clearing KV cache: {str(e)}",
+                "conversation_id": conversation_id
+            }
 
 # --- PATCH: Attach standalone functions to ModelManagerAgent class (ensures methods are available before main is executed) ---
 # --- END PATCH ---
