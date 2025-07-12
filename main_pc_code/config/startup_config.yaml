@@ -44,6 +44,13 @@ agent_groups:
       script_path: main_pc_code/agents/system_digital_twin.py
       port: 7120
       health_check_port: 8120
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
       required: true
       dependencies: []
     RequestCoordinator:

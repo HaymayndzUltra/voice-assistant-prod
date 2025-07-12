@@ -17,15 +17,8 @@ import os
 from pathlib import Path
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-# FINAL: Kept the modern pathlib approach and removed the redundant os.path block.
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+# Utilities for path handling
+from common.utils.path_env import join_path
 
 import time
 import json
@@ -62,7 +55,6 @@ logging.basicConfig(
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
 # Load configuration at module level
-config = load_config()
 
 # Constants
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
@@ -70,10 +62,6 @@ ZMQ_REQUEST_TIMEOUT = 5000
 DEFAULT_PORT = 7120
 DEFAULT_HEALTH_PORT = 8120
 # Database & Cache Defaults
-DB_PATH = os.environ.get('MEMORY_DB_PATH', join_path("data", "unified_memory.db"))
-REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
-REDIS_DB = int(os.environ.get('REDIS_DB', 0))
 
 DEFAULT_CONFIG = {
     "prometheus_url": "http://prometheus:9090",
@@ -83,6 +71,10 @@ DEFAULT_CONFIG = {
     "cpu_cores": 16,
     "ram_capacity_mb": 32000,
     "network_baseline_ms": 50,
+    # Phase-3 new defaults
+    "db_path": join_path("data", "unified_memory.db"),
+    "redis": {"host": "localhost", "port": 6379, "db": 0},
+    "zmq_request_timeout": 5000,
 }
 
 # Type variable for better type hinting
@@ -114,6 +106,9 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         self.config = DEFAULT_CONFIG.copy()
         self.config.update(config)
+        # Extract frequently-used settings after merge
+        self.db_path = self.config.get("db_path", join_path("data", "unified_memory.db"))
+        self.redis_settings = self.config.get("redis", {"host": "localhost", "port": 6379, "db": 0})
         
         self.main_port = self.port
         self.health_port = config.get("health_check_port", DEFAULT_HEALTH_PORT)
@@ -128,7 +123,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         # --- Redis connection (optional) ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, socket_connect_timeout=2)
+            self.redis_conn = redis.Redis(host=self.redis_settings.get("host"), port=self.redis_settings.get("port"), db=self.redis_settings.get("db"), socket_connect_timeout=2)
             self.redis_conn.ping()
             logger.info("Successfully connected to Redis cache.")
         except Exception as r_err:
@@ -363,7 +358,7 @@ class SystemDigitalTwinAgent(BaseAgent):
             # Database connectivity test (SQLite)
             db_connected = False
             try:
-                conn = sqlite3.connect(DB_PATH, timeout=1)
+                conn = sqlite3.connect(self.db_path, timeout=1)
                 conn.execute("SELECT 1")
                 conn.close()
                 db_connected = True
