@@ -530,12 +530,14 @@ class BaseAgent:
             Tuple of (host, port) for the requested agent
             
         Raises:
-            RuntimeError: If the agent cannot be found or SystemDigitalTwin is unreachable
+            RuntimeError: If the agent cannot be found or ServiceRegistry is unreachable
         """
         try:
             response = self.send_request_to_agent(
-                "SystemDigitalTwin",
-                {"action": "get_agent_endpoint", "agent_name": agent_name}
+                "ServiceRegistry",
+                {"action": "get_agent_endpoint", "agent_name": agent_name},
+                host=os.getenv("SERVICE_REGISTRY_HOST", "localhost"),
+                port=int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
             )
             
             if response.get("status") != "success":

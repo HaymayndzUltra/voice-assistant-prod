@@ -511,6 +511,50 @@ class SystemDigitalTwinAgent(BaseAgent):
             logger.warning(f"No endpoint found for agent {agent_name}")
             return {"status": "error", "error": f"Agent {agent_name} not found in registry"}
     
+    # ===================================================================
+    #         PHASE 2: DISCOVERY DELEGATION TO SERVICEREGISTRYAGENT
+    # ===================================================================
+
+    def _forward_to_registry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Forward a JSON payload to the ServiceRegistry agent and return its response.
+
+        Uses env vars `SERVICE_REGISTRY_HOST` and `SERVICE_REGISTRY_PORT` with
+        defaults `localhost:7100`. Falls back to an error dict on timeout.
+        """
+        import os, zmq  # Local import to avoid circulars at module import time
+        host = os.getenv("SERVICE_REGISTRY_HOST", "localhost")
+        port = int(os.getenv("SERVICE_REGISTRY_PORT", "7100"))
+        timeout = int(os.getenv("SERVICE_REGISTRY_TIMEOUT_MS", "5000"))
+
+        ctx = self.context or zmq.Context.instance()
+        with ctx.socket(zmq.REQ) as sock:
+            sock.setsockopt(zmq.LINGER, 0)
+            sock.setsockopt(zmq.RCVTIMEO, timeout)
+            sock.connect(f"tcp://{host}:{port}")
+            try:
+                sock.send_json(payload)
+                return sock.recv_json()
+            except zmq.error.Again:
+                return {"status": "error", "error": "ServiceRegistry timeout"}
+            except Exception as exc:  # noqa: BLE001
+                return {"status": "error", "error": str(exc)}
+
+    # Thin wrappers that override the bulky legacy implementations -----------------
+    def register_agent(self, registration_data):  # type: ignore[override]
+        """Delegate agent registration to the external ServiceRegistry."""
+        return self._forward_to_registry({
+            "action": "register_agent",
+            "registration_data": registration_data,
+        })
+
+    def get_agent_endpoint(self, agent_name):  # type: ignore[override]
+        """Delegate endpoint lookup to the external ServiceRegistry."""
+        return self._forward_to_registry({
+            "action": "get_agent_endpoint",
+            "agent_name": agent_name,
+        })
+
+    # -------------------------------------------------------------------
     def publish_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Publish a system event to all interested agents.
         
