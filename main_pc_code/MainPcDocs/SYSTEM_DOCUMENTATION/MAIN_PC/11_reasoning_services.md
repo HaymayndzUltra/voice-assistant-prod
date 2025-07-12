@@ -82,3 +82,9 @@ Ito ang mga agents na kabilang sa grupong ito:
 
 ---
 
+### Container Grouping Updates
+- These agents have been moved from the **ai_models_gpu_services** group to a dedicated **reasoning_services** group.
+- This reorganization provides clearer separation between infrastructure services and higher-level reasoning capabilities.
+- The new grouping better reflects the logical service boundaries in the system architecture.
+- All three agents (ChainOfThoughtAgent, GoTToTAgent, CognitiveModelAgent) are now grouped together due to their related functionality in providing advanced reasoning capabilities.
+

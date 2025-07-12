@@ -178,7 +178,7 @@ Ito ang mga agents na kabilang sa grupong ito:
   - **🔧 Environment Variables:** None explicitly defined in source
 
 ---
-### 🧠 AGENT PROFILE: EmotionSynthesisAgent
+### 🧠 AGENT PROFILE: EmotionSynthesisAgent (Moved to language_processing group)
 - **Main Class:** `EmotionSynthesisAgent` (`main_pc_code/agents/emotion_synthesis_agent.py`)
 - **Host Machine:** MainPC (default, configurable)
 - **Role:** Adds emotional nuance to text responses based on specified emotions.
@@ -203,6 +203,7 @@ Ito ang mga agents na kabilang sa grupong ito:
   - **🔌 Health Port:** 6643 (explicit)
   - **🛰️ Port:** Default 5643
   - **🔧 Environment Variables:** PC2_IP
+- **📝 Note:** This agent has been moved to the **language_processing** group because it primarily processes and modifies text content based on emotional context, making it more aligned with language processing functionality than core emotion system operations. This move optimizes containerization by grouping text processing agents together.
 
 ---
 
@@ -216,4 +217,19 @@ Ito ang mga agents na kabilang sa grupong ito:
 | VoiceProfilingAgent | ✓ | |
 | EmpathyAgent | ✓ | |
 | EmotionSynthesisAgent | ✓ | |
+
+---
+
+### Container Grouping Updates
+
+Ang **emotion_system** group ay na-optimize para sa containerization:
+
+- **EmotionSynthesisAgent** ay inilipat sa **language_processing** group dahil ito ay pangunahing nagpoproseso ng text content batay sa emotional context, na mas naaangkop sa language processing functionality kaysa sa core emotion system operations.
+
+- Ang natitirang mga agents sa emotion_system ay nagtutuon sa emotion detection, tracking, at analysis, na nagbibigay-daan sa mas mahusay na resource allocation at fault isolation.
+
+Ang pagbabagong ito ay nagbibigay ng mga sumusunod na benepisyo:
+- Mas mahusay na logical grouping batay sa functionality
+- Mas mababang network overhead sa pagitan ng mga agents na madalas na nakikipag-communicate
+- Mas malinaw na separation of concerns sa pagitan ng emotion detection at text processing
 

@@ -1,0 +1,76 @@
+
+## Final MainPC Build Context Report (2025-07-12 21:33 +08)
+
+**Active agent scripts analyzed (55):**
+
+- `main_pc_code/FORMAINPC/ChainOfThoughtAgent.py`
+- `main_pc_code/FORMAINPC/CognitiveModelAgent.py`
+- `main_pc_code/FORMAINPC/GOT_TOTAgent.py`
+- `main_pc_code/FORMAINPC/LearningAdjusterAgent.py`
+- `main_pc_code/FORMAINPC/LocalFineTunerAgent.py`
+- `main_pc_code/FORMAINPC/NLLBAdapter.py`
+- `main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py`
+- `main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py`
+- `main_pc_code/agents/DynamicIdentityAgent.py`
+- `main_pc_code/agents/EmpathyAgent.py`
+- `main_pc_code/agents/IntentionValidatorAgent.py`
+- `main_pc_code/agents/ProactiveAgent.py`
+- `main_pc_code/agents/active_learning_monitor.py`
+- `main_pc_code/agents/advanced_command_handler.py`
+- `main_pc_code/agents/chitchat_agent.py`
+- `main_pc_code/agents/code_generator.py`
+- `main_pc_code/agents/emotion_engine.py`
+- `main_pc_code/agents/emotion_synthesis_agent.py`
+- `main_pc_code/agents/executor.py`
+- `main_pc_code/agents/face_recognition_agent.py`
+- `main_pc_code/agents/feedback_handler.py`
+- `main_pc_code/agents/fixed_streaming_translation.py`
+- `main_pc_code/agents/fused_audio_preprocessor.py`
+- `main_pc_code/agents/gguf_model_manager.py`
+- `main_pc_code/agents/goal_manager.py`
+- `main_pc_code/agents/human_awareness_agent.py`
+- `main_pc_code/agents/knowledge_base.py`
+- `main_pc_code/agents/learning_manager.py`
+- `main_pc_code/agents/learning_opportunity_detector.py`
+- `main_pc_code/agents/learning_orchestration_service.py`
+- `main_pc_code/agents/memory_client.py`
+- `main_pc_code/agents/model_evaluation_framework.py`
+- `main_pc_code/agents/model_manager_agent.py`
+- `main_pc_code/agents/model_orchestrator.py`
+- `main_pc_code/agents/mood_tracker_agent.py`
+- `main_pc_code/agents/nlu_agent.py`
+- `main_pc_code/agents/predictive_health_monitor.py`
+- `main_pc_code/agents/predictive_loader.py`
+- `main_pc_code/agents/request_coordinator.py`
+- `main_pc_code/agents/responder.py`
+- `main_pc_code/agents/session_memory_agent.py`
+- `main_pc_code/agents/streaming_audio_capture.py`
+- `main_pc_code/agents/streaming_interrupt_handler.py`
+- `main_pc_code/agents/streaming_language_analyzer.py`
+- `main_pc_code/agents/streaming_speech_recognition.py`
+- `main_pc_code/agents/streaming_tts_agent.py`
+- `main_pc_code/agents/system_digital_twin.py`
+- `main_pc_code/agents/tone_detector.py`
+- `main_pc_code/agents/translation_service.py`
+- `main_pc_code/agents/unified_system_agent.py`
+- `main_pc_code/agents/voice_profiling_agent.py`
+- `main_pc_code/agents/vram_optimizer_agent.py`
+- `main_pc_code/agents/wake_word_detector.py`
+- `main_pc_code/services/stt_service.py`
+- `main_pc_code/services/tts_service.py`
+
+**Definitive directory list for Docker build:**
+
+- `common/core`
+- `common/utils`
+- `common_utils`
+- `main_pc_code/FORMAINPC`
+- `main_pc_code/agents`
+- `main_pc_code/config`
+- `main_pc_code/services`
+- `main_pc_code/src/core`
+- `main_pc_code/src/network`
+- `main_pc_code/utils`
+- `utils`
+
+---

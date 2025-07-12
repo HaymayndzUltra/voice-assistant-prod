@@ -6,6 +6,12 @@ from datetime import datetime
 from typing import Dict, Any
 import threading
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Constants
 PERFORMANCE_TOPIC = "performance_metrics"
 PUB_PORT = 5614  # For broadcasting metrics
@@ -16,7 +22,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/performance_metrics.log'),
+        logging.FileHandler(join_path("logs", "performance_metrics.log")),
         logging.StreamHandler()
     ]
 )

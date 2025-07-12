@@ -11,6 +11,8 @@ import os
 import uuid
 from typing import Dict, Any, List, Optional, Union
 
+from common.utils.network_util import retry_with_backoff
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -104,6 +106,8 @@ def get_status() -> Dict[str, Any]:
     response = _send_request(request)
     return response
 
+# Apply retry decorator with reasonable defaults (3 retries, base 0.5s)
+@retry_with_backoff(max_retries=3, base_delay=0.5, jitter=0.4, exceptions=(zmq.error.Again, zmq.ZMQError, TimeoutError))
 def _send_request(request: Dict[str, Any]) -> Dict[str, Any]:
     """
     Send a request to the ModelManagerAgent and get the response.

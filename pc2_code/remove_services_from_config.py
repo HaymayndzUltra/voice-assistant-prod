@@ -4,7 +4,7 @@ import json
 
 def update_system_config():
     # Read the current system_config.py
-    config_path = Path("d:\\DISKARTE\\Voice Assistant\\config\\system_config.py")
+    config_path = Path(get_file_path("data", "voice_samples/system_config.py"))
     config_content = config_path.read_text()
     
     # List of services to remove

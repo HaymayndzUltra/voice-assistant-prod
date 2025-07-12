@@ -16,20 +16,26 @@ import threading
 import logging
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/container_start.log")
+        logging.FileHandler(join_path("logs", "container_start.log"))
     ]
 )
 logger = logging.getLogger("container_start")
 
 def load_config():
     """Load the startup configuration."""
-    config_path = os.path.join("pc2_code", "config", "startup_config.yaml")
+    config_path = join_path("pc2_code", join_path("config", "startup_config.yaml"))
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

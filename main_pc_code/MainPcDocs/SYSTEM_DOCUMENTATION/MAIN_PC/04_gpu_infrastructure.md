@@ -1,4 +1,4 @@
-# Group: Ai Models Gpu Services
+# Group: GPU Infrastructure
 
 Ito ang mga agents na kabilang sa grupong ito:
 
@@ -41,9 +41,10 @@ Ito ang mga agents na kabilang sa grupong ito:
 ### 🧠 AGENT PROFILE: ModelManagerAgent
 - **Main Class:** `ModelManagerAgent`
 - **Host Machine:** Main PC
-- **Role:** High-level orchestrator for loading, unloading, routing, and monitoring of every model type (Ollama, custom API, GGUF, etc.).
+- **Role:** High-level orchestrator for loading, unloading, routing, and monitoring of every model type (LLMs, STT, TTS, Ollama, custom API, GGUF, etc.).
 - **🎯 Responsibilities:**
   • Mag-route generation requests to appropriate model.
+  • Mag-handle STT (speech-to-text) and TTS (text-to-speech) requests.
   • Mag-manage VRAM via coordination with `VRAMOptimizerAgent`.
   • Auto-unload idle models; maintain cache files.
   • Mag-expose rich JSON API (`load_model`, `unload_model`, `generate`, `status`).
@@ -51,12 +52,14 @@ Ito ang mga agents na kabilang sa grupong ito:
   • `VRAMOptimizerAgent` (consultation & unload requests).
   • `SystemDigitalTwin` (status updates).
   • `GGUFModelManager` for GGUF models.
+  • `STTService` and `TTSService` for audio processing.
   • Error-Bus PUB.
 - **🧬 Technical Deep Dive:**
   • ZMQ REP `tcp://0.0.0.0:5570`; health REP `5571`.
   • Handles GPU/CPU detection, VRAM budget (default 80 % of GPU).
   • Log rotation (5 MB x5) at `logs/mma_*.log`.
   • Background threads: VRAM management, health check, model idle checker.
+  • Uses `llm_config.yaml` for model routing policies including STT and TTS models.
 - **⚠️ Panganib:**
   • Complex concurrency ⇒ race conditions on `models` dict.
   • VRAM mis-estimation ➜ OOM.
@@ -67,7 +70,7 @@ Ito ang mga agents na kabilang sa grupong ito:
   - **🔧 Environment Variables:** `MODEL_MANAGER_PORT`, `PC2_IP`, `SECURE_ZMQ`, `LLM_CONFIG_PATH`, `vram_budget_percentage`
   - **📑 Sample Request:**
     ```json
-    { "action": "load_model", "model_id": "gemma-7b", "quantization": "fp16" }
+    { "action": "generate", "model_pref": "quality", "prompt": "Hello, world!" }
     ```
   - **📊 Resource Footprint (baseline):** ~220 MB RAM idle; GPU VRAM varies; CPU <6 % idle.
   - **🔒 Security & Tuning Flags:** secure-ZMQ; VRAM budget %; idle unload timeout.
@@ -145,3 +148,10 @@ Ito ang mga agents na kabilang sa grupong ito:
 | ModelManagerAgent | ✓ | |
 | VRAMOptimizerAgent | ✓ | |
 | PredictiveLoader | ✓ | |
+
+---
+
+### Container Grouping Updates
+- This group has been renamed from **ai_models_gpu_services** to **gpu_infrastructure** to better reflect its focus on core GPU resource management.
+- The reasoning agents (ChainOfThoughtAgent, GoTToTAgent, CognitiveModelAgent) have been moved to a dedicated **reasoning_services** group.
+- This reorganization provides clearer separation between infrastructure services and higher-level reasoning capabilities.

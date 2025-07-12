@@ -21,6 +21,12 @@ from queue import PriorityQueue
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Load configuration at the module level
 config = load_config()
 
@@ -31,7 +37,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/self_training.log'
+    filename=join_path("logs", "self_training.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -93,7 +99,7 @@ class SelfTrainingOrchestrator(BaseAgent):
         self.start_time = time.time()
         
         # Database setup
-        self.db_path = os.path.join(self.project_root, "data/self_training.db")
+        self.db_path = join_path("data", "self_training.db"))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         
         # Training cycle management

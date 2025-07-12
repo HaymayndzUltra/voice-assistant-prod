@@ -6,7 +6,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -32,8 +32,14 @@ from typing import List, Dict, Any, Tuple, Optional, Set
 import psutil
 from datetime import datetime
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
-LOG_PATH = "logs/lazy_voting.log"
+LOG_PATH = join_path("logs", "lazy_voting.log")
 Path(LOG_PATH).parent.mkdir(exist_ok=True)
 
 logging.basicConfig(

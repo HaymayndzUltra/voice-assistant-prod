@@ -23,11 +23,17 @@ import torch
 from datasets import load_dataset, Dataset
 import numpy as np
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/local_fine_tuner.log'
+    filename=join_path("logs", "local_fine_tuner.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -65,7 +71,7 @@ class LocalFineTunerAgent:
         self.socket.bind("tcp://*:5645")  # Local fine tuner port
         
         # Database setup
-        self.db_path = "data/local_fine_tuner.db"
+        self.db_path = join_path("data", "local_fine_tuner.db")
         self._init_db()
         
         # Job management

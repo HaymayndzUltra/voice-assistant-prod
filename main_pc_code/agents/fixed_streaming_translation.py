@@ -638,16 +638,41 @@ class FixedStreamingTranslation(BaseAgent):
         try:
             translation_metrics = self.performance_metrics.get_metrics()
             queue_status = self.get_queue_status()
-            
+
+            # Ping PC2 translator dependency
+            pc2_reachable = False
+            try:
+                context = zmq.Context()
+                sock = context.socket(zmq.REQ)
+                sock.setsockopt(zmq.LINGER, 0)
+                sock.setsockopt(zmq.RCVTIMEO, 2000)
+                sock.setsockopt(zmq.SNDTIMEO, 2000)
+                sock.connect(self.pc2_translator_address)
+                sock.send_json({"action": "health"})
+                if sock.poll(2000, zmq.POLLIN):
+                    resp = sock.recv_json()
+                    pc2_reachable = resp.get("status") in ["ok", "healthy", "HEALTHY", "success"]
+            except Exception as _:
+                pc2_reachable = False
+            finally:
+                try:
+                    sock.close()  # type: ignore
+                    context.term()  # type: ignore
+                except Exception:
+                    pass
+
             base_status.update({
                 "translation_metrics": translation_metrics,
                 "queue_status": queue_status,
+                "pc2_translator_reachable": pc2_reachable,
                 "components": {
                     "performance_monitor": "running" if getattr(self.performance_monitor, '_running', False) else "stopped",
                     "cache_size": len(getattr(self.translation_cache, 'cache', {})),
                     "google_translate_available": self.google_translator is not None
                 }
             })
+            if not pc2_reachable:
+                base_status["status"] = "degraded"
         except Exception as e:
             logger.error(f"Error getting health status: {e}")
             self.report_error(f"Error getting health status: {e}")

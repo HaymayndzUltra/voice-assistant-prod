@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -28,6 +28,12 @@ import psutil
 import GPUtil
 from collections import defaultdict
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
@@ -134,7 +140,7 @@ class VramOptimizerAgent(BaseAgent):
         """
         try:
             # Try to find config file in standard location
-            config_path = Path("config/startup_config.yaml")
+            config_path = Path(join_path("config", "startup_config.yaml"))
             if not config_path.exists():
                 # Try relative to parent directory
                 config_path = Path(__file__).parent.parent / "config" / "startup_config.yaml"

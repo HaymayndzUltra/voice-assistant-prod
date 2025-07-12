@@ -5,7 +5,7 @@ from common.core.base_agent import BaseAgent
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -40,6 +40,12 @@ import psutil
 import GPUtil
 import yaml
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the parent directory to sys.path to import the config module
 
 # Import config module
@@ -110,11 +116,11 @@ test_config_path = os.environ.get("MMA_CONFIG_PATH")
 if test_config_path:
     # Dedicated log file for test run
     test_log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    test_log_filename = f'logs/mma_test_{test_log_timestamp}.log'
+    test_log_filename = fjoin_path("logs", "mma_test_{test_log_timestamp}.log")
     log_file_path = test_log_filename
 else:
     # Default log file with rotation
-    log_file_path = 'logs/mma_PATCH_VERIFY_TEST.log'
+    log_file_path = join_path("logs", "mma_PATCH_VERIFY_TEST.log")
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
@@ -198,7 +204,7 @@ class ModelManagerAgent(BaseAgent):
         self.start_time = time.time()
         self.running = True
         # Load LLM config for routing
-        self.llm_config_path = config_path or os.environ.get('LLM_CONFIG_PATH') or os.path.join(os.path.dirname(__file__), '../config/llm_config.yaml')
+        self.llm_config_path = config_path or os.environ.get('LLM_CONFIG_PATH') or join_path("main_pc_code", join_path("config", "llm_config.yaml")))
         self.llm_config = self._load_llm_config()
     
     
@@ -1219,7 +1225,7 @@ class ModelManagerAgent(BaseAgent):
             
             # Then try to load additional GGUF models configuration if it exists
             try:
-                gguf_models_path = Path("config/gguf_models.json")
+                gguf_models_path = Path(join_path("config", "gguf_models.json"))
                 if gguf_models_path.exists():
                     with open(gguf_models_path, 'r') as f:
                         gguf_models = json.load(f)
@@ -3175,7 +3181,7 @@ class ModelManagerAgent(BaseAgent):
         
         # Load the LLM config to get the model mapping
         try:
-            with open(os.path.join("main_pc_code", "config", "llm_config.yaml"), 'r') as f:
+            with open(join_path("main_pc_code", join_path("config", "llm_config.yaml")), 'r') as f:
                 llm_config = yaml.safe_load(f)
         except Exception as e:
             self.logger.error(f"Failed to load LLM config: {e}")
@@ -3229,7 +3235,7 @@ class ModelManagerAgent(BaseAgent):
                 
             # Try to load LLM config for routing information
             try:
-                with open(os.path.join("main_pc_code", "config", "llm_config.yaml"), 'r') as f:
+                with open(join_path("main_pc_code", join_path("config", "llm_config.yaml")), 'r') as f:
                     llm_config = yaml.safe_load(f)
             except Exception as e:
                 self.logger.error(f"Failed to load LLM config: {e}")

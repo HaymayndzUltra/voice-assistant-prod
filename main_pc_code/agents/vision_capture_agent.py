@@ -23,8 +23,14 @@ from PIL import Image
 import mss
 import mss.tools
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+MAIN_PC_CODE_DIR = os.path.abspath(join_path("main_pc_code", "..")))
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
@@ -43,7 +49,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/vision_capture_agent.log")
+        logging.FileHandler(join_path("logs", "vision_capture_agent.log"))
     ]
 )
 logger = logging.getLogger("VisionCaptureAgent")
@@ -75,7 +81,7 @@ class VisionCaptureAgent(BaseAgent):
         self.running = True
 
         # Create screenshot directory if it doesn't exist
-        self.screenshot_dir = Path("data/screenshots")
+        self.screenshot_dir = Path(join_path("data", "screenshots"))
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize the screen capture tool

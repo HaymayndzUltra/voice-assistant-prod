@@ -8,6 +8,12 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -126,7 +132,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]], 
-                               stdout=open(f"logs/{service_name}.log", "a"),
+                               stdout=open(fjoin_path("logs", "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)  # Give service time to initialize
@@ -144,7 +150,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(f"logs/{service_name}.log", "a"),
+                               stdout=open(fjoin_path("logs", "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)
@@ -161,7 +167,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(f"logs/{service_name}.log", "a"),
+                               stdout=open(fjoin_path("logs", "{service_name}.log"), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)

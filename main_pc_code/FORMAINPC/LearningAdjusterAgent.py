@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -28,6 +28,12 @@ from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 import argparse
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -53,7 +59,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/learning_adjuster.log'
+    filename=join_path("logs", "learning_adjuster.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -105,7 +111,7 @@ class LearningAdjusterAgent(BaseAgent):
         }
         
         # Database setup
-        self.db_path = "data/learning_adjuster.db"
+        self.db_path = join_path("data", "learning_adjuster.db")
         self._init_db()
         
         # Parameter tracking

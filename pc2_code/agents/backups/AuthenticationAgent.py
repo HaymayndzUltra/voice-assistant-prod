@@ -16,6 +16,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -55,7 +61,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = 'logs/authentication_agent.log'
+log_file_path = join_path("logs", "authentication_agent.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(

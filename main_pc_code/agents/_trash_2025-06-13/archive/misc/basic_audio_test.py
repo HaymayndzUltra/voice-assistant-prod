@@ -14,6 +14,12 @@ import sounddevice as sd
 from datetime import datetime
 from scipy.io import wavfile
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("BasicAudioTest")
@@ -25,7 +31,7 @@ SILENCE_TIMEOUT = 30
 RECORD_SECONDS = 5  # Record for fixed 5 seconds for testing
 
 # Create logs directory if it doesn't exist
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+LOG_DIR = get_path("logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Print all input devices for manual selection

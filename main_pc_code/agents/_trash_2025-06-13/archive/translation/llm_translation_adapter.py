@@ -13,6 +13,12 @@ import threading
 import requests
 from typing import Dict, Any, Optional
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -24,7 +30,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("logs/llm_translation_adapter.log"),
+        logging.FileHandler(join_path("logs", "llm_translation_adapter.log")),
         logging.StreamHandler()
     ]
 )

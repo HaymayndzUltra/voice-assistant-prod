@@ -7,7 +7,7 @@ Code Generator Agent
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -32,6 +32,12 @@ import tempfile
 import re
 import threading
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
@@ -41,7 +47,7 @@ from main_pc_code.agents.gguf_model_manager import GGUFModelManager
 config = load_config()
 
 # Configure logging
-log_file = Path("logs/code_generator_agent.log")
+log_file = Path(join_path("logs", "code_generator_agent.log"))
 log_file.parent.mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,

@@ -26,6 +26,12 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -43,7 +49,7 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "network_config.yaml")
+    config_path = join_path("config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

@@ -13,6 +13,12 @@ from collections import defaultdict, deque
 from pathlib import Path
 from pprint import pprint
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -20,7 +26,7 @@ if str(project_root) not in sys.path:
 
 def load_startup_config():
     """Load the startup configuration from the YAML file."""
-    config_path = os.path.join(project_root, "main_pc_code", "config", "startup_config.yaml")
+    config_path = join_path("main_pc_code", join_path("config", "startup_config.yaml"))
     try:
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)

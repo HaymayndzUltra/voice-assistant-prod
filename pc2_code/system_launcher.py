@@ -8,6 +8,12 @@ import logging
 import subprocess
 from graphlib import TopologicalSorter, CycleError
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path for common_utils import
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -26,7 +32,7 @@ except ImportError:
     print("[WARNING] common_utils modules not found. Using default environment settings.")
 
 # --- Configuration ---
-CONFIG_PATH = "config/startup_config.yaml"
+CONFIG_PATH = join_path("config", "startup_config.yaml")
 LOGS_DIR = "logs"
 HEALTH_CHECK_TIMEOUT = 120  # seconds
 HEALTH_CHECK_INTERVAL = 2   # seconds

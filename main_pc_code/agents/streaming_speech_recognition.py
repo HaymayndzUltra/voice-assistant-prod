@@ -13,7 +13,6 @@ Features:
 import zmq
 import pickle
 import numpy as np
-import whisper
 import time
 import threading
 import logging
@@ -161,8 +160,9 @@ class StreamingSpeechRecognition(BaseAgent):
         self.buffer = []
         self.buffer_size = int(BUFFER_SECONDS / CHUNK_DURATION)
 
-        # Model management is now delegated to ModelManagerAgent
-        self.model_manager_socket = None
+        # Connect to STT service
+        self.stt_service_socket = None
+        self._connect_to_stt_service()
 
         # Initialize state
         self.wake_word_detected = False
@@ -184,9 +184,6 @@ class StreamingSpeechRecognition(BaseAgent):
         # Start a background thread to connect to RequestCoordinator when it becomes available
         threading.Thread(target=self._connect_to_request_coordinator, daemon=True).start()
 
-        # Initialize connection to ModelManagerAgent
-        self._connect_to_model_manager()
-
         logger.info("Enhanced Streaming Speech Recognition initialized")
         
         # Get configuration from agent args
@@ -203,9 +200,9 @@ class StreamingSpeechRecognition(BaseAgent):
             try:
                 # Use service discovery to find the RequestCoordinator
                 coordinator_info = discover_service("RequestCoordinator")
-                if coordinator_info:
-                    host = coordinator_info["host"]
-                    port = coordinator_info["port"]
+                if coordinator_info and isinstance(coordinator_info, dict) and coordinator_info.get("status") == "SUCCESS":
+                    host = coordinator_info.get("payload", {}).get("host")
+                    port = coordinator_info.get("payload", {}).get("port")
                     
                     # Initialize connection
                     self.request_coordinator_connection = self.zmq_context.socket(zmq.REQ)
@@ -355,70 +352,39 @@ class StreamingSpeechRecognition(BaseAgent):
             logger.error(f"Error initializing ZMQ sockets: {str(e)}")
             raise
     
-    def _connect_to_model_manager(self):
-        """Connect to the ModelManagerAgent for model management."""
+    def _connect_to_stt_service(self):
+        """Connect to the STT service for transcription."""
         try:
-            # Discover ModelManagerAgent
-            model_manager = discover_service("ModelManagerAgent")
-            if model_manager and model_manager.get("status") == "SUCCESS":
-                model_manager_info = model_manager.get("payload", {})
-                model_manager_host = model_manager_info.get("host", config.get("host"))
-                model_manager_port = model_manager_info.get("port", 5570)
-                logger.info(f"Discovered ModelManagerAgent at {model_manager_host}:{model_manager_port}")
+            # Discover STTService
+            stt_service = discover_service("STTService")
+            if stt_service and isinstance(stt_service, dict) and stt_service.get("status") == "SUCCESS":
+                stt_service_info = stt_service.get("payload", {})
+                stt_service_host = stt_service_info.get("host", config.get("host"))
+                stt_service_port = stt_service_info.get("port", 5800)
+                logger.info(f"Discovered STTService at {stt_service_host}:{stt_service_port}")
                 
-                # Create socket for ModelManagerAgent
-                self.model_manager_socket = self.zmq_context.socket(zmq.REQ)
-                self.model_manager_socket.setsockopt(zmq.RCVTIMEO, 10000)  # 10 second timeout
+                # Create socket for STTService
+                self.stt_service_socket = self.zmq_context.socket(zmq.REQ)
+                self.stt_service_socket.setsockopt(zmq.RCVTIMEO, 10000)  # 10 second timeout
                 
                 # Apply secure ZMQ if enabled
                 if SECURE_ZMQ:
                     try:
                         from main_pc_code.src.network.secure_zmq import secure_client_socket
-                    except ImportError as e:
-                        print(f"Import error: {e}")
-                        self.model_manager_socket = secure_client_socket(self.model_manager_socket)
-                        logger.info("Applied secure ZMQ to model manager socket")
+                        if 'secure_client_socket' in locals():
+                            self.stt_service_socket = secure_client_socket(self.stt_service_socket)
+                            logger.info("Applied secure ZMQ to STT service socket")
                     except Exception as e:
-                        logger.error(f"Failed to apply secure ZMQ to model manager socket: {e}")
+                        logger.error(f"Failed to apply secure ZMQ to STT service socket: {e}")
                 
-                self.model_manager_socket.connect(f"tcp://{model_manager_host}:{model_manager_port}")
-                logger.info(f"Connected to ModelManagerAgent at tcp://{model_manager_host}:{model_manager_port}")
-                
-                # Request model loading
-                self._request_model_loading("whisper-large-v3", "high")
+                self.stt_service_socket.connect(f"tcp://{stt_service_host}:{stt_service_port}")
+                logger.info(f"Connected to STTService at tcp://{stt_service_host}:{stt_service_port}")
             else:
-                logger.error("Could not discover ModelManagerAgent, speech recognition will not work properly")
-                self.model_manager_socket = None
+                logger.error("Could not discover STTService, speech recognition will not work properly")
+                self.stt_service_socket = None
         except Exception as e:
-            logger.error(f"Error connecting to ModelManagerAgent: {str(e)}")
-            self.model_manager_socket = None
-    
-    def _request_model_loading(self, model_id, priority="medium"):
-        """Request model loading from ModelManagerAgent."""
-        if not self.model_manager_socket:
-            logger.error("No connection to ModelManagerAgent, cannot load model")
-            return False
-        
-        try:
-            request = {
-                "command": "LOAD_MODEL",
-                "model_id": model_id,
-                "priority": priority,
-                "source": "StreamingSpeechRecognition"
-            }
-            
-            self.model_manager_socket.send_json(request)
-            response = self.model_manager_socket.recv_json()
-            
-            if response.get("status") == "success":
-                logger.info(f"Successfully requested loading of model {model_id}")
-                return True
-            else:
-                logger.error(f"Failed to load model {model_id}: {response.get('message', 'Unknown error')}")
-                return False
-        except Exception as e:
-            logger.error(f"Error requesting model loading: {str(e)}")
-            return False
+            logger.error(f"Error connecting to STTService: {str(e)}")
+            self.stt_service_socket = None
     
     def _check_wake_word_events(self):
         """Check for wake word events."""
@@ -555,20 +521,13 @@ class StreamingSpeechRecognition(BaseAgent):
             # Create standardized error message
             error_message = {
                 "status": "error",
-                "error_type": "ModelInferenceError",
+                "error_type": "LanguageDetectionError",
                 "source_agent": "streaming_speech_recognition.py",
                 "message": f"Failed to detect language: {str(e)}",
                 "timestamp": datetime.now().isoformat()
             }
             
-            # In a critical module like language detection, we should propagate errors
-            # but still provide a fallback to keep the system running
-            try:
-                self.pub_socket.send_json(error_message)
-                logger.info("Published language detection error message")
-            except Exception as pub_error:
-                logger.error(f"Failed to publish error message: {str(pub_error)}")
-            
+            # Log error but don't propagate immediately as this is non-critical
             # Return English as fallback
             return 'en', 0.5
     
@@ -905,11 +864,12 @@ class StreamingSpeechRecognition(BaseAgent):
             # Normalize
             audio_input = audio_input / (np.max(np.abs(audio_input)) + 1e-8)
             
-            # Resample to 16kHz for Whisper
+            # Resample to 16kHz for STT service
             try:
-                audio_input_16k = whisper.audio.resample_audio(audio_input, SAMPLE_RATE, 16000)
+                from scipy import signal
+                audio_input_16k = signal.resample_poly(audio_input, 16000, SAMPLE_RATE)
             except Exception as resample_error:
-                logger.error(f"Error resampling audio for Whisper: {str(resample_error)}")
+                logger.error(f"Error resampling audio: {str(resample_error)}")
                 error_message = {
                     "status": "error",
                     "error_type": "AudioProcessingError",
@@ -939,34 +899,26 @@ class StreamingSpeechRecognition(BaseAgent):
                 detected_lang = 'en'
                 confidence = 0.5
             
-            # Request transcription from ModelManagerAgent
+            # Request transcription from STT service
             try:
-                if not self.model_manager_socket:
-                    raise RuntimeError("No connection to ModelManagerAgent")
-                
-                # Create a unique request ID
-                request_id = str(uuid.uuid4())
+                if not self.stt_service_socket:
+                    raise RuntimeError("No connection to STT service")
                 
                 # Prepare transcription request
                 request = {
-                    "command": "TRANSCRIBE_AUDIO",
-                    "request_id": request_id,
-                    "model_id": "whisper-large-v3",
-                    "language": detected_lang,
+                    "action": "transcribe",
                     "audio_data": audio_input_16k.tolist(),  # Convert to list for JSON serialization
-                    "timestamp": time.time(),
-                    "source": "StreamingSpeechRecognition"
+                    "language": detected_lang
                 }
                 
-                # Send request to ModelManagerAgent
-                self.model_manager_socket.send_json(request)
-                response = self.model_manager_socket.recv_json()
+                # Send request to STT service
+                self.stt_service_socket.send_json(request)
+                response = self.stt_service_socket.recv_json()
                 
-                if response.get("status") == "success":
-                    result = response.get("result", {})
+                if response.get("status") != "error":
                     transcript = {
-                        "text": result.get("text", "").strip(),
-                        "confidence": result.get("confidence", 0.0),
+                        "text": response.get("text", "").strip(),
+                        "confidence": response.get("confidence", 0.0),
                         "language": detected_lang,
                         "language_confidence": confidence,
                         "timestamp": datetime.now().isoformat()
@@ -978,9 +930,6 @@ class StreamingSpeechRecognition(BaseAgent):
                         logger.info(f"Transcription: {transcript['text']} ({transcript['confidence']:.2f})")
                     else:
                         logger.info("Empty transcription result, nothing to publish")
-                    
-                    # Update model usage
-                    self._cleanup_idle_models("whisper-large-v3")
                 else:
                     error_message = {
                         "status": "error",

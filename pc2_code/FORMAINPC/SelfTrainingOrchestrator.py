@@ -16,11 +16,17 @@ from dataclasses import dataclass
 from enum import Enum
 from queue import PriorityQueue
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/self_training.log'
+    filename=join_path("logs", "self_training.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -60,7 +66,7 @@ class SelfTrainingOrchestrator:
         self.socket.bind("tcp://*:5644")  # Self training orchestrator port
         
         # Database setup
-        self.db_path = "data/self_training.db"
+        self.db_path = join_path("data", "self_training.db")
         self._init_db()
         
         # Training cycle management

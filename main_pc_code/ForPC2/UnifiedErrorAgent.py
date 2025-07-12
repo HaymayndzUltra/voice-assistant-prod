@@ -7,6 +7,12 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -15,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/unified_error_agent.log'),
+        logging.FileHandler(join_path("logs", "unified_error_agent.log")),
         logging.StreamHandler()
     ]
 )

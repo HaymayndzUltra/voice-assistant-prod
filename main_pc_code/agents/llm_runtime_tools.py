@@ -5,7 +5,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -31,21 +31,27 @@ import socketserver
 from functools import wraps
 from typing import Dict, List, Tuple, Optional, Any, Callable, List
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("logs/llm_runtime.log"),
+        logging.FileHandler(join_path("logs", "llm_runtime.log")),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger("LLMRuntime")
 
 # Create a file handler for telemetry logs
-os.makedirs(os.path.join(os.path.dirname(__file__), "logs"), exist_ok=True)
+os.makedirs(get_path("logs"), exist_ok=True)
 telemetry_file_handler = logging.FileHandler(
-    os.path.join(os.path.dirname(__file__), "logs", "telemetry.log")
+    join_path("logs", "telemetry.log")
 )
 telemetry_file_handler.setLevel(logging.INFO)
 telemetry_file_handler.setFormatter(
@@ -57,7 +63,7 @@ telemetry_logger.propagate = False  # Don't send to root logger
 
 # Configuration
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "model_config.yaml")
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
+MODEL_DIR = get_path("models")
 LLAMA_CPP_PATH = os.path.join(os.path.dirname(__file__), "bin", "llama.cpp")
 ZMQ_HEALTH_PORT = 5597
 MAX_RETRIES = 3
@@ -69,7 +75,7 @@ MODEL_TIMEOUT_SEC = 300  # 5 minutes of inactivity before unloading
 TELEMETRY_ENABLED = True
 TELEMETRY_INTERVAL_SEC = 30
 TELEMETRY_RETENTION_HOURS = 24
-TELEMETRY_LOG_PATH = os.path.join(os.path.dirname(__file__), "logs", "telemetry.json")
+TELEMETRY_LOG_PATH = join_path("logs", "telemetry.json")
 
 # Alert thresholds
 ALERT_THRESHOLDS = {
@@ -1204,7 +1210,7 @@ def initialize_system():
     logger.info(f"Ensured bin directory exists: {bin_dir}")
     
     # Create logs directory
-    logs_dir = os.path.join(os.path.dirname(__file__), "logs")
+    logs_dir = get_path("logs")
     os.makedirs(logs_dir, exist_ok=True)
     logger.info(f"Ensured logs directory exists: {logs_dir}")
     

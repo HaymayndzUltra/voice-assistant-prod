@@ -19,6 +19,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Union, cast
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -52,7 +58,7 @@ def load_master_map():
     debug_print(f"Loading master map from startup_config.yaml")
     
     # Try to load the startup_config.yaml file
-    master_map_path = os.path.join(main_pc_code_dir, "config", "startup_config.yaml")
+    master_map_path = get_file_path("main_pc_config", "startup_config.yaml")
     if not os.path.exists(master_map_path):
         print(f"{RED}Error: Master map not found at {master_map_path}{RESET}")
         return {}
@@ -97,7 +103,7 @@ try:
     possible_paths = [
         os.path.join(script_dir, "minimal_system_config_local.yaml"),  # Local config (preferred)
         os.path.join(script_dir, "minimal_system_config.yaml"),  # Same directory as script
-        os.path.join(script_dir, "..", "config", "minimal_system_config.yaml"),  # In config directory
+        join_path("config", join_path("config", "minimal_system_config.yaml")),  # In config directory
         "minimal_system_config.yaml",  # Current working directory
     ]
     
@@ -541,7 +547,7 @@ def main() -> int:
     # Save results to file
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        report_dir = os.path.join(script_dir, "logs")
+        report_dir = get_path("logs")
         os.makedirs(report_dir, exist_ok=True)
         report_path = os.path.join(report_dir, f"health_report_{timestamp}.json")
         

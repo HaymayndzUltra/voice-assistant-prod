@@ -17,20 +17,26 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/health_check.log")
+        logging.FileHandler(join_path("logs", "health_check.log"))
     ]
 )
 logger = logging.getLogger("health_check")
 
 def load_config() -> Optional[Dict[str, Any]]:
     """Load the startup configuration."""
-    config_path = os.path.join("pc2_code", "config", "startup_config.yaml")
+    config_path = join_path("pc2_code", join_path("config", "startup_config.yaml"))
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -200,7 +206,7 @@ def main():
             logger.error(f"Agent {agent['name']} is unhealthy")
     
     # Write health status to file
-    health_file = os.path.join("logs", f"{container_group}_health.json")
+    health_file = join_path("logs", "{container_group}_health.json")
     with open(health_file, "w") as f:
         json.dump({
             "container_group": container_group,

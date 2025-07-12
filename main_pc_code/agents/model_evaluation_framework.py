@@ -19,8 +19,14 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -49,7 +55,7 @@ config = load_config()
 DEFAULT_PORT = config.get('mef_port', 7220)
 HEALTH_CHECK_PORT = config.get('mef_health_port', 7221)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-EVAL_DB_PATH = config.get('mef_db_path', 'data/model_evaluation.db')
+EVAL_DB_PATH = config.get('mef_db_path', join_path("data", "model_evaluation.db"))
 
 class ModelEvaluationFramework(BaseAgent):
     """

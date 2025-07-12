@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Set
 
 # Import the PathManager for consistent path resolution
-from main_pc_code.utils.path_manager import PathManager
+from utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(

@@ -17,6 +17,12 @@ import logging
 import time
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -47,10 +53,10 @@ KEY_PORTS = [
 
 # Required config files
 REQUIRED_FILES = [
-    "config/system_config.json",
-    "config/model_configs.json",
-    "config/startup_config.yaml",
-    "data/personas.json"
+    join_path("config", "system_config.json"),
+    join_path("config", "model_configs.json"),
+    join_path("config", "startup_config.yaml"),
+    join_path("data", "personas.json")
 ]
 
 def check_port(port, host='localhost'):

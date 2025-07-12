@@ -11,22 +11,126 @@ Response Format:
 - For translation: {"status": "success", "translated_text": "Translated text"}
                  or {"status": "error", "message": "Error details"}
 """
-import zmq
-import json
-import time
-import logging
 import sys
 import os
-import traceback
+import time
+import logging
 import threading
-from pathlib import Path
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import json
+import traceback
 import psutil
+import torch
+import zmq
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from typing import Dict, Any, List, Optional
+from pathlib import Path
 from datetime import datetime
-from common.core.base_agent import BaseAgent
+
+# Add the main_pc_code directory to the Python path
+MAIN_PC_CODE_DIR = get_main_pc_code()
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+# Import model_client for centralized model loading
+from main_pc_code.utils import model_client
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+
+# Import base agent class
+from common.core.base_agent import BaseAgent
+
+# Define proxy classes for model_client integration
+class ModelClientModel:
+    def __init__(self, model_name, parent):
+        self.model_name = model_name
+        self.parent = parent
+        
+    def generate(self, **kwargs):
+        # Extract the input_ids from kwargs
+        input_ids = kwargs.get('input_ids', None)
+        if input_ids is None:
+            raise ValueError("No input_ids provided for translation")
+        
+        # Get the target language from forced_bos_token_id
+        target_lang_id = kwargs.get('forced_bos_token_id', None)
+        target_lang = None
+        if target_lang_id is not None and hasattr(self.parent, 'tokenizer') and hasattr(self.parent.tokenizer, 'id_to_lang_code'):
+            target_lang = self.parent.tokenizer.id_to_lang_code.get(target_lang_id)
+        
+        # Use model_client to perform the actual translation
+        response = model_client.generate(
+            prompt="Translate text using NLLB",
+            quality="quality",
+            model_name=self.model_name,
+            input_ids=input_ids.tolist() if input_ids is not None else None,
+            target_lang=target_lang,
+            max_length=kwargs.get('max_length', 512),
+            num_beams=kwargs.get('num_beams', 5),
+            length_penalty=kwargs.get('length_penalty', 1.0),
+            early_stopping=kwargs.get('early_stopping', True)
+        )
+        
+        if response.get("status") != "success":
+            raise RuntimeError(f"Translation failed: {response.get('message', 'Unknown error')}")
+        
+        # Convert the output to the expected format (tensor)
+        output_ids = torch.tensor(response.get("output_ids", []))
+        return output_ids
+    
+    def to(self, device):
+        # No-op, just return self for compatibility
+        return self
+
+class ModelClientTokenizer:
+    def __init__(self, model_name, supported_languages=None):
+        self.model_name = model_name
+        self.parent = None  # Will be set after initialization
+        self.supported_languages = supported_languages or {}
+        
+        # Create mappings that would normally be in the tokenizer
+        self.lang_code_to_id = {}
+        self.id_to_lang_code = {}
+    
+    def setup_language_mappings(self, supported_languages):
+        """Initialize language code mappings after supported_languages is available"""
+        # Initialize with provided language codes
+        for i, lang in enumerate(supported_languages.keys()):
+            self.lang_code_to_id[lang] = i
+            self.id_to_lang_code[i] = lang
+    
+    def __call__(self, text, **kwargs):
+        # Use model_client to tokenize
+        response = model_client.generate(
+            prompt="Tokenize text for NLLB",
+            quality="fast",
+            model_name=self.model_name,
+            text=text,
+            tokenize_only=True
+        )
+        
+        if response.get("status") != "success":
+            raise RuntimeError(f"Tokenization failed: {response.get('message', 'Unknown error')}")
+        
+        # Convert to expected format (dict of tensors)
+        result = {}
+        for k, v in response.get("tokens", {}).items():
+            result[k] = torch.tensor(v)
+        return result
+    
+    def batch_decode(self, outputs, **kwargs):
+        # Use model_client to decode
+        response = model_client.generate(
+            prompt="Decode NLLB outputs",
+            quality="fast",
+            model_name=self.model_name,
+            output_ids=outputs.tolist() if isinstance(outputs, torch.Tensor) else outputs,
+            skip_special_tokens=kwargs.get("skip_special_tokens", True)
+        )
+        
+        if response.get("status") != "success":
+            raise RuntimeError(f"Decoding failed: {response.get('message', 'Unknown error')}")
+        
+        return response.get("decoded_text", [""])
 
 # Load configuration
 config = load_config()
@@ -206,49 +310,36 @@ class NLLBTranslationAdapter(BaseAgent):
             self.logger.error(f"Failed to report error to error bus: {e}")
     
     def _load_model(self):
-        """Load NLLB model and tokenizer"""
+        """Load NLLB model and tokenizer via the ModelManagerAgent"""
         try:
-            self.logger.info("Loading NLLB model and tokenizer...")
+            self.logger.info("Loading NLLB model via ModelManagerAgent...")
             
-            # Load tokenizer
-            try:
-                self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-                self.logger.info("Tokenizer loaded successfully")
-            except Exception as e:
-                self.logger.error(f"Failed to load tokenizer: {str(e)}")
-                self.logger.error(traceback.format_exc())
-                raise
-                
-            # Determine device
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.logger.info(f"Using device: {device}")
+            # Use model_client to request the model initialization
+            response = model_client.generate(
+                prompt=f"Initialize NLLB model and tokenizer for {self.model_name}",
+                quality="quality",  # Use high quality for translation
+                model_name=self.model_name
+            )
             
-            # Load model with appropriate device mapping
-            try:
-                self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                    self.model_name,
-                    device_map="auto" if device == "cuda" else None,
-                    torch_dtype=torch.float16 if device == "cuda" else torch.float32
-                )
-                
-                # If using CPU, explicitly move model to CPU
-                if device == "cpu":
-                    self.model = self.model.to(device)
-                    
-                self.logger.info("Model loaded successfully")
-                
-                # Verify model is on correct device
-                if device == "cuda" and not next(self.model.parameters()).is_cuda:
-                    self.logger.warning("Model not on CUDA, attempting to move...")
-                    self.model = self.model.to(device)
-                    
-            except Exception as e:
-                self.logger.error(f"Failed to load model: {str(e)}")
-                self.logger.error(traceback.format_exc())
-                self.model = None
-                self.tokenizer = None
-                raise
-                
+            if response.get("status") != "success":
+                error_msg = response.get("message", "Unknown error")
+                self.logger.error(f"Error loading model via model_client: {error_msg}")
+                raise RuntimeError(f"Failed to load model via ModelManagerAgent: {error_msg}")
+            
+            self.logger.info("Model successfully requested via ModelManagerAgent")
+            
+            # Create proxy instances
+            self.model = ModelClientModel(self.model_name, self)
+            self.tokenizer = ModelClientTokenizer(self.model_name)
+            self.tokenizer.parent = self  # Add reference to parent
+            
+            # Set up language mappings if supported_languages is available
+            if hasattr(self, 'supported_languages'):
+                self.tokenizer.setup_language_mappings(self.supported_languages)
+            
+            # Set device to match what would have been used
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            
             self.model_loaded = True
             self.last_used = time.time()
             

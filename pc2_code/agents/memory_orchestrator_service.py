@@ -20,9 +20,15 @@ from typing import Dict, Any, List, Optional, Union, cast, TypeVar, Literal
 from pydantic import BaseModel, Field
 from collections import defaultdict
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
 # (I-adjust kung kinakailangan)
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -45,7 +51,7 @@ logger = logging.getLogger('MemoryOrchestratorService')
 
 # --- Constants ---
 DEFAULT_PORT = 7140 # Port para sa Orchestrator
-DB_PATH = "data/unified_memory.db"
+DB_PATH = join_path("data", "unified_memory.db")
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation

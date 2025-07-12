@@ -17,7 +17,10 @@ import threading
 import queue
 import numpy as np
 import sounddevice as sd
+# Path handling
 from pathlib import Path
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "../../.."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 import hashlib
 import tempfile
 import re
@@ -32,13 +35,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).resolve().parent.parent.parent, 'modular_system', 'logs', 'ultimate_tts_agent.py.log'))
+        logging.FileHandler(join_path("logs", "ultimate_tts_agent.log"))
     ]
 )
 logger = logging.getLogger("UltimateTTSAgent")
 
 # Add custom XTTS path
-xtts_path = r'C:\Users\haymayndz\Desktop\xtts-local'
+xtts_path = join_path("models", "xtts_local")
 if os.path.exists(xtts_path):
     sys.path.append(xtts_path)
     logger.info(f"Added custom XTTS path: {xtts_path}")
@@ -97,7 +100,7 @@ class UltimateTTSAgent(BaseAgent):
             logger.info(f"Created voice samples directory at {self.voice_samples_dir}")
             
         # Check for Tetey voice sample (from deprecated version)
-        tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
+        tetey_voice_path = get_file_path("data", "voice_samples/tetey1.wav")
         if os.path.exists(tetey_voice_path):
             self.speaker_wav = tetey_voice_path
             logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
@@ -132,8 +135,8 @@ class UltimateTTSAgent(BaseAgent):
         print("\n==== XTTS INITIALIZATION DEBUG ====")
         
         # Set up voice sample
-        tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
-        untitled_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/untitled1.wav"
+        tetey_voice_path = get_file_path("data", "voice_samples/tetey1.wav")
+        untitled_voice_path = get_file_path("data", "voice_samples/untitled1.wav")
         
         # Check which voice samples exist
         print("Checking available voice samples:")
@@ -405,8 +408,8 @@ class UltimateTTSAgent(BaseAgent):
                 if not self.speaker_wav or not os.path.exists(self.speaker_wav):
                     print("WARNING: No valid speaker_wav found for XTTS!")
                     # Try to find any available voice sample
-                    tetey_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
-                    untitled_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/untitled1.wav"
+                    tetey_voice_path = get_file_path("data", "voice_samples/tetey1.wav")
+                    untitled_voice_path = get_file_path("data", "voice_samples/untitled1.wav")
                     
                     if os.path.exists(untitled_voice_path):
                         self.speaker_wav = untitled_voice_path
@@ -654,7 +657,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
                         
                         # Filipino mode compatibility
                         if data.get("filipino_accent", False):
-                            tetey_path = "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav"
+                            tetey_path = get_file_path("data", "voice_samples/tetey1.wav")
                             if os.path.exists(tetey_path):
                                 self.speaker_wav = tetey_path
                                 self.use_filipino_accent = True

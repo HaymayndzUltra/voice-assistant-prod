@@ -1,4 +1,4 @@
-# Group: Vision System
+# Group: Vision Processing
 
 Ito ang mga agents na kabilang sa grupong ito:
 
@@ -45,3 +45,21 @@ Ito ang mga agents na kabilang sa grupong ito:
 | Agent | Tugma sa Pattern? | Reason (kung X) |
 |-------|-------------------|-----------------|
 | FaceRecognitionAgent | ✓ | |
+
+---
+
+### Container Grouping Updates
+
+Ang dating **vision_system** group ay naging **vision_processing** group para sa mas mahusay na containerization:
+
+- **FaceRecognitionAgent** ay nasa sarili nitong container group para sa:
+  - Mas mahusay na resource isolation - ang GPU-intensive face recognition ay hindi makakasagabal sa ibang services
+  - Mas mahusay na scaling - ang vision processing ay maaaring i-scale nang hiwalay mula sa ibang mga services
+  - Mas mahusay na fault isolation - ang mga problema sa vision processing ay hindi direktang makakaapekto sa ibang critical services
+
+Sa hinaharap, kapag nagdagdag ng karagdagang vision agents (tulad ng object detection, scene analysis, atbp.), ang mga ito ay dapat idagdag sa **vision_processing** group para sa logical organization at resource optimization.
+
+Ang pagkakaroon ng hiwalay na container para sa vision processing ay nagbibigay-daan din sa:
+- Specialized GPU allocation para sa computer vision workloads
+- Targeted resource tuning para sa high-throughput video processing
+- Mas madaling pag-deploy sa mga systems na may dedicated GPU para sa vision tasks

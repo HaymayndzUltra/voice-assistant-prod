@@ -12,9 +12,15 @@ import logging
 import netifaces
 from typing import Dict, Any, Optional
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's main_pc_code directory to the Python path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+PROJECT_ROOT = get_project_root()
+MAIN_PC_CODE = get_main_pc_code()
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
@@ -44,7 +50,7 @@ def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     if config_path is None:
         config_path = os.environ.get(
             "NETWORK_CONFIG_PATH", 
-            os.path.join(PROJECT_ROOT, "config", "network_config.yaml")
+            join_path("config", "network_config.yaml")
         )
     
     try:

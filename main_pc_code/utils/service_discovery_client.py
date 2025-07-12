@@ -15,9 +15,9 @@ import logging
 import zmq
 from typing import Dict, Any, Optional, Tuple, List, Union
 
-# Add the project's main_pc_code directory to the Python path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+from common.utils.path_env import get_project_root, get_main_pc_code, join_path
+PROJECT_ROOT = get_project_root()
+MAIN_PC_CODE = get_main_pc_code()
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 

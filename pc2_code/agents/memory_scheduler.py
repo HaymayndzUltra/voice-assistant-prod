@@ -21,8 +21,14 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
@@ -43,7 +49,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/memory_scheduler.log'),
+        logging.FileHandler(join_path("logs", "memory_scheduler.log")),
         logging.StreamHandler()
     ]
 )

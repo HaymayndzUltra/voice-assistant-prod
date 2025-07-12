@@ -1,0 +1,264 @@
+version: '3.8'
+
+networks:
+  ai_system_network:
+    driver: bridge
+
+services:
+  core_services:
+    build: .
+    container_name: mainpc-core_services
+    command: ["./scripts/run_group.sh", "core_services"]
+    networks: [ai_system_network]
+    ports:
+      - "7120:7120"
+      - "8120:8120"
+      - "26002:26002"
+      - "27002:27002"
+      - "7125:7125"
+      - "8125:8125"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on: []
+
+  memory_system:
+    build: .
+    container_name: mainpc-memory_system
+    command: ["./scripts/run_group.sh", "memory_system"]
+    networks: [ai_system_network]
+    ports:
+      - "5713:5713"
+      - "6713:6713"
+      - "5574:5574"
+      - "6574:6574"
+      - "5715:5715"
+      - "6715:6715"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - core_services
+
+  utility_services:
+    build: .
+    container_name: mainpc-utility_services
+    command: ["./scripts/run_group.sh", "utility_services"]
+    networks: [ai_system_network]
+    ports:
+      - "5650:5650"
+      - "6650:6650"
+      - "5660:5660"
+      - "6660:6660"
+      - "5613:5613"
+      - "6613:6613"
+      - "5584:5584"
+      - "6584:6584"
+      - "5606:5606"
+      - "6606:6606"
+      - "5615:5615"
+      - "6615:6615"
+      - "5642:5642"
+      - "6642:6642"
+      - "5581:5581"
+      - "6581:6581"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - core_services
+      - gpu_infrastructure
+
+  gpu_infrastructure:
+    build: .
+    container_name: mainpc-gpu_infrastructure
+    command: ["./scripts/run_group.sh", "gpu_infrastructure"]
+    networks: [ai_system_network]
+    ports:
+      - "5575:5575"
+      - "6575:6575"
+      - "5570:5570"
+      - "6570:6570"
+      - "5572:5572"
+      - "6572:6572"
+      - "5617:5617"
+      - "6617:6617"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - core_services
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  reasoning_services:
+    build: .
+    container_name: mainpc-reasoning_services
+    command: ["./scripts/run_group.sh", "reasoning_services"]
+    networks: [ai_system_network]
+    ports:
+      - "5612:5612"
+      - "6612:6612"
+      - "5646:5646"
+      - "6646:6646"
+      - "5641:5641"
+      - "6641:6641"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - gpu_infrastructure
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  vision_processing:
+    build: .
+    container_name: mainpc-vision_processing
+    command: ["./scripts/run_group.sh", "vision_processing"]
+    networks: [ai_system_network]
+    ports:
+      - "5610:5610"
+      - "6610:6610"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - gpu_infrastructure
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  learning_knowledge:
+    build: .
+    container_name: mainpc-learning_knowledge
+    command: ["./scripts/run_group.sh", "learning_knowledge"]
+    networks: [ai_system_network]
+    ports:
+      - "7220:7220"
+      - "7221:7221"
+      - "7210:7210"
+      - "7211:7211"
+      - "7200:7200"
+      - "7201:7201"
+      - "5580:5580"
+      - "6580:6580"
+      - "5638:5638"
+      - "6638:6638"
+      - "5643:5643"
+      - "6643:6643"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - memory_system
+      - utility_services
+
+  service-registry:
+    build: .
+    container_name: service-registry
+    command: ["python", "main_pc_code/agents/service_registry_agent.py"]
+    networks: [ai_system_network]
+    ports:
+      - "7100:7100"
+      - "8100:8100"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on: []
+
+  language_processing:
+    build: .
+    container_name: mainpc-language_processing
+    command: ["./scripts/run_group.sh", "language_processing"]
+    networks: [ai_system_network]
+    ports:
+      - "7010:7010"
+      - "8010:8010"
+      - "7005:7005"
+      - "8005:8005"
+      - "5701:5701"
+      - "6701:6701"
+      - "5709:5709"
+      - "6709:6709"
+      - "5710:5710"
+      - "6710:6710"
+      - "5711:5711"
+      - "6711:6711"
+      - "5636:5636"
+      - "6636:6636"
+      - "5637:5637"
+      - "6637:6637"
+      - "5595:5595"
+      - "6595:6595"
+      - "5802:5802"
+      - "6802:6802"
+      - "5706:5706"
+      - "6706:6706"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - memory_system
+      - utility_services
+      - gpu_infrastructure
+
+  speech_services:
+    build: .
+    container_name: mainpc-speech_services
+    command: ["./scripts/run_group.sh", "speech_services"]
+    networks: [ai_system_network]
+    ports:
+      - "5800:5800"
+      - "6800:6800"
+      - "5801:5801"
+      - "6801:6801"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - language_processing
+      - gpu_infrastructure
+
+  audio_interface:
+    build: .
+    container_name: mainpc-audio_interface
+    command: ["./scripts/run_group.sh", "audio_interface"]
+    networks: [ai_system_network]
+    ports:
+      - "6550:6550"
+      - "7550:7550"
+      - "6551:6551"
+      - "7551:7551"
+      - "5576:5576"
+      - "6576:6576"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - speech_services
+      - language_processing

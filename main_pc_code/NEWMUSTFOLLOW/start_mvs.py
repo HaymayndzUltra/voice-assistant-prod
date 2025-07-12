@@ -22,6 +22,12 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Set up logging
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
@@ -136,7 +142,7 @@ def load_master_map():
     logger.info("Loading master map from startup_config.yaml")
     
     # Try to load the startup_config.yaml file
-    master_map_path = os.path.join(MAIN_PC_CODE_DIR, "config", "startup_config.yaml")
+    master_map_path = get_file_path("main_pc_config", "startup_config.yaml")
     if not os.path.exists(master_map_path):
         logger.error(f"Master map not found at {master_map_path}")
         sys.exit(1)

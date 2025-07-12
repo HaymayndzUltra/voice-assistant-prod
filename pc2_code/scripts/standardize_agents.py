@@ -22,8 +22,14 @@ import time  # Import time for health check template
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Union, Any, Tuple
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = Path(__file__).resolve().parent.parent
+PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
@@ -32,7 +38,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/standardize_agents.log'),
+        logging.FileHandler(join_path("logs", "standardize_agents.log")),
         logging.StreamHandler()
     ]
 )
@@ -259,7 +265,7 @@ def check_agent_dependencies(startup_config_path: Optional[str] = None) -> Dict[
         Dictionary mapping agent names to their dependencies
     """
     if startup_config_path is None:
-        startup_config_path = os.path.join(PC2_CODE_DIR, "config", "startup_config.yaml")
+        startup_config_path = get_file_path("main_pc_config", "startup_config.yaml")
     
     try:
         import yaml
@@ -335,7 +341,7 @@ def find_redundant_agents(startup_config_path: Optional[str] = None) -> List[Tup
         List of potentially redundant agents as tuples of (agent1, agent2)
     """
     if startup_config_path is None:
-        startup_config_path = os.path.join(PC2_CODE_DIR, "config", "startup_config.yaml")
+        startup_config_path = get_file_path("main_pc_config", "startup_config.yaml")
     
     try:
         import yaml

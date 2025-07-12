@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -32,12 +32,18 @@ except ImportError:
 # Remove direct model loading; transformers now optional
 # from transformers import AutoTokenizer, AutoModelForCausalLM
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 from main_pc_code.utils import model_client
 import sys
 import os
 
 # Setup logging
-LOG_PATH = "logs/got_tot_agent.log"
+LOG_PATH = join_path("logs", "got_tot_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -50,9 +56,8 @@ logger = logging.getLogger("GoTToTAgent")
 
 # ZMQ port for this agent
 GOT_TOT_PORT = 5646
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+PROJECT_ROOT = get_project_root()
+MAIN_PC_CODE = get_main_pc_code()
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)  # Insert project root to path
 if MAIN_PC_CODE not in sys.path:

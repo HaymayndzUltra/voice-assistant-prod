@@ -13,6 +13,12 @@ import sounddevice as sd
 import zmq
 from datetime import datetime
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("IntegratedListener")
@@ -25,7 +31,7 @@ RECORD_SECONDS = 5
 DEBUG_AUDIO = True  # Print debug info for audio
 
 # Create logs directory if it doesn't exist
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+LOG_DIR = get_path("logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # ZMQ Configuration

@@ -12,6 +12,12 @@ import torch
 from scipy.io import wavfile
 from datetime import datetime
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add debug prints
 print("[DEBUG] Starting listener_debug.py")
 print("[DEBUG] Importing modules completed")
@@ -28,7 +34,7 @@ FORCED_PROCESSING = True        # Force audio processing for debugging
 SAVE_DEBUG_AUDIO = True         # Save audio files for debugging
 
 # Create logs directory if it doesn't exist
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+LOG_DIR = get_path("logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 print(f"[DEBUG] LOG_DIR: {LOG_DIR}")
 

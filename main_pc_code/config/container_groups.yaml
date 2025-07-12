@@ -30,14 +30,29 @@ ai_models_gpu_services:
   - VideoProcessingAgent
   - ChainOfThoughtAgent
   - CognitiveModelAgent
+  - GoTToTAgent
 
 # Language processing services
 language_processing:
   - TranslationAgent
   - ConsolidatedTranslator
   - NLLBTranslator
-  - SpeechToTextAgent
-  - TextToSpeechAgent
+  - EmotionSynthesisAgent
+
+# Speech services - dedicated speech processing
+speech_services:
+  - STTService
+  - TTSService
+
+# Audio interface - streaming audio processing
+audio_interface:
+  - StreamingSpeechRecognition
+  - StreamingTTSAgent
+  - StreamingInterruptHandler
+
+# Vision processing - computer vision services
+vision_processing:
+  - FaceRecognitionAgent
 
 # Map container names to agent groups
 container_mapping:
@@ -45,4 +60,7 @@ container_mapping:
   memory-system: memory_system
   utility-services: utility_services
   ai-models-gpu-services: ai_models_gpu_services
-  language-processing: language_processing 
+  language-processing: language_processing
+  speech-services: speech_services
+  audio-interface: audio_interface
+  vision-processing: vision_processing 

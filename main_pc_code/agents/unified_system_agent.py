@@ -7,7 +7,7 @@ from main_pc_code.src.core.base_agent import B
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -38,6 +38,7 @@ import signal
 import socket
 import platform
 import traceback
+from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Configure logging
 logging.basicConfig(
@@ -195,6 +196,10 @@ class UnifiedSystemAgent(BaseAgent):
 
     
             logger.info("UnifiedSystemAgent initialization completed successfully")
+
+    
+            # Instantiate ErrorPublisher after successful init
+            self.error_publisher = ErrorPublisher(self.__class__.__name__)
 
     
         except Exception as e:
