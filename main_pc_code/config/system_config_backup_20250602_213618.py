@@ -3,6 +3,12 @@ import json
 import logging
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Base paths
 ROOT_DIR = Path(__file__).parent.parent.absolute()
 CONFIG_DIR = ROOT_DIR / "config"
@@ -77,7 +83,7 @@ DEFAULT_CONFIG = {
             "face_recognition_port": 5560, 
         },
         "whisper_model_config": {
-            "model_path": "models/whisper/large-ct2",
+            "model_path": join_path("models", "whisper/large-ct2"),
             "use_gpu": True,
             "compute_type": "float16",
         },

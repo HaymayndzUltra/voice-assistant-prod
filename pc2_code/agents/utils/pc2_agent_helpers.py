@@ -13,6 +13,12 @@ import json
 import zmq
 from typing import Dict, Any, Optional
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Import the BaseAgent from main_pc_code
 from main_pc_code.src.core.base_agent import BaseAgent
 
@@ -38,7 +44,7 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
         Logger instance
     """
     # Create logs directory if it doesn't exist
-    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
+    log_dir = get_path("logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, f"{agent_name.lower()}.log")
     

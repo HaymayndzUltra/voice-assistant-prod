@@ -378,3 +378,59 @@ Ito ang mga agents na kabilang sa grupong ito:
   - **🔒 Security & Tuning Flags:** Error bus reporting
 
 ---
+### 🧠 AGENT PROFILE: EmotionSynthesisAgent (Moved from emotion_system group)
+- **Main Class:** `EmotionSynthesisAgent` (`main_pc_code/agents/emotion_synthesis_agent.py`)
+- **Host Machine:** MainPC (default, configurable)
+- **Role:** Adds emotional nuance to text responses based on specified emotions.
+- **🎯 Responsibilities:** 
+  - Synthesizes emotional markers in text
+  - Adds appropriate interjections, sentence starters, and modifiers
+  - Adjusts text based on emotion and intensity
+  - Reports errors to error bus
+- **🔗 Interactions:** 
+  - Receives text synthesis requests
+  - Reports errors to error bus
+- **🧬 Technical Deep Dive:** 
+  - Maintains emotion markers dictionary for different emotions
+  - Implements probabilistic text modification based on intensity
+  - Tracks metrics for synthesis operations
+  - Provides health status reporting
+- **⚠️ Panganib:** 
+  - Synthesized emotions may not always be appropriate
+  - Potential for overuse of emotional markers
+  - Limited emotional vocabulary for some emotions
+- **📡 Communication Details:** 
+  - **🔌 Health Port:** 6643 (explicit)
+  - **🛰️ Port:** Default 5643
+  - **🔧 Environment Variables:** PC2_IP
+- **📝 Note:** This agent has been moved from the **emotion_system** group to the **language_processing** group because it primarily processes and modifies text content based on emotional context, making it more aligned with language processing functionality than core emotion system operations.
+
+---
+
+### Pattern Compliance Checklist
+| Agent | Tugma sa Pattern? | Reason (kung X) |
+|-------|-------------------|-----------------|
+| ModelOrchestrator | ✓ | |
+| GoalManager | ✓ | |
+| IntentionValidatorAgent | ✓ | |
+| NLUAgent | ✓ | |
+| AdvancedCommandHandler | ✓ | |
+| ChitchatAgent | ✓ | |
+| FeedbackHandler | ✓ | |
+| Responder | ✓ | |
+| TranslationService | ✓ | |
+| DynamicIdentityAgent | ✓ | |
+| EmotionSynthesisAgent | ✓ | |
+
+---
+
+### Container Grouping Updates
+
+Ang **language_processing** group ay na-optimize para sa containerization:
+
+- **EmotionSynthesisAgent** ay inilipat mula sa **emotion_system** group papunta sa **language_processing** group dahil ito ay pangunahing nagpoproseso ng text content batay sa emotional context, na mas naaangkop sa language processing functionality.
+
+Ang pagbabagong ito ay nagbibigay ng mga sumusunod na benepisyo:
+- Mas mahusay na logical grouping batay sa functionality
+- Mas mababang network overhead sa pagitan ng mga agents na madalas na nakikipag-communicate
+- Mas malinaw na separation of concerns sa pagitan ng emotion detection at text processing

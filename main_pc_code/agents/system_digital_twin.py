@@ -16,8 +16,14 @@ import sys
 import os
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # FINAL: Kept the modern pathlib approach and removed the redundant os.path block.
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -42,7 +48,7 @@ from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure
 from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 
 # Configure logging
-log_file_path = 'logs/system_digital_twin.log'
+log_file_path = join_path("logs", "system_digital_twin.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -64,7 +70,7 @@ ZMQ_REQUEST_TIMEOUT = 5000
 DEFAULT_PORT = 7120
 DEFAULT_HEALTH_PORT = 8120
 # Database & Cache Defaults
-DB_PATH = os.environ.get('MEMORY_DB_PATH', 'data/unified_memory.db')
+DB_PATH = os.environ.get('MEMORY_DB_PATH', join_path("data", "unified_memory.db"))
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 REDIS_DB = int(os.environ.get('REDIS_DB', 0))
@@ -742,7 +748,7 @@ class SystemDigitalTwinAgent(BaseAgent):
             agent_config = {}
             
             # Check in source_of_truth_config.yaml
-            config_file = os.path.join(os.path.dirname(__file__), "..", "config", "source_of_truth_config.yaml")
+            config_file = join_path("config", join_path("config", "source_of_truth_config.yaml"))
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     import yaml
@@ -773,10 +779,10 @@ class SystemDigitalTwinAgent(BaseAgent):
             if "script_path" not in agent_info:
                 # Common patterns for agent script paths
                 possible_paths = [
-                    f"main_pc_code/agents/{agent_name.lower()}.py",
-                    f"main_pc_code/agents/{agent_name}.py",
-                    f"pc2_code/agents/{agent_name.lower()}.py",
-                    f"pc2_code/agents/{agent_name}.py"
+                    fjoin_path("main_pc_code", "agents/{agent_name.lower()}.py"),
+                    fjoin_path("main_pc_code", "agents/{agent_name}.py"),
+                    fjoin_path("pc2_code", "agents/{agent_name.lower()}.py"),
+                    fjoin_path("pc2_code", "agents/{agent_name}.py")
                 ]
                 
                 for path in possible_paths:

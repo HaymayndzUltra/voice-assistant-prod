@@ -6,6 +6,12 @@ from datetime import datetime
 import asyncio
 import time
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 class TieredResponder:
     def __init__(self):
         self.context = zmq.Context()
@@ -61,7 +67,7 @@ class TieredResponder:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler('logs/tiered_responder.log'),
+                logging.FileHandler(join_path("logs", "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )

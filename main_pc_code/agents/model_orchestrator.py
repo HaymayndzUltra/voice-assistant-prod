@@ -21,8 +21,14 @@ import pickle
 from datetime import datetime
 import psutil # Added for health check
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -46,13 +52,13 @@ MAX_REFINEMENT_ITERATIONS = config.get('max_refinement_iterations', 3) # Limitas
 
 # --- Embedding Model Constants ---
 EMBEDDING_MODEL_NAME = config.get('embedding_model', "all-MiniLM-L6-v2")  # Lightweight but effective sentence embedding model
-EMBEDDING_CACHE_FILE = config.get('embedding_cache_file', "data/task_embeddings_cache.pkl")
+EMBEDDING_CACHE_FILE = config.get('embedding_cache_file', join_path("data", "task_embeddings_cache.pkl"))
 EMBEDDING_DIMENSION = 384  # Dimension of embeddings from the model
 
 # --- Metrics Constants ---
 METRICS_LOG_INTERVAL = config.get('metrics_log_interval', 60)  # Log metrics every 60 seconds
 METRICS_SAVE_INTERVAL = config.get('metrics_save_interval', 300)  # Save metrics to file every 5 minutes
-METRICS_FILE = config.get('metrics_file', "logs/model_orchestrator_metrics.json")
+METRICS_FILE = config.get('metrics_file', join_path("logs", "model_orchestrator_metrics.json"))
 
 # ===================================================================
 #         ANG BAGONG UNIFIED MODEL ORCHESTRATOR

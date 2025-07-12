@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Union, List, Callable, Set
 
 # Import the PathManager for consistent path resolution
-from main_pc_code.utils.path_manager import PathManager
+from utils.path_manager import PathManager
 
 # Constants
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

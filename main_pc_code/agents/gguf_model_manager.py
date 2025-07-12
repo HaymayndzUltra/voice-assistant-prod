@@ -9,10 +9,20 @@ Provides a unified interface for model access
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
+def get_main_pc_code():
+    """Get the path to the main_pc_code directory"""
+    current_dir = Path(__file__).resolve().parent
+    main_pc_code_dir = current_dir.parent
+    return main_pc_code_dir
+
+# First define a basic join_path function for bootstrapping
+def join_path(*args):
+    return os.path.join(*args)
+
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
+# Now we can import the proper path utilities
+from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 
 import gc
@@ -39,7 +49,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("logs/gguf_model_manager.log"),
+        logging.FileHandler(join_path("logs", "gguf_model_manager.log")),
         logging.StreamHandler()
     ]
 )
@@ -71,6 +81,12 @@ class GGUFModelManager(BaseAgent):
         # Dictionary to store model metadata
         self.model_metadata = {}
         
+        # KV cache storage for conversation continuity
+        self.kv_caches = {}  # {conversation_id: {model_id: cache_data}}
+        self.kv_cache_last_used = {}  # {conversation_id: timestamp}
+        self.max_kv_caches = 50  # Maximum number of KV caches to store
+        self.kv_cache_timeout = 3600  # 1 hour timeout for KV caches
+        
         # Lock for thread safety
         self.lock = threading.RLock()
         
@@ -92,6 +108,10 @@ class GGUFModelManager(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
+        
+        # Start KV cache cleanup thread
+        self.kv_cache_cleanup_thread = threading.Thread(target=self._kv_cache_cleanup_loop, daemon=True)
+        self.kv_cache_cleanup_thread.start()
 
     def _load_model_metadata(self):
         """Load model metadata from config files"""
@@ -226,7 +246,8 @@ class GGUFModelManager(BaseAgent):
     
     def generate_text(self, model_id: str, prompt: str, system_prompt: Optional[str] = None,
                      max_tokens: int = 1024, temperature: float = 0.7,
-                     top_p: float = 0.95, stop: Optional[List[str]] = None) -> Dict[str, Any]:
+                     top_p: float = 0.95, stop: Optional[List[str]] = None,
+                     conversation_id: Optional[str] = None) -> Dict[str, Any]:
         """Generate text using a GGUF model
         
         Args:
@@ -237,6 +258,7 @@ class GGUFModelManager(BaseAgent):
             temperature: Temperature for sampling
             top_p: Top-p sampling parameter
             stop: Optional list of stop sequences
+            conversation_id: Optional conversation ID for KV cache reuse
             
         Returns:
             Dict containing the generated text and metadata
@@ -252,6 +274,19 @@ class GGUFModelManager(BaseAgent):
         # Update last used timestamp
         self.last_used[model_id] = time.time()
         
+        # Check if we should use KV cache
+        use_kv_cache = conversation_id is not None
+        kv_cache = None
+        
+        if use_kv_cache:
+            # Update KV cache last used timestamp
+            self.kv_cache_last_used[conversation_id] = time.time()
+            
+            # Get existing KV cache if available
+            if conversation_id in self.kv_caches and model_id in self.kv_caches[conversation_id]:
+                kv_cache = self.kv_caches[conversation_id][model_id]
+                logger.info(f"Using existing KV cache for conversation {conversation_id}")
+        
         try:
             with self.lock:
                 model = self.loaded_models[model_id]
@@ -264,15 +299,39 @@ class GGUFModelManager(BaseAgent):
                 # Generate text
                 logger.debug(f"Generating text with model {model_id}, prompt: {full_prompt[:100]}...")
                 
-                # Use either chat_completion or completion based on the model type
-                result = model.create_completion(
-                    prompt=full_prompt,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    top_p=top_p,
-                    stop=stop or [],
-                    stream=False
-                )
+                # Use KV cache if available
+                if use_kv_cache:
+                    # Create completion with KV cache
+                    result = model.create_completion(
+                        prompt=full_prompt,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        top_p=top_p,
+                        stop=stop or [],
+                        stream=False,
+                        cache=kv_cache  # Pass the KV cache to the model
+                    )
+                    
+                    # Store updated KV cache for future use
+                    if conversation_id not in self.kv_caches:
+                        self.kv_caches[conversation_id] = {}
+                    
+                    # Get the updated KV cache from the model
+                    try:
+                        self.kv_caches[conversation_id][model_id] = model.get_cache()
+                        logger.debug(f"Stored KV cache for conversation {conversation_id}")
+                    except (AttributeError, NotImplementedError) as e:
+                        logger.warning(f"Failed to get KV cache: {e}")
+                else:
+                    # Regular completion without KV cache
+                    result = model.create_completion(
+                        prompt=full_prompt,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        top_p=top_p,
+                        stop=stop or [],
+                        stream=False
+                    )
                 
                 # Extract the generated text
                 if isinstance(result, dict) and "choices" in result:
@@ -282,10 +341,14 @@ class GGUFModelManager(BaseAgent):
                 
                 logger.debug(f"Generated text: {text[:100]}...")
                 
+                # Manage KV cache size
+                self._manage_kv_cache_size()
+                
                 return {
                     "model_id": model_id,
                     "text": text,
-                    "status": "success"
+                    "status": "success",
+                    "using_kv_cache": use_kv_cache
                 }
                 
         except Exception as e:
@@ -358,12 +421,87 @@ class GGUFModelManager(BaseAgent):
             
             # Clear dictionaries
             self.loaded_models.clear()
+            self.kv_caches.clear()
+            self.kv_cache_last_used.clear()
             
             # Run garbage collection
             gc.collect()
             
             logger.info("GGUF Model Manager cleanup complete")
 
+    def _kv_cache_cleanup_loop(self):
+        """Background thread to clean up expired KV caches"""
+        logger.info("Starting KV cache cleanup loop")
+        
+        while True:
+            try:
+                # Sleep first to avoid immediate cleanup
+                time.sleep(60)  # Check every minute
+                
+                with self.lock:
+                    # Get current time
+                    current_time = time.time()
+                    
+                    # Find expired caches
+                    expired_caches = []
+                    for conversation_id, last_used in self.kv_cache_last_used.items():
+                        if current_time - last_used > self.kv_cache_timeout:
+                            expired_caches.append(conversation_id)
+                    
+                    # Remove expired caches
+                    for conversation_id in expired_caches:
+                        if conversation_id in self.kv_caches:
+                            del self.kv_caches[conversation_id]
+                        if conversation_id in self.kv_cache_last_used:
+                            del self.kv_cache_last_used[conversation_id]
+                            
+                    if expired_caches:
+                        logger.info(f"Cleaned up {len(expired_caches)} expired KV caches")
+                        
+            except Exception as e:
+                logger.error(f"Error in KV cache cleanup loop: {e}")
+    
+    def _manage_kv_cache_size(self):
+        """Manage the size of the KV cache dictionary"""
+        with self.lock:
+            # Check if we have too many caches
+            if len(self.kv_caches) > self.max_kv_caches:
+                # Sort by last used time (oldest first)
+                sorted_caches = sorted(
+                    self.kv_cache_last_used.items(),
+                    key=lambda x: x[1]
+                )
+                
+                # Remove oldest caches until we're under the limit
+                caches_to_remove = len(self.kv_caches) - self.max_kv_caches
+                for i in range(caches_to_remove):
+                    if i < len(sorted_caches):
+                        conversation_id = sorted_caches[i][0]
+                        if conversation_id in self.kv_caches:
+                            del self.kv_caches[conversation_id]
+                        if conversation_id in self.kv_cache_last_used:
+                            del self.kv_cache_last_used[conversation_id]
+                
+                logger.info(f"Removed {caches_to_remove} oldest KV caches to stay under limit")
+    
+    def clear_kv_cache(self, conversation_id: str) -> bool:
+        """Clear the KV cache for a specific conversation
+        
+        Args:
+            conversation_id: The conversation ID to clear
+            
+        Returns:
+            bool: True if the cache was cleared, False if it didn't exist
+        """
+        with self.lock:
+            if conversation_id in self.kv_caches:
+                del self.kv_caches[conversation_id]
+                if conversation_id in self.kv_cache_last_used:
+                    del self.kv_cache_last_used[conversation_id]
+                logger.info(f"Cleared KV cache for conversation {conversation_id}")
+                return True
+            return False
+            
     def health_check(self) -> Dict[str, Any]:
         """Perform health check for the GGUF Model Manager"""
         try:
@@ -385,6 +523,7 @@ class GGUFModelManager(BaseAgent):
                 'models_loaded': loaded_count,
                 'total_models': total_count,
                 'vram_usage': vram_usage,
+                'kv_caches_count': len(self.kv_caches),
                 'timestamp': time.time()
             }
             

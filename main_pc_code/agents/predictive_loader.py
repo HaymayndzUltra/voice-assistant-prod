@@ -5,7 +5,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -169,6 +169,10 @@ class PredictiveLoader(BaseAgent):
         """Start a separate thread for health checks"""
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
+        # Track for graceful shutdown
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.health_thread)
     
     def _health_check_loop(self):
         """Health check loop running in a separate thread"""
@@ -198,6 +202,11 @@ class PredictiveLoader(BaseAgent):
         # Start prediction thread
         prediction_thread = threading.Thread(target=self._prediction_loop, daemon=True)
         prediction_thread.start()
+        # Track prediction thread for shutdown
+        self.prediction_thread = prediction_thread
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(prediction_thread)
         
         try:
             while True:

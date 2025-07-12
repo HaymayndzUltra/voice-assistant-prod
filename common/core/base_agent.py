@@ -15,13 +15,16 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 # Import the PathManager for consistent path resolution
-from main_pc_code.utils.path_manager import PathManager
+from utils.path_manager import PathManager
 
 # Now that the path is set, we can use absolute imports
 from main_pc_code.utils.config_loader import parse_agent_args
 from common.utils.data_models import (
     SystemEvent, ErrorReport, ErrorSeverity, AgentRegistration
 )
+
+# Use centralized JSON logger
+from common.utils.logger_util import get_json_logger
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -96,24 +99,19 @@ class BaseAgent:
         logger.info(f"{self.name} initialized on port {self.port} (health check: {self.health_check_port})")
     
     def _setup_logging(self):
-        """Set up logging with proper path resolution using PathManager."""
+        """Configure per-agent JSON structured logging."""
         logs_dir = PathManager.get_logs_dir()
-        
-        # Create agent-specific log file
+        logs_dir.mkdir(parents=True, exist_ok=True)
+
         agent_log_file = logs_dir / f"{self.name.lower()}.log"
-        
-        # Add file handler if not already added
-        for handler in logger.handlers:
-            if isinstance(handler, logging.FileHandler) and handler.baseFilename == str(agent_log_file):
-                return
-        
-        file_handler = logging.FileHandler(str(agent_log_file))
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
-        logger.addHandler(file_handler)
-        
-        logger.info(f"Logging set up for {self.name} at {agent_log_file}")
+
+        # Replace existing handlers with JSON handlers only once
+        self.logger = get_json_logger(self.name, logfile=str(agent_log_file))
+
+        # Attach agent_name attribute to records automatically via LoggerAdapter
+        self.logger = logging.LoggerAdapter(self.logger, extra={"agent_name": self.name})
+
+        self.logger.info(f"Initialized JSON logging -> {agent_log_file}")
     
     def _find_available_port(self, start_port: int = 5000, max_attempts: int = 100) -> int:
         """Find an available port starting from start_port.
@@ -150,7 +148,7 @@ class BaseAgent:
         
         for attempt in range(max_retries):
             try:
-                logger.debug(f"BaseAgent._init_sockets: Attempt {attempt+1} binding main socket to port {self.port}")
+                self.logger.debug(f"BaseAgent._init_sockets: Attempt {attempt+1} binding main socket to port {self.port}")
                 
                 # Main socket for agent communication
                 if hasattr(self, 'socket') and self.socket:
@@ -387,11 +385,38 @@ class BaseAgent:
             self.cleanup()
     
     def cleanup(self):
-        """Clean up resources with proper error handling."""
+        """Clean up resources with proper error handling and ensure all background threads are joined."""
         logger.info(f"{self.name} cleaning up resources")
+        # Signal loops to stop
         self.running = False
-        
-        # Close main socket
+
+        # --- Gracefully join background threads ---
+        joined = set()
+        try:
+            for t in getattr(self, "_background_threads", []):
+                if isinstance(t, threading.Thread) and t.is_alive():
+                    t.join(timeout=10)
+                    joined.add(t)
+
+            # Heuristic: join any thread attributes following *_thread or *_threads naming
+            for attr_name in dir(self):
+                if attr_name.endswith("_thread") or attr_name.endswith("_threads"):
+                    attr = getattr(self, attr_name)
+                    if isinstance(attr, threading.Thread) and attr not in joined:
+                        if attr.is_alive():
+                            attr.join(timeout=10)
+                            joined.add(attr)
+                    elif isinstance(attr, list):
+                        for item in attr:
+                            if isinstance(item, threading.Thread) and item not in joined and item.is_alive():
+                                item.join(timeout=10)
+                                joined.add(item)
+        except Exception as e:
+            logger.warning(f"{self.name}: error while joining background threads: {e}")
+
+        logger.info(f"{self.name}: joined {len(joined)} background thread(s)")
+
+        # --- Close main socket ---
         if hasattr(self, 'socket') and self.socket:
             try:
                 self.socket.close()

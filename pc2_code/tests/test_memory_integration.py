@@ -1,18 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Test module for memory integration.
+"""
+
 import unittest
+import json
+import zmq
+import logging
 import sys
 import os
-import json
-import time
-import threading
-import sqlite3
-import redis
-import zmq
-from pathlib import Path
-import tempfile
-import shutil
+from unittest.mock import MagicMock, patch
 
-# Add project root to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+# Ensure the parent directory is in the path for imports
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the services to test
 from pc2_code.agents.memory_orchestrator_service import MemoryOrchestratorService
@@ -88,7 +91,8 @@ class TestMemoryIntegration(unittest.TestCase):
     def setUpClass(cls):
         """Set up test environment once for all tests"""
         # Create a temporary directory for test files
-        cls.temp_dir = tempfile.mkdtemp()
+        cls.temp_dir = os.path.join(get_project_root(), "tests", "temp_test_db")
+        os.makedirs(cls.temp_dir, exist_ok=True)
         cls.db_path = os.path.join(cls.temp_dir, "test_memory.db")
         
         # Start MemoryOrchestratorService in a separate thread

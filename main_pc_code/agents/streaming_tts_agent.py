@@ -1,11 +1,17 @@
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+from common.utils.path_env import get_path, join_path, get_file_path, get_main_pc_code
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -13,7 +19,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
-Tier 1: XTTS v2 (Primary) - High-quality multilingual speech synthesis
+Tier 1: TTS Service (Primary) - High-quality multilingual speech synthesis via ModelManagerAgent
 Tier 2: Windows SAPI (Secondary) - Reliable system-level TTS
 Tier 3: pyttsx3 (Tertiary) - Cross-platform TTS fallback
 Tier 4: Console Print (Final) - Text output as last resort
@@ -36,7 +42,7 @@ from pathlib import Path
 import hashlib
 import tempfile
 import re
-from main_pc_code.utils.service_discovery_client import register_service, get_service_address
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address, discover_service
 from main_pc_code.utils.env_loader import get_env
 import pickle
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
@@ -48,9 +54,9 @@ config = load_config()
 # Add the parent directory to sys.path
 
 # Configure logging
-log_dir = os.path.join(os.path.dirname(__file__), '../../logs')
+log_dir = join_path("logs")
 os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'streaming_tts_agent.log')
+log_file = join_path("logs", 'streaming_tts_agent.log')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -60,11 +66,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("UltimateTTSAgent")
-
-# Add custom XTTS path
-xtts_path = os.environ.get("XTTS_PATH", "models/xtts-local")
-if os.path.exists(xtts_path):
-    logger.info(f"Added custom XTTS path: {xtts_path}")
 
 # ZMQ Configuration
 SAMPLE_RATE = int(config.get("sample_rate", 24000))
@@ -130,7 +131,7 @@ class UltimateTTSAgent(BaseAgent):
         usa_address = get_service_address("UnifiedSystemAgent")
         if not usa_address:
             # Fall back to configured port
-            usa_address = get_zmq_connection_string({self.unified_system_port}, "localhost")
+            usa_address = f"tcp://localhost:{self.unified_system_port}"
         
         self.system_socket.connect(usa_address)
         logger.info(f"Connected to UnifiedSystemAgent at {usa_address}")
@@ -144,16 +145,13 @@ class UltimateTTSAgent(BaseAgent):
         self.stop_speaking = False
         
         # Set up voice samples directory
-        self.voice_samples_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "voice_samples"
-        )
+        self.voice_samples_dir = join_path("data", "voice_samples")
         if not os.path.exists(self.voice_samples_dir):
             os.makedirs(self.voice_samples_dir)
             logger.info(f"Created voice samples directory at {self.voice_samples_dir}")
             
         # Check for Tetey voice sample (from deprecated version)
-        tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
+        tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", join_path("data", "voice_samples", "tetey1.wav")) # Allow override
         if os.path.exists(tetey_voice_path):
             self.speaker_wav = tetey_voice_path
             logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
@@ -165,6 +163,10 @@ class UltimateTTSAgent(BaseAgent):
                 self.speaker_wav = os.path.join(self.voice_samples_dir, voice_samples[0])
                 logger.info(f"Using voice sample: {self.speaker_wav}")
         
+        # Connect to TTS service
+        self.tts_service_socket = None
+        self._connect_to_tts_service()
+        
         # Initialize TTS engines in a background thread
         self.tts_engines = {}
         self.initialization_status = {
@@ -172,7 +174,7 @@ class UltimateTTSAgent(BaseAgent):
             "error": None,
             "progress": 0.0,
             "engines_ready": {
-                "xtts": False,
+                "tts_service": False,
                 "sapi": False,
                 "pyttsx3": False,
                 "console": True  # Console is always available
@@ -198,7 +200,7 @@ class UltimateTTSAgent(BaseAgent):
         interrupt_address = get_service_address("StreamingInterruptHandler")
         if not interrupt_address:
             # Fall back to configured port
-            interrupt_address = get_zmq_connection_string({self.interrupt_port}, "localhost")
+            interrupt_address = f"tcp://localhost:{self.interrupt_port}"
         
         self.interrupt_socket.connect(interrupt_address)
         self.interrupt_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -240,328 +242,156 @@ class UltimateTTSAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error registering service: {e}")
 
-    def _initialize_tts_engines(self):
-        """Initialize all TTS engines in order of preference"""
+    def _connect_to_tts_service(self):
+        """Connect to the TTS service for speech synthesis."""
         try:
-            # --- Start of XTTS Initialization Block ---
-            print("\n==== XTTS INITIALIZATION DEBUG ====")
-            
-            # Set up voice sample
-            tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
-            if os.path.exists(tetey_voice_path):
-                self.speaker_wav = tetey_voice_path
-                logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
-            
-            # Find the XTTS model path
-            model_path = xtts_path # Use the path defined at the top of the file
-            
-            # Check if model exists
-            if not os.path.exists(model_path):
-                print(f"XTTS model not found at {model_path}. Will use default XTTS model.")
-                logger.warning(f"XTTS model not found at {model_path}. Will use default XTTS model.")
-            
-            try:
-                from TTS.api import TTS
-                import torch
+            # Discover TTSService
+            tts_service = discover_service("TTSService")
+            if tts_service and isinstance(tts_service, dict) and tts_service.get("status") == "SUCCESS":
+                tts_service_info = tts_service.get("payload", {})
+                tts_service_host = tts_service_info.get("host", "localhost")
+                tts_service_port = tts_service_info.get("port", 5801)
+                logger.info(f"Discovered TTSService at {tts_service_host}:{tts_service_port}")
                 
-                # Check for CUDA
-                cuda_available = torch.cuda.is_available()
-                print(f"CUDA available: {cuda_available}")
-                device = "cuda" if cuda_available else "cpu"
+                # Create socket for TTSService
+                self.tts_service_socket = self.context.socket(zmq.REQ)
+                self.tts_service_socket.setsockopt(zmq.RCVTIMEO, 10000)  # 10 second timeout
                 
-                print(f"Loading predefined XTTS model...")
-                # Use the predefined model which we know works
+                # Apply secure ZMQ if enabled
+                if self.secure_zmq:
+                    self.tts_service_socket = configure_secure_client(self.tts_service_socket)
                 
-                # Initialize XTTS without speaker_wav parameter
-                try:
-                    print("Initializing XTTS model without voice sample")
-                    self.tts_engines["xtts"] = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-                    self.initialization_status["engines_ready"]["xtts"] = True
-                    print("SUCCESS: XTTS model loaded successfully!")
-                except Exception as e:
-                    print(f"Failed to initialize XTTS: {e}")
-                    import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-                    print("--- DETAILED XTTS INITIALIZATION ERROR ---")
-                    traceback.print_exc()
-                    print("------------------------------------------")
+                self.tts_service_socket.connect(f"tcp://{tts_service_host}:{tts_service_port}")
+                logger.info(f"Connected to TTSService at tcp://{tts_service_host}:{tts_service_port}")
                 
-                logger.info("Tier 1: XTTS v2 model loaded successfully.")
-                print("XTTS initialization complete. Model is ready to use.")
-                
-            except ImportError as e:
-                print(f"Import error: {e}")
-                logger.error(f"Tier 1 (XTTS) failed during initialization: {e}")
-                print(f"CRITICAL ERROR in XTTS initialization: {e}")
-                import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-                print("--- DETAILED XTTS INITIALIZATION ERROR ---")
-                traceback.print_exc()
-                print("------------------------------------------")
+                # Update initialization status
+                self.initialization_status["engines_ready"]["tts_service"] = True
+            else:
+                logger.error("Could not discover TTSService, will fall back to other TTS engines")
+                self.tts_service_socket = None
+        except Exception as e:
+            logger.error(f"Error connecting to TTSService: {str(e)}")
+            self.tts_service_socket = None
 
-            print("==== END XTTS INITIALIZATION DEBUG ====\n")
-            # --- End of XTTS Initialization Block ---
+    def _async_initialize_tts_engines(self):
+        """Initialize all TTS engines in a background thread."""
+        try:
+            # Initialize fallback engines (SAPI and pyttsx3)
+            # This is simplified as we're now primarily using the TTS service
             
-            # Tier 2: Windows SAPI
+            # Windows SAPI (if on Windows)
             try:
-                import win32com.client
-                self.tts_engines["sapi"] = win32com.client.Dispatch("SAPI.SpVoice")
-                self.initialization_status["engines_ready"]["sapi"] = True
-                logger.info("Tier 2: Windows SAPI initialized")
-            except ImportError as e:
-                print(f"Import error: {e}")
-                logger.warning("Windows SAPI not available")
+                if os.name == 'nt':  # Windows only
+                    import win32com.client
+                    self.tts_engines["sapi"] = win32com.client.Dispatch("SAPI.SpVoice")
+                    self.initialization_status["engines_ready"]["sapi"] = True
+                    logger.info("Initialized Windows SAPI TTS engine")
             except Exception as e:
-                logger.warning(f"Tier 2: Windows SAPI initialization failed: {e}")
+                logger.warning(f"Failed to initialize Windows SAPI: {e}")
             
-            # Tier 3: pyttsx3
+            # pyttsx3 (cross-platform)
             try:
                 import pyttsx3
                 self.tts_engines["pyttsx3"] = pyttsx3.init()
                 self.initialization_status["engines_ready"]["pyttsx3"] = True
-                logger.info("Tier 3: pyttsx3 initialized")
-            except ImportError as e:
-                print(f"Import error: {e}")
-                logger.warning("pyttsx3 not available")
+                logger.info("Initialized pyttsx3 TTS engine")
             except Exception as e:
-                logger.warning(f"Tier 3: pyttsx3 initialization failed: {e}")
-            
-            # Tier 4: Console Print (always available)
-            self.tts_engines["console"] = True
+                logger.warning(f"Failed to initialize pyttsx3: {e}")
             
             # Mark initialization as complete
-            self.initialization_status.update({
-                "is_initialized": True,
-                "progress": 1.0
-            })
+            self.initialization_status["is_initialized"] = True
+            self.initialization_status["progress"] = 1.0
             logger.info("TTS engines initialization complete")
             
-        except Exception as e:
-            self.initialization_status.update({
-                "error": str(e),
-                "progress": 0.0
-            })
-            logger.error(f"TTS engines initialization failed: {e}")
-
-    def _async_initialize_tts_engines(self):
-        """Background thread to load TTS engines."""
-        try:
-            self._initialize_tts_engines()
-        except Exception as e:
-            logger.error(f"Error in TTS initialization thread: {e}")
-            self.initialization_status.update({
-                "error": str(e),
-                "progress": 0.0
-            })
-    
-    def _add_to_cache(self, key, audio):
-        """Add audio to cache with size limit"""
-        if len(self.cache) >= MAX_CACHE_SIZE:
-            # Remove oldest item
-            self.cache.popitem(last=False)
-        self.cache[key] = audio
-    
-    def split_into_sentences(self, text):
-        """Split text into sentences for streaming"""
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        return [s for s in sentences if s.strip()]
-    
-    def speak(self, text):
-        """Speak text using the best available TTS engine"""
-        if not self.initialization_status["is_initialized"]:
-            logger.warning("TTS engines not yet initialized, using console fallback")
-            self._speak_with_console(text)
-            return
+            # Update service status
+            self._update_service_status("online")
             
-        if self.interrupt_flag.is_set():
-            logger.info("Interrupt flag detected. Stopping TTS generation.")
-            self.audio_queue.queue.clear()
-            self.interrupt_flag.clear()
+        except Exception as e:
+            logger.error(f"Error initializing TTS engines: {e}")
+            self.initialization_status["error"] = str(e)
+            self.initialization_status["is_initialized"] = False
+
+    def _add_to_cache(self, key, audio):
+        """Add audio to cache with LRU eviction."""
+        self.cache[key] = audio
+        if len(self.cache) > self.max_cache_size:
+            self.cache.popitem(last=False)  # Remove oldest item
+
+    def split_into_sentences(self, text):
+        """Split text into sentences for better TTS processing."""
+        return re.split(r'(?<=[.!?])\s+', text)
+
+    def speak(self, text):
+        """Speak text using the available TTS engines."""
+        if self.stop_speaking:
+            logger.info("Speak request ignored due to active stop flag")
             return {"status": "error", "message": "Interrupted"}
             
         # Try engines in order of preference
-        if self.initialization_status["engines_ready"]["xtts"]:
-            self._speak_with_xtts(text)
+        if self.tts_service_socket and self.initialization_status["engines_ready"]["tts_service"]:
+            return self._speak_with_tts_service(text)
         elif self.initialization_status["engines_ready"]["sapi"]:
-            self._speak_with_sapi(text)
+            return self._speak_with_sapi(text)
         elif self.initialization_status["engines_ready"]["pyttsx3"]:
-            self._speak_with_pyttsx3(text)
+            return self._speak_with_pyttsx3(text)
         else:
-            self._speak_with_console(text)
+            return self._speak_with_console(text)
     
-    def _speak_with_xtts(self, text):
-        """Speak using XTTS v2"""
-        # Make sure numpy is imported
-        import numpy as np
+    def _speak_with_tts_service(self, text):
+        """Speak using TTS service."""
+        logger.info(f"Speaking with TTS service: {text[:30]}...")
         
-        print(f"\n==== XTTS SPEAK ATTEMPT ====")
-        print(f"Attempting to speak with XTTS: '{text[:50]}...'")
-        
-        # Map Tagalog/Filipino to English since XTTS doesn't support 'tl' directly
-        # The voice sample will still give it Filipino characteristics
-        actual_language = self.language
-        tts_language = self.language
-        
-        # List of supported languages from the error message
-        supported_languages = ['en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh-cn', 'hu', 'ko', 'ja', 'hi']
-        
-        # If language is not supported, fall back to English
-        if tts_language not in supported_languages:
-            print(f"Language '{tts_language}' not directly supported, using 'en' with voice sample instead")
-            tts_language = 'en'
-        
-        print(f"Voice settings: language={actual_language} (using {tts_language}), temperature={self.temperature}, speed={self.speed}, volume={self.volume}")
-        
-        # DETAILED VOICE SAMPLE VERIFICATION
-        voice_sample = self.speaker_wav
-        print(f"Voice sample path: {voice_sample}")
-        if voice_sample:
-            if os.path.exists(voice_sample):
-                try:
-                    import soundfile as sf
-                    info = sf.info(voice_sample)
-                    print(f"VOICE SAMPLE VERIFIED: {voice_sample}")
-                    print(f"  - File exists: YES")
-                    print(f"  - Duration: {info.duration:.2f} seconds")
-                    print(f"  - Sample rate: {info.samplerate} Hz")
-                    print(f"  - Channels: {info.channels}")
-                except ImportError as e:
-                    print(f"Import error: {e}")
-                    print(f"  - Cannot verify voice sample details: soundfile not available")
-                except Exception as e:
-                    print(f"  - Error reading voice sample: {e}")
-            else:
-                print(f"  - File exists: NO - VOICE SAMPLE NOT FOUND!")
-                print(f"  - Will fall back to default voice")
-        else:
-            print("  - No voice sample specified")
-        
-        # Check cache first - include all voice parameters in the cache key
-        cache_key = hashlib.md5(f"{text}_{actual_language}_{self.speaker_wav}_{self.temperature}_{self.speed}_{self.volume}".encode()).hexdigest()
-        cached_audio = self.cache.get(cache_key)
-        audio = None  # Initialize audio variable
-        
-        if cached_audio:
-            print("Using cached XTTS audio")
-            logger.info(f"Using cached XTTS audio for: {text[:30]}...")
-            audio = cached_audio
-        else:
-            print("Generating new XTTS audio - no cache hit")
-            logger.info(f"Generating XTTS audio for: {text[:30]}...")
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-                temp_path = temp_file.name
+        try:
+            # Prepare request
+            request = {
+                "action": "speak",
+                "text": text,
+                "language": self.language,
+                "voice_sample": self.speaker_wav if os.path.exists(self.speaker_wav or "") else None,
+                "temperature": self.temperature,
+                "speed": self.speed,
+                "volume": self.volume
+            }
             
-            # Generate audio using XTTS
-            try:
-                print(f"Generating new XTTS audio...")
-                
-                # Ensure we have a valid speaker_wav
-                if not self.speaker_wav or not os.path.exists(self.speaker_wav):
-                    print("WARNING: No valid speaker_wav found for XTTS!")
-                    # Try to find any available voice sample
-                    tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", "C:/Users/haymayndz/Desktop/Voice assistant/tetey1.wav") # Allow override
-                    untitled_voice_path = "C:/Users/haymayndz/Desktop/Voice assistant/untitled1.wav"
-                    
-                    if os.path.exists(untitled_voice_path):
-                        self.speaker_wav = untitled_voice_path
-                        print(f"Found and using untitled1.wav: {untitled_voice_path}")
-                    elif os.path.exists(tetey_voice_path):
-                        self.speaker_wav = tetey_voice_path
-                        print(f"Found and using tetey1.wav: {tetey_voice_path}")
-                
-                # Double check we have a valid speaker_wav before proceeding
-                if not self.speaker_wav or not os.path.exists(self.speaker_wav):
-                    print("ERROR: Still no valid speaker_wav found! Will likely use default voice.")
-                
-                # Explicitly load the voice sample for this generation
-                print(f"Generating with voice sample: {self.speaker_wav}")
-                
-                # Use the TTS model to generate audio
-                wav = self.tts_engines["xtts"].tts(
-                    text=text,
-                    speaker_wav=self.speaker_wav,
-                    language=tts_language,
-                    temperature=self.temperature
-                )
-                
-                print("XTTS generation successful!")
-                
-                # Handle the case where wav is a list (newer XTTS versions return a list)
-                if isinstance(wav, list):
-                    print("Converting list output to numpy array...")
-                    # If it's a list of sentences, concatenate them
-                    if len(wav) > 0:
-                        if isinstance(wav[0], np.ndarray):
-                            wav = np.concatenate(wav)
-                        else:
-                            # If it's a list of floats, convert directly to numpy array
-                            wav = np.array(wav)
-                
-                # Apply speed adjustment if needed
-                if self.speed != 1.0:
-                    print(f"Adjusting speed to {self.speed}x")
-                    import librosa
-                    wav = librosa.effects.time_stretch(wav, rate=self.speed)
-                
-                # Apply volume adjustment if needed
-                if self.volume != 1.0:
-                    print(f"Adjusting volume to {self.volume}x")
-                    wav = wav * self.volume
-                
-                # Keep audio as float32 for compatibility with sounddevice
-                # Make sure values are between -1 and 1
-                audio = wav.astype(np.float32)
-                
-                # Cache the result
-                self.cache[cache_key] = audio
-                
-            except Exception as e:
-                print(f"XTTS generation failed: {e}")
-                import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-                traceback.print_exc()
+            # Send request to TTS service
+            self.tts_service_socket.send_json(request)
+            response = self.tts_service_socket.recv_json()
+            
+            if response.get("status") == "success":
+                logger.info("TTS service successfully processed speech request")
+                return {"status": "success", "message": "Speech request processed"}
+            else:
+                error_message = response.get("message", "Unknown error")
+                logger.error(f"TTS service error: {error_message}")
                 # Fall back to SAPI
                 return self._speak_with_sapi(text)
-        
-        # Stream audio in chunks
-        if audio is not None:
-            print(f"Streaming XTTS audio in chunks: {len(audio)} samples")
-            chunk_size = BUFFER_SIZE
-            for i in range(0, len(audio), chunk_size):
-                if self.stop_speaking:
-                    print("Streaming interrupted by stop command")
-                    break
-                chunk = audio[i:i+chunk_size]
-                self.audio_queue.put(chunk)
-            
-            print("==== END XTTS SPEAK ATTEMPT (SUCCESS) ====\n")
-            return True
-        else:
-            print("==== END XTTS SPEAK ATTEMPT (FAILED - NO AUDIO) ====\n")
+        except Exception as e:
+            logger.error(f"Error using TTS service: {str(e)}")
+            # Fall back to SAPI
             return self._speak_with_sapi(text)
     
     def _speak_with_sapi(self, text):
-        """Speak using Windows SAPI"""
+        """Speak using Windows SAPI."""
         logger.info(f"Speaking with SAPI: {text[:30]}...")
         self.tts_engines["sapi"].Speak(text)
-        return True
+        return {"status": "success", "message": "Spoke with SAPI"}
     
     def _speak_with_pyttsx3(self, text):
-        """Speak using pyttsx3"""
+        """Speak using pyttsx3."""
         logger.info(f"Speaking with pyttsx3: {text[:30]}...")
         engine = self.tts_engines["pyttsx3"]
         engine.say(text)
         engine.runAndWait()
-        return True
+        return {"status": "success", "message": "Spoke with pyttsx3"}
     
     def _speak_with_console(self, text):
-        """Print text to console"""
+        """Print text to console."""
         logger.info(f"Console output: {text}")
         print(f"[TTS] {text}")
-        return True
+        return {"status": "success", "message": "Printed to console"}
     
     def audio_playback_loop(self):
-        """Background thread for audio playback"""
+        """Background thread for audio playback."""
         logger.info("Starting audio playback thread")
         
         try:
@@ -579,88 +409,89 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
                         except queue.Empty:
                             continue
                         
-                        # Convert chunk to float32 if it's not already
-                        if chunk.dtype != np.float32:
-                            if chunk.dtype == np.int16:
-                                # Convert from int16 to float32
-                                chunk = chunk.astype(np.float32) / 32767.0
-                            else:
-                                # For any other type, try to convert to float32
-                                chunk = chunk.astype(np.float32)
+                        # Check if we should stop speaking
+                        if self.stop_speaking:
+                            self.audio_queue.task_done()
+                            continue
                         
-                        # Make sure values are between -1 and 1
-                        if np.max(np.abs(chunk)) > 1.0:
-                            chunk = chunk / np.max(np.abs(chunk))
-                        
-                        # Play audio chunk
-                        if len(chunk) > 0:
+                        # Play audio
+                        if chunk is not None and len(chunk) > 0:
                             stream.write(chunk)
                         
-                        # Mark task as done
                         self.audio_queue.task_done()
                         
                     except Exception as e:
                         logger.error(f"Error in audio playback: {e}")
-                        time.sleep(0.1)
+                        time.sleep(0.1)  # Prevent tight loop on error
         except Exception as e:
-            logger.error(f"Error setting up audio stream: {e}")
+            logger.error(f"Failed to initialize audio output stream: {e}")
     
     def _send_health_updates(self):
-        """Send health updates to UnifiedSystemAgent."""
-        while True:
+        """Send periodic health updates to UnifiedSystemAgent."""
+        while self.running:
             try:
-                health_status = {
-                    "status": "success",
-                    "agent": "StreamingTTSAgent",
-                    "timestamp": time.time(),
-                    "initialization_status": self.initialization_status,
-                    "is_speaking": self.is_speaking,
-                    "queue_size": self.audio_queue.qsize()
-                }
-                self.system_socket.send_json(health_status)
-                time.sleep(5)  # Send updates every 5 seconds
+                health_data = self._get_health_status()
+                self.system_socket.send_json(health_data)
             except Exception as e:
                 logger.error(f"Error sending health update: {e}")
-                time.sleep(1)
+            
+            time.sleep(30)  # Send update every 30 seconds
     
     def _interrupt_listener(self):
-        """Listen for interrupt signals"""
-        logger.info("Starting interrupt listener thread")
-        while True:
+        """Listen for interrupt commands."""
+        logger.info("Starting interrupt listener")
+        
+        while self.running:
             try:
-                msg = self.interrupt_socket.recv(flags=zmq.NOBLOCK)
-                data = pickle.loads(msg)
-                if data.get('type') == 'interrupt':
-                    logger.info("Received interrupt signal")
-                    self.interrupt_flag.set()
-                    self.stop_speaking = True
-                    # Clear audio queue
-                    while not self.audio_queue.empty():
-                        try:
-                            self.audio_queue.get_nowait()
-                        except queue.Empty:
-                            break
-            except zmq.Again:
-                time.sleep(0.05)  # Small sleep to avoid tight loop
+                # Check for interrupt messages
+                try:
+                    message = self.interrupt_socket.recv_json(flags=zmq.NOBLOCK)
+                    command = message.get("command", "")
+                    
+                    if command == "STOP_SPEAKING":
+                        logger.info("Received STOP_SPEAKING command")
+                        self.stop_speaking = True
+                        self.interrupt_flag.set()
+                        
+                        # If using TTS service, send stop command
+                        if self.tts_service_socket:
+                            try:
+                                self.tts_service_socket.send_json({"action": "stop"})
+                                self.tts_service_socket.recv_json()  # Get response but ignore it
+                            except Exception as e:
+                                logger.error(f"Error sending stop command to TTS service: {e}")
+                        
+                        # Clear audio queue
+                        while not self.audio_queue.empty():
+                            try:
+                                self.audio_queue.get_nowait()
+                                self.audio_queue.task_done()
+                            except queue.Empty:
+                                break
+                except zmq.Again:
+                    pass  # No message available
+                
+                time.sleep(0.1)  # Small sleep to prevent tight loop
+                
             except Exception as e:
                 logger.error(f"Error in interrupt listener: {e}")
                 time.sleep(1)  # Longer sleep on error
-
+    
     def _start_interrupt_thread(self):
-        """Start the interrupt listener thread"""
-        self.interrupt_thread = threading.Thread(target=self._interrupt_listener, daemon=True)
-        self.interrupt_thread.start()
-        logger.info("Interrupt listener thread started")
-
+        """Start the interrupt listener thread."""
+        interrupt_thread = threading.Thread(target=self._interrupt_listener, daemon=True)
+        interrupt_thread.start()
+    
     def _get_health_status(self):
-        # Default health status: Agent is running if its main loop is active.
-        # This can be expanded with more specific checks later.
-        status = "HEALTHY" if self.running else "UNHEALTHY"
-        details = {
-            "status_message": "Agent is operational.",
-            "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else 0
+        """Get the health status of the TTS agent."""
+        return {
+            "agent": self.name,
+            "status": "online" if self.initialization_status["is_initialized"] else "initializing",
+            "uptime": int(time.time() - self.start_time),
+            "engines_ready": self.initialization_status["engines_ready"],
+            "is_speaking": not self.audio_queue.empty() and not self.stop_speaking,
+            "error": self.initialization_status["error"]
         }
-        return {"status": status, "details": details}
 
     def run(self):
         """Main loop to handle TTS requests"""

@@ -13,15 +13,16 @@ from datetime import datetime
 import sys
 import os
 from pathlib import Path
+from common.utils.path_env import get_main_pc_code, join_path, get_file_path
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
-USER_PROFILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'user_profile.json')
+USER_PROFILE_PATH = join_path("data", "user_profile.json")
 ZMQ_RESPONDER_PORT = 5558
 REMINDER_CHECK_INTERVAL = 10  # seconds
 
-LOG_PATH = os.path.join(os.path.dirname(__file__), '..', 'proactive_agent.log')
+LOG_PATH = join_path("logs", "proactive_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -99,7 +100,7 @@ class ProactiveAgent(BaseAgent):
         # Return the active user's name or ID
         try:
             # Example: Read from a file or service
-            user_file = os.path.join(os.path.dirname(__file__), '..', 'active_user.txt')
+            user_file = join_path("data", "active_user.txt")
             if os.path.exists(user_file):
                 with open(user_file, 'r', encoding='utf-8') as f:
                     return f.read().strip()

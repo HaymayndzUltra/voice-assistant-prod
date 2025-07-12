@@ -16,6 +16,12 @@ from common.utils.data_models import ErrorSeverity
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils.config_loader import load_config
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Try importing optional dependencies
 try:
     import langdetect
@@ -893,7 +899,7 @@ class TranslationCache:
         self.estimated_memory_usage = 0
         
         # Initialize disk cache
-        self.cache_dir = Path("cache/translation_cache")
+        self.cache_dir = Path(join_path("cache", "translation_cache"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize metrics

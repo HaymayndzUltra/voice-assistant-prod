@@ -18,6 +18,12 @@ from pathlib import Path
 from main_pc_code.utils.config_loader import load_config
 from common.core.base_agent import BaseAgent
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 config = load_config()
 
 # Configure logging
@@ -50,12 +56,12 @@ class VoiceProfilingAgent(BaseAgent):
         # Load configuration – determine config_path safely to avoid NameError
         config_path = self.config.get('config_path', None)
         if config_path is None:
-            config_path = os.path.join(os.path.dirname(__file__), "..", "config", "system_config.py")
+            config_path = join_path("config", join_path("config", "system_config.py"))
         self.config_path = config_path
         self.load_config()
         
         # Initialize voice profiles storage
-        self.profile_storage_path = self.config.get("voice_profiling", {}).get("profile_storage_path", "data/voice_profiles")
+        self.profile_storage_path = self.config.get("voice_profiling", {}).get("profile_storage_path", join_path("data", "voice_profiles"))
         os.makedirs(self.profile_storage_path, exist_ok=True)
         
         # Load existing voice profiles
@@ -95,7 +101,7 @@ class VoiceProfilingAgent(BaseAgent):
                 json_cfg = json.load(f)
             self.config = {
                 'voice_profiling': json_cfg.get('voice_profiling', {
-                    'profile_storage_path': 'data/voice_profiles',
+                    'profile_storage_path': join_path("data", "voice_profiles"),
                     'min_enrollment_samples': 3,
                     'recognition_confidence_threshold': 0.8
                 }),
@@ -109,7 +115,7 @@ class VoiceProfilingAgent(BaseAgent):
             # Final fallback defaults
             self.config = {
                 'voice_profiling': {
-                    'profile_storage_path': 'data/voice_profiles',
+                    'profile_storage_path': join_path("data", "voice_profiles"),
                     'min_enrollment_samples': 3,
                     'recognition_confidence_threshold': 0.8
                 },

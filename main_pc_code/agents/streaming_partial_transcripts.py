@@ -5,7 +5,7 @@ from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -22,10 +22,43 @@ import threading
 import logging
 import hashlib
 from collections import deque
+import yaml
+from main_pc_code.utils.config_loader import load_config
+import psutil
+from datetime import datetime
+
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
+# Try to import ModelClient, with fallback if not available
+try:
+    from main_pc_code.utils.model_client import ModelClient
+    model_client = ModelClient()
+except ImportError:
+    logging.warning("ModelClient import failed, will use direct model loading if enabled")
+    model_client = None
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("StreamingPartialTranscripts")
+
+# Load configuration
+config = load_config()
+
+# Load LLM configuration to check for ENABLE_LEGACY_MODELS flag
+llm_config_path = get_file_path("main_pc_config", "llm_config.yaml")
+try:
+    with open(llm_config_path, 'r') as f:
+        llm_config = yaml.safe_load(f)
+    ENABLE_LEGACY_MODELS = llm_config.get('global_flags', {}).get('ENABLE_LEGACY_MODELS', False)
+    logger.info(f"ENABLE_LEGACY_MODELS flag set to: {ENABLE_LEGACY_MODELS}")
+except Exception as e:
+    logger.error(f"Error loading llm_config.yaml: {e}")
+    ENABLE_LEGACY_MODELS = False
+    logger.info("Defaulting ENABLE_LEGACY_MODELS to False")
 
 # ZMQ Configuration
 ZMQ_SUB_PORT = 5570  # Subscribe to audio capture
@@ -46,10 +79,9 @@ class StreamingPartialTranscripts(BaseAgent):
         self.pub_socket.bind(f"tcp://*:{ZMQ_PUB_PORT}")
         logger.info(f"Connected to audio stream on port {ZMQ_SUB_PORT}, publishing partials to {ZMQ_PUB_PORT}")
         
-        # Use base model for partials (faster)
-        logger.info(f"Loading Whisper model: {MODEL_SIZE} for partial transcripts")
-        self.model = whisper.load_model(MODEL_SIZE, device="cuda")
-        logger.info(f"Loaded Whisper model: {MODEL_SIZE} on GPU (CUDA)")
+        # Initialize model
+        self.model = None
+        self._initialize_model()
         
         self.buffer = deque()
         self.buffer_times = deque()
@@ -58,6 +90,25 @@ class StreamingPartialTranscripts(BaseAgent):
         self.error_publisher = ErrorPublisher(self.name)
         self.lock = threading.Lock()
         self.last_chunk_hash = None
+        self.start_time = time.time()
+        
+    def _initialize_model(self):
+        """Initialize the model based on the ENABLE_LEGACY_MODELS flag"""
+        if ENABLE_LEGACY_MODELS:
+            # Legacy direct model loading path
+            logger.info(f"Legacy mode: Loading Whisper model: {MODEL_SIZE} for partial transcripts")
+            try:
+                self.model = whisper.load_model(MODEL_SIZE, device="cuda")
+                logger.info(f"Loaded Whisper model: {MODEL_SIZE} on GPU (CUDA)")
+            except Exception as e:
+                logger.error(f"Error loading Whisper model: {e}")
+                self.model = None
+        else:
+            # New centralized model loading path
+            logger.info("Using centralized model management for partial transcripts")
+            # We don't need to load the model here, we'll use model_client for inference
+            self.model = None
+            logger.info("Model will be loaded through ModelManagerAgent when needed")
         
     def receive_audio(self):
         while self.running:
@@ -122,17 +173,47 @@ class StreamingPartialTranscripts(BaseAgent):
                                 else:
                                     audio_resampled = audio.astype(np.float32)
                                 
-                                # Use faster decode-only mode for partials
-                                result = self.model.transcribe(
-                                    audio_resampled, 
-                                    language=None, 
-                                    fp16=True, 
-                                    task='transcribe',
-                                    verbose=False
-                                )
+                                # Process audio based on model loading strategy
+                                partial_transcription = ""
+                                detected_language = "unknown"
                                 
-                                partial_transcription = result['text'].strip()
-                                detected_language = result.get('language', 'unknown')
+                                if ENABLE_LEGACY_MODELS and self.model:
+                                    # Legacy direct model inference
+                                    try:
+                                        result = self.model.transcribe(
+                                            audio_resampled, 
+                                            language=None, 
+                                            fp16=True, 
+                                            task='transcribe',
+                                            verbose=False
+                                        )
+                                        partial_transcription = result['text'].strip()
+                                        detected_language = result.get('language', 'unknown')
+                                    except Exception as e:
+                                        logger.error(f"Error in direct model inference: {e}")
+                                else:
+                                    # Use centralized model management
+                                    if model_client:
+                                        try:
+                                            # Convert audio to list for JSON serialization
+                                            audio_list = audio_resampled.tolist()
+                                            
+                                            # Request transcription from ModelManagerAgent via model_client
+                                            response = model_client.transcribe(
+                                                audio_data=audio_list,
+                                                model_pref="fast"  # Use fast model for partials
+                                            )
+                                            
+                                            if response and response.get("status") == "ok":
+                                                partial_transcription = response.get("text", "").strip()
+                                                detected_language = response.get("language", "unknown")
+                                            else:
+                                                error_msg = response.get('message', 'Unknown error') if response else "No response"
+                                                logger.error(f"Error in model_client transcription: {error_msg}")
+                                        except Exception as e:
+                                            logger.error(f"Error using model_client for transcription: {e}")
+                                    else:
+                                        logger.error("No model available for transcription")
                                 
                                 if partial_transcription:
                                     logger.info(f"Partial: {partial_transcription}")

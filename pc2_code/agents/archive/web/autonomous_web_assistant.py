@@ -29,12 +29,18 @@ import base64
 from bs4 import BeautifulSoup
 import urllib.parse
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.pc2_connections import get_connection_string
 
 # Setup logging
-LOG_PATH = os.path.join(Path(os.path.dirname(__file__)).parent, "logs", "autonomous_web_assistant.log")
+LOG_PATH = join_path("logs", "autonomous_web_assistant.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(

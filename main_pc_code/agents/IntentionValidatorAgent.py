@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -16,8 +16,8 @@ Intention Validator Agent
 
 import sys
 import os
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-MAIN_PC_CODE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
+MAIN_PC_CODE = get_main_pc_code()
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 if MAIN_PC_CODE not in sys.path:
@@ -32,6 +32,12 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, List, Set, Tuple
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 
@@ -96,7 +102,7 @@ default from _agent_args or 5572)
         if hasattr(_agent_args, 'RequestCoordinator_port') and self.request_coordinator_port == 5570:
             self.request_coordinator_port = config.get("RequestCoordinator_port")
             
-        self.db_path = os.path.join(MAIN_PC_CODE, "data", "intention_validation.db")
+        self.db_path = join_path("data", "intention_validation.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         
         self.sensitive_commands = {

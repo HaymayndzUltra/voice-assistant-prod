@@ -26,8 +26,14 @@ from collections import deque
 from typing import Dict, Any, List, Optional, Union, Tuple
 from uuid import UUID
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -58,7 +64,7 @@ config = load_config()
 DEFAULT_PORT = config.get('lod_port', 7200)
 HEALTH_CHECK_PORT = config.get('lod_health_port', 7201)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-OPPORTUNITY_DB_PATH = config.get('lod_db_path', 'data/learning_opportunities.db')
+OPPORTUNITY_DB_PATH = config.get('lod_db_path', join_path("data", "learning_opportunities.db"))
 INTERACTION_BUFFER_SIZE = config.get('lod_buffer_size', 1000)
 SCORING_THRESHOLD = config.get('lod_scoring_threshold', 0.7)
 

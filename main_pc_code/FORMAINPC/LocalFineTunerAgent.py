@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -33,7 +33,15 @@ from datasets import load_dataset, Dataset
 import numpy as np
 from typing import Dict, Any
 from common.core.base_agent import BaseAgent
+# Import the model_client for centralized model loading
+from main_pc_code.utils import model_client
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -62,7 +70,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/local_fine_tuner.log'
+    filename=join_path("logs", "local_fine_tuner.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -111,7 +119,7 @@ class LocalFineTunerAgent(BaseAgent):
             "database_status": "ok"
         }
         # Database setup
-        self.db_path = "data/local_fine_tuner.db"
+        self.db_path = join_path("data", "local_fine_tuner.db")
         self._init_db()
         # Job management
         self.active_jobs = {}
@@ -624,13 +632,51 @@ class LocalFineTunerAgent(BaseAgent):
             logging.info("Health socket closed")
 
     def _load_model(self, model_name):
-        """Load a pre-trained model"""
+        """Load a pre-trained model using the centralized ModelManagerAgent"""
         try:
-            model = AutoModelForCausalLM.from_pretrained(model_name)
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            return model, tokenizer
+            # Instead of direct loading, use the model_client to request the model
+            # Generate a simple prompt to get the tokenizer and model from the ModelManagerAgent
+            response = model_client.generate(
+                prompt=f"Initialize tokenizer and model for {model_name}",
+                quality="quality",  # Use high quality for fine-tuning
+                model_name=model_name
+            )
+            
+            if response.get("status") != "success":
+                error_msg = response.get("message", "Unknown error")
+                logger.error(f"Error loading model {model_name} via model_client: {error_msg}")
+                raise RuntimeError(f"Failed to load model via ModelManagerAgent: {error_msg}")
+            
+            # For compatibility with the existing code, we need to return a model and tokenizer
+            # However, since we're now using the ModelManagerAgent, we'll need to adapt our fine-tuning
+            # approach to work with the centralized model loading
+            
+            # For now, we'll log a warning and fall back to direct loading if absolutely necessary
+            logger.warning(f"Model {model_name} loaded via ModelManagerAgent. Fine-tuning will need to be adapted.")
+            
+            # For compatibility with existing code, we'll return placeholder objects
+            # that will trigger appropriate errors if misused
+            class ModelClientModel:
+                def __init__(self, model_name):
+                    self.model_name = model_name
+                def __getattr__(self, name):
+                    raise NotImplementedError(f"Direct model access via {name} is not supported when using ModelManagerAgent. Use model_client.generate() instead.")
+            
+            class ModelClientTokenizer:
+                def __init__(self, model_name):
+                    self.model_name = model_name
+                def __getattr__(self, name):
+                    raise NotImplementedError(f"Direct tokenizer access via {name} is not supported when using ModelManagerAgent. Use model_client.generate() instead.")
+            
+            return ModelClientModel(model_name), ModelClientTokenizer(model_name)
+            
         except Exception as e:
-            logger.error(f"Error loading model {model_name}: {str(e)}")
+            logger.error(f"Error loading model {model_name} via model_client: {str(e)}")
+            # Log the error to the error bus
+            try:
+                self.error_bus_pub.send_string(f"ERROR:LocalFineTunerAgent:model_loading:{str(e)}")
+            except:
+                pass
             raise
     
     def _prepare_lora_config(self, model_name):

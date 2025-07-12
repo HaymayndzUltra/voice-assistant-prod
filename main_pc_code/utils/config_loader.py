@@ -15,6 +15,19 @@ import sys
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
+
+# Define get_project_root function
+def get_project_root():
+    """Get the project root directory"""
+    current_file = Path(__file__).resolve()
+    # Go up two levels: from utils/ to main_pc_code/ to project root
+    return current_file.parent.parent.parent
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, str(get_project_root()))
+from common.utils.path_env import get_path, join_path, get_file_path
 class Config:
     """Simple configuration loader class."""
     
@@ -26,11 +39,11 @@ class Config:
         
         # Try to load configuration from various locations
         config_paths = [
-            Path("config/config.json"),
+            Path(join_path("config", "config.json")),
             Path("config.json"),
             Path("../config/config.json"),
             Path("../../config/config.json"),
-            Path("config/startup_config.yaml"),
+            Path(join_path("config", "startup_config.yaml")),
             Path("../config/startup_config.yaml"),
             Path("../../config/startup_config.yaml"),
         ]

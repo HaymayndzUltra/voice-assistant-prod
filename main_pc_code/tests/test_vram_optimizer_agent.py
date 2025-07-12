@@ -13,7 +13,10 @@ import os
 from unittest.mock import MagicMock, patch
 
 # Ensure the parent directory is in the path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the agent to test
 from main_pc_code.agents.vram_optimizer_agent import VRAMOptimizerAgent

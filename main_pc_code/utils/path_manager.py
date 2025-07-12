@@ -15,7 +15,7 @@ Usage:
     config_dir = PathManager.get_config_dir()
     
     # Resolve a path relative to project root
-    full_path = PathManager.resolve_path("main_pc_code/agents/model_manager_agent.py")
+    full_path = PathManager.resolve_path(join_path("main_pc_code", "agents/model_manager_agent.py"))
     
     # Get logs directory
     logs_dir = PathManager.get_logs_dir()
@@ -27,9 +27,52 @@ import logging
 from pathlib import Path
 from typing import Optional, Union, Dict
 
+# Define a simple join_path function for use in this module
+def join_path(*args):
+    return os.path.join(*args)
+
+# Define get_project_root function for bootstrapping
+def get_project_root():
+    """Get the project root directory."""
+    current_file = Path(__file__).resolve()
+    current_dir = current_file.parent
+    
+    # Go up the directory tree until we find the project root
+    while current_dir.name and current_dir != current_dir.parent:
+        # Check for key markers that indicate project root
+        if any((current_dir / marker).exists() for marker in [
+            ".git",
+            "main_pc_code",
+            "pc2_code",
+            join_path("config", "network_config.yaml")
+        ]):
+            return current_dir
+        
+        # Go up one directory
+        current_dir = current_dir.parent
+    
+    # If we couldn't find the project root, use a reasonable default
+    return Path.cwd()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Backward compatibility for deprecated import path
+import types
+
+# Ensure the old dotted path 'main_pc_code.utils.path_manager' resolves to this module
+_old_module_name = 'main_pc_code.utils.path_manager'
+if _old_module_name not in sys.modules:
+    # Create parent packages if they don't exist
+    _parent_pkg_name = 'main_pc_code.utils'
+    if _parent_pkg_name not in sys.modules:
+        _parent_pkg = types.ModuleType(_parent_pkg_name)
+        sys.modules[_parent_pkg_name] = _parent_pkg
+    # Map the old full module name to the current module
+    sys.modules[_old_module_name] = sys.modules[__name__]
+    # Attach reference in parent package
+    setattr(sys.modules[_parent_pkg_name], 'path_manager', sys.modules[__name__])
 
 class PathManager:
     """Centralized path management for the AI System."""
@@ -67,7 +110,7 @@ class PathManager:
                         ".git",
                         "main_pc_code",
                         "pc2_code",
-                        "config/network_config.yaml"
+                        join_path("config", "network_config.yaml")
                     ]):
                         cls._project_root = current_dir
                         break
@@ -78,7 +121,7 @@ class PathManager:
                 # If we couldn't find the project root, use a reasonable default
                 if cls._project_root is None:
                     # If this file is in main_pc_code/utils, go up two directories
-                    if "main_pc_code/utils" in str(current_file):
+                    if join_path("main_pc_code", "utils") in str(current_file):
                         cls._project_root = current_file.parent.parent.parent
                     else:
                         # Last resort: use current working directory
@@ -286,6 +329,21 @@ class PathManager:
 
 # Initialize the project root when module is imported
 PathManager.get_project_root()
+
+# Import path_env after PathManager class is defined to avoid circular imports
+# This should be at the end of the file
+try:
+    # Now that the project root is properly set up, we can import path_env
+    from common.utils.path_env import get_path, get_file_path
+    # Note: We already have our own join_path function defined above
+except ImportError:
+    logger.warning("Could not import path_env module. Using built-in path functions.")
+    # Define fallback functions
+    def get_path(path_name) -> Path:
+        return PathManager.resolve_path(path_name)
+    
+    def get_file_path(directory, filename) -> Path:
+        return PathManager.resolve_path(join_path(directory, filename))
 
 if __name__ == "__main__":
     # Print key paths when run directly

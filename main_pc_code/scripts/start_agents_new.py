@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import time
 import socket
 import os
@@ -6,11 +7,12 @@ import logging
 from typing import List, Dict, Tuple, Optional
 import urllib.request
 import urllib.error
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import join_path, get_main_pc_code
 
 # Configure logging
-LOGS_DIR = os.path.join(os.path.dirname(__file__), '..', 'logs')
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+LOGS_DIR = join_path("logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -154,7 +156,7 @@ def start_agent(agent_name: str, script_path: str) -> Optional[subprocess.Popen]
     log_file_path = os.path.join(LOGS_DIR, f"{agent_name}.log")
     
     # Use absolute path for the script
-    abs_script_path = os.path.join(os.path.dirname(__file__), '..', script_path)
+    abs_script_path = os.path.join(get_main_pc_code(), script_path)
 
     if not os.path.exists(abs_script_path):
         logging.error(f"Agent script not found at: {abs_script_path}. Cannot start {agent_name}.")

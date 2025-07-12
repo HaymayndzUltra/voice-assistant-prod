@@ -7,6 +7,12 @@ from datetime import datetime
 from typing import Dict, List, Any
 from enum import Enum
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 class ErrorSeverity(BaseAgent)(Enum):
     LOW = 1
     MEDIUM = 2
@@ -37,7 +43,7 @@ class ErrorHandler(BaseAgent):
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename='logs/error_handler.log'
+            filename=join_path("logs", "error_handler.log")
         )
         
     def load_config(self, config_path: str) -> Dict:

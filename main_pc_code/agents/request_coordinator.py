@@ -15,8 +15,14 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Union
 import pickle
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -206,7 +212,7 @@ class RequestCoordinator(BaseAgent):
             "last_updated": datetime.now().isoformat()
         }
         self.metrics_lock = threading.Lock()
-        self.metrics_file = "logs/request_coordinator_metrics.json"
+        self.metrics_file = join_path("logs", "request_coordinator_metrics.json")
         self.last_metrics_log = time.time()
         self.last_metrics_save = time.time()
         self._load_metrics()
@@ -767,6 +773,7 @@ class RequestCoordinator(BaseAgent):
                 logger.error(f"Error in suggestion handler: {e}")
 
     def health_check(self):
+        # Deep health check with dependency pings
         base = {
             "status": "healthy" if self.running else "stopped",
             "uptime": time.time() - self.start_time,
@@ -775,6 +782,21 @@ class RequestCoordinator(BaseAgent):
             "queue_size": len(self.task_queue),
             "circuit_breakers": {n: cb.get_status() for n, cb in self.circuit_breakers.items()}
         }
+
+        # Probe critical downstream dependencies
+        dependencies = {}
+        for dep in ["ModelOrchestrator", "MemoryClient"]:
+            try:
+                resp = self.send_request_to_agent(dep, {"action": "health"}, timeout=2000, retries=1)
+                dependencies[dep] = resp.get("status", "unknown") if isinstance(resp, dict) else "no_response"
+            except Exception:
+                dependencies[dep] = "unreachable"
+
+        base["dependencies"] = dependencies
+
+        if any(v != "ok" and v != "healthy" and v != "success" for v in dependencies.values()):
+            base["status"] = "degraded"
+
         with self.metrics_lock:
             base["metrics"] = {
                 "requests_total": self.metrics["requests_total"],

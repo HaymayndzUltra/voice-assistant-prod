@@ -22,6 +22,12 @@ from prometheus_api_client.metric import Metric
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple, Union, cast
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path
 project_root = str(Path(__file__).resolve().parent.parent.parent)
 if project_root not in sys.path:
@@ -37,7 +43,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/system_digital_twin.log")
+        logging.FileHandler(join_path("logs", "system_digital_twin.log"))
     ]
 )
 logger = logging.getLogger("SystemDigitalTwinAgent")

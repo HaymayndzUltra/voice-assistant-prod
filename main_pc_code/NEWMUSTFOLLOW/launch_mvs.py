@@ -41,7 +41,7 @@ def launch_agent(agent):
         return None
     
     # Construct full path to the agent file - point to the original agents directory
-    main_pc_code_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+main_pc_code_dir = get_project_root()
     full_path = os.path.join(main_pc_code_dir, "agents", file_path)
     
     # Check if file exists

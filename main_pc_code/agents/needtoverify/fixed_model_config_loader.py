@@ -54,7 +54,7 @@ from main_pc_code.utils.config_loader import Config
         
         # Then try to load additional GGUF models configuration if it exists
         try:
-            gguf_models_path = Path("config/gguf_models.json")
+            gguf_models_path = Path(join_path("config", "gguf_models.json"))
             if gguf_models_path.exists():
                 with open(gguf_models_path, 'r') as f:
                     gguf_models = json.load(f)

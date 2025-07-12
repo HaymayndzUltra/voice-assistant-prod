@@ -14,11 +14,17 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='logs/learning_adjuster.log'
+    filename=join_path("logs", "learning_adjuster.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -49,7 +55,7 @@ class LearningAdjusterAgent:
         self.socket.bind("tcp://*:5643")  # Learning adjuster port
         
         # Database setup
-        self.db_path = "data/learning_adjuster.db"
+        self.db_path = join_path("data", "learning_adjuster.db")
         self._init_db()
         
         # Parameter tracking

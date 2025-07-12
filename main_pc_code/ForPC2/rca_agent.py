@@ -37,7 +37,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/rca_agent.log")
+        logging.FileHandler(join_path("logs", "rca_agent.log"))
     ]
 )
 logger = logging.getLogger("RCA_Agent")
@@ -162,6 +162,12 @@ class RCA_Agent:
                 recommendation="proactive_restart",
                 description="Module import error detected"
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
             )

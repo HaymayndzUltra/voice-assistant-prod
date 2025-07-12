@@ -19,7 +19,7 @@ import sys
 from typing import List, Dict, Any, Optional, Union
 
 # Add the project's main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 

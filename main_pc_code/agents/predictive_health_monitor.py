@@ -7,7 +7,7 @@ Predictive Health Monitor
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -22,6 +22,12 @@ import logging
 import socket
 import zmq
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time
@@ -506,7 +512,7 @@ class PredictiveHealthMonitor(BaseAgent):
     def _load_agent_configs(self):
         """Load agent configurations from startup config"""
         try:
-            with open("config/startup_config.yaml", 'r') as f:
+            with open(join_path("config", "startup_config.yaml"), 'r') as f:
                 startup_config = yaml.safe_load(f)
             
             for agent in startup_config.get('agents', []):
@@ -879,7 +885,7 @@ class PredictiveHealthMonitor(BaseAgent):
         if path is None:
             # Use system drive as default path
             if platform.system() == "Windows":
-                path = "C:\\"
+                path = get_file_path("data", "")
             else:
                 path = "/"
         

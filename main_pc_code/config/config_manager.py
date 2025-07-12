@@ -16,6 +16,12 @@ from typing import Dict, Any, Optional, List, Union, Callable
 from datetime import datetime
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -75,7 +81,7 @@ class ConfigManager:
         self._defaults["system"] = {
             "version": "1.0.0",
             "name": "Voice Assistant",
-            "logs_dir": os.path.join(os.path.dirname(self._config_dir), "logs"),
+            "logs_dir": get_path("logs"),
             "enable_telemetry": True,
             "telemetry": {
                 "interval_sec": 30,
@@ -117,8 +123,8 @@ class ConfigManager:
                 "display_confidence": True
             },
             "paths": {
-                "models_dir": os.path.join(os.path.dirname(self._config_dir), "models"),
-                "cache_dir": os.path.join(os.path.dirname(self._config_dir), "cache"),
+                "models_dir": get_path("models"),
+                "cache_dir": get_path("cache"),
                 "temp_dir": os.path.join(os.path.dirname(self._config_dir), "temp"),
                 "recordings_dir": os.path.join(os.path.dirname(self._config_dir), "recordings")
             }

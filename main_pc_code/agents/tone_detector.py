@@ -1,17 +1,33 @@
 # ✅ Path patch fix for src/ and utils/ imports
 import sys
 import os
+from pathlib import Path
 
+def get_main_pc_code():
+    """Get the path to the main_pc_code directory"""
+    current_dir = Path(__file__).resolve().parent
+    main_pc_code_dir = current_dir.parent
+    return main_pc_code_dir
+
+# First define a basic join_path function for bootstrapping
+def join_path(*args):
+    return os.path.join(*args)
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
+from common.utils.path_env import get_path, join_path, get_file_path
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
+MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -23,6 +39,7 @@ import logging
 import threading
 import zmq
 import json
+import yaml
 from datetime import datetime
 from queue import Queue
 import re
@@ -55,7 +72,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("logs/tone_detector.log"),
+        logging.FileHandler(join_path("logs", "tone_detector.log")),
         logging.StreamHandler()
     ]
 )
@@ -227,8 +244,24 @@ class ToneDetector(BaseAgent):
             logger.error("Cannot initialize Whisper model: required libraries not available")
             return None
         
+        # Load LLM configuration to check for ENABLE_LEGACY_MODELS flag
         try:
-            logger.info("Loading Whisper model...")
+            llm_config_path = get_file_path("main_pc_config", "llm_config.yaml")
+            with open(llm_config_path, 'r') as f:
+                llm_config = yaml.safe_load(f)
+            ENABLE_LEGACY_MODELS = llm_config.get('global_flags', {}).get('ENABLE_LEGACY_MODELS', False)
+            logger.info(f"ENABLE_LEGACY_MODELS flag set to: {ENABLE_LEGACY_MODELS}")
+        except Exception as e:
+            logger.error(f"Error loading llm_config.yaml: {e}")
+            ENABLE_LEGACY_MODELS = False
+            logger.info("Defaulting ENABLE_LEGACY_MODELS to False")
+            
+        if not ENABLE_LEGACY_MODELS:
+            logger.warning("Direct model loading is disabled. Use model_client instead.")
+            return None
+        
+        try:
+            logger.info("Legacy mode: Loading Whisper model...")
             model = whisper.load_model("base")
             logger.info("Whisper model loaded successfully")
             return model

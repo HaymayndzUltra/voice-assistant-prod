@@ -19,10 +19,16 @@ import logging
 import re
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
-LOG_PATH = "logs/enhanced_model_router.log"
+LOG_PATH = join_path("logs", "enhanced_model_router.log")
 ZMQ_MODEL_ROUTER_PORT = 5601 # Enhanced version of standard model router
 
 # Ensure log directory exists

@@ -36,6 +36,9 @@ import psutil
 import gc
 from datetime import datetime
 
+# Centralized LLM router client
+from main_pc_code.utils import model_client
+
 # Add project root to Python path for common_utils import
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
@@ -320,25 +323,9 @@ class TinyLlamaService(BaseAgent):
             self.model_state = ModelState.LOADING
             logger.info(f"Loading TinyLlama model from {self.model_name}")
             
-            # Import here to avoid loading transformers at startup
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            
-            # Load model with appropriate settings
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                torch_dtype=torch.float16 if self.resource_manager.device == "cuda" else torch.float32,
-                low_cpu_mem_usage=True,
-                ignore_mismatched_sizes=True
-            )
-            
-            # Move model to device
-            self.model.to(self.resource_manager.device)
-            
-            self.model_state = ModelState.LOADED
-            logger.info("TinyLlama model loaded successfully")
+            # Skip local loading; rely on centralized ModelManagerAgent
+            self.model_state = ModelState.UNLOADED
+            logger.info("TinyLlama local model loading skipped – using model_client route")
             return True
             
         except Exception as e:
@@ -377,42 +364,22 @@ class TinyLlamaService(BaseAgent):
     def generate_text(self, prompt: str, config: Optional[GenerationConfig] = None) -> Dict:
         """Generate text with enhanced error handling"""
         try:
-            if self.model_state != ModelState.LOADED:
-                if not self._load_model():
-                    return {"status": "error", "message": "Failed to load model"}
-            
-            # Update last request time
-            self.last_request_time = time.time()
-            
-            # Use provided config or default
+            # For unified system, delegate to MMA via model_client
             gen_config = config or self.default_config
-            
-            # Format chat prompt
-            formatted_prompt = f"<human>: {prompt}\n<assistant>: "
-            
-            # Tokenize input
-            inputs = self.tokenizer(formatted_prompt, return_tensors="pt").to(self.resource_manager.device)
-            
-            # Generate text
-            with torch.no_grad():
-                output = self.model.generate(
-                    inputs["input_ids"],
-                    max_new_tokens=gen_config.max_tokens,
-                    do_sample=gen_config.do_sample,
-                    temperature=gen_config.temperature,
-                    top_p=gen_config.top_p,
-                    top_k=gen_config.top_k,
-                    repetition_penalty=gen_config.repetition_penalty,
-                    pad_token_id=self.tokenizer.eos_token_id
-                )
-            
-            # Decode and extract response
-            generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True)
-            assistant_response = generated_text.split("<assistant>: ")[-1].strip()
+            resp = model_client.generate(
+                prompt,
+                quality="fast",
+                max_tokens=gen_config.max_tokens,
+                temperature=gen_config.temperature,
+                top_p=gen_config.top_p,
+            )
+
+            assistant_response = resp.get("response_text", "")
             
             return {
                 "status": "success",
                 "text": assistant_response,
+                "source": "model_client",
                 "config": {
                     "max_tokens": gen_config.max_tokens,
                     "temperature": gen_config.temperature,

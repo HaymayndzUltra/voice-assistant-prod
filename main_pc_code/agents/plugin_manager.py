@@ -12,11 +12,12 @@ from watchdog.events import FileSystemEventHandler
 import sys
 import os
 from pathlib import Path
+from common.utils.path_env import get_main_pc_code, join_path
 MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
-PLUGINS_DIR = os.path.join(os.path.dirname(__file__), '..', 'plugins')
+PLUGINS_DIR = join_path('plugins')
 LOADED_PLUGINS = {}
 
 class PluginEventHandler(BaseAgent, FileSystemEventHandler):

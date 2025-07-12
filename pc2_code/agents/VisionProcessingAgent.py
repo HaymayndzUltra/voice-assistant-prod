@@ -19,8 +19,14 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from PIL import Image
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PC2_CODE_DIR = get_project_root()
 if PC2_CODE_DIR not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR)
 
@@ -37,7 +43,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("logs/vision_processing_agent.log")
+        logging.FileHandler(join_path("logs", "vision_processing_agent.log"))
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")
@@ -65,7 +71,7 @@ class VisionProcessingAgent(BaseAgent):
         self.running = True
         
         # Create output directory if it doesn't exist
-        self.output_dir = os.path.join(PC2_CODE_DIR, "data", "vision_output")
+        self.output_dir = join_path("data", "vision_output")
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")

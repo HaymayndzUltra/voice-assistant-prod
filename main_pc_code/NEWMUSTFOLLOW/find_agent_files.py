@@ -12,6 +12,12 @@ import yaml
 import argparse
 from pathlib import Path
 
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, get_project_root())
+from common.utils.path_env import get_path, join_path, get_file_path
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -28,9 +34,9 @@ def find_config_file():
     """Find the minimal system configuration file."""
     possible_paths = [
         os.path.join(SCRIPT_DIR, "minimal_system_config.yaml"),
-        os.path.join(SCRIPT_DIR, "..", "config", "minimal_system_config.yaml"),
-        os.path.join(PROJECT_ROOT, "main_pc_code", "config", "minimal_system_config.yaml"),
-        os.path.join(PROJECT_ROOT, "main_pc_code", "NEWMUSTFOLLOW", "minimal_system_config.yaml"),
+        join_path("config", join_path("config", "minimal_system_config.yaml")),
+        join_path("main_pc_code", join_path("config", "minimal_system_config.yaml")),
+        join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config.yaml"),
     ]
     
     for path in possible_paths:
@@ -74,10 +80,10 @@ def find_agent_file(agent_name):
     """Find the Python file for an agent."""
     # First try direct matches in common locations
     possible_locations = [
-        os.path.join(PROJECT_ROOT, "main_pc_code", "agents", f"{agent_name}.py"),
-        os.path.join(PROJECT_ROOT, "main_pc_code", "src", "agents", f"{agent_name}.py"),
+        join_path("main_pc_code", "agents/{agent_name}.py"),
+        join_path("main_pc_code", "src/agents/{agent_name}.py"),
         os.path.join(PROJECT_ROOT, "src", "agents", f"{agent_name}.py"),
-        os.path.join(PROJECT_ROOT, "pc2_code", "agents", f"{agent_name}.py"),
+        join_path("pc2_code", "agents/{agent_name}.py"),
     ]
     
     for location in possible_locations:
