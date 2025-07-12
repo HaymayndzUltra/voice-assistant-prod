@@ -1,0 +1,16 @@
+[project]
+name = "ai_system"
+version = "0.1.0"
+description = "AI System Monorepo"
+requires-python = ">=3.8"
+dependencies = [
+    "pyzmq",
+    "pydantic",
+    "psutil",
+    "pyyaml",
+    "redis"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["common*", "main_pc_code*", "pc2_code*", "utils*", "src*"] 

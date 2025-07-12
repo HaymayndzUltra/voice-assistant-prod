@@ -1,0 +1,59 @@
+name: Check for new sys.path.insert calls
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  check-sys-path:
+    name: Check for new sys.path.insert calls
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run sys.path.insert check
+        run: |
+          chmod +x scripts/check_sys_path_inserts.sh
+          scripts/check_sys_path_inserts.sh
+        
+      - name: Report sys.path.insert count
+        run: |
+          python3 scripts/remove_sys_path_inserts.py --count
+        
+      - name: Add comment to PR
+        if: github.event_name == 'pull_request' && success()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            
+            const output = `
+            ## Package Modernization Check
+            
+            This PR was checked for new \`sys.path.insert\` calls.
+            
+            Please remember that we're working on removing all \`sys.path.insert\` calls from the codebase.
+            Instead, use proper imports after installing the package with \`pip install -e .\`.
+            
+            See \`MainPcDocs/SYSTEM_DOCUMENTATION/DEV_GUIDE/01_package_layout.md\` for more information.
+            `;
+            
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: output
+            }); 
