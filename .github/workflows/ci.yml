@@ -29,3 +29,7 @@ jobs:
         run: |
           pytest main_pc_code/tests/test_no_direct_model_load.py -q
           pytest tests/test_model_manager_agent_router.py -q 
+          
+      - name: Run service registry and digital twin tests
+        run: |
+          pytest tests/test_service_registry.py tests/test_system_digital_twin.py -q 
