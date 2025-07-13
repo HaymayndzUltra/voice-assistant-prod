@@ -30,7 +30,7 @@ from uuid import UUID
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = get_main_pc_code()
@@ -108,12 +108,15 @@ class LearningOpportunityDetector(BaseAgent):
         """Register this agent with the service discovery system if available."""
         try:
             from main_pc_code.utils.service_discovery_client import get_service_discovery_client
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+            from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+        except ImportError as e:
+            print(f"Import error in learning_opportunity_detector: {e}")
+            return
+        try:
             client = get_service_discovery_client()
             self.service_registry[self.name] = {
                 "name": self.name,
                 "ip": self.config.get('bind_address', '0.0.0.0'),
-                "port": self.port,
                 "health_check_port": HEALTH_CHECK_PORT,
                 "capabilities": ["learning_opportunity_detection"],
                 "status": "running"
@@ -129,15 +132,15 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
     def _setup_zmq_connections(self):
         try:
             self.umra_socket = self.context.socket(zmq.SUB)
-            self.umra_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))umra_port', 5701)}")
+            self.umra_socket.connect(get_zmq_connection_string(self.config.get('umra_port', 5701), "localhost"))
             self.umra_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             self.coordinator_socket = self.context.socket(zmq.SUB)
-            self.coordinator_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))request_coordinator_port', 5702)}")
+            self.coordinator_socket.connect(get_zmq_connection_string(self.config.get('request_coordinator_port', 5702), "localhost"))
             self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
             self.los_socket = self.context.socket(zmq.REQ)
             self.los_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.los_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.los_socket.connect(get_zmq_connection_string({self.config.get(, "localhost"))los_port', 7210)}")
+            self.los_socket.connect(get_zmq_connection_string(self.config.get('los_port', 7210), "localhost"))
             logger.info("ZMQ connections established successfully")
         except Exception as e:
             logger.error(f"Error setting up ZMQ connections: {e}")

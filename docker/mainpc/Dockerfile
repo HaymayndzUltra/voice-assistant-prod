@@ -35,7 +35,7 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python && \
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
-COPY requirements.txt /app/
+COPY main_pc_code/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -U pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121

@@ -1,0 +1,20 @@
+# Git & Docker
+.git
+.gitignore
+.github
+
+# Python Caches & Environments
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Large Data Directories (to be mounted as volumes)
+models/
+data/
+logs/
+artifacts/
+
+# IDE / OS specific
+.idea/
+.vscode/ 

@@ -11,13 +11,19 @@ Implements two core actions:
 
 Standard health actions (``ping``, ``health``, ``health_check``) are inherited
 from :class:`common.core.base_agent.BaseAgent`.
+
+Supports multiple backend storage options:
+- In-memory (default): Fast but non-persistent
+- Redis: Persistent and supports high-availability
 """
 from __future__ import annotations
 
+import argparse
+import json
 import logging
 import os
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Protocol, runtime_checkable
 
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
@@ -27,17 +33,126 @@ from common.utils.data_models import AgentRegistration
 # ---------------------------------------------------------------------------
 DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
 DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
+DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
+DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
+DEFAULT_REDIS_PREFIX = os.getenv("SERVICE_REGISTRY_REDIS_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
 
 
-class ServiceRegistryAgent(BaseAgent):
-    """A tiny in-memory service registry."""
+@runtime_checkable
+class RegistryBackend(Protocol):
+    """Protocol defining the interface for registry backends."""
+    
+    def get(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Get agent data by ID."""
+        ...
+    
+    def set(self, agent_id: str, data: Dict[str, Any]) -> None:
+        """Store agent data by ID."""
+        ...
+    
+    def list_agents(self) -> list[str]:
+        """List all registered agent IDs."""
+        ...
+    
+    def close(self) -> None:
+        """Close any resources."""
+        ...
 
-    def __init__(self, **kwargs):
-        # Initialise registry storage before BaseAgent starts threads that
-        # may call ``handle_request`` early.
+
+class MemoryBackend:
+    """Simple in-memory backend for the service registry."""
+    
+    def __init__(self) -> None:
         self.registry: Dict[str, Dict[str, Any]] = {}
+    
+    def get(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Get agent data by ID."""
+        return self.registry.get(agent_id)
+    
+    def set(self, agent_id: str, data: Dict[str, Any]) -> None:
+        """Store agent data by ID."""
+        self.registry[agent_id] = data
+    
+    def list_agents(self) -> list[str]:
+        """List all registered agent IDs."""
+        return list(self.registry.keys())
+    
+    def close(self) -> None:
+        """Close any resources."""
+        pass
+
+
+class RedisBackend:
+    """Redis-backed storage for the service registry.
+    
+    Provides persistence and high-availability.
+    """
+    
+    def __init__(self, redis_url: str, prefix: str = DEFAULT_REDIS_PREFIX) -> None:
+        """Initialize Redis backend.
+        
+        Args:
+            redis_url: Redis connection URL (redis://host:port/db)
+            prefix: Key prefix for Redis keys
+        """
+        try:
+            import redis
+        except ImportError:
+            logger.error("Redis package not installed. Install with: pip install redis")
+            raise
+        
+        self.prefix = prefix
+        self.redis = redis.from_url(redis_url)
+        logger.info("Connected to Redis at %s", redis_url)
+    
+    def _key(self, agent_id: str) -> str:
+        """Get the Redis key for an agent."""
+        return f"{self.prefix}{agent_id}"
+    
+    def get(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Get agent data by ID."""
+        data = self.redis.get(self._key(agent_id))
+        if data:
+            try:
+                return json.loads(data)
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON data for agent %s", agent_id)
+        return None
+    
+    def set(self, agent_id: str, data: Dict[str, Any]) -> None:
+        """Store agent data by ID."""
+        self.redis.set(self._key(agent_id), json.dumps(data))
+    
+    def list_agents(self) -> list[str]:
+        """List all registered agent IDs."""
+        keys = self.redis.keys(f"{self.prefix}*")
+        return [key.decode('utf-8').replace(self.prefix, '') for key in keys]
+    
+    def close(self) -> None:
+        """Close Redis connection."""
+        self.redis.close()
+
+
+class ServiceRegistryAgent(BaseAgent):
+    """A service registry with configurable backend storage."""
+
+    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_REDIS_URL, **kwargs):
+        """Initialize the service registry.
+        
+        Args:
+            backend: Storage backend ('memory' or 'redis')
+            redis_url: Redis connection URL if using redis backend
+            **kwargs: Additional arguments passed to BaseAgent
+        """
+        # Initialize backend before BaseAgent starts threads
+        if backend == "redis":
+            logger.info("Using Redis backend at %s", redis_url)
+            self.backend: RegistryBackend = RedisBackend(redis_url)
+        else:
+            logger.info("Using in-memory backend")
+            self.backend = MemoryBackend()
 
         # Merge default ports with kwargs, but allow kwargs to override.
         port = int(kwargs.pop("port", DEFAULT_PORT))
@@ -71,7 +186,7 @@ class ServiceRegistryAgent(BaseAgent):
         if action == "list_agents":
             return {
                 "status": "success",
-                "agents": list(self.registry.keys()),
+                "agents": self.backend.list_agents(),
             }
 
         return {"status": "error", "error": f"Unknown action: {action}"}
@@ -94,7 +209,7 @@ class ServiceRegistryAgent(BaseAgent):
             logger.warning("Invalid registration attempt: %s", exc)
             return {"status": "error", "error": str(exc)}
 
-        self.registry[registration.agent_id] = {
+        agent_data = {
             "host": registration.host,
             "port": registration.port,
             "health_check_port": registration.health_check_port,
@@ -103,6 +218,8 @@ class ServiceRegistryAgent(BaseAgent):
             "metadata": registration.metadata,
             "last_registered": datetime.utcnow().isoformat(),
         }
+        
+        self.backend.set(registration.agent_id, agent_data)
 
         logger.info("Registered agent %s @ %s:%s", registration.agent_id, registration.host, registration.port)
         return {"status": "success"}
@@ -113,20 +230,46 @@ class ServiceRegistryAgent(BaseAgent):
         if not agent_name:
             return {"status": "error", "error": "Missing 'agent_name'"}
 
-        if agent_name not in self.registry:
+        agent_data = self.backend.get(agent_name)
+        if not agent_data:
             return {"status": "error", "error": f"Agent {agent_name} not found"}
 
-        data = self.registry[agent_name].copy()
+        data = agent_data.copy()
         data.update({"status": "success"})
         return data
+        
+    def cleanup(self) -> None:
+        """Clean up resources before shutdown."""
+        if hasattr(self, 'backend'):
+            self.backend.close()
+        super().cleanup()
 
 
 # ---------------------------------------------------------------------------
 # Entrypoint
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    agent = ServiceRegistryAgent()
+    parser = argparse.ArgumentParser(description="Service Registry Agent")
+    parser.add_argument("--backend", choices=["memory", "redis"], default=DEFAULT_BACKEND,
+                       help="Storage backend (default: memory)")
+    parser.add_argument("--redis-url", default=DEFAULT_REDIS_URL,
+                       help="Redis connection URL if using redis backend")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT,
+                       help="ZMQ port for agent communication")
+    parser.add_argument("--health-check-port", type=int, default=DEFAULT_HEALTH_PORT,
+                       help="HTTP port for health checks")
+    
+    args = parser.parse_args()
+    
+    agent = ServiceRegistryAgent(
+        backend=args.backend,
+        redis_url=args.redis_url,
+        port=args.port,
+        health_check_port=args.health_check_port
+    )
+    
     try:
         agent.run()
     except KeyboardInterrupt:
         logger.info("ServiceRegistryAgent interrupted; shutting down")
+        agent.cleanup()

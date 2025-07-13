@@ -1,6 +1,95 @@
 version: '3.8'
 
 services:
+  # Redis for HA service registry
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.10
+
+  # Primary service registry instance
+  service-registry:
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile.service_registry
+    image: ai-system/service-registry:latest
+    container_name: service-registry
+    restart: unless-stopped
+    command: python main_pc_code/agents/service_registry_agent.py --backend redis --redis-url redis://redis:6379/0
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "7100:7100"
+      - "8100:8100"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - SERVICE_REGISTRY_BACKEND=redis
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Replica service registry for HA
+  service-registry-replica:
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile.service_registry
+    image: ai-system/service-registry:latest
+    container_name: service-registry-replica
+    restart: unless-stopped
+    command: python main_pc_code/agents/service_registry_agent.py --backend redis --redis-url redis://redis:6379/0
+    networks:
+      ai_system_network:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "7101:7100"
+      - "8101:8100"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../models:/app/models
+      - ../../data:/app/data
+      - ../../config:/app/config
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - SERVICE_REGISTRY_BACKEND=redis
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # Core services - fundamental agents that most others depend on
   core-services:
     build:
@@ -21,6 +110,8 @@ services:
       - DEBUG_MODE=false
       - ENABLE_METRICS=true
       - ENABLE_TRACING=true
+      - SERVICE_REGISTRY_HOST=service-registry
+      - SERVICE_REGISTRY_PORT=7100
     networks:
       ai_system_network:
         ipv4_address: 172.20.0.2
@@ -31,6 +122,9 @@ services:
       - "27002:27002"  # RequestCoordinator health
       - "7125:7125"  # UnifiedSystemAgent
       - "8125:8125"  # UnifiedSystemAgent health
+    depends_on:
+      service-registry:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-m", "main_pc_code.scripts.container_healthcheck"]
       interval: 30s
@@ -58,6 +152,8 @@ services:
       - LOG_LEVEL=INFO
       - CONTAINER_GROUP=memory_system
       - DEBUG_MODE=false
+      - SERVICE_REGISTRY_HOST=service-registry
+      - SERVICE_REGISTRY_PORT=7100
     networks:
       ai_system_network:
         ipv4_address: 172.20.0.3
@@ -149,7 +245,6 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
               capabilities: [gpu]
               device_ids: ['0']
     networks:
@@ -255,7 +350,6 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
               capabilities: [gpu]
               device_ids: ['0']
     networks:
@@ -462,3 +556,7 @@ networks:
       driver: default
       config:
         - subnet: 172.20.0.0/16 
+
+volumes:
+  redis_data:
+    driver: local 

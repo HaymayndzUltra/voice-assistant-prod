@@ -25,9 +25,11 @@ import sys
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
 from common.utils.path_env import get_path, join_path, get_file_path
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
+PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 

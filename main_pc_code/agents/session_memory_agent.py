@@ -26,11 +26,9 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code'))
+if MAIN_PC_CODE_DIR not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config

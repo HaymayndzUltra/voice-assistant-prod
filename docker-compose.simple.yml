@@ -1,0 +1,6 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: ai-system-test 

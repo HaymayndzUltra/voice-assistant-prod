@@ -1,0 +1,46 @@
+version: '3.8'
+
+networks:
+  ai_system_network:
+    driver: bridge
+
+services:
+  # Redis for HA service registry
+  redis:
+    image: redis:7-alpine
+    container_name: redis-test
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [ai_system_network]
+
+  # Core Services
+  core_services:
+    build: .
+    container_name: mainpc-core_services-test
+    command: ["python", "-m", "pytest", "tests/test_docker_validation.py", "-v"]
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./tests:/app/tests
+    environment:
+      - PYTHONPATH=/app
+      - TEST_MODE=true
+    depends_on:
+      - redis
+    networks: [ai_system_network]
+    ports:
+      - "26002:26002"
+      - "7100:7100"  # ServiceRegistry
+      - "7120:7120"  # SystemDigitalTwin
+      - "7125:7125"  # UnifiedSystemAgent
+
+volumes:
+  redis_data:
+    driver: local 

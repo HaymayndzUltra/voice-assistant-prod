@@ -11,6 +11,11 @@ dependencies = [
     "redis"
 ]
 
+[project.optional-dependencies]
+ha = [
+    "redis>=4.5.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["common*", "main_pc_code*", "pc2_code*", "utils*", "src*"] 

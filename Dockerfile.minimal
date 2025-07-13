@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install only the minimal required packages
+RUN pip install --no-cache-dir numpy requests pyyaml pyzmq
+
+# Copy just what we need for testing
+COPY test_simple.py .
+COPY scripts/ /app/scripts/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TEST_MODE=true
+ENV PYTHONPATH=/app
+
+# Make the run_group.sh script executable
+RUN chmod +x /app/scripts/run_group.sh
+
+# Default command
+CMD ["python", "test_simple.py"] 

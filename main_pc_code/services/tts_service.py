@@ -22,7 +22,8 @@ import hashlib
 from collections import OrderedDict
 
 # Add the project's main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+from common.utils.path_manager import PathManager
+MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 

@@ -40,6 +40,14 @@ agent_groups:
       health_check_port: 8100
       required: true
       dependencies: []
+      config:
+        backend: memory  # Options: memory, redis
+        redis:
+          url: redis://localhost:6379/0
+          prefix: "service_registry:"
+
+      # For HA deployment with Redis backend, uncomment and adjust:
+      # command_args: --backend redis --redis-url redis://redis:6379/0
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
       port: 7120
@@ -52,7 +60,8 @@ agent_groups:
           db: 0
         zmq_request_timeout: 5000
       required: true
-      dependencies: []
+      dependencies:
+        - ServiceRegistry
     RequestCoordinator:
       script_path: main_pc_code/agents/request_coordinator.py
       port: 26002

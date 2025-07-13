@@ -13,7 +13,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # ANSI color codes for terminal output
 GREEN = "\033[92m"

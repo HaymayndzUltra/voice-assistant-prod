@@ -99,7 +99,7 @@ class SelfTrainingOrchestrator(BaseAgent):
         self.start_time = time.time()
         
         # Database setup
-        self.db_path = join_path("data", "self_training.db"))
+        self.db_path = join_path("data", "self_training.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         
         # Training cycle management

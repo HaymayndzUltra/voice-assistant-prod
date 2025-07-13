@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy just what we need for testing
+COPY test_simple.py .
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TEST_MODE=true
+
+# Default command
+CMD ["python", "test_simple.py"] 

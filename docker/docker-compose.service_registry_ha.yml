@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - service_registry_network
+
+  service-registry:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service_registry
+    command: python main_pc_code/agents/service_registry_agent.py --backend redis --redis-url redis://redis:6379/0
+    ports:
+      - "7100:7100"
+      - "8100:8100"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - SERVICE_REGISTRY_BACKEND=redis
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis:6379/0
+    networks:
+      - service_registry_network
+    restart: unless-stopped
+
+  service-registry-replica:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service_registry
+    command: python main_pc_code/agents/service_registry_agent.py --backend redis --redis-url redis://redis:6379/0
+    ports:
+      - "7101:7100"
+      - "8101:8100"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - SERVICE_REGISTRY_BACKEND=redis
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis:6379/0
+    networks:
+      - service_registry_network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  service_registry_network:
+    driver: bridge 

@@ -24,9 +24,9 @@ from main_pc_code.agents.memory_client import MemoryClient
 # Configuration & Logging
 # -----------------------------------------------------------------------------
 
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code'))
+if MAIN_PC_CODE_DIR not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 config = load_config()
 

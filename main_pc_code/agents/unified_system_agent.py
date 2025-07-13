@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from main_pc_code.src.core.base_agent import B
+from main_pc_code.agents.base_agent import BaseAgent
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
+MAIN_PC_CODE_DIR = PathManager.get_project_root()
+if MAIN_PC_CODE_DIR not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 aseAgent
 from main_pc_code.utils.config_loader import load_config

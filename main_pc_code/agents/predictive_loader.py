@@ -80,7 +80,7 @@ class PredictiveLoader(BaseAgent):
         self.request_coordinator_socket = self.context.socket(zmq.REQ)
 
     
-        self.request_coordinator_socket.connect(get_zmq_connection_string({request_coordinator_port}, "localhost")))
+        self.request_coordinator_socket.connect(get_zmq_connection_string({request_coordinator_port}, "localhost"))
 
     
         logger.info(f"Connected to RequestCoordinator on port {request_coordinator_port}")

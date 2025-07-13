@@ -15,7 +15,7 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 # Import the PathManager for consistent path resolution
-from utils.path_manager import PathManager
+from common.utils.path_manager import PathManager
 
 # Now that the path is set, we can use absolute imports
 from main_pc_code.utils.config_loader import parse_agent_args

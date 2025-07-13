@@ -21,7 +21,7 @@ import zmq  # Added for error bus
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
 from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = get_main_pc_code()
