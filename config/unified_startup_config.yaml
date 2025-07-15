@@ -74,3 +74,11 @@ agent_groups:
       required: true
       dependencies:
         - SystemDigitalTwin
+  monitoring:
+    UnifiedHealthMonitor:
+      script_path: main_pc_code/agents/unified_health_monitor.py
+      port: 8200
+      health_check_port: 9200
+      required: true
+      dependencies:
+        - ServiceRegistry
