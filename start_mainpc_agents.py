@@ -23,7 +23,11 @@ import threading
 # Define paths
 PROJECT_ROOT = Path(__file__).resolve().parent
 MAIN_PC_CODE_ROOT = PROJECT_ROOT / 'main_pc_code'
-MAIN_PC_CONFIG_PATH = MAIN_PC_CODE_ROOT / 'config' / 'startup_config.yaml'
+UNIFIED_CONFIG_PATH = PROJECT_ROOT / 'config' / 'unified_startup_config.yaml'
+# Prefer unified config if present, else fall back to legacy
+MAIN_PC_CONFIG_PATH = UNIFIED_CONFIG_PATH if UNIFIED_CONFIG_PATH.exists() else (
+    MAIN_PC_CODE_ROOT / 'config' / 'startup_config.yaml'
+)
 MAIN_PC_AGENTS_DIR = MAIN_PC_CODE_ROOT
 
 # Global variables
@@ -78,7 +82,18 @@ def start_agent(agent, dry_run=False):
         print(f"❌ {name}: No script path specified")
         return False
     
-    full_script_path = MAIN_PC_AGENTS_DIR / script_path
+    # Resolve script_path: if it already looks like an absolute/relative path from project root,
+    # join against PROJECT_ROOT; otherwise join against MAIN_PC_AGENTS_DIR for backward compat.
+    script_path_obj = Path(script_path)
+    if script_path_obj.exists():
+        full_script_path = script_path_obj
+    else:
+        candidate = PROJECT_ROOT / script_path_obj
+        if candidate.exists():
+            full_script_path = candidate
+        else:
+            full_script_path = MAIN_PC_AGENTS_DIR / script_path_obj
+
     if not full_script_path.exists():
         print(f"❌ {name}: Script not found at {full_script_path}")
         return False
