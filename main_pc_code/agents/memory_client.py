@@ -22,6 +22,14 @@ config = load_config()
 
 logger = logging.getLogger("MemoryClient")
 
+try:
+    from grpclib.client import Channel
+    GRPC_AVAILABLE = True
+except ImportError:  # grpclib not installed yet
+    GRPC_AVAILABLE = False
+
+GRPC_ADDR = os.environ.get("MEMORY_GRPC", "pc2:7300")
+
 def get_service_address(service_name: str) -> str:
     # Use environment variable if available, otherwise use PC2 default IP with correct port
     pc2_ip = os.environ.get("PC2_IP", "192.168.100.17")
@@ -660,6 +668,23 @@ class MemoryClient(BaseAgent):
         })
         
         return base_status
+
+    def _try_grpc(self) -> bool:
+        """Attempt to connect via gRPC if grpclib is installed and endpoint reachable.
+
+        Returns True on success and sets ``self.grpc_channel`` attribute.
+        Currently returns False if grpclib not available or connection fails.
+        """
+        if not GRPC_AVAILABLE:
+            return False
+        try:
+            host, port_str = GRPC_ADDR.split(":")
+            port = int(port_str)
+            self.grpc_channel = Channel(host, port)
+            # TODO: Implement health check once protobuf definitions exist
+            return True
+        except Exception:
+            return False
 
 
 if __name__ == "__main__":

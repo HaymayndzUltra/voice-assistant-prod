@@ -23,7 +23,11 @@ import threading
 # Define paths
 PROJECT_ROOT = Path(__file__).resolve().parent
 PC2_CODE_ROOT = PROJECT_ROOT / 'pc2_code'
-PC2_CONFIG_PATH = PC2_CODE_ROOT / 'config' / 'startup_config.yaml'
+UNIFIED_CONFIG_PATH = Path('config/unified_startup_config.yaml')
+# Use unified config when present (for consolidated deployments). Otherwise fall back.
+PC2_CONFIG_PATH = UNIFIED_CONFIG_PATH if UNIFIED_CONFIG_PATH.exists() else (
+    PC2_CODE_ROOT / 'config' / 'startup_config.yaml'
+)
 PC2_AGENTS_DIR = PC2_CODE_ROOT / 'agents'
 
 # Global variables
