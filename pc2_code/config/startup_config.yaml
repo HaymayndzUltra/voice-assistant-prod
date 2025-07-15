@@ -5,11 +5,20 @@
 pc2_services:
   # Phase 1 - Integration Layer Agents
   - {
+      name: MemoryOrchestratorService,
+      script_path: pc2_code/agents/memory_orchestrator_service.py,
+      host: 0.0.0.0,
+      port: 7140,
+      health_check_port: 8140,
+      required: true,
+      dependencies: [],
+    }
+  - {
       name: TieredResponder,
       script_path: pc2_code/agents/tiered_responder.py,
       host: 0.0.0.0,
       port: 7100,
-      health_check_port: 8131,
+      health_check_port: 8100,
       required: true,
       dependencies: [ResourceManager],
     }
@@ -62,7 +71,7 @@ pc2_services:
     }
   - {
       name: UnifiedMemoryReasoningAgent,
-      script_path: pc2_code/agents/UnifiedMemoryReasoningAgent.py,
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
       host: 0.0.0.0,
       port: 7105,
       health_check_port: 8105,
@@ -76,17 +85,18 @@ pc2_services:
       port: 7108,
       health_check_port: 8108,
       required: true,
-      dependencies: [TutoringServiceAgent],
+      dependencies: [MemoryOrchestratorService],
     }
   - {
-      name: TutoringServiceAgent,
-      script_path: pc2_code/agents/tutoring_service_agent.py,
+      name: TutoringAgent,
+      script_path: pc2_code/agents/tutoring_agent.py,
       host: 0.0.0.0,
-      port: 7130,
-      health_check_port: 8130,
+      port: 7131,
+      health_check_port: 8131,
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
+
 
   - {
       name: ContextManager,
@@ -237,16 +247,7 @@ pc2_services:
       dependencies: [TaskScheduler],
     }
 
-  # Additional Agents Found in Directory (Not in Original Config)
-  - {
-      name: TutoringAgent,
-      script_path: pc2_code/agents/tutoring_agent.py,
-      host: 0.0.0.0,
-      port: 7131,
-      health_check_port: 8131,
-      dependencies: [TutoringServiceAgent],
-      required: false,
-    }
+
 
 # Environment variables for all agents
 environment:

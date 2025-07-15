@@ -59,10 +59,15 @@ class TutoringServiceAgent(BaseAgent):
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 
-        self.error_bus_pub = self.context.socket(zmq.PUB)
+        try:
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.warning(f"Failed to connect to error bus: {e}")
+            self.error_bus_pub = None
 
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _get_health_status(self) -> Dict[str, Any]:
+    def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
         # Call parent implementation
         status = super()._get_health_status()

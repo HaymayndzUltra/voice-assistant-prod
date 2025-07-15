@@ -454,7 +454,7 @@ agent_groups:
     StreamingLanguageAnalyzer:
       script_path: main_pc_code/agents/streaming_language_analyzer.py
       port: 5579
-      health_check_port: 5597
+      health_check_port: 6579
       required: true
       dependencies:
       - StreamingSpeechRecognition
