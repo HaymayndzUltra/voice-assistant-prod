@@ -1,0 +1,76 @@
+global_settings:
+  environment:
+    PYTHONPATH: /app
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 4096
+    max_threads: 8
+  volumes:
+    - source: ./logs
+      target: /app/logs
+    - source: ./models
+      target: /app/models
+    - source: ./data
+      target: /app/data
+    - source: ./config
+      target: /app/config
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+  network:
+    name: ai_system_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+
+agent_groups:
+  core_services:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies: []
+      config:
+        backend: redis  # Use Redis backend for HA
+        redis:
+          url: redis://localhost:6379/0
+          prefix: "service_registry:"
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7120
+      health_check_port: 8120
+      required: true
+      dependencies:
+        - ServiceRegistry
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 26002
+      health_check_port: 27002
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+    UnifiedSystemAgent:
+      script_path: main_pc_code/agents/unified_system_agent.py
+      port: 7125
+      health_check_port: 8125
+      required: true
+      dependencies:
+        - SystemDigitalTwin
