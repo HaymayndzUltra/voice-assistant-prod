@@ -62,12 +62,14 @@ from .routers import session_memory_router
 from .routers import knowledge_base_router
 from .routers import orchestrator_router
 from .routers import unified_memory_reasoning_router
+from .routers import context_manager_router
 
 app.include_router(memory_client_router.router)
 app.include_router(session_memory_router.router)
 app.include_router(knowledge_base_router.router)
 app.include_router(orchestrator_router.router)
 app.include_router(unified_memory_reasoning_router.router)
+app.include_router(context_manager_router.router)
 
 
 # ---------------------------------------------------------------------------
