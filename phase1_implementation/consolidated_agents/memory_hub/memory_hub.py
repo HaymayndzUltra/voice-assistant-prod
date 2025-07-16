@@ -54,6 +54,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------------------------------------------------------------------
+# Routers (legacy integration)
+# ---------------------------------------------------------------------------
+from .routers import memory_client_router  # noqa: E402 – import after FastAPI instance
+
+app.include_router(memory_client_router.router)
+
 
 # ---------------------------------------------------------------------------
 # Base endpoints
