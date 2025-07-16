@@ -174,7 +174,7 @@ class HealthMonitor:
         self.health_status: Dict[str, HealthStatus] = {}
         self.health_check_interval = 30  # seconds
         
-    def update_agent_health(self, agent_name: str, status: str, details: Dict[str, Any] = None, location: str = "Unknown"):
+    def update_agent_health(self, agent_name: str, status: str, details: Optional[Dict[str, Any]] = None, location: str = "Unknown"):
         """Update health status for an agent"""
         self.health_status[agent_name] = HealthStatus(
             agent_name=agent_name,
