@@ -1,0 +1,10 @@
+main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+main_pc_code/FORMAINPC/CognitiveModelAgent.py
+main_pc_code/FORMAINPC/ConsolidatedTranslator.py
+main_pc_code/FORMAINPC/GOT_TOTAgent.py
+main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+main_pc_code/FORMAINPC/NLLBAdapter.py
+main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+main_pc_code/FORMAINPC/consolidated_translator_simple.py
