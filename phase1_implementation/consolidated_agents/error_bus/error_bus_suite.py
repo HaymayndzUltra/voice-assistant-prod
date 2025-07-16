@@ -75,6 +75,10 @@ class ErrorBusSuite(BaseAgent):
         self._legacy: ErrorBusService | None = None  # type: ignore[valid-type]
         self._start_legacy()
 
+        # Optional: in‐proc SystemHealthManager for additional health aggregation per corrections spec
+        self._system_health: Any | None = None
+        self._start_system_health_manager()
+
         self._ctx = zmq.Context()
         self.app = FastAPI(title="ErrorBusSuite", description="Unified error-management bus", version="1.0.0")
         self._setup_routes()
@@ -96,6 +100,25 @@ class ErrorBusSuite(BaseAgent):
         except Exception as exc:  # pylint: disable=broad-except
             LOGGER.error("Failed to start legacy ErrorBusService: %s", exc)
             self._legacy = None
+
+    # ------------------------------------------------------------------
+    # SystemHealthManager bootstrap
+    # ------------------------------------------------------------------
+
+    def _start_system_health_manager(self):
+        """Launch SystemHealthManager inside this process if available."""
+        try:
+            from pc2_code.agents.ForPC2.system_health_manager import SystemHealthManager  # type: ignore
+        except Exception as exc:  # pylint: disable=broad-except
+            LOGGER.warning("SystemHealthManager unavailable: %s", exc)
+            return
+
+        try:
+            self._system_health = SystemHealthManager(port=7121)  # keep legacy port
+            threading.Thread(target=self._system_health.run, daemon=True, name="legacy_system_health").start()
+            LOGGER.info("SystemHealthManager running in-proc within ErrorBusSuite")
+        except Exception as exc:  # pylint: disable=broad-except
+            LOGGER.error("Failed to start SystemHealthManager: %s", exc)
 
     async def _delegate(self, request: Dict[str, Any]) -> Dict[str, Any]:
         if self._legacy and hasattr(self._legacy, "handle_request"):
@@ -150,6 +173,7 @@ class ErrorBusSuite(BaseAgent):
         base.update({
             "service": "ErrorBusSuite",
             "legacy_running": self._legacy is not None,
+            "system_health": self._system_health is not None,
             "uptime": time.time() - getattr(self, "_startup_time", time.time()),
         })
         return base
