@@ -58,8 +58,10 @@ app.add_middleware(
 # Routers (legacy integration)
 # ---------------------------------------------------------------------------
 from .routers import memory_client_router  # noqa: E402 – import after FastAPI instance
+from .routers import session_memory_router
 
 app.include_router(memory_client_router.router)
+app.include_router(session_memory_router.router)
 
 
 # ---------------------------------------------------------------------------
