@@ -144,6 +144,48 @@ agent_groups:
         level: INFO
         file: "phase1_implementation/logs/error_bus_suite.log"
 
+    MemoryHub:
+      script_path: phase1_implementation/consolidated_agents/memory_hub/memory_hub.py
+      port: 7010
+      health_check_port: 7110
+      required: true
+      dependencies: [ObservabilityHub, ErrorBusSuite]
+      config:
+        # PHASE 1 Memory Consolidation - O3 Enhanced
+        enable_redis_cache: true
+        enable_sqlite_integration: true
+        enable_context_reasoning: true
+        enable_auth_middleware: true
+        enable_trust_scoring: true
+        redis_host: "localhost"
+        redis_port: 6379
+        redis_db: 2
+        sqlite_db_path: "phase1_implementation/data/memory_hub.db"
+        context_retention_hours: 72
+        session_timeout_minutes: 120
+        trust_score_threshold: 0.7
+        # MainPC Integration
+        mainpc_core_orchestrator: "http://172.20.0.10:7000"
+        mainpc_security_gateway: "http://172.20.0.10:7005"
+      environment:
+        ENABLE_REDIS_CACHE: 'true'
+        ENABLE_SQLITE_INTEGRATION: 'true'
+        ENABLE_CONTEXT_REASONING: 'true'
+        ENABLE_AUTH_MIDDLEWARE: 'true'
+        ENABLE_TRUST_SCORING: 'true'
+        REDIS_HOST: 'localhost'
+        REDIS_PORT: '6379'
+        REDIS_DB: '2'
+        MAINPC_CORE_ORCHESTRATOR: 'http://172.20.0.10:7000'
+        MAINPC_SECURITY_GATEWAY: 'http://172.20.0.10:7005'
+      startup:
+        order: 4
+        wait_for_dependencies: true
+        dependency_timeout: 90
+      logging:
+        level: INFO
+        file: "phase1_implementation/logs/memory_hub.log"
+
   # ===================================================================
   # LEGACY SERVICES (GRADUALLY DEPRECATED)
   # ===================================================================
@@ -364,6 +406,9 @@ startup_sequence:
     
   phase1_services_startup:
     - ObservabilityHub           # Order 1 - Monitoring foundation
+    - ResourceManagerSuite       # Order 2 - Resource management
+    - ErrorBusSuite             # Order 3 - Error handling
+    - MemoryHub                 # Order 4 - Memory consolidation
     
   essential_services_startup:
     - TranslatorAgent           # Order 10 - Translation services

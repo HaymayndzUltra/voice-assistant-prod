@@ -1,0 +1,622 @@
+global_settings:
+  environment:
+    PYTHONPATH: /app
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+    # Phase 1 Consolidation Flags - O3 Enhanced
+    ENABLE_PHASE1_CONSOLIDATION: 'true'
+    CORE_ORCHESTRATOR_MODE: 'unified'
+    ENABLE_O3_ENHANCEMENTS: 'true'
+    ENABLE_SQLITE_INTEGRATION: 'true'
+    ENABLE_REDIS_CACHE: 'true'
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 2048
+    max_threads: 8
+  volumes:
+  - source: ./logs
+    target: /app/logs
+  - source: ./models
+    target: /app/models
+  - source: ./data
+    target: /app/data
+  - source: ./config
+    target: /app/config
+  - source: ./phase1_implementation/data
+    target: /app/phase1_data
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+  network:
+    name: ai_system_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/16
+
+agent_groups:
+  # ===================================================================
+  # PHASE 1 CONSOLIDATED SERVICES - IMPLEMENTED ✅
+  # ===================================================================
+  phase1_consolidated_services:
+    CoreOrchestrator:
+      script_path: phase1_implementation/consolidated_agents/core_orchestrator/core_orchestrator.py
+      port: 7000
+      health_check_port: 8000
+      required: true
+      dependencies: []
+      config:
+        enable_unified_registry: true
+        enable_unified_twin: true
+        enable_unified_coordinator: true
+        enable_unified_system: true
+        sqlite_db_path: "phase1_implementation/data/core_orchestrator.db"
+        redis_host: "localhost"
+        redis_port: 6379
+        redis_db: 1
+      startup:
+        order: 1
+        wait_for_dependencies: false
+
+    SecurityGateway:
+      script_path: phase1_implementation/consolidated_agents/security_gateway/security_gateway.py
+      port: 7005
+      health_check_port: 8005
+      required: true
+      dependencies: [CoreOrchestrator]
+      config:
+        enable_jwt_auth: true
+        enable_trust_scoring: true
+        jwt_secret_key: "phase1_security_key_change_in_production"
+        session_timeout_minutes: 60
+        trust_score_threshold: 0.7
+      startup:
+        order: 4
+        wait_for_dependencies: true
+
+  # ===================================================================
+  # UPDATED DEPENDENCIES FOR EXISTING AGENTS
+  # ===================================================================
+  # ===================================================================
+  # PHASE 1 EXTERNAL DEPENDENCIES (PC2)
+  # ===================================================================
+  external_dependencies:
+    MemoryHub:
+      # Consolidated memory service running on PC2
+      endpoint: "http://172.20.0.11:7010"  # PC2 IP
+      health_endpoint: "http://172.20.0.11:7110"
+      port: 7010
+      health_check_port: 7110
+      required: true
+      machine: "PC2"
+      config:
+        consolidates: [MemoryClient, SessionMemoryAgent, KnowledgeBase]
+        deprecation_notice: "Individual memory agents consolidated into MemoryHub on PC2"
+        phase1_integration: true
+
+  # ===================================================================
+  # LEGACY MEMORY SYSTEM (DEPRECATED - PHASE 1)
+  # ===================================================================
+  legacy_memory_system:
+    # These services are now consolidated into MemoryHub (PC2)
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 6713
+      required: false  # ❌ DEPRECATED: Consolidated into MemoryHub
+      enabled: false
+      dependencies: []
+      config:
+        deprecation_notice: "This service is consolidated into MemoryHub (PC2:7010)"
+        phase_out_date: "2025-02-01"
+        replacement: "MemoryHub"
+
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: false  # ❌ DEPRECATED: Consolidated into MemoryHub
+      enabled: false
+      dependencies: []
+      config:
+        deprecation_notice: "This service is consolidated into MemoryHub (PC2:7010)"
+        phase_out_date: "2025-02-01"
+        replacement: "MemoryHub"
+
+    KnowledgeBase:
+      script_path: main_pc_code/agents/knowledge_base.py
+      port: 5715
+      health_check_port: 6715
+      required: false  # ❌ DEPRECATED: Consolidated into MemoryHub
+      enabled: false
+      dependencies: []
+      config:
+        deprecation_notice: "This service is consolidated into MemoryHub (PC2:7010)"
+        phase_out_date: "2025-02-01"
+        replacement: "MemoryHub"
+
+  utility_services:
+    CodeGenerator:
+      script_path: main_pc_code/agents/code_generator.py
+      port: 5650
+      health_check_port: 6650
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - ModelManagerAgent
+      config:
+        enable_phase1_integration: true
+
+    SelfTrainingOrchestrator:
+      script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+      port: 5660
+      health_check_port: 6660
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - ModelManagerAgent
+
+    FixedStreamingTranslation:
+      script_path: main_pc_code/agents/fixed_streaming_translation.py
+      port: 5584
+      health_check_port: 6584
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    Executor:
+      script_path: main_pc_code/agents/executor.py
+      port: 5606
+      health_check_port: 6606
+      required: true
+      dependencies:
+      - CodeGenerator
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - SecurityGateway    # ✅ NEW: for security validation
+
+    TinyLlamaServiceEnhanced:
+      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+      port: 5615
+      health_check_port: 6615
+      required: false
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    LocalFineTunerAgent:
+      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+      port: 5642
+      health_check_port: 6642
+      required: true
+      dependencies:
+      - SelfTrainingOrchestrator
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    NLLBAdapter:
+      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+      port: 5581
+      health_check_port: 6581
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+  gpu_infrastructure:
+    GGUFModelManager:
+      script_path: main_pc_code/agents/gguf_model_manager.py
+      port: 5575
+      health_check_port: 6575
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    ModelManagerAgent:
+      script_path: main_pc_code/agents/model_manager_agent.py
+      port: 5570
+      health_check_port: 6570
+      required: true
+      dependencies:
+      - GGUFModelManager
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    # VRAMOptimizerAgent CONSOLIDATED into ResourceManagerSuite
+    # PredictiveLoader still needed until ModelManagerSuite is ready
+    PredictiveLoader:
+      script_path: main_pc_code/agents/predictive_loader.py
+      port: 5617
+      health_check_port: 6617
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+
+  reasoning_services:
+    ChainOfThoughtAgent:
+      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+      port: 5612
+      health_check_port: 6612
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    GoTToTAgent:
+      script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+      port: 5646
+      health_check_port: 6646
+      required: false
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - ChainOfThoughtAgent
+
+    CognitiveModelAgent:
+      script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
+      port: 5641
+      health_check_port: 6641
+      required: false
+      dependencies:
+      - ChainOfThoughtAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+  vision_processing:
+    FaceRecognitionAgent:
+      script_path: main_pc_code/agents/face_recognition_agent.py
+      port: 5610
+      health_check_port: 6610
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - ModelManagerAgent
+
+  learning_knowledge:
+    ModelEvaluationFramework:
+      script_path: main_pc_code/agents/model_evaluation_framework.py
+      port: 7220
+      health_check_port: 7221
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    LearningOrchestrationService:
+      script_path: main_pc_code/agents/learning_orchestration_service.py
+      port: 7210
+      health_check_port: 7211
+      required: true
+      dependencies:
+      - ModelEvaluationFramework
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    LearningOpportunityDetector:
+      script_path: main_pc_code/agents/learning_opportunity_detector.py
+      port: 7200
+      health_check_port: 7201
+      required: true
+      dependencies:
+      - LearningOrchestrationService
+      - MemoryHub  # ✅ UPDATED: was MemoryClient (now external on PC2)
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        memory_hub_endpoint: "http://172.20.0.11:7010"
+
+    LearningManager:
+      script_path: main_pc_code/agents/learning_manager.py
+      port: 5580
+      health_check_port: 6580
+      required: true
+      dependencies:
+      - MemoryHub  # ✅ UPDATED: was MemoryClient (now external on PC2)
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      config:
+        memory_hub_endpoint: "http://172.20.0.11:7010"
+
+    ActiveLearningMonitor:
+      script_path: main_pc_code/agents/active_learning_monitor.py
+      port: 5638
+      health_check_port: 6638
+      required: true
+      dependencies:
+      - LearningManager
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    LearningAdjusterAgent:
+      script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+      port: 5643
+      health_check_port: 6643
+      required: true
+      dependencies:
+      - SelfTrainingOrchestrator
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+  language_processing:
+    ModelOrchestrator:
+      script_path: main_pc_code/agents/model_orchestrator.py
+      port: 7010
+      health_check_port: 8010
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - ModelManagerAgent
+
+    GoalManager:
+      script_path: main_pc_code/agents/goal_manager.py
+      port: 7005
+      health_check_port: 8005
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - ModelOrchestrator
+      - MemoryClient
+
+    IntentionValidatorAgent:
+      script_path: main_pc_code/agents/IntentionValidatorAgent.py
+      port: 5701
+      health_check_port: 6701
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+
+    NLUAgent:
+      script_path: main_pc_code/agents/nlu_agent.py
+      port: 5709
+      health_check_port: 6709
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    AdvancedCommandHandler:
+      script_path: main_pc_code/agents/advanced_command_handler.py
+      port: 5710
+      health_check_port: 6710
+      required: true
+      dependencies:
+      - NLUAgent
+      - CodeGenerator
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    ChitchatAgent:
+      script_path: main_pc_code/agents/chitchat_agent.py
+      port: 5711
+      health_check_port: 6711
+      required: true
+      dependencies:
+      - NLUAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    FeedbackHandler:
+      script_path: main_pc_code/agents/feedback_handler.py
+      port: 5636
+      health_check_port: 6636
+      required: true
+      dependencies:
+      - NLUAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    Responder:
+      script_path: main_pc_code/agents/responder.py
+      port: 5637
+      health_check_port: 6637
+      required: true
+      dependencies:
+      - EmotionEngine
+      - FaceRecognitionAgent
+      - NLUAgent
+      - StreamingTTSAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - TTSService
+
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: 5595
+      health_check_port: 6595
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    DynamicIdentityAgent:
+      script_path: main_pc_code/agents/DynamicIdentityAgent.py
+      port: 5802
+      health_check_port: 6802
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+
+    EmotionSynthesisAgent:
+      script_path: main_pc_code/agents/emotion_synthesis_agent.py
+      port: 5706
+      health_check_port: 6706
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - ModelManagerAgent
+
+  speech_services:
+    STTService:
+      script_path: main_pc_code/services/stt_service.py
+      port: 5800
+      health_check_port: 6800
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    TTSService:
+      script_path: main_pc_code/services/tts_service.py
+      port: 5801
+      health_check_port: 6801
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - StreamingInterruptHandler
+
+  audio_interface:
+    AudioCapture:
+      script_path: main_pc_code/agents/streaming_audio_capture.py
+      port: 6550
+      health_check_port: 7550
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    FusedAudioPreprocessor:
+      script_path: main_pc_code/agents/fused_audio_preprocessor.py
+      port: 6551
+      health_check_port: 7551
+      required: true
+      dependencies:
+      - AudioCapture
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    StreamingInterruptHandler:
+      script_path: main_pc_code/agents/streaming_interrupt_handler.py
+      port: 5576
+      health_check_port: 6576
+      required: true
+      dependencies:
+      - StreamingSpeechRecognition
+      - StreamingTTSAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    StreamingSpeechRecognition:
+      script_path: main_pc_code/agents/streaming_speech_recognition.py
+      port: 6553
+      health_check_port: 7553
+      required: true
+      dependencies:
+      - FusedAudioPreprocessor
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - STTService
+
+    StreamingTTSAgent:
+      script_path: main_pc_code/agents/streaming_tts_agent.py
+      port: 5562
+      health_check_port: 6562
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin, UnifiedSystemAgent
+      - TTSService
+
+    WakeWordDetector:
+      script_path: main_pc_code/agents/wake_word_detector.py
+      port: 6552
+      health_check_port: 7552
+      required: true
+      dependencies:
+      - AudioCapture
+      - FusedAudioPreprocessor
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    StreamingLanguageAnalyzer:
+      script_path: main_pc_code/agents/streaming_language_analyzer.py
+      port: 5579
+      health_check_port: 5597
+      required: true
+      dependencies:
+      - StreamingSpeechRecognition
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      - TranslationService
+
+    ProactiveAgent:
+      script_path: main_pc_code/agents/ProactiveAgent.py
+      port: 5624
+      health_check_port: 6624
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+
+  emotion_system:
+    EmotionEngine:
+      script_path: main_pc_code/agents/emotion_engine.py
+      port: 5590
+      health_check_port: 6590
+      required: true
+      dependencies:
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    MoodTrackerAgent:
+      script_path: main_pc_code/agents/mood_tracker_agent.py
+      port: 5704
+      health_check_port: 6704
+      required: true
+      dependencies:
+      - EmotionEngine
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    HumanAwarenessAgent:
+      script_path: main_pc_code/agents/human_awareness_agent.py
+      port: 5705
+      health_check_port: 6705
+      required: true
+      dependencies:
+      - EmotionEngine
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    ToneDetector:
+      script_path: main_pc_code/agents/tone_detector.py
+      port: 5625
+      health_check_port: 6625
+      required: true
+      dependencies:
+      - EmotionEngine
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    VoiceProfilingAgent:
+      script_path: main_pc_code/agents/voice_profiling_agent.py
+      port: 5708
+      health_check_port: 6708
+      required: true
+      dependencies:
+      - EmotionEngine
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    EmpathyAgent:
+      script_path: main_pc_code/agents/EmpathyAgent.py
+      port: 5703
+      health_check_port: 6703
+      required: true
+      dependencies:
+      - EmotionEngine
+      - StreamingTTSAgent
+      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+# ===================================================================
+# PHASE 1 CONFIGURATION
+# ===================================================================
+phase1_config:
+  deployment_mode: "production"
+  consolidation_level: "complete"
+  
+  database_config:
+    sqlite_base_path: "phase1_implementation/data"
+    backup_interval_hours: 6
+    
+  redis_config:
+    host: "localhost"
+    port: 6379
+    database_assignments:
+      core_orchestrator: 1
+      security_gateway: 4
+
+startup_sequence:
+    # External dependencies check (PC2 services)
+  external_dependencies_check:
+    - MemoryHub               # PC2:7010 - Memory consolidation service
+    
+  phase1_services_startup:
+    - CoreOrchestrator          # Order 1 - Foundation service
+    - SecurityGateway           # Order 4 - Security layer
+    
+  essential_services_startup:
+    # Memory services now external (PC2)
+    - ModelManagerAgent        # Model services
+    - GGUFModelManager
+    - TranslationService       # Core services
+    - NLUAgent
+    - EmotionEngine
