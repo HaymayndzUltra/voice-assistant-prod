@@ -67,6 +67,7 @@ from .routers import experience_tracker_router
 from .routers import cache_manager_router
 from .routers import proactive_context_monitor_router
 from .routers import unified_utils_router
+from .routers import authentication_router
 
 app.include_router(memory_client_router.router)
 app.include_router(session_memory_router.router)
@@ -78,6 +79,7 @@ app.include_router(experience_tracker_router.router)
 app.include_router(cache_manager_router.router)
 app.include_router(proactive_context_monitor_router.router)
 app.include_router(unified_utils_router.router)
+app.include_router(authentication_router.router)
 
 
 # ---------------------------------------------------------------------------
