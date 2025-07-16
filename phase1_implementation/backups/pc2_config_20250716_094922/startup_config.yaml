@@ -1,0 +1,293 @@
+# Canonical Startup Configuration for PC2 Sub-System
+# Forged by CASCADE - Single Source of Truth
+
+# PC2 Services (Agents)
+pc2_services:
+  # Phase 1 - Integration Layer Agents
+  - {
+      name: MemoryOrchestratorService,
+      script_path: pc2_code/agents/memory_orchestrator_service.py,
+      host: 0.0.0.0,
+      port: 7140,
+      health_check_port: 8140,
+      required: true,
+      dependencies: [],
+    }
+  - {
+      name: TieredResponder,
+      script_path: pc2_code/agents/tiered_responder.py,
+      host: 0.0.0.0,
+      port: 7100,
+      health_check_port: 8100,
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: AsyncProcessor,
+      script_path: pc2_code/agents/async_processor.py,
+      host: 0.0.0.0,
+      port: 7101,
+      health_check_port: 8101,
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: CacheManager,
+      script_path: pc2_code/agents/cache_manager.py,
+      host: 0.0.0.0,
+      port: 7102,
+      health_check_port: 8102,
+      required: true,
+      dependencies: [MemoryOrchestratorService],
+    }
+  - {
+      name: PerformanceMonitor,
+      script_path: pc2_code/agents/performance_monitor.py,
+      host: 0.0.0.0,
+      port: 7103,
+      health_check_port: 8103,
+      required: true,
+      dependencies: [PerformanceLoggerAgent],
+    }
+  - {
+      name: VisionProcessingAgent,
+      script_path: pc2_code/agents/VisionProcessingAgent.py,
+      host: 0.0.0.0,
+      port: 7150,
+      health_check_port: 8150,
+      required: true,
+      dependencies: [CacheManager],
+    }
+
+  # Phase 2 - PC2-Specific Core Agents
+  - {
+      name: DreamWorldAgent,
+      script_path: pc2_code/agents/DreamWorldAgent.py,
+      host: 0.0.0.0,
+      port: 7104,
+      health_check_port: 8104,
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: UnifiedMemoryReasoningAgent,
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
+      host: 0.0.0.0,
+      port: 7105,
+      health_check_port: 8105,
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: TutorAgent,
+      script_path: pc2_code/agents/tutor_agent.py,
+      host: 0.0.0.0,
+      port: 7108,
+      health_check_port: 8108,
+      required: true,
+      dependencies: [MemoryOrchestratorService],
+    }
+  - {
+      name: TutoringAgent,
+      script_path: pc2_code/agents/tutoring_agent.py,
+      host: 0.0.0.0,
+      port: 7131,
+      health_check_port: 8131,
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+
+
+  - {
+      name: ContextManager,
+      script_path: pc2_code/agents/context_manager.py,
+      host: 0.0.0.0,
+      port: 7111,
+      health_check_port: 8111,
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: ExperienceTracker,
+      script_path: pc2_code/agents/experience_tracker.py,
+      host: 0.0.0.0,
+      port: 7112,
+      health_check_port: 8112,
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: ResourceManager,
+      script_path: pc2_code/agents/resource_manager.py,
+      host: 0.0.0.0,
+      port: 7113,
+      health_check_port: 8113,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+  - {
+      name: HealthMonitor,
+      script_path: pc2_code/agents/health_monitor.py,
+      host: 0.0.0.0,
+      port: 7114,
+      health_check_port: 8114,
+      required: true,
+      dependencies: [PerformanceMonitor],
+    }
+  - {
+      name: TaskScheduler,
+      script_path: pc2_code/agents/task_scheduler.py,
+      host: 0.0.0.0,
+      port: 7115,
+      health_check_port: 8115,
+      dependencies: [AsyncProcessor],
+      required: true,
+    }
+
+  # ForPC2 Agents (PC2-Specific Services)
+  - {
+      name: AuthenticationAgent,
+      script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py,
+      host: 0.0.0.0,
+      port: 7116,
+      health_check_port: 8116,
+      required: true,
+      dependencies: [UnifiedUtilsAgent],
+    }
+  - {
+      name: SystemHealthManager,
+      script_path: pc2_code/agents/ForPC2/system_health_manager.py,
+      host: 0.0.0.0,
+      port: 7117,
+      health_check_port: 8117,
+      required: true,
+      dependencies: [], # Removed HealthMonitor dependency to break circular reference
+    }
+  - {
+      name: UnifiedUtilsAgent,
+      script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
+      host: 0.0.0.0,
+      port: 7118,
+      health_check_port: 8118,
+      required: true,
+      dependencies: [SystemHealthManager],
+    }
+  - {
+      name: ProactiveContextMonitor,
+      script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py,
+      host: 0.0.0.0,
+      port: 7119,
+      health_check_port: 8119,
+      dependencies: [ContextManager],
+      required: true,
+    }
+
+  # Additional PC2 Core Agents
+  - {
+      name: AgentTrustScorer,
+      script_path: pc2_code/agents/AgentTrustScorer.py,
+      host: 0.0.0.0,
+      port: 7122,
+      health_check_port: 8122,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+  - {
+      name: FileSystemAssistantAgent,
+      script_path: pc2_code/agents/filesystem_assistant_agent.py,
+      host: 0.0.0.0,
+      port: 7123,
+      health_check_port: 8123,
+      required: true,
+      dependencies: [UnifiedUtilsAgent],
+    }
+  - {
+      name: RemoteConnectorAgent,
+      script_path: pc2_code/agents/remote_connector_agent.py,
+      host: 0.0.0.0,
+      port: 7124,
+      health_check_port: 8124,
+      required: true,
+      dependencies: [AdvancedRouter],
+    }
+  - {
+      name: UnifiedWebAgent,
+      script_path: pc2_code/agents/unified_web_agent.py,
+      host: 0.0.0.0,
+      port: 7126,
+      health_check_port: 8126,
+      required: true,
+      dependencies: [FileSystemAssistantAgent, MemoryOrchestratorService],
+    }
+  - {
+      name: DreamingModeAgent,
+      script_path: pc2_code/agents/DreamingModeAgent.py,
+      host: 0.0.0.0,
+      port: 7127,
+      health_check_port: 8127,
+      dependencies: [DreamWorldAgent],
+      required: true,
+    }
+  - {
+      name: PerformanceLoggerAgent,
+      script_path: pc2_code/agents/PerformanceLoggerAgent.py,
+      host: 0.0.0.0,
+      port: 7128,
+      health_check_port: 8128,
+      required: true,
+      dependencies: [], # Removed SystemHealthManager dependency to break circular reference
+    }
+  - {
+      name: AdvancedRouter,
+      script_path: pc2_code/agents/advanced_router.py,
+      host: 0.0.0.0,
+      port: 7129,
+      health_check_port: 8129,
+      required: true,
+      dependencies: [TaskScheduler],
+    }
+
+
+
+# Environment variables for all agents
+environment:
+  PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
+  LOG_LEVEL: 'INFO'
+  DEBUG_MODE: 'false'
+
+# Resource limits for all agents
+resource_limits:
+  cpu_percent: 80
+  memory_mb: 4096
+  max_threads: 8
+
+# Health check configuration
+health_checks:
+  interval_seconds: 30
+  timeout_seconds: 10
+  retries: 3
+  start_period_seconds: 300
+
+# PC2 Network Configuration
+pc2_network:
+  host: '0.0.0.0'
+  agent_ports:
+    start: 7100
+    end: 7199
+  health_check_ports:
+    start: 8100
+    end: 8199
+
+# Central Memory Orchestrator Service (PC2 Primary Persistence)
+core_services:
+  - name: MemoryOrchestratorService
+    script_path: pc2_code/agents/memory_orchestrator_service.py
+    module: agents.memory_orchestrator_service
+    class: MemoryOrchestratorService
+    port: 7140
+    health_check_port: 7141
+    required: true
+    startup_priority: 1
+    description: "Central memory service with direct Redis integration for caching and SQLite for persistence."
+
+error_bus_port: 7150

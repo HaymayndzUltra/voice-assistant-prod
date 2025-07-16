@@ -1,0 +1,632 @@
+#!/usr/bin/env python3
+"""
+FileSystem Assistant Agent
+--------------------------
+This agent provides a ZMQ service for file system operations, allowing other agents
+to perform controlled file operations across the distributed system.
+
+The agent runs with a REP socket pattern to handle requests and provide responses.
+"""
+
+import zmq
+import json
+import os
+import sys
+import threading
+import logging
+import shutil
+import yaml
+from pathlib import Path
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional
+import time
+
+
+# Import path manager for containerization-friendly paths
+import sys
+import os
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+from common.utils.path_env import get_path, join_path, get_file_path
+# Add project root to Python path
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+# Import base agent and config loaders
+from common.core.base_agent import BaseAgent
+from pc2_code.agents.utils.config_loader import Config
+
+# Standard imports for PC2 agents
+from pc2_code.utils.config_loader import load_config, parse_agent_args
+
+# Import common utilities if available
+try:
+    # Assuming this module exists and provides `create_socket`
+    from common_utils.zmq_helper import create_socket
+    USE_COMMON_UTILS = True
+except ImportError as e:
+    print(f"Import error: {e}. Some common utilities might not be available.")
+    USE_COMMON_UTILS = False
+
+# Load network configuration
+def load_network_config():
+    """Load the network configuration from the central YAML file."""
+    config_path = join_path("config", "network_config.yaml")
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Error loading network config: {e}")
+        # Default fallback values
+        return {
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
+            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
+            "secure_zmq": False,
+            "ports": {
+                "filesystem_agent": int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)),
+                "filesystem_health": int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)),
+                "error_bus": int(os.environ.get("ERROR_BUS_PORT", 7150))
+            }
+        }
+
+# Setup logging before any other imports that might use logging
+LOG_DIR = project_root / "logs" # Use project_root for consistency
+LOG_DIR.mkdir(exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("FilesystemAssistant")
+
+# Load network configuration
+network_config = load_network_config()
+
+# Get machine IPs from network config
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
+
+# Get port configuration from network config
+ZMQ_FILESYSTEM_AGENT_PORT = network_config.get("ports", {}).get("filesystem_agent", int(os.environ.get("FILESYSTEM_AGENT_PORT", 5606)))
+ZMQ_FILESYSTEM_HEALTH_PORT = network_config.get("ports", {}).get("filesystem_health", int(os.environ.get("FILESYSTEM_HEALTH_PORT", 5607)))
+ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
+
+
+class FileSystemAssistantAgent(BaseAgent):
+    """Filesystem Assistant Agent that provides file operations via ZMQ
+    
+    This agent allows other components in the system to interact with the filesystem
+    in a controlled and secure manner. It provides operations such as listing directories,
+    reading files, writing files, checking file existence, and more.
+    
+    The agent uses a ZMQ REP socket to receive requests and send responses.
+    """
+    
+    # Parse agent arguments
+    _agent_args = parse_agent_args()
+    
+    def __init__(self, zmq_port=None):
+        # Initialize state before BaseAgent
+        self.running = True
+        self.request_count = 0
+        self.error_count = 0
+        self.last_request_time = None
+        self.start_time = time.time()
+        self.main_pc_connections = {}
+        
+        # Call BaseAgent's constructor with proper parameters
+        super().__init__(
+            name="FileSystemAssistantAgent", 
+            port=zmq_port if zmq_port is not None else ZMQ_FILESYSTEM_AGENT_PORT,
+            health_check_port=ZMQ_FILESYSTEM_HEALTH_PORT
+        )
+        
+        logger.info("=" * 80)
+        logger.info(f"Initializing {self.name} on port {self.port}")
+        logger.info("=" * 80)
+        
+        # Set up thread lock for synchronization
+        self.lock = threading.Lock()
+        
+        # Setup error reporting
+        self.setup_error_reporting()
+        
+        # Start health check thread
+        self._start_health_check_thread()
+        
+        logger.info(f"{self.name} initialized successfully.")
+        logger.info(f"Working directory: {os.getcwd()}")
+
+    def setup_error_reporting(self):
+        """Set up error reporting to the central Error Bus."""
+        try:
+            self.error_bus_host = PC2_IP
+            self.error_bus_port = ERROR_BUS_PORT
+            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+            self.error_bus_pub = self.context.socket(zmq.PUB)
+            self.error_bus_pub.connect(self.error_bus_endpoint)
+            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
+        except Exception as e:
+            logger.error(f"Failed to set up error reporting: {e}")
+    
+    def report_error(self, error_type, message, severity="ERROR"):
+        """Report an error to the central Error Bus."""
+        try:
+            if hasattr(self, 'error_bus_pub'):
+                error_report = {
+                    "timestamp": datetime.now().isoformat(),
+                    "agent": self.name,
+                    "type": error_type,
+                    "message": message,
+                    "severity": severity
+                }
+                self.error_bus_pub.send_multipart([
+                    b"ERROR",
+                    json.dumps(error_report).encode('utf-8')
+                ])
+                logger.info(f"Reported error: {error_type} - {message}")
+        except Exception as e:
+            logger.error(f"Failed to report error: {e}")
+
+    def _start_health_check_thread(self):
+        """Start health check thread."""
+        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+        self.health_thread.start()
+        logger.info("Health check thread started")
+    
+    def _health_check_loop(self):
+        """Background loop to handle health check requests."""
+        logger.info("Health check loop started")
+        
+        while self.running:
+            try:
+                # Check for health check requests with timeout
+                if self.health_socket.poll(100) == 0: # 100ms timeout, zmq.POLLIN is default for poll()
+                    continue
+                
+                # Receive request (content is usually not important for health checks)
+                _ = self.health_socket.recv()
+                
+                # Get health data (calls the overridden _get_health_status)
+                health_data = self._get_health_status()
+                
+                # Send response
+                self.health_socket.send_json(health_data)
+                
+            except zmq.error.Again: # Timeout, no request received
+                pass
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}", exc_info=True)
+                self.report_error("HEALTH_CHECK_ERROR", str(e))
+                time.sleep(1) # Sleep longer on error
+
+    def _get_health_status(self) -> Dict[str, Any]:
+        """Get the current health status of the agent. Overrides BaseAgent's method."""
+        base_status = super()._get_health_status() # Get base status from BaseAgent
+        
+        # Add FileSystemAssistantAgent specific health info
+        uptime_seconds = time.time() - self.start_time
+        
+        base_status.update({
+            "agent": self.name,
+            "status": "ok", # Overall status, refine if specific checks fail
+            "timestamp": datetime.now().isoformat(), # For human-readable timestamp
+            "uptime_seconds": uptime_seconds,
+            "uptime_human": str(timedelta(seconds=int(uptime_seconds))), # Convert to human-readable
+            "metrics": {
+                "request_count": self.request_count,
+                "error_count": self.error_count,
+                "last_request_time": self.last_request_time.isoformat() if self.last_request_time else None,
+                "health_thread_alive": self.health_thread.is_alive() if hasattr(self, 'health_thread') else False,
+            }
+        })
+        return base_status
+
+    def handle_query(self, query: Dict[str, Any]) -> Dict[str, Any]:
+        """Process incoming file operation requests"""
+        try:
+            self.request_count += 1
+            self.last_request_time = datetime.now()
+            
+            # Extract action and path from query
+            action = query.get("action")
+            path = query.get("path")
+            
+            logger.info(f"Received request: {action} on {path}")
+            
+            # Directory listing operation
+            if action == "list_dir":
+                if not path:
+                    return {"status": "error", "reason": "Missing directory path"}
+                # Ensure path is within a permitted root if security is paramount
+                if not os.path.isdir(path):
+                    return {"status": "error", "reason": "Path is not a valid directory or does not exist"}
+                try:
+                    with self.lock:
+                        entries = []
+                        for item in os.listdir(path):
+                            item_path = os.path.join(path, item)
+                            entry = {
+                                "name": item,
+                                "is_dir": os.path.isdir(item_path),
+                                "size": os.path.getsize(item_path) if os.path.isfile(item_path) else None,
+                                "modified_timestamp": os.path.getmtime(item_path),
+                                "modified_human": datetime.fromtimestamp(os.path.getmtime(item_path)).isoformat()
+                            }
+                            entries.append(entry)
+                    return {"status": "ok", "entries": entries}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error listing directory '{path}': {e}", exc_info=True)
+                    self.report_error("LIST_DIR_ERROR", f"Error listing directory '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+            
+            # File reading operation
+            elif action == "read_file":
+                if not path:
+                    return {"status": "error", "reason": "Missing file path"}
+                if not os.path.isfile(path):
+                    return {"status": "error", "reason": "Path is not a valid file or does not exist"}
+                try:
+                    with self.lock:
+                        with open(path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                    return {"status": "ok", "content": content, "size": os.path.getsize(path)}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error reading file '{path}': {e}", exc_info=True)
+                    self.report_error("READ_FILE_ERROR", f"Error reading file '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+            
+            # Write file operation
+            elif action == "write_file":
+                content = query.get("content")
+                mode = query.get("mode", "w")  # Default to write mode, but allow append with "a"
+                if not path or content is None: # content can be empty string, check for None
+                    return {"status": "error", "reason": "Missing path or content"}
+                if mode not in ["w", "a", "wb", "ab"]: # Basic validation for mode
+                    return {"status": "error", "reason": f"Invalid write mode: {mode}"}
+                
+                try:
+                    # Make sure directory exists
+                    directory = os.path.dirname(path)
+                    if directory and not os.path.exists(directory):
+                        os.makedirs(directory, exist_ok=True)
+                        
+                    with self.lock:
+                        if 'b' in mode: # If binary mode, content should be bytes
+                            if not isinstance(content, bytes):
+                                # If content is string, attempt to encode (default to utf-8)
+                                try:
+                                    content_bytes = content.encode(query.get("encoding", "utf-8"))
+                                except Exception:
+                                    return {"status": "error", "reason": "Content must be bytes for binary write, or a string with valid encoding."}
+                            else:
+                                content_bytes = content
+                            with open(path, mode) as f:
+                                f.write(content_bytes)
+                        else: # Text mode
+                            if not isinstance(content, str):
+                                return {"status": "error", "reason": "Content must be string for text write."}
+                            with open(path, mode, encoding="utf-8") as f: # Default to utf-8
+                                f.write(content)
+                    
+                    return {"status": "ok", "path": path, "size": os.path.getsize(path)}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error writing file '{path}' in mode '{mode}': {e}", exc_info=True)
+                    self.report_error("WRITE_FILE_ERROR", f"Error writing file '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+            
+            # File existence check
+            elif action == "check_exists":
+                if not path:
+                    return {"status": "error", "reason": "Missing path"}
+                exists = os.path.exists(path)
+                is_file = os.path.isfile(path) if exists else False
+                is_dir = os.path.isdir(path) if exists else False
+                return {
+                    "status": "ok", 
+                    "exists": exists,
+                    "is_file": is_file,
+                    "is_dir": is_dir
+                }
+                
+            # File deletion
+            elif action == "delete":
+                if not path:
+                    return {"status": "error", "reason": "Missing path"}
+                if not os.path.exists(path):
+                    return {"status": "ok", "message": f"Path {path} does not exist, nothing to delete"} # Already gone
+                
+                recursive = query.get("recursive", False) # Allow recursive directory delete
+                
+                try:
+                    with self.lock:
+                        if os.path.isfile(path):
+                            os.remove(path)
+                            return {"status": "ok", "message": f"File {path} deleted successfully"}
+                        elif os.path.isdir(path):
+                            if not os.listdir(path): # Directory is empty
+                                os.rmdir(path)
+                                return {"status": "ok", "message": f"Empty directory {path} deleted successfully"}
+                            elif recursive:
+                                shutil.rmtree(path)
+                                return {"status": "ok", "message": f"Directory {path} and its contents deleted successfully (recursive)"}
+                            else:
+                                return {"status": "error", "reason": "Directory is not empty, use recursive=True to delete contents"}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error deleting path '{path}': {e}", exc_info=True)
+                    self.report_error("DELETE_ERROR", f"Error deleting path '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+                
+            # Get file info
+            elif action == "get_info":
+                if not path:
+                    return {"status": "error", "reason": "Missing path"}
+                if not os.path.exists(path):
+                    return {"status": "error", "reason": "Path does not exist"}
+                try:
+                    is_file = os.path.isfile(path)
+                    is_dir = os.path.isdir(path)
+                    stat = os.stat(path)
+                    info = {
+                        "status": "ok",
+                        "path": path,
+                        "is_file": is_file,
+                        "is_dir": is_dir,
+                        "size": stat.st_size,
+                        "created_timestamp": stat.st_ctime, # Creation time (platform dependent)
+                        "modified_timestamp": stat.st_mtime, # Last modification time
+                        "accessed_timestamp": stat.st_atime, # Last access time
+                        "created_human": datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                        "modified_human": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        "accessed_human": datetime.fromtimestamp(stat.st_atime).isoformat()
+                    }
+                    return info
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error getting file info for '{path}': {e}", exc_info=True)
+                    self.report_error("FILE_INFO_ERROR", f"Error getting file info for '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+            
+            # Copy file operation
+            elif action == "copy":
+                source = path
+                destination = query.get("destination")
+                if not source or not destination:
+                    return {"status": "error", "reason": "Missing source or destination path"}
+                if not os.path.exists(source):
+                    return {"status": "error", "reason": "Source path does not exist"}
+                
+                try:
+                    with self.lock:
+                        if os.path.isfile(source):
+                            # Create destination directory if needed
+                            dest_dir = os.path.dirname(destination)
+                            if dest_dir and not os.path.exists(dest_dir):
+                                os.makedirs(dest_dir, exist_ok=True)
+                            
+                            shutil.copy2(source, destination) # copy2 preserves metadata
+                            return {"status": "ok", "message": f"File copied from {source} to {destination}"}
+                        elif os.path.isdir(source):
+                            # Copy directory, destination must not exist for copytree
+                            if not os.path.exists(destination):
+                                shutil.copytree(source, destination)
+                                return {"status": "ok", "message": f"Directory copied from {source} to {destination}"}
+                            else:
+                                return {"status": "error", "reason": "Destination directory already exists for directory copy"}
+                        else:
+                            return {"status": "error", "reason": "Source is not a file or directory"}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error copying from '{source}' to '{destination}': {e}", exc_info=True)
+                    self.report_error("COPY_ERROR", f"Error copying from '{source}' to '{destination}': {e}")
+                    return {"status": "error", "reason": str(e)}
+
+            # Move/Rename file or directory
+            elif action == "move":
+                source = path
+                destination = query.get("destination")
+                if not source or not destination:
+                    return {"status": "error", "reason": "Missing source or destination path"}
+                if not os.path.exists(source):
+                    return {"status": "error", "reason": "Source path does not exist"}
+                
+                try:
+                    with self.lock:
+                        shutil.move(source, destination) # Handles both files and directories, rename too
+                        return {"status": "ok", "message": f"Moved/Renamed '{source}' to '{destination}'"}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error moving '{source}' to '{destination}': {e}", exc_info=True)
+                    self.report_error("MOVE_ERROR", f"Error moving '{source}' to '{destination}': {e}")
+                    return {"status": "error", "reason": str(e)}
+
+            # Create directory
+            elif action == "create_dir":
+                if not path:
+                    return {"status": "error", "reason": "Missing directory path"}
+                try:
+                    with self.lock:
+                        os.makedirs(path, exist_ok=True) # Creates intermediate directories if needed
+                        return {"status": "ok", "message": f"Directory '{path}' created (or already exists)"}
+                except Exception as e:
+                    self.error_count += 1
+                    logger.error(f"Error creating directory '{path}': {e}", exc_info=True)
+                    self.report_error("CREATE_DIR_ERROR", f"Error creating directory '{path}': {e}")
+                    return {"status": "error", "reason": str(e)}
+            
+            # Health check
+            elif action == "health_check":
+                return self._get_health_status()
+            
+            # Unknown action
+            else:
+                return {"status": "error", "reason": f"Unknown action: {action}"}
+                
+        except Exception as e:
+            self.error_count += 1
+            logger.error(f"Unexpected error in handle_query: {e}", exc_info=True)
+            self.report_error("QUERY_ERROR", f"Unexpected error in handle_query: {e}")
+            return {"status": "error", "reason": f"Server error: {str(e)}"}
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get current agent status (mainly for debug)"""
+        return self._get_health_status()
+
+    def run(self):
+        """Main execution loop for the agent."""
+        logger.info(f"Starting {self.name} main loop")
+        
+        while self.running:
+            try:
+                # Wait for a request with timeout
+                if self.socket.poll(timeout=1000) != 0:  # 1 second timeout
+                    # Receive and parse request
+                    message = self.socket.recv_json()
+                    
+                    # Process request
+                    response = self.handle_query(message)
+                    
+                    # Send response
+                    self.socket.send_json(response)
+                
+            except zmq.error.ZMQError as e:
+                logger.error(f"ZMQ error in main loop: {e}")
+                self.report_error("ZMQ_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'reason': f'ZMQ communication error: {str(e)}'
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
+                
+            except Exception as e:
+                logger.error(f"Unexpected error in main loop: {e}", exc_info=True)
+                self.report_error("RUNTIME_ERROR", str(e))
+                try:
+                    self.socket.send_json({
+                        'status': 'error',
+                        'reason': f'Internal server error: {str(e)}'
+                    })
+                except:
+                    pass
+                time.sleep(1)  # Avoid tight loop on error
+                
+        logger.info(f"{self.name} main loop ended")
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"Cleaning up {self.name} resources")
+        self.running = False
+        
+        # Close main socket
+        if hasattr(self, 'socket'):
+            try:
+                self.socket.close()
+                logger.info("Closed main socket")
+            except Exception as e:
+                logger.error(f"Error closing main socket: {e}")
+        
+        # Close health socket
+        if hasattr(self, 'health_socket'):
+            try:
+                self.health_socket.close()
+                logger.info("Closed health socket")
+            except Exception as e:
+                logger.error(f"Error closing health socket: {e}")
+        
+        # Close error bus socket
+        if hasattr(self, 'error_bus_pub'):
+            try:
+                self.error_bus_pub.close()
+                logger.info("Closed error bus socket")
+            except Exception as e:
+                logger.error(f"Error closing error bus socket: {e}")
+        
+        # Close any connections to other services
+        for service_name, socket in getattr(self, 'main_pc_connections', {}).items():
+            try:
+                socket.close()
+                logger.info(f"Closed connection to {service_name}")
+            except Exception as e:
+                logger.error(f"Error closing connection to {service_name}: {e}")
+        
+        # Join threads
+        if hasattr(self, 'health_thread') and self.health_thread.is_alive():
+            try:
+                # Don't join daemon thread, it will terminate when process exits
+                logger.info("Health thread will terminate with process")
+            except Exception as e:
+                logger.error(f"Error with health thread cleanup: {e}")
+        
+        # Call parent cleanup
+        try:
+            super().cleanup()
+            logger.info("Called parent cleanup")
+        except Exception as e:
+            logger.error(f"Error in parent cleanup: {e}")
+        
+        logger.info(f"{self.name} cleanup complete")
+
+    def stop(self):
+        """Stop the agent gracefully."""
+        logger.info(f"Stopping {self.name}")
+        self.running = False
+        # Cleanup is handled in the finally block of main
+
+    def connect_to_main_pc_service(self, service_name: str) -> Optional[zmq.Socket]:
+        """Connect to a service on the main PC."""
+        try:
+            # Get service details from config
+            service_ports = network_config.get('ports', {})
+            if service_name not in service_ports:
+                logger.error(f"Service '{service_name}' not found in network configuration")
+                return None
+            
+            # Create socket
+            socket = self.context.socket(zmq.REQ)
+            
+            # Connect to service
+            port = service_ports[service_name]
+            socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
+            logger.info(f"Connected to {service_name} at {MAIN_PC_IP}:{port}")
+            
+            # Store socket
+            if not hasattr(self, 'main_pc_connections'):
+                self.main_pc_connections = {}
+            self.main_pc_connections[service_name] = socket
+            
+            return socket
+        except Exception as e:
+            logger.error(f"Error connecting to service '{service_name}': {e}")
+            self.report_error("CONNECTION_ERROR", f"Failed to connect to {service_name}: {e}")
+            return None
+
+
+if __name__ == "__main__":
+    # Standardized main execution block for PC2 agents
+    agent = None
+    try:
+        agent = FileSystemAssistantAgent()
+        agent.run()
+    except KeyboardInterrupt:
+        print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name} on PC2...")
+            agent.cleanup()

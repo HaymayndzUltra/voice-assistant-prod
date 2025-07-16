@@ -1,0 +1,232 @@
+from main_pc_code.src.core.base_agent import BaseAgent
+import zmq
+import json
+import logging
+from main_pc_code.agents.error_publisher import ErrorPublisher
+import time
+import threading
+from datetime import datetime
+from typing import Dict, Any, List
+import psutil
+from datetime import datetime
+
+# Configure logging
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = get_main_pc_code()
+if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('unified_system.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+class UnifiedSystemAgent(BaseAgent):
+    def __init__(self, port: int = None, **kwargs):
+        super().__init__(port=port, name="Unifiedsystemagent")
+        """Initialize the Unified System Agent."""
+        self.context = zmq.Context()
+        
+        # REP socket for handling requests
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+        self.socket.bind("tcp://*:5568")
+        
+        # Define all known agents and their ports
+        self.agents = {
+            # Core Agents
+            'AutonomousWebAssistant': 5630,
+            'EpisodicMemoryAgent': 5631,
+            'ModelOrchestrator': 5632,
+            'PerformanceLoggerAgent': 5633,
+            'RequestCoordinator': 5634,
+            'EmpathyAgent': 5635,
+            
+            # Advanced Agents
+            'DreamingModeAgent': 5640,
+            'CognitiveModelAgent': 5641,
+            'DreamWorldAgent': 5642,
+            'GoalManager': 5643,
+            'DynamicIdentityAgent': 5644
+        }
+        
+        # Agent status tracking
+        self.agent_status = {}
+        for agent in self.agents:
+            self.agent_status[agent] = {
+                'status': 'unknown',
+                'last_seen': None,
+                'port': self.agents[agent]
+            }
+        
+        # Start health check thread
+        self.health_check_thread = threading.Thread(target=self._health_check_loop)
+        self.health_check_thread.daemon = True
+        self.health_check_thread.start()
+        if not hasattr(self, "_background_threads"):
+            self._background_threads = []
+        self._background_threads.append(self.health_check_thread)
+        # Initialise error publisher
+        self.error_publisher = ErrorPublisher(self.name)
+        
+        logger.info("Unified System Agent initialized")
+    
+    def _check_agent_health(self, agent: str, port: int) -> bool:
+        """Check if an agent is healthy by sending a ping request."""
+        try:
+            socket = self.context.socket(zmq.REQ)
+            socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+            socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
+            socket.connect(f"tcp://localhost:{port}")
+            
+            socket.send_json({'action': 'ping'})
+            response = socket.recv_json()
+            
+            socket.close()
+            return response.get('status') == 'success'
+            
+        except Exception as e:
+            logger.error(f"Error checking health of {agent}: {str(e)}")
+            self.error_publisher.publish_error(error_type="health_check", severity="medium", details=f"{agent}: {str(e)}")
+            return False
+    
+    def _health_check_loop(self):
+        """Continuously check the health of all agents."""
+        while True:
+            for agent, port in self.agents.items():
+                is_healthy = self._check_agent_health(agent, port)
+                
+                self.agent_status[agent]['status'] = 'active' if is_healthy else 'inactive'
+                self.agent_status[agent]['last_seen'] = datetime.now().isoformat() if is_healthy else None
+                
+                logger.info(f"Agent {agent} status: {self.agent_status[agent]['status']}")
+            
+            time.sleep(5)  # Check every 5 seconds
+    
+    def get_agent_status(self) -> Dict[str, Any]:
+        """Get the current status of all agents."""
+        return {
+            'status': 'success',
+            'agents': self.agent_status
+        }
+    
+    def get_agent_info(self, agent: str) -> Dict[str, Any]:
+        """Get detailed information about a specific agent."""
+        if agent not in self.agents:
+            return {
+                'status': 'error',
+                'message': f'Unknown agent: {agent}'
+            }
+        
+        return {
+            'status': 'success',
+            'agent': {
+                'name': agent,
+                'port': self.agents[agent],
+                'status': self.agent_status[agent]
+            }
+        }
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle incoming requests."""
+        action = request.get('action')
+        
+        if action == 'get_agent_status':
+            return self.get_agent_status()
+            
+        elif action == 'get_agent_info':
+            agent = request.get('agent')
+            return self.get_agent_info(agent)
+            
+        else:
+            return {
+                'status': 'error',
+                'message': f'Unknown action: {action}'
+            }
+    
+    def run(self):
+        """Run the agent's main loop."""
+        logger.info("Unified System Agent started")
+        
+        while True:
+            try:
+                # Receive request
+                request = self.socket.recv_json()
+                
+                # Handle request
+                response = self.handle_request(request)
+                
+                # Send response
+                self.socket.send_json(response)
+                
+            except Exception as e:
+                logger.error(f"Error in main loop: {str(e)}")
+                self.socket.send_json({
+                    'status': 'error',
+                    'message': str(e)
+                })
+    
+    def stop(self):
+        """Stop the agent and clean up resources."""
+        self.socket.close()
+        self.context.term()
+        
+        logger.info("Unified System Agent stopped")
+
+
+    def health_check(self):
+        '''
+        Performs a health check on the agent, returning a dictionary with its status.
+        '''
+        try:
+            # Basic health check logic
+            is_healthy = True # Assume healthy unless a check fails
+            
+            # TODO: Add agent-specific health checks here.
+            # For example, check if a required connection is alive.
+            # if not self.some_service_connection.is_alive():
+            #     is_healthy = False
+
+            status_report = {
+                "status": "healthy" if is_healthy else "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "timestamp": datetime.utcnow().isoformat(),
+                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
+                "system_metrics": {
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent
+                },
+                "agent_specific_metrics": {} # Placeholder for agent-specific data
+            }
+            return status_report
+        except Exception as e:
+            # It's crucial to catch exceptions to prevent the health check from crashing
+            return {
+                "status": "unhealthy",
+                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
+                "error": f"Health check failed with exception: {str(e)}"
+            }
+
+if __name__ == '__main__':
+    agent = UnifiedSystemAgent()
+    try:
+        agent.run()
+    except KeyboardInterrupt:
+        agent.stop() 
+    def _perform_initialization(self):
+        """Initialize agent components."""
+        try:
+            # Add your initialization code here
+            pass
+        except Exception as e:
+            logger.error(f"Initialization error: {e}")
+            raise

@@ -1,0 +1,28 @@
+# Model Configuration
+models:
+  default:
+    name: "gpt-3.5-turbo"
+    temperature: 0.7
+    max_tokens: 2000
+
+  memory:
+    name: "gpt-4"
+    temperature: 0.3
+    max_tokens: 4000
+
+  reasoning:
+    name: "gpt-4"
+    temperature: 0.5
+    max_tokens: 3000
+
+# Performance Thresholds
+thresholds:
+  response_time: 2000  # milliseconds
+  cpu_usage: 80  # percentage
+  memory_usage: 85  # percentage
+
+# Monitoring Settings
+monitoring:
+  update_interval: 1  # seconds
+  history_length: 100  # data points
+  alert_threshold: 90  # percentage 

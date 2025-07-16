@@ -1,8 +1,101 @@
 # Canonical Startup Configuration for PC2 Sub-System
 # Forged by CASCADE - Single Source of Truth
 
+# Environment variables for all agents
+environment:
+  PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
+  LOG_LEVEL: 'INFO'
+  DEBUG_MODE: 'false'
+  # Phase 1 Consolidation Flags
+  ENABLE_PHASE1_CONSOLIDATION: 'true'
+  OBSERVABILITY_HUB_MODE: 'unified'  # Options: unified, delegation, gradual
+
 # PC2 Services (Agents)
 pc2_services:
+  # ===================================================================
+  # PHASE 1 CONSOLIDATED SERVICES
+  # ===================================================================
+  - {
+      name: ObservabilityHub,
+      script_path: phase1_implementation/consolidated_agents/observability_hub/observability_hub.py,
+      host: 0.0.0.0,
+      port: 7002,
+      health_check_port: 8002,
+      required: true,
+      dependencies: [],
+      config: {
+        mode: unified,
+        metrics: {
+          collection_interval: 5,
+          retention_hours: 24,
+          gpu_monitoring: true,
+          anomaly_detection: true
+        },
+        health: {
+          check_interval: 10,
+          timeout: 5,
+          parallel_checks: true
+        },
+        alerting: {
+          cpu_threshold: 80,
+          memory_threshold: 85,
+          disk_threshold: 90,
+          response_time_threshold: 5000
+        },
+        feature_flags: {
+          ENABLE_UNIFIED_PERFORMANCE: true,
+          ENABLE_UNIFIED_HEALTH: true,
+          ENABLE_UNIFIED_LOGGER: true,
+          ENABLE_UNIFIED_SYSTEM_HEALTH: true
+        }
+      }
+    }
+
+  # ===================================================================
+  # ORIGINAL AGENTS (Phase 1 - Consolidated, keeping for reference/migration)
+  # NOTE: These are now handled by ObservabilityHub in unified mode
+  # ===================================================================
+  # DEPRECATED - Replaced by ObservabilityHub
+  # - {
+  #     name: PerformanceMonitor,
+  #     script_path: pc2_code/agents/performance_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: 7103,
+  #     health_check_port: 8103,
+  #     required: false,  # Now handled by ObservabilityHub
+  #     dependencies: [ObservabilityHub],
+  #   }
+  # - {
+  #     name: HealthMonitor,
+  #     script_path: pc2_code/agents/health_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: 7114,
+  #     health_check_port: 8114,
+  #     required: false,  # Now handled by ObservabilityHub
+  #     dependencies: [ObservabilityHub],
+  #   }
+  # - {
+  #     name: PerformanceLoggerAgent,
+  #     script_path: pc2_code/agents/PerformanceLoggerAgent.py,
+  #     host: 0.0.0.0,
+  #     port: 7128,
+  #     health_check_port: 8128,
+  #     required: false,  # Now handled by ObservabilityHub
+  #     dependencies: [ObservabilityHub],
+  #   }
+  # - {
+  #     name: SystemHealthManager,
+  #     script_path: pc2_code/agents/ForPC2/system_health_manager.py,
+  #     host: 0.0.0.0,
+  #     port: 7117,
+  #     health_check_port: 8117,
+  #     required: false,  # Now handled by ObservabilityHub
+  #     dependencies: [ObservabilityHub],
+  #   }
+
+  # ===================================================================
+  # REMAINING ORIGINAL SERVICES (Updated dependencies)
+  # ===================================================================
   # Phase 1 - Integration Layer Agents
   - {
       name: MemoryOrchestratorService,
@@ -39,15 +132,6 @@ pc2_services:
       health_check_port: 8102,
       required: true,
       dependencies: [MemoryOrchestratorService],
-    }
-  - {
-      name: PerformanceMonitor,
-      script_path: pc2_code/agents/performance_monitor.py,
-      host: 0.0.0.0,
-      port: 7103,
-      health_check_port: 8103,
-      required: true,
-      dependencies: [PerformanceLoggerAgent],
     }
   - {
       name: VisionProcessingAgent,
@@ -97,7 +181,6 @@ pc2_services:
       required: true,
     }
 
-
   - {
       name: ContextManager,
       script_path: pc2_code/agents/context_manager.py,
@@ -123,16 +206,7 @@ pc2_services:
       port: 7113,
       health_check_port: 8113,
       required: true,
-      dependencies: [HealthMonitor],
-    }
-  - {
-      name: HealthMonitor,
-      script_path: pc2_code/agents/health_monitor.py,
-      host: 0.0.0.0,
-      port: 7114,
-      health_check_port: 8114,
-      required: true,
-      dependencies: [PerformanceMonitor],
+      dependencies: [ObservabilityHub],  # Changed from HealthMonitor
     }
   - {
       name: TaskScheduler,
@@ -155,22 +229,13 @@ pc2_services:
       dependencies: [UnifiedUtilsAgent],
     }
   - {
-      name: SystemHealthManager,
-      script_path: pc2_code/agents/ForPC2/system_health_manager.py,
-      host: 0.0.0.0,
-      port: 7117,
-      health_check_port: 8117,
-      required: true,
-      dependencies: [], # Removed HealthMonitor dependency to break circular reference
-    }
-  - {
       name: UnifiedUtilsAgent,
       script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
       host: 0.0.0.0,
       port: 7118,
       health_check_port: 8118,
       required: true,
-      dependencies: [SystemHealthManager],
+      dependencies: [ObservabilityHub],  # Changed from SystemHealthManager
     }
   - {
       name: ProactiveContextMonitor,
@@ -190,7 +255,7 @@ pc2_services:
       port: 7122,
       health_check_port: 8122,
       required: true,
-      dependencies: [HealthMonitor],
+      dependencies: [ObservabilityHub],  # Changed from HealthMonitor
     }
   - {
       name: FileSystemAssistantAgent,
@@ -229,15 +294,6 @@ pc2_services:
       required: true,
     }
   - {
-      name: PerformanceLoggerAgent,
-      script_path: pc2_code/agents/PerformanceLoggerAgent.py,
-      host: 0.0.0.0,
-      port: 7128,
-      health_check_port: 8128,
-      required: true,
-      dependencies: [], # Removed SystemHealthManager dependency to break circular reference
-    }
-  - {
       name: AdvancedRouter,
       script_path: pc2_code/agents/advanced_router.py,
       host: 0.0.0.0,
@@ -247,13 +303,6 @@ pc2_services:
       dependencies: [TaskScheduler],
     }
 
-
-
-# Environment variables for all agents
-environment:
-  PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
-  LOG_LEVEL: 'INFO'
-  DEBUG_MODE: 'false'
 
 # Resource limits for all agents
 resource_limits:

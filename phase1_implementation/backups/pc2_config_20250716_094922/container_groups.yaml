@@ -1,0 +1,55 @@
+# PC2 Container Groups Configuration
+# This file defines how PC2 agents are grouped into containers
+
+# Core PC2 services - essential infrastructure
+pc2_core_services:
+  - SystemHealthManager
+  - HealthMonitor
+  - ResourceManager
+  - PerformanceMonitor
+  - PerformanceLoggerAgent
+
+# Authentication and security services
+pc2_security_services:
+  - AuthenticationAgent
+  - UnifiedUtilsAgent
+  - AgentTrustScorer
+
+# Memory and context management
+pc2_memory_services:
+  - CacheManager
+  - ContextManager
+  - ExperienceTracker
+  - ProactiveContextMonitor
+  - UnifiedMemoryReasoningAgent
+
+# Task processing and routing
+pc2_task_services:
+  - TieredResponder
+  - AsyncProcessor
+  - TaskScheduler
+  - AdvancedRouter
+  - RemoteConnectorAgent
+
+# Specialized AI services
+pc2_ai_services:
+  - DreamWorldAgent
+  - DreamingModeAgent
+  - TutorAgent
+  - TutoringServiceAgent
+  - TutoringAgent
+
+# Web and filesystem services
+pc2_web_services:
+  - FileSystemAssistantAgent
+  - UnifiedWebAgent
+  - VisionProcessingAgent
+
+# Map container names to agent groups
+container_mapping:
+  pc2-core-services: pc2_core_services
+  pc2-security-services: pc2_security_services
+  pc2-memory-services: pc2_memory_services
+  pc2-task-services: pc2_task_services
+  pc2-ai-services: pc2_ai_services
+  pc2-web-services: pc2_web_services 

@@ -1,0 +1,25 @@
+[33mcommit 790c5af70bff9cfcce15dd72f0a1044c1397c21c[m[33m ([m[1;32mview-790c5af[m[33m)[m
+Author: haymayndz3 <jhonsoncheng14@gmail.com>
+Date:   Mon Jul 14 01:21:30 2025 +0800
+
+    NewHome
+
+ main_pc_code/src/__init__.py                       |   5 [31m-[m
+ main_pc_code/src/analysis/tone_analyzer.py         |  72 [31m------[m
+ main_pc_code/src/bridge/redundant_zmq_bridge.py    | 655 [31m---------------------------------------------------[m
+ main_pc_code/src/core/__init__.py                  |   5 [31m-[m
+ main_pc_code/src/core/base_agent.py                |   1 [31m-[m
+ main_pc_code/src/core/health_monitor.py            | 634 [31m-------------------------------------------------[m
+ main_pc_code/src/core/http_server.py               | 138 [31m-----------[m
+ main_pc_code/src/core/proactive_context_monitor.py | 197 [31m----------------[m
+ main_pc_code/src/core/rca_agent.py                 | 445 [31m----------------------------------[m
+ main_pc_code/src/core/secure_agent_template.py     | 322 [31m-------------------------[m
+ main_pc_code/src/core/unified_monitoring.py        | 448 [31m-----------------------------------[m
+ main_pc_code/src/database/create_schema.py         | 335 [31m--------------------------[m
+ main_pc_code/src/database/db_pool.py               | 115 [31m---------[m
+ main_pc_code/src/detection/pose_detector.py        |  93 [31m--------[m
+ main_pc_code/src/detection/window_detector.py      |  63 [31m-----[m
+ main_pc_code/src/memory_new/memory_orchestrator.py | 322 [31m-------------------------[m
+ main_pc_code/src/network/edge_router.py            | 331 [31m--------------------------[m
+ main_pc_code/src/network/secure_zmq.py             | 273 [31m---------------------[m
+ 18 files changed, 4454 deletions(-)

@@ -1,0 +1,520 @@
+global_settings:
+  environment:
+    PYTHONPATH: /app
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 2048
+    max_threads: 4
+  volumes:
+  - source: ./logs
+    target: /app/logs
+  - source: ./models
+    target: /app/models
+  - source: ./data
+    target: /app/data
+  - source: ./config
+    target: /app/config
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+  network:
+    name: ai_system_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/16
+agent_groups:
+  core_services:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies: []
+      config:
+        backend: memory  # Options: memory, redis
+        redis:
+          url: redis://localhost:6379/0
+          prefix: "service_registry:"
+
+      # For HA deployment with Redis backend, uncomment and adjust:
+      # command_args: --backend redis --redis-url redis://redis:6379/0
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7120
+      health_check_port: 8120
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
+      required: true
+      dependencies:
+        - ServiceRegistry
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 26002
+      health_check_port: 27002
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    UnifiedSystemAgent:
+      script_path: main_pc_code/agents/unified_system_agent.py
+      port: 7125
+      health_check_port: 8125
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+  memory_system:
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 6713
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+      - MemoryClient
+    KnowledgeBase:
+      script_path: main_pc_code/agents/knowledge_base.py
+      port: 5715
+      health_check_port: 6715
+      required: true
+      dependencies:
+      - MemoryClient
+      - SystemDigitalTwin
+  utility_services:
+    CodeGenerator:
+      script_path: main_pc_code/agents/code_generator.py
+      port: 5650
+      health_check_port: 6650
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - ModelManagerAgent
+    SelfTrainingOrchestrator:
+      script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+      port: 5660
+      health_check_port: 6660
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - ModelManagerAgent
+    PredictiveHealthMonitor:
+      script_path: main_pc_code/agents/predictive_health_monitor.py
+      port: 5613
+      health_check_port: 6613
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    FixedStreamingTranslation:
+      script_path: main_pc_code/agents/fixed_streaming_translation.py
+      port: 5584
+      health_check_port: 6584
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+    Executor:
+      script_path: main_pc_code/agents/executor.py
+      port: 5606
+      health_check_port: 6606
+      required: true
+      dependencies:
+      - CodeGenerator
+      - SystemDigitalTwin
+    TinyLlamaServiceEnhanced:
+      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+      port: 5615
+      health_check_port: 6615
+      required: false
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+    LocalFineTunerAgent:
+      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+      port: 5642
+      health_check_port: 6642
+      required: true
+      dependencies:
+      - SelfTrainingOrchestrator
+      - SystemDigitalTwin
+    NLLBAdapter:
+      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+      port: 5581
+      health_check_port: 6581
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+  gpu_infrastructure:
+    GGUFModelManager:
+      script_path: main_pc_code/agents/gguf_model_manager.py
+      port: 5575
+      health_check_port: 6575
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    ModelManagerAgent:
+      script_path: main_pc_code/agents/model_manager_agent.py
+      port: 5570
+      health_check_port: 6570
+      required: true
+      dependencies:
+      - GGUFModelManager
+      - SystemDigitalTwin
+    VRAMOptimizerAgent:
+      script_path: main_pc_code/agents/vram_optimizer_agent.py
+      port: 5572
+      health_check_port: 6572
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - RequestCoordinator
+      - SystemDigitalTwin
+    PredictiveLoader:
+      script_path: main_pc_code/agents/predictive_loader.py
+      port: 5617
+      health_check_port: 6617
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+  reasoning_services:
+    ChainOfThoughtAgent:
+      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+      port: 5612
+      health_check_port: 6612
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+    GoTToTAgent:
+      script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+      port: 5646
+      health_check_port: 6646
+      required: false
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+      - ChainOfThoughtAgent
+    CognitiveModelAgent:
+      script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
+      port: 5641
+      health_check_port: 6641
+      required: false
+      dependencies:
+      - ChainOfThoughtAgent
+      - SystemDigitalTwin
+  vision_processing:
+    FaceRecognitionAgent:
+      script_path: main_pc_code/agents/face_recognition_agent.py
+      port: 5610
+      health_check_port: 6610
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - ModelManagerAgent
+      - SystemDigitalTwin
+  learning_knowledge:
+    ModelEvaluationFramework:
+      script_path: main_pc_code/agents/model_evaluation_framework.py
+      port: 7220
+      health_check_port: 7221
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    LearningOrchestrationService:
+      script_path: main_pc_code/agents/learning_orchestration_service.py
+      port: 7210
+      health_check_port: 7211
+      required: true
+      dependencies:
+      - ModelEvaluationFramework
+      - SystemDigitalTwin
+    LearningOpportunityDetector:
+      script_path: main_pc_code/agents/learning_opportunity_detector.py
+      port: 7200
+      health_check_port: 7201
+      required: true
+      dependencies:
+      - LearningOrchestrationService
+      - MemoryClient
+      - SystemDigitalTwin
+    LearningManager:
+      script_path: main_pc_code/agents/learning_manager.py
+      port: 5580
+      health_check_port: 6580
+      required: true
+      dependencies:
+      - MemoryClient
+      - RequestCoordinator
+      - SystemDigitalTwin
+    ActiveLearningMonitor:
+      script_path: main_pc_code/agents/active_learning_monitor.py
+      port: 5638
+      health_check_port: 6638
+      required: true
+      dependencies:
+      - LearningManager
+      - SystemDigitalTwin
+    LearningAdjusterAgent:
+      script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+      port: 5643
+      health_check_port: 6643
+      required: true
+      dependencies:
+      - SelfTrainingOrchestrator
+      - SystemDigitalTwin
+  language_processing:
+    ModelOrchestrator:
+      script_path: main_pc_code/agents/model_orchestrator.py
+      port: 7010
+      health_check_port: 8010
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - ModelManagerAgent
+      - SystemDigitalTwin
+    GoalManager:
+      script_path: main_pc_code/agents/goal_manager.py
+      port: 7005
+      health_check_port: 8005
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - ModelOrchestrator
+      - SystemDigitalTwin
+      - MemoryClient
+    IntentionValidatorAgent:
+      script_path: main_pc_code/agents/IntentionValidatorAgent.py
+      port: 5701
+      health_check_port: 6701
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+    NLUAgent:
+      script_path: main_pc_code/agents/nlu_agent.py
+      port: 5709
+      health_check_port: 6709
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    AdvancedCommandHandler:
+      script_path: main_pc_code/agents/advanced_command_handler.py
+      port: 5710
+      health_check_port: 6710
+      required: true
+      dependencies:
+      - NLUAgent
+      - CodeGenerator
+      - SystemDigitalTwin
+    ChitchatAgent:
+      script_path: main_pc_code/agents/chitchat_agent.py
+      port: 5711
+      health_check_port: 6711
+      required: true
+      dependencies:
+      - NLUAgent
+      - SystemDigitalTwin
+    FeedbackHandler:
+      script_path: main_pc_code/agents/feedback_handler.py
+      port: 5636
+      health_check_port: 6636
+      required: true
+      dependencies:
+      - NLUAgent
+      - SystemDigitalTwin
+    Responder:
+      script_path: main_pc_code/agents/responder.py
+      port: 5637
+      health_check_port: 6637
+      required: true
+      dependencies:
+      - EmotionEngine
+      - FaceRecognitionAgent
+      - NLUAgent
+      - StreamingTTSAgent
+      - SystemDigitalTwin
+      - TTSService
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: 5595
+      health_check_port: 6595
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    DynamicIdentityAgent:
+      script_path: main_pc_code/agents/DynamicIdentityAgent.py
+      port: 5802
+      health_check_port: 6802
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+    EmotionSynthesisAgent:
+      script_path: main_pc_code/agents/emotion_synthesis_agent.py
+      port: 5706
+      health_check_port: 6706
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - ModelManagerAgent
+      - SystemDigitalTwin
+  speech_services:
+    STTService:
+      script_path: main_pc_code/services/stt_service.py
+      port: 5800
+      health_check_port: 6800
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+    TTSService:
+      script_path: main_pc_code/services/tts_service.py
+      port: 5801
+      health_check_port: 6801
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - SystemDigitalTwin
+      - StreamingInterruptHandler
+  audio_interface:
+    AudioCapture:
+      script_path: main_pc_code/agents/streaming_audio_capture.py
+      port: 6550
+      health_check_port: 7550
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    FusedAudioPreprocessor:
+      script_path: main_pc_code/agents/fused_audio_preprocessor.py
+      port: 6551
+      health_check_port: 7551
+      required: true
+      dependencies:
+      - AudioCapture
+      - SystemDigitalTwin
+    StreamingInterruptHandler:
+      script_path: main_pc_code/agents/streaming_interrupt_handler.py
+      port: 5576
+      health_check_port: 6576
+      required: true
+      dependencies:
+      - StreamingSpeechRecognition
+      - StreamingTTSAgent
+      - SystemDigitalTwin
+    StreamingSpeechRecognition:
+      script_path: main_pc_code/agents/streaming_speech_recognition.py
+      port: 6553
+      health_check_port: 7553
+      required: true
+      dependencies:
+      - FusedAudioPreprocessor
+      - RequestCoordinator
+      - STTService
+      - SystemDigitalTwin
+    StreamingTTSAgent:
+      script_path: main_pc_code/agents/streaming_tts_agent.py
+      port: 5562
+      health_check_port: 6562
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - TTSService
+      - SystemDigitalTwin
+      - UnifiedSystemAgent
+    WakeWordDetector:
+      script_path: main_pc_code/agents/wake_word_detector.py
+      port: 6552
+      health_check_port: 7552
+      required: true
+      dependencies:
+      - AudioCapture
+      - FusedAudioPreprocessor
+      - SystemDigitalTwin
+    StreamingLanguageAnalyzer:
+      script_path: main_pc_code/agents/streaming_language_analyzer.py
+      port: 5579
+      health_check_port: 6579
+      required: true
+      dependencies:
+      - StreamingSpeechRecognition
+      - SystemDigitalTwin
+      - TranslationService
+    ProactiveAgent:
+      script_path: main_pc_code/agents/ProactiveAgent.py
+      port: 5624
+      health_check_port: 6624
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+  emotion_system:
+    EmotionEngine:
+      script_path: main_pc_code/agents/emotion_engine.py
+      port: 5590
+      health_check_port: 6590
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    MoodTrackerAgent:
+      script_path: main_pc_code/agents/mood_tracker_agent.py
+      port: 5704
+      health_check_port: 6704
+      required: true
+      dependencies:
+      - EmotionEngine
+      - SystemDigitalTwin
+    HumanAwarenessAgent:
+      script_path: main_pc_code/agents/human_awareness_agent.py
+      port: 5705
+      health_check_port: 6705
+      required: true
+      dependencies:
+      - EmotionEngine
+      - SystemDigitalTwin
+    ToneDetector:
+      script_path: main_pc_code/agents/tone_detector.py
+      port: 5625
+      health_check_port: 6625
+      required: true
+      dependencies:
+      - EmotionEngine
+      - SystemDigitalTwin
+    VoiceProfilingAgent:
+      script_path: main_pc_code/agents/voice_profiling_agent.py
+      port: 5708
+      health_check_port: 6708
+      required: true
+      dependencies:
+      - EmotionEngine
+      - SystemDigitalTwin
+    EmpathyAgent:
+      script_path: main_pc_code/agents/EmpathyAgent.py
+      port: 5703
+      health_check_port: 6703
+      required: true
+      dependencies:
+      - EmotionEngine
+      - StreamingTTSAgent
+      - SystemDigitalTwin
+  utilities_support: null

@@ -1,0 +1,394 @@
+# Canonical Startup Configuration for PC2 Sub-System
+# Forged by CASCADE - Single Source of Truth
+
+# PC2 Services (Agents) - Organized by Container Groups
+pc2_services:
+  # Group 1: Core Infrastructure Container
+  - {
+      name: ResourceManager,
+      script_path: pc2_code/agents/resource_manager.py,
+      host: 0.0.0.0,
+      port: 7113,
+      health_check_port: 8113,
+      required: true,
+      dependencies: [],  # Base dependency - no dependencies
+    }
+  - {
+      name: HealthMonitor,
+      script_path: pc2_code/agents/health_monitor.py,
+      host: 0.0.0.0,
+      port: 7114,
+      health_check_port: 8114,
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: TaskScheduler,
+      script_path: pc2_code/agents/task_scheduler.py,
+      host: 0.0.0.0,
+      port: 7115,
+      health_check_port: 8115,
+      dependencies: [HealthMonitor],
+      required: true,
+    }
+  - {
+      name: AdvancedRouter,
+      script_path: pc2_code/agents/advanced_router.py,
+      host: 0.0.0.0,
+      port: 7129,
+      health_check_port: 8129,
+      required: true,
+      dependencies: [TaskScheduler],
+    }
+  # Removed SystemDigitalTwin as it should only be on main_pc
+
+  # Group 2: Memory & Storage Container
+  - {
+      name: UnifiedMemoryReasoningAgent,
+      script_path: pc2_code/agents/UnifiedMemoryReasoningAgent.py,
+      host: 0.0.0.0,
+      port: 7105,
+      health_check_port: 8105,
+      dependencies: [HealthMonitor],
+      required: true,
+    }
+  - {
+      name: MemoryManager,
+      script_path: pc2_code/agents/memory_manager.py,
+      host: 0.0.0.0,
+      port: 7110,
+      health_check_port: 8110,
+      dependencies: [UnifiedMemoryReasoningAgent],
+      required: true,
+    }
+  - {
+      name: EpisodicMemoryAgent,
+      script_path: pc2_code/agents/EpisodicMemoryAgent.py,
+      host: 0.0.0.0,
+      port: 7106,
+      health_check_port: 8106,
+      dependencies: [UnifiedMemoryReasoningAgent],
+      required: true,
+    }
+  - {
+      name: ContextManager,
+      script_path: pc2_code/agents/context_manager.py,
+      host: 0.0.0.0,
+      port: 7111,
+      health_check_port: 8111,
+      dependencies: [MemoryManager],
+      required: true,
+    }
+  - {
+      name: ExperienceTracker,
+      script_path: pc2_code/agents/experience_tracker.py,
+      host: 0.0.0.0,
+      port: 7112,
+      health_check_port: 8112,
+      dependencies: [EpisodicMemoryAgent],
+      required: true,
+    }
+  - {
+      name: MemoryDecayManager,
+      script_path: pc2_code/agents/memory_decay_manager.py,
+      host: 0.0.0.0,
+      port: 7133,
+      health_check_port: 8133,
+      dependencies: [UnifiedMemoryReasoningAgent],
+      required: false,
+    }
+  - {
+      name: EnhancedContextualMemory,
+      script_path: pc2_code/agents/enhanced_contextual_memory.py,
+      host: 0.0.0.0,
+      port: 7134,
+      health_check_port: 8134,
+      dependencies: [MemoryManager],
+      required: false,
+    }
+
+  # Group 3: Security & Authentication Container
+  - {
+      name: AuthenticationAgent,
+      script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py,
+      host: 0.0.0.0,
+      port: 7116,
+      health_check_port: 8116,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+  - {
+      name: UnifiedErrorAgent,
+      script_path: pc2_code/agents/ForPC2/UnifiedErrorAgent.py,
+      host: 0.0.0.0,
+      port: 7117,
+      health_check_port: 8117,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+  - {
+      name: UnifiedUtilsAgent,
+      script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
+      host: 0.0.0.0,
+      port: 7118,
+      health_check_port: 8118,
+      required: true,
+      dependencies: [UnifiedErrorAgent],
+    }
+  - {
+      name: AgentTrustScorer,
+      script_path: pc2_code/agents/AgentTrustScorer.py,
+      host: 0.0.0.0,
+      port: 7122,
+      health_check_port: 8122,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+
+  # Group 4: Integration & Communication Container
+  - {
+      name: TieredResponder,
+      script_path: pc2_code/agents/tiered_responder.py,
+      host: 0.0.0.0,
+      port: 7100,
+      health_check_port: 8100,
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: AsyncProcessor,
+      script_path: pc2_code/agents/async_processor.py,
+      host: 0.0.0.0,
+      port: 7101,
+      health_check_port: 8101,
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: CacheManager,
+      script_path: pc2_code/agents/cache_manager.py,
+      host: 0.0.0.0,
+      port: 7102,
+      health_check_port: 8102,
+      required: true,
+      dependencies: [AsyncProcessor],
+    }
+  - {
+      name: RemoteConnectorAgent,
+      script_path: pc2_code/agents/remote_connector_agent.py,
+      host: 0.0.0.0,
+      port: 7124,
+      health_check_port: 8124,
+      required: true,
+      dependencies: [AdvancedRouter],
+    }
+  - {
+      name: FileSystemAssistantAgent,
+      script_path: pc2_code/agents/filesystem_assistant_agent.py,
+      host: 0.0.0.0,
+      port: 7123,
+      health_check_port: 8123,
+      required: true,
+      dependencies: [UnifiedUtilsAgent],
+    }
+
+  # Group 5: Monitoring & Support Container
+  - {
+      name: PerformanceMonitor,
+      script_path: pc2_code/agents/performance_monitor.py,
+      host: 0.0.0.0,
+      port: 7103,
+      health_check_port: 8103,
+      required: true,
+      dependencies: [HealthMonitor],
+    }
+  - {
+      name: PerformanceLoggerAgent,
+      script_path: pc2_code/agents/PerformanceLoggerAgent.py,
+      host: 0.0.0.0,
+      port: 7128,
+      health_check_port: 8128,
+      required: true,
+      dependencies: [PerformanceMonitor],
+    }
+  - {
+      name: SelfHealingAgent,
+      script_path: pc2_code/agents/self_healing_agent.py,
+      host: 0.0.0.0,
+      port: 7125,
+      health_check_port: 8125,
+      required: true,
+      dependencies: [PerformanceLoggerAgent],
+    }
+  - {
+      name: ProactiveContextMonitor,
+      script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py,
+      host: 0.0.0.0,
+      port: 7119,
+      health_check_port: 8119,
+      dependencies: [ContextManager],
+      required: true,
+    }
+  - {
+      name: RCAAgent,
+      script_path: pc2_code/agents/ForPC2/rca_agent.py,
+      host: 0.0.0.0,
+      port: 7121,
+      health_check_port: 8121,
+      dependencies: [SelfHealingAgent],
+      required: true,
+    }
+
+  # Group 6: Dream & Tutoring Container
+  - {
+      name: DreamWorldAgent,
+      script_path: pc2_code/agents/DreamWorldAgent.py,
+      host: 0.0.0.0,
+      port: 7104,
+      health_check_port: 8104,
+      dependencies: [UnifiedMemoryReasoningAgent],
+      required: true,
+    }
+  - {
+      name: DreamingModeAgent,
+      script_path: pc2_code/agents/DreamingModeAgent.py,
+      host: 0.0.0.0,
+      port: 7127,
+      health_check_port: 8127,
+      dependencies: [DreamWorldAgent],
+      required: true,
+    }
+  - {
+      name: TutoringServiceAgent,
+      script_path: pc2_code/agents/tutoring_service_agent.py,
+      host: 0.0.0.0,
+      port: 7130,
+      health_check_port: 8130,
+      required: true,
+      dependencies: [UnifiedMemoryReasoningAgent],
+    }
+  - {
+      name: TutorAgent,
+      script_path: pc2_code/agents/tutor_agent.py,
+      host: 0.0.0.0,
+      port: 7108,
+      health_check_port: 8108,
+      required: true,
+      dependencies: [TutoringServiceAgent],
+    }
+
+  # Group 7: Web & External Services Container
+  - {
+      name: UnifiedWebAgent,
+      script_path: pc2_code/agents/unified_web_agent.py,
+      host: 0.0.0.0,
+      port: 7126,
+      health_check_port: 8126,
+      required: true,
+      dependencies: [FileSystemAssistantAgent, UnifiedMemoryReasoningAgent],
+    }
+
+  # Optional/Development Agents
+  - {
+      name: TutoringAgent,
+      script_path: pc2_code/agents/tutoring_agent.py,
+      host: 0.0.0.0,
+      port: 7131,
+      health_check_port: 8131,
+      dependencies: [TutoringServiceAgent],
+      required: false,
+    }
+  - {
+      name: UnifiedMemoryReasoningAgentAlt,
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
+      host: 0.0.0.0,
+      port: 7132,
+      health_check_port: 8132,
+      dependencies: [CacheManager],
+      required: false,
+    }
+  - {
+      name: AutoFixerAgent,
+      script_path: pc2_code/agents/auto_fixer_agent.py,
+      host: 0.0.0.0,
+      port: 7135,
+      health_check_port: 8135,
+      dependencies: [HealthMonitor],
+      required: false,
+      status: not_implemented,  # File exists but is empty (0 bytes)
+    }
+  - {
+      name: AgentUtils,
+      script_path: pc2_code/agents/agent_utils.py,
+      host: 0.0.0.0,
+      port: 7136,
+      health_check_port: 8136,
+      dependencies: [UnifiedUtilsAgent],
+      required: false,
+    }
+
+# Environment variables for all agents
+environment:
+  PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
+  LOG_LEVEL: 'INFO'
+  DEBUG_MODE: 'false'
+  BIND_ADDRESS: '0.0.0.0'
+
+# Resource limits for all agents
+resource_limits:
+  cpu_percent: 80
+  memory_mb: 4096
+  max_threads: 8
+
+# Container-specific resource limits
+container_resource_limits:
+  core_infrastructure:
+    cpu: "1.0"
+    memory: "1024M"
+  memory_storage:
+    cpu: "1.0"
+    memory: "2048M"
+  security_authentication:
+    cpu: "0.5"
+    memory: "512M"
+  integration_communication:
+    cpu: "1.0"
+    memory: "1024M"
+  monitoring_support:
+    cpu: "0.5"
+    memory: "512M"
+  dream_tutoring:
+    cpu: "1.0"
+    memory: "1024M"
+  web_external:
+    cpu: "0.5"
+    memory: "512M"
+
+# Health check configuration
+health_checks:
+  interval_seconds: 30
+  timeout_seconds: 10
+  retries: 3
+  start_period_seconds: 300
+
+# PC2 Network Configuration
+pc2_network:
+  host: '0.0.0.0'
+  agent_ports:
+    start: 7100
+    end: 7199
+  health_check_ports:
+    start: 8100
+    end: 8199
+
+# Volume mounts for containerization
+volume_mounts:
+  logs:
+    container_path: /app/logs
+    host_path: ./logs
+  config:
+    container_path: /app/config
+    host_path: ./config
+  data:
+    container_path: /app/data
+    host_path: ./data 
