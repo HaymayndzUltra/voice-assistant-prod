@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env python3
 """
 ResourceManagerSuite - Phase 1 Implementation
@@ -385,7 +384,7 @@ class ResourceManagerSuite(BaseAgent):
     """
     
     def __init__(self, **kwargs):
-        super().__init__(name="ResourceManagerSuite", port=7001, health_check_port=7101)
+        super().__init__(name="ResourceManagerSuite", port=9001, health_check_port=9101)
         
         # Feature flags for gradual migration
         self.enable_unified_resources = os.getenv('ENABLE_UNIFIED_RESOURCES', 'false').lower() == 'true'
@@ -627,7 +626,7 @@ class ResourceManagerSuite(BaseAgent):
             # Mark startup as complete
             self.startup_complete = True
             
-            logger.info("ResourceManagerSuite started successfully on port 7001")
+            logger.info("ResourceManagerSuite started successfully on port 9001")
             logger.info(f"Feature flags - Resources: {self.enable_unified_resources}, "
                        f"Scheduling: {self.enable_unified_scheduling}, "
                        f"VRAM: {self.enable_unified_vram}")
@@ -636,7 +635,7 @@ class ResourceManagerSuite(BaseAgent):
             config = uvicorn.Config(
                 self.app,
                 host="0.0.0.0",
-                port=7001,
+                port=9001,
                 log_level="info"
             )
             server = uvicorn.Server(config)
@@ -673,21 +672,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"ResourceManagerSuite error: {e}")
     finally:
-        suite.cleanup() 
-=======
-
-from __future__ import annotations
-
-# ResourceManagerSuite Consolidated Service
-
-import sys
-import os
-import logging
-import time
-import threading
-from pathlib import Path
-from typing import Dict, Any, Optional
-from concurrent.futures import ThreadPoolExecutor
+        suite.cleanup()
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
@@ -770,7 +755,7 @@ class ResourceManagerSuite(BaseAgent):
       * VramOptimizerAgent (GPU-specific optimisation)
     """
 
-    def __init__(self, *, port: int = 7001, health_check_port: int = 7101):
+    def __init__(self, *, port: int = 9001, health_check_port: int = 9101):
         super().__init__(name="ResourceManagerSuite", port=port, health_check_port=health_check_port)
 
         # Thread-pool for background tasks
@@ -920,4 +905,3 @@ class ResourceManagerSuite(BaseAgent):
 if __name__ == "__main__":
     service = ResourceManagerSuite()
     uvicorn.run(service.app, host="0.0.0.0", port=service.port, log_level="info")
->>>>>>> d25a671 (Merge pull request #2 from HaymayndzUltra/cursor/implement-phase-1-consolidation-with-full-logic-preservation-6366)

@@ -7,13 +7,18 @@ global_settings:
     ENABLE_TRACING: 'true'
     ENABLE_DATA_OPTIMIZER: 'true'
     DATA_OPTIMIZER_METHOD: compressed_msgpack
-    # Phase 1 Consolidation Flags
+    # Phase 1 Consolidation Flags - O3 Enhanced
     ENABLE_PHASE1_CONSOLIDATION: 'true'
     CORE_ORCHESTRATOR_MODE: 'unified'  # Options: unified, delegation, gradual
+    ENABLE_O3_ENHANCEMENTS: 'true'    # Enable O3 specific features
+    ENABLE_SQLITE_INTEGRATION: 'true'  # SQLite database features
+    ENABLE_REDIS_CACHE: 'true'         # Redis caching
+    ENABLE_LANGUAGE_ANALYSIS: 'true'   # Language analysis thread
+    ENABLE_PRIORITY_CALCULATION: 'true' # Dynamic priority calculation
   resource_limits:
     cpu_percent: 80
     memory_mb: 2048
-    max_threads: 4
+    max_threads: 8  # Increased for O3 threading
   volumes:
   - source: ./logs
     target: /app/logs
@@ -23,6 +28,8 @@ global_settings:
     target: /app/data
   - source: ./config
     target: /app/config
+  - source: ./phase1_implementation/data
+    target: /app/phase1_data  # Phase 1 data directory
   health_checks:
     interval_seconds: 30
     timeout_seconds: 10
@@ -38,9 +45,9 @@ global_settings:
 
 agent_groups:
   # ===================================================================
-  # PHASE 1 CONSOLIDATED SERVICES
+  # PHASE 1 CONSOLIDATED SERVICES - O3 ENHANCED
   # ===================================================================
-  consolidated_services:
+  phase1_consolidated_services:
     CoreOrchestrator:
       script_path: phase1_implementation/consolidated_agents/core_orchestrator/core_orchestrator.py
       port: 7000
@@ -48,495 +55,307 @@ agent_groups:
       required: true
       dependencies: []
       config:
-        mode: unified  # unified, delegation, gradual
-        service_registry:
-          backend: memory  # Options: memory, redis
-          redis:
-            url: redis://localhost:6379/0
-            prefix: "service_registry:"
-        system_digital_twin:
-          db_path: data/unified_memory.db
-          redis:
-            host: localhost
-            port: 6379
-            db: 0
-          zmq_request_timeout: 5000
-        request_coordinator:
-          port: 26002
-          enable_dynamic_prioritization: true
-          queue_max_size: 100
-          default_task_timeout: 5000
-        unified_system_agent:
-          port: 7125
-          monitor_interval: 30
-        feature_flags:
-          ENABLE_UNIFIED_REGISTRY: true
-          ENABLE_UNIFIED_TWIN: true
-          ENABLE_UNIFIED_COORDINATOR: true
-          ENABLE_UNIFIED_SYSTEM: true
+        enable_unified_registry: true
+        enable_unified_twin: true
+        enable_unified_coordinator: true
+        enable_unified_system: true
+        # O3 Enhanced Configuration
+        sqlite_db_path: "phase1_implementation/data/core_orchestrator.db"
+        redis_host: "localhost"
+        redis_port: 6379
+        redis_db: 1
+        language_analysis_enabled: true
+        priority_calculation_enabled: true
+        circuit_breaker_threshold: 3
+        circuit_breaker_timeout: 30
+      environment:
+        ENABLE_O3_ENHANCEMENTS: 'true'
+        SQLITE_DB_PATH: '/app/phase1_data/core_orchestrator.db'
+        REDIS_HOST: 'localhost'
+        REDIS_PORT: '6379'
+        REDIS_DB: '1'
+      startup:
+        order: 1
+        wait_for_dependencies: false
+      logging:
+        level: INFO
+        file: "phase1_implementation/logs/core_orchestrator.log"
 
-  # ===================================================================
-  # ORIGINAL AGENTS (Phase 1 - Consolidated, keeping for reference/migration)
-  # NOTE: These are now handled by CoreOrchestrator in unified mode
-  # ===================================================================
-  # DEPRECATED - Replaced by CoreOrchestrator
-  # core_services:
-  #   ServiceRegistry:
-  #     script_path: main_pc_code/agents/service_registry_agent.py
-  #     port: 7100
-  #     health_check_port: 8100
-  #     required: false  # Now handled by CoreOrchestrator
-  #     dependencies: []
-  #   SystemDigitalTwin:
-  #     script_path: main_pc_code/agents/system_digital_twin.py
-  #     port: 7120
-  #     health_check_port: 8120
-  #     required: false  # Now handled by CoreOrchestrator
-  #     dependencies:
-  #       - CoreOrchestrator  # Changed from ServiceRegistry
-  #   RequestCoordinator:
-  #     script_path: main_pc_code/agents/request_coordinator.py
-  #     port: 26002
-  #     health_check_port: 27002
-  #     required: false  # Now handled by CoreOrchestrator
-  #     dependencies:
-  #     - CoreOrchestrator  # Changed from SystemDigitalTwin
-  #   UnifiedSystemAgent:
-  #     script_path: main_pc_code/agents/unified_system_agent.py
-  #     port: 7125
-  #     health_check_port: 8125
-  #     required: false  # Now handled by CoreOrchestrator
-  #     dependencies:
-  #     - CoreOrchestrator  # Changed from SystemDigitalTwin
-
-  # ===================================================================
-  # REMAINING ORIGINAL SERVICES (Updated dependencies)
-  # ===================================================================
-  memory_system:
-    MemoryClient:
-      script_path: main_pc_code/agents/memory_client.py
-      port: 5713
-      health_check_port: 6713
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    SessionMemoryAgent:
-      script_path: main_pc_code/agents/session_memory_agent.py
-      port: 5574
-      health_check_port: 6574
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-      - MemoryClient
-    KnowledgeBase:
-      script_path: main_pc_code/agents/knowledge_base.py
-      port: 5715
-      health_check_port: 6715
-      required: true
-      dependencies:
-      - MemoryClient
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-  utility_services:
-    CodeGenerator:
-      script_path: main_pc_code/agents/code_generator.py
-      port: 5650
-      health_check_port: 6650
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - ModelManagerAgent
-    SelfTrainingOrchestrator:
-      script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
-      port: 5660
-      health_check_port: 6660
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - ModelManagerAgent
-    PredictiveHealthMonitor:
-      script_path: main_pc_code/agents/predictive_health_monitor.py
-      port: 5613
-      health_check_port: 6613
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    FixedStreamingTranslation:
-      script_path: main_pc_code/agents/fixed_streaming_translation.py
-      port: 5584
-      health_check_port: 6584
-      required: true
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    Executor:
-      script_path: main_pc_code/agents/executor.py
-      port: 5606
-      health_check_port: 6606
-      required: true
-      dependencies:
-      - CodeGenerator
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    TinyLlamaServiceEnhanced:
-      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
-      port: 5615
-      health_check_port: 6615
-      required: false
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    LocalFineTunerAgent:
-      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
-      port: 5642
-      health_check_port: 6642
-      required: true
-      dependencies:
-      - SelfTrainingOrchestrator
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    NLLBAdapter:
-      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
-      port: 5581
-      health_check_port: 6581
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-  gpu_infrastructure:
-    GGUFModelManager:
-      script_path: main_pc_code/agents/gguf_model_manager.py
-      port: 5575
-      health_check_port: 6575
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    ModelManagerAgent:
-      script_path: main_pc_code/agents/model_manager_agent.py
-      port: 5570
-      health_check_port: 6570
-      required: true
-      dependencies:
-      - GGUFModelManager
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    VRAMOptimizerAgent:
-      script_path: main_pc_code/agents/vram_optimizer_agent.py
-      port: 5572
-      health_check_port: 6572
-      required: true
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-    PredictiveLoader:
-      script_path: main_pc_code/agents/predictive_loader.py
-      port: 5617
-      health_check_port: 6617
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-  reasoning_services:
-    ChainOfThoughtAgent:
-      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
-      port: 5612
-      health_check_port: 6612
-      required: true
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    GoTToTAgent:
-      script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
-      port: 5646
-      health_check_port: 6646
-      required: false
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - ChainOfThoughtAgent
-    CognitiveModelAgent:
-      script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
-      port: 5641
-      health_check_port: 6641
-      required: false
-      dependencies:
-      - ChainOfThoughtAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-  vision_processing:
-    FaceRecognitionAgent:
-      script_path: main_pc_code/agents/face_recognition_agent.py
-      port: 5610
-      health_check_port: 6610
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator
-      - ModelManagerAgent
-  learning_knowledge:
-    ModelEvaluationFramework:
-      script_path: main_pc_code/agents/model_evaluation_framework.py
-      port: 7220
-      health_check_port: 7221
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    LearningOrchestrationService:
-      script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: 7210
-      health_check_port: 7211
-      required: true
-      dependencies:
-      - ModelEvaluationFramework
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    LearningOpportunityDetector:
-      script_path: main_pc_code/agents/learning_opportunity_detector.py
-      port: 7200
-      health_check_port: 7201
-      required: true
-      dependencies:
-      - LearningOrchestrationService
-      - MemoryClient
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    LearningManager:
-      script_path: main_pc_code/agents/learning_manager.py
-      port: 5580
-      health_check_port: 6580
-      required: true
-      dependencies:
-      - MemoryClient
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-    ActiveLearningMonitor:
-      script_path: main_pc_code/agents/active_learning_monitor.py
-      port: 5638
-      health_check_port: 6638
-      required: true
-      dependencies:
-      - LearningManager
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    LearningAdjusterAgent:
-      script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
-      port: 5643
-      health_check_port: 6643
-      required: true
-      dependencies:
-      - SelfTrainingOrchestrator
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-  language_processing:
-    ModelOrchestrator:
-      script_path: main_pc_code/agents/model_orchestrator.py
-      port: 7010
-      health_check_port: 8010
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator
-      - ModelManagerAgent
-    GoalManager:
-      script_path: main_pc_code/agents/goal_manager.py
+    SecurityGateway:
+      script_path: phase1_implementation/consolidated_agents/security_gateway/security_gateway.py
       port: 7005
       health_check_port: 8005
       required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-      - ModelOrchestrator
-      - MemoryClient
-    IntentionValidatorAgent:
-      script_path: main_pc_code/agents/IntentionValidatorAgent.py
-      port: 5701
-      health_check_port: 6701
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-    NLUAgent:
-      script_path: main_pc_code/agents/nlu_agent.py
-      port: 5709
-      health_check_port: 6709
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    AdvancedCommandHandler:
-      script_path: main_pc_code/agents/advanced_command_handler.py
-      port: 5710
-      health_check_port: 6710
-      required: true
-      dependencies:
-      - NLUAgent
-      - CodeGenerator
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    ChitchatAgent:
-      script_path: main_pc_code/agents/chitchat_agent.py
-      port: 5711
-      health_check_port: 6711
-      required: true
-      dependencies:
-      - NLUAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    FeedbackHandler:
-      script_path: main_pc_code/agents/feedback_handler.py
-      port: 5636
-      health_check_port: 6636
-      required: true
-      dependencies:
-      - NLUAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    Responder:
-      script_path: main_pc_code/agents/responder.py
-      port: 5637
-      health_check_port: 6637
-      required: true
-      dependencies:
-      - EmotionEngine
-      - FaceRecognitionAgent
-      - NLUAgent
-      - StreamingTTSAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - TTSService
+      dependencies: [CoreOrchestrator]
+      config:
+        # O3 Enhanced Security
+        enable_jwt_auth: true
+        enable_trust_scoring: true
+        enable_threat_detection: true
+        jwt_secret_key: "phase1_security_key_change_in_production"
+        session_timeout_minutes: 60
+        trust_score_threshold: 0.7
+      environment:
+        ENABLE_JWT_AUTH: 'true'
+        ENABLE_TRUST_SCORING: 'true'
+        JWT_SECRET_KEY: 'phase1_security_key_change_in_production'
+      startup:
+        order: 4
+        wait_for_dependencies: true
+        dependency_timeout: 60
+      logging:
+        level: INFO
+        file: "phase1_implementation/logs/security_gateway.log"
+
+  # ===================================================================
+  # LEGACY SERVICES (GRADUALLY DEPRECATED)
+  # ===================================================================
+  legacy_services:
+    # These services will be gradually phased out as Phase 1 consolidation completes
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7100
+      health_check_port: 8100
+      required: false  # Not required when Phase 1 is enabled
+      dependencies: []
+      config:
+        deprecation_notice: "This service is being replaced by CoreOrchestrator"
+        phase_out_date: "2025-02-01"
+      environment:
+        PHASE1_FALLBACK_MODE: 'true'
+      startup:
+        order: 100  # Start after Phase 1 services
+        enabled: false  # Disabled when Phase 1 is enabled
+
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7120
+      health_check_port: 8120
+      required: false  # Not required when Phase 1 is enabled
+      dependencies: []
+      config:
+        deprecation_notice: "This service is being replaced by CoreOrchestrator"
+        phase_out_date: "2025-02-01"
+      environment:
+        PHASE1_FALLBACK_MODE: 'true'
+      startup:
+        order: 101
+        enabled: false  # Disabled when Phase 1 is enabled
+
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 26002
+      health_check_port: 26102
+      required: false  # Not required when Phase 1 is enabled
+      dependencies: []
+      config:
+        deprecation_notice: "This service is being replaced by CoreOrchestrator"
+        phase_out_date: "2025-02-01"
+      environment:
+        PHASE1_FALLBACK_MODE: 'true'
+      startup:
+        order: 102
+        enabled: false  # Disabled when Phase 1 is enabled
+
+  # ===================================================================
+  # ESSENTIAL MAINPC SERVICES (CONTINUE RUNNING)
+  # ===================================================================
+  essential_services:
     TranslationService:
       script_path: main_pc_code/agents/translation_service.py
-      port: 5595
-      health_check_port: 6595
+      port: 5002
+      health_check_port: 5102
       required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    DynamicIdentityAgent:
-      script_path: main_pc_code/agents/DynamicIdentityAgent.py
-      port: 5802
-      health_check_port: 6802
+      dependencies: [CoreOrchestrator, ErrorBusSuite]
+      config:
+        enable_phase1_integration: true
+        core_orchestrator_endpoint: "http://localhost:7000"
+        error_bus_endpoint: "http://localhost:7003"
+      startup:
+        order: 10
+        wait_for_dependencies: true
+        dependency_timeout: 120
+
+    VoiceProcessingPipeline:
+      script_path: main_pc_code/agents/voice_processing_pipeline.py
+      port: 5001
+      health_check_port: 5101
       required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-    EmotionSynthesisAgent:
-      script_path: main_pc_code/agents/emotion_synthesis_agent.py
-      port: 5706
-      health_check_port: 6706
+      dependencies: [CoreOrchestrator, ResourceManagerSuite]
+      config:
+        enable_phase1_integration: true
+        resource_manager_endpoint: "http://localhost:7001"
+      startup:
+        order: 11
+        wait_for_dependencies: true
+
+    ModelOrchestrator:
+      script_path: main_pc_code/agents/model_orchestrator.py
+      port: 5003
+      health_check_port: 5103
       required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator
-      - ModelManagerAgent
-  speech_services:
-    STTService:
-      script_path: main_pc_code/services/stt_service.py
-      port: 5800
-      health_check_port: 6800
-      required: true
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    TTSService:
-      script_path: main_pc_code/services/tts_service.py
-      port: 5801
-      health_check_port: 6801
-      required: true
-      dependencies:
-      - ModelManagerAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - StreamingInterruptHandler
-  audio_interface:
-    AudioCapture:
-      script_path: main_pc_code/agents/streaming_audio_capture.py
-      port: 6550
-      health_check_port: 7550
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    FusedAudioPreprocessor:
-      script_path: main_pc_code/agents/fused_audio_preprocessor.py
-      port: 6551
-      health_check_port: 7551
-      required: true
-      dependencies:
-      - AudioCapture
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    StreamingInterruptHandler:
-      script_path: main_pc_code/agents/streaming_interrupt_handler.py
-      port: 5576
-      health_check_port: 6576
-      required: true
-      dependencies:
-      - StreamingSpeechRecognition
-      - StreamingTTSAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    StreamingSpeechRecognition:
-      script_path: main_pc_code/agents/streaming_speech_recognition.py
-      port: 6553
-      health_check_port: 7553
-      required: true
-      dependencies:
-      - FusedAudioPreprocessor
-      - CoreOrchestrator  # Changed from RequestCoordinator
-      - STTService
-    StreamingTTSAgent:
-      script_path: main_pc_code/agents/streaming_tts_agent.py
-      port: 5562
-      health_check_port: 6562
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and UnifiedSystemAgent
-      - TTSService
-    WakeWordDetector:
-      script_path: main_pc_code/agents/wake_word_detector.py
-      port: 6552
-      health_check_port: 7552
-      required: true
-      dependencies:
-      - AudioCapture
-      - FusedAudioPreprocessor
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    StreamingLanguageAnalyzer:
-      script_path: main_pc_code/agents/streaming_language_analyzer.py
-      port: 5579
-      health_check_port: 6579
-      required: true
-      dependencies:
-      - StreamingSpeechRecognition
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-      - TranslationService
-    ProactiveAgent:
-      script_path: main_pc_code/agents/ProactiveAgent.py
-      port: 5624
-      health_check_port: 6624
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from RequestCoordinator and SystemDigitalTwin
-  emotion_system:
-    EmotionEngine:
-      script_path: main_pc_code/agents/emotion_engine.py
-      port: 5590
-      health_check_port: 6590
-      required: true
-      dependencies:
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    MoodTrackerAgent:
-      script_path: main_pc_code/agents/mood_tracker_agent.py
-      port: 5704
-      health_check_port: 6704
-      required: true
-      dependencies:
-      - EmotionEngine
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    HumanAwarenessAgent:
-      script_path: main_pc_code/agents/human_awareness_agent.py
-      port: 5705
-      health_check_port: 6705
-      required: true
-      dependencies:
-      - EmotionEngine
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    ToneDetector:
-      script_path: main_pc_code/agents/tone_detector.py
-      port: 5625
-      health_check_port: 6625
-      required: true
-      dependencies:
-      - EmotionEngine
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    VoiceProfilingAgent:
-      script_path: main_pc_code/agents/voice_profiling_agent.py
-      port: 5708
-      health_check_port: 6708
-      required: true
-      dependencies:
-      - EmotionEngine
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-    EmpathyAgent:
-      script_path: main_pc_code/agents/EmpathyAgent.py
-      port: 5703
-      health_check_port: 6703
-      required: true
-      dependencies:
-      - EmotionEngine
-      - StreamingTTSAgent
-      - CoreOrchestrator  # Changed from SystemDigitalTwin
-  utilities_support: null
+      dependencies: [CoreOrchestrator, ResourceManagerSuite]
+      config:
+        enable_phase1_integration: true
+        circuit_breaker_integration: true
+      startup:
+        order: 12
+        wait_for_dependencies: true
+
+# ===================================================================
+# PHASE 1 SPECIFIC CONFIGURATIONS
+# ===================================================================
+phase1_config:
+  deployment_mode: "production"  # Options: development, staging, production
+  consolidation_level: "complete"  # Options: partial, gradual, complete
+  migration_strategy: "blue_green"  # Options: rolling, blue_green, canary
+  
+  feature_flags:
+    enable_o3_enhancements: true
+    enable_sqlite_integration: true
+    enable_redis_caching: true
+    enable_prometheus_metrics: true
+    enable_predictive_analytics: true
+    enable_zmq_broadcasting: true
+    enable_parallel_health_checks: true
+    enable_circuit_breakers: true
+    enable_priority_queues: true
+    enable_language_analysis: true
+
+  database_config:
+    sqlite_base_path: "phase1_implementation/data"
+    backup_interval_hours: 6
+    cleanup_older_than_days: 30
+
+  redis_config:
+    host: "localhost"
+    port: 6379
+    database_assignments:
+      core_orchestrator: 1
+      resource_manager: 2
+      error_bus: 3
+      security_gateway: 4
+      observability_hub: 5
+
+  monitoring_config:
+    health_check_interval: 30
+    metrics_collection_interval: 60
+    log_retention_days: 7
+    alert_threshold_critical: 0.8
+    alert_threshold_warning: 0.6
+
+  performance_config:
+    max_concurrent_requests: 100
+    request_timeout_seconds: 30
+    circuit_breaker_failure_threshold: 3
+    circuit_breaker_recovery_timeout: 30
+    priority_queue_max_size: 25
+    thread_pool_max_workers: 8
+
+# ===================================================================
+# STARTUP ORCHESTRATION
+# ===================================================================
+startup_sequence:
+  pre_start_checks:
+    - check_phase1_directories
+    - verify_sqlite_permissions
+    - test_redis_connection
+    - validate_configuration
+    
+  phase1_services_startup:
+    - CoreOrchestrator          # Order 1 - Foundation service
+    - ResourceManagerSuite      # Order 2 - Resource management
+    - ErrorBusSuite            # Order 3 - Error handling
+    - SecurityGateway          # Order 4 - Security layer
+    
+  essential_services_startup:
+    - TranslationService       # Order 10 - Core functionality
+    - VoiceProcessingPipeline  # Order 11 - Voice processing
+    - ModelOrchestrator        # Order 12 - Model management
+    
+  post_start_verification:
+    - verify_all_health_endpoints
+    - test_inter_service_communication
+    - validate_phase1_integration
+    - run_smoke_tests
+
+# ===================================================================
+# LOGGING CONFIGURATION
+# ===================================================================
+logging:
+  global_level: INFO
+  
+  phase1_loggers:
+    core_orchestrator:
+      level: INFO
+      file: "phase1_implementation/logs/core_orchestrator.log"
+      rotation: "daily"
+      retention: "7 days"
+    
+    resource_manager_suite:
+      level: INFO
+      file: "phase1_implementation/logs/resource_manager_suite.log"
+      rotation: "daily"
+      retention: "7 days"
+    
+    error_bus_suite:
+      level: INFO
+      file: "phase1_implementation/logs/error_bus_suite.log"
+      rotation: "daily"
+      retention: "7 days"
+    
+    security_gateway:
+      level: INFO
+      file: "phase1_implementation/logs/security_gateway.log"
+      rotation: "daily"
+      retention: "7 days"
+
+  log_aggregation:
+    enabled: true
+    central_log_endpoint: "http://localhost:7002/logs"  # ObservabilityHub on PC2
+    batch_size: 100
+    flush_interval: 60
+
+# ===================================================================
+# HEALTH CHECK CONFIGURATION
+# ===================================================================
+health_checks:
+  global_settings:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+  
+  phase1_specific:
+    core_orchestrator:
+      endpoint: "http://localhost:7000/health"
+      critical: true
+      
+    resource_manager_suite:
+      endpoint: "http://localhost:7001/health"
+      critical: true
+      
+    error_bus_suite:
+      endpoint: "http://localhost:7003/health"
+      critical: true
+      
+    security_gateway:
+      endpoint: "http://localhost:7005/health"
+      critical: true
+
+# ===================================================================
+# MIGRATION AND ROLLBACK CONFIGURATION
+# ===================================================================
+migration:
+  backup_before_migration: true
+  backup_location: "phase1_implementation/backups"
+  
+  rollback_strategy:
+    automatic_rollback_on_failure: true
+    rollback_timeout_minutes: 10
+    health_check_failures_threshold: 3
+  
+  legacy_service_deprecation:
+    grace_period_days: 30
+    warning_notifications: true
+    forced_retirement_date: "2025-02-01"

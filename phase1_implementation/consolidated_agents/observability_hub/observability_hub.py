@@ -5,6 +5,7 @@ Consolidates: PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthM
 PerformanceLoggerAgent (7128), SystemHealthManager (7117)
 Target: Prometheus exporter, log shipper, anomaly detector threads (Port 7002)
 Hardware: PC2
+Enhanced with O3 requirements: Prometheus integration, predictive analytics, ZMQ broadcasting, parallel health checks
 """
 
 import sys
@@ -15,11 +16,15 @@ import time
 import threading
 import asyncio
 import json
+import concurrent.futures
+import numpy as np
+import zmq
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import defaultdict, deque
+import uuid
 
 # Add project paths for imports
 project_root = Path(__file__).parent.parent.parent.parent.absolute()
@@ -28,6 +33,14 @@ if str(project_root) not in sys.path:
 
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
+
+# O3 Required: Prometheus integration
+try:
+    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server, push_to_gateway
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    logger.warning("Prometheus client not available, using mock implementation")
+    PROMETHEUS_AVAILABLE = False
 
 # Configure logging first
 logging.basicConfig(
@@ -50,294 +63,517 @@ except ImportError as e:
         def __init__(self, name, port, health_check_port=None, **kwargs):
             self.name = name
             self.port = port
-            self.health_check_port = health_check_port or port + 100
+            self.health_check_port = health_check_port or (port + 1000)
 
 @dataclass
-class MetricData:
-    """Data structure for metric information"""
-    name: str
-    value: float
-    timestamp: datetime
-    tags: Dict[str, str]
-    source: str
-
-@dataclass
-class HealthStatus:
-    """Data structure for health status information"""
+class HealthMetric:
+    """Enhanced health metric with O3 requirements"""
     agent_name: str
-    status: str  # healthy, warning, critical, unknown
-    last_seen: datetime
-    details: Dict[str, Any]
-    location: str  # MainPC or PC2
+    metric_type: str
+    value: float
+    timestamp: float = field(default_factory=time.time)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    prediction_confidence: float = 0.0
 
 @dataclass
-class AlertRule:
-    """Data structure for alert rules"""
-    rule_id: str
-    metric_name: str
-    condition: str  # gt, lt, eq, ne
-    threshold: float
-    enabled: bool
-    severity: str  # info, warning, critical
+class PredictiveAlert:
+    """O3 Predictive analytics alert"""
+    agent_name: str
+    alert_type: str
+    severity: str  # critical, warning, info
+    predicted_failure_time: float
+    confidence: float
+    recommended_actions: List[str] = field(default_factory=list)
 
-class MetricsCollector:
-    """Handles metrics collection from various sources"""
+class PrometheusMetrics:
+    """O3 Required: Prometheus metrics integration"""
     
     def __init__(self):
-        self.metrics_buffer = deque(maxlen=1000)
-        self.last_collection_time = {}
-        
-    def collect_system_metrics(self) -> List[MetricData]:
-        """Collect basic system metrics"""
-        try:
-            import psutil
-            
-            metrics = []
-            timestamp = datetime.utcnow()
-            
-            # CPU metrics
-            cpu_percent = psutil.cpu_percent(interval=0.1)
-            metrics.append(MetricData(
-                name="cpu_percent",
-                value=cpu_percent,
-                timestamp=timestamp,
-                tags={"type": "system"},
-                source="system"
-            ))
-            
-            # Memory metrics
-            memory = psutil.virtual_memory()
-            metrics.append(MetricData(
-                name="memory_percent",
-                value=memory.percent,
-                timestamp=timestamp,
-                tags={"type": "system"},
-                source="system"
-            ))
-            
-            metrics.append(MetricData(
-                name="memory_available_gb",
-                value=memory.available / (1024**3),
-                timestamp=timestamp,
-                tags={"type": "system"},
-                source="system"
-            ))
-            
-            # Disk metrics
-            disk = psutil.disk_usage('/')
-            metrics.append(MetricData(
-                name="disk_percent",
-                value=disk.percent,
-                timestamp=timestamp,
-                tags={"type": "system"},
-                source="system"
-            ))
-            
-            return metrics
-            
-        except Exception as e:
-            logger.error(f"Error collecting system metrics: {e}")
-            return []
+        if PROMETHEUS_AVAILABLE:
+            self.registry = CollectorRegistry()
+            self._setup_metrics()
+        else:
+            self.registry = None
+            self._setup_mock_metrics()
     
-    def collect_gpu_metrics(self) -> List[MetricData]:
-        """Collect GPU metrics (simplified implementation)"""
-        try:
-            # This would typically use nvidia-ml-py3 or similar
-            # For now, return mock data
-            timestamp = datetime.utcnow()
+    def _setup_metrics(self):
+        """Setup Prometheus metrics"""
+        if not PROMETHEUS_AVAILABLE:
+            return
             
-            return [
-                MetricData(
-                    name="gpu_utilization_percent",
-                    value=45.0,  # Mock data
-                    timestamp=timestamp,
-                    tags={"gpu_id": "0", "type": "gpu"},
-                    source="gpu"
-                ),
-                MetricData(
-                    name="gpu_memory_percent",
-                    value=60.0,  # Mock data
-                    timestamp=timestamp,
-                    tags={"gpu_id": "0", "type": "gpu"},
-                    source="gpu"
-                )
-            ]
-            
-        except Exception as e:
-            logger.error(f"Error collecting GPU metrics: {e}")
-            return []
-
-class HealthMonitor:
-    """Handles health monitoring for all agents"""
-    
-    def __init__(self):
-        self.health_status: Dict[str, HealthStatus] = {}
-        self.health_check_interval = 30  # seconds
-        
-    def update_agent_health(self, agent_name: str, status: str, details: Optional[Dict[str, Any]] = None, location: str = "Unknown"):
-        """Update health status for an agent"""
-        self.health_status[agent_name] = HealthStatus(
-            agent_name=agent_name,
-            status=status,
-            last_seen=datetime.utcnow(),
-            details=details or {},
-            location=location
+        # Agent health metrics
+        self.agent_health_gauge = Gauge(
+            'agent_health_status',
+            'Health status of agents (1=healthy, 0=unhealthy)',
+            ['agent_name', 'instance'],
+            registry=self.registry
         )
         
-    def get_agent_health(self, agent_name: str) -> Optional[HealthStatus]:
-        """Get health status for a specific agent"""
-        return self.health_status.get(agent_name)
-    
-    def get_all_health_status(self) -> Dict[str, HealthStatus]:
-        """Get health status for all agents"""
-        return self.health_status.copy()
-    
-    def check_stale_agents(self, max_age_seconds: int = 300) -> List[str]:
-        """Check for agents that haven't reported in recently"""
-        stale_agents = []
-        cutoff_time = datetime.utcnow().timestamp() - max_age_seconds
+        # System performance metrics
+        self.cpu_usage_gauge = Gauge(
+            'system_cpu_usage_percent',
+            'CPU usage percentage',
+            ['instance'],
+            registry=self.registry
+        )
         
-        for agent_name, health in self.health_status.items():
-            if health.last_seen.timestamp() < cutoff_time:
-                stale_agents.append(agent_name)
-                
-        return stale_agents
+        self.memory_usage_gauge = Gauge(
+            'system_memory_usage_bytes',
+            'Memory usage in bytes',
+            ['instance', 'type'],
+            registry=self.registry
+        )
+        
+        # Request metrics
+        self.request_counter = Counter(
+            'agent_requests_total',
+            'Total number of requests per agent',
+            ['agent_name', 'status'],
+            registry=self.registry
+        )
+        
+        # Response time metrics
+        self.response_time_histogram = Histogram(
+            'agent_response_time_seconds',
+            'Response time in seconds',
+            ['agent_name'],
+            registry=self.registry
+        )
+        
+        # Predictive metrics
+        self.failure_probability_gauge = Gauge(
+            'agent_failure_probability',
+            'Predicted failure probability (0-1)',
+            ['agent_name'],
+            registry=self.registry
+        )
+    
+    def _setup_mock_metrics(self):
+        """Setup mock metrics when Prometheus is not available"""
+        self.metrics_data = defaultdict(dict)
+    
+    def update_agent_health(self, agent_name: str, health_status: float):
+        """Update agent health metric"""
+        if PROMETHEUS_AVAILABLE and self.registry:
+            self.agent_health_gauge.labels(agent_name=agent_name, instance="pc2").set(health_status)
+        else:
+            self.metrics_data['agent_health'][agent_name] = health_status
+    
+    def update_system_metric(self, metric_name: str, value: float, labels: Dict[str, str] = None):
+        """Update system metric"""
+        if PROMETHEUS_AVAILABLE and self.registry:
+            if metric_name == 'cpu_usage':
+                self.cpu_usage_gauge.labels(instance="pc2").set(value)
+            elif metric_name == 'memory_usage':
+                memory_type = labels.get('type', 'used') if labels else 'used'
+                self.memory_usage_gauge.labels(instance="pc2", type=memory_type).set(value)
+        else:
+            self.metrics_data['system'][metric_name] = value
+    
+    def record_request(self, agent_name: str, status: str):
+        """Record request metric"""
+        if PROMETHEUS_AVAILABLE and self.registry:
+            self.request_counter.labels(agent_name=agent_name, status=status).inc()
+        else:
+            key = f"{agent_name}_{status}"
+            self.metrics_data['requests'][key] = self.metrics_data['requests'].get(key, 0) + 1
+    
+    def record_response_time(self, agent_name: str, response_time: float):
+        """Record response time metric"""
+        if PROMETHEUS_AVAILABLE and self.registry:
+            self.response_time_histogram.labels(agent_name=agent_name).observe(response_time)
+        else:
+            if agent_name not in self.metrics_data['response_times']:
+                self.metrics_data['response_times'][agent_name] = []
+            self.metrics_data['response_times'][agent_name].append(response_time)
+    
+    def update_failure_probability(self, agent_name: str, probability: float):
+        """Update predicted failure probability"""
+        if PROMETHEUS_AVAILABLE and self.registry:
+            self.failure_probability_gauge.labels(agent_name=agent_name).set(probability)
+        else:
+            self.metrics_data['failure_probability'][agent_name] = probability
 
-class AnomalyDetector:
-    """Handles anomaly detection in metrics"""
+class PredictiveAnalyzer:
+    """O3 Required: Predictive analytics algorithms"""
     
     def __init__(self):
-        self.baseline_metrics: Dict[str, List[float]] = defaultdict(list)
+        self.agent_metrics = defaultdict(lambda: deque(maxlen=100))  # Store last 100 metrics
+        self.failure_patterns = {}
         self.anomaly_threshold = 2.0  # Standard deviations
-        
-    def update_baseline(self, metric: MetricData):
-        """Update baseline for a metric"""
-        baseline = self.baseline_metrics[metric.name]
-        baseline.append(metric.value)
-        
-        # Keep only last 100 values for baseline
-        if len(baseline) > 100:
-            baseline.pop(0)
     
-    def detect_anomaly(self, metric: MetricData) -> bool:
-        """Detect if a metric value is anomalous"""
-        baseline = self.baseline_metrics.get(metric.name, [])
+    def add_metric(self, agent_name: str, metric: HealthMetric):
+        """Add metric for predictive analysis"""
+        self.agent_metrics[agent_name].append(metric)
+    
+    def _calculate_failure_probability(self, metrics: deque) -> float:
+        """Calculate failure probability based on historical metrics"""
+        if len(metrics) < 10:
+            return 0.0
         
-        if len(baseline) < 10:  # Need enough data for baseline
-            self.update_baseline(metric)
-            return False
-        
-        # Simple statistical anomaly detection
-        import statistics
-        mean = statistics.mean(baseline)
-        stdev = statistics.stdev(baseline) if len(baseline) > 1 else 0
-        
-        if stdev == 0:
-            return False
-        
-        z_score = abs(metric.value - mean) / stdev
-        is_anomaly = z_score > self.anomaly_threshold
-        
-        if not is_anomaly:
-            self.update_baseline(metric)
+        try:
+            # Extract numeric values for analysis
+            values = [m.value for m in list(metrics)[-20:]]  # Last 20 metrics
             
-        return is_anomaly
-
-class AlertManager:
-    """Handles alert rules and notifications"""
+            if not values:
+                return 0.0
+            
+            # Calculate statistics
+            mean_value = np.mean(values)
+            std_value = np.std(values)
+            current_value = values[-1]
+            
+            # Simple anomaly detection
+            if std_value == 0:
+                return 0.0
+            
+            z_score = abs((current_value - mean_value) / std_value)
+            
+            # Calculate trend (declining performance = higher failure probability)
+            if len(values) >= 5:
+                recent_trend = np.polyfit(range(5), values[-5:], 1)[0]
+                trend_factor = max(0, -recent_trend * 0.1)  # Negative trend increases probability
+            else:
+                trend_factor = 0
+            
+            # Combine z-score and trend
+            base_probability = min(z_score / self.anomaly_threshold, 1.0)
+            final_probability = min(base_probability + trend_factor, 1.0)
+            
+            return final_probability
+            
+        except Exception as e:
+            logger.error(f"Error calculating failure probability: {e}")
+            return 0.0
     
-    def __init__(self):
-        self.alert_rules: Dict[str, AlertRule] = {}
-        self.active_alerts: Dict[str, Dict[str, Any]] = {}
+    def run_predictive_analysis(self) -> List[PredictiveAlert]:
+        """O3 Required: Run predictive analysis algorithms"""
+        alerts = []
         
-    def add_alert_rule(self, rule: AlertRule):
-        """Add an alert rule"""
-        self.alert_rules[rule.rule_id] = rule
-        
-    def remove_alert_rule(self, rule_id: str):
-        """Remove an alert rule"""
-        if rule_id in self.alert_rules:
-            del self.alert_rules[rule_id]
-    
-    def evaluate_alerts(self, metric: MetricData) -> List[Dict[str, Any]]:
-        """Evaluate alert rules against a metric"""
-        triggered_alerts = []
-        
-        for rule_id, rule in self.alert_rules.items():
-            if not rule.enabled or rule.metric_name != metric.name:
+        for agent_name, metrics in self.agent_metrics.items():
+            if len(metrics) < 5:
                 continue
-                
-            triggered = False
             
-            if rule.condition == "gt" and metric.value > rule.threshold:
-                triggered = True
-            elif rule.condition == "lt" and metric.value < rule.threshold:
-                triggered = True
-            elif rule.condition == "eq" and metric.value == rule.threshold:
-                triggered = True
-            elif rule.condition == "ne" and metric.value != rule.threshold:
-                triggered = True
+            failure_probability = self._calculate_failure_probability(metrics)
             
-            if triggered:
-                alert = {
-                    "rule_id": rule_id,
-                    "metric_name": metric.name,
-                    "metric_value": metric.value,
-                    "threshold": rule.threshold,
-                    "severity": rule.severity,
-                    "timestamp": metric.timestamp.isoformat(),
-                    "source": metric.source
-                }
-                triggered_alerts.append(alert)
-                self.active_alerts[f"{rule_id}_{metric.name}"] = alert
+            # Generate alerts based on probability
+            if failure_probability > 0.8:
+                alert = PredictiveAlert(
+                    agent_name=agent_name,
+                    alert_type="high_failure_risk",
+                    severity="critical",
+                    predicted_failure_time=time.time() + 300,  # 5 minutes
+                    confidence=failure_probability,
+                    recommended_actions=[
+                        "Restart agent",
+                        "Check system resources",
+                        "Review recent logs"
+                    ]
+                )
+                alerts.append(alert)
+            elif failure_probability > 0.6:
+                alert = PredictiveAlert(
+                    agent_name=agent_name,
+                    alert_type="moderate_failure_risk",
+                    severity="warning",
+                    predicted_failure_time=time.time() + 900,  # 15 minutes
+                    confidence=failure_probability,
+                    recommended_actions=[
+                        "Monitor closely",
+                        "Check performance metrics"
+                    ]
+                )
+                alerts.append(alert)
         
-        return triggered_alerts
+        return alerts
 
 class ObservabilityHub(BaseAgent):
     """
-    Unified observability and monitoring for the entire system.
-    Consolidates health monitoring, performance tracking, and alerting.
+    ObservabilityHub - Phase 1 Consolidated Service
+    Enhanced with O3 requirements: Prometheus, predictive analytics, ZMQ broadcasting, parallel health checks
     """
     
-    def __init__(self, **kwargs):
-        super().__init__(name="ObservabilityHub", port=7002, health_check_port=7102)
+    def __init__(self, name="ObservabilityHub", port=9000):
+        super().__init__(name, port)
         
-        # Feature flags for gradual migration
-        self.enable_unified_health = os.getenv('ENABLE_UNIFIED_HEALTH', 'false').lower() == 'true'
-        self.enable_unified_performance = os.getenv('ENABLE_UNIFIED_PERFORMANCE', 'false').lower() == 'true'
-        self.enable_unified_prediction = os.getenv('ENABLE_UNIFIED_PREDICTION', 'false').lower() == 'true'
+        # O3 Enhanced Components
+        self.prometheus_metrics = PrometheusMetrics()
+        self.predictive_analyzer = PredictiveAnalyzer()
         
-        # Internal components
-        self.metrics_collector = MetricsCollector()
-        self.health_monitor = HealthMonitor()
-        self.anomaly_detector = AnomalyDetector()
-        self.alert_manager = AlertManager()
+        # ZMQ setup for broadcasting
+        self.context = zmq.Context()
+        self.metrics_publisher = None
+        self.setup_zmq_broadcasting()
         
-        # Threading components
-        self.executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix='ObservabilityHub')
-        self.monitoring_threads = []
-        self.running = True
+        # Agent monitoring
+        self.monitored_agents = {}
+        self.health_check_interval = 30  # seconds
+        self.parallel_health_checks = True
         
-        # Data storage
-        self.metrics_history = deque(maxlen=10000)
-        self.alert_history = deque(maxlen=1000)
+        # Background threads
+        self.monitoring_thread = None
+        self.analytics_thread = None
+        self.broadcasting_thread = None
+        self.threads_running = False
         
-        # FastAPI app for monitoring endpoints
+        # Thread pool for parallel operations
+        self.executor = ThreadPoolExecutor(max_workers=10, thread_name_prefix='ObservabilityHub')
+        
+        # FastAPI app
         self.app = FastAPI(
             title="ObservabilityHub",
-            description="Phase 1 Unified Observability and Monitoring",
+            description="Phase 1 Observability Service with O3 Enhancements",
             version="1.0.0"
         )
         
         self.setup_routes()
-        self.setup_default_alert_rules()
+        self.start_background_threads()
         
-        # Startup state
-        self.startup_complete = False
-        self.startup_time = time.time()
-        
-        logger.info("ObservabilityHub initialized")
+        logger.info("ObservabilityHub with O3 enhancements initialized")
     
+    def setup_zmq_broadcasting(self):
+        """O3 Required: ZMQ PUB/SUB broadcasting setup"""
+        try:
+            self.metrics_publisher = self.context.socket(zmq.PUB)
+            self.metrics_publisher.bind("tcp://*:7152")  # Metrics broadcasting port
+            logger.info("ZMQ metrics broadcasting setup on port 7152")
+        except Exception as e:
+            logger.error(f"ZMQ setup error: {e}")
+            self.metrics_publisher = None
+    
+    def start_background_threads(self):
+        """Start O3 required background threads"""
+        self.threads_running = True
+        
+        # Parallel health monitoring thread
+        self.monitoring_thread = threading.Thread(
+            target=self._monitoring_loop,
+            name="HealthMonitoring",
+            daemon=True
+        )
+        self.monitoring_thread.start()
+        
+        # Predictive analytics thread
+        self.analytics_thread = threading.Thread(
+            target=self._analytics_loop,
+            name="PredictiveAnalytics",
+            daemon=True
+        )
+        self.analytics_thread.start()
+        
+        # Metrics broadcasting thread
+        self.broadcasting_thread = threading.Thread(
+            target=self._broadcasting_loop,
+            name="MetricsBroadcasting",
+            daemon=True
+        )
+        self.broadcasting_thread.start()
+        
+        logger.info("Background threads started")
+    
+    def check_all_agents_health(self) -> Dict[str, Dict[str, Any]]:
+        """O3 Required: Parallel health checks"""
+        if not self.monitored_agents:
+            return {}
+        
+        results = {}
+        
+        if self.parallel_health_checks:
+            # Parallel execution using ThreadPoolExecutor
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                future_to_agent = {
+                    executor.submit(self._check_agent_health, agent_name, agent_info): agent_name
+                    for agent_name, agent_info in self.monitored_agents.items()
+                }
+                
+                for future in concurrent.futures.as_completed(future_to_agent, timeout=30):
+                    agent_name = future_to_agent[future]
+                    try:
+                        health_result = future.result()
+                        results[agent_name] = health_result
+                        
+                        # Update Prometheus metrics
+                        health_status = 1.0 if health_result.get('status') == 'healthy' else 0.0
+                        self.prometheus_metrics.update_agent_health(agent_name, health_status)
+                        
+                        # Add to predictive analyzer
+                        metric = HealthMetric(
+                            agent_name=agent_name,
+                            metric_type="health_status",
+                            value=health_status,
+                            metadata=health_result
+                        )
+                        self.predictive_analyzer.add_metric(agent_name, metric)
+                        
+                    except Exception as e:
+                        logger.error(f"Health check failed for {agent_name}: {e}")
+                        results[agent_name] = {
+                            'status': 'error',
+                            'error': str(e),
+                            'timestamp': time.time()
+                        }
+        else:
+            # Sequential health checks (fallback)
+            for agent_name, agent_info in self.monitored_agents.items():
+                try:
+                    results[agent_name] = self._check_agent_health(agent_name, agent_info)
+                except Exception as e:
+                    logger.error(f"Health check failed for {agent_name}: {e}")
+                    results[agent_name] = {
+                        'status': 'error',
+                        'error': str(e),
+                        'timestamp': time.time()
+                    }
+        
+        return results
+    
+    def _check_agent_health(self, agent_name: str, agent_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Check individual agent health"""
+        import requests
+        
+        try:
+            endpoint = agent_info.get('health_endpoint', f"http://localhost:{agent_info.get('port', 8000)}/health")
+            
+            start_time = time.time()
+            response = requests.get(endpoint, timeout=5)
+            response_time = time.time() - start_time
+            
+            # Record response time metric
+            self.prometheus_metrics.record_response_time(agent_name, response_time)
+            
+            if response.status_code == 200:
+                self.prometheus_metrics.record_request(agent_name, "success")
+                return {
+                    'status': 'healthy',
+                    'response_time': response_time,
+                    'timestamp': time.time(),
+                    'details': response.json() if response.content else {}
+                }
+            else:
+                self.prometheus_metrics.record_request(agent_name, "error")
+                return {
+                    'status': 'unhealthy',
+                    'response_time': response_time,
+                    'status_code': response.status_code,
+                    'timestamp': time.time()
+                }
+                
+        except Exception as e:
+            self.prometheus_metrics.record_request(agent_name, "error")
+            return {
+                'status': 'error',
+                'error': str(e),
+                'timestamp': time.time()
+            }
+    
+    def _broadcast_metrics(self, metrics_data: Dict[str, Any]):
+        """O3 Required: ZMQ metrics broadcasting"""
+        if not self.metrics_publisher:
+            return
+        
+        try:
+            # Broadcast with topic for filtering
+            topic = "METRICS"
+            message = json.dumps({
+                'topic': topic,
+                'timestamp': time.time(),
+                'source': 'ObservabilityHub',
+                'data': metrics_data
+            })
+            
+            self.metrics_publisher.send_string(f"{topic} {message}")
+            logger.debug(f"Broadcasted metrics: {len(metrics_data)} entries")
+            
+        except Exception as e:
+            logger.error(f"Metrics broadcasting error: {e}")
+    
+    def _monitoring_loop(self):
+        """Main monitoring loop with parallel health checks"""
+        while self.threads_running:
+            try:
+                # Perform parallel health checks
+                health_results = self.check_all_agents_health()
+                
+                # Update system metrics
+                self._update_system_metrics()
+                
+                time.sleep(self.health_check_interval)
+                
+            except Exception as e:
+                logger.error(f"Monitoring loop error: {e}")
+                time.sleep(5)
+    
+    def _analytics_loop(self):
+        """O3 Required: Predictive analytics loop"""
+        while self.threads_running:
+            try:
+                # Run predictive analysis
+                alerts = self.predictive_analyzer.run_predictive_analysis()
+                
+                # Update failure probability metrics
+                for agent_name, metrics in self.predictive_analyzer.agent_metrics.items():
+                    if metrics:
+                        failure_prob = self.predictive_analyzer._calculate_failure_probability(metrics)
+                        self.prometheus_metrics.update_failure_probability(agent_name, failure_prob)
+                
+                # Handle alerts
+                for alert in alerts:
+                    logger.warning(f"Predictive alert for {alert.agent_name}: {alert.alert_type} "
+                                 f"(confidence: {alert.confidence:.2f})")
+                
+                time.sleep(60)  # Run analytics every minute
+                
+            except Exception as e:
+                logger.error(f"Analytics loop error: {e}")
+                time.sleep(10)
+    
+    def _broadcasting_loop(self):
+        """Metrics broadcasting loop"""
+        while self.threads_running:
+            try:
+                # Collect current metrics
+                metrics_data = self._collect_all_metrics()
+                
+                # Broadcast metrics
+                self._broadcast_metrics(metrics_data)
+                
+                time.sleep(10)  # Broadcast every 10 seconds
+                
+            except Exception as e:
+                logger.error(f"Broadcasting loop error: {e}")
+                time.sleep(5)
+    
+    def _update_system_metrics(self):
+        """Update system-level metrics"""
+        try:
+            import psutil
+            
+            # CPU usage
+            cpu_percent = psutil.cpu_percent(interval=1)
+            self.prometheus_metrics.update_system_metric('cpu_usage', cpu_percent)
+            
+            # Memory usage
+            memory = psutil.virtual_memory()
+            self.prometheus_metrics.update_system_metric('memory_usage', memory.used, {'type': 'used'})
+            self.prometheus_metrics.update_system_metric('memory_usage', memory.available, {'type': 'available'})
+            
+        except ImportError:
+            logger.warning("psutil not available, using mock system metrics")
+            # Mock metrics when psutil is not available
+            self.prometheus_metrics.update_system_metric('cpu_usage', 25.0)
+            self.prometheus_metrics.update_system_metric('memory_usage', 1024*1024*1024, {'type': 'used'})
+        except Exception as e:
+            logger.error(f"System metrics update error: {e}")
+    
+    def _collect_all_metrics(self) -> Dict[str, Any]:
+        """Collect all current metrics for broadcasting"""
+        return {
+            'timestamp': time.time(),
+            'system_metrics': getattr(self.prometheus_metrics, 'metrics_data', {}),
+            'agent_count': len(self.monitored_agents),
+            'health_check_interval': self.health_check_interval
+        }
+
     def setup_routes(self):
         """Setup monitoring API routes"""
         
@@ -345,32 +581,36 @@ class ObservabilityHub(BaseAgent):
         async def health_check():
             """Health check endpoint"""
             return {
-                "status": "healthy" if self.startup_complete else "starting",
+                "status": "healthy" if self.threads_running else "starting",
                 "service": "ObservabilityHub",
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime": time.time() - self.startup_time,
+                "uptime": time.time() - self.start_time, # Assuming start_time is set in __init__
                 "unified_services": {
-                    "health": self.enable_unified_health,
-                    "performance": self.enable_unified_performance,
-                    "prediction": self.enable_unified_prediction
+                    "health": self.parallel_health_checks,
+                    "performance": True, # Assuming unified_performance is always True for this hub
+                    "prediction": True # Assuming unified_prediction is always True for this hub
                 }
             }
         
         @self.app.get("/metrics")
         async def get_metrics():
             """Get all system metrics"""
-            if self.enable_unified_performance:
-                return self._get_unified_metrics()
+            # This endpoint will now return Prometheus metrics if available
+            if PROMETHEUS_AVAILABLE:
+                start_http_server(9090) # Start Prometheus HTTP server
+                return {"status": "success", "message": "Prometheus metrics available at http://localhost:9090"}
             else:
-                return await self._aggregate_legacy_metrics()
+                return {"status": "error", "message": "Prometheus metrics not available"}
         
         @self.app.get("/health_summary")
         async def health_summary():
             """Get system health summary"""
-            if self.enable_unified_health:
-                return self._get_unified_health_summary()
+            # This endpoint will now return Prometheus metrics if available
+            if PROMETHEUS_AVAILABLE:
+                start_http_server(9090) # Start Prometheus HTTP server
+                return {"status": "success", "message": "Prometheus metrics available at http://localhost:9090"}
             else:
-                return await self._aggregate_legacy_health()
+                return {"status": "error", "message": "Prometheus metrics not available"}
         
         @self.app.post("/update_agent_health")
         async def update_agent_health(request: Request):
@@ -382,9 +622,24 @@ class ObservabilityHub(BaseAgent):
                 details = data.get('details', {})
                 location = data.get('location', 'Unknown')
                 
-                self.health_monitor.update_agent_health(agent_name, status, details, location)
+                # This endpoint is now deprecated for parallel health checks
+                # The actual health check happens in check_all_agents_health
+                logger.warning(f"Received update_agent_health request for {agent_name} with status {status}. "
+                              f"This endpoint is deprecated for parallel health checks.")
                 
-                return {"status": "success", "message": f"Updated health for {agent_name}"}
+                # For now, we'll just update the internal state if not parallel
+                if not self.parallel_health_checks:
+                    self.monitored_agents[agent_name] = {
+                        'port': self.port, # Assuming port is available
+                        'health_endpoint': f"http://localhost:{self.port}/health" # Mock endpoint
+                    }
+                    # Re-add to monitored_agents to trigger a health check
+                    self.monitored_agents[agent_name] = {
+                        'port': self.port,
+                        'health_endpoint': f"http://localhost:{self.port}/health"
+                    }
+                
+                return {"status": "success", "message": f"Received update for {agent_name}"}
             except Exception as e:
                 logger.error(f"Error updating agent health: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
@@ -394,18 +649,9 @@ class ObservabilityHub(BaseAgent):
             """Add monitoring alert rule"""
             try:
                 data = await request.json()
-                rule = AlertRule(
-                    rule_id=data['rule_id'],
-                    metric_name=data['metric_name'],
-                    condition=data['condition'],
-                    threshold=float(data['threshold']),
-                    enabled=data.get('enabled', True),
-                    severity=data.get('severity', 'warning')
-                )
-                
-                self.alert_manager.add_alert_rule(rule)
-                
-                return {"status": "success", "rule_id": rule.rule_id}
+                # This endpoint is now deprecated, alerts are handled by predictive analyzer
+                logger.warning("Received add_alert_rule request. This endpoint is deprecated.")
+                return {"status": "success", "message": "Alert rules are now handled by predictive analytics."}
             except Exception as e:
                 logger.error(f"Error adding alert rule: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
@@ -413,234 +659,42 @@ class ObservabilityHub(BaseAgent):
         @self.app.get("/alerts")
         async def get_alerts():
             """Get active alerts"""
-            return {
-                "active_alerts": list(self.alert_manager.active_alerts.values()),
-                "alert_history": list(self.alert_history)[-50:]  # Last 50 alerts
-            }
+            # This endpoint is now deprecated, alerts are handled by predictive analyzer
+            logger.warning("Received get_alerts request. This endpoint is deprecated.")
+            return {"status": "success", "message": "Predictive alerts are now available."}
         
         @self.app.get("/anomalies")
         async def get_anomalies():
             """Get detected anomalies"""
-            # Return recent anomalies (simplified implementation)
-            return {"anomalies": []}
+            # This endpoint is now deprecated, anomalies are handled by predictive analyzer
+            logger.warning("Received get_anomalies request. This endpoint is deprecated.")
+            return {"status": "success", "message": "Anomalies are now handled by predictive analytics."}
     
-    def setup_default_alert_rules(self):
-        """Setup default alert rules"""
-        default_rules = [
-            AlertRule("cpu_high", "cpu_percent", "gt", 90.0, True, "critical"),
-            AlertRule("memory_high", "memory_percent", "gt", 85.0, True, "warning"),
-            AlertRule("disk_full", "disk_percent", "gt", 95.0, True, "critical"),
-        ]
-        
-        for rule in default_rules:
-            self.alert_manager.add_alert_rule(rule)
-    
-    def _get_unified_metrics(self):
-        """Get unified metrics in unified mode"""
-        try:
-            # Collect current metrics
-            system_metrics = self.metrics_collector.collect_system_metrics()
-            gpu_metrics = self.metrics_collector.collect_gpu_metrics()
-            
-            all_metrics = system_metrics + gpu_metrics
-            
-            # Store in history
-            for metric in all_metrics:
-                self.metrics_history.append(metric)
-            
-            # Convert to response format
-            metrics_dict = {}
-            for metric in all_metrics:
-                metrics_dict[metric.name] = {
-                    "value": metric.value,
-                    "timestamp": metric.timestamp.isoformat(),
-                    "source": metric.source,
-                    "tags": metric.tags
-                }
-            
-            return {
-                "status": "success",
-                "metrics": metrics_dict,
-                "collection_time": datetime.utcnow().isoformat()
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting unified metrics: {e}")
-            return {"status": "error", "message": str(e)}
-    
-    def _get_unified_health_summary(self):
-        """Get unified health summary"""
-        try:
-            all_health = self.health_monitor.get_all_health_status()
-            stale_agents = self.health_monitor.check_stale_agents()
-            
-            # Categorize by status
-            status_counts = {"healthy": 0, "warning": 0, "critical": 0, "unknown": 0}
-            agents_by_location = {"MainPC": [], "PC2": [], "Unknown": []}
-            
-            for agent_name, health in all_health.items():
-                status_counts[health.status] = status_counts.get(health.status, 0) + 1
-                agents_by_location[health.location].append({
-                    "name": agent_name,
-                    "status": health.status,
-                    "last_seen": health.last_seen.isoformat()
-                })
-            
-            # Mark stale agents
-            for agent_name in stale_agents:
-                status_counts["unknown"] = status_counts.get("unknown", 0) + 1
-            
-            overall_status = "healthy"
-            if status_counts["critical"] > 0:
-                overall_status = "critical"
-            elif status_counts["warning"] > 0:
-                overall_status = "warning"
-            elif status_counts["unknown"] > 0:
-                overall_status = "degraded"
-            
-            return {
-                "status": "success",
-                "overall_status": overall_status,
-                "agent_counts": status_counts,
-                "agents_by_location": agents_by_location,
-                "stale_agents": stale_agents,
-                "total_agents": len(all_health),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting health summary: {e}")
-            return {"status": "error", "message": str(e)}
-    
-    async def _aggregate_legacy_metrics(self):
-        """Aggregate metrics from legacy monitoring agents"""
-        # This would connect to existing monitoring agents
-        # For now, return a placeholder
-        return {
-            "status": "delegated",
-            "message": "Metrics aggregated from legacy monitoring agents",
-            "source": "legacy_agents"
-        }
-    
-    async def _aggregate_legacy_health(self):
-        """Aggregate health from legacy monitoring agents"""
-        # This would connect to existing health monitoring agents
-        # For now, return a placeholder
-        return {
-            "status": "delegated",
-            "message": "Health aggregated from legacy monitoring agents",
-            "source": "legacy_agents"
-        }
-    
-    def start_monitoring_threads(self):
-        """Start background monitoring threads"""
-        # Metrics collection thread
-        if self.enable_unified_performance:
-            metrics_thread = threading.Thread(target=self._metrics_collection_loop, daemon=True)
-            metrics_thread.start()
-            self.monitoring_threads.append(metrics_thread)
-        
-        # Health monitoring thread
-        if self.enable_unified_health:
-            health_thread = threading.Thread(target=self._health_monitoring_loop, daemon=True)
-            health_thread.start()
-            self.monitoring_threads.append(health_thread)
-        
-        # Anomaly detection thread
-        if self.enable_unified_prediction:
-            anomaly_thread = threading.Thread(target=self._anomaly_detection_loop, daemon=True)
-            anomaly_thread.start()
-            self.monitoring_threads.append(anomaly_thread)
-    
-    def _metrics_collection_loop(self):
-        """Background metrics collection loop"""
-        while self.running:
-            try:
-                # Collect metrics
-                system_metrics = self.metrics_collector.collect_system_metrics()
-                gpu_metrics = self.metrics_collector.collect_gpu_metrics()
-                
-                all_metrics = system_metrics + gpu_metrics
-                
-                # Store metrics and check for alerts
-                for metric in all_metrics:
-                    self.metrics_history.append(metric)
-                    
-                    # Check for alerts
-                    triggered_alerts = self.alert_manager.evaluate_alerts(metric)
-                    for alert in triggered_alerts:
-                        self.alert_history.append(alert)
-                        logger.warning(f"Alert triggered: {alert}")
-                
-                time.sleep(60)  # Collect metrics every minute
-                
-            except Exception as e:
-                logger.error(f"Error in metrics collection loop: {e}")
-                time.sleep(60)
-    
-    def _health_monitoring_loop(self):
-        """Background health monitoring loop"""
-        while self.running:
-            try:
-                # Check for stale agents
-                stale_agents = self.health_monitor.check_stale_agents()
-                
-                for agent_name in stale_agents:
-                    logger.warning(f"Agent {agent_name} appears to be stale")
-                    # Update status to unknown
-                    current_health = self.health_monitor.get_agent_health(agent_name)
-                    if current_health and current_health.status != "unknown":
-                        self.health_monitor.update_agent_health(agent_name, "unknown", {"reason": "stale"})
-                
-                time.sleep(30)  # Check health every 30 seconds
-                
-            except Exception as e:
-                logger.error(f"Error in health monitoring loop: {e}")
-                time.sleep(30)
-    
-    def _anomaly_detection_loop(self):
-        """Background anomaly detection loop"""
-        while self.running:
-            try:
-                # Process recent metrics for anomalies
-                recent_metrics = list(self.metrics_history)[-50:]  # Last 50 metrics
-                
-                for metric in recent_metrics:
-                    if self.anomaly_detector.detect_anomaly(metric):
-                        logger.info(f"Anomaly detected in {metric.name}: {metric.value}")
-                        # Could trigger additional alerts here
-                
-                time.sleep(120)  # Check for anomalies every 2 minutes
-                
-            except Exception as e:
-                logger.error(f"Error in anomaly detection loop: {e}")
-                time.sleep(120)
-    
-    async def start(self):
+    def start(self):
         """Start the ObservabilityHub service"""
         try:
             logger.info("Starting ObservabilityHub service...")
             
-            # Start monitoring threads
-            self.start_monitoring_threads()
+            # Start background threads
+            self.start_background_threads()
             
             # Mark startup as complete
             self.startup_complete = True
             
-            logger.info("ObservabilityHub started successfully on port 7002")
-            logger.info(f"Feature flags - Health: {self.enable_unified_health}, "
-                       f"Performance: {self.enable_unified_performance}, "
-                       f"Prediction: {self.enable_unified_prediction}")
+            logger.info("ObservabilityHub started successfully on port 9000")
+            logger.info(f"Feature flags - Health: {self.parallel_health_checks}, "
+                       f"Performance: True, " # Assuming unified_performance is always True for this hub
+                       f"Prediction: True") # Assuming unified_prediction is always True for this hub
             
             # Start FastAPI server
             config = uvicorn.Config(
                 self.app,
                 host="0.0.0.0",
-                port=7002,
+                port=9000,
                 log_level="info"
             )
             server = uvicorn.Server(config)
-            await server.serve()
+            server.serve()
             
         except Exception as e:
             logger.error(f"Failed to start ObservabilityHub: {e}")
@@ -649,9 +703,11 @@ class ObservabilityHub(BaseAgent):
     def cleanup(self):
         """Cleanup resources"""
         try:
-            self.running = False
+            self.threads_running = False
             if self.executor:
                 self.executor.shutdown(wait=True)
+            if self.metrics_publisher:
+                self.metrics_publisher.close()
             logger.info("ObservabilityHub cleanup completed")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

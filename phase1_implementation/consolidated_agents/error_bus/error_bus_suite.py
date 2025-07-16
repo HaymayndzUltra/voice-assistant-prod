@@ -69,7 +69,7 @@ logging.basicConfig(
 class ErrorBusSuite(BaseAgent):
     """Consolidated ErrorBus façade service (port 7003)."""
 
-    def __init__(self, *, port: int = 7003, health_check_port: int = 7103):
+    def __init__(self, *, port: int = 9002, health_check_port: int = 9102):
         super().__init__(name="ErrorBusSuite", port=port, health_check_port=health_check_port)
 
         self._legacy: ErrorBusService | None = None  # type: ignore[valid-type]
