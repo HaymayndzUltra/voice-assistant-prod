@@ -1,4 +1,4 @@
-CONSOLIDATION PROPOSAL
+CONSOLIDATION PROPOSAL (UPDATED – ModelManagerSuite deferred)
 (The plan is intentionally detailed so you can execute it phase-by-phase without hunting for extra information.)
 GLOBAL PRINCIPLES
 Keep MainPC GPU-heavy (RTX 4090 → high-VRAM tasks, large models, fine-tuning, multi-modal reasoning).
