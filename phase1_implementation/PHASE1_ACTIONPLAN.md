@@ -1,53 +1,63 @@
-Agent Consolidation Task
-Objective:
-Consolidate the following legacy agents into a single unified agent/service.
-It is CRUCIAL that you preserve ALL logic, error handling, imports, helper functions, and interface patterns from each original agent.
-No part of the original agent's logic or pattern should be lost or omitted during this process.
+# PHASE 2 CONSOLIDATION – ModelManagerSuite
 
-Instructions for Consolidation
-Lossless Merge (Walang Makakalimutan):
+**Objective:**  
+Consolidate all legacy model management and orchestration agents into a unified ModelManagerSuite.  
+All logic, error handling, imports, helpers, and API endpoints from the original agents must be preserved and fully integrated.  
+Use a modular structure (submodules/classes) so that each legacy logic is traceable and testable after the merge.
 
-Import or migrate all code from each agent as modules, classes, or sub-apps.
-DO NOT discard, rewrite, or drop any logic, error handling, or reusable code—retain everything from each source agent.
-Preserve and Integrate Patterns:
+---
 
-Keep all original error handling, logging, helper imports, and interface patterns.
-If logic overlaps (e.g. same method names), use adapters or wrapper classes to avoid overwriting.
-Namespace schemas, tables, or memory keys to prevent collisions (e.g. session_, kb_, etc.).
-Maintain API Compatibility:
+## Agents to Consolidate
 
-Expose legacy endpoints (routes, methods) as sub-routes or sub-apps so that any old integrations still work.
-If deprecating any endpoint, mark it clearly but do not remove support.
-Modular Structure:
+- List here all legacy model agents, for example:
+  - ModelOrchestrator (`main_pc_code/agents/model_orchestrator.py`)
+  - ModelRegistryAgent (`main_pc_code/agents/model_registry_agent.py`)
+  - ModelLoaderAgent (`main_pc_code/agents/model_loader_agent.py`)
+  - ModelHealthMonitor (`main_pc_code/agents/model_health_monitor.py`)
+  - *[Add any other model-related agents here]*
 
-Organize merged code in a modular way: each legacy agent’s logic should be traceable and testable after the merge.
-Use clear comments and sections for each legacy agent’s logic within the unified agent.
-Testing and Documentation:
+- **Unified Target:**  
+  - ModelManagerSuite (`phase2_implementation/consolidated_agents/model_manager_suite/model_manager_suite.py`)
 
-After merging, ensure all original agent logic is covered by tests (unit/integration).
-Update or generate documentation mapping legacy agent features to the unified agent structure.
-Migration Scripts:
+---
 
-If there are schema or data changes, generate migration scripts or adapters to ensure smooth data transition.
-Example Agent List for Consolidation
-MemoryClient
-SessionMemoryAgent
-KnowledgeBase
-MemoryOrchestratorService
-UnifiedMemoryReasoningAgent
-ContextManager
-ExperienceTracker
-CacheManager
-ProactiveContextMonitor
-UnifiedUtilsAgent
-AuthenticationAgent
-AgentTrustScorer
-Output
-Unified agent/service codebase with ALL logic, error handling, and patterns preserved.
-Modular structure (not copy-paste, not mixed up).
-Legacy API compatibility.
-Documentation and migration scripts.
-Tagalog Reminder:
-Siguraduhin na WALANG logic, error handling, imports, o pattern na mawawala o maliligtaan. Bawat dating agent ay dapat may traceable na bahagi sa bagong unified agent.
+## Instructions
 
-END OF INSTRUCTION.
+1. **Lossless Merge:**
+   - Import all logic, classes, and helpers from each legacy agent as submodules or classes.
+   - Do NOT discard, rewrite, or drop any logic or error handling—retain everything.
+   - Use wrappers/adapters if direct class merges cause conflicts.
+
+2. **Preserve API and Patterns:**
+   - All legacy endpoints/routes must be exposed as subroutes, sub-apps, or compatible API handlers for backward compatibility.
+   - Retain all error handling, logging, and config patterns.
+
+3. **Modular Structure:**
+   - Structure the unified ModelManagerSuite so that each legacy agent’s logic is encapsulated and documented.
+   - Use clear comments or docstrings to map legacy features into the new code.
+
+4. **Testing and Documentation:**
+   - Ensure all original agent logic is covered by tests (unit/integration as available).
+   - Update or generate documentation mapping legacy agent features to the unified agent.
+
+5. **Migration Scripts (if needed):**
+   - If DB/schema/data changes are needed, generate migration scripts or adapters.
+
+---
+
+## Output Checklist
+
+- [ ] ModelManagerSuite contains ALL logic, error handling, and imports from legacy model agents.
+- [ ] Modular, maintainable structure—no duplicated or lost code.
+- [ ] All legacy endpoints are exposed or mapped.
+- [ ] Full backward compatibility and traceability.
+- [ ] Documentation updated.
+
+---
+
+**IMPORTANT:**  
+Walang logic, error handling, o import na dapat mawala o makalimutan. Bawat dating agent ay dapat may traceable na bahagi sa bagong ModelManagerSuite.
+
+---
+
+# END OF INSTRUCTION
