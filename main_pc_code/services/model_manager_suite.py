@@ -94,6 +94,7 @@ class ModelManagerSuite(BaseAgent):
     """Facade that muxes requests to the legacy sub-agents."""
 
     def __init__(self, port: int = 7011, **kwargs):
+        # Port 7011 is the unified external endpoint. Health uses *explicit* 7112 as per plan.
         super().__init__(name="ModelManagerSuite", port=port, **kwargs)
 
         # Sub-agents (lazy-loaded to keep start-up fast and reduce VRAM until
@@ -111,9 +112,24 @@ class ModelManagerSuite(BaseAgent):
             "main_pc_code.agents.model_evaluation_framework", "ModelEvaluationFramework"
         )
 
-        # Health-check REP socket (7012 by convention)
-        self.health_port = port + 1
+        # Health-check REP socket – fixed 7112 to follow consolidation spec.
+        self.health_port = 7112
         self._init_additional_sockets()
+
+        # -----------------------------------------------------------------
+        # Eagerly instantiate sub-agents so their legacy ports / gRPC servers
+        # are bound and available from the moment the suite goes live.
+        # -----------------------------------------------------------------
+        self._sub_agent_threads: list[threading.Thread] = []
+        for lazy in (self.gguf_manager, self.model_manager, self.predictive_loader, self.model_eval_framework):
+            t = threading.Thread(target=lambda l=lazy: l.instance(), daemon=True)
+            t.start()
+            self._sub_agent_threads.append(t)
+
+        # Health responder thread (for 7112)
+        hr = threading.Thread(target=self._health_responder_loop, daemon=True)
+        hr.start()
+        self._threads.append(hr)
 
         # Start thread for handling external REQ/REP like the other agents.
         t = threading.Thread(target=self._request_loop, daemon=True)
