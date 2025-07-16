@@ -1,7 +1,7 @@
 # DISTRIBUTED AI SYSTEM ARCHITECTURAL CONSOLIDATION
 
 ## **TASK OVERVIEW**
-You have access to a distributed AI system codebase with 75+ agents across two machines. Your task is to propose a comprehensive architectural consolidation plan that reduces complexity while maintaining functionality and optimizing for the available hardware.
+You have access to a distributed AI system codebase with 80+ agents across two machines. Your task is to propose a comprehensive architectural consolidation plan that reduces complexity while maintaining functionality and optimizing for the available hardware.
 
 ---
 
@@ -12,8 +12,8 @@ You have access to a distributed AI system codebase with 75+ agents across two m
 - **PC2**: RTX 3060 (12GB VRAM) 
 
 **Configuration Files:**
-- **MainPC Agents**: `main_pc_code/config/startup_config.yaml` (~50 agents)
-- **PC2 Agents**: `pc2_code/config/startup_config.yaml` (~25 agents)
+- **MainPC Agents**: `main_pc_code/config/startup_config.yaml` 
+- **PC2 Agents**: `pc2_code/config/startup_config.yaml` 
 
 ---
 
@@ -90,7 +90,6 @@ For each proposed consolidation, provide:
 ---
 
 ## **SUCCESS METRICS**
-- **Agent count reduction**: Target 30-40% (75+ → 45-55 agents)
 - **Dependency simplification**: Reduced inter-agent communications
 - **Hardware optimization**: Better GPU utilization distribution
 - **Maintainability improvement**: Clearer functional boundaries
