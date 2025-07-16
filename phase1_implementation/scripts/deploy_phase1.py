@@ -56,6 +56,27 @@ class Phase1Deployer:
                 "health_port": 7102,
                 "hardware": "PC2",
                 "description": "PredictiveHealthMonitor, PerformanceMonitor, HealthMonitor, PerformanceLoggerAgent, SystemHealthManager consolidated"
+            },
+            "ResourceManagerSuite": {
+                "script": "phase1_implementation/consolidated_agents/resource_manager_suite/resource_manager_suite.py",
+                "port": 7001,
+                "health_port": 7101,
+                "hardware": "PC2",
+                "description": "ResourceManager, TaskScheduler, AsyncProcessor, VRAMOptimizerAgent consolidated"
+            },
+            "ErrorBusSuite": {
+                "script": "phase1_implementation/consolidated_agents/error_bus/error_bus_suite.py",
+                "port": 7003,
+                "health_port": 7103,
+                "hardware": "PC2",
+                "description": "Centralised Error Bus service"
+            },
+            "SecurityGateway": {
+                "script": "phase1_implementation/consolidated_agents/security_gateway/security_gateway.py",
+                "port": 7005,
+                "health_port": 7105,
+                "hardware": "PC2",
+                "description": "Authentication & Trust Scorer consolidated service"
             }
         }
         
