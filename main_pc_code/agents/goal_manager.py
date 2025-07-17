@@ -34,42 +34,14 @@ from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, Err
 from main_pc_code.agents.memory_client import MemoryClient
 
 from main_pc_code.utils.config_loader import load_config
+from common.utils.circuit_breaker import CircuitBreaker  # <— use shared utility
 
 # Load configuration at the module level
 config = load_config()
 
 
 # --- Shared Utilities ---
-# I-assume na ang CircuitBreaker ay nasa isang shared utility file
-# Halimbawa: from common.utils.resilience import CircuitBreaker
-# Para sa example, ilalagay ko muna ito dito.
-class CircuitBreaker:
-    """Isang self-contained utility para sa resilient service connections."""
-    # (Ang buong code para sa CircuitBreaker class ay ilalagay dito, gaya ng sa RequestCoordinator)
-    CLOSED, OPEN, HALF_OPEN = 'closed', 'open', 'half_open'
-    def __init__(self, name: str, failure_threshold: int = 3, reset_timeout: int = 30):
-        self.name, self.failure_threshold, self.reset_timeout = name, failure_threshold, reset_timeout
-        self.state, self.failure_count, self.last_failure_time = self.CLOSED, 0, 0
-        self._lock = threading.Lock()
-        logging.info(f"Circuit Breaker initialized for service: {self.name}")
-    def record_success(self):
-        with self._lock:
-            if self.state == self.HALF_OPEN: logging.info(f"Circuit for {self.name} is now CLOSED.")
-            self.state, self.failure_count = self.CLOSED, 0
-    def record_failure(self):
-        with self._lock:
-            self.failure_count += 1; self.last_failure_time = time.time()
-            if self.state == self.HALF_OPEN or self.failure_count >= self.failure_threshold:
-                if self.state != self.OPEN: logging.warning(f"Circuit for {self.name} has TRIPPED and is now OPEN.")
-                self.state = self.OPEN
-    def allow_request(self) -> bool:
-        with self._lock:
-            if self.state == self.OPEN:
-                if time.time() - self.last_failure_time > self.reset_timeout:
-                    self.state = self.HALF_OPEN; logging.info(f"Circuit for {self.name} is now HALF-OPEN.")
-                    return True
-                return False
-            return True
+# Using common.utils.circuit_breaker.CircuitBreaker for resilience
 
 # --- Logging Setup ---
 logger = logging.getLogger('GoalManager')
