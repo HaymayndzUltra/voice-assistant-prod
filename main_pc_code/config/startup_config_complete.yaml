@@ -46,21 +46,20 @@ agent_groups:
   # PHASE 1 CONSOLIDATED SERVICES - IMPLEMENTED ✅
   # ===================================================================
   phase1_consolidated_services:
-    CoreOrchestrator:
-      script_path: phase1_implementation/consolidated_agents/core_orchestrator/core_orchestrator.py
+    SystemCoreHub:
+      script_path: phase1_implementation/consolidated_agents/system_core/system_core_hub.py
       port: 7000
       health_check_port: 8000
       required: true
       dependencies: []
       config:
-        enable_unified_registry: true
-        enable_unified_twin: true
-        enable_unified_coordinator: true
-        enable_unified_system: true
-        sqlite_db_path: "phase1_implementation/data/core_orchestrator.db"
-        redis_host: "localhost"
-        redis_port: 6379
-        redis_db: 1
+        unified_subapps:
+          - CoreOrchestrator
+          - SecurityGateway
+          - ObservabilityHub
+          - ResourceManagerSuite
+          - ErrorBusSuite
+        prometheus_port: 9090  # forwarded from ObservabilityHub
       startup:
         order: 1
         wait_for_dependencies: false
@@ -69,7 +68,8 @@ agent_groups:
       script_path: phase1_implementation/consolidated_agents/security_gateway/security_gateway.py
       port: 7005
       health_check_port: 8005
-      required: true
+      required: false  # 🔄 Consolidated into SystemCoreHub
+      enabled: false
       dependencies: [CoreOrchestrator]
       config:
         enable_jwt_auth: true
