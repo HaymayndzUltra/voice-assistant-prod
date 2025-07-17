@@ -81,6 +81,37 @@ agent_groups:
         order: 4
         wait_for_dependencies: true
 
+    ModelManagerSuite:
+      script_path: phase1_implementation/consolidated_agents/model_manager_suite/model_manager_suite.py
+      port: 7011
+      health_check_port: 7111
+      required: true
+      dependencies: [CoreOrchestrator]
+      config:
+        enable_gguf_management: true
+        enable_predictive_loading: true
+        enable_model_evaluation: true
+        sqlite_db_path: "phase1_implementation/data/model_evaluation.db"
+        models_directory: "models/"
+        vram_limit_gb: 24
+        prediction_interval_seconds: 300
+        enable_backward_compatibility: true
+        legacy_endpoints:
+          - "/load_model"
+          - "/unload_model"
+          - "/generate_text"
+          - "/list_models"
+          - "/get_model_status"
+          - "/predict_models"
+          - "/record_usage"
+          - "/log_performance_metric"
+          - "/get_performance_metrics"
+          - "/log_model_evaluation"
+          - "/get_model_evaluation_scores"
+      startup:
+        order: 2
+        wait_for_dependencies: true
+
   # ===================================================================
   # UPDATED DEPENDENCIES FOR EXISTING AGENTS
   # ===================================================================
@@ -214,41 +245,22 @@ agent_groups:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
 
   gpu_infrastructure:
-    GGUFModelManager:
-      script_path: main_pc_code/agents/gguf_model_manager.py
-      port: 5575
-      health_check_port: 6575
-      required: true
-      dependencies:
-      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
-      config:
-        enable_phase1_integration: true
-
+    # GGUFModelManager CONSOLIDATED into ModelManagerSuite (Port 7011)
+    # PredictiveLoader CONSOLIDATED into ModelManagerSuite (Port 7011)
+    # ModelEvaluationFramework CONSOLIDATED into ModelManagerSuite (Port 7011)
+    
     ModelManagerAgent:
       script_path: main_pc_code/agents/model_manager_agent.py
       port: 5570
       health_check_port: 6570
       required: true
       dependencies:
-      - GGUFModelManager
+      - ModelManagerSuite  # ✅ UPDATED: was GGUFModelManager
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       config:
         enable_phase1_integration: true
         core_orchestrator_endpoint: "http://localhost:7000"
-
-    # VRAMOptimizerAgent CONSOLIDATED into ResourceManagerSuite
-    # PredictiveLoader still needed until ModelManagerSuite is ready
-    PredictiveLoader:
-      script_path: main_pc_code/agents/predictive_loader.py
-      port: 5617
-      health_check_port: 6617
-      required: true
-      dependencies:
-      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
-      - ModelManagerAgent  # For model status tracking
-      config:
-        enable_phase1_integration: true
-        prediction_interval_seconds: 300
+        model_manager_suite_endpoint: "http://localhost:7011"
 
   reasoning_services:
     ChainOfThoughtAgent:
@@ -293,21 +305,15 @@ agent_groups:
         face_recognition_model: "default"
 
   learning_knowledge:
-    ModelEvaluationFramework:
-      script_path: main_pc_code/agents/model_evaluation_framework.py
-      port: 7220
-      health_check_port: 7221
-      required: true
-      dependencies:
-      - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
-
+    # ModelEvaluationFramework CONSOLIDATED into ModelManagerSuite (Port 7011)
+    
     LearningOrchestrationService:
       script_path: main_pc_code/agents/learning_orchestration_service.py
       port: 7210
       health_check_port: 7211
       required: true
       dependencies:
-      - ModelEvaluationFramework
+      - ModelManagerSuite  # ✅ UPDATED: was ModelEvaluationFramework
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
 
     LearningOpportunityDetector:
