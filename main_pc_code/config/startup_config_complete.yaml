@@ -218,7 +218,8 @@ agent_groups:
       script_path: main_pc_code/agents/gguf_model_manager.py
       port: 5575
       health_check_port: 6575
-      required: true
+      required: false  # 🔄 Consolidated into ModelManagementHub
+      enabled: false
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       config:
@@ -228,7 +229,8 @@ agent_groups:
       script_path: main_pc_code/agents/model_manager_agent.py
       port: 5570
       health_check_port: 6570
-      required: true
+      required: false  # 🔄 Consolidated into ModelManagementHub
+      enabled: false
       dependencies:
       - GGUFModelManager
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
@@ -242,13 +244,25 @@ agent_groups:
       script_path: main_pc_code/agents/predictive_loader.py
       port: 5617
       health_check_port: 6617
-      required: true
+      required: false  # 🔄 Consolidated into ModelManagementHub
+      enabled: false
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
       - ModelManagerAgent  # For model status tracking
       config:
         enable_phase1_integration: true
         prediction_interval_seconds: 300
+
+    ModelManagementHub:
+      script_path: phase1_implementation/consolidated_agents/model_management_suite/model_management_hub.py
+      port: 5570
+      health_check_port: 6570
+      required: true
+      dependencies:
+      - CoreOrchestrator
+      startup:
+        order: 2
+        wait_for_dependencies: true
 
   reasoning_services:
     ChainOfThoughtAgent:
