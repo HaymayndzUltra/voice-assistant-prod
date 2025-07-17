@@ -1,0 +1,347 @@
+# Canonical Startup Configuration for PC2 Sub-System - CORRECTED
+# Based on v2 config minus consolidated agents + Phase 1 services
+
+global_settings:
+  environment:
+    PYTHONPATH: /app
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    # Phase 1 Consolidation Flags - O3 Enhanced
+    ENABLE_PHASE1_CONSOLIDATION: 'true'
+    OBSERVABILITY_HUB_MODE: 'unified'
+    ENABLE_O3_ENHANCEMENTS: 'true'
+    ENABLE_PROMETHEUS_METRICS: 'true'
+    ENABLE_PREDICTIVE_ANALYTICS: 'true'
+    ENABLE_ZMQ_BROADCASTING: 'true'
+    ENABLE_PARALLEL_HEALTH_CHECKS: 'true'
+  resource_limits:
+    cpu_percent: 75
+    memory_mb: 1536
+    max_threads: 6
+  volumes:
+  - source: ./logs
+    target: /app/logs
+  - source: ./models
+    target: /app/models
+  - source: ./data
+    target: /app/data
+  - source: ./config
+    target: /app/config
+  - source: ./phase1_implementation/data
+    target: /app/phase1_data
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+  network:
+    name: ai_system_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/16
+
+agent_groups:
+  # ===================================================================
+  # PHASE 1 CONSOLIDATED SERVICES - IMPLEMENTED ✅
+  # ===================================================================
+  phase1_consolidated_services:
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9100
+      required: true
+      dependencies: []
+      config:
+        enable_prometheus_metrics: true
+        enable_predictive_analytics: true
+        enable_zmq_broadcasting: true
+        enable_parallel_health_checks: true
+        prometheus_port: 9090
+        mainpc_services:
+          core_orchestrator: "http://172.20.0.10:7000"
+          security_gateway: "http://172.20.0.10:7005"
+      startup:
+        order: 1
+        wait_for_dependencies: false
+
+    ResourceManagerSuite:
+      script_path: phase1_implementation/consolidated_agents/resource_manager_suite/resource_manager_suite.py
+      port: 9001
+      health_check_port: 9101
+      required: true
+      dependencies: [ObservabilityHub]
+      config:
+        enable_circuit_breakers: true
+        enable_priority_queues: true
+        enable_vram_tracking: true
+        enable_async_processing: true
+      startup:
+        order: 2
+        wait_for_dependencies: true
+
+    ErrorBusSuite:
+      script_path: phase1_implementation/consolidated_agents/error_bus/error_bus_suite.py
+      port: 9002
+      health_check_port: 9102
+      required: true
+      dependencies: [ObservabilityHub]
+      config:
+        enable_zmq_pub_sub: true
+        enable_error_classification: true
+        enable_recovery_mechanisms: true
+        error_bus_port: 7150
+        zmq_broadcast_port: 7151
+      startup:
+        order: 3
+        wait_for_dependencies: true
+
+    MemoryHub:
+      script_path: phase1_implementation/consolidated_agents/memory_hub/memory_hub.py
+      port: 7010
+      health_check_port: 7110
+      required: true
+      dependencies: [ObservabilityHub, ErrorBusSuite]
+      config:
+        enable_redis_cache: true
+        enable_sqlite_integration: true
+        enable_context_reasoning: true
+        enable_auth_middleware: true
+        enable_trust_scoring: true
+        redis_host: "localhost"
+        redis_port: 6379
+        redis_db: 2
+        sqlite_db_path: "phase1_implementation/data/memory_hub.db"
+        mainpc_core_orchestrator: "http://172.20.0.10:7000"
+        mainpc_security_gateway: "http://172.20.0.10:7005"
+      startup:
+        order: 4
+        wait_for_dependencies: true
+
+  # ===================================================================
+  # INDIVIDUAL AGENTS (NOT CONSOLIDATED) - CORRECTED ✅
+  # ===================================================================
+  core_services:
+    TieredResponder:
+      script_path: pc2_code/agents/tiered_responder.py
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies: [ResourceManagerSuite]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 10
+
+    VisionProcessingAgent:
+      script_path: pc2_code/agents/VisionProcessingAgent.py
+      port: 7150
+      health_check_port: 8150
+      required: true
+      dependencies: [MemoryHub]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 11
+
+    RemoteConnectorAgent:
+      script_path: pc2_code/agents/remote_connector_agent.py
+      port: 7124
+      health_check_port: 8124
+      required: true
+      dependencies: [AdvancedRouter]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 12
+
+    AdvancedRouter:
+      script_path: pc2_code/agents/advanced_router.py
+      port: 7129
+      health_check_port: 8129
+      required: true
+      dependencies: [ResourceManagerSuite]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 13
+
+    FileSystemAssistantAgent:
+      script_path: pc2_code/agents/filesystem_assistant_agent.py
+      port: 7123
+      health_check_port: 8123
+      required: true
+      dependencies: [MemoryHub]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 14
+
+  dream_world_services:
+    DreamWorldAgent:
+      script_path: pc2_code/agents/DreamWorldAgent.py
+      port: 7104
+      health_check_port: 8104
+      required: true
+      dependencies: [MemoryHub]
+      config:
+        enable_phase1_integration: true
+        dream_world_enabled: true
+      startup:
+        order: 20
+
+    DreamingModeAgent:
+      script_path: pc2_code/agents/DreamingModeAgent.py
+      port: 7127
+      health_check_port: 8127
+      required: true
+      dependencies: [DreamWorldAgent]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 21
+
+  tutoring_services:
+    TutoringServiceAgent:
+      script_path: pc2_code/agents/tutoring_service_agent.py
+      port: 7130
+      health_check_port: 8130
+      required: true
+      dependencies: [MemoryHub]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 30
+
+    TutorAgent:
+      script_path: pc2_code/agents/tutor_agent.py
+      port: 7108
+      health_check_port: 8108
+      required: true
+      dependencies: [TutoringServiceAgent]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 31
+
+    TutoringAgent:
+      script_path: pc2_code/agents/tutoring_agent.py
+      port: 7131
+      health_check_port: 8131
+      required: true
+      dependencies: [TutoringServiceAgent]
+      config:
+        enable_phase1_integration: true
+      startup:
+        order: 32
+
+  web_services:
+    UnifiedWebAgent:
+      script_path: pc2_code/agents/unified_web_agent.py
+      port: 7126
+      health_check_port: 8126
+      required: true
+      dependencies: [FileSystemAssistantAgent, MemoryHub]
+      config:
+        enable_phase1_integration: true
+        web_scraping_enabled: true
+      startup:
+        order: 40
+
+# ===================================================================
+# STARTUP ORCHESTRATION (PC2) - CORRECTED
+# ===================================================================
+startup_sequence:
+  pre_start_checks:
+    - check_phase1_directories
+    - verify_prometheus_availability
+    - test_mainpc_connectivity
+    - validate_zmq_ports
+    
+  phase1_services_startup:
+    - ObservabilityHub           # Order 1 - Monitoring foundation
+    - ResourceManagerSuite       # Order 2 - Resource management
+    - ErrorBusSuite             # Order 3 - Error handling
+    - MemoryHub                 # Order 4 - Memory consolidation
+    
+  individual_services_startup:
+    - TieredResponder           # Order 10 - Response handling
+    - VisionProcessingAgent     # Order 11 - Vision processing
+    - RemoteConnectorAgent      # Order 12 - Remote connections
+    - AdvancedRouter           # Order 13 - Advanced routing
+    - FileSystemAssistantAgent # Order 14 - File operations
+    - DreamWorldAgent          # Order 20 - Dream world
+    - DreamingModeAgent        # Order 21 - Dreaming mode
+    - TutoringServiceAgent     # Order 30 - Tutoring service
+    - TutorAgent              # Order 31 - Tutor
+    - TutoringAgent           # Order 32 - Tutoring
+    - UnifiedWebAgent         # Order 40 - Web services
+    
+  post_start_verification:
+    - verify_all_health_endpoints
+    - test_phase1_integration
+    - validate_agent_connectivity
+
+# ===================================================================
+# PHASE 1 SPECIFIC CONFIGURATIONS (PC2)
+# ===================================================================
+phase1_config:
+  deployment_mode: "production"
+  consolidation_level: "complete"
+  hardware_role: "distributed_processing_hub"
+  
+  feature_flags:
+    enable_o3_enhancements: true
+    enable_prometheus_metrics: true
+    enable_predictive_analytics: true
+    enable_zmq_broadcasting: true
+    enable_parallel_health_checks: true
+    enable_cross_system_monitoring: true
+    enable_dream_world: true
+    enable_tutoring_services: true
+    enable_web_services: true
+
+  cross_system_integration:
+    mainpc_ip: "172.20.0.10"
+    mainpc_services:
+      core_orchestrator:
+        endpoint: "http://172.20.0.10:7000"
+        health_endpoint: "http://172.20.0.10:7000/health"
+        critical: true
+      security_gateway:
+        endpoint: "http://172.20.0.10:7005"
+        health_endpoint: "http://172.20.0.10:7005/health"
+        critical: true
+
+  monitoring_config:
+    system_metrics_enabled: true
+    gpu_monitoring_enabled: true
+    network_monitoring_enabled: true
+    predictive_analytics_enabled: true
+    alert_threshold_critical: 0.8
+    alert_threshold_warning: 0.6
+
+# ===================================================================
+# LOGGING CONFIGURATION (PC2)
+# ===================================================================
+logging:
+  global_level: INFO
+  
+  phase1_loggers:
+    observability_hub:
+      level: INFO
+      file: "phase1_implementation/logs/observability_hub.log"
+      
+  individual_agent_loggers:
+    dream_world:
+      level: INFO
+      file: "logs/dream_world_services.log"
+    tutoring:
+      level: INFO
+      file: "logs/tutoring_services.log"
+    web_services:
+      level: INFO
+      file: "logs/web_services.log" 

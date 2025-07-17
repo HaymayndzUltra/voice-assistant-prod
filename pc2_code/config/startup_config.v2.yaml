@@ -48,7 +48,7 @@ pc2_services:
   - MemoryOrchestratorService
   required: true
 - name: UnifiedMemoryReasoningAgent
-  script_path: pc2_code/agents/UnifiedMemoryReasoningAgent.py
+  script_path: pc2_code/agents/unified_memory_reasoning_agent.py.py
   host: 0.0.0.0
   port: 7105
   health_check_port: 8105

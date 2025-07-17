@@ -171,6 +171,8 @@ agent_groups:
       dependencies:
       - ModelManagerAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     Executor:
       script_path: main_pc_code/agents/executor.py
@@ -181,6 +183,9 @@ agent_groups:
       - CodeGenerator
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       - SecurityGateway    # ✅ NEW: for security validation
+      config:
+        enable_phase1_integration: true
+        security_validation_enabled: true
 
     TinyLlamaServiceEnhanced:
       script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
@@ -216,6 +221,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     ModelManagerAgent:
       script_path: main_pc_code/agents/model_manager_agent.py
@@ -225,6 +232,9 @@ agent_groups:
       dependencies:
       - GGUFModelManager
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
+        core_orchestrator_endpoint: "http://localhost:7000"
 
     # VRAMOptimizerAgent CONSOLIDATED into ResourceManagerSuite
     # PredictiveLoader still needed until ModelManagerSuite is ready
@@ -235,6 +245,10 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      - ModelManagerAgent  # For model status tracking
+      config:
+        enable_phase1_integration: true
+        prediction_interval_seconds: 300
 
   reasoning_services:
     ChainOfThoughtAgent:
@@ -274,6 +288,9 @@ agent_groups:
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
       - ModelManagerAgent
+      config:
+        enable_phase1_integration: true
+        face_recognition_model: "default"
 
   learning_knowledge:
     ModelEvaluationFramework:
@@ -352,7 +369,10 @@ agent_groups:
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
       - ModelOrchestrator
-      - MemoryClient
+      - MemoryHub  # ✅ UPDATED: was MemoryClient (now external on PC2)
+      config:
+        enable_phase1_integration: true
+        memory_hub_endpoint: "http://172.20.0.11:7010"
 
     IntentionValidatorAgent:
       script_path: main_pc_code/agents/IntentionValidatorAgent.py
@@ -361,6 +381,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     NLUAgent:
       script_path: main_pc_code/agents/nlu_agent.py
@@ -369,6 +391,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     AdvancedCommandHandler:
       script_path: main_pc_code/agents/advanced_command_handler.py
@@ -379,6 +403,8 @@ agent_groups:
       - NLUAgent
       - CodeGenerator
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     ChitchatAgent:
       script_path: main_pc_code/agents/chitchat_agent.py
@@ -388,6 +414,8 @@ agent_groups:
       dependencies:
       - NLUAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     FeedbackHandler:
       script_path: main_pc_code/agents/feedback_handler.py
@@ -397,6 +425,8 @@ agent_groups:
       dependencies:
       - NLUAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     Responder:
       script_path: main_pc_code/agents/responder.py
@@ -410,6 +440,8 @@ agent_groups:
       - StreamingTTSAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       - TTSService
+      config:
+        enable_phase1_integration: true
 
     TranslationService:
       script_path: main_pc_code/agents/translation_service.py
@@ -418,6 +450,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     DynamicIdentityAgent:
       script_path: main_pc_code/agents/DynamicIdentityAgent.py
@@ -426,6 +460,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     EmotionSynthesisAgent:
       script_path: main_pc_code/agents/emotion_synthesis_agent.py
@@ -435,6 +471,8 @@ agent_groups:
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
       - ModelManagerAgent
+      config:
+        enable_phase1_integration: true
 
   speech_services:
     STTService:
@@ -445,6 +483,8 @@ agent_groups:
       dependencies:
       - ModelManagerAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     TTSService:
       script_path: main_pc_code/services/tts_service.py
@@ -455,6 +495,8 @@ agent_groups:
       - ModelManagerAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       - StreamingInterruptHandler
+      config:
+        enable_phase1_integration: true
 
   audio_interface:
     AudioCapture:
@@ -464,6 +506,8 @@ agent_groups:
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     FusedAudioPreprocessor:
       script_path: main_pc_code/agents/fused_audio_preprocessor.py
@@ -473,6 +517,8 @@ agent_groups:
       dependencies:
       - AudioCapture
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+      config:
+        enable_phase1_integration: true
 
     StreamingInterruptHandler:
       script_path: main_pc_code/agents/streaming_interrupt_handler.py
