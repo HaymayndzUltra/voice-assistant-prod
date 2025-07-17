@@ -263,33 +263,58 @@ agent_groups:
         model_manager_suite_endpoint: "http://localhost:7011"
 
   reasoning_services:
+    # === DEPRECATED after Phase-2 consolidation ===
     ChainOfThoughtAgent:
+      # superseded by CognitiveReasoningAgent
+      required: false
+      enabled: false
       script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
       port: 5612
       health_check_port: 6612
-      required: true
       dependencies:
       - ModelManagerAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
 
     GoTToTAgent:
+      # superseded by CognitiveReasoningAgent
+      required: false
+      enabled: false
       script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
       port: 5646
       health_check_port: 6646
-      required: false
       dependencies:
       - ModelManagerAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
       - ChainOfThoughtAgent
 
     CognitiveModelAgent:
+      # superseded by CognitiveReasoningAgent
+      required: false
+      enabled: false
       script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
       port: 5641
       health_check_port: 6641
-      required: false
       dependencies:
       - ChainOfThoughtAgent
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
+
+    # === NEW UNIFIED AGENT ===
+    CognitiveReasoningAgent:
+      script_path: main_pc_code/agents/cognitive_reasoning_agent.py
+      port: 5720
+      health_check_port: 6720
+      required: true
+      dependencies:
+      - ModelManagerAgent
+      - CoreOrchestrator
+      - NLUAgent
+      - IntentionValidatorAgent
+      - GoalManager
+      - TranslationService
+      - DynamicIdentityAgent
+      config:
+        enable_phase2_integration: true
+        default_strategy: chain_of_thought
 
   vision_processing:
     FaceRecognitionAgent:
