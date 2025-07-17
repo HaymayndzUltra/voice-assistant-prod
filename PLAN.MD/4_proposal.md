@@ -1,21 +1,33 @@
 CONSOLIDATION PROPOSAL (UPDATED – ModelManagerSuite deferred)
 (The plan is intentionally detailed so you can execute it phase-by-phase without hunting for extra information.)
+
 GLOBAL PRINCIPLES
 Keep MainPC GPU-heavy (RTX 4090 → high-VRAM tasks, large models, fine-tuning, multi-modal reasoning).
 Delegate orchestration / caching / web / light CPU logic to PC2 (RTX 3060).
 One logical domain = one long-running service – no micro-agents inside a single process.
-Stable Port Blocks (7 xxx for MainPC, 8 xxx health, 9 xxx for PC2 + health = 9 8xx).
+Stable Port Blocks (7 xxx for MainPC, 9 xxx for PC2 + health = 9 xxx + 100).
 Everything bootstraps from CoreOrchestrator → ServiceDiscovery is in-proc, not separate.
-PHASE 1: FOUNDATION & OBSERVABILITY
-Target Reduction: 15 agents → 5 agents
-New Group	Source Agents (old port)	New Port	HW	Key Merger Notes
-CoreOrchestrator	ServiceRegistry (7100), SystemDigitalTwin (7120), RequestCoordinator (26002), UnifiedSystemAgent (7125)	7000	MainPC	One FastAPI proc with an in-proc registry dict, keeps unified gRPC ingress for all services.
-ObservabilityHub	PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthMonitor (7114), PerformanceLoggerAgent (7128), SystemHealthManager (7117)	7002	PC2	Prometheus exporter, log shipper, anomaly detector threads.
-ResourceManager+Scheduler	ResourceManager (7113), TaskScheduler (7115), AsyncProcessor (7101), VRAMOptimizerAgent (5572)	7003	PC2 (CPU) & hooks MainPC via NVML	Single queue with per-GPU schedulers.
-ErrorBus	error_bus_port (7150)	7004	PC2	Keep as is; migrate to NATS.
-SecurityGateway	AuthenticationAgent (7116), AgentTrustScorer (7122)	7005	PC2	JWT auth + trust-score side-table.
-Risk: merging SystemDigitalTwin with ServiceRegistry → large codebase touch. Mitigation: keep original classes, wrap them in a “facade” first, then deprecate.
-PHASE 2: DATA & MODEL BACKBONE
+
+PHASE 0 – FOUNDATIONS (STARTING POINT)
+Target: 82 agents → 22 agents over four staged roll-outs.
+
+Core & Observability (5 agents → 2)
+Consolidation	Source Agents	New Agent	Port	Location
+CoreOrchestrator	ServiceRegistry, SystemDigitalTwin, RequestCoordinator, UnifiedSystemAgent	CoreOrchestrator	7000	MainPC
+ObservabilityHub	PredictiveHealthMonitor, PerformanceMonitor, HealthMonitor, PerformanceLoggerAgent, SystemHealthManager	ObservabilityHub	9000	PC2
+
+Notes
+SystemDigitalTwin is kept as an internal module inside CoreOrchestrator.
+Health endpoints become /metrics; data sent to Prometheus + Grafana.
+
+Resource & Scheduling Layer (7 agents → 2)
+Consolidation	Source Agents	New Agent	Port	Location
+ResourceManagerSuite	ResourceManager, TaskScheduler, AsyncProcessor, VRAMOptimizerAgent	ResourceManagerSuite	9001	PC2 (controls MainPC via NVML)
+ErrorBus	retains NATS on 9002; becomes side-car in ResourceManagerSuite	ErrorBus	9002	PC2
+
+Risk: merging SystemDigitalTwin with ServiceRegistry → large codebase touch. Mitigation: keep original classes, wrap them in a "facade" first, then deprecate.
+
+PHASE 1: DATA & MODEL BACKBONE
 Target Reduction: 23 agents → 6 agents
 Consolidation Group 1: MemoryHub
 Source Agents:
@@ -45,7 +57,7 @@ Hardware: MainPC (GPU)
 Integrated Functions: continual-learning scheduler, LoRA fine-tuner, auto-eval loop.
 Dependencies: ModelManagerSuite, MemoryHub.
 Risk: VRAM spikes – rely on ResourceManager GPU quotas.
-PHASE 3: USER-FACING INTELLIGENCE
+PHASE 2: USER-FACING INTELLIGENCE
 Target Reduction: 34 agents → 7 agents
 Consolidation Group 1: CognitiveReasoningAgent
 Source Agents:

@@ -19,6 +19,8 @@ import json
 import concurrent.futures
 import numpy as np
 import zmq
+import sqlite3
+import pickle
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
@@ -34,15 +36,7 @@ if str(project_root) not in sys.path:
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
-# O3 Required: Prometheus integration
-try:
-    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server, push_to_gateway
-    PROMETHEUS_AVAILABLE = True
-except ImportError:
-    logger.warning("Prometheus client not available, using mock implementation")
-    PROMETHEUS_AVAILABLE = False
-
-# Configure logging first
+# Configure logging first (before prometheus import to avoid logger error)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -53,9 +47,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ObservabilityHub")
 
+# O3 Required: Prometheus integration
+try:
+    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server, push_to_gateway
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    logger.warning("Prometheus client not available, using mock implementation")
+    PROMETHEUS_AVAILABLE = False
+
 # Import BaseAgent with safe fallback
 try:
-    from common.core.base_agent import BaseAgent
+    from common.core.base_agent import BaseAgent as BaseAgentImport
+    BaseAgent = BaseAgentImport  # type: ignore  # Use alias to avoid type conflicts
 except ImportError as e:
     logger.warning(f"Could not import BaseAgent: {e}")
     # Create a minimal BaseAgent substitute
@@ -63,7 +66,7 @@ except ImportError as e:
         def __init__(self, name, port, health_check_port=None, **kwargs):
             self.name = name
             self.port = port
-            self.health_check_port = health_check_port or (port + 1000)
+            self.health_check_port = health_check_port or (port + 100)
 
 @dataclass
 class HealthMetric:
@@ -159,13 +162,16 @@ class PrometheusMetrics:
         else:
             self.metrics_data['agent_health'][agent_name] = health_status
     
-    def update_system_metric(self, metric_name: str, value: float, labels: Dict[str, str] = None):
+    def update_system_metric(self, metric_name: str, value: float, labels: Optional[Dict[str, str]] = None):
         """Update system metric"""
+        if labels is None:
+            labels = {}
+            
         if PROMETHEUS_AVAILABLE and self.registry:
             if metric_name == 'cpu_usage':
                 self.cpu_usage_gauge.labels(instance="pc2").set(value)
             elif metric_name == 'memory_usage':
-                memory_type = labels.get('type', 'used') if labels else 'used'
+                memory_type = labels.get('type', 'used')
                 self.memory_usage_gauge.labels(instance="pc2", type=memory_type).set(value)
         else:
             self.metrics_data['system'][metric_name] = value
@@ -287,18 +293,336 @@ class PredictiveAnalyzer:
         
         return alerts
 
+# MISSING LOGIC 1: Agent Process Management (from PredictiveHealthMonitor)
+class AgentLifecycleManager:
+    """PredictiveHealthMonitor Logic: Agent lifecycle and process management"""
+    
+    def __init__(self):
+        self.agent_processes = {}
+        self.agent_last_restart = {}
+        self.restart_cooldown = 60  # seconds
+        self.agent_configs = {}
+        
+    def load_agent_configs(self):
+        """Load agent configurations for lifecycle management"""
+        try:
+            # Load from config files
+            config_paths = [
+                "pc2_code/config/startup_config.yaml",
+                "main_pc_code/config/startup_config.yaml"
+            ]
+            
+            import yaml
+            for config_path in config_paths:
+                if os.path.exists(config_path):
+                    with open(config_path, 'r') as f:
+                        config_data = yaml.safe_load(f)
+                        
+                    # Extract agent configurations
+                    agents = config_data.get('pc2_services', []) + config_data.get('main_pc_agents', [])
+                    for agent in agents:
+                        if isinstance(agent, dict) and 'name' in agent:
+                            self.agent_configs[agent['name']] = agent
+                            
+            logger.info(f"Loaded {len(self.agent_configs)} agent configurations")
+        except Exception as e:
+            logger.error(f"Error loading agent configs: {e}")
+    
+    def start_agent(self, agent_name: str) -> bool:
+        """Start a specific agent process"""
+        if agent_name not in self.agent_configs:
+            logger.error(f"Unknown agent: {agent_name}")
+            return False
+            
+        # Check cooldown period
+        now = time.time()
+        if agent_name in self.agent_last_restart and (now - self.agent_last_restart[agent_name]) < self.restart_cooldown:
+            logger.warning(f"Agent {agent_name} in cooldown period")
+            return False
+            
+        try:
+            import subprocess
+            config = self.agent_configs[agent_name]
+            script_path = config.get("script_path", "")
+            
+            if script_path and os.path.exists(script_path):
+                process = subprocess.Popen([sys.executable, script_path])
+                self.agent_processes[agent_name] = process
+                self.agent_last_restart[agent_name] = now
+                
+                logger.info(f"Started agent {agent_name}")
+                return True
+            else:
+                logger.error(f"Script not found for agent {agent_name}: {script_path}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to start agent {agent_name}: {e}")
+            return False
+    
+    def restart_agent(self, agent_name: str) -> bool:
+        """Restart an agent"""
+        try:
+            # Stop existing process
+            if agent_name in self.agent_processes:
+                process = self.agent_processes[agent_name]
+                if process.poll() is None:  # Still running
+                    process.terminate()
+                    time.sleep(2)
+                    if process.poll() is None:
+                        process.kill()
+                del self.agent_processes[agent_name]
+            
+            # Start new process
+            return self.start_agent(agent_name)
+            
+        except Exception as e:
+            logger.error(f"Error restarting agent {agent_name}: {e}")
+            return False
+
+# MISSING LOGIC 2: Performance Data Persistence (from PerformanceLoggerAgent)
+class PerformanceLogger:
+    """PerformanceLoggerAgent Logic: Performance data logging and persistence"""
+    
+    def __init__(self, db_path: str = "phase1_implementation/data/performance_metrics.db"):
+        self.db_path = db_path
+        self.db_lock = threading.Lock()
+        self._init_database()
+        
+        # Start cleanup thread
+        self.cleanup_thread = threading.Thread(target=self._cleanup_old_metrics, daemon=True)
+        self.cleanup_thread.start()
+    
+    def _init_database(self):
+        """Initialize SQLite database for performance metrics"""
+        try:
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+            
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS performance_metrics (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp REAL NOT NULL,
+                        agent_name TEXT NOT NULL,
+                        metric_type TEXT NOT NULL,
+                        metric_value REAL NOT NULL,
+                        metadata TEXT
+                    )
+                """)
+                
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_timestamp ON performance_metrics(timestamp)
+                """)
+                
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_agent_name ON performance_metrics(agent_name)
+                """)
+                
+            logger.info(f"Performance metrics database initialized at {self.db_path}")
+            
+        except Exception as e:
+            logger.error(f"Database initialization error: {e}")
+    
+    def log_metric(self, agent_name: str, metric_type: str, value: float, metadata: Optional[Dict[str, Any]] = None):
+        """Log a performance metric to database"""
+        if metadata is None:
+            metadata = {}
+            
+        try:
+            with self.db_lock:
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute("""
+                        INSERT INTO performance_metrics 
+                        (timestamp, agent_name, metric_type, metric_value, metadata)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        time.time(),
+                        agent_name,
+                        metric_type,
+                        value,
+                        json.dumps(metadata) if metadata else None
+                    ))
+                    
+        except Exception as e:
+            logger.error(f"Error logging metric: {e}")
+    
+    def get_metrics(self, agent_name: Optional[str] = None, hours: int = 24) -> List[Dict[str, Any]]:
+        """Retrieve metrics from database"""
+        try:
+            cutoff_time = time.time() - (hours * 3600)
+            
+            with sqlite3.connect(self.db_path) as conn:
+                if agent_name:
+                    cursor = conn.execute("""
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata
+                        FROM performance_metrics
+                        WHERE agent_name = ? AND timestamp > ?
+                        ORDER BY timestamp DESC
+                    """, (agent_name, cutoff_time))
+                else:
+                    cursor = conn.execute("""
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata
+                        FROM performance_metrics
+                        WHERE timestamp > ?
+                        ORDER BY timestamp DESC
+                    """, (cutoff_time,))
+                
+                results = []
+                for row in cursor.fetchall():
+                    timestamp, agent_name, metric_type, metric_value, metadata = row
+                    results.append({
+                        'timestamp': timestamp,
+                        'agent_name': agent_name,
+                        'metric_type': metric_type,
+                        'metric_value': metric_value,
+                        'metadata': json.loads(metadata) if metadata else {}
+                    })
+                
+                return results
+                
+        except Exception as e:
+            logger.error(f"Error retrieving metrics: {e}")
+            return []
+    
+    def _cleanup_old_metrics(self):
+        """Cleanup old metrics periodically"""
+        while True:
+            try:
+                # Remove metrics older than 30 days
+                cutoff_time = time.time() - (30 * 24 * 3600)
+                
+                with self.db_lock:
+                    with sqlite3.connect(self.db_path) as conn:
+                        cursor = conn.execute("""
+                            DELETE FROM performance_metrics WHERE timestamp < ?
+                        """, (cutoff_time,))
+                        
+                        if cursor.rowcount > 0:
+                            logger.info(f"Cleaned up {cursor.rowcount} old performance metrics")
+                
+                # Sleep for 24 hours
+                time.sleep(24 * 3600)
+                
+            except Exception as e:
+                logger.error(f"Error in cleanup thread: {e}")
+                time.sleep(3600)  # Wait 1 hour before retrying
+
+# MISSING LOGIC 3: Recovery Strategies (from PredictiveHealthMonitor)
+class RecoveryManager:
+    """PredictiveHealthMonitor Logic: Tiered recovery strategies"""
+    
+    def __init__(self, lifecycle_manager: AgentLifecycleManager):
+        self.lifecycle_manager = lifecycle_manager
+        self.recovery_strategies = {
+            "tier1": {
+                "description": "Basic recovery: restart agent",
+                "actions": ["restart_agent"]
+            },
+            "tier2": {
+                "description": "Intermediate recovery: restart agent with clean state",
+                "actions": ["clear_agent_state", "restart_agent"]
+            },
+            "tier3": {
+                "description": "Advanced recovery: restart agent with dependencies",
+                "actions": ["restart_dependencies", "clear_agent_state", "restart_agent"]
+            },
+            "tier4": {
+                "description": "Critical recovery: restart all agents",
+                "actions": ["restart_all_agents"]
+            }
+        }
+    
+    def attempt_recovery(self, agent_name: str, strategy: str = "tier1") -> bool:
+        """Attempt recovery using specified strategy"""
+        if strategy not in self.recovery_strategies:
+            logger.error(f"Unknown recovery strategy: {strategy}")
+            return False
+            
+        try:
+            actions = self.recovery_strategies[strategy]["actions"]
+            logger.info(f"Attempting recovery for {agent_name} using strategy {strategy}")
+            
+            for action in actions:
+                if action == "restart_agent":
+                    if not self.lifecycle_manager.restart_agent(agent_name):
+                        return False
+                elif action == "clear_agent_state":
+                    self._clear_agent_state(agent_name)
+                elif action == "restart_dependencies":
+                    self._restart_dependencies(agent_name)
+                elif action == "restart_all_agents":
+                    self._restart_all_agents()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Recovery failed for {agent_name}: {e}")
+            return False
+    
+    def _clear_agent_state(self, agent_name: str):
+        """Clear agent state (cache, temp files, etc.)"""
+        try:
+            # Clear agent-specific cache directories
+            cache_dirs = [
+                f"cache/{agent_name}",
+                f"temp/{agent_name}",
+                f"logs/{agent_name}"
+            ]
+            
+            import shutil
+            for cache_dir in cache_dirs:
+                if os.path.exists(cache_dir):
+                    shutil.rmtree(cache_dir)
+                    logger.info(f"Cleared cache directory: {cache_dir}")
+                    
+        except Exception as e:
+            logger.error(f"Error clearing agent state for {agent_name}: {e}")
+    
+    def _restart_dependencies(self, agent_name: str):
+        """Restart agent dependencies"""
+        try:
+            config = self.lifecycle_manager.agent_configs.get(agent_name, {})
+            dependencies = config.get("dependencies", [])
+            
+            for dep in dependencies:
+                logger.info(f"Restarting dependency {dep} for {agent_name}")
+                self.lifecycle_manager.restart_agent(dep)
+                
+        except Exception as e:
+            logger.error(f"Error restarting dependencies for {agent_name}: {e}")
+    
+    def _restart_all_agents(self):
+        """Restart all agents (nuclear option)"""
+        try:
+            logger.warning("Performing system-wide agent restart")
+            
+            for agent_name in self.lifecycle_manager.agent_configs.keys():
+                self.lifecycle_manager.restart_agent(agent_name)
+                time.sleep(2)  # Stagger restarts
+                
+        except Exception as e:
+            logger.error(f"Error in system-wide restart: {e}")
+
 class ObservabilityHub(BaseAgent):
     """
     ObservabilityHub - Phase 1 Consolidated Service
-    Enhanced with O3 requirements: Prometheus, predictive analytics, ZMQ broadcasting, parallel health checks
+    Enhanced with ALL missing logic from source agents
     """
     
-    def __init__(self, name="ObservabilityHub", port=9000):
+    def __init__(self, name="ObservabilityHub", port=9000):  # FIXED: Use correct port 9000 from PHASE 0
         super().__init__(name, port)
+        
+        # Initialize start time for health reporting
+        self.start_time = time.time()
         
         # O3 Enhanced Components
         self.prometheus_metrics = PrometheusMetrics()
         self.predictive_analyzer = PredictiveAnalyzer()
+        
+        # MISSING LOGIC INTEGRATION
+        self.lifecycle_manager = AgentLifecycleManager()
+        self.performance_logger = PerformanceLogger()
+        self.recovery_manager = RecoveryManager(self.lifecycle_manager)
         
         # ZMQ setup for broadcasting
         self.context = zmq.Context()
@@ -322,14 +646,17 @@ class ObservabilityHub(BaseAgent):
         # FastAPI app
         self.app = FastAPI(
             title="ObservabilityHub",
-            description="Phase 1 Observability Service with O3 Enhancements",
+            description="Phase 1 Observability Service with Complete Source Agent Logic",
             version="1.0.0"
         )
         
         self.setup_routes()
         self.start_background_threads()
         
-        logger.info("ObservabilityHub with O3 enhancements initialized")
+        # Load agent configurations
+        self.lifecycle_manager.load_agent_configs()
+        
+        logger.info("ObservabilityHub with complete source agent logic initialized")
     
     def setup_zmq_broadcasting(self):
         """O3 Required: ZMQ PUB/SUB broadcasting setup"""
@@ -404,6 +731,19 @@ class ObservabilityHub(BaseAgent):
                             metadata=health_result
                         )
                         self.predictive_analyzer.add_metric(agent_name, metric)
+                        
+                        # Log to performance database
+                        self.performance_logger.log_metric(
+                            agent_name=agent_name,
+                            metric_type="health_check",
+                            value=health_status,
+                            metadata=health_result
+                        )
+                        
+                        # Attempt recovery if unhealthy
+                        if health_status == 0.0:
+                            logger.warning(f"Agent {agent_name} is unhealthy, attempting recovery")
+                            self.recovery_manager.attempt_recovery(agent_name, "tier1")
                         
                     except Exception as e:
                         logger.error(f"Health check failed for {agent_name}: {e}")
@@ -520,6 +860,10 @@ class ObservabilityHub(BaseAgent):
                 for alert in alerts:
                     logger.warning(f"Predictive alert for {alert.agent_name}: {alert.alert_type} "
                                  f"(confidence: {alert.confidence:.2f})")
+                    
+                    # Trigger recovery if critical
+                    if alert.severity == "critical":
+                        self.recovery_manager.attempt_recovery(alert.agent_name, "tier2")
                 
                 time.sleep(60)  # Run analytics every minute
                 
@@ -557,6 +901,10 @@ class ObservabilityHub(BaseAgent):
             self.prometheus_metrics.update_system_metric('memory_usage', memory.used, {'type': 'used'})
             self.prometheus_metrics.update_system_metric('memory_usage', memory.available, {'type': 'available'})
             
+            # Log system metrics to database
+            self.performance_logger.log_metric("system", "cpu_usage", cpu_percent)
+            self.performance_logger.log_metric("system", "memory_usage", memory.used)
+            
         except ImportError:
             logger.warning("psutil not available, using mock system metrics")
             # Mock metrics when psutil is not available
@@ -584,117 +932,155 @@ class ObservabilityHub(BaseAgent):
                 "status": "healthy" if self.threads_running else "starting",
                 "service": "ObservabilityHub",
                 "timestamp": datetime.utcnow().isoformat(),
-                "uptime": time.time() - self.start_time, # Assuming start_time is set in __init__
+                "uptime": time.time() - self.start_time,
                 "unified_services": {
                     "health": self.parallel_health_checks,
-                    "performance": True, # Assuming unified_performance is always True for this hub
-                    "prediction": True # Assuming unified_prediction is always True for this hub
+                    "performance": True,
+                    "prediction": True
                 }
             }
         
         @self.app.get("/metrics")
         async def get_metrics():
             """Get all system metrics"""
-            # This endpoint will now return Prometheus metrics if available
-            if PROMETHEUS_AVAILABLE:
-                start_http_server(9090) # Start Prometheus HTTP server
-                return {"status": "success", "message": "Prometheus metrics available at http://localhost:9090"}
-            else:
-                return {"status": "error", "message": "Prometheus metrics not available"}
+            try:
+                if PROMETHEUS_AVAILABLE:
+                    return {"status": "success", "message": "Prometheus metrics available at /metrics endpoint"}
+                else:
+                    # Return collected metrics
+                    return {
+                        "status": "success", 
+                        "metrics": self._collect_all_metrics()
+                    }
+            except Exception as e:
+                logger.error(f"Error getting metrics: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/health_summary")
         async def health_summary():
             """Get system health summary"""
-            # This endpoint will now return Prometheus metrics if available
-            if PROMETHEUS_AVAILABLE:
-                start_http_server(9090) # Start Prometheus HTTP server
-                return {"status": "success", "message": "Prometheus metrics available at http://localhost:9090"}
-            else:
-                return {"status": "error", "message": "Prometheus metrics not available"}
+            try:
+                health_results = self.check_all_agents_health()
+                total_agents = len(health_results)
+                healthy_agents = sum(1 for result in health_results.values() if result.get('status') == 'healthy')
+                
+                return {
+                    "status": "success",
+                    "total_agents": total_agents,
+                    "healthy_agents": healthy_agents,
+                    "unhealthy_agents": total_agents - healthy_agents,
+                    "health_results": health_results
+                }
+            except Exception as e:
+                logger.error(f"Error getting health summary: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
         
-        @self.app.post("/update_agent_health")
-        async def update_agent_health(request: Request):
-            """Update health status for an agent"""
+        @self.app.post("/register_agent")
+        async def register_agent(request: Request):
+            """Register an agent for monitoring"""
             try:
                 data = await request.json()
                 agent_name = data.get('agent_name')
-                status = data.get('status')
-                details = data.get('details', {})
-                location = data.get('location', 'Unknown')
+                port = data.get('port')
+                health_endpoint = data.get('health_endpoint')
                 
-                # This endpoint is now deprecated for parallel health checks
-                # The actual health check happens in check_all_agents_health
-                logger.warning(f"Received update_agent_health request for {agent_name} with status {status}. "
-                              f"This endpoint is deprecated for parallel health checks.")
+                if not agent_name or not port:
+                    raise HTTPException(status_code=400, detail="Missing agent_name or port")
                 
-                # For now, we'll just update the internal state if not parallel
-                if not self.parallel_health_checks:
-                    self.monitored_agents[agent_name] = {
-                        'port': self.port, # Assuming port is available
-                        'health_endpoint': f"http://localhost:{self.port}/health" # Mock endpoint
-                    }
-                    # Re-add to monitored_agents to trigger a health check
-                    self.monitored_agents[agent_name] = {
-                        'port': self.port,
-                        'health_endpoint': f"http://localhost:{self.port}/health"
-                    }
+                self.monitored_agents[agent_name] = {
+                    'port': port,
+                    'health_endpoint': health_endpoint or f"http://localhost:{port}/health"
+                }
                 
-                return {"status": "success", "message": f"Received update for {agent_name}"}
+                logger.info(f"Registered agent {agent_name} for monitoring")
+                return {"status": "success", "message": f"Agent {agent_name} registered for monitoring"}
+            
             except Exception as e:
-                logger.error(f"Error updating agent health: {e}")
+                logger.error(f"Error registering agent: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
-        @self.app.post("/add_alert_rule")
-        async def add_alert_rule(request: Request):
-            """Add monitoring alert rule"""
+        @self.app.post("/trigger_recovery")
+        async def trigger_recovery(request: Request):
+            """Trigger recovery for an agent"""
             try:
                 data = await request.json()
-                # This endpoint is now deprecated, alerts are handled by predictive analyzer
-                logger.warning("Received add_alert_rule request. This endpoint is deprecated.")
-                return {"status": "success", "message": "Alert rules are now handled by predictive analytics."}
+                agent_name = data.get('agent_name')
+                strategy = data.get('strategy', 'tier1')
+                
+                if not agent_name:
+                    raise HTTPException(status_code=400, detail="Missing agent_name")
+                
+                success = self.recovery_manager.attempt_recovery(agent_name, strategy)
+                
+                return {
+                    "status": "success" if success else "error",
+                    "message": f"Recovery {'successful' if success else 'failed'} for {agent_name}",
+                    "strategy": strategy
+                }
+            
             except Exception as e:
-                logger.error(f"Error adding alert rule: {e}")
+                logger.error(f"Error triggering recovery: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+        
+        @self.app.get("/performance_metrics/{agent_name}")
+        async def get_performance_metrics(agent_name: str):
+            """Get performance metrics for an agent"""
+            try:
+                metrics = self.performance_logger.get_metrics(agent_name=agent_name)
+                return {
+                    "status": "success",
+                    "agent_name": agent_name,
+                    "metrics": metrics
+                }
+            except Exception as e:
+                logger.error(f"Error getting performance metrics: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/alerts")
         async def get_alerts():
-            """Get active alerts"""
-            # This endpoint is now deprecated, alerts are handled by predictive analyzer
-            logger.warning("Received get_alerts request. This endpoint is deprecated.")
-            return {"status": "success", "message": "Predictive alerts are now available."}
-        
-        @self.app.get("/anomalies")
-        async def get_anomalies():
-            """Get detected anomalies"""
-            # This endpoint is now deprecated, anomalies are handled by predictive analyzer
-            logger.warning("Received get_anomalies request. This endpoint is deprecated.")
-            return {"status": "success", "message": "Anomalies are now handled by predictive analytics."}
+            """Get active predictive alerts"""
+            try:
+                alerts = self.predictive_analyzer.run_predictive_analysis()
+                return {
+                    "status": "success",
+                    "alerts": [
+                        {
+                            "agent_name": alert.agent_name,
+                            "alert_type": alert.alert_type,
+                            "severity": alert.severity,
+                            "confidence": alert.confidence,
+                            "predicted_failure_time": alert.predicted_failure_time,
+                            "recommended_actions": alert.recommended_actions
+                        }
+                        for alert in alerts
+                    ]
+                }
+            except Exception as e:
+                logger.error(f"Error getting alerts: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
     
-    def start(self):
+    async def start(self):
         """Start the ObservabilityHub service"""
         try:
             logger.info("Starting ObservabilityHub service...")
-            
-            # Start background threads
-            self.start_background_threads()
             
             # Mark startup as complete
             self.startup_complete = True
             
             logger.info("ObservabilityHub started successfully on port 9000")
             logger.info(f"Feature flags - Health: {self.parallel_health_checks}, "
-                       f"Performance: True, " # Assuming unified_performance is always True for this hub
-                       f"Prediction: True") # Assuming unified_prediction is always True for this hub
+                       f"Performance: True, "
+                       f"Prediction: True")
             
             # Start FastAPI server
             config = uvicorn.Config(
                 self.app,
                 host="0.0.0.0",
-                port=9000,
+                port=9000,  # FIXED: Use correct port 9000 from PHASE 0
                 log_level="info"
             )
             server = uvicorn.Server(config)
-            server.serve()
+            await server.serve()
             
         except Exception as e:
             logger.error(f"Failed to start ObservabilityHub: {e}")
@@ -708,6 +1094,8 @@ class ObservabilityHub(BaseAgent):
                 self.executor.shutdown(wait=True)
             if self.metrics_publisher:
                 self.metrics_publisher.close()
+            if self.context:
+                self.context.term()
             logger.info("ObservabilityHub cleanup completed")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
