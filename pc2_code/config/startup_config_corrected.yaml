@@ -100,7 +100,7 @@ agent_groups:
         wait_for_dependencies: true
 
     MemoryHub:
-      script_path: phase1_implementation/consolidated_agents/memory_hub/memory_hub.py
+      script_path: phase1_implementation/consolidated_agents/memory_services/memory_services_hub.py
       port: 7010
       health_check_port: 7110
       required: true
