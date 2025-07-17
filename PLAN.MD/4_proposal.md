@@ -39,15 +39,17 @@ Integrated Functions: unified Redis + SQLite layer, neuro-symbolic search, sessi
 Logic Merger Strategy: expose /kv, /doc, /embedding sub-routes; import legacy modules into sub-apps.
 Dependencies: CoreOrchestrator → MemoryHub (startup priority 2).
 Risk: schema collision – add namespacing per legacy agent.
+
 Consolidation Group 2: ModelManagerSuite
 Source Agents:
-GGUFModelManager (5575) • ModelManagerAgent (5570) • PredictiveLoader (5617) • ModelEvaluationFramework (7220)
+GGUFModelManager (5575) • PredictiveLoader (5617) • ModelEvaluationFramework (7220)
 Target Unified Agent: ModelManagerSuite
 Port: 7011
 Hardware: MainPC (GPU)
 Integrated Functions: quantised-model registry, hot-swap loader, eval runner.
 Dependencies: MemoryHub, ResourceManager.
 Risk: GPU hot-swap races – implement lockfile.
+Note: ModelManagerAgent (5570) remains standalone - already a large, complex agent (4,843 lines) with consolidated functionality.
 Consolidation Group 3: AdaptiveLearningSuite
 Source Agents:
 SelfTrainingOrchestrator (5660) • LocalFineTunerAgent (5642) • LearningManager (5580) • LearningOrchestrationService (7210) • LearningOpportunityDetector (7200) • ActiveLearningMonitor (5638) • LearningAdjusterAgent (5643)
@@ -270,10 +272,11 @@ Source: MemoryClient, SessionMemoryAgent, KnowledgeBase, MemoryOrchestratorServi
 → MemoryHub (Port 7010, PC2).
 Namespaced Redis + SQLite; built-in auth & trust-scoring middleware.
 ProactiveContextMonitor becomes internal coroutine.
-2.4 ModelManagerSuite (4 agents → 1)
-GGUFModelManager, ModelManagerAgent, PredictiveLoader, ModelEvaluationFramework
+2.4 ModelManagerSuite (3 agents → 1)
+GGUFModelManager, PredictiveLoader, ModelEvaluationFramework
 → ModelManagerSuite (Port 7011, MainPC).
 Handles model registry, hot-swap, evaluation APIs.
+Note: ModelManagerAgent (5570) remains standalone - already a large, complex agent (4,843 lines) with consolidated functionality.
 PHASE 2 – LEARNING & ADAPTATION
 2.5 AdaptiveLearningSuite (7 agents → 1)
 SelfTrainingOrchestrator, LocalFineTunerAgent, LearningManager, LearningOrchestrationService, LearningOpportunityDetector, ActiveLearningMonitor, LearningAdjusterAgent
