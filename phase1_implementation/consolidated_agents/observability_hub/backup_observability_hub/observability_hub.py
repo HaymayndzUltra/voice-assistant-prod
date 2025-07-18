@@ -61,12 +61,8 @@ try:
     BaseAgent = BaseAgentImport  # type: ignore  # Use alias to avoid type conflicts
 except ImportError as e:
     logger.warning(f"Could not import BaseAgent: {e}")
-    # Create a minimal BaseAgent substitute
-    class BaseAgent:
-        def __init__(self, name, port, health_check_port=None, **kwargs):
-            self.name = name
-            self.port = port
-            self.health_check_port = health_check_port or (port + 100)
+    # Import the real BaseAgent instead of creating a substitute
+    from common.core.base_agent import BaseAgent
 
 @dataclass
 class HealthMetric:

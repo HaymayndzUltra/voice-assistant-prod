@@ -153,3 +153,30 @@ Thumbs.db
 # ===================================================================
 # Zone.Identifier files created by Windows when downloading files
 *:Zone.Identifier
+
+# Security & Secrets
+*.key_secret
+*.key_private
+**/secrets.yaml
+**/secrets.json
+**/*secret*.txt
+**/*secret*.json
+**/*secret*.yaml
+certificates/*.key
+certificates/*.pem
+certificates/*.crt
+*.p12
+*.pfx
+
+# Environment & Config
+.env
+.env.*
+**/config/*secret*
+**/config/*password*
+**/config/*key*
+
+# Crypto Keys
+**/*.private
+**/*.secret
+**/private_keys/
+**/secrets/

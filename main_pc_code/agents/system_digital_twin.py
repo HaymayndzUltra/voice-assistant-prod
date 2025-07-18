@@ -518,7 +518,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         """
         import os, zmq  # Local import to avoid circulars at module import time
         host = os.getenv("SERVICE_REGISTRY_HOST", "localhost")
-        port = int(os.getenv("SERVICE_REGISTRY_PORT", "7100"))
+        port = int(os.getenv("SERVICE_REGISTRY_PORT", "7200"))
         timeout = int(os.getenv("SERVICE_REGISTRY_TIMEOUT_MS", "5000"))
 
         ctx = self.context or zmq.Context.instance()

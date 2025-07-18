@@ -36,8 +36,8 @@ agent_groups:
   core_services:
     ServiceRegistry:
       script_path: main_pc_code/agents/service_registry_agent.py
-      port: 7100
-      health_check_port: 8100
+      port: 7200
+      health_check_port: 8200
       required: true
       dependencies: []
       config:
@@ -50,8 +50,8 @@ agent_groups:
       # command_args: --backend redis --redis-url redis://redis:6379/0
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
-      port: 7120
-      health_check_port: 8120
+      port: 7220
+      health_check_port: 8220
       config:
         db_path: data/unified_memory.db
         redis:
@@ -71,8 +71,8 @@ agent_groups:
       - SystemDigitalTwin
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
-      port: 7125
-      health_check_port: 8125
+      port: 7225
+      health_check_port: 8225
       required: true
       dependencies:
       - SystemDigitalTwin
@@ -88,9 +88,9 @@ agent_groups:
         parallel_health_checks: true
         prediction_enabled: true
     ModelManagerSuite:
-      script_path: phase1_implementation/consolidated_agents/model_manager_suite/backup_model_manager_suite/model_manager_suite.py
-      port: 7011
-      health_check_port: 7111
+      script_path: main_pc_code/11.py
+      port: 7211
+      health_check_port: 8211
       required: true
       dependencies:
       - SystemDigitalTwin
@@ -308,8 +308,8 @@ agent_groups:
   language_processing:
     ModelOrchestrator:
       script_path: main_pc_code/agents/model_orchestrator.py
-      port: 7010
-      health_check_port: 8010
+      port: 7210
+      health_check_port: 8210
       required: true
       dependencies:
       - RequestCoordinator
@@ -317,8 +317,8 @@ agent_groups:
       - SystemDigitalTwin
     GoalManager:
       script_path: main_pc_code/agents/goal_manager.py
-      port: 7005
-      health_check_port: 8005
+      port: 7205
+      health_check_port: 8205
       required: true
       dependencies:
       - RequestCoordinator
