@@ -75,7 +75,7 @@ class AISystemMonitor:
             "memory_usage": psutil.virtual_memory().percent,
             "disk_usage": psutil.disk_usage('/').percent,
             "network_status": self._check_network(),
-            "gpu_status": await self._check_gpu_status()
+            "gpu_status": self._check_gpu_status()
         }
         return health
     
@@ -132,15 +132,15 @@ class AISystemMonitor:
         """Get AI-specific metrics and performance data"""
         try:
             # Check model loading status
-            model_status = await self._check_model_status()
+            model_status = self._check_model_status()
             
             # Check memory hub status
-            memory_status = await self._check_memory_hub()
+            memory_status = self._check_memory_hub()
             
             return {
                 "models": model_status,
                 "memory_hub": memory_status,
-                "ai_performance": await self._get_ai_performance()
+                "ai_performance": self._get_ai_performance()
             }
         except Exception as e:
             self.logger.error(f"Error getting AI metrics: {e}")
@@ -193,7 +193,7 @@ class AISystemMonitor:
             "local_network": True  # Assuming local network is available
         }
     
-    async def _check_model_status(self) -> Dict[str, Any]:
+    def _check_model_status(self) -> Dict[str, Any]:
         """Check AI model loading and status"""
         try:
             # This would integrate with your ModelManagerAgent
@@ -205,7 +205,7 @@ class AISystemMonitor:
         except Exception as e:
             return {"error": str(e)}
     
-    async def _check_memory_hub(self) -> Dict[str, Any]:
+    def _check_memory_hub(self) -> Dict[str, Any]:
         """Check MemoryHub status"""
         try:
             # This would integrate with your MemoryHub
@@ -217,7 +217,7 @@ class AISystemMonitor:
         except Exception as e:
             return {"error": str(e)}
     
-    async def _get_ai_performance(self) -> Dict[str, Any]:
+    def _get_ai_performance(self) -> Dict[str, Any]:
         """Get AI performance metrics"""
         return {
             "response_times": [],

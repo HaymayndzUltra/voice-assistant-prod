@@ -13,7 +13,7 @@ Target: 82 agents → 22 agents over four staged roll-outs.
 
 -- Consolidation Group: Core & Observability (5 agents → 2) --
 Consolidation	Source Agents	New Agent	Port	Location
-CoreOrchestrator	ServiceRegistry, SystemDigitalTwin, RequestCoordinator, UnifiedSystemAgent	CoreOrchestrator	7000	MainPC
+CoreOrchestrator	ServiceRegistry, SystemDigitalTwin, RequestCoordinator, UnifiedSystemAgent	- CoreOrchestrator	7000	MainPC
 ObservabilityHub	PredictiveHealthMonitor, PerformanceMonitor, HealthMonitor, PerformanceLoggerAgent, SystemHealthManager	ObservabilityHub	9000	PC2
 
 Notes
