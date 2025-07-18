@@ -174,10 +174,39 @@ agent_groups:
         replacement: "MemoryHub"
 
   utility_services:
+    # PHASE 2 DEPENDENCY SERVICES ✅
+    WebAssistant:
+      script_path: main_pc_code/agents/web_assistant.py  # TODO: Verify path
+      port: 7080
+      health_check_port: 8080
+      required: true
+      dependencies:
+      - CoreOrchestrator
+      - ModelManagerAgent
+      config:
+        enable_phase2_integration: true
+      startup:
+        order: 15
+
+    AutoGenFramework:
+      script_path: main_pc_code/agents/autogen_framework.py  # TODO: Verify path  
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies:
+      - CoreOrchestrator
+      - ModelManagerAgent
+      - PlanningOrchestrator
+      config:
+        enable_phase2_integration: true
+        multi_agent_enabled: true
+      startup:
+        order: 16
+
     CodeGenerator:
       script_path: main_pc_code/agents/code_generator.py
-      port: 5650
-      health_check_port: 6650
+      port: 7090
+      health_check_port: 8090
       required: true
       dependencies:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
@@ -358,27 +387,55 @@ agent_groups:
       - CoreOrchestrator   # ✅ UPDATED: was SystemDigitalTwin
 
   language_processing:
+    # PHASE 2 CONSOLIDATED SERVICE ✅
+    PlanningOrchestrator:
+      script_path: phase2_implementation/group_02_planning_orchestrator/planning_orchestrator.py
+      port: 7021
+      health_check_port: 8021
+      required: true
+      dependencies:
+      - CoreOrchestrator
+      - ModelManagerAgent
+      - MemoryHub  # External on PC2
+      config:
+        enable_phase2_consolidation: true
+        consolidates: [ModelOrchestrator, GoalManager]
+        memory_hub_endpoint: "http://172.20.0.11:7010"  # PC2 MemoryHub
+        error_bus_endpoint: "tcp://172.20.0.11:7150"    # PC2 Error Bus
+        external_services:
+          model_manager_agent: "tcp://localhost:5570"
+          web_assistant: "tcp://localhost:7080"
+          code_generator: "tcp://localhost:7090" 
+          memory_reasoning: "tcp://172.20.0.11:7020"     # PC2
+          autogen_framework: "tcp://localhost:7100"
+      startup:
+        order: 12
+        wait_for_dependencies: true
+
+    # DEPRECATED SERVICES (Consolidated into PlanningOrchestrator) ❌
     ModelOrchestrator:
       script_path: main_pc_code/agents/model_orchestrator.py
       port: 7010
       health_check_port: 8010
-      required: true
-      dependencies:
-      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
-      - ModelManagerAgent
+      required: false  # ❌ DEPRECATED: Consolidated into PlanningOrchestrator
+      enabled: false
+      dependencies: []
+      config:
+        deprecation_notice: "This service is consolidated into PlanningOrchestrator (7021)"
+        phase_out_date: "2025-02-01"
+        replacement: "PlanningOrchestrator"
 
     GoalManager:
       script_path: main_pc_code/agents/goal_manager.py
       port: 7005
       health_check_port: 8005
-      required: true
-      dependencies:
-      - CoreOrchestrator   # ✅ UPDATED: was RequestCoordinator, SystemDigitalTwin
-      - ModelOrchestrator
-      - MemoryHub  # ✅ UPDATED: was MemoryClient (now external on PC2)
+      required: false  # ❌ DEPRECATED: Consolidated into PlanningOrchestrator
+      enabled: false
+      dependencies: []
       config:
-        enable_phase1_integration: true
-        memory_hub_endpoint: "http://172.20.0.11:7010"
+        deprecation_notice: "This service is consolidated into PlanningOrchestrator (7021)"
+        phase_out_date: "2025-02-01"
+        replacement: "PlanningOrchestrator"
 
     IntentionValidatorAgent:
       script_path: main_pc_code/agents/IntentionValidatorAgent.py
@@ -669,6 +726,7 @@ startup_sequence:
     # Memory services now external (PC2)
     - ModelManagerAgent        # Model services
     - GGUFModelManager
+    - PlanningOrchestrator     # Phase 2 Consolidated Service (was ModelOrchestrator + GoalManager)
     - TranslationService       # Core services
     - NLUAgent
     - EmotionEngine

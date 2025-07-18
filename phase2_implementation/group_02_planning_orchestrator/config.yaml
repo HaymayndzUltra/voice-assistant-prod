@@ -1,0 +1,364 @@
+# PlanningOrchestrator Configuration
+# Complete configuration for consolidated ModelOrchestrator + GoalManager
+
+# ===================================================================
+#         SERVICE CONFIGURATION
+# ===================================================================
+service:
+  name: "PlanningOrchestrator"
+  port: 7021
+  health_check_port: 8021
+  host: "0.0.0.0"
+  
+# ===================================================================
+#         TASK CLASSIFICATION CONFIGURATION
+# ===================================================================
+task_classification:
+  embedding_model: "all-MiniLM-L6-v2"
+  embedding_cache_file: "data/planning_task_embeddings_cache.pkl"
+  embedding_dimension: 384
+  confidence_threshold: 0.5
+  fallback_to_keyword: true
+  
+  # Task type definitions
+  task_types:
+    - code_generation
+    - tool_use
+    - reasoning
+    - chat
+  
+  # Keyword patterns for fallback classification
+  keyword_patterns:
+    code_generation:
+      - "code"
+      - "python"
+      - "function" 
+      - "script"
+      - "debug"
+      - "implement"
+      - "fix"
+    tool_use:
+      - "search for"
+      - "find information about"
+      - "browse"
+      - "lookup"
+      - "research"
+    reasoning:
+      - "why"
+      - "how"
+      - "explain"
+      - "analyze"
+      - "compare"
+      - "understand"
+    chat:
+      - "hello"
+      - "hi"
+      - "joke"
+      - "help"
+
+# ===================================================================
+#         CODE EXECUTION CONFIGURATION
+# ===================================================================
+code_execution:
+  enabled: true
+  timeout_seconds: 30
+  temp_directory: "/tmp/planning_orchestrator_sandbox"
+  max_refinement_iterations: 3
+  
+  # Supported languages
+  languages:
+    python:
+      extension: ".py"
+      command: ["python3"]
+      security_enabled: true
+    javascript:
+      extension: ".js" 
+      command: ["node"]
+      security_enabled: true
+  
+  # Security settings
+  security:
+    restrict_network: true
+    restrict_filesystem: true
+    minimal_environment: true
+    allowed_env_vars:
+      - "PATH"
+      - "PYTHONPATH"
+
+# ===================================================================
+#         GOAL MANAGEMENT CONFIGURATION  
+# ===================================================================
+goal_management:
+  default_priority: 5
+  max_tasks_per_goal: 50
+  goal_timeout_hours: 24
+  task_timeout_minutes: 30
+  
+  # Task queue settings
+  task_queue:
+    check_interval_seconds: 1
+    max_concurrent_tasks: 10
+    retry_failed_tasks: true
+    max_retries: 3
+    
+  # Goal decomposition settings
+  decomposition:
+    use_llm: true
+    fallback_strategy: "simple"
+    max_decomposition_retries: 2
+    retry_backoff_seconds: 2
+
+# ===================================================================
+#         MEMORY SYSTEM INTEGRATION
+# ===================================================================
+memory_system:
+  enabled: true
+  client_type: "MemoryClient"
+  connection:
+    host: "192.168.100.17"  # PC2 IP
+    port: 7010
+    timeout_seconds: 15
+  
+  # Memory tiers for different content types  
+  memory_tiers:
+    goals: "medium"    # Goals persist longer
+    tasks: "short"     # Tasks are temporary
+    results: "short"   # Results are temporary
+    
+  # Memory importance scores
+  importance_scores:
+    goals: 0.8
+    tasks: 0.6
+    results: 0.4
+
+# ===================================================================
+#         ERROR REPORTING & RESILIENCE
+# ===================================================================
+error_reporting:
+  enabled: true
+  error_bus:
+    host: "192.168.100.17"  # PC2 IP
+    port: 7150
+    protocol: "zmq"
+    
+  # Circuit breaker configuration
+  circuit_breakers:
+    failure_threshold: 3
+    reset_timeout_seconds: 30
+    half_open_max_calls: 1
+    
+  # Services with circuit breaker protection
+  protected_services:
+    - "ModelManagerAgent"
+    - "UnifiedMemoryReasoningAgent" 
+    - "WebAssistant"
+    - "CodeGenerator"
+    - "AutoGenFramework"
+
+# ===================================================================
+#         EXTERNAL SERVICE INTEGRATION
+# ===================================================================
+external_services:
+  # Core LLM service
+  model_manager:
+    host: "localhost"
+    port: 5570
+    timeout_ms: 30000
+    
+  # Memory and reasoning service
+  memory_reasoning:
+    host: "192.168.100.17"
+    port: 7020
+    timeout_ms: 15000
+    
+  # Web search and browsing
+  web_assistant:
+    host: "localhost" 
+    port: 7080
+    timeout_ms: 20000
+    
+  # Code generation service
+  code_generator:
+    host: "localhost"
+    port: 7090
+    timeout_ms: 25000
+    
+  # Multi-agent framework
+  autogen_framework:
+    host: "localhost"
+    port: 7100
+    timeout_ms: 30000
+
+# ===================================================================
+#         AGENT ROUTING CONFIGURATION
+# ===================================================================
+agent_routing:
+  # Task type to agent mapping
+  task_routing:
+    code_generation: "CodeGenerator"
+    tool_use: "WebAssistant" 
+    reasoning: "ModelManagerAgent"
+    chat: "ModelManagerAgent"
+    
+  # Agent capabilities
+  agent_capabilities:
+    ModelManagerAgent:
+      - "text_generation"
+      - "reasoning"
+      - "chat"
+    CodeGenerator:
+      - "code_generation"
+      - "code_review"
+      - "debugging"
+    WebAssistant:
+      - "web_search"
+      - "information_retrieval"
+      - "browsing"
+    AutoGenFramework:
+      - "multi_agent_coordination"
+      - "complex_reasoning"
+
+# ===================================================================
+#         METRICS & MONITORING
+# ===================================================================
+metrics:
+  enabled: true
+  log_interval_seconds: 60
+  save_interval_seconds: 300
+  metrics_file: "logs/planning_orchestrator_metrics.json"
+  
+  # Metric categories to track
+  tracked_metrics:
+    - "requests_total"
+    - "requests_by_type"
+    - "response_times"
+    - "success_rates"
+    - "classification_methods"
+    - "goal_statistics"
+    - "task_statistics"
+    - "circuit_breaker_states"
+    
+  # Performance thresholds
+  performance_thresholds:
+    max_response_time_seconds: 30
+    min_success_rate_percent: 90
+    max_error_rate_percent: 5
+
+# ===================================================================
+#         PHASE 1 INTEGRATION COMPATIBILITY
+# ===================================================================
+phase1_integration:
+  enabled: true
+  fallback_mode: true
+  
+  # CoreOrchestrator integration
+  core_orchestrator:
+    host: "localhost"
+    port: 5555
+    timeout_ms: 15000
+    fallback_priority: 1
+    
+  # Legacy agent compatibility
+  legacy_compatibility:
+    model_orchestrator_port: 7010
+    goal_manager_port: 7005
+    bridge_mode: true
+
+# ===================================================================
+#         DYNAMIC IDENTITY INTEGRATION
+# ===================================================================
+dynamic_identity:
+  enabled: true
+  agent_host: "localhost"
+  agent_port: 5802
+  
+  # Persona integration settings
+  persona_integration:
+    update_frequency_seconds: 300
+    context_injection: true
+    personality_adaptation: true
+
+# ===================================================================
+#         SECURITY CONFIGURATION
+# ===================================================================
+security:
+  # Code execution security
+  code_execution_security:
+    sandbox_enabled: true
+    network_isolation: true
+    file_system_restrictions: true
+    resource_limits:
+      memory_mb: 512
+      cpu_percent: 50
+      disk_mb: 100
+      
+  # API security
+  api_security:
+    rate_limiting:
+      enabled: true
+      max_requests_per_minute: 100
+    authentication:
+      enabled: false  # Will be enabled in production
+      method: "jwt"
+      
+  # Inter-service communication security
+  service_security:
+    encryption_enabled: false  # Will be enabled in production
+    certificate_verification: false
+
+# ===================================================================
+#         LOGGING CONFIGURATION
+# ===================================================================
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log files
+  files:
+    main: "logs/planning_orchestrator.log"
+    errors: "logs/planning_orchestrator_errors.log"
+    metrics: "logs/planning_orchestrator_metrics.log"
+    
+  # Log rotation
+  rotation:
+    max_size_mb: 50
+    backup_count: 5
+    
+  # Console logging
+  console:
+    enabled: true
+    level: "INFO"
+
+# ===================================================================
+#         DEVELOPMENT & TESTING
+# ===================================================================
+development:
+  debug_mode: false
+  test_mode: false
+  mock_external_services: false
+  
+  # Performance profiling
+  profiling:
+    enabled: false
+    profile_file: "logs/performance_profile.prof"
+    
+  # Testing configuration
+  testing:
+    unit_tests: true
+    integration_tests: true
+    load_testing: false
+    
+# ===================================================================
+#         FEATURE FLAGS
+# ===================================================================
+feature_flags:
+  enable_embedding_classification: true
+  enable_code_execution: true 
+  enable_goal_decomposition: true
+  enable_background_monitoring: true
+  enable_memory_persistence: true
+  enable_error_bus_reporting: true
+  enable_circuit_breakers: true
+  enable_metrics_collection: true
+  enable_phase1_compatibility: true
+  enable_dynamic_identity_integration: true 
