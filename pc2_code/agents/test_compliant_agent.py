@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any, Optional
 
 # Import the BaseAgent from main_pc_code (shared)
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config

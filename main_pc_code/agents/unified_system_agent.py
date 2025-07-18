@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from main_pc_code.agents.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Add the project's main_pc_code directory to the Python path
 import sys

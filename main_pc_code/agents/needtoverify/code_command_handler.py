@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 Code Command Handler for Voice Assistant
 This script handles voice commands related to auto code generation, debugging, and self-healing

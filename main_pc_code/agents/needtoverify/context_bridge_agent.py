@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 Context Bridge Agent
 Connects face recognition events to the context manager for seamless context switching.

@@ -20,7 +20,7 @@ import os
 sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Import the BaseAgent from main_pc_code
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config

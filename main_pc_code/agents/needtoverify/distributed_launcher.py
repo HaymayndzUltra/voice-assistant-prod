@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 Distributed Agent Launcher
 - Manages agent distribution across multiple machines

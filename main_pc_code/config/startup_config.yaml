@@ -76,6 +76,28 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9100
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        prometheus_enabled: true
+        parallel_health_checks: true
+        prediction_enabled: true
+    ModelManagerSuite:
+      script_path: phase1_implementation/consolidated_agents/model_manager_suite/backup_model_manager_suite/model_manager_suite.py
+      port: 7011
+      health_check_port: 7111
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        models_dir: models
+        vram_budget_percentage: 80
+        idle_timeout: 300
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
@@ -103,7 +125,7 @@ agent_groups:
       - SystemDigitalTwin
   utility_services:
     CodeGenerator:
-      script_path: main_pc_code/agents/code_generator.py
+      script_path: main_pc_code/agents/code_generator_agent.py
       port: 5650
       health_check_port: 6650
       required: true

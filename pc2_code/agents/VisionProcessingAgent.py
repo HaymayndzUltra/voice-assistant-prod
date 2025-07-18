@@ -30,7 +30,7 @@ PC2_CODE_DIR = get_project_root()
 if PC2_CODE_DIR not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR)
 
-from agents.agent_utils import BaseAgent
+from common.core.base_agent import BaseAgent
 import psutil
 
 # Standard imports for PC2 agents

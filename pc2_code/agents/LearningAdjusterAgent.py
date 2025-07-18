@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
 from pc2_code.config.system_config import get_service_host, get_service_port
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 import traceback
 
