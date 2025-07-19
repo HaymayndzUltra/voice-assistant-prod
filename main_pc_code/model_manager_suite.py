@@ -1211,6 +1211,61 @@ class ModelManagerSuite(BaseAgent):
                 self.kv_caches.pop(conversation_id, None)
                 self.kv_cache_last_used.pop(conversation_id, None)
 
+# ---------------- Backward Compatibility Layer (Model Management Cleanup) ----------------
+_suite_singleton = None
+
+def _get_suite_singleton():
+    """Lazily create a single ModelManagerSuite instance shared by all legacy wrappers."""
+    global _suite_singleton
+    if _suite_singleton is None:
+        _suite_singleton = ModelManagerSuite()
+    return _suite_singleton
+
+
+class _LegacyModelManagerProxy:
+    """Proxy that forwards all attribute access to the unified ModelManagerSuite instance."""
+
+    def __init__(self, *args, **kwargs):
+        # Do NOT start multiple servers; just reuse (and lazily create) the singleton
+        self._suite = _get_suite_singleton()
+
+    def __getattr__(self, name):
+        # Defer every attribute/method lookup to the underlying suite
+        return getattr(self._suite, name)
+
+
+# Expose legacy public names so imports continue to work untouched
+GGUFModelManager = _LegacyModelManagerProxy
+ModelManagerAgent = _LegacyModelManagerProxy
+PredictiveLoader = _LegacyModelManagerProxy
+ModelEvaluationFramework = _LegacyModelManagerProxy
+
+
+# Legacy helper preserved for backward compatibility (e.g. get_instance())
+
+def get_instance():
+    """Return the shared proxy instance for legacy callers."""
+    return _LegacyModelManagerProxy()
+
+
+# -----------------------------------------------------------------------------
+# Register legacy module paths so that "import main_pc_code.agents.gguf_model_manager"
+# and friends transparently resolve to this unified implementation. This step must be
+# done *after* the proxy class definitions so that any subsequent `import` pulls the
+# correct symbols from this module instead of loading the old duplicated source files.
+# -----------------------------------------------------------------------------
+import sys as _sys
+
+for _alias in (
+    'main_pc_code.agents.gguf_model_manager',
+    'main_pc_code.agents.model_manager_agent',
+    'main_pc_code.agents.predictive_loader',
+    'main_pc_code.agents.model_evaluation_framework',
+):
+    _sys.modules[_alias] = _sys.modules[__name__]
+
+# ---------------- End Backward Compatibility Layer ----------------
+
 if __name__ == "__main__":
     # Parse command line arguments
     import argparse
