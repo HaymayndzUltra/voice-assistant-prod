@@ -131,7 +131,7 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
-      - ModelManagerAgent
+      - ModelManagerSuite
     SelfTrainingOrchestrator:
       script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
       port: 5660
@@ -139,7 +139,7 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
-      - ModelManagerAgent
+      - ModelManagerSuite
     PredictiveHealthMonitor:
       script_path: main_pc_code/agents/predictive_health_monitor.py
       port: 5613
@@ -153,7 +153,7 @@ agent_groups:
       health_check_port: 6584
       required: true
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
     Executor:
       script_path: main_pc_code/agents/executor.py
@@ -169,7 +169,7 @@ agent_groups:
       health_check_port: 6615
       required: false
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
     LocalFineTunerAgent:
       script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
@@ -203,7 +203,7 @@ agent_groups:
       health_check_port: 6612
       required: true
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
     GoTToTAgent:
       script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
@@ -211,7 +211,7 @@ agent_groups:
       health_check_port: 6646
       required: false
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
       - ChainOfThoughtAgent
     CognitiveModelAgent:
@@ -230,7 +230,7 @@ agent_groups:
       required: true
       dependencies:
       - RequestCoordinator
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
   learning_knowledge:
     LearningOrchestrationService:
@@ -239,7 +239,7 @@ agent_groups:
       health_check_port: 8212
       required: true
       dependencies:
-      - ModelEvaluationFramework
+      - ModelManagerSuite
       - SystemDigitalTwin
     LearningOpportunityDetector:
       script_path: main_pc_code/agents/learning_opportunity_detector.py
@@ -283,7 +283,7 @@ agent_groups:
       required: true
       dependencies:
       - RequestCoordinator
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
     GoalManager:
       script_path: main_pc_code/agents/goal_manager.py
@@ -369,7 +369,7 @@ agent_groups:
       required: true
       dependencies:
       - RequestCoordinator
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
   speech_services:
     STTService:
@@ -378,7 +378,7 @@ agent_groups:
       health_check_port: 6800
       required: true
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
     TTSService:
       script_path: main_pc_code/services/tts_service.py
@@ -386,7 +386,7 @@ agent_groups:
       health_check_port: 6801
       required: true
       dependencies:
-      - ModelManagerAgent
+      - ModelManagerSuite
       - SystemDigitalTwin
       - StreamingInterruptHandler
   audio_interface:

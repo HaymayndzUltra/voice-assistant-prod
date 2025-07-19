@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  mm-router:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.router
+    image: ai-system/mm-router:latest
+    container_name: mm-router
+    environment:
+      - SUITE_TRAFFIC_PERCENT=${SUITE_TRAFFIC_PERCENT:-5}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      ai_system_net:
+        ipv4_address: 172.20.0.50
+    depends_on:
+      - core-services
+    ports:
+      # Expose original public ports so external clients remain unchanged
+      - "5570:5570"
+      - "5575:5575"
+      - "5617:5617"
+      - "7222:7222"
+
+networks:
+  ai_system_net:
+    external: true
