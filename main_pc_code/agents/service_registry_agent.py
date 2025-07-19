@@ -19,8 +19,29 @@ Supports multiple backend storage options:
 """
 
 import argparse
-import orjson
-import json  # Fallback for compatibility
+# Prefer orjson for performance if available, but gracefully fall back to the
+# standard library ``json`` so the agent can run even when the optional
+# dependency is not installed inside the Docker image.
+try:
+    import orjson as _json  # type: ignore
+    _dumps = _json.dumps  # returns bytes
+    _loads = _json.loads
+except ImportError:  # pragma: no cover – orjson is optional
+    import json as _json  # noqa: F401 – fallback
+
+    def _dumps(obj):  # type: ignore
+        """Mimic orjson.dumps signature but return bytes for consistency."""
+        text = _json.dumps(obj, separators=(",", ":"))
+        return text.encode("utf-8")
+
+    def _loads(data):  # type: ignore
+        if isinstance(data, (bytes, bytearray)):
+            data = data.decode("utf-8")
+        return _json.loads(data)
+
+# Expose dumps / loads helpers for this module
+dumps = _dumps
+loads = _loads
 import logging
 import os
 from datetime import datetime
@@ -118,14 +139,16 @@ class RedisBackend:
         data = self.redis.get(self._key(agent_id))
         if data:
             try:
-                return ororjson.loads(data)
-            except json.JSONDecodeError:
+                return loads(data)
+            except Exception:  # noqa: BLE001 – handle any decode error gracefully
                 logger.error("Invalid JSON data for agent %s", agent_id)
         return None
     
     def set(self, agent_id: str, data: Dict[str, Any]) -> None:
         """Store agent data by ID."""
-        self.redis.set(self._key(agent_id), ororjson.dumps(data).decode().decode())
+        # Redis expects ``bytes`` or ``str``.  ``dumps`` returns *bytes* for
+        # both the orjson and stdlib fallback, so we can send it directly.
+        self.redis.set(self._key(agent_id), dumps(data))
     
     def list_agents(self) -> list[str]:
         """List all registered agent IDs."""

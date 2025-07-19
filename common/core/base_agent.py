@@ -73,6 +73,9 @@ class BaseAgent:
                 self.health_check_port = self.port + 1
         else:
             self.health_check_port = self.port + 1
+            
+        # HTTP health port should be separate to avoid conflicts with ZMQ health socket
+        self.http_health_port = self.health_check_port + 1
         
         self.context = zmq.Context()
         self.strict_port = kwargs.get('strict_port', True)  # If True, do not auto-switch ports on bind failure
@@ -227,7 +230,8 @@ class BaseAgent:
                     config = getattr(self, 'config', {}) or {}
                     if not config.get('health_check_port') and self.health_check_port == old_port + 1:
                         self.health_check_port = self.port + 1
-                        logger.info(f"Auto-switching health check port to {self.health_check_port}")
+                        self.http_health_port = self.health_check_port + 1
+                        logger.info(f"Auto-switching health check port to {self.health_check_port}, HTTP health to {self.http_health_port}")
                 else:
                     logger.error(f"Failed to initialize sockets after {max_retries} attempts")
                     self.cleanup()
@@ -764,7 +768,7 @@ class BaseAgent:
             logger.error(f"Original error: {error_type} - {message}") 
 
     def _start_http_health_server(self):
-        """Start a simple HTTP server for health checks."""
+        """Start a simple HTTP server for health checks on separate port to avoid ZMQ conflict."""
         class HealthHandler(BaseHTTPRequestHandler):
             def do_GET(s):
                 if s.path == '/health':
@@ -775,9 +779,17 @@ class BaseAgent:
                     s.wfile.write(json.dumps(status).encode())
                 else:
                     s.send_error(404)
+            
+            def log_message(self, format, *args):
+                # Suppress HTTP server logs to reduce noise
+                pass
         
-        self.http_server = HTTPServer(('0.0.0.0', self.health_check_port), HealthHandler)
-        thread = threading.Thread(target=self.http_server.serve_forever)
-        thread.daemon = True
-        thread.start()
-        logger.info(f"Started HTTP health server on port {self.health_check_port}") 
+        try:
+            self.http_server = HTTPServer(('0.0.0.0', self.http_health_port), HealthHandler)
+            thread = threading.Thread(target=self.http_server.serve_forever)
+            thread.daemon = True
+            thread.start()
+            logger.info(f"Started HTTP health server on port {self.http_health_port} (ZMQ health on {self.health_check_port})")
+        except OSError as e:
+            logger.warning(f"Failed to start HTTP health server on port {self.http_health_port}: {e}")
+            logger.info(f"HTTP health endpoint unavailable, ZMQ health check still available on port {self.health_check_port}") 
