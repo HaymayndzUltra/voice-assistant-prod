@@ -45,6 +45,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SystemDigitalTwinLauncher")
 
+# New default ports (aligned with startup_config.yaml)
+LAUNCH_PORT = 7220
+LAUNCH_HEALTH_PORT = 8220
+
 # Override BaseAgent's __init__ to use our custom health check port
 BaseAgent._original_init = BaseAgent.__init__
 def custom_init(self, *args, **kwargs):
@@ -76,13 +80,13 @@ def custom_init(self, *args, **kwargs):
 BaseAgent.__init__ = custom_init
 
 if __name__ == "__main__":
-    logger.info("Starting SystemDigitalTwin with port 7120 and health check port 8120...")
+    logger.info(f"Starting SystemDigitalTwin with port {LAUNCH_PORT} and health check port {LAUNCH_HEALTH_PORT}...")
     try:
-        # Create and run the agent with custom health check port
-        agent = SystemDigitalTwinAgent()
+        # Create and run the agent with custom port configuration
+        agent = SystemDigitalTwinAgent(config={"port": LAUNCH_PORT, "health_check_port": LAUNCH_HEALTH_PORT})
         
-        # Override the health check port
-        custom_init(agent, name=agent.name, port=agent.port, health_check_port=8120)
+        # Override the health check port (in case BaseAgent defaulted differently)
+        custom_init(agent, name=agent.name, port=agent.port, health_check_port=LAUNCH_HEALTH_PORT)
         
         # Run the agent
         agent.run()

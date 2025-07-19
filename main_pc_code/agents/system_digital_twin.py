@@ -61,8 +61,8 @@ logger = logging.getLogger("SystemDigitalTwinAgent")
 # Constants
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 ZMQ_REQUEST_TIMEOUT = 5000
-DEFAULT_PORT = 7120
-DEFAULT_HEALTH_PORT = 8120
+DEFAULT_PORT = 7220
+DEFAULT_HEALTH_PORT = 8220
 # Database & Cache Defaults
 
 DEFAULT_CONFIG = {
@@ -114,6 +114,12 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         self.main_port = self.port
         self.health_port = config.get("health_check_port", DEFAULT_HEALTH_PORT)
+
+        # Start HTTP health endpoint for environments expecting HTTP probes
+        try:
+            self._start_http_health_server()
+        except Exception as http_err:
+            logger.warning(f"Failed to start HTTP health server on port {self.health_port}: {http_err}")
         
         self.metrics_history = {
             "cpu_usage": [], "vram_usage_mb": [], "ram_usage_mb": [],
@@ -407,6 +413,44 @@ class SystemDigitalTwinAgent(BaseAgent):
             return self.prom.check_prometheus_connection() if self.prom else False
         except Exception:
             return False
+
+    # ------------------------------------------------------------------
+    #                      HTTP HEALTH ENDPOINT
+    # ------------------------------------------------------------------
+    def _start_http_health_server(self) -> None:
+        """Start a very lightweight HTTP server that returns health status.
+
+        Many container orchestration systems (and some existing health-check
+        scripts in this repo) expect an HTTP endpoint.  To remain compatible
+        while keeping the main ZMQ protocol unchanged, we expose a minimal
+        JSON endpoint on the configured ``health_port``.
+        """
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        import json, time as _time
+
+        class _HealthHandler(BaseHTTPRequestHandler):
+            # pylint: disable=attribute-defined-outside-init
+            def do_GET(self):  # noqa: N802 – BaseHTTP naming convention
+                if self.path in ("/", "/health", "/healthz"):
+                    payload = {"status": "healthy", "timestamp": _time.time()}
+                    response = json.dumps(payload).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+
+            # Silence the default noisy logging
+            def log_message(self, *_args):  # type: ignore[override]
+                return
+
+        # Bind to 0.0.0.0 to cover Docker bridge
+        http_server = HTTPServer(("0.0.0.0", int(self.health_port)), _HealthHandler)
+        threading.Thread(target=http_server.serve_forever, daemon=True).start()
+        logger.info(f"HTTP health endpoint available at http://0.0.0.0:{self.health_port}/health")
 
     def _update_vram_metrics(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Update VRAM metrics from ModelManagerAgent reports."""
