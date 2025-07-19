@@ -1,0 +1,10 @@
+# AI System - Audio Dependencies (~1GB)
+# Audio processing dependencies for audio-interface containers
+
+# Audio Processing Core
+librosa>=0.10.0
+# Note: soundfile is handled by librosa dependency
+
+# Audio I/O & Recording
+pyaudio>=0.2.11
+speechrecognition>=3.10.0 

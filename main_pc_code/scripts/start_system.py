@@ -13,6 +13,7 @@ import yaml
 import subprocess
 import signal
 import psutil
+import argparse
 from pathlib import Path
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -46,19 +47,33 @@ class DependencyResolver:
         self.build_dependency_graph()
     
     def extract_agents(self):
+        """Handle both current agent_groups schema and legacy list schema."""
         for section_name, section_data in self.config.items():
-            if not isinstance(section_data, list):
-                continue
-            for agent in section_data:
-                if not isinstance(agent, dict):
-                    continue
-                if 'name' not in agent or 'script_path' not in agent:
-                    continue
-                name = agent['name']
-                self.agents[name] = agent
-                if 'dependencies' in agent:
-                    for dep in agent['dependencies']:
-                        self.dependencies[name].add(dep)
+            # Current schema: agent_groups -> group_name -> agent_name -> config
+            if section_name == "agent_groups" and isinstance(section_data, dict):
+                for group_name, agents_mapping in section_data.items():
+                    if not isinstance(agents_mapping, dict):
+                        continue
+                    for agent_name, agent_cfg in agents_mapping.items():
+                        if not isinstance(agent_cfg, dict) or 'script_path' not in agent_cfg:
+                            continue
+                        agent_cfg['name'] = agent_name
+                        self.agents[agent_name] = agent_cfg
+                        for dep in agent_cfg.get('dependencies', []):
+                            self.dependencies[agent_name].add(dep)
+            
+            # Legacy schema: list of agent dicts
+            elif isinstance(section_data, list):
+                for agent in section_data:
+                    if not isinstance(agent, dict):
+                        continue
+                    if 'name' not in agent or 'script_path' not in agent:
+                        continue
+                    name = agent['name']
+                    self.agents[name] = agent
+                    if 'dependencies' in agent:
+                        for dep in agent['dependencies']:
+                            self.dependencies[name].add(dep)
     def build_dependency_graph(self):
         for agent_name, deps in self.dependencies.items():
             for dep in deps:
@@ -230,15 +245,23 @@ def verify_phase_health(phase_agents, retries=RETRIES, delay=RETRY_DELAY):
     return True
 
 def main():
+    parser = argparse.ArgumentParser(description="Phased System Startup Script")
+    parser.add_argument('--demo', action='store_true', help="Run in demo mode (only Phase 1)")
+    args = parser.parse_args()
+    
     print("[SYSTEM STARTUP] Loading configuration and resolving dependencies...")
     config = load_startup_config()
     resolver = DependencyResolver(config)
     phases = resolver.get_startup_phases()
     print(f"[SYSTEM STARTUP] {len(phases)} phases detected.")
     
-    # For demonstration, only run Phase 1 with a subset of agents
-    demo_mode = True
+    demo_mode = args.demo
     max_phases = 1 if demo_mode else len(phases)
+    
+    total_agents = sum(len(phase) for phase in phases)
+    if total_agents == 0:
+        print("[ERROR] No agents detected in configuration! Aborting startup.")
+        sys.exit(1)
     
     all_procs = []
     for idx, phase_agents in enumerate(phases):

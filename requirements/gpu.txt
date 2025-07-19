@@ -1,0 +1,29 @@
+# AI System - GPU/ML Dependencies (~8GB)
+# Heavy machine learning and AI dependencies for GPU containers
+
+# Core ML Framework
+torch>=2.0.0
+
+# Transformers & NLP
+transformers>=4.30.0
+tokenizers>=0.13.0
+
+# ML Acceleration & Optimization
+accelerate>=0.20.0
+
+# Datasets & ML Utilities
+datasets>=2.10.0
+scikit-learn>=1.3.0
+
+# Computer Vision
+opencv-python>=4.8.0
+pillow>=10.0.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Development Tools
+black>=23.7.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.5.0 

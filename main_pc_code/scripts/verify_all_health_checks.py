@@ -27,7 +27,6 @@ import subprocess
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.env_helpers import get_env
 # Add project root to Python path
@@ -62,18 +61,20 @@ def extract_agents(config):
     
     # Process each section in the configuration
     for section_name, section_data in config.items():
-        if not isinstance(section_data, list):
-            continue
-            
-        for agent in section_data:
-            if not isinstance(agent, dict):
-                continue
-                
-            # Skip entries without a name or script_path
-            if 'name' not in agent or 'script_path' not in agent:
-                continue
-                
-            agents.append(agent)
+        # Handle nested agent_groups
+        if section_name == "agent_groups" and isinstance(section_data, dict):
+            for group_name, agents_mapping in section_data.items():
+                if isinstance(agents_mapping, dict):
+                    for agent_name, agent_cfg in agents_mapping.items():
+                        if isinstance(agent_cfg, dict) and 'script_path' in agent_cfg:
+                            agent_cfg = agent_cfg.copy()
+                            agent_cfg['name'] = agent_name
+                            agents.append(agent_cfg)
+        # Handle legacy list format
+        elif isinstance(section_data, list):
+            for agent in section_data:
+                if isinstance(agent, dict) and 'name' in agent and 'script_path' in agent:
+                    agents.append(agent)
     
     return agents
 
@@ -210,6 +211,9 @@ def main():
     print(f"Extracting agents from configuration...")
     agents = extract_agents(config)
     print(f"Found {len(agents)} agents in the configuration.")
+    if len(agents) == 0:
+        print("[ERROR] No agents found in configuration! Aborting.")
+        sys.exit(1)
     
     print(f"Checking health of all agents (timeout: {args.timeout}s)...")
     results = []

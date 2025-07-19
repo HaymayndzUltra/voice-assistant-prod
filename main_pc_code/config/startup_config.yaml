@@ -539,4 +539,3 @@ agent_groups:
       - EmotionEngine
       - StreamingTTSAgent
       - SystemDigitalTwin
-  utilities_support: null

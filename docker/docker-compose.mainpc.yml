@@ -49,11 +49,11 @@ services:
   core-services:
     build: 
       context: ..
-      dockerfile: docker/gpu_base/Dockerfile
-    image: ai-system/core-services:latest
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    image: ai-system/core-services:optimized
     command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "core_services"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - LOG_LEVEL=INFO
       - DEBUG_MODE=false
       - ENABLE_METRICS=true
@@ -96,10 +96,11 @@ services:
   gpu-infrastructure:
     build:
       context: ..
-      dockerfile: docker/gpu_base/Dockerfile
-    image: ai-system/gpu-infrastructure:latest
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    image: ai-system/gpu-infrastructure:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "gpu_infrastructure"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - LOG_LEVEL=INFO
       - CUDA_VISIBLE_DEVICES=0
       - SERVICE_REGISTRY_HOST=core-services
@@ -131,10 +132,11 @@ services:
   memory-system:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/memory-system:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/memory-system:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "memory_system"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
@@ -154,10 +156,11 @@ services:
   reasoning-services:
     build:
       context: ..
-      dockerfile: docker/gpu_base/Dockerfile
-    image: ai-system/reasoning-services:latest
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    image: ai-system/reasoning-services:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "reasoning_services"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - CUDA_VISIBLE_DEVICES=0
       - SERVICE_REGISTRY_HOST=core-services
     networks:
@@ -184,10 +187,11 @@ services:
   language-processing:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/language-processing:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/language-processing:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "language_processing"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
@@ -216,10 +220,11 @@ services:
   speech-services:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/speech-services:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/speech-services:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "speech_services"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
       - ai_system_net
@@ -237,10 +242,11 @@ services:
   audio-interface:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/audio-interface:latest
+      dockerfile: docker/Dockerfile.audio.optimized
+    image: ai-system/audio-interface:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "audio_interface"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
       - ai_system_net
@@ -263,10 +269,11 @@ services:
   emotion-system:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/emotion-system:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/emotion-system:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "emotion_system"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
       - ai_system_net
@@ -287,10 +294,11 @@ services:
   utility-services:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/utility-services:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/utility-services:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "utility_services"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
@@ -315,10 +323,11 @@ services:
   learning-knowledge:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.base
-    image: ai-system/learning-knowledge:latest
+      dockerfile: docker/Dockerfile.base.optimized
+    image: ai-system/learning-knowledge:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "learning_knowledge"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
@@ -341,10 +350,11 @@ services:
   vision-processing:
     build:
       context: ..
-      dockerfile: docker/gpu_base/Dockerfile
-    image: ai-system/vision-processing:latest
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    image: ai-system/vision-processing:optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "vision_processing"]
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - CUDA_VISIBLE_DEVICES=0
       - SERVICE_REGISTRY_HOST=core-services
     networks:

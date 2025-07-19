@@ -13,6 +13,9 @@ import socket
 from typing import Dict, Any, cast, Optional, Union, List, Tuple, TypeVar, cast
 from datetime import datetime
 from abc import ABC, abstractmethod
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
 
 # Import the PathManager for consistent path resolution
 from common.utils.path_manager import PathManager
@@ -37,8 +40,7 @@ class BaseAgent:
     """Base class for all agents with proper initialization and health check patterns."""
     
     def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)        # Set up project root using PathManager
+        # Set up project root using PathManager
         project_root = str(PathManager.get_project_root())
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
@@ -89,6 +91,7 @@ class BaseAgent:
         
         # Start health check thread immediately
         self._start_health_check()
+        self._start_http_health_server()
         
         # Start initialization in background
         self._start_initialization()
@@ -471,6 +474,11 @@ class BaseAgent:
             except Exception as e:
                 logger.error(f"{self.name} error terminating health context: {e}")
         
+        # Shutdown HTTP server if exists
+        if hasattr(self, 'http_server'):
+            self.http_server.shutdown()
+            self.http_server.server_close()
+        
         logger.info(f"{self.name} cleanup complete")
         
     def _safe_int(self, value: Any, default: int = 0) -> int:
@@ -527,6 +535,10 @@ class BaseAgent:
                 }
             )
             
+            # Get Digital Twin endpoint from env vars
+            dt_host = os.getenv('DIGITAL_TWIN_HOST', '0.0.0.0')
+            dt_port = int(os.getenv('DIGITAL_TWIN_PORT', 7120))
+            
             # Send registration to SystemDigitalTwin
             self.send_request_to_agent(
                 "SystemDigitalTwin",
@@ -537,10 +549,12 @@ class BaseAgent:
                     "location": "MainPC",  # Default to MainPC, can be overridden
                     "registration_data": registration.dict()
                 },
+                host=dt_host,
+                port=dt_port,
                 retries=3,
                 retry_delay=2.0
             )
-            logger.info(f"Successfully registered {self.name} with SystemDigitalTwin")
+            logger.info(f"Successfully registered {self.name} with SystemDigitalTwin at {dt_host}:{dt_port}")
         except Exception as e:
             logger.warning(f"Failed to register with SystemDigitalTwin: {e}. Will continue without registration.")
     
@@ -747,3 +761,22 @@ class BaseAgent:
             # Log locally if error reporting fails
             logger.error(f"Error in report_error: {e}")
             logger.error(f"Original error: {error_type} - {message}") 
+
+    def _start_http_health_server(self):
+        """Start a simple HTTP server for health checks."""
+        class HealthHandler(BaseHTTPRequestHandler):
+            def do_GET(s):
+                if s.path == '/health':
+                    s.send_response(200)
+                    s.send_header('Content-type', 'application/json')
+                    s.end_headers()
+                    status = self._get_health_status()
+                    s.wfile.write(json.dumps(status).encode())
+                else:
+                    s.send_error(404)
+        
+        self.http_server = HTTPServer(('0.0.0.0', self.health_check_port), HealthHandler)
+        thread = threading.Thread(target=self.http_server.serve_forever)
+        thread.daemon = True
+        thread.start()
+        logger.info(f"Started HTTP health server on port {self.health_check_port}") 
