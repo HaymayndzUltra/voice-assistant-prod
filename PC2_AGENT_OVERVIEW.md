@@ -1,39 +1,39 @@
 ### PC2 Subsystem: Integration Layer Agents
 
 #### Agent: TieredResponder
-- **Purpose:** To provide a sophisticated, multi-layered response strategy, likely selecting from different models or response generators based on the request's complexity and resource availability.
-- **Core Logic/Features:** This agent acts as an advanced response generator. The "Tiered" nature implies it can access different levels of models (e.g., simple, medium, complex as defined in `model_tiers`) to balance response quality with performance and cost. It likely receives a processed request and generates the final output.
-- **Health Check:** Listens on port `7100`. Health check details are inherited from the global `health_checks` configuration (30s interval, 10s timeout).
-- **Error Handling:** Not specified in config, but likely uses standard logging and try/except blocks.
-- **Configuration/Parameters:** `host`, `port` (7100), `required: true`. Inherits global settings for `environment`, `resource_limits`, and `network`.
-- **Inter-Agent Communication:** Serves as a core response generation service for PC2. It would be called by a coordinating agent (like `TaskScheduler` or `AdvancedRouter`) after a request has been processed.
-- **Dependencies:** None listed, but implicitly depends on a model-providing service.
+- **Purpose:** To provide a sophisticated, multi-layered response strategy, selecting from different response generators based on the request's complexity and real-time system resources.
+- **Core Logic/Features:** The agent categorizes incoming queries into `'instant'`, `'fast'`, and `'deep'` tiers based on regex pattern matching. It has an internal `ResourceManager` class that uses `psutil` and `torch` to monitor CPU, RAM, and GPU load, and will delay processing if thresholds are exceeded. It uses `asyncio` for handling response generation.
+- **Health Check:** Listens for synchronous health checks on a ZMQ REP socket. It also runs a background thread (`monitor_health`) that periodically broadcasts its health status (including resource stats and queue size) on a ZMQ PUB socket.
+- **Error Handling:** Uses a central `error_bus` (ZMQ PUB socket) to report exceptions from its core loops, such as health monitoring or request processing failures.
+- **Configuration/Parameters:** `host`, `port` (7100), `required: true`. Inherits global settings. Uses multiple ports defined in the config for REP, PUSH, and PUB sockets.
+- **Inter-Agent Communication:** It receives requests on a ZMQ REP socket and sends responses on a ZMQ PUSH socket, allowing for an asynchronous response pattern. It also broadcasts health status on a ZMQ PUB socket.
+- **Dependencies:** None listed, but implicitly depends on model services to handle `'fast'` and `'deep'` responses.
 
 #### Agent: AsyncProcessor
-- **Purpose:** To handle long-running or resource-intensive tasks asynchronously, preventing them from blocking the main request-response cycle.
-- **Core Logic/Features:** This agent manages a queue of background jobs. When a task that cannot be completed immediately is identified (e.g., generating a complex report, fine-tuning a model), it is offloaded to this processor. It uses a worker pattern to process tasks from the queue.
-- **Health Check:** Listens on port `7101`. Health check details are inherited from the global `health_checks` configuration.
-- **Error Handling:** Not specified. Would need robust error handling to manage failed jobs, including logging the error and potentially implementing a retry mechanism.
+- **Purpose:** To handle long-running or resource-intensive tasks asynchronously, using a priority-based queueing system.
+- **Core Logic/Features:** Implements a `TaskQueue` class which contains separate `deque` objects for `'high'`, `'medium'`, and `'low'` priority tasks. It has its own `ResourceManager` to check system load before dequeuing a task. It also tracks detailed statistics on task success/failure rates and processing times.
+- **Health Check:** Responds to synchronous health checks on its REP socket. It also runs a background health monitoring thread that broadcasts detailed status (including queue stats) on a ZMQ PUB socket.
+- **Error Handling:** Reports all exceptions during task processing or health monitoring to a central `error_bus`.
 - **Configuration/Parameters:** `host`, `port` (7101), `required: true`. Inherits global settings.
-- **Inter-Agent Communication:** Receives tasks to be processed from agents like `TaskScheduler`. It works independently in the background and may report task completion or failure back to the originating agent or a central monitor.
+- **Inter-Agent Communication:** Uses a ZMQ REP socket to receive tasks and return an immediate acknowledgement. It uses a PUSH socket for fire-and-forget task submission and a PUB socket to broadcast health.
 - **Dependencies:** None listed.
 
 #### Agent: CacheManager
-- **Purpose:** Provides a centralized caching service to store and retrieve frequently accessed data, reducing latency and redundant processing.
-- **Core Logic/Features:** Implements a key-value cache with a Time-to-Live (TTL) policy. It can be used to cache results from expensive operations like model inferences or database queries. The global `optimization.cache_ttl` is likely a default for this agent.
-- **Health Check:** Listens on port `7102`. Health check details are inherited from the global `health_checks` configuration.
-- **Error Handling:** Not specified. Would need to handle cache misses gracefully and manage potential memory limits of the cache itself.
-- **Configuration/Parameters:** `host`, `port` (7102), `required: true`. Inherits global settings. May use `optimization.cache_ttl`.
-- **Inter-Agent Communication:** Provides caching services to any agent on PC2 that performs repeatable, expensive operations, such as `UnifiedMemoryReasoningAgent` or `KnowledgeBaseAgent`.
-- **Dependencies:** None listed.
+- **Purpose:** Provides a centralized caching service backed by Redis to store and retrieve frequently accessed data, reducing latency.
+- **Core Logic/Features:** The agent is a wrapper around a Redis client. It uses a structured caching approach, with a pre-defined `cache_config` that specifies TTLs and priorities for different `cache_type`s (e.g., `nlu_results`, `model_decisions`, `memory`). It runs a background maintenance thread (`_run_maintenance`) for periodic stats logging.
+- **Health Check:** Inherits from `BaseAgent` and uses its standard ZMQ REQ/REP health check mechanism. The health status (`_get_health_status`) is directly tied to the availability of the Redis connection.
+- **Error Handling:** Reports all Redis connection errors or operational failures to the central `error_bus`.
+- **Configuration/Parameters:** `host`, `port` (7102), `required: true`. It is configured via environment variables for Redis connection details (`REDIS_HOST`, `REDIS_PORT`, etc.).
+- **Inter-Agent Communication:** Inherits from `BaseAgent` and uses its `handle_request` method as a dispatcher for a rich API supporting actions like `get`, `put`, `invalidate`, and `flush` for different cache types.
+- **Dependencies:** None listed, but has a hard dependency on a running Redis server.
 
 #### Agent: PerformanceMonitor
-- **Purpose:** To monitor the real-time performance and resource utilization of PC2 agents and the underlying hardware.
-- **Core Logic/Features:** Collects and aggregates metrics such as CPU usage, memory consumption, GPU load, and request latency for all PC2 services. This data is essential for identifying bottlenecks and ensuring system stability. It is a more focused version of the main system's `ObservabilityHub`.
-- **Health Check:** Listens on port `7103`. Health check details are inherited from the global `health_checks` configuration.
-- **Error Handling:** Not specified. As a monitoring service, it should be highly resilient and log any errors it encounters while collecting metrics without impacting other agents.
+- **Purpose:** To aggregate application-level performance metrics from all other services and broadcast them for real-time monitoring and alerting.
+- **Core Logic/Features:** Its primary role is to act as a data aggregator. It exposes a `log_metric` action for other agents to push metrics like `response_times`, `error_counts`, and `queue_sizes`. It has a built-in alerting mechanism that checks incoming data against `ALERT_THRESHOLDS` and will mark its own status as `'degraded'` if any are breached. It uses `numpy` for statistical calculations.
+- **Health Check:** It is a monitoring agent itself. It broadcasts its own health status on a dedicated ZMQ PUB socket via the `_monitor_health` background thread.
+- **Error Handling:** Reports errors from its own broadcasting and monitoring loops to the central `error_bus`.
 - **Configuration/Parameters:** `host`, `port` (7103), `required: true`. Inherits global settings.
-- **Inter-Agent Communication:** Interacts with all other PC2 agents to poll for performance data. It provides its aggregated data to the `HealthMonitor` or `RCAAgent` for analysis and may be queried by the main PC's monitoring services.
+- **Inter-Agent Communication:** This agent is primarily a **publisher**. It runs two background threads, `_broadcast_metrics` and `_monitor_health`, which continuously send data out on two different ZMQ PUB sockets. Its REP socket is for receiving metric logs and serving alert data, not for its primary monitoring function.
 - **Dependencies:** None listed.
 
 ---
