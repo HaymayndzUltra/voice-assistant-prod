@@ -1,6 +1,7 @@
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 EMR_PORT = 5598
 EMR_HOST = 'localhost'

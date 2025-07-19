@@ -10,6 +10,7 @@ import signal
 import logging
 from pathlib import Path
 from typing import List, Dict, Optional
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

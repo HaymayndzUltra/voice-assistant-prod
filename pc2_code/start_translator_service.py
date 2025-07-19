@@ -16,6 +16,7 @@ import json
 import zmq
 from pathlib import Path
 from datetime import datetime
+from common.env_helpers import get_env
 
 # Setup logging
 logging.basicConfig(

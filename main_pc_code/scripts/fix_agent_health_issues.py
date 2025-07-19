@@ -76,6 +76,7 @@ class AgentHealthFixer:
             # Try to import agent_ports.py
             sys.path.append(str(CONFIG_DIR.parent))
 from main_pc_code.config.agent_ports import AgentPorts
+from common.env_helpers import get_env
             
             agent_ports = AgentPorts()
             return agent_ports.get_all_ports()

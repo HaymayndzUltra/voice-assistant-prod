@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Embedding Service for semantic search with vector storage."""
 
 import json
@@ -41,7 +42,8 @@ class EmbeddingService:
     """
     
     def __init__(self, config: EmbeddingConfig):
-        self.config = config
+
+        super().__init__(*args, **kwargs)        self.config = config
         self.model: Optional[SentenceTransformer] = None
         self.index: Optional[faiss.IndexFlatIP] = None  # Inner product for cosine similarity
         self.metadata: List[EmbeddingMetadata] = []

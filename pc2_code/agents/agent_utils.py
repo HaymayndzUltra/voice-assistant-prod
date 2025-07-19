@@ -494,6 +494,7 @@ def get_system_info() -> Dict[str, Any]:
     try:
         import psutil
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
         

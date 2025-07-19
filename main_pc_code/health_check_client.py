@@ -7,6 +7,7 @@ import zmq
 import json
 import time
 import sys
+from common.env_helpers import get_env
 
 def send_health_check(port=5564, timeout=5):
     """Send health check request to agent"""

@@ -25,6 +25,7 @@ def test_unified_web_agent():
         # Import the agent
         print("1. Importing UnifiedWebAgent...")
 from pc2_code.agents.unified_web_agent import UnifiedWebAgent
+from common.env_helpers import get_env
         print("   ✓ Import successful")
         
         # Create agent instance
@@ -45,7 +46,7 @@ from pc2_code.agents.unified_web_agent import UnifiedWebAgent
         print("4. Testing health check...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7126")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7126")
         
         # Send health check request
         health_request = {"action": "health_check"}
@@ -65,7 +66,7 @@ from pc2_code.agents.unified_web_agent import UnifiedWebAgent
         print("5. Testing web search...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7126")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7126")
         
         # Send search request
         search_request = {

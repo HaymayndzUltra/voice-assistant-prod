@@ -7,6 +7,7 @@ Directly test the health check port without the full health check script
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 def test_health_check():
     context = zmq.Context()
@@ -15,7 +16,7 @@ def test_health_check():
     
     try:
         print("Connecting to health check port 5591...")
-        socket.connect("tcp://localhost:5591")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5591")
         
         print("Sending health check request...")
         request = {"action": "health_check"}

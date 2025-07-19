@@ -19,6 +19,7 @@ from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the services to test
 from pc2_code.agents.memory_orchestrator_service import MemoryOrchestratorService
+from common.env_helpers import get_env
 
 class MemoryClient:
     """Simple client to interact with MemoryOrchestratorService for testing"""

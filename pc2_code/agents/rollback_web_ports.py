@@ -2,6 +2,7 @@ import os
 import shutil
 import logging
 from datetime import datetime
+from common.core.base_agent import BaseAgent
 
 # Configure logging
 logging.basicConfig(
@@ -15,7 +16,8 @@ logging.basicConfig(
 
 class WebPortRollback:
     def __init__(self):
-        self.backup_dir = "port_changes_backup"
+
+        super().__init__(*args, **kwargs)        self.backup_dir = "port_changes_backup"
         self.files_to_rollback = {
             'autonomous_web_assistant.py': {
                 'port': 5604,

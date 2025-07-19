@@ -100,17 +100,18 @@ class DependencyResolver:
 # --- HEALTH CHECK LOGIC (reuse from verify_all_health_checks.py) ---
 import socket
 import json
+from common.env_helpers import get_env
 
 def get_health_check_url(agent):
     name = agent.get('name')
     # Port override for SystemDigitalTwin
     if name == "SystemDigitalTwin":
-        host = "localhost"
+        host = get_env("BIND_ADDRESS", "0.0.0.0")
         health_port = agent.get('health_check_port', 8100)
     else:
         host = agent.get('host', 'localhost')
         if host == "0.0.0.0":
-            host = "localhost"
+            host = get_env("BIND_ADDRESS", "0.0.0.0")
         port = agent.get('port')
         if port is None:
             return None

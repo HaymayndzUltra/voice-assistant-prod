@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
 from main_pc_code.agents.proactive_agent_interface import send_proactive_event
+from common.env_helpers import get_env
 except ImportError:
     def send_proactive_event(event_type, data):
         logging.warning(f"[ContextualMemory] Could not import send_proactive_event, using fallback. Event: {event_type}")

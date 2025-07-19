@@ -365,6 +365,7 @@ if __name__ == "__main__":
     # Check if agent is still responsive
     try:
 from pc2_code.agents.contextual_memory_agent import send_context_request
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
         response = send_context_request({"action": "get_session_id", "user_id": "diagnostic"})

@@ -6,6 +6,7 @@ import time
 import logging
 from pathlib import Path
 from datetime import datetime
+from common.core.base_agent import BaseAgent
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "context_summarizer.log"
@@ -26,7 +27,8 @@ logger = logging.getLogger("ContextSummarizer")
 
 class ContextSummarizer:
     def __init__(self, zmq_port=ZMQ_CONTEXT_SUMMARIZER_PORT):
-        """Initialize the Context Summarizer agent"""
+
+        super().__init__(*args, **kwargs)        """Initialize the Context Summarizer agent"""
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         

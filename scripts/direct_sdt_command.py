@@ -14,8 +14,9 @@ from pathlib import Path
 
 # Configure arguments
 import argparse
+from common.env_helpers import get_env
 parser = argparse.ArgumentParser(description="Send commands directly to SystemDigitalTwin")
-parser.add_argument("--host", default="127.0.0.1", help="SystemDigitalTwin host")
+parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="SystemDigitalTwin host")
 parser.add_argument("--port", type=int, default=7120, help="SystemDigitalTwin port")
 parser.add_argument("--command", choices=["register", "discover", "ping", "status"], default="status", 
                    help="Command to send")

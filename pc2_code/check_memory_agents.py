@@ -6,6 +6,7 @@ import sys
 import time
 import json
 import zmq
+from common.env_helpers import get_env
 
 def check_agent_health(port, name):
     """Connect to a ZeroMQ socket and send a health check request."""

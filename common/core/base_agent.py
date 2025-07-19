@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 Base Agent Class with Proper Initialization and Health Check Patterns
 """
@@ -25,6 +26,7 @@ from common.utils.data_models import (
 
 # Use centralized JSON logger
 from common.utils.logger_util import get_json_logger
+from common.env_helpers import get_env
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -32,11 +34,12 @@ logger = logging.getLogger(__name__)
 # Type variables for better type hinting
 T = TypeVar('T')
 
-class BaseAgent:
+class BaseAgent(BaseAgent):
     """Base class for all agents with proper initialization and health check patterns."""
     
     def __init__(self, *args, **kwargs):
-        # Set up project root using PathManager
+
+        super().__init__(*args, **kwargs)        # Set up project root using PathManager
         project_root = str(PathManager.get_project_root())
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
@@ -77,6 +80,7 @@ class BaseAgent:
         self.is_initialized = threading.Event()
         self.initialization_error = None
         self.start_time = time.time()
+        self._cleanup_called = False  # Prevent multiple cleanup calls
         
         # Set up logging directory using PathManager
         self._setup_logging()
@@ -93,6 +97,9 @@ class BaseAgent:
         # Get agent capabilities for registration
         self.capabilities = kwargs.get('capabilities', self._get_default_capabilities())
         
+        # Set up graceful shutdown handlers
+        self._setup_graceful_shutdown()
+        
         # Set up auto-registration with SystemDigitalTwin
         self._register_with_digital_twin()
         
@@ -100,7 +107,9 @@ class BaseAgent:
     
     def _setup_logging(self):
         """Configure per-agent JSON structured logging."""
-        logs_dir = PathManager.get_logs_dir()
+        from pathlib import Path
+        project_root = Path(PathManager.get_project_root())
+        logs_dir = project_root / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
         agent_log_file = logs_dir / f"{self.name.lower()}.log"
@@ -112,6 +121,16 @@ class BaseAgent:
         self.logger = logging.LoggerAdapter(self.logger, extra={"agent_name": self.name})
 
         self.logger.info(f"Initialized JSON logging -> {agent_log_file}")
+    
+    def _setup_graceful_shutdown(self):
+        """Setup graceful shutdown handlers for SIGTERM and SIGINT signals."""
+        
+    
+    def _atexit_cleanup(self):
+        """Cleanup method called on normal Python exit."""
+        if self.running:
+            self.logger.info(f"{self.name} performing atexit cleanup...")
+            self.cleanup()
     
     def _find_available_port(self, start_port: int = 5000, max_attempts: int = 100) -> int:
         """Find an available port starting from start_port.
@@ -386,7 +405,13 @@ class BaseAgent:
     
     def cleanup(self):
         """Clean up resources with proper error handling and ensure all background threads are joined."""
+        if self._cleanup_called:
+            logger.debug(f"{self.name} cleanup already called, skipping")
+            return
+        
+        self._cleanup_called = True
         logger.info(f"{self.name} cleaning up resources")
+        
         # Signal loops to stop
         self.running = False
 
@@ -536,14 +561,14 @@ class BaseAgent:
             response = self.send_request_to_agent(
                 "ServiceRegistry",
                 {"action": "get_agent_endpoint", "agent_name": agent_name},
-                host=os.getenv("SERVICE_REGISTRY_HOST", "localhost"),
+                host=os.getenv("SERVICE_REGISTRY_HOST", get_env("BIND_ADDRESS", "0.0.0.0")),
                 port=int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
             )
             
             if response.get("status") != "success":
                 raise RuntimeError(f"Failed to get endpoint for {agent_name}: {response.get('error', 'Unknown error')}")
             
-            host = response.get("host", "localhost")
+            host = response.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             port = response.get("port")
             
             if port is None:
@@ -583,7 +608,7 @@ class BaseAgent:
         """
         # Special case for SystemDigitalTwin - use hardcoded values if discovery not available
         if agent_name == "SystemDigitalTwin" and (host is None or port is None):
-            host = host or "localhost"
+            host = host or get_env("BIND_ADDRESS", "0.0.0.0")
             port = port or 7120  # Default SystemDigitalTwin port from config
         
         # Try to discover the agent if host/port not provided
@@ -595,7 +620,7 @@ class BaseAgent:
             except Exception as e:
                 if agent_name == "SystemDigitalTwin":
                     # For SystemDigitalTwin, fall back to default if discovery fails
-                    host = "localhost"
+                    host = get_env("BIND_ADDRESS", "0.0.0.0")
                     port = 7120
                     logger.warning(f"Using default SystemDigitalTwin endpoint: {host}:{port}")
                 else:
@@ -603,7 +628,7 @@ class BaseAgent:
         
         # Ensure host and port are not None at this point
         if host is None:
-            host = "localhost"
+            host = get_env("BIND_ADDRESS", "0.0.0.0")
             logger.warning(f"Host was None for {agent_name}, using default: {host}")
         
         if port is None:

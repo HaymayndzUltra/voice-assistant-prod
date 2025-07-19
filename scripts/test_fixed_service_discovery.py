@@ -16,6 +16,7 @@ import logging
 import signal
 import argparse
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent

@@ -18,6 +18,7 @@ import logging
 import sys
 import os
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

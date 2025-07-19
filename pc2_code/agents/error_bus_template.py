@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Error Bus Integration Template

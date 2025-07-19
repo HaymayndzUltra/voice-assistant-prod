@@ -48,6 +48,7 @@ import wave
 from typing import Dict, Any, Optional
 from main_pc_code.utils.config_loader import load_config
 import psutil
+from common.env_helpers import get_env
 
 # Load configuration at module level
 config = load_config()
@@ -120,7 +121,7 @@ class ToneDetector(BaseAgent):
         
         # Setup error bus
         self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -229,7 +230,7 @@ class ToneDetector(BaseAgent):
             # Use the partial transcripts port from streaming system
             context = zmq.Context()
             socket = context.socket(zmq.SUB)
-            host = config.get("host", "localhost")
+            host = config.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             socket.connect(f"tcp://{host}:5575")  # Partial transcripts port
             socket.setsockopt_string(zmq.SUBSCRIBE, "")
             logger.info("Connected to Whisper partial transcripts stream")
@@ -275,7 +276,7 @@ class ToneDetector(BaseAgent):
             socket = context.socket(zmq.REQ)
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            host = config.get("tagalog_analyzer_host", "localhost")
+            host = config.get("tagalog_analyzer_host", get_env("BIND_ADDRESS", "0.0.0.0"))
             port = config.get("tagalog_analyzer_port", 5707)
             socket.connect(f"tcp://{host}:{port}")  # TagalogAnalyzer service port
             logger.info("Connected to TagalogAnalyzer service")

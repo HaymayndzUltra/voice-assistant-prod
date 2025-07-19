@@ -1,5 +1,6 @@
 import zmq
 import json
+from common.env_helpers import get_env
 
 def test_health():
     context = zmq.Context()

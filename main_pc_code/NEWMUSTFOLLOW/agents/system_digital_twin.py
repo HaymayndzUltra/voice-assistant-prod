@@ -27,6 +27,7 @@ if str(parent_dir) not in sys.path:
     sys.path.append(str(parent_dir))
 
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

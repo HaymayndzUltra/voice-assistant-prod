@@ -14,10 +14,12 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import traceback
+from common.core.base_agent import BaseAgent
 
 # Add the parent directory to sys.path to import the config
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
 
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
@@ -36,9 +38,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ChainOfThoughtAgent")
 
-class ChainOfThoughtAgent:
+class ChainOfThoughtAgent(BaseAgent):
     def __init__(self, zmq_port=ZMQ_CHAIN_OF_THOUGHT_PORT):
-        logger.info("=" * 80)
+
+        super().__init__(*args, **kwargs)        logger.info("=" * 80)
         logger.info("Initializing Chain of Thought Agent")
         logger.info("=" * 80)
         

@@ -50,6 +50,7 @@ def log_usage_analytics(user: str, command: str, status: str):
         logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
 
 import zmq
+from common.env_helpers import get_env
 ZMQ_LOG_PORT = 5600  # Central log collector port
 log_context = zmq.Context()
 log_socket = log_context.socket(zmq.PUB)

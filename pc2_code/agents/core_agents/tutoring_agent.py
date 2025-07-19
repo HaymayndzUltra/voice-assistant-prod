@@ -19,6 +19,7 @@ if str(project_root) not in sys.path:
 try:
     from common_utils.zmq_helper import create_socket
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True

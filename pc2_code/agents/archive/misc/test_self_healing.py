@@ -12,6 +12,7 @@ import logging
 import sys
 import os
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Setup logging
 LOG_DIR = Path(os.path.dirname(__file__)).parent / "logs"

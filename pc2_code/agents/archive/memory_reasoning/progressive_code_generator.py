@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 Progressive Code Generator
 - Breaks down complex tasks into smaller, testable components
@@ -21,6 +22,7 @@ import threading
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
 from pc2_code.agents.error_database import ErrorDatabase
+from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -47,7 +49,8 @@ class ProgressiveCodeGenerator:
     """Progressive code generator that builds code incrementally with testing"""
     
     def __init__(self):
-        """Initialize the progressive code generator"""
+
+        super().__init__(*args, **kwargs)        """Initialize the progressive code generator"""
         # Initialize ZMQ
         self.context = zmq.Context()
         

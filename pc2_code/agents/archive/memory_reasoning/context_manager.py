@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 Advanced Context Management for Voice Assistant
 This module provides enhanced context management capabilities for the voice assistant,
@@ -15,7 +16,8 @@ class ContextManager:
     """Advanced context management for voice assistant conversations"""
     
     def __init__(self, min_size=5, max_size=20, initial_size=10):
-        # Context window configuration
+
+        super().__init__(*args, **kwargs)        # Context window configuration
         self.min_size = min_size
         self.max_size = max_size
         self.current_size = initial_size

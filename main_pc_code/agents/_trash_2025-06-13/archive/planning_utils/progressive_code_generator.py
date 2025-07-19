@@ -22,6 +22,7 @@ import threading
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import config
 from main_pc_code.agents.error_database import ErrorDatabase
+from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')

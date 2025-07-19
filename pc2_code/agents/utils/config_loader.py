@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Configuration loader utility for PC2 agents.
@@ -11,12 +12,14 @@ import logging
 from typing import Dict, Any, Optional, Union
 from pathlib import Path
 import argparse
+from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 
 class Config:
     def __init__(self, config_path=None):
-        """Initialize the configuration loader"""
+
+        super().__init__(*args, **kwargs)        """Initialize the configuration loader"""
         # If specific config path is provided, use it
         if config_path:
             self.config_path = config_path

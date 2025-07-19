@@ -18,6 +18,7 @@ import socket
 import zmq
 import json
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent

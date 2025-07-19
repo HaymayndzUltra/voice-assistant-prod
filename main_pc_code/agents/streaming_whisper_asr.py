@@ -34,6 +34,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # Try to import model_client for centralized model access
 try:
     from main_pc_code.utils.model_client import ModelClient

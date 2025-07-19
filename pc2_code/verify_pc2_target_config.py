@@ -15,6 +15,7 @@ import sys
 import os
 from datetime import datetime
 from pathlib import Path
+from common.env_helpers import get_env
 
 # ANSI colors for terminal output
 class Colors:

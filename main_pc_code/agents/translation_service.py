@@ -320,6 +320,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 # --- Add AdvancedTimeoutManager (from legacy) ---
 import numpy as np
 from collections import defaultdict
+from common.env_helpers import get_env
 
 class AdvancedTimeoutManager:
     """Manages dynamic timeouts for translation requests."""

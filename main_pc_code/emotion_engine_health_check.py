@@ -13,6 +13,7 @@ import signal
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 class EmotionEngineHealthChecker:
     def __init__(self, main_port: int = 5575, script_path: str = "agents/emotion_engine.py"):

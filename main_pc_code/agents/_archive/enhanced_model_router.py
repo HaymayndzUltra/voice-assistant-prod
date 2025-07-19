@@ -25,6 +25,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -70,18 +71,18 @@ class EnhancedModelRouter(BaseAgent):
         self.context_summarizer_socket = self.context.socket(zmq.REQ)
         self.context_summarizer_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.context_summarizer_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.context_summarizer_socket.connect("tcp://127.0.0.1:5610")
+        self.context_summarizer_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5610")
         
         self.chain_of_thought_socket = self.context.socket(zmq.REQ)
         self.chain_of_thought_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.chain_of_thought_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.chain_of_thought_socket.connect("tcp://127.0.0.1:5612")
+        self.chain_of_thought_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5612")
         
         # Connect to original model manager
         self.model_manager_socket = self.context.socket(zmq.REQ)
         self.model_manager_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_manager_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.model_manager_socket.connect("tcp://127.0.0.1:5555")
+        self.model_manager_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5555")
         
         self.running = True
         logging.info(f"[EnhancedModelRouter] Started on ports {zmq_port} and 5571")

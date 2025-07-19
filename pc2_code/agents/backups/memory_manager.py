@@ -24,6 +24,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level
@@ -121,7 +122,7 @@ class MemoryManager(BaseAgent):
             
             # Connect to UnifiedMemoryReasoningAgent
             self.umra_socket = self.context.socket(zmq.REQ)
-            self.umra_socket.connect("tcp://localhost:5596")
+            self.umra_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596")
             
             self.initialized = True
             logger.info("MemoryManager initialization completed")

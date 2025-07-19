@@ -19,7 +19,8 @@ Supports multiple backend storage options:
 from __future__ import annotations
 
 import argparse
-import json
+import orjson
+import json  # Fallback for compatibility
 import logging
 import os
 from datetime import datetime
@@ -27,6 +28,7 @@ from typing import Dict, Any, Optional, Protocol, runtime_checkable
 
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
+from common.env_helpers import get_env
 
 # ---------------------------------------------------------------------------
 # Configuration defaults
@@ -34,7 +36,7 @@ from common.utils.data_models import AgentRegistration
 DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
 DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
 DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
-DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
+DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", f"redis://{get_env('REDIS_HOST', 'redis')}:6379/0")
 DEFAULT_REDIS_PREFIX = os.getenv("SERVICE_REGISTRY_REDIS_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
@@ -116,14 +118,14 @@ class RedisBackend:
         data = self.redis.get(self._key(agent_id))
         if data:
             try:
-                return json.loads(data)
+                return ororjson.loads(data)
             except json.JSONDecodeError:
                 logger.error("Invalid JSON data for agent %s", agent_id)
         return None
     
     def set(self, agent_id: str, data: Dict[str, Any]) -> None:
         """Store agent data by ID."""
-        self.redis.set(self._key(agent_id), json.dumps(data))
+        self.redis.set(self._key(agent_id), ororjson.dumps(data).decode().decode())
     
     def list_agents(self) -> list[str]:
         """List all registered agent IDs."""

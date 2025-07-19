@@ -82,7 +82,7 @@ class StreamingInterruptHandler(BaseAgent):
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
             # Fall back to configured port
-            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, "localhost")
+            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, get_env("STREAMING_STT_HOST", "streaming-stt"))
             
         self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -339,6 +339,7 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
         traceback.print_exc()
     finally:

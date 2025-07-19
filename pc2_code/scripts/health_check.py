@@ -135,6 +135,7 @@ def check_agent_health_zmq(agent: Dict[str, Any]) -> bool:
     try:
         import zmq
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.setsockopt(zmq.LINGER, 0)

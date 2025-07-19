@@ -1,0 +1,40 @@
+
+version: '3.8'
+services:
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "6222:6222"
+    command: [
+      "--jetstream",
+      "--store_dir=/data",
+      "--max_mem_store=1GB",
+      "--max_file_store=10GB"
+    ]
+    volumes:
+      - nats_data:/data
+    environment:
+      - NATS_LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nats-box:
+    image: natsio/nats-box:latest
+    depends_on:
+      - nats
+    command: |
+      sh -c "
+        echo 'Waiting for NATS server...'
+        sleep 5
+        nats --server nats:4222 stream add ERROR_STREAM --subjects 'errors.>' --storage file --retention limits --max-msgs 1000000 --max-age 7d
+        echo 'NATS Error Stream created'
+        sleep infinity
+      "
+
+volumes:
+  nats_data:

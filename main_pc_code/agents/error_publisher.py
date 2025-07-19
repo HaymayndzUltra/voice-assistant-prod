@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Utility class for standardized error-bus publishing.
 
 All agents should use `ErrorPublisher` (instantiated once, ideally in `__init__`) and call
@@ -14,6 +15,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import zmq
+from common.env_helpers import get_env
 
 
 class ErrorPublisher:
@@ -109,7 +111,7 @@ class ErrorPublisher:
     # ------------------------------------------------------------------
     @staticmethod
     def _build_default_endpoint() -> str:
-        host = os.environ.get("ERROR_BUS_HOST") or os.environ.get("PC2_IP", "localhost")
+        host = os.environ.get("ERROR_BUS_HOST") or os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
         port = int(os.environ.get("ERROR_BUS_PORT", 7150))
         return f"tcp://{host}:{port}"
 

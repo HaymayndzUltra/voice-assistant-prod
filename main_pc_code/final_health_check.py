@@ -12,6 +12,7 @@ import sys
 import os
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
+from common.env_helpers import get_env
 
 def launch_agent(script_path: str, agent_name: str, port: int) -> Optional[subprocess.Popen]:
     """Launch an agent with specific port."""

@@ -38,6 +38,7 @@ from common.core.base_agent import BaseAgent
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 from pc2_code.agents.utils.config_loader import Config
+from common.env_helpers import get_env
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -71,11 +72,11 @@ class SystemHealthManager(BaseAgent):
         super().__init__(name="SystemHealthManager", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = os.environ.get("PC2_IP", "localhost")
+        self.memory_orchestrator_host = os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         
-        self.memory_scheduler_host = os.environ.get("PC2_IP", "localhost")
+        self.memory_scheduler_host = os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
         self.memory_scheduler_port = 7142
         self.memory_scheduler_endpoint = f"tcp://{self.memory_scheduler_host}:{self.memory_scheduler_port}"
         

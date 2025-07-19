@@ -16,6 +16,7 @@ import requests
 import re
 import argparse
 from datetime import datetime
+from common.env_helpers import get_env
 
 # --- Security Configuration ---
 AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")

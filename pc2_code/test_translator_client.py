@@ -8,6 +8,7 @@ import time
 import zmq
 import logging
 import argparse
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

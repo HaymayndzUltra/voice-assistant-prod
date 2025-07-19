@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Unified Storage Manager for Redis + SQLite with namespacing."""
 
 import json
@@ -35,7 +36,8 @@ class UnifiedStorageManager:
     """
     
     def __init__(self, config: StorageConfig):
-        self.config = config
+
+        super().__init__(*args, **kwargs)        self.config = config
         self._redis_pools: Dict[str, redis.Redis] = {}
         self._sqlite_conn: Optional[sqlite3.Connection] = None
         self._initialized = False

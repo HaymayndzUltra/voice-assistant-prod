@@ -9,6 +9,7 @@ import json
 import time
 import sys
 from pathlib import Path
+from common.env_helpers import get_env
 
 def test_agent_health(agent_name, port, timeout=5):
     """Test agent health check"""

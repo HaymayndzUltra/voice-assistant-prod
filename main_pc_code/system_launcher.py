@@ -34,6 +34,7 @@ import time
 import socket
 import signal
 import re
+from common.env_helpers import get_env
 
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent
@@ -146,7 +147,7 @@ def wait_for_batch_healthy(batch_agents: List[Dict[str, Any]], timeout_seconds: 
     while time.time() - start < timeout_seconds and remaining:
         for name, agent in list(remaining.items()):
             # Use environment variables for host if available
-            host = agent.get("host", "localhost")
+            host = agent.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             if host == "0.0.0.0" and USE_COMMON_UTILS:
                 host = get_ip("main_pc")
             port = int(agent.get("port"))

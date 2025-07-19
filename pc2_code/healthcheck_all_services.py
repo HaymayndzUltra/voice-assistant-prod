@@ -2,6 +2,7 @@ import zmq
 import json
 import time
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 # List of agents from start_all_pc2_agents.bat with likely ports
 SOT = [

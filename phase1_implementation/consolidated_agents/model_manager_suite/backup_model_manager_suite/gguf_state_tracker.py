@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 GGUFStateTracker - State Management for GGUF Models
@@ -28,7 +29,8 @@ class GGUFStateTracker:
     """
     
     def __init__(self, port: int = 5576, **kwargs):
-        """Initialize the GGUF state tracker
+
+        super().__init__(*args, **kwargs)        """Initialize the GGUF state tracker
         
         Args:
             port: Port for the state tracker service (unused in consolidated version)

@@ -19,6 +19,7 @@ import zmq
 import socket
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent

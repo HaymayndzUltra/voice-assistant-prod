@@ -9,6 +9,7 @@ import urllib.request
 import urllib.error
 sys.path.insert(0, get_project_root())
 from common.utils.path_env import join_path, get_main_pc_code
+from common.env_helpers import get_env
 
 # Configure logging
 LOGS_DIR = join_path("logs")

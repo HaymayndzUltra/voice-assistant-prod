@@ -38,6 +38,7 @@ from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.pc2_connections import get_connection_string
+from common.env_helpers import get_env
 
 # Setup logging
 LOG_PATH = join_path("logs", "autonomous_web_assistant.log")
@@ -107,7 +108,7 @@ class AutonomousWebAssistant:
             logger.info("Connected to Contextual Memory Agent on PC2")
         except (ImportError, ValueError):
             # Use the new port for consolidated Contextual Memory Agent (5596)
-            self.memory_agent.connect("tcp://localhost:5596")
+            self.memory_agent.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596")
             logger.info("Connected to Contextual Memory Agent on port 5596")
         
         # Browser session

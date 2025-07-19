@@ -12,6 +12,7 @@ import zmq
 import json
 import time
 import threading
+from common.env_helpers import get_env
 
 def test_base_agent_health():
     print("🧪 Testing BaseAgent health check mechanism...")

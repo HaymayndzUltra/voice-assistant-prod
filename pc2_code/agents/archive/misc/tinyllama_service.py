@@ -32,6 +32,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 try:
 from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
     SERVICE_ID = "tinyllama-service-pc2"

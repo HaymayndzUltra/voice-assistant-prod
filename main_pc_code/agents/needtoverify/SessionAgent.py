@@ -9,6 +9,7 @@ import os
 import threading
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -39,7 +40,7 @@ class SessionAgent(BaseAgent):
         
         # SUB socket for CoordinatorAgent
         self.coordinator_socket = self.context.socket(zmq.SUB)
-        self.coordinator_socket.connect("tcp://localhost:5621")  # CoordinatorAgent
+        self.coordinator_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5621")  # CoordinatorAgent
         self.coordinator_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Store session data

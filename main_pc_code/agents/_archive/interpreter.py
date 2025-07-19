@@ -130,7 +130,7 @@ class InterpreterAgent(BaseAgent):
         self.executor_socket = self.context.socket(zmq.PUB)
         self.executor_socket.connect(f"tcp://127.0.0.1:{zmq_executor_port}")
         self.responder_socket = self.context.socket(zmq.PUB)
-        self.responder_socket.connect("tcp://127.0.0.1:5558")
+        self.responder_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5558")
         
         # Set up Memory Agent REQ socket
         self.memory_socket = self.context.socket(zmq.REQ)
@@ -541,6 +541,7 @@ class InterpreterAgent(BaseAgent):
         """Process text input with enhanced context awareness and face recognition integration"""
         # Taglish detection integration
 from main_pc_code.agents.taglish_detector import detect_taglish
+from common.env_helpers import get_env
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logging.info(f"[Interpreter] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

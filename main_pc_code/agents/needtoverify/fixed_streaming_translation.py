@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from datetime import datetime, timedelta
 from collections import defaultdict
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -332,7 +333,7 @@ class FixedStreamingTranslation(BaseAgent):
         
         # Health monitoring
         self.health_socket = self.context.socket(zmq.PUB)
-        self.health_socket.connect("tcp://localhost:5569")  # Unified System Agent port
+        self.health_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5569")  # Unified System Agent port
         
         # Request queue for handling multiple translation requests
         self.request_queue = []

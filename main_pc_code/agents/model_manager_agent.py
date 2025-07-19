@@ -38,6 +38,8 @@ import socket
 import errno
 import psutil
 import GPUtil
+
+from common.env_helpers import get_env
 import yaml
 import numpy as np
 
@@ -79,7 +81,7 @@ def is_port_in_use(port: int) -> bool:
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
-            s.bind(('localhost', port))
+            s.bind((get_env('BIND_ADDRESS', '0.0.0.0'), port))
             return False
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
@@ -821,7 +823,7 @@ class ModelManagerAgent(BaseAgent):
             vram_optimizer_info = discover_service("VRAMOptimizerAgent")
             if vram_optimizer_info:
                 vram_optimizer_available = True
-                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_host = vram_optimizer_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 vram_optimizer_port = vram_optimizer_info.get("port", 5588)
                 
                 # Create socket for VRAM optimizer
@@ -1100,7 +1102,7 @@ class ModelManagerAgent(BaseAgent):
         try:
             vram_optimizer_info = discover_service("VRAMOptimizerAgent")
             if vram_optimizer_info:
-                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_host = vram_optimizer_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 vram_optimizer_port = vram_optimizer_info.get("port", 5588)
                 
                 # Create socket for VRAM optimizer
@@ -2524,7 +2526,7 @@ class ModelManagerAgent(BaseAgent):
         try:
             vram_optimizer_info = discover_service("VRAMOptimizerAgent")
             if vram_optimizer_info:
-                vram_optimizer_host = vram_optimizer_info.get("host", "localhost")
+                vram_optimizer_host = vram_optimizer_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 vram_optimizer_port = vram_optimizer_info.get("port", 5588)
                 
                 # Create socket for VRAM optimizer

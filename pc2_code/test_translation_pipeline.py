@@ -3,6 +3,7 @@ import json
 import time
 import logging
 from typing import Dict, Any
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -15,7 +16,7 @@ class TranslationPipelineTester:
     def __init__(self):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
-        self.socket.connect("tcp://localhost:5563")  # Consolidated Translator port
+        self.socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5563")  # Consolidated Translator port
         
     def test_translation(self, text: str, source_lang: str, target_lang: str) -> Dict[str, Any]:
         """Test translation with the consolidated translator"""

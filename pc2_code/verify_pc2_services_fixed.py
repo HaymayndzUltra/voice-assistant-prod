@@ -21,6 +21,7 @@ import threading
 import colorama
 from colorama import Fore, Style
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 # Initialize colorama for colored terminal output
 colorama.init()

@@ -2,6 +2,7 @@ import zmq
 import time
 import os
 import random
+from common.env_helpers import get_env
 
 def send_request(socket, payload):
     socket.send_json(payload)
@@ -13,7 +14,7 @@ def send_request(socket, payload):
 def main():
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://127.0.0.1:5581")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5581")
 
     token = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")
     wrong_token = "wrongtoken" + str(random.randint(1, 10000))

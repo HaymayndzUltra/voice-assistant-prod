@@ -27,6 +27,7 @@ if str(project_root) not in sys.path:
 
 # Import service discovery client for agent discovery
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -138,7 +139,7 @@ class TestVoiceCommandFlow(unittest.TestCase):
         
         # Socket to send simulated speech recognition output
         self.speech_pub_socket = self.context.socket(zmq.PUB)
-        self.speech_pub_socket.bind(f"tcp://127.0.0.1:6599")  # Test-specific port for publishing
+        self.speech_pub_socket.bind(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:6599")  # Test-specific port for publishing
         logger.info(f"Bound speech simulation socket to tcp://127.0.0.1:6599")
         
         # Socket to request task routing

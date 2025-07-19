@@ -7,6 +7,7 @@ This module provides utilities for parsing command-line arguments for agents.
 import sys
 import argparse
 from typing import List, Optional
+from common.env_helpers import get_env
 
 # Constants
 _STANDARD_ARGS = ["host", "port"]
@@ -44,7 +45,7 @@ def parse_agent_args(argv: Optional[List[str]] = None):
 
     parser = argparse.ArgumentParser(add_help=False)
     # Standard flags
-    parser.add_argument("--host", default="localhost", type=str)
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), type=str)
     parser.add_argument("--port", default=None, type=int)
 
     # Dynamically add flags discovered in argv so argparse won't error out

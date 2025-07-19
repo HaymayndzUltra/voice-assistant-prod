@@ -7,6 +7,7 @@ import zmq
 import json
 import logging
 from main_pc_code.agents.knowledge_base import KnowledgeBase
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +34,7 @@ def test_health_check():
     # Initialize ZMQ context for health check
     context = zmq.Context()
     health_socket = context.socket(zmq.REQ)
-    health_socket.connect("tcp://localhost:5579")  # Health check port is main port + 1
+    health_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5579")  # Health check port is main port + 1
     
     # Test health check multiple times
     for i in range(5):
@@ -65,7 +66,7 @@ def test_health_check():
     try:
         logger.info("Testing knowledge base operations...")
         main_socket = context.socket(zmq.REQ)
-        main_socket.connect("tcp://localhost:5578")
+        main_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5578")
         
         # Try to add a fact
         main_socket.send_json({

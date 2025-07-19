@@ -1,0 +1,123 @@
+# WP-02: Production Hardened Base Image
+# Multi-stage build for security and size optimization
+FROM python:3.11-slim-bullseye as base
+
+# ===================================
+# SYSTEM DEPENDENCIES & SECURITY
+# ===================================
+
+# Create non-root user early
+RUN groupadd --gid 1000 ai && \
+    useradd --uid 1000 --gid ai --shell /bin/bash --create-home ai
+
+# Install system dependencies and security updates
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    wget \
+    libssl-dev \
+    libffi-dev \
+    pkg-config \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# ===================================
+# PYTHON ENVIRONMENT SETUP
+# ===================================
+
+# Upgrade pip and install core dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ===================================
+# APPLICATION CODE
+# ===================================
+
+# Copy application code
+COPY . .
+
+# ===================================
+# DIRECTORY SETUP & PERMISSIONS
+# ===================================
+
+# Create required directories with proper permissions
+RUN mkdir -p /app/data \
+             /app/logs \
+             /app/models \
+             /app/cache \
+             /app/config \
+             /app/certificates \
+             /app/temp \
+    && chown -R ai:ai /app \
+    && chmod -R 755 /app \
+    && chmod -R 777 /app/logs \
+    && chmod -R 777 /app/data \
+    && chmod -R 777 /app/cache \
+    && chmod -R 777 /app/temp
+
+# Set secure permissions for certificates
+RUN chmod -R 600 /app/certificates 2>/dev/null || true
+
+# ===================================
+# ENVIRONMENT CONFIGURATION
+# ===================================
+
+# Set environment variables
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC
+
+# Default environment variables (can be overridden)
+ENV BIND_ADDRESS=0.0.0.0 \
+    LOG_LEVEL=INFO \
+    DEBUG_MODE=false \
+    ENABLE_METRICS=true
+
+# ===================================
+# SECURITY HARDENING
+# ===================================
+
+# Switch to non-root user
+USER ai
+
+# Set default working directory as ai user
+WORKDIR /app
+
+# ===================================
+# HEALTH CHECK
+# ===================================
+
+# Default health check (can be overridden by services)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)" || exit 1
+
+# ===================================
+# DEFAULT COMMAND
+# ===================================
+
+# Default command (should be overridden by specific services)
+CMD ["python", "-c", "print('AI System Base Image - Specify service command in docker-compose.yml')"]
+
+# ===================================
+# LABELS & METADATA
+# ===================================
+
+LABEL maintainer="AI System Team" \
+      version="1.0.0" \
+      description="Production hardened base image for AI System" \
+      work_package="WP-02" \
+      security_level="hardened" \
+      user="non-root" 

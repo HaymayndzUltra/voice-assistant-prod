@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Unified MemoryHub - True Consolidation Implementation.
 
 This is the production-ready unified implementation that replaces all legacy proxy 

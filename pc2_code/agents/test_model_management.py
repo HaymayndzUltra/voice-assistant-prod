@@ -27,6 +27,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from enhanced_model_router import EnhancedModelRouter
 from remote_connector_agent import RemoteConnectorAgent
 from tinyllama_service_enhanced import TinyLlamaService
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -93,13 +94,13 @@ class TestModelManagementHierarchy(unittest.TestCase):
         
         # Create sockets for each component
         self.router_socket = self.context.socket(zmq.REQ)
-        self.router_socket.connect("tcp://localhost:5610")
+        self.router_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5610")
         
         self.connector_socket = self.context.socket(zmq.REQ)
-        self.connector_socket.connect("tcp://localhost:5611")
+        self.connector_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5611")
         
         self.tinyllama_socket = self.context.socket(zmq.REQ)
-        self.tinyllama_socket.connect("tcp://localhost:5615")
+        self.tinyllama_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5615")
     
     def tearDown(self):
         """Clean up each test"""

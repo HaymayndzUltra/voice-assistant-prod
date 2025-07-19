@@ -29,6 +29,7 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -82,7 +83,7 @@ def get_health_check_url(agent):
     
     # Apply port overrides if available
     if name in PORT_OVERRIDES:
-        host = "localhost"
+        host = get_env("BIND_ADDRESS", "0.0.0.0")
         health_port = PORT_OVERRIDES[name].get('health_check_port')
         if health_port is None:
             port = PORT_OVERRIDES[name].get('port')
@@ -92,7 +93,7 @@ def get_health_check_url(agent):
     else:
         host = agent.get('host', 'localhost')
         if host == "0.0.0.0":
-            host = "localhost"  # Use localhost instead of 0.0.0.0
+            host = get_env("BIND_ADDRESS", "0.0.0.0")  # Use localhost instead of 0.0.0.0
             
         port = agent.get('port')
         if port is None:

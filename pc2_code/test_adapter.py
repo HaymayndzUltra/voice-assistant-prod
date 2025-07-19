@@ -4,12 +4,13 @@ Simple test client for the Phi Translation Adapter
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 def test_translation(text, source_lang="tl", target_lang="en"):
     # Connect to the adapter
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5581")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5581")
     
     # Send a translation request
     request = {

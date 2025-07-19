@@ -39,6 +39,7 @@ from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
 from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
+from common.env_helpers import get_env
 
 # Configure logging
 log_file_path = join_path("logs", "system_digital_twin.log")
@@ -517,7 +518,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         defaults `localhost:7100`. Falls back to an error dict on timeout.
         """
         import os, zmq  # Local import to avoid circulars at module import time
-        host = os.getenv("SERVICE_REGISTRY_HOST", "localhost")
+        host = os.getenv("SERVICE_REGISTRY_HOST", get_env("BIND_ADDRESS", "0.0.0.0"))
         port = int(os.getenv("SERVICE_REGISTRY_PORT", "7200"))
         timeout = int(os.getenv("SERVICE_REGISTRY_TIMEOUT_MS", "5000"))
 

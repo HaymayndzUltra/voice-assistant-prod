@@ -34,6 +34,7 @@ logger = logging.getLogger("ModelManager")
 try:
     # Import config module
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
     
     # Configure logging with config settings
     log_level = config.get('system.log_level', 'INFO')

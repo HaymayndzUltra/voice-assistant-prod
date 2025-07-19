@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Background monitoring for proactive context changes."""
 
 import asyncio
@@ -28,7 +29,8 @@ class ProactiveContextMonitor:
     """
     
     def __init__(self, storage_manager, embedding_service):
-        self.storage = storage_manager
+
+        super().__init__(*args, **kwargs)        self.storage = storage_manager
         self.embedding = embedding_service
         self.is_running = False
         self.tasks: List[asyncio.Task] = []

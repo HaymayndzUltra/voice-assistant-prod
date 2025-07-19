@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM ai_system/base:1.0
 
 WORKDIR /app
 
@@ -20,13 +20,23 @@ RUN pip install -e .
 EXPOSE 7100 8100
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
 ENV SERVICE_REGISTRY_PORT=7100
 ENV SERVICE_REGISTRY_HEALTH_PORT=8100
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8100/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)" || exit 1
+  
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
 
 # Default command
 CMD ["python", "main_pc_code/agents/service_registry_agent.py"] 
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

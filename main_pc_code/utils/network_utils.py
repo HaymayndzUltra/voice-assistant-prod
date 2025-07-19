@@ -18,6 +18,7 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = get_project_root()
 MAIN_PC_CODE = get_main_pc_code()
@@ -247,7 +248,7 @@ def get_zmq_connection_string(port: int, machine: str = "localhost", bind_addres
         return f"tcp://{bind_address}:{port}"
     
     # For localhost, use IP from network configuration
-    if machine.lower() == "localhost" or machine.lower() == "127.0.0.1":
+    if machine.lower() == "localhost" or machine.lower() == get_env("BIND_ADDRESS", "0.0.0.0"):
         # In local mode, use actual localhost
         if is_local_mode():
             return f"tcp://127.0.0.1:{port}"

@@ -1,7 +1,6 @@
 FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -49,4 +48,14 @@ RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=89" pip install --n
 RUN mkdir -p /app/logs /app/data /app/models /app/config /app/certificates
 
 # Default command - will be overridden by docker-compose
-CMD ["bash"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

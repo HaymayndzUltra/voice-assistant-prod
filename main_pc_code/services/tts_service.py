@@ -32,6 +32,7 @@ from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from main_pc_code.utils import model_client
+from common.env_helpers import get_env
 
 # Load configuration
 config = load_config()
@@ -98,7 +99,7 @@ class TTSService(BaseAgent):
         
         # Error bus connection
         self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -113,7 +114,7 @@ class TTSService(BaseAgent):
             interrupt_handler = discover_service("StreamingInterruptHandler")
             if interrupt_handler and interrupt_handler.get("status") == "SUCCESS":
                 interrupt_info = interrupt_handler.get("payload", {})
-                interrupt_host = interrupt_info.get("host", "localhost")
+                interrupt_host = interrupt_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 interrupt_port = interrupt_info.get("port", self.interrupt_port)
                 interrupt_address = f"tcp://{interrupt_host}:{interrupt_port}"
         except Exception as e:

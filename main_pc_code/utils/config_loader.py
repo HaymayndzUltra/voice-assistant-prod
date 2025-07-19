@@ -28,6 +28,7 @@ import sys
 import os
 sys.path.insert(0, str(get_project_root()))
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 class Config:
     """Simple configuration loader class."""
     
@@ -180,7 +181,7 @@ def parse_agent_args(argv: List[str] | None = None):
 
     parser = argparse.ArgumentParser(add_help=False)
     # Standard flags
-    parser.add_argument("--host", default="localhost", type=str)
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), type=str)
     parser.add_argument("--check_interval_seconds", type=int, default=15, help="How often to check VRAM and idle status.")
     parser.add_argument("--port", default=None, type=int)
 

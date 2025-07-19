@@ -9,6 +9,7 @@ import json
 import time
 import sys
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Agent configurations with their ports
 AGENTS = {

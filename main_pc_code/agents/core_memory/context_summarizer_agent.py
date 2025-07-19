@@ -12,6 +12,7 @@ import time
 import logging
 import hashlib
 from datetime import datetime
+from common.env_helpers import get_env
 
 LOG_PATH = "context_summarizer_agent.log"
 CONTEXT_STORE_PATH = "context_store.json"

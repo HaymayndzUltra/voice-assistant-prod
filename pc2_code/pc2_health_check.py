@@ -23,6 +23,7 @@ import socket
 from tabulate import tabulate
 import sys
 from colorama import init, Fore, Style
+from common.env_helpers import get_env
 
 # Initialize colorama for colored terminal output
 init()
@@ -214,7 +215,7 @@ def display_results(results):
 
 def main():
     parser = argparse.ArgumentParser(description="PC2 Health Check Tool")
-    parser.add_argument("--host", default="localhost", help="PC2 host address (default: localhost)")
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="PC2 host address (default: localhost)")
     args = parser.parse_args()
     
     print(f"\n{Fore.CYAN}Starting PC2 Health Check...{Style.RESET_ALL}")

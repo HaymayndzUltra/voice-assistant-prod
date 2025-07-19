@@ -249,7 +249,7 @@ class UltimateTTSAgent(BaseAgent):
             tts_service = discover_service("TTSService")
             if tts_service and isinstance(tts_service, dict) and tts_service.get("status") == "SUCCESS":
                 tts_service_info = tts_service.get("payload", {})
-                tts_service_host = tts_service_info.get("host", "localhost")
+                tts_service_host = tts_service_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 tts_service_port = tts_service_info.get("port", 5801)
                 logger.info(f"Discovered TTSService at {tts_service_host}:{tts_service_port}")
                 
@@ -728,6 +728,7 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'UltimateTTSAgent'}: {e}")
         traceback.print_exc()
     finally:

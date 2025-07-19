@@ -13,6 +13,7 @@ import json
 import zmq
 import logging
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -63,7 +64,7 @@ def main():
     socket = context.socket(zmq.REQ)
 
     # Connect to SystemDigitalTwin
-    address = "tcp://127.0.0.1:7120"
+    address = f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7120"
     print(f"Connecting to SystemDigitalTwin at {address}...")
     socket.connect(address)
     socket.setsockopt(zmq.RCVTIMEO, 3000)  # 3 second timeout

@@ -13,6 +13,7 @@ import re
 import hashlib
 from pathlib import Path
 from datetime import datetime
+from common.env_helpers import get_env
 
 # Setup logging
 LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "error_pattern_memory.log"

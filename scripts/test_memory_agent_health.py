@@ -12,6 +12,7 @@ import json
 import time
 import logging
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -34,7 +35,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryHealthTest")
 
-def test_memory_agent_health(host: str = "localhost", port: int = 5597, timeout: int = 5000) -> bool:
+def test_memory_agent_health(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5597, timeout: int = 5000) -> bool:
     """
     Test the health check functionality of the UnifiedMemoryReasoningAgent.
     
@@ -89,7 +90,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Test Memory Agent Health Check")
-    parser.add_argument("--host", default="localhost", help="Host of the memory agent")
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="Host of the memory agent")
     parser.add_argument("--port", type=int, default=5597, help="Health check port of the memory agent")
     parser.add_argument("--timeout", type=int, default=5000, help="Timeout in milliseconds")
     parser.add_argument("--use-env", action="store_true", help="Use environment variables for host")

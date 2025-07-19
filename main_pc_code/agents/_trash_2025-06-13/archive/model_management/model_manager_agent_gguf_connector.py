@@ -48,6 +48,7 @@ class GGUFConnector(BaseAgent):
 from main_pc_code.config.system_config import Config
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
                 config = Config()
                 cga_port = config.get('zmq.code_generator_port', 5604)
                 logger.info(f"Loaded code_generator_port={cga_port} from config")

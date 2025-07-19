@@ -48,6 +48,7 @@ from datetime import datetime
 
 from common.core.base_agent import BaseAgent, logger
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -1470,7 +1471,7 @@ class PredictiveHealthMonitor(BaseAgent):
                             continue
                             
                         # Get agent host and port
-                        host = agent_config.get("host", "localhost")
+                        host = agent_config.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                         port = agent_config.get("health_port", agent_config.get("port", 0))
                         
                         if port > 0:

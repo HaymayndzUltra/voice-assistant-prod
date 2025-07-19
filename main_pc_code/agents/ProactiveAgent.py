@@ -14,6 +14,7 @@ from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 # Load configuration
 config = load_config()
@@ -63,7 +64,7 @@ class ProactiveAgent(BaseAgent):
         
         # Error bus connection
         self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -86,7 +87,7 @@ class ProactiveAgent(BaseAgent):
             # Try to discover coordinator via service discovery
             coordinator_info = discover_service("RequestCoordinator")
             if coordinator_info:
-                host = coordinator_info.get("host", "localhost")
+                host = coordinator_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 port = coordinator_info.get("port", 5621)
                 self.coordinator_address = f"tcp://{host}:{port}"
             

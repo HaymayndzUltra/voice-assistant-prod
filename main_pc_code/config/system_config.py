@@ -11,6 +11,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 # Get the root directory
 ROOT_DIR = Path(__file__).parent.parent

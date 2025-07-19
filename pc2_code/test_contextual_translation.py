@@ -11,6 +11,7 @@ import logging
 import json
 import zmq
 from pprint import pprint
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -24,7 +25,7 @@ def test_contextual_translation():
     # Connect to translator agent
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5563")  # Default translator agent port
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5563")  # Default translator agent port
     
     # Create a session ID for this conversation to maintain context
     session_id = f"test_session_{int(time.time())}"

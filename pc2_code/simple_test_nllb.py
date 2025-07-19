@@ -5,6 +5,7 @@ import zmq
 import json
 import time
 import sys
+from common.env_helpers import get_env
 
 # Default server settings
 SERVER = "localhost"

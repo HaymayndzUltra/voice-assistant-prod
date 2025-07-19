@@ -37,6 +37,7 @@ from common.core.base_agent import BaseAgent
 # Import existing command handler as base
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 config = load_config()
 

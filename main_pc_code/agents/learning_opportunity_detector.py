@@ -45,6 +45,7 @@ from main_pc_code.utils.config_loader import load_config
 
 # --- Shared Utilities ---
 from main_pc_code.agents.request_coordinator import CircuitBreaker
+from common.env_helpers import get_env
 
 # --- Logging Setup ---
 log_dir = 'logs'

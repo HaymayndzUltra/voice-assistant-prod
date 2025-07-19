@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 # Parse command line arguments
 config = load_config()
@@ -58,7 +59,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class IntentionValidatorAgent(BaseAgent):
-    def __init__(self, port: int = None, name: str = None, host="localhost", request_coordinator_host=None, request_coordinator_port=None, **kwargs):
+    def __init__(self, port: int = None, name: str = None, host=get_env("BIND_ADDRESS", "0.0.0.0"), request_coordinator_host=None, request_coordinator_port=None, **kwargs):
         """Initialize the IntentionValidatorAgent.
         
         Args:
@@ -93,11 +94,11 @@ default from _agent_args or 5572)
         super().__init__(port=agent_port, name=agent_name)
         
         # Get RequestCoordinator connection details from command line args (lowercase)
-        self.request_coordinator_host = request_coordinator_host or config.get("request_coordinator_host", None) or "localhost"
+        self.request_coordinator_host = request_coordinator_host or config.get("request_coordinator_host", None) or get_env("BIND_ADDRESS", "0.0.0.0")
         self.request_coordinator_port = request_coordinator_port or config.get("request_coordinator_port", None) or 5570
         
         # Also check for uppercase variant for backward compatibility
-        if hasattr(_agent_args, 'RequestCoordinator_host') and self.request_coordinator_host == "localhost":
+        if hasattr(_agent_args, 'RequestCoordinator_host') and self.request_coordinator_host == get_env("BIND_ADDRESS", "0.0.0.0"):
             self.request_coordinator_host = config.get("RequestCoordinator_host")
         if hasattr(_agent_args, 'RequestCoordinator_port') and self.request_coordinator_port == 5570:
             self.request_coordinator_port = config.get("RequestCoordinator_port")

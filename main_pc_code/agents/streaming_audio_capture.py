@@ -49,6 +49,7 @@ if PROJECT_ROOT not in sys.path:
 # Import with canonical path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
 config = load_config()
@@ -214,7 +215,7 @@ class StreamingAudioCapture(BaseAgent):
             
             # Error bus setup
             self.error_bus_port = int(config.get("error_bus_port", 7150))
-            self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+            self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
             self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
             self.error_bus_pub = self.context.socket(zmq.PUB)
             self.error_bus_pub.connect(self.error_bus_endpoint)

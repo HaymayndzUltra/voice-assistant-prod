@@ -10,6 +10,7 @@ from collections import defaultdict
 from threading import Thread
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -42,13 +43,13 @@ class LearningAgent(BaseAgent):
         self.memory_socket = self.context.socket(zmq.REQ)
         self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.memory_socket.connect("tcp://localhost:5629")  # EpisodicMemoryAgent
+        self.memory_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5629")  # EpisodicMemoryAgent
         
         # REQ socket for LocalFineTunerAgent
         self.tuner_socket = self.context.socket(zmq.REQ)
         self.tuner_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.tuner_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tuner_socket.connect("tcp://localhost:5603")  # LocalFineTunerAgent
+        self.tuner_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5603")  # LocalFineTunerAgent
         
         # Initialize database
         self.db_path = "learning_agent.db"

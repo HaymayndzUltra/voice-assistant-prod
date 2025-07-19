@@ -23,6 +23,7 @@ sys.path.insert(0, str(project_root))
 
 # --- Dynamic Model Management Imports ---
 from modular_system.model_manager.model_manager_agent import DynamicSTTModelManager
+from common.env_helpers import get_env
 
 # Load model config
 config_path = Path(__file__).parent.parent.parent / 'config' / 'model_config.json'

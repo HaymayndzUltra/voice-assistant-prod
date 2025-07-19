@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM ai_system/base:1.0
 
 WORKDIR /app
 
@@ -10,12 +10,20 @@ COPY test_simple.py .
 COPY scripts/ /app/scripts/
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
 ENV TEST_MODE=true
-ENV PYTHONPATH=/app
 
 # Make the run_group.sh script executable
 RUN chmod +x /app/scripts/run_group.sh
 
 # Default command
-CMD ["python", "test_simple.py"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

@@ -2,12 +2,13 @@ import zmq
 import json
 import time
 import uuid
+from common.env_helpers import get_env
 
 def send_tutor_request(action, subject=None, difficulty=None, session_id=None, user_profile=None):
     """Sends a structured request to the TutorAgent."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5558")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5558")
 
     request = {
         "type": "tutor",

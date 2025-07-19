@@ -13,6 +13,7 @@ import threading
 import re
 import logging
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -38,39 +39,39 @@ class CodeCommandHandler(BaseAgent):
         # Setup ZMQ connection to listener agent
         self.context = zmq.Context()
         self.listener_socket = self.context.socket(zmq.SUB)
-        self.listener_socket.connect("tcp://localhost:5561")  # Listener ZMQ port
+        self.listener_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5561")  # Listener ZMQ port
         self.listener_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         
         # Setup ZMQ connection to TTS agent
         self.tts_context = zmq.Context()
         self.tts_socket = self.tts_context.socket(zmq.REQ)  # Changed from PUSH to REQ
         self.tts_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.tts_socket.connect("tcp://localhost:5562")  # TTS ZMQ port
+        self.tts_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5562")  # TTS ZMQ port
         self.tts_socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
         
         # Setup ZMQ connection to auto-fixer agent
         self.auto_fixer_context = zmq.Context()
         self.auto_fixer_socket = self.auto_fixer_context.socket(zmq.REQ)
         self.auto_fixer_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.auto_fixer_socket.connect("tcp://localhost:5609")  # Auto-fixer ZMQ port
+        self.auto_fixer_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5609")  # Auto-fixer ZMQ port
         
         # Setup ZMQ connection to self-healing agent
         self.self_healing_context = zmq.Context()
         self.self_healing_socket = self.self_healing_context.socket(zmq.REQ)
         self.self_healing_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.self_healing_socket.connect("tcp://localhost:5611")  # Self-healing ZMQ port
+        self.self_healing_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5611")  # Self-healing ZMQ port
         
         # Setup ZMQ connection to code generator agent
         self.code_gen_context = zmq.Context()
         self.code_gen_socket = self.code_gen_context.socket(zmq.REQ)
         self.code_gen_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.code_gen_socket.connect("tcp://localhost:5604")  # Code generator ZMQ port
+        self.code_gen_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5604")  # Code generator ZMQ port
         
         # Setup ZMQ connection to executor agent
         self.executor_context = zmq.Context()
         self.executor_socket = self.executor_context.socket(zmq.REQ)
         self.executor_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.executor_socket.connect("tcp://localhost:5613")  # Executor ZMQ port
+        self.executor_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5613")  # Executor ZMQ port
         
         # Command patterns for voice recognition
         self.command_patterns = {

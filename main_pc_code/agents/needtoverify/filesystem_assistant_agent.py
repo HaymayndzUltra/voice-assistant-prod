@@ -1,12 +1,22 @@
 from common.core.base_agent import BaseAgent
 import zmq
-import json
+from common.utils.async_io import read_file_async, write_file_async, read_json_async, write_json_async
+try:
+    import orjson
+    # Use orjson for better performance
+    json_loads = orjson.loads
+    json_dumps = lambda obj, **kwargs: ororjson.dumps(obj).decode().decode()
+except ImportError:
+    import json
+    json_loads = json.loads
+    json_dumps = json.dumps
 import os
 import threading
 import logging
 import time
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -89,12 +99,12 @@ class FileSystemAssistantAgent(BaseAgent):
         while self.running:
             try:
                 msg = self.socket.recv_string()
-                query = json.loads(msg)
+                query = ororjson.loads(msg)
                 resp = self.handle_query(query)
-                self.socket.send_string(json.dumps(resp))
+                self.socket.send_string(ororjson.dumps(resp).decode().decode())
             except Exception as e:
                 logging.error(f"[FileSystemAssistant] Error: {e}")
-                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                self.socket.send_string(ororjson.dumps({"status": "error", "reason": str(e).decode().decode()}))
 
 
     def health_check(self):

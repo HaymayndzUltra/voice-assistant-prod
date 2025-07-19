@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM ai_system/base:1.0
 
 WORKDIR /app
 
@@ -30,8 +30,16 @@ RUN touch /app/utils/__init__.py
 RUN echo "import sys, os; sys.path.insert(0, os.getcwd()); print('Python path initialized')" > /app/fix_path.py
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
 
 # Default command runs our test script
-CMD ["python", "test_imports.py"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

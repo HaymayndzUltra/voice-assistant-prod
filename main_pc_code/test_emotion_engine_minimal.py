@@ -11,6 +11,7 @@ from main_pc_code.agents.emotion_engine import EmotionEngine
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 def test_emotion_engine_health():
     print("🧪 Testing EmotionEngine health check...")

@@ -15,6 +15,7 @@ import logging
 import argparse
 import zmq
 from typing import Dict, Any, Optional, List, Tuple
+from common.env_helpers import get_env
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -85,7 +86,7 @@ def check_zmq_service(host: str, port: int, service_name: str, timeout: int = 50
         logger.error(f"Error checking ZMQ service {service_name} at {host}:{port}: {e}")
         return False
 
-def check_system_digital_twin(host: str = "localhost", port: int = 7120) -> bool:
+def check_system_digital_twin(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 7120) -> bool:
     """
     Check if the System Digital Twin service is healthy.
     
@@ -98,7 +99,7 @@ def check_system_digital_twin(host: str = "localhost", port: int = 7120) -> bool
     """
     return check_zmq_service(host, port, "SystemDigitalTwin")
 
-def check_task_router(host: str = "localhost", port: int = 8571) -> bool:
+def check_task_router(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 8571) -> bool:
     """
     Check if the Task Router service is healthy.
     
@@ -111,7 +112,7 @@ def check_task_router(host: str = "localhost", port: int = 8571) -> bool:
     """
     return check_zmq_service(host, port, "TaskRouter")
 
-def check_streaming_tts(host: str = "localhost", port: int = 5562) -> bool:
+def check_streaming_tts(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5562) -> bool:
     """
     Check if the Streaming TTS service is healthy.
     
@@ -124,7 +125,7 @@ def check_streaming_tts(host: str = "localhost", port: int = 5562) -> bool:
     """
     return check_zmq_service(host, port, "StreamingTtsAgent")
 
-def check_tts(host: str = "localhost", port: int = 5563) -> bool:
+def check_tts(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5563) -> bool:
     """
     Check if the TTS service is healthy.
     
@@ -137,7 +138,7 @@ def check_tts(host: str = "localhost", port: int = 5563) -> bool:
     """
     return check_zmq_service(host, port, "TTSAgent")
 
-def check_responder(host: str = "localhost", port: int = 5637) -> bool:
+def check_responder(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5637) -> bool:
     """
     Check if the Responder service is healthy.
     
@@ -150,7 +151,7 @@ def check_responder(host: str = "localhost", port: int = 5637) -> bool:
     """
     return check_zmq_service(host, port, "ResponderAgent")
 
-def check_interrupt_handler(host: str = "localhost", port: int = 5576) -> bool:
+def check_interrupt_handler(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 5576) -> bool:
     """
     Check if the Interrupt Handler service is healthy.
     
@@ -169,7 +170,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Docker Health Check Script")
     parser.add_argument("--service", type=str, required=True, help="Service to check")
-    parser.add_argument("--host", type=str, default="localhost", help="Host of the service")
+    parser.add_argument("--host", type=str, default=get_env("BIND_ADDRESS", "0.0.0.0"), help="Host of the service")
     parser.add_argument("--port", type=int, help="Port of the service")
     args = parser.parse_args()
     

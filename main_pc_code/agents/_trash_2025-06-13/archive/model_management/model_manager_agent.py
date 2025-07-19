@@ -1376,6 +1376,7 @@ from main_pc_code.utils.config_loader import Config
             # Second attempt: Try direct loading through the GGUF Model Manager
             try:
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
                 gguf_manager = get_gguf_manager()

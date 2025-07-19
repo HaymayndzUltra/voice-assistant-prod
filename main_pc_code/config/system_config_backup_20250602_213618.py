@@ -9,6 +9,7 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # Base paths
 ROOT_DIR = Path(__file__).parent.parent.absolute()
 CONFIG_DIR = ROOT_DIR / "config"
@@ -480,7 +481,7 @@ DEFAULT_CONFIG = {
                 "auto_load_on_start": True,
                 "display_name": "CodeGeneratorAgent",
                 "serving_method": "zmq_service",
-                "zmq_address": "tcp://localhost:5604",
+                "zmq_address": f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5604",
                 "capabilities": ["code-generation", "code-execution"],
                 "estimated_vram_mb": 0,  # Service doesn't use VRAM directly
                 "context_length": 0,      # Not applicable

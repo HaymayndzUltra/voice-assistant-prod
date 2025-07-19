@@ -3,6 +3,7 @@ import json
 import time
 import logging
 from datetime import datetime
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -20,7 +21,7 @@ def test_learning_analysis():
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {
@@ -54,7 +55,7 @@ def test_memory_optimization():
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {
@@ -81,7 +82,7 @@ def test_system_monitoring():
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {

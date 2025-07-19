@@ -37,4 +37,14 @@ ENV HEALTH_CHECK_PORT=8105
 ENV MEMORY_DB_PATH=/app/data/memory/memory.db
 
 # Set entry point
-CMD ["python", "-m", "pc2_code.scripts.start_container", "memory_storage"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

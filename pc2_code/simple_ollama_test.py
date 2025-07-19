@@ -1,5 +1,6 @@
 import requests
 import time
+from common.env_helpers import get_env
 
 print("=== Simple Ollama Connection Test ===")
 print("Testing with higher timeout (30 seconds)...")

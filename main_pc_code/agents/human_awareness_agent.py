@@ -36,6 +36,7 @@ if PROJECT_ROOT not in sys.path:
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 import psutil
+from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class HumanAwarenessAgent(BaseAgent):
         import zmq
         self.context = zmq.Context()
         self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

@@ -19,6 +19,7 @@ from pathlib import Path
 # Ensure project root is in PYTHONPATH so we can import config
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import config
+from common.env_helpers import get_env
 
 # Configurable parameters sourced from centralized configuration
 CODE_GENERATOR_PORT = config.get('zmq.code_generator_port', 5604)

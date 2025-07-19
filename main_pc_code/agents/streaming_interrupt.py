@@ -18,7 +18,15 @@ import zmq
 import queue
 import sounddevice as sd
 import vosk
-import json
+try:
+    import orjson
+    # Use orjson for better performance
+    json_loads = orjson.loads
+    json_dumps = lambda obj, **kwargs: ororjson.dumps(obj).decode().decode()
+except ImportError:
+    import json
+    json_loads = json.loads
+    json_dumps = json.dumps
 import threading
 import time
 import psutil
@@ -50,11 +58,11 @@ class StreamingInterrupt(BaseAgent):
             while self.running:
                 data = self.q.get()
                 if rec.AcceptWaveform(data):
-                    result = json.loads(rec.Result())
+                    result = ororjson.loads(rec.Result())
                     text = result.get("text", "")
                     if any(kw in text for kw in INTERRUPT_KEYWORDS):
                         print(f"[StreamingInterrupt] Interrupt detected: {text}")
-                        self.socket.send_string(json.dumps({"type": "interrupt", "text": text}))
+                        self.socket.send_string(ororjson.dumps({"type": "interrupt", "text": text}).decode().decode())
                         # Optional: Stop after first interrupt
                         # self.running = False
 

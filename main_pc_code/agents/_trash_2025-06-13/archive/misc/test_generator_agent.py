@@ -14,6 +14,7 @@ import re
 import tempfile
 import subprocess
 from datetime import datetime
+from common.env_helpers import get_env
 
 LOG_PATH = "test_generator_agent.log"
 ZMQ_TEST_GENERATOR_PORT = 5613  # New agent port

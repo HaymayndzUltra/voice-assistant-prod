@@ -1109,7 +1109,7 @@ class UnifiedWebAgent(BaseAgent):
             memory_address = get_service_address("UnifiedMemoryReasoningAgent")
             if not memory_address:
                 # Fall back to configured port
-                memory_address = f"tcp://localhost:5596"
+                memory_address = ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596"
                 
             self.memory_socket.connect(memory_address)
             logger.info(f"Connected to memory agent at {memory_address}")
@@ -1780,6 +1780,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level

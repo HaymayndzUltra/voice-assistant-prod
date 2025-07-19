@@ -10,6 +10,7 @@ from pathlib import Path
 # Import the ModelManagerAgent and model_client for testing
 from main_pc_code.agents.model_manager_agent import ModelManagerAgent
 from main_pc_code.utils import model_client
+from common.env_helpers import get_env
 
 # Test port for the ModelManagerAgent
 TEST_PORT = 5589

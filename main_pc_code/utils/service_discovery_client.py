@@ -22,6 +22,7 @@ if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
 from main_pc_code.utils.network_utils import get_machine_ip, is_local_mode
+from common.env_helpers import get_env
 
 # Configure logging
 logger = logging.getLogger(__name__)

@@ -38,6 +38,7 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
 
 # Import base agent class
 from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Define proxy classes for model_client integration
 class ModelClientModel:

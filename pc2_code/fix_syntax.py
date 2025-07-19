@@ -35,6 +35,7 @@ import re
 import argparse
 import random
 from datetime import datetime
+from common.env_helpers import get_env
 
 # --- Security Configuration ---
 AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")  # Set via env var or default

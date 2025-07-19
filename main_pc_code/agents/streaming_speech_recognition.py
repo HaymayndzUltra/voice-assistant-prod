@@ -19,7 +19,8 @@ import logging
 import os
 import tempfile
 import wave
-import json
+import orjson
+import json  # Fallback for compatibility
 from collections import deque
 from datetime import datetime
 import uuid
@@ -36,6 +37,7 @@ import traceback
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
 config = load_config()
@@ -93,7 +95,7 @@ class ResourceManager:
         
         # Error bus connection
         self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
+        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -554,7 +556,7 @@ class StreamingSpeechRecognition(BaseAgent):
                     # Check if message is a JSON error message
                     try:
                         if message.startswith(b'{"status":"error"'):
-                            error_data = json.loads(message)
+                            error_data = ororjson.loads(message)
                             if error_data.get("status") == "error":
                                 # Log received error
                                 logger.warning(f"Received error from upstream component: {error_data.get('source_agent')} - {error_data.get('message')}")
@@ -926,7 +928,7 @@ class StreamingSpeechRecognition(BaseAgent):
                     
                     # Publish transcription if not empty
                     if transcript["text"]:
-                        self.pub_socket.send_string(f"TRANSCRIPTION: {json.dumps(transcript)}")
+                        self.pub_socket.send_string(f"TRANSCRIPTION: {ororjson.dumps(transcript).decode().decode()}")
                         logger.info(f"Transcription: {transcript['text']} ({transcript['confidence']:.2f})")
                     else:
                         logger.info("Empty transcription result, nothing to publish")

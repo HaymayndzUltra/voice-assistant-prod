@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 TinyLLama Service
 - Provides access to the TinyLLama model via ZMQ
@@ -31,6 +32,7 @@ import torch
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -51,7 +53,8 @@ class TinyLlamaService:
     """Service for TinyLLama model with on-demand loading/unloading"""
     
     def __init__(self, zmq_port=TINYLLAMA_SERVICE_PORT, ollama_base_url=OLLAMA_API_BASE):
-        """Initialize the TinyLlama Service with ZMQ REP socket on specified port"""
+
+        super().__init__(*args, **kwargs)        """Initialize the TinyLlama Service with ZMQ REP socket on specified port"""
         # ZMQ setup
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)

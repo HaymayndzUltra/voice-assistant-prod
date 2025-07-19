@@ -42,6 +42,7 @@ from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.agents.gguf_model_manager import GGUFModelManager
+from common.env_helpers import get_env
 
 # Parse command line arguments
 config = load_config()

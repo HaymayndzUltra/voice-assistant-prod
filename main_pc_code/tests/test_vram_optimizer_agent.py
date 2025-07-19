@@ -20,6 +20,7 @@ from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the agent to test
 from main_pc_code.agents.vram_optimizer_agent import VRAMOptimizerAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 

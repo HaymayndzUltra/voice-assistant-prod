@@ -25,6 +25,7 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_env import get_path, join_path, get_file_path
+from common.env_helpers import get_env
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"

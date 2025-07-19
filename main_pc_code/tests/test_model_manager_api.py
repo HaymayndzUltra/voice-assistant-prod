@@ -7,6 +7,7 @@ import yaml
 
 # IMPORTANT: This requires the ModelManagerAgent class to be importable.
 from main_pc_code.agents.model_manager_agent import ModelManagerAgent
+from common.env_helpers import get_env
 
 @pytest.fixture(scope="module")
 def mma_service():
@@ -54,7 +55,7 @@ def test_status_action(mma_service):
     """Tests the 'status' action to ensure it returns the correct structure."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5588")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5588")
 
     socket.send_json({"action": "status"})
     response = socket.recv_json()
@@ -70,7 +71,7 @@ def test_generate_action(mma_service):
     """Tests the 'generate' action with different preferences."""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5588")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5588")
 
     # Test 'fast' preference
     socket.send_json({"action": "generate", "model_pref": "fast", "prompt": "test"})

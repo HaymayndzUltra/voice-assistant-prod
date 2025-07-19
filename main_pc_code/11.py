@@ -38,6 +38,8 @@ from datetime import datetime, timedelta
 import traceback
 import socket
 import errno
+
+from common.env_helpers import get_env
 import yaml
 import numpy as np
 import requests
@@ -275,7 +277,7 @@ class ModelManagerSuite(BaseAgent):
         # Request coordinator connection
         self.request_coordinator_port = self.config.get('request_coordinator_port', 8571)
         self.request_coordinator_socket = self.context.socket(zmq.REQ)
-        self.request_coordinator_socket.connect(f"tcp://localhost:{self.request_coordinator_port}")
+        self.request_coordinator_socket.connect(f"tcp://{get_env('REQUEST_COORDINATOR_HOST', 'request-coordinator')}:{self.request_coordinator_port}")
         
         logger.info(f"ZMQ initialized - Main: {self.port}, Health: {self.health_check_port}")
     

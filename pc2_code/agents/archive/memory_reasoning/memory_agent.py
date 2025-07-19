@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Memory Agent
@@ -33,9 +34,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryAgent")
 
-class MemoryAgent:
+class MemoryAgent(BaseAgent):
     def __init__(self, port=5590, bind_address="0.0.0.0"):
-        """Initialize the Memory Agent"""
+
+        super().__init__(*args, **kwargs)        """Initialize the Memory Agent"""
         self.port = port
         self.bind_address = bind_address
         self.context = zmq.Context()

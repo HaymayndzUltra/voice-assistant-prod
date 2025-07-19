@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM ai_system/base:1.0
 
 # Set working directory
 WORKDIR /app
@@ -25,7 +25,6 @@ COPY config /app/config
 COPY scripts /app/scripts
 
 # Set environment variables
-ENV PYTHONPATH=/app
 ENV SECURE_ZMQ=1
 ENV FORCE_LOCAL_SDT=1
 ENV LOG_LEVEL=INFO
@@ -34,4 +33,14 @@ ENV LOG_LEVEL=INFO
 EXPOSE 8571 5637 5562 5576
 
 # Default command - will be overridden by docker-compose
-CMD ["python", "-m", "main_pc_code.src.core.task_router"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+CMD
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

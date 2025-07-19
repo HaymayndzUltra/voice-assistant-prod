@@ -25,6 +25,7 @@ def test_self_healing_agent():
         # Import the agent
         print("1. Importing SelfHealingAgent...")
 from pc2_code.agents.self_healing_agent import SelfHealingAgent
+from common.env_helpers import get_env
         print("   ✓ Import successful")
         
         # Create agent instance
@@ -45,7 +46,7 @@ from pc2_code.agents.self_healing_agent import SelfHealingAgent
         print("4. Testing health check...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7125")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7125")
         
         # Send health check request
         health_request = {"action": "health_check"}
@@ -65,7 +66,7 @@ from pc2_code.agents.self_healing_agent import SelfHealingAgent
         print("5. Testing agent registration...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7125")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7125")
         
         # Register a test agent
         register_request = {

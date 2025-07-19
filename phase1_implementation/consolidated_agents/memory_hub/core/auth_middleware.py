@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """Authentication middleware with JWT and trust scoring."""
 
 import json
@@ -38,7 +39,8 @@ class TrustScore:
     """Trust scoring system for agents and users."""
     
     def __init__(self, storage_manager):
-        self.storage = storage_manager
+
+        super().__init__(*args, **kwargs)        self.storage = storage_manager
         self.base_scores = {
             "CoreOrchestrator": 1.0,
             "PlanningOrchestrator": 1.0,
@@ -176,7 +178,8 @@ class AuthMiddleware:
     """JWT Authentication middleware with trust scoring."""
     
     def __init__(self, config: AuthConfig, storage_manager):
-        self.config = config
+
+        super().__init__(*args, **kwargs)        self.config = config
         self.storage = storage_manager
         self.trust_scorer = TrustScore(storage_manager)
         self.security = HTTPBearer(auto_error=False)

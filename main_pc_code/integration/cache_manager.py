@@ -10,6 +10,7 @@ import threading
 import time
 from pathlib import Path
 from collections import defaultdict
+from common.env_helpers import get_env
 
 # Constants
 REDIS_HOST = 'localhost'

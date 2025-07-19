@@ -12,6 +12,7 @@ import signal
 import zmq
 import json
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add agents directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'agents'))

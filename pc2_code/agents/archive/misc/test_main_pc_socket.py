@@ -13,6 +13,7 @@ import time
 import uuid
 import argparse
 from colorama import init, Fore, Style
+from common.env_helpers import get_env
 
 # Initialize colorama
 init(autoreset=True)

@@ -57,6 +57,7 @@ def duckduckgo_search(query, max_results=3):
 
 import zmq
 import json
+from common.env_helpers import get_env
 
 ZMQ_WEBSEARCH_PORT = 5592
 

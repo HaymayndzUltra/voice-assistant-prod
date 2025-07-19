@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from common.core.base_agent import BaseAgent
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -23,12 +24,13 @@ logging.basicConfig(
     ]
 )
 
-class LearningModeAgent:
+class LearningModeAgent(BaseAgent):
     def broadcast_learning_suggestion(self, text, user=None, emotion="neutral"):
         send_proactive_event(event_type="suggestion", text=text, user=user, emotion=emotion)
 
     def __init__(self, zmq_port=ZMQ_LEARNING_MODE_PORT):
-        self.context = zmq.Context()
+
+        super().__init__(*args, **kwargs)        self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         self.learning_data = self.load_learning_data()

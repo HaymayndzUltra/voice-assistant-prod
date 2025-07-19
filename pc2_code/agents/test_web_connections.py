@@ -1,6 +1,7 @@
 import zmq
 import time
 import sys
+from common.env_helpers import get_env
 
 def test_connection(port):
     context = zmq.Context()

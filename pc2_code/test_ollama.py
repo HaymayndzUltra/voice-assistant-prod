@@ -1,6 +1,7 @@
 import requests
 import json
 import sys
+from common.env_helpers import get_env
 
 def test_ollama(model_name="phi"):
     """

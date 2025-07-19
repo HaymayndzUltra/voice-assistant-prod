@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 Auto-Fixer Agent
 - Orchestrates auto-code correction and debugging loop
@@ -10,6 +11,7 @@ import json
 import time
 import logging
 from typing import Optional, Dict, Any
+from common.env_helpers import get_env
 
 # Configurable parameters
 CODE_GENERATOR_PORT = 5605
@@ -24,9 +26,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AutoFixerAgent")
 
-class AutoFixerAgent:
+class AutoFixerAgent(BaseAgent):
     def __init__(self, code_gen_port=CODE_GENERATOR_PORT, executor_port=EXECUTOR_PORT, max_attempts=MAX_ATTEMPTS):
-        self.context = zmq.Context()
+
+        super().__init__(*args, **kwargs)        self.context = zmq.Context()
         # Code generator
         self.code_gen = self.context.socket(zmq.REQ)
         self.code_gen.connect(f"tcp://localhost:{code_gen_port}")

@@ -14,6 +14,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -22,7 +23,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # --- CONFIGURATION ---
-SDT_HOST = "127.0.0.1"  # Local host for MainPC
+SDT_HOST = get_env("BIND_ADDRESS", "0.0.0.0")  # Local host for MainPC
 SDT_PORT = 7120  # Port of the SystemDigitalTwin agent
 CONNECTION_TIMEOUT_S = 10  # Timeout for connection
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"  # Check if secure ZMQ is enabled

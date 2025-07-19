@@ -7,6 +7,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pc2_code.config.system_config import pc2_settings
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 def check_agent_health(port, timeout=2):
     """Check agent health using ZMQ"""

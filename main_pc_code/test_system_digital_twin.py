@@ -6,6 +6,7 @@ Test for SystemDigitalTwin agent
 import sys
 import time
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent

@@ -312,6 +312,7 @@ class RecoveryManagerModule:
             # Try to find and kill the process by name
             import psutil
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = proc.info['cmdline']

@@ -6,6 +6,7 @@ Debug Health Check - Shows exactly what's being sent and received
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 def debug_health_check():
     context = zmq.Context()
@@ -14,7 +15,7 @@ def debug_health_check():
     
     try:
         print("🔍 DEBUG: Connecting to health check port 5576...")
-        socket.connect("tcp://localhost:5576")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5576")
         print("✅ DEBUG: Connected successfully")
         
         # Test 1: Send raw string

@@ -18,6 +18,7 @@ project_root = Path(__file__).parent.absolute()
 sys.path.append(str(project_root))
 
 from main_pc_code.config.system_config import Config
+from common.env_helpers import get_env
 
 class ModelManagerAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
@@ -50,7 +51,7 @@ class ModelManagerAgent(BaseAgent):
         self.logger.info("Starting Model Manager Agent...")
         
         # Subscribe to health messages on port 5597
-        self.subscriber.connect("tcp://localhost:5597")
+        self.subscriber.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5597")
         self.subscriber.setsockopt_string(zmq.SUBSCRIBE, "")
         
         self.logger.info("Subscribed to health messages on port 5597")

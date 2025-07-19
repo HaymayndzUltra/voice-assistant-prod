@@ -4,6 +4,7 @@ import zmq
 import json
 import sys
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 services = [
     ("primary_translator", 5563, {"action": "health_check"}),
     ("fallback_translator", 5564, {"action": "health_check"}),

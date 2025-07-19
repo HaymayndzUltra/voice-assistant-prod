@@ -5,6 +5,7 @@ Simple test to check if port 5576 is listening
 
 import socket
 import time
+from common.env_helpers import get_env
 
 def test_port_connection():
     print("Testing connection to port 5576...")

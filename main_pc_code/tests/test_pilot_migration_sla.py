@@ -8,6 +8,7 @@ import os
 import socket
 import importlib
 import logging
+from common.env_helpers import get_env
 
 # Configure logging for the test
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

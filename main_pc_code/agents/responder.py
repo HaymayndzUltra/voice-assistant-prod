@@ -29,6 +29,7 @@ from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from common.env_helpers import get_env
 config = load_config()
 
 # Get the directory of the current file for the log

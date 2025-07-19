@@ -1,5 +1,6 @@
 import zmq
 import time
+from common.env_helpers import get_env
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)

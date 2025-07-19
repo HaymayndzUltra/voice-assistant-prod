@@ -14,8 +14,9 @@ import socket
 import subprocess
 import sys
 from pathlib import Path
+from common.env_helpers import get_env
 
-DB_HOST = "localhost"
+DB_HOST = get_env("BIND_ADDRESS", "0.0.0.0")
 DB_PORT = 5432
 
 def check_database_connection(host: str, port: int) -> bool:

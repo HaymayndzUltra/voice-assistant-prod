@@ -35,6 +35,7 @@ from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.pc2_connections import get_connection_string
+from common.env_helpers import get_env
 
 # Setup logging
 LOG_PATH = join_path("logs", "ai_studio_assistant.log")

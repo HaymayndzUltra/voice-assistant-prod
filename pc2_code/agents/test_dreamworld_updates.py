@@ -3,6 +3,7 @@ import time
 import json
 import logging
 from datetime import datetime
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -18,7 +19,7 @@ class DreamWorldTester:
     def __init__(self):
         self.context = zmq.Context()
         self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect("tcp://localhost:5599")  # New port
+        self.sub_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5599")  # New port
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         self.received_updates = []
 

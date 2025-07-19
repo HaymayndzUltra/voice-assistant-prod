@@ -3,6 +3,8 @@ import time
 import sys
 import logging
 from datetime import datetime
+from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -16,7 +18,8 @@ logging.basicConfig(
 
 class WebPortMonitor:
     def __init__(self):
-        self.context = zmq.Context()
+
+        super().__init__(*args, **kwargs)        self.context = zmq.Context()
         self.ports = {
             'unified_web': 5604,
             'autonomous_web': 5605

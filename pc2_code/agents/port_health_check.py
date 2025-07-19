@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 """
 Port Health Check Script for PC2
 Verifies all PC2 ports are accessible and working correctly.
@@ -8,6 +9,7 @@ import time
 import logging
 from typing import Dict, List, Tuple
 from port_config import (
+from common.env_helpers import get_env
     ENHANCED_MODEL_ROUTER_PORT,
     DREAM_WORLD_PORT,
     TRANSLATOR_PORT,
@@ -35,7 +37,8 @@ logger = logging.getLogger(__name__)
 
 class PortHealthChecker:
     def __init__(self):
-        """Initialize the port health checker."""
+
+        super().__init__(*args, **kwargs)        """Initialize the port health checker."""
         self.context = zmq.Context()
         self.timeout = 5000  # 5 seconds timeout
         self.ports_to_check = {

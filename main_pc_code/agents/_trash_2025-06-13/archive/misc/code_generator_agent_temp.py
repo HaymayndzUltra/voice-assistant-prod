@@ -27,6 +27,7 @@ from main_pc_code.config.system_config import config
 
 # Import the GGUF Model Manager
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+from common.env_helpers import get_env
 
 # Check for GGUF support
 try:

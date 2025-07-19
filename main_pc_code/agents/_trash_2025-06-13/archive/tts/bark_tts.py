@@ -15,6 +15,7 @@ import json
 import re
 from pathlib import Path
 from bark import SAMPLE_RATE, generate_audio, preload_models
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

@@ -38,6 +38,7 @@ if str(project_root) not in sys.path:
 from main_pc_code.utils.service_discovery_client import discover_service
 from main_pc_code.utils.network_utils import load_network_config
 from main_pc_code.src.network.secure_zmq import configure_secure_client, start_auth
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -47,7 +48,7 @@ logging.basicConfig(
 logger = logging.getLogger('CrossMachineTest')
 
 # Constants
-SDT_HOST = "localhost"  # SystemDigitalTwin is local on MainPC
+SDT_HOST = get_env("BIND_ADDRESS", "0.0.0.0")  # SystemDigitalTwin is local on MainPC
 SDT_PORT = 7120
 PC2_AGENT_NAME = "UnifiedMemoryReasoningAgent"
 

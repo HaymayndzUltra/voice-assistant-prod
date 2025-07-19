@@ -19,6 +19,7 @@ import zmq
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.agents.memory_client import MemoryClient
+from common.env_helpers import get_env
 
 # -----------------------------------------------------------------------------
 # Configuration & Logging
@@ -35,7 +36,7 @@ DEFAULT_PORT = int(os.environ.get("KNOWLEDGE_BASE_PORT", config.get("knowledge_b
 DEFAULT_HEALTH_PORT = int(os.environ.get("KNOWLEDGE_BASE_HEALTH_PORT", config.get("knowledge_base", {}).get("health_port", 6715)))
 
 # Error Bus settings (Rule 8)
-ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", os.environ.get("PC2_IP", "localhost"))
+ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0")))
 ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 ERROR_BUS_ENDPOINT = f"tcp://{ERROR_BUS_HOST}:{ERROR_BUS_PORT}"
 

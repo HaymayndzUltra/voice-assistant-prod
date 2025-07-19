@@ -1,7 +1,6 @@
 FROM docker.io/nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -64,4 +63,14 @@ RUN ln -sf /app/main_pc_code/src /app/src && \
     ln -sf /app/main_pc_code/utils /app/utils
 
 # Default command - will be overridden by docker-compose
-ENTRYPOINT ["python", "/app/docker/podman/scripts/container_startup.py"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+ENTRYPOINT
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

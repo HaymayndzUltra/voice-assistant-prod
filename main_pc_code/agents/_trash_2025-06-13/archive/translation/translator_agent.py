@@ -397,6 +397,7 @@ class TranslatorAgent(BaseAgent):
 from main_pc_code.agents.taglish_detector import detect_taglish
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[TranslatorAgent] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

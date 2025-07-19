@@ -7,6 +7,7 @@ from typing import Dict, Any, List
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -32,13 +33,13 @@ class TimelineUIServer(BaseAgent):
         self.memory_socket = self.context.socket(zmq.REQ)
         self.memory_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.memory_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.memory_socket.connect("tcp://localhost:5629")  # EpisodicMemoryAgent
+        self.memory_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5629")  # EpisodicMemoryAgent
         
         # REQ socket for MetaCognitionAgent
         self.meta_socket = self.context.socket(zmq.REQ)
         self.meta_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.meta_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.meta_socket.connect("tcp://localhost:5630")  # MetaCognitionAgent
+        self.meta_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")  # MetaCognitionAgent
         
         logger.info("TimelineUIServer initialized")
     

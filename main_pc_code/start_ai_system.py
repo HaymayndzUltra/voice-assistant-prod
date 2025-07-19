@@ -7,6 +7,7 @@ import logging
 from dotenv import load_dotenv
 from pathlib import Path
 import argparse
+from common.env_helpers import get_env
 
 # Load environment variables
 load_dotenv()

@@ -64,6 +64,7 @@ print(resp)
 print("[TEST] Log model evaluation score to MEF")
 from uuid import uuid4
 from datetime import datetime
+from common.env_helpers import get_env
 model_eval = {
     'evaluation': {
         'evaluation_id': str(uuid4()),

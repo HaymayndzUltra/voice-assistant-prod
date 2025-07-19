@@ -31,6 +31,7 @@ from main_pc_code.utils.service_discovery_client import discover_service, regist
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.config.agent_ports import default_ports
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from common.env_helpers import get_env
 
 # Parse command line arguments
 config = load_config()

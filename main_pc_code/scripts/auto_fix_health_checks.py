@@ -26,6 +26,7 @@ import json
 import signal
 import psutil
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
