@@ -3,7 +3,7 @@ import time
 import zmq
 import pytest
 
-from main_pc_code.agents.model_manager_agent import ModelManagerAgent
+from main_pc_code.model_manager_suite import get_instance as get_model_manager_instance
 
 # Use a high-numbered port to avoid collisions
 TEST_PORT = 5950

@@ -6,7 +6,7 @@ import os
 import yaml
 
 # IMPORTANT: This requires the ModelManagerAgent class to be importable.
-from main_pc_code.agents.model_manager_agent import ModelManagerAgent
+from main_pc_code.model_manager_suite import get_instance as get_model_manager_instance
 from common.env_helpers import get_env
 
 @pytest.fixture(scope="module")

@@ -9,7 +9,7 @@ from pathlib import Path
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import the ModelManagerAgent and model_client for testing
-from main_pc_code.agents.model_manager_agent import ModelManagerAgent
+from main_pc_code.model_manager_suite import get_instance as get_model_manager_instance
 from main_pc_code.utils import model_client
 from common.env_helpers import get_env
 
