@@ -1,12 +1,9 @@
 version: "3.9"
 
 networks:
-  ai_system_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
+  default:
+    external: true
+    name: default
 
 volumes:
   logs:
@@ -22,7 +19,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - ai_system_net
+      - default
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -35,7 +32,7 @@ services:
     volumes:
       - nats_data:/data
     networks:
-      - ai_system_net
+      - default
     ports:
       - "4222:4222"
       - "8222:8222"
@@ -63,7 +60,7 @@ services:
       - NATS_HOST=nats
       - MESH_DISABLED=true
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -106,7 +103,7 @@ services:
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - models:/app/models
@@ -114,10 +111,10 @@ services:
     depends_on:
       - core-services
     ports:
-      - "5575:5575"  # GGUFModelManager
-      - "5570:5570"  # ModelManagerAgent
+      - "7223:5575"  # GGUFModelManager (moved to 7223)
+      - "7224:5570"  # ModelManagerAgent (moved to 7224)
       - "5572:5572"  # VRAMOptimizerAgent
-      - "5617:5617"  # PredictiveLoader
+      - "7225:5617"  # PredictiveLoader (moved to 7225)
     deploy:
       resources:
         reservations:
@@ -140,7 +137,7 @@ services:
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -164,7 +161,7 @@ services:
       - CUDA_VISIBLE_DEVICES=0
       - SERVICE_REGISTRY_HOST=core-services
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - models:/app/models
@@ -195,7 +192,7 @@ services:
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -227,7 +224,7 @@ services:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - models:/app/models
@@ -249,7 +246,7 @@ services:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - ./config:/app/config
@@ -276,7 +273,7 @@ services:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - ./config:/app/config
@@ -302,7 +299,7 @@ services:
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -331,7 +328,7 @@ services:
       - SERVICE_REGISTRY_HOST=core-services
       - REDIS_HOST=redis
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -339,7 +336,7 @@ services:
     depends_on:
       - core-services
     ports:
-      - "7222:7222"  # ModelEvaluationFramework (fixed port)
+      - "7300:7222"  # ModelEvaluationFramework (fixed port)
       - "7212:7212"  # LearningOrchestrationService (fixed port)
       - "7202:7202"  # LearningOpportunityDetector (fixed port)
       - "5580:5580"  # LearningManager
@@ -358,7 +355,7 @@ services:
       - CUDA_VISIBLE_DEVICES=0
       - SERVICE_REGISTRY_HOST=core-services
     networks:
-      - ai_system_net
+      - default
     volumes:
       - logs:/app/logs
       - models:/app/models

@@ -10,9 +10,6 @@ services:
     environment:
       - SUITE_TRAFFIC_PERCENT=${SUITE_TRAFFIC_PERCENT:-5}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    networks:
-      ai_system_net:
-        ipv4_address: 172.20.0.50
     depends_on:
       - core-services
     ports:
@@ -23,5 +20,6 @@ services:
       - "7222:7222"
 
 networks:
-  ai_system_net:
+  default:
     external: true
+    name: ai_system_net

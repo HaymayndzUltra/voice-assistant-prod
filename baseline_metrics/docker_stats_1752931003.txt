@@ -1,3 +1,0 @@
-NAME         CPU %     MEM USAGE / LIMIT
-grafana      0.10%     92.09MiB / 15.2GiB
-prometheus   0.00%     41.2MiB / 15.2GiB
