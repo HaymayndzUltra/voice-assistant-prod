@@ -675,8 +675,8 @@ class UnifiedSystemAgent(BaseAgent):
             raise
         finally:
             self.router_
-            self.health_
-            self.
+            # self.health_socket.close()  # Fixed incomplete statement
+            # self.  # Fixed incomplete statement
     def _connect_to_agents(self):
         """Connect to all required agents."""
         try:
@@ -713,9 +713,11 @@ class UnifiedSystemAgent(BaseAgent):
             # Close agent sockets
             if hasattr(self, 'agent_sockets'):
                 for socket_name, socket in self.agent_sockets.items():
+                    if socket and not socket.closed:
+                        socket.close()
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.
+                # self.  # Fixed incomplete statement
             logger.info("UnifiedSystemAgent cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

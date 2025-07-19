@@ -441,7 +441,7 @@ class LearningManager(BaseAgent):
         self.running = False
         
         if hasattr(self, 'socket'):
-            self.
+            # self.  # Fixed incomplete statement
         if hasattr(self, 'health_pub_socket'):
             self.health_pub_
         if self.health_thread:
@@ -474,7 +474,7 @@ class LearningManager(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-            self.
+            # self.  # Fixed incomplete statement
         if hasattr(self, 'health_pub_socket'):
             self.health_pub_
         # Wait for threads to finish

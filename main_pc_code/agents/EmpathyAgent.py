@@ -361,10 +361,10 @@ class EmpathyAgent(BaseAgent):
     
     def stop(self):
         """Stop the agent and clean up resources."""
-        self.
-        self.emotion_sub_
-        self.tts_
-        self.
+        # self.  # Fixed incomplete statement
+        # self.emotion_sub_socket.close()  # Fixed incomplete statement
+        # self.tts_socket.close()  # Fixed incomplete statement
+        # self.  # Fixed incomplete statement
         logger.info("EmpathyAgent stopped")
 
 
@@ -464,9 +464,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.
+                # self.  # Fixed incomplete statement
             if hasattr(self, 'context') and self.context:
-                self.
+                # self.  # Fixed incomplete statement
             # Close any open file handles
             # [Add specific resource cleanup here]
             

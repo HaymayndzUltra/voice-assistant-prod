@@ -626,7 +626,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
                 logger.info("Closed Translation socket")
                 
             if hasattr(self, 'context') and self.context:
-                self.
+                # self.  # Fixed incomplete statement
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")

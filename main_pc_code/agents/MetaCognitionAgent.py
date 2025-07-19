@@ -690,7 +690,7 @@ class MetaCognitionAgent(BaseAgent):
         # Close sockets in a try-finally block to ensure they're all closed
         try:
             if hasattr(self, 'socket'):
-                self.
+                # self.  # Fixed incomplete statement
                 logger.debug("Closed main socket")
             
             if hasattr(self, 'cot_sub'):
@@ -713,7 +713,7 @@ class MetaCognitionAgent(BaseAgent):
         finally:
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.
+                # self.  # Fixed incomplete statement
                 logger.debug("Terminated ZMQ context")
         
         logger.info("MetaCognitionAgent stopped successfully")

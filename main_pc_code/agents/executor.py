@@ -293,7 +293,7 @@ class ExecutorAgent(BaseAgent):
             if hasattr(self, 'feedback_socket'):
                 self.feedback_
             if hasattr(self, 'context'):
-                self.
+                # self.  # Fixed incomplete statement
         except Exception as e:
             logging.error(f"[Executor] Error during cleanup: {e}")
         

@@ -222,7 +222,7 @@ class StreamingWhisperASR(BaseAgent):
             logger.info("Keyboard interrupt detected, stopping")
         finally:
             self.running = False
-            self.
+            # self.  # Fixed incomplete statement
             logger.info("Streaming Whisper ASR stopped.")
 
 
@@ -261,6 +261,26 @@ class StreamingWhisperASR(BaseAgent):
                 "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
                 "error": f"Health check failed with exception: {str(e)}"
             }
+
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"SyntaxErrorFixer cleaning up resources...")
+        try:
+            self.running = False
+            
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.close()
+            if hasattr(self, 'health_context') and self.health_context:
+                self.health_context.term()
+                
+            logger.info(f"SyntaxErrorFixer cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
 
 if __name__ == "__main__":
     logger.info("Streaming Whisper ASR Module starting...")

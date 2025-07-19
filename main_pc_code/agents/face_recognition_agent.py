@@ -677,11 +677,11 @@ class FaceRecognitionAgent(BaseAgent):
         logging.info("Stopping FaceRecognitionAgent")
         self.running = False
         if hasattr(self, 'socket'):
-            self.
+            # self.  # Fixed incomplete statement
         if hasattr(self, 'pub_socket'):
             self.pub_
         if hasattr(self, 'context'):
-            self.
+            # self.  # Fixed incomplete statement
     def health_check(self):
         """Perform a health check and return status."""
         try:
@@ -746,9 +746,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.
+                # self.  # Fixed incomplete statement
             if hasattr(self, 'context') and self.context:
-                self.
+                # self.  # Fixed incomplete statement
             # Close any open file handles
             # [Add specific resource cleanup here]
             

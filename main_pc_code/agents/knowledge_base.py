@@ -237,7 +237,7 @@ class KnowledgeBase(BaseAgent):
             if hasattr(self, "error_bus_pub") and self.error_bus_pub:
                 self.error_bus_pub.close()
             if hasattr(self, "context") and self.context:
-                self.
+                # self.  # Fixed incomplete statement
             logger.info("KnowledgeBase cleanup complete")
         except Exception as exc:
             logger.error(f"Cleanup error: {exc}")

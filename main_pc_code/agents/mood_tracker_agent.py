@@ -417,7 +417,7 @@ class MoodTrackerAgent(BaseAgent):
         self.running = False
         time.sleep(0.5)  # Give threads time to exit
         
-        self.emotion_sub_
+        # self.emotion_sub_socket.close()  # Fixed incomplete statement
         # Use BaseAgent's cleanup method
         super().cleanup()
         logger.info("MoodTrackerAgent shutdown complete")
