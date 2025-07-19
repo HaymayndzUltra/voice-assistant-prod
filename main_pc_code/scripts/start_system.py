@@ -289,6 +289,30 @@ def main():
         print(f"[SYSTEM STARTUP] Phase {idx+1} complete.")
     
     print("\n[SYSTEM STARTUP] All phases complete. System is fully started.")
+    
+    # Keep container alive by monitoring agents
+    print("[SYSTEM STARTUP] Monitoring agents. Press Ctrl+C to stop...")
+    try:
+        while True:
+            # Keep the container running and monitor agent health
+            time.sleep(30)  # Check every 30 seconds
+            
+            # Optional: Check if critical agents are still running
+            # You can add health monitoring logic here
+            alive_count = sum(1 for p in all_procs if p.poll() is None)
+            if alive_count == 0:
+                print("[WARNING] All agent processes have exited. System may need restart.")
+                break
+                
+    except KeyboardInterrupt:
+        print("\n[SYSTEM STARTUP] Shutdown signal received. Stopping all agents...")
+        for proc in all_procs:
+            try:
+                proc.terminate()
+                proc.wait(timeout=5)
+            except:
+                proc.kill()
+        print("[SYSTEM STARTUP] All agents stopped. Exiting.")
 
 if __name__ == "__main__":
     main() 

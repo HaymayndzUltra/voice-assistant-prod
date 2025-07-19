@@ -350,9 +350,9 @@ class LearningOrchestrationService(BaseAgent):
         logger.info("Cleaning up resources...")
         self.running = False
         if hasattr(self, 'socket'):
-            self.
+            self.socket.close()
         if hasattr(self, 'health_socket'):
-            self.health_
+            self.health_socket.close()
         if hasattr(self, 'error_bus_pub'):
             self.error_bus_pub.close()
         super().cleanup()

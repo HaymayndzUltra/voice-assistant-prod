@@ -1,0 +1,211 @@
+### PC2 Subsystem: Integration Layer Agents
+
+#### Agent: MemoryOrchestratorService
+- **Purpose:** Central orchestrator for managing all memory and context for PC2 agents, acting as the foundational memory service.
+- **Core Logic/Features:** Comprehensive memory management system with SQLite database backend and Redis caching. Implements MemoryEntry data model with support for memory tiers (short, medium, long), importance scoring, access tracking, and relationship mapping. Features memory lifecycle management with decay and consolidation processes. Includes MemoryStorageManager for database operations and supports hierarchical memory structures with parent-child relationships.
+- **Health Check:** Listens on port `8140` for health checks. Provides detailed health diagnostics including database connectivity, cache status, and ZMQ socket health.
+- **Error Handling:** Comprehensive error handling with centralized error bus reporting. Uses threading locks for database operations and implements robust exception handling for all memory operations. Reports errors via ZMQ PUB socket to error bus.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7140), `health_check_port` (8140), `required: true`. Database path: `data/unified_memory.db`, Redis configuration, lifecycle interval (3600s). Inherits global settings for `environment` and `resource_limits`.
+- **Inter-Agent Communication:** Serves memory requests from nearly every other agent on PC2. Handles actions: add_memory, get_memory, search_memory, get_related_memories, create_context_group. Uses ZMQ REP socket for requests and PUB socket for error reporting.
+- **Dependencies:** None.
+
+#### Agent: TieredResponder
+- **Purpose:** Provides a sophisticated, multi-layered response strategy, selecting different response generators based on request complexity and available resources.
+- **Core Logic/Features:** Implements three response tiers: instant (canned responses, <100ms), fast (local model, <1s), and deep (comprehensive analysis, <5s). Includes integrated ResourceManager for CPU, memory, and GPU monitoring. Features response queue management, health monitoring thread, and adaptive tier selection based on system load. Supports thinking messages for deep queries and comprehensive response tracking.
+- **Health Check:** Listens on port `8100`. Provides detailed health status including resource statistics, queue size, tier performance metrics, and system resource averages. Includes background health monitoring thread.
+- **Error Handling:** Comprehensive error handling with error bus integration. Handles resource constraints gracefully and reports errors via ZMQ PUB socket. Includes cleanup procedures for all sockets and resources.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7100), `health_check_port` (8100), `required: true`. Resource thresholds: CPU (80%), memory (80%), GPU (80%). Max response times per tier, queue size limits (100), health check interval (30s).
+- **Inter-Agent Communication:** Uses ZMQ PULL/PUSH sockets for request/response handling. Integrates with error bus for error reporting. Provides tiered response capabilities to routing agents with resource-aware tier selection.
+- **Dependencies:** `ResourceManager`.
+
+#### Agent: AsyncProcessor
+- **Purpose:** To handle long-running or resource-intensive tasks asynchronously, preventing them from blocking the main request-response cycle.
+- **Core Logic/Features:** Manages a queue of background jobs. Its dependency on `ResourceManager` indicates that it likely checks for system load before starting new, heavy tasks to avoid overloading the system.
+- **Health Check:** Listens on port `8101`. Health check details are inherited from the global `health_checks` configuration.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7101), `health_check_port` (8101), `required: true`. Inherits global settings.
+- **Inter-Agent Communication:** Receives tasks from `TaskScheduler`. It likely reports task completion or failure back to the originating agent or a central monitor.
+- **Dependencies:** `ResourceManager`.
+
+#### Agent: CacheManager
+- **Purpose:** Provides a centralized caching service to store and retrieve frequently accessed data, reducing latency and redundant database lookups.
+- **Core Logic/Features:** Acts as a caching layer in front of the main memory service. It likely implements a key-value store with a configurable TTL (Time-to-Live) for cached items.
+- **Health Check:** Listens on port `8102`. Health check details are inherited from the global `health_checks` configuration.
+- **Error Handling:** Not specified. Would need to handle cache misses gracefully and manage cache eviction policies.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7102), `health_check_port` (8102), `required: true`. Inherits global settings.
+- **Inter-Agent Communication:** Intercepts or receives requests for data, first checking its internal cache before forwarding the request to its dependency, `MemoryOrchestratorService`.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: VisionProcessingAgent
+- **Purpose:** Handles tasks related to computer vision, such as image recognition, object detection, or analysis of visual data.
+- **Core Logic/Features:** Encapsulates the logic and models required for vision-related tasks. It uses a cache to store results of previous analyses to provide faster responses for repeated requests.
+- **Health Check:** Listens on port `8150`. Health check details are inherited from the global `health_checks` configuration.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7150), `health_check_port` (8150), `required: true`.
+- **Inter-Agent Communication:** Provides vision analysis services to other agents. Depends on `CacheManager` to cache its results.
+- **Dependencies:** `CacheManager`.
+
+---
+
+### PC2 Subsystem: Core Agents
+
+#### Agent: DreamWorldAgent
+- **Purpose:** Simulates experiences and generates synthetic data during system downtime, a process likely referred to as "dreaming," to facilitate offline learning.
+- **Core Logic/Features:** Activated during idle periods. It uses the system's existing knowledge to generate novel scenarios or data, which can then be used as training material for other agents.
+- **Health Check:** Listens on port `8104`. Health check details are inherited from the global `health_checks` configuration.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7104), `health_check_port` (8104), `required: true`.
+- **Inter-Agent Communication:** Relies on `MemoryOrchestratorService` to access the system's knowledge base to create its simulations.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: UnifiedMemoryReasoningAgent
+- **Purpose:** Combines memory retrieval with reasoning capabilities to answer complex queries that require synthesizing information.
+- **Core Logic/Features:** This agent doesn't just retrieve data; it reasons over it. It can draw inferences and provide answers that are not explicitly stored in memory.
+- **Health Check:** Listens on port `8105`. Health check details are inherited from the global `health_checks` configuration.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7105), `health_check_port` (8105), `required: true`.
+- **Inter-Agent Communication:** Acts as a high-level memory service, using the `MemoryOrchestratorService` as its backend for raw data access.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: TutorAgent & TutoringAgent
+- **Purpose:** Provides a guided, interactive learning experience for users, acting as a specialized tutor.
+- **Core Logic/Features:** These agents likely manage a curriculum, present information, ask questions, and adapt their teaching style based on user responses. The presence of two similar agents may indicate a split of responsibilities (e.g., one for content, one for interaction).
+- **Health Check:** `TutorAgent` listens on port `8108`, `TutoringAgent` on `8131`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** Both are `required` and use standard host/port configs.
+- **Inter-Agent Communication:** Both depend on `MemoryOrchestratorService` to access teaching materials and track user progress.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: ContextManager
+- **Purpose:** To build and maintain the active context for the current task or conversation by assembling relevant information.
+- **Core Logic/Features:** Gathers data from the memory system to create a comprehensive contextual snapshot that other agents can use to make informed decisions.
+- **Health Check:** Listens on port `8111`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7111), `health_check_port` (8111), `required: true`.
+- **Inter-Agent Communication:** Provides contextual data to any agent that needs it, using `MemoryOrchestratorService` as its data source.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: ExperienceTracker
+- **Purpose:** Tracks and evaluates the outcomes of the AI's actions to create feedback for learning.
+- **Core Logic/Features:** Observes the results of system actions. If an action succeeds, it reinforces that pathway; if it fails, it records the failure, providing crucial data for system improvement.
+- **Health Check:** Listens on port `8112`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7112), `health_check_port` (8112), `required: true`.
+- **Inter-Agent Communication:** Uses `MemoryOrchestratorService` to log the experiences it tracks.
+- **Dependencies:** `MemoryOrchestratorService`.
+
+#### Agent: ResourceManager
+- **Purpose:** To manage and allocate hardware resources (CPU, GPU, memory) for PC2 agents.
+- **Core Logic/Features:** Monitors resource usage of all agents on PC2. It can be used to enforce resource limits and prevent system overload.
+- **Health Check:** Listens on port `8113`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7113), `health_check_port` (8113), `required: true`.
+- **Inter-Agent Communication:** Provides resource information to `TaskScheduler` and other agents to make decisions about task execution. It now reports its findings to the consolidated `ObservabilityHub`.
+- **Dependencies:** `ObservabilityHub`.
+
+#### Agent: TaskScheduler
+- **Purpose:** To schedule and dispatch tasks to other agents based on priority and dependencies.
+- **Core Logic/Features:** Manages a queue of tasks and understands task dependencies, deciding the optimal order of execution.
+- **Health Check:** Listens on port `8115`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7115), `health_check_port` (8115), `required: true`.
+- **Inter-Agent Communication:** A central orchestration agent that dispatches jobs to workers like `AsyncProcessor`.
+- **Dependencies:** `AsyncProcessor`.
+
+---
+
+### PC2 Subsystem: Specialized Services
+
+#### Agent: AuthenticationAgent
+- **Purpose:** To handle user authentication and manage security sessions.
+- **Core Logic/Features:** Provides a secure endpoint for user login and session validation, ensuring only authorized users can access the system.
+- **Health Check:** Listens on port `8116`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7116), `health_check_port` (8116), `required: true`.
+- **Inter-Agent Communication:** Acts as a security gateway. Other agents would query it via its dependency, `UnifiedUtilsAgent`, to validate user sessions.
+- **Dependencies:** `UnifiedUtilsAgent`.
+
+#### Agent: UnifiedUtilsAgent
+- **Purpose:** Provides a set of common utility functions as a shared service to reduce code duplication.
+- **Core Logic/Features:** Exposes common, stateless functions that might be needed by multiple agents (e.g., data format conversion, complex calculations).
+- **Health Check:** Listens on port `8118`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7118), `health_check_port` (8118), `required: true`.
+- **Inter-Agent Communication:** A shared library exposed as a service. It reports its metrics to `ObservabilityHub`.
+- **Dependencies:** `ObservabilityHub`.
+
+#### Agent: ProactiveContextMonitor
+- **Purpose:** Actively monitors the system's context to identify opportunities for proactive interaction.
+- **Core Logic/Features:** Observes user actions and system state. If it detects a pattern where the AI could helpfully interject, it can trigger a proactive response.
+- **Health Check:** Listens on port `8119`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7119), `health_check_port` (8119), `required: true`.
+- **Inter-Agent Communication:** Consumes data from the `ContextManager` to understand the current state.
+- **Dependencies:** `ContextManager`.
+
+#### Agent: AgentTrustScorer
+- **Purpose:** To evaluate the reliability and trustworthiness of different agents or data sources.
+- **Core Logic/Features:** Maintains a trust score for other agents based on their historical performance, success rate, and error frequency, allowing the system to prefer more reliable components.
+- **Health Check:** Listens on port `8122`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7122), `health_check_port` (8122), `required: true`.
+- **Inter-Agent Communication:** Provides trust scores to decision-making agents. Reports its data to the `ObservabilityHub`.
+- **Dependencies:** `ObservabilityHub`.
+
+#### Agent: FileSystemAssistantAgent
+- **Purpose:** To provide a natural language interface for interacting with the file system.
+- **Core Logic/Features:** Allows the user to perform file operations (e.g., "find my presentation from last week") using natural language commands.
+- **Health Check:** Listens on port `8123`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7123), `health_check_port` (8123), `required: true`.
+- **Inter-Agent Communication:** Depends on `UnifiedUtilsAgent` for some of its underlying functionality.
+- **Dependencies:** `UnifiedUtilsAgent`.
+
+#### Agent: RemoteConnectorAgent
+- **Purpose:** Acts as the primary bridge for communication between the main PC and PC2.
+- **Core Logic/Features:** Exposes a secure endpoint that the main PC can call to offload tasks to PC2. It handles the network communication and data serialization between the two systems.
+- **Health Check:** Listens on port `8124`.
+- **Error Handling:** Not specified. Must be robust to handle network failures.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7124), `health_check_port` (8124), `required: true`.
+- **Inter-Agent Communication:** The main gateway from MainPC into the PC2 subsystem. It routes incoming requests to the `AdvancedRouter`.
+- **Dependencies:** `AdvancedRouter`.
+
+#### Agent: UnifiedWebAgent
+- **Purpose:** Provides a comprehensive interface for interacting with the web (browsing, scraping, data extraction).
+- **Core Logic/Features:** Can execute high-level goals (e.g., "find the price of this item") by navigating websites and parsing HTML.
+- **Health Check:** Listens on port `8126`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7126), `health_check_port` (8126), `required: true`.
+- **Inter-Agent Communication:** Uses `FileSystemAssistantAgent` for local file operations and `MemoryOrchestratorService` to store its findings.
+- **Dependencies:** `FileSystemAssistantAgent`, `MemoryOrchestratorService`.
+
+#### Agent: DreamingModeAgent
+- **Purpose:** Manages the "dreaming" state of the system, activating and deactivating the `DreamWorldAgent`.
+- **Core Logic/Features:** Monitors system activity. When it detects a prolonged idle period, it activates `DreamWorldAgent`. When a new user request arrives, it signals the `DreamWorldAgent` to stop.
+- **Health Check:** Listens on port `8127`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7127), `health_check_port` (8127), `required: true`.
+- **Inter-Agent Communication:** Orchestrates the `DreamWorldAgent`.
+- **Dependencies:** `DreamWorldAgent`.
+
+#### Agent: AdvancedRouter
+- **Purpose:** A sophisticated task router that intelligently decides where to send a request based on content, priority, and system state.
+- **Core Logic/Features:** Likely uses a model or complex rules to classify incoming requests and route them to the most appropriate specialized agent on PC2.
+- **Health Check:** Listens on port `8129`.
+- **Error Handling:** Not specified.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (7129), `health_check_port` (8129), `required: true`.
+- **Inter-Agent Communication:** Receives requests from `RemoteConnectorAgent` and dispatches them to other PC2 agents, starting with the `TaskScheduler`.
+- **Dependencies:** `TaskScheduler`.
+
+---
+
+### PC2 Subsystem: Consolidated Monitoring
+
+#### Agent: ObservabilityHub
+- **Purpose:** A consolidated monitoring solution that replaces legacy monitors like `PerformanceMonitor` and `HealthMonitor`. It provides a unified view of system health and performance for PC2.
+- **Core Logic/Features:** Gathers metrics and health statuses from all other PC2 agents. It is configured with `scope: "pc2_agents"` and has the ability to sync with the MainPC's hub (`cross_machine_sync: true`). It runs parallel health checks and may have predictive capabilities.
+- **Health Check:** Listens on port `9100`. As a core monitoring service, its own health is critical.
+- **Error Handling:** Not specified. Must be highly resilient.
+- **Configuration/Parameters:** `host` (0.0.0.0), `port` (9000), `health_check_port` (9100), `required: true`, and a detailed `config` block specifying its scope, sync behavior, and features.
+- **Inter-Agent Communication:** Does not have explicit dependencies, as other agents depend on it (`ResourceManager`, `UnifiedUtilsAgent`, etc.). It polls all other agents for their status and pushes aggregated data to the MainPC hub.
+- **Dependencies:** None.

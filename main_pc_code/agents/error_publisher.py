@@ -102,7 +102,7 @@ class ErrorPublisher:
                 pass
         if not self._ctx_provided and getattr(self, "context", None) is not None:
             try:
-                self.
+                self.context.term()
             except Exception:
                 pass
 

@@ -933,9 +933,9 @@ class SystemDigitalTwinAgent(BaseAgent):
         if self.metrics_thread and self.metrics_thread.is_alive():
             self.metrics_thread.join(timeout=2.0)
         if hasattr(self, 'socket'):
-            self.
+            self.socket.close()
         if hasattr(self, 'context'):
-            self.
+            self.context.term()
         super().cleanup()
         logger.info(f"{self.name} cleanup complete.")
 
