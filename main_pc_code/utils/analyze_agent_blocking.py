@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Analyze agent scripts to detect potential blocking calls before their health
 service or main loop becomes active. Outputs a Markdown table summarizing
 results.
 
 Heuristics based; not perfect but good enough for triage.
 """
-from __future__ import annotations
 
 import ast
 import re

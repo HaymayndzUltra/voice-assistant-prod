@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import annotations
 """
 Agent Stabilization Sweep
 
@@ -20,7 +21,6 @@ invocation patterns in order:
 Environment variables identifying the PC role are injected so that agents relying
 on them still work during the sweep.
 """
-from __future__ import annotations
 
 import os
 import subprocess

@@ -1,4 +1,3 @@
-from common.core.base_agent import BaseAgent
 """
 Base Agent Class with Proper Initialization and Health Check Patterns
 """
@@ -34,7 +33,7 @@ logger = logging.getLogger(__name__)
 # Type variables for better type hinting
 T = TypeVar('T')
 
-class BaseAgent(BaseAgent):
+class BaseAgent:
     """Base class for all agents with proper initialization and health check patterns."""
     
     def __init__(self, *args, **kwargs):

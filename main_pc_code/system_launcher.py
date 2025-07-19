@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 Path-Aware System Launcher
 
@@ -13,7 +14,6 @@ Constraints honoured:
 • Read-only – no subprocesses are started.
 • Python 3 and PyYAML required.
 """
-from __future__ import annotations
 
 
 # Import path manager for containerization-friendly paths

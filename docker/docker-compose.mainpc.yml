@@ -1,0 +1,366 @@
+version: "3.9"
+
+networks:
+  ai_system_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  logs:
+  data:
+  models:
+  redis_data:
+  nats_data:
+
+services:
+  # Core Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai_system_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nats:
+    image: nats:2.10
+    command: ["--jetstream", "--store_dir=/data", "--max_mem_store=1GB"]
+    volumes:
+      - nats_data:/data
+    networks:
+      - ai_system_net
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Core Services Container
+  core-services:
+    build: 
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile
+    image: ai-system/core-services:latest
+    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "core_services"]
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - NATS_HOST=nats
+      - MESH_DISABLED=true
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - redis
+      - nats
+    ports:
+      - "7200:7200"  # ServiceRegistry
+      - "7220:7220"  # SystemDigitalTwin
+      - "26002:26002" # RequestCoordinator
+      - "7225:7225"  # UnifiedSystemAgent
+      - "9000:9000"  # ObservabilityHub
+      - "7211:7211"  # ModelManagerSuite
+    healthcheck:
+      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://localhost:7220'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # GPU Infrastructure Container (RTX 4090 Heavy)
+  gpu-infrastructure:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile
+    image: ai-system/gpu-infrastructure:latest
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - core-services
+    ports:
+      - "5575:5575"  # GGUFModelManager
+      - "5570:5570"  # ModelManagerAgent
+      - "5572:5572"  # VRAMOptimizerAgent
+      - "5617:5617"  # PredictiveLoader
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 8G
+
+  # Memory System Container
+  memory-system:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/memory-system:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - core-services
+    ports:
+      - "5713:5713"  # MemoryClient
+      - "5574:5574"  # SessionMemoryAgent
+      - "5715:5715"  # KnowledgeBase
+
+  # Reasoning Services (RTX 4090)
+  reasoning-services:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile
+    image: ai-system/reasoning-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_REGISTRY_HOST=core-services
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - gpu-infrastructure
+    ports:
+      - "5612:5612"  # ChainOfThoughtAgent
+      - "5646:5646"  # GoTToTAgent
+      - "5641:5641"  # CognitiveModelAgent
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Language Processing Container
+  language-processing:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/language-processing:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - core-services
+      - memory-system
+    ports:
+      - "7210:7210"  # ModelOrchestrator
+      - "7205:7205"  # GoalManager
+      - "5701:5701"  # IntentionValidatorAgent
+      - "5709:5709"  # NLUAgent
+      - "5710:5710"  # AdvancedCommandHandler
+      - "5711:5711"  # ChitchatAgent
+      - "5636:5636"  # FeedbackHandler
+      - "5637:5637"  # Responder
+      - "5595:5595"  # TranslationService
+      - "5802:5802"  # DynamicIdentityAgent
+      - "5706:5706"  # EmotionSynthesisAgent
+
+  # Speech Services Container
+  speech-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/speech-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - gpu-infrastructure
+    ports:
+      - "5800:5800"  # STTService
+      - "5801:5801"  # TTSService
+
+  # Audio Interface Container
+  audio-interface:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/audio-interface:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - speech-services
+    ports:
+      - "6550:6550"  # AudioCapture
+      - "6551:6551"  # FusedAudioPreprocessor
+      - "5576:5576"  # StreamingInterruptHandler
+      - "6553:6553"  # StreamingSpeechRecognition
+      - "5562:5562"  # StreamingTTSAgent
+      - "6552:6552"  # WakeWordDetector
+      - "5579:5579"  # StreamingLanguageAnalyzer
+      - "5624:5624"  # ProactiveAgent
+
+  # Emotion System Container
+  emotion-system:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/emotion-system:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - core-services
+    ports:
+      - "5590:5590"  # EmotionEngine
+      - "5704:5704"  # MoodTrackerAgent
+      - "5705:5705"  # HumanAwarenessAgent
+      - "5625:5625"  # ToneDetector
+      - "5708:5708"  # VoiceProfilingAgent
+      - "5703:5703"  # EmpathyAgent
+
+  # Utility Services Container
+  utility-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/utility-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - core-services
+    ports:
+      - "5650:5650"  # CodeGenerator
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "5613:5613"  # PredictiveHealthMonitor
+      - "5584:5584"  # FixedStreamingTranslation
+      - "5606:5606"  # Executor
+      - "5615:5615"  # TinyLlamaServiceEnhanced
+      - "5642:5642"  # LocalFineTunerAgent
+      - "5581:5581"  # NLLBAdapter
+
+  # Learning Knowledge Container
+  learning-knowledge:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/learning-knowledge:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - core-services
+    ports:
+      - "7222:7222"  # ModelEvaluationFramework (fixed port)
+      - "7212:7212"  # LearningOrchestrationService (fixed port)
+      - "7202:7202"  # LearningOpportunityDetector (fixed port)
+      - "5580:5580"  # LearningManager
+      - "5638:5638"  # ActiveLearningMonitor
+      - "5643:5643"  # LearningAdjusterAgent
+
+  # Vision Processing Container
+  vision-processing:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile
+    image: ai-system/vision-processing:latest
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_REGISTRY_HOST=core-services
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - models:/app/models
+      - ./config:/app/config
+    depends_on:
+      - gpu-infrastructure
+    ports:
+      - "5610:5610"  # FaceRecognitionAgent
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu] 

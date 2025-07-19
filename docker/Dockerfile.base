@@ -1,0 +1,59 @@
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libportaudio2 \
+    libsndfile1 \
+    portaudio19-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1-mesa-glx \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r ai && useradd -r -g ai ai
+
+# Create application directory
+WORKDIR /app
+
+# Upgrade pip and install basic packages
+RUN pip install --no-cache-dir -U pip setuptools wheel
+
+# Install common Python dependencies
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Copy application code
+COPY --chown=ai:ai . /app
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/models /app/config /app/cache && \
+    chown -R ai:ai /app
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+# Switch to non-root user
+USER ai
+
+# Health check script
+COPY --chown=ai:ai scripts/health_check.py /app/scripts/health_check.py
+RUN chmod +x /app/scripts/health_check.py
+
+# Default command
+CMD ["python", "-m", "main_pc_code.startup"]
+
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02" 

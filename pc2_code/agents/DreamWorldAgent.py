@@ -26,7 +26,7 @@ from pc2_code.agents.utils.config_loader import Config
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args

@@ -18,7 +18,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))

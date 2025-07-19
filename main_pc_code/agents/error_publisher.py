@@ -1,3 +1,4 @@
+from __future__ import annotations
 from common.core.base_agent import BaseAgent
 """Utility class for standardized error-bus publishing.
 
@@ -5,7 +6,6 @@ All agents should use `ErrorPublisher` (instantiated once, ideally in `__init__`
 `publish_error()` whenever a critical or noteworthy error occurs. This sends a JSON message
 matching the system-wide standard to the central error-bus (ZMQ PUB/SUB).
 """
-from __future__ import annotations
 
 import json
 import logging

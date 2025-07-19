@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Utility helpers for fetching and validating environment variables.
 
 This module is introduced as part of WP-00 (Bootstrap) to centralise environment
@@ -5,7 +6,6 @@ configuration access across all agents.  All new code – and legacy agents duri
 migration – should import from `common.env_helpers` instead of using `os.getenv`
 scattered throughout the codebase.
 """
-from __future__ import annotations
 
 import os
 from typing import Optional, TypeVar, Callable, cast

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Lightweight health probe utility for agents.
 
 Usage::
@@ -13,7 +14,6 @@ in use) in a daemon thread.  Any client that connects receives ``OK`` (or
 external health-checkers succeed instantly without blocking the main agent
 startup.
 """
-from __future__ import annotations
 
 import socket
 import threading

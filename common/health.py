@@ -1,10 +1,10 @@
+from __future__ import annotations
 """Standardised health-check utilities (WP-00).
 
 Provides a decorator for HTTP frameworks (FastAPI/Flask) **and** a helper
 function for ZMQ REP handlers so all agents can expose a consistent health
 payload.
 """
-from __future__ import annotations
 
 import functools
 import time

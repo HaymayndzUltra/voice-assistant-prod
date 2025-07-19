@@ -88,7 +88,7 @@ agent_groups:
         parallel_health_checks: true
         prediction_enabled: true
     ModelManagerSuite:
-      script_path: main_pc_code/11.py
+      script_path: main_pc_code/model_manager_suite.py
       port: 7211
       health_check_port: 8211
       required: true
@@ -258,23 +258,23 @@ agent_groups:
   learning_knowledge:
     ModelEvaluationFramework:
       script_path: main_pc_code/agents/model_evaluation_framework.py
-      port: 7220
-      health_check_port: 7221
+      port: 7222
+      health_check_port: 8222
       required: true
       dependencies:
       - SystemDigitalTwin
     LearningOrchestrationService:
       script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: 7210
-      health_check_port: 7211
+      port: 7212
+      health_check_port: 8212
       required: true
       dependencies:
       - ModelEvaluationFramework
       - SystemDigitalTwin
     LearningOpportunityDetector:
       script_path: main_pc_code/agents/learning_opportunity_detector.py
-      port: 7200
-      health_check_port: 7201
+      port: 7202
+      health_check_port: 8202
       required: true
       dependencies:
       - LearningOrchestrationService

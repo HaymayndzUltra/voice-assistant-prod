@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Stub implementation of the `web_automation` package.
 
 This lightweight stub is only meant to satisfy imports in environments where the
@@ -8,7 +9,6 @@ sub-modules that some legacy agents expect.
 If your project later integrates the real web_automation package, simply remove
 this stub directory from the Python path.
 """
-from __future__ import annotations
 
 import logging
 import sys

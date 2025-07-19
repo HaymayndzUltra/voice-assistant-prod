@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Service Registry Agent
 
 A minimal, highly-available registry that other agents can query to discover
@@ -16,7 +17,6 @@ Supports multiple backend storage options:
 - In-memory (default): Fast but non-persistent
 - Redis: Persistent and supports high-availability
 """
-from __future__ import annotations
 
 import argparse
 import orjson

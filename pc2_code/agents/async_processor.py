@@ -20,7 +20,7 @@ import json
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
 import sys

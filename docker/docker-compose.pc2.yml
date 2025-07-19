@@ -1,0 +1,257 @@
+version: "3.9"
+
+networks:
+  ai_system_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  logs:
+  data:
+  cache_data:
+
+services:
+  # Core Infrastructure
+  memory-orchestrator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/memory-orchestrator:latest
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - REDIS_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    ports:
+      - "7140:7140"  # MemoryOrchestratorService
+    healthcheck:
+      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://localhost:7140'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Task Processing Services
+  task-processing:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/task-processing:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - cache_data:/app/cache
+      - ./config:/app/config
+    depends_on:
+      - memory-orchestrator
+    ports:
+      - "7100:7100"  # TieredResponder
+      - "7101:7101"  # AsyncProcessor
+      - "7102:7102"  # CacheManager
+      - "7103:7103"  # PerformanceMonitor
+      - "7115:7115"  # TaskScheduler
+
+  # Light GPU Services (RTX 3060)
+  light-gpu-services:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile
+    image: ai-system/light-gpu-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - task-processing
+    ports:
+      - "7150:7150"  # VisionProcessingAgent
+      - "7104:7104"  # DreamWorldAgent
+      - "7105:7105"  # UnifiedMemoryReasoningAgent
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 4G
+
+  # Educational Services
+  educational-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/educational-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - memory-orchestrator
+    ports:
+      - "7108:7108"  # TutorAgent
+      - "7131:7131"  # TutoringAgent
+      - "7130:7130"  # TutoringServiceAgent (from container_grouping.yaml)
+
+  # Context Management
+  context-management:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/context-management:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - REDIS_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - memory-orchestrator
+    ports:
+      - "7111:7111"  # ContextManager
+      - "7112:7112"  # ExperienceTracker
+      - "7119:7119"  # ProactiveContextMonitor
+
+  # Resource Management
+  resource-management:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/resource-management:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - task-processing
+    ports:
+      - "7113:7113"  # ResourceManager
+      - "7114:7114"  # HealthMonitor
+      - "7128:7128"  # PerformanceLoggerAgent
+
+  # Authentication & Security
+  security-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/security-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - ./config:/app/config
+    depends_on:
+      - resource-management
+    ports:
+      - "7116:7116"  # AuthenticationAgent
+      - "7117:7117"  # SystemHealthManager
+      - "7118:7118"  # UnifiedUtilsAgent
+      - "7122:7122"  # AgentTrustScorer
+
+  # File & Web Services
+  web-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/web-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - security-services
+      - memory-orchestrator
+    ports:
+      - "7123:7123"  # FileSystemAssistantAgent
+      - "7124:7124"  # RemoteConnectorAgent
+      - "7126:7126"  # UnifiedWebAgent
+      - "7129:7129"  # AdvancedRouter
+
+  # Dream & Creative Services
+  creative-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/creative-services:latest
+    environment:
+      - PYTHONPATH=/app
+      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - MAINPC_HOST=192.168.100.16
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+    depends_on:
+      - light-gpu-services
+    ports:
+      - "7127:7127"  # DreamingModeAgent
+
+  # Cross-Machine Sync Service
+  sync-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/sync-service:latest
+    environment:
+      - PYTHONPATH=/app
+      - MAINPC_HOST=192.168.100.16
+      - SYNC_INTERVAL=300  # 5 minutes
+    networks:
+      - ai_system_net
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./scripts:/app/scripts
+    command: ["python", "/app/scripts/cross_machine_sync.py"]
+    depends_on:
+      - memory-orchestrator 
