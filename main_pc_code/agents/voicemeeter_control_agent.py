@@ -18,7 +18,7 @@ Provides remote control of VoiceMeeter settings through a standardized interface
 import os
 import time
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import ctypes
 import subprocess
@@ -63,8 +63,8 @@ class VoiceMeeterControlAgent(BaseAgent):
         super().__init__(port=port, name="VoicemeeterControlAgent")
         """Initialize the VoiceMeeter control agent"""
         # ZMQ setup
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
+        self.context = None  # Using pool
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
@@ -355,8 +355,8 @@ class VoiceMeeterControlAgent(BaseAgent):
         try:
             if self.initialized:
                 self.vm_dll.VBVMR_Logout()
-            self.socket.close()
-            self.context.term()
+            self.
+            self.
             logger.info("VoiceMeeter Control Agent cleaned up")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

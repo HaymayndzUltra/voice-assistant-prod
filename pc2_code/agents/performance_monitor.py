@@ -127,7 +127,7 @@ class PerformanceMonitor(BaseAgent):
         
     def _setup_zmq(self):
         """Setup ZMQ sockets for metrics and health monitoring"""
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Get port values from config or use defaults
         metrics_port = self.config.get("ports", {}).get("performance_metrics", METRICS_PORT)
@@ -399,11 +399,9 @@ class PerformanceMonitor(BaseAgent):
         
         # Close all sockets
         if hasattr(self, 'metrics_socket'):
-            self.metrics_socket.close()
-        
+            self.metrics_
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-            
+            self.health_
         # Clean up error reporting
         if hasattr(self, 'error_bus') and self.error_bus:
             from pc2_code.agents.error_bus_template import cleanup_error_reporting

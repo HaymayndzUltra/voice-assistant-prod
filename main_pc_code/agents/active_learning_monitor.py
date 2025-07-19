@@ -1,5 +1,5 @@
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import threading
@@ -193,10 +193,10 @@ class ActiveLearningMonitor(BaseAgent):
     def shutdown(self):
         """Gracefully shutdown the monitor"""
         self.running = False
-        self.umra_socket.close()
-        self.coordinator_socket.close()
-        self.orchestrator_socket.close()
-        self.context.term()
+        self.umra_
+        self.coordinator_
+        self.orchestrator_
+        self.
         logger.info("ActiveLearningMonitor shutdown complete")
 
     def _get_health_status(self):
@@ -286,11 +286,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

@@ -79,7 +79,7 @@ class HumanAwarenessAgent(BaseAgent):
         
         # Setup error bus
         import zmq
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.error_bus_port = int(config.get("error_bus_port", 7150))
         self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
@@ -256,7 +256,7 @@ class HumanAwarenessAgent(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.context.term()
+                    self.
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")

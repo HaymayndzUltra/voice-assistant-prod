@@ -22,7 +22,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import threading
@@ -150,10 +150,10 @@ class EmotionEngine(BaseAgent):
     def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
-            self.context = zmq.Context()
+            self.context = None  # Using pool
             
             # Main socket
-            self.socket = self.context.socket(zmq.REP)
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
             
@@ -194,31 +194,6 @@ class EmotionEngine(BaseAgent):
                     raise
                 time.sleep(1)  # Wait before retrying
         return False
-    
-    def _health_check_loop(self):
-        """Health check loop with proper error handling"""
-        logger.info("Starting health check loop")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket and self.health_socket.poll(100) != 0:
-                    # Receive request (don't care about content)
-                    message = self.health_socket.recv() if self.health_socket else None
-                    logger.debug(f"Received health check request: {message}")
-                    
-                    # Send response
-                    response = self._get_health_status()
-                    if self.health_socket:
-                        self.health_socket.send_json(response)
-                        logger.debug("Sent health check response")
-            except zmq.error.Again:
-                # Timeout on receive, this is normal
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-            
-            time.sleep(0.1)
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -454,26 +429,26 @@ class EmotionEngine(BaseAgent):
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             try:
-                self.socket.close()
+                self.
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
         
         if hasattr(self, 'health_socket') and self.health_socket:
             try:
-                self.health_socket.close()
+                self.health_
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
         
         if hasattr(self, 'pub_socket') and self.pub_socket:
             try:
-                self.pub_socket.close()
+                self.pub_
             except Exception as e:
                 logger.error(f"Error closing pub socket: {e}")
         
         # Terminate context
         if hasattr(self, 'context') and self.context:
             try:
-                self.context.term()
+                self.
             except Exception as e:
                 logger.error(f"Error terminating ZMQ context: {e}")
         

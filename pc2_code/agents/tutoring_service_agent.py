@@ -1,5 +1,5 @@
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time

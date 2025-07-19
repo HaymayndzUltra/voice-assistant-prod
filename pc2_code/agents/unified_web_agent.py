@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from typing import Dict, Any, Optional, Union, List, Tuple
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -125,10 +125,10 @@ class UnifiedWebAgent(BaseAgent):
             logger.info(f"Using explicitly provided port {self.port} overriding config.")
 
         # ZMQ setup
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
         # Main socket for requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
 
         # Secure ZMQ configuration
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -909,38 +909,6 @@ class UnifiedWebAgent(BaseAgent):
         finally:
             self.cleanup() # Call cleanup method
 
-    def _health_check_loop(self):
-        """Background thread for handling health checks"""
-        logger.info("Starting health check loop")
-
-        while self.running:
-            try:
-                # Wait for a health check request with a timeout
-                poller = zmq.Poller()
-                poller.register(self.health_socket, zmq.POLLIN)
-
-                # Poll with a 1 second timeout
-                if poller.poll(1000):
-                    # Receive the request (content doesn't matter for basic health check)
-                    request_raw = self.health_socket.recv()
-
-                    # Perform health check
-                    health_data = self._health_check()
-
-                    # Send the response
-                    self.health_socket.send_json(health_data)
-
-            except zmq.error.Again:
-                # Timeout, continue the loop (no request received within timeout)
-                continue
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                try:
-                    self.health_socket.send_json({"status": "error", "message": str(e)})
-                except Exception as send_error:
-                    logger.error(f"Failed to send health check error response: {send_error}")
-        logger.info("Health check loop exited")
-
     def cleanup(self):
         """Clean up resources before exit. Overrides BaseAgent's cleanup method."""
         logger.info(f"Cleaning up resources for {self.name}...")
@@ -979,7 +947,7 @@ class UnifiedWebAgent(BaseAgent):
         try:
             if hasattr(self, 'context') and self.context:
                 if not self.context.closed:
-                    self.context.term()
+                    self.
                     logger.info("ZMQ context terminated")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)

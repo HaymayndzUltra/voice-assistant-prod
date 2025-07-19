@@ -16,7 +16,7 @@ Natural Language Understanding agent that analyzes user input and extracts inten
 
 from common.core.base_agent import BaseAgent
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -124,8 +124,8 @@ class NLUAgent(BaseAgent):
         """Perform ZMQ initialization in background."""
         try:
             # Create ZMQ context and socket
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REP)
+            self.context = None  # Using pool
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -164,10 +164,9 @@ class NLUAgent(BaseAgent):
         logger.info("Stopping NLUAgent")
         self.running = False
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'context'):
-            self.context.term()
-    
+            self.
     def _handle_requests(self):
         """Handle incoming ZMQ requests."""
         while self.running:

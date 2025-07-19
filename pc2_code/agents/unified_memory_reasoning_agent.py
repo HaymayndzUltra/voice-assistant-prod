@@ -8,7 +8,7 @@ Combines features from:
 - Error Pattern Memory
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 import threading
@@ -840,7 +840,6 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         if hasattr(self, 'memory_agent_sockets'):
             for agent, socket in self.memory_agent_sockets.items():
                 try:
-                    socket.close()
                     logger.debug(f"Closed socket for memory agent {agent}")
                 except Exception as e:
                     logger.error(f"Error closing socket for memory agent {agent}: {e}")

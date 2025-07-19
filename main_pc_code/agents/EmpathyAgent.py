@@ -25,7 +25,7 @@ if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -59,7 +59,7 @@ class EmpathyAgent(BaseAgent):
 
         super().__init__(port=agent_port, name=agent_name)
 
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.tts_socket = None
         
         self.running = True
@@ -361,10 +361,10 @@ class EmpathyAgent(BaseAgent):
     
     def stop(self):
         """Stop the agent and clean up resources."""
-        self.socket.close()
-        self.emotion_sub_socket.close()
-        self.tts_socket.close()
-        self.context.term()
+        self.
+        self.emotion_sub_
+        self.tts_
+        self.
         logger.info("EmpathyAgent stopped")
 
 
@@ -464,11 +464,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

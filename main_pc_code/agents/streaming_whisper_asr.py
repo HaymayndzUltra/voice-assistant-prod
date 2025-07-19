@@ -13,7 +13,7 @@ Streaming Whisper ASR Module (CTranslate2, Real-Time)
 Subscribes to audio chunks from streaming_audio_capture.py via ZMQ and transcribes in near real-time.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
@@ -112,8 +112,8 @@ BUFFER_SECONDS = 2.0  # How much audio to buffer for each inference
 class StreamingWhisperASR(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="StreamingWhisperAsr")
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.SUB)
+        self.context = None  # Using pool
+        self.socket = get_sub_socket(self.endpoint).socket
         self.socket.connect(f"tcp://localhost:{ZMQ_SUB_PORT}")
         self.socket.setsockopt(zmq.SUBSCRIBE, b"")
         logger.info(f"Subscribed to ZMQ audio stream on port {ZMQ_SUB_PORT}")
@@ -221,7 +221,7 @@ class StreamingWhisperASR(BaseAgent):
             logger.info("Keyboard interrupt detected, stopping")
         finally:
             self.running = False
-            self.context.term()
+            self.
             logger.info("Streaming Whisper ASR stopped.")
 
 

@@ -4,7 +4,7 @@ from common.core.base_agent import BaseAgent
 Check if ports can be bound to by ZMQ
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import yaml
 import os
 import sys
@@ -44,17 +44,13 @@ def load_config():
 
 def test_port(port):
     """Test if a port can be bound to by ZMQ"""
-    context = zmq.Context()
-    socket = context.socket(zmq.REP)
+    context = None  # Using pool
+    socket = get_rep_socket(endpoint).socket
     try:
         socket.bind(f"tcp://*:{port}")
-        socket.close()
-        context.term()
         return True
     except zmq.error.ZMQError as e:
         print(f"Failed to bind to port {port}: {e}")
-        socket.close()
-        context.term()
         return False
 
 def main():

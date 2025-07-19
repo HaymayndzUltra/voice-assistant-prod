@@ -8,7 +8,7 @@ to perform controlled file operations across the distributed system.
 The agent runs with a REP socket pattern to handle requests and provide responses.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 import sys
@@ -180,32 +180,6 @@ class FileSystemAssistantAgent(BaseAgent):
         self.health_thread.start()
         logger.info("Health check thread started")
     
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100) == 0: # 100ms timeout, zmq.POLLIN is default for poll()
-                    continue
-                
-                # Receive request (content is usually not important for health checks)
-                _ = self.health_socket.recv()
-                
-                # Get health data (calls the overridden _get_health_status)
-                health_data = self._get_health_status()
-                
-                # Send response
-                self.health_socket.send_json(health_data)
-                
-            except zmq.error.Again: # Timeout, no request received
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                self.report_error("HEALTH_CHECK_ERROR", str(e))
-                time.sleep(1) # Sleep longer on error
-
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent. Overrides BaseAgent's method."""
         base_status = super()._get_health_status() # Get base status from BaseAgent
@@ -533,7 +507,7 @@ class FileSystemAssistantAgent(BaseAgent):
         # Close main socket
         if hasattr(self, 'socket'):
             try:
-                self.socket.close()
+                self.
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
@@ -541,7 +515,7 @@ class FileSystemAssistantAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
@@ -557,7 +531,6 @@ class FileSystemAssistantAgent(BaseAgent):
         # Close any connections to other services
         for service_name, socket in getattr(self, 'main_pc_connections', {}).items():
             try:
-                socket.close()
                 logger.info(f"Closed connection to {service_name}")
             except Exception as e:
                 logger.error(f"Error closing connection to {service_name}: {e}")

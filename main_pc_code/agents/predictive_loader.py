@@ -174,26 +174,6 @@ class PredictiveLoader(BaseAgent):
             self._background_threads = []
         self._background_threads.append(self.health_thread)
     
-    def _health_check_loop(self):
-        """Health check loop running in a separate thread"""
-        poller = zmq.Poller()
-        poller.register(self.health_socket, zmq.POLLIN)
-        
-        while True:
-            try:
-                socks = dict(poller.poll(1000))  # 1 second timeout
-                if self.health_socket in socks:
-                    message = self.health_socket.recv_json()
-                    self.health_socket.send_json({
-                        "status": "HEALTHY",
-                        "agent": "PredictiveLoader",
-                        "uptime": time.time() - self.start_time,
-                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-                    })
-            except Exception as e:
-                logger.error(f"Health check error: {e}")
-            time.sleep(0.1)
-    
     def run(self):
         """Run the predictive loader service (standard entrypoint)"""
         self.start_time = time.time()

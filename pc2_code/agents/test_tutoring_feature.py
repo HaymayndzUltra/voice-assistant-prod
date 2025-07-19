@@ -10,8 +10,8 @@ COORDINATOR_HOST = "192.168.1.128"
 
 def send_tutor_request(action, subject=None, question=None, session_id=None, user_profile=None):
     """Sends a structured request to the CoordinatorAgent."""
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    context = None  # Using pool
+    socket = get_req_socket(endpoint).socket
     socket.connect(f"tcp://{COORDINATOR_HOST}:{COORDINATOR_PORT}")
 
     request = {
@@ -45,9 +45,6 @@ def send_tutor_request(action, subject=None, question=None, session_id=None, use
             print("\n<<< ERROR: No response from CoordinatorAgent within 10 seconds.")
             return None
     finally:
-        socket.close()
-        context.term()
-
 if __name__ == "__main__":
     print("--- Tutoring Feature End-to-End Test ---")
     

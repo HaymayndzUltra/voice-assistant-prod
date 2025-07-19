@@ -6,7 +6,7 @@ and managing communication between the main system and PC2's translation service
 Includes intelligent multi-layer fallback system and advanced performance monitoring.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -100,8 +100,8 @@ class PerformanceMonitor(BaseAgent):
     
     def _monitor_loop(self):
         """Main monitoring loop."""
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
+        context = None  # Using pool
+        socket = get_sub_socket(endpoint).socket
         socket.connect(f"tcp://{PC2_IP}:{PC2_PERFORMANCE_PORT}")
         socket.setsockopt(zmq.SUBSCRIBE, b"")
         
@@ -115,10 +115,6 @@ class PerformanceMonitor(BaseAgent):
                 logger.error(f"Error in performance monitoring: {e}")
                 self.report_error(f"Error in performance monitoring: {e}")
                 time.sleep(1)
-        
-        socket.close()
-        context.term()
-    
     def report_error(self, error_message, severity="WARNING", context=None):
         """Report an error to the error bus"""
         try:
@@ -642,7 +638,7 @@ class FixedStreamingTranslation(BaseAgent):
             # Ping PC2 translator dependency
             pc2_reachable = False
             try:
-                context = zmq.Context()
+                context = None  # Using pool
                 sock = context.socket(zmq.REQ)
                 sock.setsockopt(zmq.LINGER, 0)
                 sock.setsockopt(zmq.RCVTIMEO, 2000)

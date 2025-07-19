@@ -17,7 +17,7 @@ Implements real-time noise reduction for the voice assistant system:
 - Publishes cleaned audio to downstream components
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
@@ -67,7 +67,7 @@ class NoiseReductionAgent(BaseAgent):
         self.health_thread = None
         
         # Initialize ZMQ context
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
         
         # Initialize sockets
         self._init_sockets()
@@ -327,10 +327,9 @@ class NoiseReductionAgent(BaseAgent):
             self.health_thread.join(timeout=2)
             
         # Close ZMQ sockets
-        self.sub_socket.close()
-        self.pub_socket.close()
-        self.health_socket.close()
-        
+        self.sub_
+        self.pub_
+        self.health_
         logger.info("Noise reduction agent stopped")
     
     def run(self):

@@ -12,7 +12,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 Streaming Language to LLM Connector
 Connects the language analyzer to the LLM translation connector.
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import json
 import time
@@ -37,7 +37,7 @@ class StreamingLanguageToLLM(BaseAgent):
         super().__init__(port=port, name="StreamingLanguageToLlm")
         """Initialize the connector"""
         # Set up ZMQ context
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive from language analyzer
         self.receiver = self.context.socket(zmq.SUB)

@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.env_helpers import get_env
 
 
@@ -40,7 +40,7 @@ class ErrorPublisher:
         self.context = context or zmq.Context.instance()
 
         try:
-            self.socket = self.context.socket(zmq.PUB)
+            self.socket = get_pub_socket(self.endpoint).socket
             # PUB sockets must *connect* to the central SUB (collector) or vice-versa.
             # We assume collector is a SUB‐binding central bus; agents therefore connect.
             self.socket.connect(self.endpoint)
@@ -102,7 +102,7 @@ class ErrorPublisher:
                 pass
         if not self._ctx_provided and getattr(self, "context", None) is not None:
             try:
-                self.context.term()
+                self.
             except Exception:
                 pass
 

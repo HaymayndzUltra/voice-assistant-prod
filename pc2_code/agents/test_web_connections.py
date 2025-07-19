@@ -4,8 +4,8 @@ import sys
 from common.env_helpers import get_env
 
 def test_connection(port):
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    context = None  # Using pool
+    socket = get_req_socket(endpoint).socket
     try:
         socket.connect(f"tcp://localhost:{port}")
         socket.send_string("TEST")
@@ -20,9 +20,6 @@ def test_connection(port):
         print(f"❌ Failed to connect to port {port}: {e}")
         return False
     finally:
-        socket.close()
-        context.term()
-
 def main():
     # Test both web service ports
     ports = [5604, 5605]

@@ -69,12 +69,12 @@ class PerformanceLoggerAgent(BaseAgent):
         self.start_time = time.time()
         self.port = port
         self.health_port = self.port + 1
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.error_bus = setup_error_reporting(self)
         # Start health check thread
         self._start_health_check()
         # Main REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         # Initialize health check socket
         try:
             if USE_COMMON_UTILS:
@@ -105,29 +105,6 @@ class PerformanceLoggerAgent(BaseAgent):
         self.health_thread.daemon = True
         self.health_thread.start()
         logging.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logging.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logging.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -389,9 +366,8 @@ class PerformanceLoggerAgent(BaseAgent):
         self.running = False
         self.cleanup_thread.join()
         
-        self.socket.close()
-        self.context.term()
-
+        self.
+        self.
     def report_error(self, error_type, message, severity="ERROR", context=None):
         error_data = {
             "error_type": error_type,

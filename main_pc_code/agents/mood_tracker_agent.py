@@ -15,7 +15,7 @@ s
 
 import sys
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import threading
@@ -416,7 +416,7 @@ class MoodTrackerAgent(BaseAgent):
         self.running = False
         time.sleep(0.5)  # Give threads time to exit
         
-        self.emotion_sub_socket.close()
+        self.emotion_sub_
         # Use BaseAgent's cleanup method
         super().cleanup()
         logger.info("MoodTrackerAgent shutdown complete")

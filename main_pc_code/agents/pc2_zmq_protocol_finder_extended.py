@@ -1,5 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -134,8 +134,8 @@ def test_service_protocols(service_id, service_info):
     for payload in payloads:
         try:
             # Create a new context and socket for each test for robustness
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             socket.setsockopt(zmq.LINGER, 0)
             socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2 second timeout
             socket.setsockopt(zmq.SNDTIMEO, 2000)  # 2 second timeout for send
@@ -199,8 +199,6 @@ def test_service_protocols(service_id, service_info):
             logger.warning(f"[ERROR] | Payload: {payload} | Error: {str(e)[:50]}...")
             print(f"[ERROR] | Payload: {payload} | Error: {str(e)[:50]}...")
         finally:
-            socket.close()
-            context.term()
             time.sleep(0.5)  # Brief pause between attempts
     
     return successful_protocols

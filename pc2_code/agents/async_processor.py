@@ -144,7 +144,7 @@ class AsyncProcessor(BaseAgent):
     def __init__(self, port: int = 7101):
         super().__init__(name="AsyncProcessor", port=port)
         self.start_time = time.time()
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.resource_manager = ResourceManager()
         self.task_queue = TaskQueue()
         
@@ -364,14 +364,11 @@ class AsyncProcessor(BaseAgent):
         
         # Close all sockets
         if hasattr(self, 'pull_socket'):
-            self.pull_socket.close()
-        
+            self.pull_
         if hasattr(self, 'push_socket'):
-            self.push_socket.close()
-            
+            self.push_
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-            
+            self.health_
         # Clean up error reporting
         if hasattr(self, 'error_bus') and self.error_bus:
             from pc2_code.agents.error_bus_template import cleanup_error_reporting

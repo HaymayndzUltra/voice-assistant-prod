@@ -6,7 +6,7 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import subprocess
 import threading
@@ -49,10 +49,10 @@ def log_usage_analytics(user: str, command: str, status: str):
         # Fall back to local logging if PUB socket unavailable
         logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.env_helpers import get_env
 ZMQ_LOG_PORT = 5600  # Central log collector port
-log_context = zmq.Context()
+log_context = None  # Using pool
 log_socket = log_context.socket(zmq.PUB)
 log_collector_host = os.environ.get('LOG_COLLECTOR_HOST', 'localhost')
 log_socket.connect(f"tcp://{log_collector_host}:{ZMQ_LOG_PORT}")
@@ -120,7 +120,7 @@ class ExecutorAgent(BaseAgent):
         self.last_health_check = time.time()
         
         # Initialize ZMQ sockets - adding a socket for receiving commands
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.command_socket = self.context.socket(zmq.REP)
         bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.command_socket.bind(bind_address)
@@ -288,11 +288,11 @@ class ExecutorAgent(BaseAgent):
         # Close ZMQ sockets
         try:
             if hasattr(self, 'command_socket'):
-                self.command_socket.close()
+                self.command_
             if hasattr(self, 'feedback_socket'):
-                self.feedback_socket.close()
+                self.feedback_
             if hasattr(self, 'context'):
-                self.context.term()
+                self.
         except Exception as e:
             logging.error(f"[Executor] Error during cleanup: {e}")
         

@@ -22,7 +22,7 @@ Central command center for system orchestration, service discovery, maintenance,
 Provides comprehensive system management capabilities through ZMQ interface.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import os
@@ -112,7 +112,7 @@ class UnifiedSystemAgent(BaseAgent):
             logger.info("Initializing ZMQ context...")
 
     
-            self.context = zmq.Context()
+            self.context = None  # Using pool
 
     
             # ROUTER socket for main communication
@@ -251,7 +251,7 @@ class UnifiedSystemAgent(BaseAgent):
             logger.info("Initializing ZMQ context...")
 
     
-            self.context = zmq.Context()
+            self.context = None  # Using pool
 
     
             # ROUTER socket for main communication
@@ -372,7 +372,7 @@ class UnifiedSystemAgent(BaseAgent):
             
             # Initialize ZMQ context and sockets
             logger.info("Initializing ZMQ context...")
-            self.context = zmq.Context()
+            self.context = None  # Using pool
             
             # ROUTER socket for main communication
             logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
@@ -448,8 +448,7 @@ class UnifiedSystemAgent(BaseAgent):
             else:
                 logger.warning("No acknowledgment received for ready signal")
             
-            ready_socket.close()
-            
+            ready_
         except Exception as e:
             logger.error(f"Failed to send ready signal: {str(e)}")
     
@@ -675,10 +674,9 @@ class UnifiedSystemAgent(BaseAgent):
             logger.error(f"Fatal error in main loop: {str(e)}\n{traceback.format_exc()}")
             raise
         finally:
-            self.router_socket.close()
-            self.health_socket.close()
-            self.context.term()
-    
+            self.router_
+            self.health_
+            self.
     def _connect_to_agents(self):
         """Connect to all required agents."""
         try:
@@ -709,19 +707,15 @@ class UnifiedSystemAgent(BaseAgent):
                 
             # Close sockets
             if hasattr(self, 'router_socket'):
-                self.router_socket.close()
+                self.router_
             if hasattr(self, 'health_socket'):
-                self.health_socket.close()
-                
+                self.health_
             # Close agent sockets
             if hasattr(self, 'agent_sockets'):
                 for socket_name, socket in self.agent_sockets.items():
-                    socket.close()
-                    
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.context.term()
-                
+                self.
             logger.info("UnifiedSystemAgent cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

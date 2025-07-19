@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
@@ -237,7 +237,7 @@ class KnowledgeBase(BaseAgent):
             if hasattr(self, "error_bus_pub") and self.error_bus_pub:
                 self.error_bus_pub.close()
             if hasattr(self, "context") and self.context:
-                self.context.term()
+                self.
             logger.info("KnowledgeBase cleanup complete")
         except Exception as exc:
             logger.error(f"Cleanup error: {exc}")

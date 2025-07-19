@@ -6,7 +6,7 @@ Provides visual and voice confirmation feedback for command execution
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import threading
 import time
@@ -64,7 +64,7 @@ class FeedbackHandler(BaseAgent):
         self.feedback_received_count = 0
         self.last_feedback_time = None
         super().__init__(name=self.name, port=self.port)
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket for GUI feedback (visual)
         self.gui_socket = self.context.socket(zmq.PUB)
@@ -301,7 +301,7 @@ class FeedbackHandler(BaseAgent):
         self.last_gui_reconnect = current_time
         try:
             # Close and recreate socket
-            self.gui_socket.close()
+            self.gui_
             self.gui_socket = self.context.socket(zmq.PUB)
             self.gui_socket.bind(f"tcp://*:5578")
             self.gui_connected = True
@@ -319,7 +319,7 @@ class FeedbackHandler(BaseAgent):
         self.last_voice_reconnect = current_time
         try:
             # Close and recreate socket
-            self.voice_socket.close()
+            self.voice_
             self.voice_socket = self.context.socket(zmq.PUB)
             self.voice_socket.connect(f"tcp://{config.get('host', '127.0.0.1')}:5574")
             self.voice_connected = True
@@ -349,8 +349,8 @@ class FeedbackHandler(BaseAgent):
         time.sleep(0.2)  # Give thread time to exit
         
         try:
-            self.gui_socket.close()
-            self.voice_socket.close()
+            self.gui_
+            self.voice_
             logger.info("Feedback handler shutdown complete")
         except Exception as e:
             logger.error(f"Error during feedback handler shutdown: {e}")
@@ -431,11 +431,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

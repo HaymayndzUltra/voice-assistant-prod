@@ -7,7 +7,7 @@ import threading
 import time
 import logging
 import psutil
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List, Union
 import hashlib
@@ -435,11 +435,9 @@ class CacheManager(BaseAgent):
         
         # Close ZMQ sockets if they exist
         if hasattr(self, 'socket') and self.socket:
-            self.socket.close()
-        
+            self.
         if hasattr(self, 'context') and self.context:
-            self.context.term()
-            
+            self.
         # Call parent cleanup
         super().cleanup()
             

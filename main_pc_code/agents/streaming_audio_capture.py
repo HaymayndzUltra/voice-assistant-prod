@@ -246,23 +246,6 @@ class StreamingAudioCapture(BaseAgent):
                 time.sleep(1)
         return False
 
-    def _health_check_loop(self):
-        logger.info("Starting health check loop")
-        while self.running:
-            try:
-                if self.health_socket and self.health_socket.poll(100) != 0:
-                    message = self.health_socket.recv() if self.health_socket else None
-                    logger.debug(f"Received health check request: {message}")
-                    response = self._get_health_status()
-                    if self.health_socket:
-                        self.health_socket.send_json(response)
-                        logger.debug("Sent health check response")
-            except zmq.error.Again:
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-            time.sleep(0.1)
-
     def _get_health_status(self):
         return {
             'status': 'ok',

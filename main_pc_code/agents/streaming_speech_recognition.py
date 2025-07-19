@@ -10,7 +10,7 @@ Features:
 - Multiple language support
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
@@ -91,7 +91,7 @@ class ResourceManager:
         self.default_batch_size = DEFAULT_BATCH_SIZE
         self.max_batch_size = MAX_BATCH_SIZE
         self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Error bus connection
         self.error_bus_port = int(config.get("error_bus_port", 7150))
@@ -152,7 +152,7 @@ class StreamingSpeechRecognition(BaseAgent):
         self.process_thread = None
 
         # Initialize ZMQ context
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
 
         # Initialize sockets
         self._init_sockets()
@@ -806,30 +806,23 @@ class StreamingSpeechRecognition(BaseAgent):
         
         # Close all ZMQ sockets
         if hasattr(self, 'pub_socket') and self.pub_socket:
-            self.pub_socket.close()
-        
+            self.pub_
         if hasattr(self, 'sub_socket') and self.sub_socket:
-            self.sub_socket.close()
-        
+            self.sub_
         if hasattr(self, 'wake_word_socket') and self.wake_word_socket:
-            self.wake_word_socket.close()
-        
+            self.wake_word_
         if hasattr(self, 'vad_socket') and self.vad_socket:
-            self.vad_socket.close()
-        
+            self.vad_
         if hasattr(self, 'health_socket') and self.health_socket:
-            self.health_socket.close()
-        
+            self.health_
         if hasattr(self, 'model_manager_socket') and self.model_manager_socket:
-            self.model_manager_socket.close()
-        
+            self.model_manager_
         if hasattr(self, 'request_coordinator_connection') and self.request_coordinator_connection:
             self.request_coordinator_connection.close()
         
         # Terminate ZMQ context
         if self.zmq_context:
-            self.zmq_context.term()
-        
+            self.zmq_
         logger.info("StreamingSpeechRecognition cleaned up successfully")
 
     def run(self):

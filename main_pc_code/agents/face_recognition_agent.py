@@ -22,7 +22,7 @@ from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 import cv2
 import numpy as np
 import insightface
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any
@@ -479,8 +479,8 @@ class FaceRecognitionAgent(BaseAgent):
     def _init_zmq(self):
         """Initialize ZMQ context and sockets."""
         try:
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REP)
+            self.context = None  # Using pool
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
             self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -677,12 +677,11 @@ class FaceRecognitionAgent(BaseAgent):
         logging.info("Stopping FaceRecognitionAgent")
         self.running = False
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'pub_socket'):
-            self.pub_socket.close()
+            self.pub_
         if hasattr(self, 'context'):
-            self.context.term()
-
+            self.
     def health_check(self):
         """Perform a health check and return status."""
         try:
@@ -747,11 +746,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

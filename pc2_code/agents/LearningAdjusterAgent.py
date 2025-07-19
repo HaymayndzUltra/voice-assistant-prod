@@ -147,29 +147,6 @@ class LearningAdjusterAgent(BaseAgent):
         self.health_thread.start()
         logger.info("Health check thread started")
     
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
-    
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
         # Call parent implementation first

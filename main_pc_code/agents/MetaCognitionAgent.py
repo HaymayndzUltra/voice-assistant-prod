@@ -8,7 +8,7 @@ Responsible for:
 - Providing insights into system behavior
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -111,10 +111,10 @@ class MetaCognitionAgent(BaseAgent):
 
     def _init_components(self):
         """Initialize all components of the MetaCognitionAgent."""
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Main REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
@@ -689,7 +689,7 @@ class MetaCognitionAgent(BaseAgent):
         # Close sockets in a try-finally block to ensure they're all closed
         try:
             if hasattr(self, 'socket'):
-                self.socket.close()
+                self.
                 logger.debug("Closed main socket")
             
             if hasattr(self, 'cot_sub'):
@@ -701,18 +701,18 @@ class MetaCognitionAgent(BaseAgent):
                 logger.debug("Closed voting subscription socket")
             
             if hasattr(self, 'kb_socket'):
-                self.kb_socket.close()
+                self.kb_
                 logger.debug("Closed knowledge base socket")
             
             if hasattr(self, 'request_coordinator_socket'):
-                self.request_coordinator_socket.close()
+                self.request_coordinator_
                 logger.debug("Closed coordinator socket")
         except Exception as e:
             logger.error(f"Error during socket cleanup: {e}")
         finally:
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.context.term()
+                self.
                 logger.debug("Terminated ZMQ context")
         
         logger.info("MetaCognitionAgent stopped successfully")

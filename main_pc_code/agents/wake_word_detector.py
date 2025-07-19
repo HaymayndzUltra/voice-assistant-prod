@@ -19,7 +19,7 @@ import json
 import os
 import logging
 import threading
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import pickle
 from datetime import datetime
@@ -86,7 +86,7 @@ class WakeWordDetector(BaseAgent):
         self.vad_last_update = 0        # Last time VAD status was updated
         
         # Initialize ZMQ
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
         self._init_zmq()
         
         # Initialize Porcupine
@@ -419,24 +419,19 @@ class WakeWordDetector(BaseAgent):
         try:
             # Close ZMQ sockets
             if hasattr(self, 'audio_socket') and self.audio_socket:
-                self.audio_socket.close()
-            
+                self.audio_
             if hasattr(self, 'pub_socket') and self.pub_socket:
-                self.pub_socket.close()
-            
+                self.pub_
             if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_socket.close()
-            
+                self.health_
             if hasattr(self, 'vad_socket') and self.vad_socket:
-                self.vad_socket.close()
-            
+                self.vad_
             if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
                 self.error_bus_pub.close()
             
             # Terminate ZMQ context after all sockets are closed
             if hasattr(self, 'zmq_context') and self.zmq_context:
-                self.zmq_context.term()
-            
+                self.zmq_
             logger.info("Resources cleaned up")
         except Exception as e:
             logger.error(f"Error in cleanup: {str(e)}")

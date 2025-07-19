@@ -16,7 +16,7 @@ Remote Connector / API Client Agent
 - Uses centralized configuration system
 - Implements response caching for improved performance
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -65,7 +65,7 @@ class RemoteConnectorAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="RemoteConnectorAgent")
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
@@ -444,8 +444,7 @@ class RemoteConnectorAgent(BaseAgent):
         self.receiver.close()
         self.task_router.close()
         self.model_status.close()
-        self.context.term()
-        
+        self.
         logger.info("Remote Connector Agent stopped")
 
     def report_error(self, error_type, message, severity="ERROR", context=None):

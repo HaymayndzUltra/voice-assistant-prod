@@ -6,7 +6,7 @@ import time
 import logging
 import threading
 import argparse
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from main_pc_code.utils.network import get_host
 import psutil
 import heapq
@@ -170,7 +170,7 @@ class RequestCoordinator(BaseAgent):
         port = kwargs.get('port', DEFAULT_PORT)
         super().__init__(name="RequestCoordinator", port=port, health_check_port=port + 1)
 
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self._init_zmq_sockets()
 
         # Error Bus PUB socket (connect to PC2 error bus)
@@ -282,8 +282,8 @@ class RequestCoordinator(BaseAgent):
         """Listen for language analysis results from StreamingLanguageAnalyzer"""
         try:
             # Create subscription socket
-            context = zmq.Context()
-            socket = context.socket(zmq.SUB)
+            context = None  # Using pool
+            socket = get_sub_socket(endpoint).socket
             if SECURE_ZMQ:
                 socket = configure_secure_client(socket)
                 
@@ -346,9 +346,7 @@ class RequestCoordinator(BaseAgent):
             # Clean up socket resources
             try:
                 if socket:
-                    socket.close()
                 if context:
-                    context.term()
             except Exception as cleanup_error:
                 logger.error(f"Error cleaning up language analysis socket: {cleanup_error}")
                 
@@ -817,7 +815,7 @@ class RequestCoordinator(BaseAgent):
         for sock in [self.main_socket, self.suggestion_socket, self.interrupt_socket, self.memory_socket, self.tts_socket, self.cot_socket, self.got_tot_socket]:
             if sock and not sock.closed:
                 sock.close()
-        self.context.term()
+        self.
         logger.info("RequestCoordinator stopped.")
 
     def run(self):
@@ -879,11 +877,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

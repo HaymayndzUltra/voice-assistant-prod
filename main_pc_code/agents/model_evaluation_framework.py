@@ -12,7 +12,7 @@ import time
 import logging
 import threading
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
 import psutil
 from pathlib import Path
@@ -72,7 +72,7 @@ class ModelEvaluationFramework(BaseAgent):
         self.db_path = EVAL_DB_PATH
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self._setup_zmq()
         self.metrics = {
             'performance_logs': 0,
@@ -148,7 +148,7 @@ class ModelEvaluationFramework(BaseAgent):
             self.report_error("database_init_error", str(e), ErrorSeverity.ERROR)
 
     def _setup_zmq(self):
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.bind(f"tcp://*:{self.port}")
         self.health_socket = self.context.socket(zmq.REP)
         self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
@@ -392,9 +392,9 @@ class ModelEvaluationFramework(BaseAgent):
         logger.info("Cleaning up resources...")
         self.running = False
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
+            self.health_
         if hasattr(self, 'error_bus_pub'):
             self.error_bus_pub.close()
         super().cleanup()

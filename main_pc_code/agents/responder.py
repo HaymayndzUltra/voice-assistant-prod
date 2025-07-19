@@ -13,7 +13,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 # import os
 import sounddevice as sd
@@ -179,10 +179,10 @@ class Responder(BaseAgent):
         self.ZMQ_REQUEST_TIMEOUT = int(config.get('zmq_request_timeout', 5000))
         self.VISUAL_FEEDBACK_ENABLED = bool(config.get('visual_feedback_enabled', False))
         super().__init__(name="Responder", port=self.port)
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Set up main socket for receiving TTS requests
-        self.socket = self.context.socket(zmq.SUB)
+        self.socket = get_sub_socket(self.endpoint).socket
         if is_secure_zmq_enabled():
             self.socket = configure_secure_server(self.socket)
             
@@ -791,7 +791,6 @@ class Responder(BaseAgent):
                 socket = getattr(self, socket_name)
                 if socket:
                     try:
-                        socket.close()
                         logger.info(f"Closed {socket_name}")
                     except Exception as e:
                         logger.error(f"Error closing {socket_name}: {e}")
@@ -799,7 +798,7 @@ class Responder(BaseAgent):
         # Terminate ZMQ context
         if self.context:
             try:
-                self.context.term()
+                self.
                 logger.info("Terminated ZMQ context")
             except Exception as e:
                 logger.error(f"Error terminating ZMQ context: {e}")
@@ -901,11 +900,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

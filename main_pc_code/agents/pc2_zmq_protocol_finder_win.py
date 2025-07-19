@@ -1,5 +1,5 @@
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -97,11 +97,11 @@ def find_working_health_check(service):
     working_protocols = []
     
     # Create ZMQ context
-    context = zmq.Context()
+    context = None  # Using pool
     
     for variation in HEALTH_CHECK_VARIATIONS:
         # Create socket for this attempt
-        socket = context.socket(zmq.REQ)
+        socket = get_req_socket(endpoint).socket
         socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.setsockopt(zmq.LINGER, 0)  # Don't keep messages in memory after close
         socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
@@ -148,8 +148,6 @@ def find_working_health_check(service):
             logging.error(f"Error communicating with {model_id}: {str(e)}")
             print(f"[ERROR] | Payload: {payload} | Error: {str(e)}")
         finally:
-            socket.close()
-        
         # Brief pause between attempts
         time.sleep(0.5)
     

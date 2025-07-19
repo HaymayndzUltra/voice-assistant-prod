@@ -17,7 +17,7 @@ import time
 import logging
 import threading
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
 import psutil
 from pathlib import Path
@@ -603,11 +603,11 @@ class LearningOpportunityDetector(BaseAgent):
     def cleanup(self):
         self.running = False
         try:
-            self.umra_socket.close()
-            self.coordinator_socket.close()
-            self.los_socket.close()
+            self.umra_
+            self.coordinator_
+            self.los_
             self.error_bus_pub.close()
-            self.context.term()
+            self.
         except Exception as e:
             logger.error(f"Cleanup error: {e}")
         logger.info("LearningOpportunityDetector shutdown complete")

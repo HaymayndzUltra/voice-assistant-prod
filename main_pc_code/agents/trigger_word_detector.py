@@ -15,7 +15,7 @@ Trigger Word Detector
 - More reliable than audio-based wake word detection
 - Supports multiple trigger phrases in Filipino and English
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 
@@ -60,7 +60,7 @@ class TriggerWordDetector(BaseAgent):
         super().__init__(port=port, name="TriggerWordDetector")
         """Initialize the trigger word detector"""
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive transcribed speech from listener
         self.listener_sub = self.context.socket(zmq.SUB)
@@ -319,7 +319,7 @@ class TriggerWordDetector(BaseAgent):
         
         self.publisher.close()
         self.listener_sub.close()
-        self.context.term()
+        self.
         logger.info("Trigger Word Detector stopped")
 
 

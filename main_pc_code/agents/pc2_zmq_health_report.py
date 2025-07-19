@@ -4,7 +4,7 @@ import os
 import sys
 import json
 import time
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import re
 import logging
 from pathlib import Path
@@ -123,8 +123,8 @@ def check_zmq_service(service_info, timeout_ms=5000, retries=2):
     # Try with retries
     for attempt in range(1, retries+1):
         # Create new context and socket for each attempt
-        context = zmq.Context()
-        socket = context.socket(zmq.REQ)
+        context = None  # Using pool
+        socket = get_req_socket(endpoint).socket
         socket.setsockopt(zmq.LINGER, 0)
         socket.setsockopt(zmq.RCVTIMEO, timeout_ms)
         socket.setsockopt(zmq.SNDTIMEO, timeout_ms)
@@ -190,9 +190,6 @@ def check_zmq_service(service_info, timeout_ms=5000, retries=2):
             logger.error(f"Error checking {model_id}: {e}")
             logger.debug(traceback.format_exc())
         finally:
-            socket.close()
-            context.term()
-            
             # If successful, no need to retry
             if result["status"] == "healthy":
                 break

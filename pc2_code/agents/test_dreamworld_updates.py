@@ -17,7 +17,7 @@ logging.basicConfig(
 
 class DreamWorldTester:
     def __init__(self):
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.sub_socket = self.context.socket(zmq.SUB)
         self.sub_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5599")  # New port
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -40,9 +40,8 @@ class DreamWorldTester:
                 break
 
     def cleanup(self):
-        self.sub_socket.close()
-        self.context.term()
-
+        self.sub_
+        self.
 def main():
     tester = DreamWorldTester()
     try:

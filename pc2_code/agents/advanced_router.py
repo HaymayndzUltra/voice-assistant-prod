@@ -11,7 +11,7 @@ input, allowing agents to determine the most appropriate model or processing pat
 import re
 import json
 import logging
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import os
 import sys
@@ -498,30 +498,6 @@ class AdvancedRouterAgent(BaseAgent):
             self.running = False
             self.cleanup()
     
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                self.report_error("HEALTH_CHECK_ERROR", str(e))
-                time.sleep(1)  # Sleep longer on error
-    
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info("Cleaning up resources...")
@@ -529,7 +505,7 @@ class AdvancedRouterAgent(BaseAgent):
         # Close all sockets
         if hasattr(self, 'socket'):
             try:
-                self.socket.close()
+                self.
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
@@ -537,7 +513,7 @@ class AdvancedRouterAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")

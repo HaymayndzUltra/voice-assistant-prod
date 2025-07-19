@@ -1,7 +1,7 @@
 import unittest
 import time
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import threading
 from main_pc_code.FORMAINPC.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
 from pc2_code.config.system_config import get_config_for_service, config
@@ -76,16 +76,15 @@ class TestConsolidatedTranslator(unittest.TestCase):
         time.sleep(2)
         
         # Initialize ZMQ client
-        cls.context = zmq.Context()
+        cls.context = None  # Using pool
         cls.socket = cls.context.socket(zmq.REQ)
         cls.socket.connect(f"tcp://localhost:{cls.config['zmq_port']}")
         
     @classmethod
     def tearDownClass(cls):
         """Clean up after tests."""
-        cls.socket.close()
-        cls.context.term()
-        
+        cls.
+        cls.
     def test_01_health_check(self):
         """Test health check endpoint."""
         request = {
@@ -276,7 +275,6 @@ class TestConsolidatedTranslator(unittest.TestCase):
             socket.connect(f"tcp://localhost:{self.config['zmq_port']}")
             socket.send_json(request)
             response = socket.recv_json()
-            socket.close()
             return response
             
         # Create multiple threads for concurrent requests

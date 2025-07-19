@@ -37,7 +37,7 @@ from common.core.base_agent import BaseAgent
 import time
 import logging
 import threading
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import yaml
 from datetime import datetime
@@ -228,8 +228,8 @@ class ToneDetector(BaseAgent):
         
         try:
             # Use the partial transcripts port from streaming system
-            context = zmq.Context()
-            socket = context.socket(zmq.SUB)
+            context = None  # Using pool
+            socket = get_sub_socket(endpoint).socket
             host = config.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             socket.connect(f"tcp://{host}:5575")  # Partial transcripts port
             socket.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -272,8 +272,8 @@ class ToneDetector(BaseAgent):
     
     def _connect_to_tagalog_analyzer(self):
         try:
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             host = config.get("tagalog_analyzer_host", get_env("BIND_ADDRESS", "0.0.0.0"))
@@ -596,7 +596,7 @@ class ToneDetector(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.context.term()
+                    self.
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")

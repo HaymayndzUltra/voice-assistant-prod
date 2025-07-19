@@ -18,7 +18,7 @@ Extends the custom command handler with advanced features:
 4. Advanced coordination with Jarvis Memory Agent
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -779,10 +779,9 @@ class AdvancedCommandHandler(BaseAgent, CustomCommandHandler):
         
         # Close sockets
         if hasattr(self, 'executor_socket'):
-            self.executor_socket.close()
+            self.executor_
         if hasattr(self, 'coordinator_socket'):
-            self.coordinator_socket.close()
-            
+            self.coordinator_
         # Call parent cleanup
         super().cleanup()
         logger.info("AdvancedCommandHandler shutdown complete")

@@ -3,7 +3,7 @@ Test suite for Model Management Hierarchy components
 Tests the Enhanced Model Router, Remote Connector Agent, and TinyLlama Service
 """
 import unittest
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import threading
@@ -90,7 +90,7 @@ class TestModelManagementHierarchy(unittest.TestCase):
     
     def setUp(self):
         """Set up each test"""
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Create sockets for each component
         self.router_socket = self.context.socket(zmq.REQ)
@@ -104,11 +104,10 @@ class TestModelManagementHierarchy(unittest.TestCase):
     
     def tearDown(self):
         """Clean up each test"""
-        self.router_socket.close()
-        self.connector_socket.close()
-        self.tinyllama_socket.close()
-        self.context.term()
-    
+        self.router_
+        self.connector_
+        self.tinyllama_
+        self.
     def test_router_health_check(self):
         """Test router health check"""
         logger.info("Testing router health check")

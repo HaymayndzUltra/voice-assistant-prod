@@ -25,7 +25,7 @@ import json
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import threading
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import psutil
 import sqlite3
 import redis
@@ -162,8 +162,8 @@ class SystemDigitalTwinAgent(BaseAgent):
     
     def _setup_zmq(self):
         """Set up ZMQ sockets."""
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REP)
+        self.context = None  # Using pool
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
         
         if is_secure_zmq_enabled():
@@ -888,9 +888,9 @@ class SystemDigitalTwinAgent(BaseAgent):
         if self.metrics_thread and self.metrics_thread.is_alive():
             self.metrics_thread.join(timeout=2.0)
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'context'):
-            self.context.term()
+            self.
         super().cleanup()
         logger.info(f"{self.name} cleanup complete.")
 

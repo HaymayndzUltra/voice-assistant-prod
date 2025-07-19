@@ -3,7 +3,7 @@ Streaming Language Analyzer Module
 Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import logging
 import re
@@ -605,27 +605,27 @@ class StreamingLanguageAnalyzer(BaseAgent):
         logger.info("Cleaning up resources")
         try:
             if hasattr(self, 'sub_socket') and self.sub_socket:
-                self.sub_socket.close()
+                self.sub_
                 logger.info("Closed subscription socket")
                 
             if hasattr(self, 'pub_socket') and self.pub_socket:
-                self.pub_socket.close()
+                self.pub_
                 logger.info("Closed publisher socket")
                 
             if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
                 
             if hasattr(self, 'tagabert_socket') and self.tagabert_socket:
-                self.tagabert_socket.close()
+                self.tagabert_
                 logger.info("Closed TagaBERTa socket")
                 
             if hasattr(self, 'translation_socket') and self.translation_socket:
-                self.translation_socket.close()
+                self.translation_
                 logger.info("Closed Translation socket")
                 
             if hasattr(self, 'context') and self.context:
-                self.context.term()
+                self.
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")

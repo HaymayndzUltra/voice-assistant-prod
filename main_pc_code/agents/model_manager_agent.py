@@ -524,32 +524,6 @@ class ModelManagerAgent(BaseAgent):
                 self.vram_logger.error(traceback.format_exc())
                 time.sleep(1)
     
-    def _health_check_loop(self):
-        """Enhanced health check loop with service verification."""
-        while self.running:
-            try:
-                # Check local model health
-                self.health_check_models(publish_update=True)
-                
-                # Verify PC2 services
-                service_status = self.verify_pc2_services()
-                
-                # Update service status in model registry
-                for service_id, is_healthy in service_status.items():
-                    if service_id in self.models:
-                        self.models[service_id]['healthy'] = is_healthy
-                        
-                # Publish health status
-                self._publish_status_update()
-                
-                # Sleep until next check
-                time.sleep(5)
-                
-            except Exception as e:
-                self.logger.error(f"Error in health check loop: {e}")
-                self.logger.error(traceback.format_exc())
-                time.sleep(5)  # Sleep before retrying
-    
     def _health_response_loop(self):
         """Background thread for handling health check requests from the health checker."""
         self.logger.info("Starting health response loop on port %s", self.health_check_port)
@@ -4584,31 +4558,6 @@ class ModelManagerAgent(BaseAgent):
             self.logger.error(traceback.format_exc())
             
         return service_status
-
-    def _health_check_loop(self):
-        """Enhanced health check loop with service verification."""
-        while self.running:
-            try:
-                # Check local model health
-                self.health_check_models(publish_update=True)
-                
-                # Verify PC2 services
-                service_status = self.verify_pc2_services()
-                
-                # Update service status in model registry
-                for service_id, is_healthy in service_status.items():
-                    if service_id in self.models:
-                        self.models[service_id]['healthy'] = is_healthy
-                        
-                # Publish health status
-                self._publish_status_update()
-                
-                # Sleep until next check
-                time.sleep(5)
-                
-            except Exception as e:
-                self.logger.error(f"Error in health check loop: {e}")
-                self.logger.error(traceback.format_exc())
 
     def report_vram_metrics_to_sdt(self):
         """

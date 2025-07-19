@@ -1,5 +1,5 @@
 import logging
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import uuid
 import json
@@ -474,7 +474,6 @@ class ConnectionManager:
         """Close all sockets and clean up resources."""
         for service_name, socket in list(self.sockets.items()):
             try:
-                socket.close()
                 self.logger.info(f"Socket for {service_name} closed")
             except Exception as e:
                 self.logger.error(f"Error closing socket for {service_name}: {e}")
@@ -1769,7 +1768,7 @@ class TranslationService(BaseAgent):
     
     def _setup_sockets(self):
         """Set up ZMQ sockets with CurveZMQ security if enabled."""
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         
         # Apply CurveZMQ security if enabled
         if self.secure_zmq:
@@ -1996,8 +1995,7 @@ class TranslationService(BaseAgent):
         """Clean up resources."""
         try:
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-                
+                self.
             # Clean up engine clients
             for engine_name, engine in self.engine_manager.engines.items():
                 if hasattr(engine, 'cleanup'):

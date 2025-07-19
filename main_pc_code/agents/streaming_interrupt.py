@@ -14,7 +14,7 @@ Streaming Interrupt Detection Module
 - Uses Vosk (lightweight, local, supports Tagalog/English)
 - Sends interrupt signal to main state machine via ZMQ
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import queue
 import sounddevice as sd
 import vosk

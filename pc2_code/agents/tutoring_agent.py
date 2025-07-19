@@ -3,7 +3,7 @@ import yaml
 import os
 import time
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import threading
 import sys
 from datetime import datetime
@@ -148,30 +148,6 @@ class AdvancedTutoringAgent(BaseAgent):
         self.health_thread.daemon = True
         self.health_thread.start()
         logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                self.report_error("HEALTH_CHECK_ERROR", str(e))
-                time.sleep(1)  # Sleep longer on error
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -403,7 +379,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close all sockets
         if hasattr(self, 'socket'):
             try:
-                self.socket.close()
+                self.
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
@@ -411,7 +387,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
@@ -419,7 +395,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close model socket
         if hasattr(self, 'model_socket'):
             try:
-                self.model_socket.close()
+                self.model_
                 logger.info("Closed model socket")
             except Exception as e:
                 logger.error(f"Error closing model socket: {e}")

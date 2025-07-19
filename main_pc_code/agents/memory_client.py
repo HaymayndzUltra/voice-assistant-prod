@@ -8,7 +8,7 @@ allowing other agents to store and retrieve memories.
 
 import os
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import time
 from typing import Dict, Any, Optional, List, Union
@@ -124,8 +124,7 @@ class MemoryClient(BaseAgent):
             
             # Close existing socket if any
             if self.orchestrator_socket:
-                self.orchestrator_socket.close()
-                
+                self.orchestrator_
             self.orchestrator_socket = self.context.socket(zmq.REQ)
             self.orchestrator_socket.connect(connection_str)
             self.orchestrator_socket.setsockopt(zmq.LINGER, 0)
@@ -681,11 +680,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             

@@ -12,7 +12,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 Streaming Partial Transcripts Module
 Processes audio chunks and provides partial transcripts before full processing
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import whisper
@@ -72,7 +72,7 @@ MODEL_SIZE = "base"  # Use smaller model for partials to reduce latency
 class StreamingPartialTranscripts(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
         super().__init__(port=port, name="StreamingPartialTranscripts")
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.sub_socket = self.context.socket(zmq.SUB)
         self.sub_socket.connect(f"tcp://localhost:{ZMQ_SUB_PORT}")
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")

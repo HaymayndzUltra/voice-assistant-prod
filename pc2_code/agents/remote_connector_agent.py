@@ -6,7 +6,7 @@ Remote Connector / API Client Agent
 - Uses centralized configuration system
 - Implements response caching for improved performance
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -125,7 +125,7 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_port = self.port + 1
 
         # Initialize ZMQ Context
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
         # Socket to receive requests (main REP socket)
         self.receiver = self.context.socket(zmq.REP)
@@ -202,31 +202,6 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True) # Set as daemon
         self.health_thread.start()
         logger.info("Health check thread started")
-
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-
-        while self.running: # Use self.running from BaseAgent
-            try:
-                # Poll for health check requests with timeout
-                if self.health_socket.poll(100) == 0: # 100ms timeout, using zmq.POLLIN is implicit
-                    continue
-
-                # Receive request (don't care about content)
-                _ = self.health_socket.recv()
-
-                # Get health data (calls the overridden _get_health_status)
-                health_data = self._get_health_status()
-
-                # Send response
-                self.health_socket.send_json(health_data)
-
-                time.sleep(0.01) # Very small sleep to prevent CPU hogging in fast loop
-
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                time.sleep(1)  # Sleep longer on error
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent. Overrides BaseAgent's method."""
@@ -780,7 +755,7 @@ class RemoteConnectorAgent(BaseAgent):
         # Terminate ZMQ context
         try:
             if hasattr(self, 'context') and self.context and not self.context.closed:
-                self.context.term()
+                self.
                 logger.info("ZMQ context terminated.")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)
@@ -836,7 +811,6 @@ class RemoteConnectorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"An unexpected error occurred while connecting to {service_name}: {e}", exc_info=True)
             if socket and not socket.closed:
-                socket.close()
             return None
 
 

@@ -1,6 +1,6 @@
 import sys
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -48,10 +48,10 @@ class ProactiveAgent(BaseAgent):
         self.tasks_file = config.get("tasks_file", "tasks.json")
         
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Main REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.bind(f"tcp://*:{self.port}")
@@ -336,18 +336,15 @@ class ProactiveAgent(BaseAgent):
         try:
             # Close ZMQ sockets
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
-                self.coordinator_socket.close()
-            
+                self.coordinator_
             if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
                 self.error_bus_pub.close()
             
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-            
+                self.
             logger.info("Resources cleaned up")
         except Exception as e:
             logger.error(f"Error in cleanup: {str(e)}")

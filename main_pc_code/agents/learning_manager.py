@@ -18,7 +18,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 - Coordinating with other agents for continuous learning
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -440,10 +440,9 @@ class LearningManager(BaseAgent):
         self.running = False
         
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'health_pub_socket'):
-            self.health_pub_socket.close()
-        
+            self.health_pub_
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
         
@@ -474,10 +473,9 @@ class LearningManager(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-            self.socket.close()
+            self.
         if hasattr(self, 'health_pub_socket'):
-            self.health_pub_socket.close()
-            
+            self.health_pub_
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)

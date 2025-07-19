@@ -20,7 +20,7 @@ nitors system resources and agent performance
 
 import logging
 import socket
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 
 # Import path manager for containerization-friendly paths
@@ -109,13 +109,13 @@ class PredictiveHealthMonitor(BaseAgent):
         # Initialize ZMQ
 
     
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
     
         # Socket to receive requests
 
     
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
 
     
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -301,7 +301,7 @@ class PredictiveHealthMonitor(BaseAgent):
             logger.warning("This machine is not in the distributed configuration")
         
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
@@ -1226,8 +1226,8 @@ class PredictiveHealthMonitor(BaseAgent):
         try:
             # Create a new context and socket for each health check
             # This prevents socket contention issues
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             
             # Set timeout values to prevent hanging
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -1246,13 +1246,9 @@ class PredictiveHealthMonitor(BaseAgent):
             # Check response
             if "status" in response and response["status"] == "ok":
                 logger.debug(f"Agent {agent_name} health check passed")
-                socket.close()
-                context.term()
                 return True
             else:
                 logger.warning(f"Agent {agent_name} returned unexpected health status: {response}")
-                socket.close()
-                context.term()
                 return False
                 
         except zmq.error.Again:
@@ -1267,8 +1263,6 @@ class PredictiveHealthMonitor(BaseAgent):
         finally:
             # Ensure we clean up the socket resources even if an exception occurs
             try:
-                socket.close()
-                context.term()
             except:
                 pass
             return False  # Ensure we always return a boolean
@@ -1607,11 +1601,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
+                self.
             if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
+                self.
             # Close any open file handles
             # [Add specific resource cleanup here]
             
