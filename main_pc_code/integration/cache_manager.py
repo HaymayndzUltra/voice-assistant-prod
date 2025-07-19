@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Constants
 REDIS_HOST = 'localhost'

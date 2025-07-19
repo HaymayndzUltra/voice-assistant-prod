@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 WP-10 Security & Authentication Migration Script
 Migrates agents to use authentication, encryption, and access control

@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 NLLB Translation Quality Tester
 ------------------------------
 Comprehensive test suite for evaluating the NLLB translation adapter quality.

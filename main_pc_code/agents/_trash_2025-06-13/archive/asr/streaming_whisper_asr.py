@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Streaming Whisper ASR Module (CTranslate2, Real-Time)
 Subscribes to audio chunks from streaming_audio_capture.py via ZMQ and transcribes in near real-time.

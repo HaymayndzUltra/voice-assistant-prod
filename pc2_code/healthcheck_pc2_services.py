@@ -3,6 +3,7 @@ import json
 import time
 from datetime import datetime
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # PC2 Services with correct port numbers from SOT file
 PC2_SERVICES = [

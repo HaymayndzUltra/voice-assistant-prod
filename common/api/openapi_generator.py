@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 WP-06 OpenAPI Documentation Generator
 Generates OpenAPI/Swagger documentation for API contracts
 """

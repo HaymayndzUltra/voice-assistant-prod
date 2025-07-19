@@ -21,6 +21,7 @@ import tempfile
 import socket
 import yaml
 import pickle
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import Selenium for browser automation
 from selenium import webdriver

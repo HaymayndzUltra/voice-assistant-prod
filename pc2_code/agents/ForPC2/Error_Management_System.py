@@ -1,4 +1,5 @@
 # File: main_pc_code/agents/error_management_system.py
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #
 # Ito ang FINAL at PINAHUSAY na bersyon ng Error Management System.
 # Pinagsasama nito ang error collection, log scanning, health monitoring,
@@ -349,7 +350,7 @@ from common.env_helpers import get_env
             socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
             
             # Get SystemDigitalTwin address from environment or use default
-            sdt_host = os.environ.get('MAINPC_IP', '192.168.100.10')
+            sdt_host = get_service_ip("mainpc")
             sdt_port = int(os.environ.get('SYSTEM_DIGITAL_TWIN_PORT', 7120))
             socket.connect(f"tcp://{sdt_host}:{sdt_port}")
             

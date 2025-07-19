@@ -6,6 +6,7 @@ import random
 import threading
 from datetime import datetime
 from typing import Dict, Any
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path for common_utils import
 import sys

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Context Summarizer Agent - For maintaining context in conversations with large LLMs
 # Maintains a rolling summary of code, discussions, errors, and previous interactions
 # Uses compression techniques to maximize context window efficiency

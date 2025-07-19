@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import get_service_host, get_service_port
 

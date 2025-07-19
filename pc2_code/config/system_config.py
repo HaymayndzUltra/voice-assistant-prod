@@ -1,4 +1,5 @@
 # system_config.py - Centralized configuration for Voice Assistant (PC2)
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 import os
 from typing import Dict, Any, Optional
@@ -16,8 +17,8 @@ pc2_settings = {
     "machine_role": "pc2_worker",
     "log_level": "INFO",
     "logs_dir": "logs",
-    "main_pc_ip": "192.168.100.16",
-    "pc2_ip": "192.168.100.17",
+    "main_pc_ip": get_service_ip("mainpc"),
+    "pc2_ip": get_service_ip("pc2"),
     "connection": {
         "timeout": 10.0,
         "retry_attempts": 3,

@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:

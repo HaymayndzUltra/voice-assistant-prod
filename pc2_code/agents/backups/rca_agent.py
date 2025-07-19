@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Root Cause Analysis (RCA) Agent
 -------------------------------
@@ -76,7 +77,7 @@ SELF_HEALING_PORT = 5614  # Port for Self-Healing Agent on PC2
 SCAN_INTERVAL = 60  # Scan logs every 60 seconds
 ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
 ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
-PC2_IP = "192.168.100.17"  # PC2 IP address
+PC2_IP = get_service_ip("pc2")  # PC2 IP address
 
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""

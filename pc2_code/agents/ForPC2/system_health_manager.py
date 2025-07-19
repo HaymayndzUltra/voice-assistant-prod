@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 System Health Manager
 
@@ -82,7 +83,7 @@ class SystemHealthManager(BaseAgent):
         
         # Error bus configuration
         self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         
         # ZMQ setup

@@ -1,4 +1,5 @@
 import sys
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.argv = [sys.argv[0]]
 import pytest
 import time

@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 TinyLLama Service
 - Provides access to the TinyLLama model via ZMQ
 - Supports on-demand loading/unloading for VRAM management
@@ -57,8 +58,8 @@ config = load_config()
 
 # ZMQ Configuration
 ZMQ_BIND_ADDRESS = "0.0.0.0"  # Listen on all interfaces
-PC2_IP = "192.168.100.17"  # PC2's IP address
-MAIN_PC_IP = "192.168.100.16"  # Main PC's IP address
+PC2_IP = get_service_ip("pc2")  # PC2's IP address
+MAIN_PC_IP = get_service_ip("mainpc")  # Main PC's IP address
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
@@ -245,7 +246,7 @@ class TinyLlamaService(BaseAgent):
         
         # Setup error reporting
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

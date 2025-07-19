@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Direct SystemDigitalTwin Command Test
 
@@ -47,7 +48,7 @@ try:
             "payload": {
                 "name": args.name,
                 "location": "CLI-Test",
-                "ip": "127.0.0.1",
+                "ip": "localhost",
                 "port": 9999,
                 "source": "direct_command_test"
             }

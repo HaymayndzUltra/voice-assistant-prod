@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path

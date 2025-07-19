@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add the project's main_pc_code directory to the Python path
 import sys
@@ -84,7 +85,7 @@ class Node:
 
         # --- Removed invalid error_bus wiring lines that belonged to Agent ---
         # self.error_bus_port = 7150
-        # self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        # self.error_bus_host = get_service_ip("pc2")
         # self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         # self.error_bus_pub = self.context.socket(zmq.PUB)
         # self.error_bus_pub.connect(self.error_bus_endpoint)

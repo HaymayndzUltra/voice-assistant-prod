@@ -1,6 +1,7 @@
 # ✅ Path patch fix for src/ and utils/ imports
 import sys
 import os
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
@@ -97,7 +98,7 @@ class EmotionSynthesisAgent(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

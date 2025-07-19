@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Authentication Agent
 - Handles user authentication and authorization
 - Manages user sessions and tokens

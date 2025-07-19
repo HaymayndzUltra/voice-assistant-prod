@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Network Utilities
 
@@ -101,13 +102,13 @@ def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             "environment": {
                 "development": {
                     "use_local_mode": True,
-                    "mainpc_ip": "127.0.0.1",
-                    "pc2_ip": "127.0.0.1"
+                    "mainpc_ip": "localhost",
+                    "pc2_ip": "localhost"
                 }
             },
             "machines": {
-                "mainpc": {"ip": "127.0.0.1"},
-                "pc2": {"ip": "127.0.0.1"}
+                "mainpc": {"ip": "localhost"},
+                "pc2": {"ip": "localhost"}
             }
         }
 
@@ -199,10 +200,10 @@ def get_machine_ip(machine: Optional[str] = None) -> str:
     env_type = os.environ.get("ENV_TYPE", "development")
     if env_type == "development":
         logger.debug(f"Using loopback IP for {machine} in development mode")
-        return "127.0.0.1"
+        return "localhost"
     
     logger.warning(f"Could not find IP for machine {machine}, using loopback")
-    return "127.0.0.1"
+    return "localhost"
 
 def is_local_mode() -> bool:
     """

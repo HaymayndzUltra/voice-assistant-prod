@@ -4,6 +4,7 @@ import time
 import json
 import sys
 import os
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pc2_code.config.system_config import pc2_settings
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip

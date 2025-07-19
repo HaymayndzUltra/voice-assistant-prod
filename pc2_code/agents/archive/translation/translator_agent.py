@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Translator Agent - PC2 Enhanced Version
 - Translates commands from Filipino to English
 - Sits between listener and Enhanced Model Router

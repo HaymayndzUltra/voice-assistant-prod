@@ -1,4 +1,5 @@
 
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Mesh Client Library for WP-09 Service Mesh Integration
 Provides service discovery, load balancing, and circuit breaking for inter-agent communication

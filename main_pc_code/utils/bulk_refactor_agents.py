@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """Utility to refactor main-PC agent scripts to use utils.config_parser.
 
 It will:

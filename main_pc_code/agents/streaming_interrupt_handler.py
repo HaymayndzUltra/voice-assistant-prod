@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 """
 
@@ -122,7 +123,7 @@ class StreamingInterruptHandler(BaseAgent):
         self.interrupt_cooldown = 2.0  # Seconds between interrupts to prevent duplicates
         
         self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

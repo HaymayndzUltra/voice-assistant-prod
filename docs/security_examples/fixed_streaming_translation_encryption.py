@@ -1,4 +1,5 @@
 
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # WP-10 Encryption Integration for fixed_streaming_translation
 # Add data encryption and secrets management
 

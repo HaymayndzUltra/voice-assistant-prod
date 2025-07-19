@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Verification script to check if core infrastructure agents are registered with SystemDigitalTwin.
 

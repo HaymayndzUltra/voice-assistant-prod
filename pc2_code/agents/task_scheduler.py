@@ -8,6 +8,7 @@ import sys
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
@@ -36,8 +37,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_service_ip("mainpc"),
+            "pc2_ip": get_service_ip("pc2"),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -46,8 +47,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = network_config.get("main_pc_ip", get_service_ip("mainpc"))
+PC2_IP = network_config.get("pc2_ip", get_service_ip("pc2"))
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 class TaskSchedulerAgent(BaseAgent):
@@ -80,7 +81,7 @@ class TaskSchedulerAgent(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 

@@ -12,6 +12,7 @@ import zmq
 import json
 import threading
 import time
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
@@ -59,8 +60,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "main_pc_ip": os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")),
+            "pc2_ip": os.environ.get("PC2_IP", get_service_ip("pc2")),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -74,8 +75,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")))
+PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", get_service_ip("pc2")))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 UTILS_AGENT_PORT = network_config.get("ports", {}).get("utils_agent", int(os.environ.get("UTILS_AGENT_PORT", 7118)))
 UTILS_AGENT_HEALTH_PORT = network_config.get("ports", {}).get("utils_health", int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)))

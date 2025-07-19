@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Final Fix for PHI Translator
 This version enforces extreme restrictions on prompt and output to ensure consistent, high-quality translations
 """

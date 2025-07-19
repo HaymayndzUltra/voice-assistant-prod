@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Unified Memory Reasoning Agent Validation Script
 Tests if the agent meets all the required criteria

@@ -77,7 +77,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); sock=ctx.socket(zmq.REQ); sock.connect('tcp://localhost:7200'); sock.send_string('ping'); resp=sock.recv_string(zmq.NOBLOCK if True else 0); print(resp)"]
+      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); sock=ctx.socket(zmq.REQ); sock.connect('tcp://${LOCALHOST:-localhost}:7200'); sock.send_string('ping'); resp=sock.recv_string(zmq.NOBLOCK if True else 0); print(resp)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -114,7 +114,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8220/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://${LOCALHOST:-localhost}:8220/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -268,7 +268,7 @@ services:
       system-digital-twin:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9100/health"]
+      test: ["CMD", "curl", "-f", "http://${LOCALHOST:-localhost}:9100/health"]
       interval: 30s
       timeout: 10s
       retries: 3

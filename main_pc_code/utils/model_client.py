@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Client library for interacting with the ModelManagerAgent.
 This provides a simplified interface for generating text, transcribing audio, etc.
 """

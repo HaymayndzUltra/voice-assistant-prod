@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Self-Healing Agent
 ---------------------
 Monitors and maintains the health of all agents in the distributed voice assistant system.

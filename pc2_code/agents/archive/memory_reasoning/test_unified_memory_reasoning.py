@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script for Unified Memory and Reasoning Agent
 Tests all major features including context management, error patterns, and session handling

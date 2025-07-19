@@ -10,6 +10,7 @@ import networkx as nx
 from common.core.base_agent import BaseAgent
 import psutil
 from main_pc_code.utils.config_loader import load_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Module-level configuration loading
 config = load_config()
@@ -18,8 +19,8 @@ config = load_config()
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Network Configuration
-PC2_IP = "192.168.100.17"  # PC2's IP address
-MAIN_PC_IP = "192.168.100.16"  # Main PC's IP address
+PC2_IP = get_service_ip("pc2")  # PC2's IP address
+MAIN_PC_IP = get_service_ip("mainpc")  # Main PC's IP address
 COGNITIVE_MODEL_PORT = 5600  # Cognitive Model port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector port on PC2
 
@@ -85,7 +86,7 @@ class CognitiveModelAgent(BaseAgent):
 
         # --- Removed invalid error_bus wiring lines that belonged to Agent ---
         # self.error_bus_port = 7150
-        # self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        # self.error_bus_host = get_service_ip("pc2")
         # self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         # self.error_bus_pub = self.context.socket(zmq.PUB)
         # self.error_bus_pub.connect(self.error_bus_endpoint)

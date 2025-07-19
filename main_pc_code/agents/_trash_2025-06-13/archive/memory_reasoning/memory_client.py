@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Dict, Any, Optional
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

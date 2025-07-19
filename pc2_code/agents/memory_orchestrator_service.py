@@ -1,4 +1,5 @@
 # File: main_pc_code/agents/memory_orchestrator_service.py
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # (O kung saan man dapat ilagay ang bagong central orchestrator)
 #
 # Ito ang FINAL at PINAHUSAY na bersyon ng Memory Orchestrator.
@@ -449,7 +450,7 @@ class MemoryOrchestratorService(BaseAgent):
         
         # --- Error Bus Configuration ---
         self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         try:
             self.error_bus_pub = self.context.socket(zmq.PUB)

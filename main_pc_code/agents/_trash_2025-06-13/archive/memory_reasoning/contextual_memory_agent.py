@@ -7,6 +7,7 @@ import time
 import logging
 import sys
 from typing import List, Dict, Any
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add the parent directory to sys.path to allow importing from sibling modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

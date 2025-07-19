@@ -5,6 +5,7 @@ from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket
 import threading
 from main_pc_code.FORMAINPC.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
 from pc2_code.config.system_config import get_config_for_service, config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths

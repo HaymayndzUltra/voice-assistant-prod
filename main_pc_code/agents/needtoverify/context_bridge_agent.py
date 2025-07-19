@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Context Bridge Agent
 Connects face recognition events to the context manager for seamless context switching.

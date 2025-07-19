@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Memory Agent Protocol Testing Script
 For testing both payload formats with the Memory Agent
 """

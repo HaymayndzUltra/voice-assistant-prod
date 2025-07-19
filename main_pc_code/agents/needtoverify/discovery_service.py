@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Discovery Service Agent
 Provides service discovery for distributed agents across the network.
@@ -88,7 +89,7 @@ class DiscoveryService(BaseAgent):
             return local_ip
         except Exception as e:
             logger.error(f"Failed to get local IP: {e}")
-            return "127.0.0.1"
+            return "localhost"
     
     def register_service(self, service_data):
         """Register a service with the discovery service"""
@@ -99,7 +100,7 @@ class DiscoveryService(BaseAgent):
             
             # Update or add the service
             self.services[service_name] = {
-                "ip": service_data.get("ip", "127.0.0.1"),
+                "ip": service_data.get("ip", "localhost"),
                 "port": service_data.get("port", 0),
                 "machine_id": service_data.get("machine_id", "unknown"),
                 "last_seen": datetime.now().timestamp()

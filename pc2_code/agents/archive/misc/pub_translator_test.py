@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 PUB test script for translator_agent.py
 Uses the correct socket pattern (PUB to translator's SUB socket)
 """

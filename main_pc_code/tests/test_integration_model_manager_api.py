@@ -6,6 +6,7 @@ import yaml
 import json
 import zmq
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import the ModelManagerAgent and model_client for testing
 from main_pc_code.agents.model_manager_agent import ModelManagerAgent

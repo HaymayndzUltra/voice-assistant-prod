@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Chitchat Agent
 -------------
 Handles natural conversational interactions:
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 # ZMQ Configuration
 ZMQ_CHITCHAT_PORT = 5573  # Port for receiving chitchat requests
 ZMQ_HEALTH_PORT = 6582  # Health status
-PC2_IP = "192.168.100.17"  # PC2 IP address
+PC2_IP = get_service_ip("pc2")  # PC2 IP address
 PC2_LLM_PORT = 5557  # Remote LLM on PC2
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -92,7 +93,7 @@ class ChitchatAgent(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 

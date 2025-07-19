@@ -1,6 +1,7 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json

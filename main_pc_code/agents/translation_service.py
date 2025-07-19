@@ -15,6 +15,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils.config_loader import load_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths

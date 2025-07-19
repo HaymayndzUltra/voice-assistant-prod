@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))

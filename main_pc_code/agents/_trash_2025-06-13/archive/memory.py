@@ -5,6 +5,7 @@ import os
 import time
 import threading
 import logging
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # from datetime import datetime
 from typing import List, Dict, Any
 from common.env_helpers import get_env

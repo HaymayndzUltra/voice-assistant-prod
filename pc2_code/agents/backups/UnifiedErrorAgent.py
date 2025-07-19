@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional
 from pathlib import Path
 import sys
 import os
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths

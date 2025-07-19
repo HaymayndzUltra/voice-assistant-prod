@@ -23,8 +23,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - SERVICE_REGISTRY_HOST=192.168.100.16
-      - REDIS_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
+      - REDIS_HOST=${REDIS_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -35,7 +35,7 @@ services:
     ports:
       - "7140:7140"  # MemoryOrchestratorService
     healthcheck:
-      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://localhost:7140'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
+      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://${LOCALHOST:-localhost}:7140'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -48,7 +48,7 @@ services:
     image: ai-system/task-processing:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -74,7 +74,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - CUDA_VISIBLE_DEVICES=0
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -106,7 +106,7 @@ services:
     image: ai-system/educational-services:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -129,8 +129,8 @@ services:
     image: ai-system/context-management:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
-      - REDIS_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
+      - REDIS_HOST=${REDIS_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -153,7 +153,7 @@ services:
     image: ai-system/resource-management:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -175,7 +175,7 @@ services:
     image: ai-system/security-services:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -198,7 +198,7 @@ services:
     image: ai-system/web-services:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net
@@ -223,7 +223,7 @@ services:
     image: ai-system/creative-services:latest
     environment:
       - PYTHONPATH=/app
-      - SERVICE_REGISTRY_HOST=192.168.100.16
+      - SERVICE_REGISTRY_HOST=${SERVICE_REGISTRY_HOST:-192.168.100.16}
       - MAINPC_HOST=192.168.100.16
     networks:
       - ai_system_net

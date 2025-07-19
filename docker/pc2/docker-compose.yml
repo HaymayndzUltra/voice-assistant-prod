@@ -15,7 +15,7 @@ services:
       - DEBUG_MODE=false
       - ENABLE_METRICS=true
       - ENABLE_TRACING=true
-      - MAINPC_IP=192.168.100.10
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
     volumes:
       - ../../logs:/app/logs
       - ../../models:/app/models
@@ -50,7 +50,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
     volumes:
       - ../../logs:/app/logs
       - ../../models:/app/models
@@ -115,7 +115,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
     volumes:
       - ../../logs:/app/logs
       - ../../data:/app/data

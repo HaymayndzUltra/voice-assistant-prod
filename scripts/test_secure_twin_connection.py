@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test Script for Secure Communication between SystemDigitalTwin and UnifiedMemoryReasoningAgent
 
@@ -45,8 +46,8 @@ class TestSecureConnection:
             logger.info("Secure ZMQ disabled")
             
         # Override configuration for local testing
-        os.environ["MAINPC_IP"] = "127.0.0.1"
-        os.environ["PC2_IP"] = "127.0.0.1"
+        os.environ["MAINPC_IP"] = "localhost"
+        os.environ["PC2_IP"] = "localhost"
         os.environ["SYSTEM_DIGITAL_TWIN_PORT"] = "7120"
         os.environ["UNIFIED_MEMORY_REASONING_PORT"] = "7230"
         

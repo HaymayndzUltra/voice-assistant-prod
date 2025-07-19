@@ -9,6 +9,7 @@ import argparse
 import random
 from datetime import datetime
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # --- Security Configuration ---
 AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")  # Set via env var or default

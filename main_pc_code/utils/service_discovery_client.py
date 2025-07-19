@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Discovery Client
 
@@ -65,7 +66,7 @@ class ServiceDiscoveryClient:
         
         # Use localhost in local mode
         if self.local_mode:
-            sdt_ip = "127.0.0.1"
+            sdt_ip = "localhost"
             logger.debug(f"Using local mode, connecting to SystemDigitalTwin at {sdt_ip}:{self.sdt_port}")
         
         # Construct the address
@@ -182,7 +183,7 @@ class ServiceDiscoveryClient:
                     port = service_info["port"]
                     # If the IP is 0.0.0.0, use 127.0.0.1 for local connections
                     if ip == "0.0.0.0":
-                        ip = "127.0.0.1"
+                        ip = "localhost"
                     return f"tcp://{ip}:{port}"
             
             # If not successful and not the last attempt, wait and retry
@@ -293,7 +294,7 @@ def get_service_address(service_name: str, machine: str = None) -> Optional[str]
                 port = service_info["port"]
                 # If the IP is 0.0.0.0, use 127.0.0.1 for local connections
                 if ip == "0.0.0.0":
-                    ip = "127.0.0.1"
+                    ip = "localhost"
                 return f"tcp://{ip}:{port}"
         
         # If not successful and not the last attempt, wait and retry
@@ -385,7 +386,7 @@ def register_service(name: str, location: Optional[str] = None,
     
     # Use localhost in local mode
     if client.local_mode:
-        sdt_ip = "127.0.0.1"
+        sdt_ip = "localhost"
     
     # Construct the address
     address = f"tcp://{sdt_ip}:{client.sdt_port}"

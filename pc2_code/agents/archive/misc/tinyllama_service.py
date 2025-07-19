@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 TinyLLama Service
 - Provides access to the TinyLLama model via ZMQ
 - Implements robust self-managed on-demand loading and idle unloading
@@ -94,7 +95,7 @@ class TinyLlamaService:
                 try:
                     self.socket.bind(f"tcp://127.0.0.1:{self.service_port}")
                     logger.info(f"TinyLlama service bound to FALLBACK tcp://127.0.0.1:{self.service_port}")
-                    self.bind_address = "127.0.0.1"
+                    self.bind_address = "localhost"
                 except zmq.error.ZMQError as e2:
                     logger.error(f"Fallback bind also failed: {e2}")
                     raise RuntimeError(f"Cannot bind to port {self.service_port}") from e2

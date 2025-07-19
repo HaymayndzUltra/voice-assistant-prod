@@ -1,4 +1,5 @@
 
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 NATS Error Bus Library for WP-10 NATS Error Bus Integration
 Provides centralized error handling, flood detection, and error correlation

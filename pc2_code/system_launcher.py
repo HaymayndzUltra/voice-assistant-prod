@@ -7,6 +7,7 @@ import signal
 import logging
 import subprocess
 from graphlib import TopologicalSorter, CycleError
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths

@@ -2,6 +2,7 @@ import os
 import yaml
 import pathlib
 from typing import Dict, Any, Optional
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 def load_network_config() -> Dict[str, Any]:
     """
@@ -19,8 +20,8 @@ def load_network_config() -> Dict[str, Any]:
         print(f"Error loading network config: {e}")
         # Return default configuration
         return {
-            "main_pc": {"ip": "192.168.100.16"},
-            "pc2": {"ip": "192.168.100.17"},
+            "main_pc": {"ip": get_service_ip("mainpc")},
+            "pc2": {"ip": get_service_ip("pc2")},
             "services": {}
         }
 
@@ -62,7 +63,7 @@ def get_ip(machine: str) -> str:
     except (KeyError, TypeError):
         # Return localhost as last resort
         print(f"Warning: Could not find IP for {machine}, using localhost")
-        return "127.0.0.1"
+        return "localhost"
 
 def addr(service: str, target: str) -> str:
     """

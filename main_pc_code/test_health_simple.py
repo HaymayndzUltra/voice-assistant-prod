@@ -1,6 +1,7 @@
 import zmq
 import json
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 def test_health():
     context = zmq.Context()

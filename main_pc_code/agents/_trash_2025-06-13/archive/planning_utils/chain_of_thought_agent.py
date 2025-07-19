@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps

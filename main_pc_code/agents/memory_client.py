@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Memory Client
 
@@ -24,7 +25,7 @@ logger = logging.getLogger("MemoryClient")
 
 def get_service_address(service_name: str) -> str:
     # Use environment variable if available, otherwise use PC2 default IP with correct port
-    pc2_ip = os.environ.get("PC2_IP", "192.168.100.17")
+    pc2_ip = os.environ.get("PC2_IP", get_service_ip("pc2"))
     memory_orchestrator_port = 7140  # Updated to correct port from PC2 config
     return os.environ.get("MEMORY_ORCHESTRATOR_ADDR", f"tcp://{pc2_ip}:{memory_orchestrator_port}")
 
@@ -101,7 +102,7 @@ class MemoryClient(BaseAgent):
         
         # Error bus configuration
         self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

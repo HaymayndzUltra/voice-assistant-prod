@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """Unified MemoryHub - True Consolidation Implementation.
 
 This is the production-ready unified implementation that replaces all legacy proxy 

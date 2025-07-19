@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 System Digital Twin Agent
 
@@ -74,7 +75,7 @@ DEFAULT_CONFIG = {
     "network_baseline_ms": 50,
     # Phase-3 new defaults
     "db_path": join_path("data", "unified_memory.db"),
-    "redis": {"host": "localhost", "port": 6379, "db": 0},
+    "redis": {"host": get_service_ip("redis"), "port": 6379, "db": 0},
     "zmq_request_timeout": 5000,
 }
 
@@ -124,9 +125,10 @@ class SystemDigitalTwinAgent(BaseAgent):
         # --- Redis connection (optional) ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            self.redis_conn = redis.Redis(host=self.redis_settings.get("host"), port=self.redis_settings.get("port"), db=self.redis_settings.get("db"), socket_connect_timeout=2)
+            redis_url = get_redis_url()
+            self.redis_conn = redis.from_url(redis_url, socket_connect_timeout=2)
             self.redis_conn.ping()
-            logger.info("Successfully connected to Redis cache.")
+            logger.info(f"Successfully connected to Redis cache at {redis_url}")
         except Exception as r_err:
             logger.warning(f"Redis connection failed: {r_err}. Health checks will report degraded cache connectivity.")
             self.redis_conn = None
@@ -514,11 +516,10 @@ class SystemDigitalTwinAgent(BaseAgent):
     def _forward_to_registry(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Forward a JSON payload to the ServiceRegistry agent and return its response.
 
-        Uses env vars `SERVICE_REGISTRY_HOST` and `SERVICE_REGISTRY_PORT` with
-        defaults `localhost:7100`. Falls back to an error dict on timeout.
+        Uses config manager to get ServiceRegistry endpoint. Falls back to an error dict on timeout.
         """
         import os, zmq  # Local import to avoid circulars at module import time
-        host = os.getenv("SERVICE_REGISTRY_HOST", get_env("BIND_ADDRESS", "0.0.0.0"))
+        host = get_service_ip("service_registry")
         port = int(os.getenv("SERVICE_REGISTRY_PORT", "7200"))
         timeout = int(os.getenv("SERVICE_REGISTRY_TIMEOUT_MS", "5000"))
 

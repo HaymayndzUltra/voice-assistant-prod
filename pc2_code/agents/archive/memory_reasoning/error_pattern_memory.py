@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Error Pattern Memory - For tracking, learning, and suggesting fixes for common errors
 # Maintains a database of encountered errors and their successful fixes
 # Enables more intelligent auto-fix workflows

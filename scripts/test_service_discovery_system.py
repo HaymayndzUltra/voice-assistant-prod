@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Discovery Integration Test
 
@@ -103,8 +104,8 @@ def start_unified_memory_agent(secure: bool = False) -> subprocess.Popen:
     env["SECURE_ZMQ"] = "1" if secure else "0"
     
     # Force local IP addresses for testing
-    env["MAINPC_IP"] = "127.0.0.1"
-    env["PC2_IP"] = "127.0.0.1"
+    env["MAINPC_IP"] = "localhost"
+    env["PC2_IP"] = "localhost"
     
     # Start the process 
     process = subprocess.Popen(

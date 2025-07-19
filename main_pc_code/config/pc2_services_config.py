@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 PC2 Services Configuration Loader
 --------------------------------
 Utility module for loading PC2 services configuration
@@ -36,7 +37,7 @@ def load_pc2_services() -> Dict[str, Any]:
             # Return default configuration
             return {
                 "enabled": False,
-                "ip": "192.168.100.17",
+                "ip": get_service_ip("pc2"),
                 "hostname": "PC2"
             }
     except Exception as e:
@@ -70,7 +71,7 @@ def get_service_connection(service_name: str) -> Optional[str]:
             logger.warning(f"Service {service_name} is disabled")
             return None
             
-        pc2_ip = pc2_config.get("ip", "192.168.100.17")
+        pc2_ip = pc2_config.get("ip", get_service_ip("pc2"))
         port = service_config.get("port")
         
         if not port:

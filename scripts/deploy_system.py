@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Complete AI System Deployment Script
 Deploys the entire system with correct IP addresses:
@@ -15,8 +16,8 @@ from pathlib import Path
 
 class SystemDeployer:
     def __init__(self):
-        self.mainpc_ip = "192.168.100.16"
-        self.pc2_ip = "192.168.100.17"
+        self.mainpc_ip = get_service_ip("mainpc")
+        self.pc2_ip = get_service_ip("pc2")
         self.project_root = Path(__file__).parent.parent
         
     def setup_environment(self, machine_type: str):

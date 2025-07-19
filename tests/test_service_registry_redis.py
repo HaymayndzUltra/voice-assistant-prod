@@ -1,4 +1,5 @@
 """Integration tests for ServiceRegistryAgent with Redis backend.
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 This test requires a running Redis instance. It will be skipped if Redis is not available.
 """

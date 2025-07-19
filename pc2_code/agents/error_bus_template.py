@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 """
 Error Bus Integration Template
@@ -58,7 +59,7 @@ def setup_error_reporting(agent, error_bus_port: int = 7150) -> Optional[Dict[st
         Optional[Dict[str, Any]]: Error bus configuration or None if setup failed
     """
     # Get PC2_IP from environment or use default
-    error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+    error_bus_host = get_service_ip("pc2")
     error_bus_endpoint = f"tcp://{error_bus_host}:{error_bus_port}"
     
     # Create PUB socket using the agent's ZMQ context

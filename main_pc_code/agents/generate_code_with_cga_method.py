@@ -1,6 +1,7 @@
 from main_pc_code.src.core.base_agent import zmq
 import BaseAgent
 from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 def generate_code_with_cga(self, request_data):
     """Send a code generation request to the Code Generator Agent and return the response.
     

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Cross-Machine Synchronization Service
 Handles data sync between MainPC (RTX 4090) and PC2 (RTX 3060)
@@ -17,8 +18,8 @@ from datetime import datetime
 
 @dataclass
 class SyncConfig:
-    mainpc_host: str = "192.168.100.16"
-    pc2_host: str = "192.168.100.17"
+    mainpc_host: str = get_service_ip("mainpc")
+    pc2_host: str = get_service_ip("pc2")
     redis_port: int = 6379
     sync_interval: int = 300  # 5 minutes
     data_paths: list = None
@@ -299,8 +300,8 @@ class CrossMachineSync:
 async def main():
     """Main entry point"""
     config = SyncConfig(
-        mainpc_host=os.getenv("MAINPC_HOST", "192.168.100.16"),
-        pc2_host=os.getenv("PC2_HOST", "192.168.100.17"),
+        mainpc_host=os.getenv("MAINPC_HOST", get_service_ip("mainpc")),
+        pc2_host=os.getenv("PC2_HOST", get_service_ip("pc2")),
         sync_interval=int(os.getenv("SYNC_INTERVAL", "300"))
     )
     

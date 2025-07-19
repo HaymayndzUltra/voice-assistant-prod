@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 WP-01 Host Binding Refactor Script
 AST-based replacement of hardcoded localhost/127.0.0.1 with env-aware helpers
@@ -85,7 +86,7 @@ class HostBindingRefactor(ast.NodeTransformer):
                     keywords=[]
                 )
             
-            elif node.s == "127.0.0.1":
+            elif node.s == "localhost":
                 self.changes.append(f"Line {node.lineno}: '127.0.0.1' → get_env(...)")
                 return ast.Call(
                     func=ast.Name(id='get_env', ctx=ast.Load()),

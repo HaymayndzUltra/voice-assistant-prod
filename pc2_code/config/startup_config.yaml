@@ -40,15 +40,16 @@ pc2_services:
       required: true,
       dependencies: [MemoryOrchestratorService],
     }
-  - {
-      name: PerformanceMonitor,
-      script_path: pc2_code/agents/performance_monitor.py,
-      host: 0.0.0.0,
-      port: 7103,
-      health_check_port: 8103,
-      required: true,
-      dependencies: [PerformanceLoggerAgent],
-    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: PerformanceMonitor,
+  #     script_path: pc2_code/agents/performance_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: 7103,
+  #     health_check_port: 8103,
+  #     required: true,
+  #     dependencies: [PerformanceLoggerAgent],
+  #   }
   - {
       name: VisionProcessingAgent,
       script_path: pc2_code/agents/VisionProcessingAgent.py,
@@ -123,17 +124,18 @@ pc2_services:
       port: 7113,
       health_check_port: 8113,
       required: true,
-      dependencies: [HealthMonitor],
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
-  - {
-      name: HealthMonitor,
-      script_path: pc2_code/agents/health_monitor.py,
-      host: 0.0.0.0,
-      port: 7114,
-      health_check_port: 8114,
-      required: true,
-      dependencies: [PerformanceMonitor],
-    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution  
+  # - {
+  #     name: HealthMonitor,
+  #     script_path: pc2_code/agents/health_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: 7114,
+  #     health_check_port: 8114,
+  #     required: true,
+  #     dependencies: [PerformanceMonitor],
+  #   }
   - {
       name: TaskScheduler,
       script_path: pc2_code/agents/task_scheduler.py,
@@ -154,15 +156,16 @@ pc2_services:
       required: true,
       dependencies: [UnifiedUtilsAgent],
     }
-  - {
-      name: SystemHealthManager,
-      script_path: pc2_code/agents/ForPC2/system_health_manager.py,
-      host: 0.0.0.0,
-      port: 7117,
-      health_check_port: 8117,
-      required: true,
-      dependencies: [], # Removed HealthMonitor dependency to break circular reference
-    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: SystemHealthManager,
+  #     script_path: pc2_code/agents/ForPC2/system_health_manager.py,
+  #     host: 0.0.0.0,
+  #     port: 7117,
+  #     health_check_port: 8117,
+  #     required: true,
+  #     dependencies: [], # Removed HealthMonitor dependency to break circular reference
+  #   }
   - {
       name: UnifiedUtilsAgent,
       script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
@@ -170,7 +173,7 @@ pc2_services:
       port: 7118,
       health_check_port: 8118,
       required: true,
-      dependencies: [SystemHealthManager],
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
   - {
       name: ProactiveContextMonitor,
@@ -190,7 +193,7 @@ pc2_services:
       port: 7122,
       health_check_port: 8122,
       required: true,
-      dependencies: [HealthMonitor],
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
   - {
       name: FileSystemAssistantAgent,
@@ -228,15 +231,16 @@ pc2_services:
       dependencies: [DreamWorldAgent],
       required: true,
     }
-  - {
-      name: PerformanceLoggerAgent,
-      script_path: pc2_code/agents/PerformanceLoggerAgent.py,
-      host: 0.0.0.0,
-      port: 7128,
-      health_check_port: 8128,
-      required: true,
-      dependencies: [], # Removed SystemHealthManager dependency to break circular reference
-    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: PerformanceLoggerAgent,
+  #     script_path: pc2_code/agents/PerformanceLoggerAgent.py,
+  #     host: 0.0.0.0,
+  #     port: 7128,
+  #     health_check_port: 8128,
+  #     required: true,
+  #     dependencies: [], # Removed SystemHealthManager dependency to break circular reference
+  #   }
   - {
       name: AdvancedRouter,
       script_path: pc2_code/agents/advanced_router.py,
@@ -247,6 +251,24 @@ pc2_services:
       dependencies: [TaskScheduler],
     }
 
+  # CONSOLIDATED MONITORING SOLUTION - Replaces legacy monitors
+  - {
+      name: ObservabilityHub,
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py,
+      host: 0.0.0.0,
+      port: 9000,
+      health_check_port: 9100,
+      required: true,
+      dependencies: [],  # Core monitoring service, no dependencies
+      config: {
+        scope: "pc2_agents",
+        prometheus_port: 9000,
+        cross_machine_sync: true,
+        mainpc_hub_endpoint: "http://192.168.100.16:9000",
+        parallel_health_checks: true,
+        prediction_enabled: true
+      }
+    }
 
 
 # Environment variables for all agents
@@ -278,16 +300,7 @@ pc2_network:
     start: 8100
     end: 8199
 
-# Central Memory Orchestrator Service (PC2 Primary Persistence)
-core_services:
-  - name: MemoryOrchestratorService
-    script_path: pc2_code/agents/memory_orchestrator_service.py
-    module: agents.memory_orchestrator_service
-    class: MemoryOrchestratorService
-    port: 7140
-    health_check_port: 7141
-    required: true
-    startup_priority: 1
-    description: "Central memory service with direct Redis integration for caching and SQLite for persistence."
+# DUPLICATE REMOVED - MemoryOrchestratorService already defined in pc2_services section above
+# This duplicate entry was causing port conflicts (7140 used twice) and health port confusion (8140 vs 7141)
 
 error_bus_port: 7150

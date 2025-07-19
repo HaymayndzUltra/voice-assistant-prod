@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Comprehensive Test Suite for Phi Translator Service
 --------------------------------------------------
 Evaluates translation quality, reliability, and performance metrics

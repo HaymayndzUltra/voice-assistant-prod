@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Port Health Check Script for PC2
 Verifies all PC2 ports are accessible and working correctly.

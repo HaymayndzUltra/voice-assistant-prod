@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Base Agent Class with Proper Initialization and Health Check Patterns
 """
 import sys
@@ -517,7 +518,7 @@ class BaseAgent:
             try:
                 ip_address = socket.gethostbyname(hostname)
             except socket.gaierror:
-                ip_address = "127.0.0.1"
+                ip_address = "localhost"
                 logger.warning(f"Could not resolve hostname, using {ip_address}")
             
             # Prepare registration data

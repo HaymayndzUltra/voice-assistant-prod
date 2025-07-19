@@ -11,6 +11,7 @@ import threading
 import time
 from difflib import get_close_matches
 import re
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 try:
     import dateparser
 except ImportError:

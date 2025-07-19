@@ -6,6 +6,7 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
 from port_config import ENHANCED_MODEL_ROUTER_PORT
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path for common_utils import
 import sys

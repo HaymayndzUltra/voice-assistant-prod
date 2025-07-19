@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Deployment Validation Script
 Validates the entire AI System deployment across MainPC and PC2
@@ -16,8 +17,8 @@ from pathlib import Path
 
 class DeploymentValidator:
     def __init__(self):
-        self.mainpc_host = "192.168.100.16"  # Configure as needed
-        self.pc2_host = "192.168.100.17"     # Configure as needed
+        self.mainpc_host = get_service_ip("mainpc")  # Configure as needed
+        self.pc2_host = get_service_ip("pc2")     # Configure as needed
         self.results = {"mainpc": {}, "pc2": {}, "cross_machine": {}}
     
     def check_docker_containers(self, host: str) -> Dict:
@@ -262,9 +263,9 @@ def main():
     parser = argparse.ArgumentParser(description="Validate AI System Deployment")
     parser.add_argument("--machine", choices=["mainpc", "pc2", "all"], default="all",
                       help="Which machine to validate")
-    parser.add_argument("--mainpc-host", default="192.168.100.16",
+    parser.add_argument("--mainpc-host", default=get_service_ip("mainpc"),
                       help="MainPC host address")
-    parser.add_argument("--pc2-host", default="192.168.100.17", 
+    parser.add_argument("--pc2-host", default=get_service_ip("pc2"), 
                       help="PC2 host address")
     parser.add_argument("--output", help="Output file for report")
     

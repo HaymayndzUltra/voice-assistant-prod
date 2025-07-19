@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script to verify Task Router health check
 """
@@ -12,7 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Network Configuration
-MAIN_PC_IP = "192.168.100.16"  # Main PC IP
+MAIN_PC_IP = get_service_ip("mainpc")  # Main PC IP
 TASK_ROUTER_PORT = 8570        # Task Router port
 
 def test_task_router_health():

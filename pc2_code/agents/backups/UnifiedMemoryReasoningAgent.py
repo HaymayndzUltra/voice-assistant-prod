@@ -12,6 +12,7 @@ from pathlib import Path
 import socket
 import copy
 import pickle
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent

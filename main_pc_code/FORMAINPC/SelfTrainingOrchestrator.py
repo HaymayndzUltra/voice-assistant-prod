@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Self Training Orchestrator
 Purpose: Manages training cycles and resource allocation for PC2 agents
 Features: Cycle management, progress tracking, resource allocation
@@ -136,7 +137,7 @@ class SelfTrainingOrchestrator(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_service_ip("pc2")
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 

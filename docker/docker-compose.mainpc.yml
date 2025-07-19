@@ -40,7 +40,7 @@ services:
       - "4222:4222"
       - "8222:8222"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://${LOCALHOST:-localhost}:8222/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,7 +80,7 @@ services:
       - "9000:9000"  # ObservabilityHub
       - "7211:7211"  # ModelManagerSuite
     healthcheck:
-      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://localhost:7220'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
+      test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://${LOCALHOST:-localhost}:7220'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
       interval: 30s
       timeout: 10s
       retries: 3

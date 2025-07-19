@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
 - Provides model selection based on capabilities, availability and task requirements

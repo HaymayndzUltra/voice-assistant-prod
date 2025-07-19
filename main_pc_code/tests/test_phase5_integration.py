@@ -2,6 +2,7 @@ import zmq
 import json
 import time
 from main_pc_code.utils.config_loader import load_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 config = load_config()
 

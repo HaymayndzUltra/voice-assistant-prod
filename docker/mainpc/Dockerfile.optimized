@@ -1,0 +1,114 @@
+# Multi-Stage Optimized MainPC Dockerfile (RTX 4090)
+# Target: Reduce image size by ~1.1GB through optimization
+# Features: RTX 4090 optimized CUDA, multi-stage builds, dependency caching
+
+# Stage 1: Base Builder (~500MB)
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 as builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Install build dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    git \
+    wget \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Upgrade pip and install build tools
+RUN pip install --no-cache-dir -U pip setuptools wheel
+
+# Copy requirements and install dependencies
+COPY requirements/base.txt /tmp/base.txt
+COPY requirements/gpu.txt /tmp/gpu.txt
+COPY main_pc_code/requirements.txt /tmp/mainpc_requirements.txt
+
+# Install base dependencies
+RUN pip install --no-cache-dir -r /tmp/base.txt && \
+    pip install --no-cache-dir -r /tmp/gpu.txt
+
+# Install PyTorch with CUDA 12.1 support optimized for RTX 4090
+RUN pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# Install llama-cpp-python with CUDA support for RTX 4090 (compute capability 8.9)
+RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=89" \
+    pip install --no-cache-dir llama-cpp-python==0.2.23
+
+# Install MainPC specific requirements
+RUN pip install --no-cache-dir -r /tmp/mainpc_requirements.txt
+
+# Stage 2: Runtime Image (~3-4GB total)
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    MALLOC_TRIM_THRESHOLD_=100000 \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    libportaudio2 \
+    libsndfile1 \
+    portaudio19-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1-mesa-glx \
+    procps \
+    htop \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Copy Python environment from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Create non-root user for security
+RUN groupadd -r ai && useradd -r -g ai ai
+
+# Create application directory
+WORKDIR /app
+
+# Copy application code with proper ownership
+COPY --chown=ai:ai . /app/
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/models /app/config /app/cache && \
+    chown -R ai:ai /app
+
+# Make scripts executable
+RUN chmod +x /app/docker/mainpc/agent_starter.py \
+    && chmod +x /app/main_pc_code/scripts/container_healthcheck.py
+
+# Declare volumes for persistent data
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+# Use non-root user
+USER ai
+
+# Set default command
+CMD ["python", "/app/docker/mainpc/agent_starter.py"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python /app/main_pc_code/scripts/container_healthcheck.py 

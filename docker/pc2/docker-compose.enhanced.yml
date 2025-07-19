@@ -12,8 +12,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=core-infrastructure
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
     volumes:
@@ -80,8 +80,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=memory-system
       - REDIS_HOST=redis
       - SQLITE_DIR=/app/data
@@ -131,8 +131,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=ai-models
       - CUDA_VISIBLE_DEVICES=0
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
@@ -189,8 +189,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=user-services
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
     volumes:
@@ -241,8 +241,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=ai-monitoring
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
     volumes:
@@ -286,8 +286,8 @@ services:
     environment:
       - PYTHONPATH=/app
       - LOG_LEVEL=INFO
-      - MAINPC_IP=192.168.100.10
-      - PC2_IP=192.168.100.17
+      - MAINPC_IP=${MAINPC_IP:-192.168.100.16}
+      - PC2_IP=${PC2_IP:-192.168.100.17}
       - PC2_ROLE=translation
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
     volumes:

@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 import threading
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths

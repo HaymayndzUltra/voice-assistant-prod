@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 NLLB Translation Adapter (Self-Managed)
 - Provides access to the NLLB translation model via ZMQ.
 - Implements self-managed on-demand loading and idle unloading.
@@ -247,10 +248,10 @@ class NLLBTranslationAdapter(BaseAgent):
             if self.bind_address == "0.0.0.0":
                 self.logger.warning(f"Attempting fallback bind to localhost")
                 try:
-                    fallback_endpoint = get_zmq_connection_string(self.service_port, "bind", "127.0.0.1")
+                    fallback_endpoint = get_zmq_connection_string(self.service_port, "bind", "localhost")
                     self.socket.bind(fallback_endpoint)
                     self.logger.info(f"NLLB Translation Adapter bound to FALLBACK {fallback_endpoint}")
-                    self.bind_address = "127.0.0.1"
+                    self.bind_address = "localhost"
                 except zmq.error.ZMQError as e2:
                     self.logger.error(f"Fallback bind also failed: {e2}")
                     self.report_error(f"Fallback bind also failed: {e2}")

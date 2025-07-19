@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Enhanced Fixed Streaming Translation Agent with Intelligent Fallback
 Acts as a customer service interface for the main translator, handling translation requests
@@ -73,7 +74,7 @@ class PerformanceMonitor(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -201,7 +202,7 @@ class TranslationCache(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -296,7 +297,7 @@ class AdvancedTimeoutManager(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -402,7 +403,7 @@ class PerformanceMetrics(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -527,7 +528,7 @@ class FixedStreamingTranslation(BaseAgent):
         
         # Setup error bus connection
         self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
+        self.error_bus_host = get_service_ip("pc2")
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         self.error_bus_pub = self.context.socket(zmq.PUB)
         self.error_bus_pub.connect(self.error_bus_endpoint)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 ObservabilityHub - Phase 1 Implementation
 Consolidates: PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthMonitor (7114), 
@@ -768,7 +769,8 @@ class ObservabilityHub(BaseAgent):
         import requests
         
         try:
-            endpoint = agent_info.get('health_endpoint', f"http://localhost:{agent_info.get('port', 8000)}/health")
+            host = agent_info.get('host', 'localhost')
+            endpoint = agent_info.get('health_endpoint', f"http://{host}:{agent_info.get('port', 8000)}/health")
             
             start_time = time.time()
             response = requests.get(endpoint, timeout=5)
@@ -983,9 +985,11 @@ class ObservabilityHub(BaseAgent):
                 if not agent_name or not port:
                     raise HTTPException(status_code=400, detail="Missing agent_name or port")
                 
+                host = data.get('host', 'localhost')
                 self.monitored_agents[agent_name] = {
+                    'host': host,
                     'port': port,
-                    'health_endpoint': health_endpoint or f"http://localhost:{port}/health"
+                    'health_endpoint': health_endpoint or f"http://{host}:{port}/health"
                 }
                 
                 logger.info(f"Registered agent {agent_name} for monitoring")

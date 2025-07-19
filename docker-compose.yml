@@ -39,7 +39,7 @@ services:
       - "7120:7120"  # SystemDigitalTwin
       - "7125:7125"  # UnifiedSystemAgent
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      test: ["CMD", "curl", "-f", "http://${LOCALHOST:-localhost}:8100/health"]
       interval: 30s
       timeout: 10s
       retries: 3

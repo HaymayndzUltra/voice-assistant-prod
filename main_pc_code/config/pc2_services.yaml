@@ -5,7 +5,7 @@
 enabled: true
 
 # PC2 connection details
-ip: "192.168.100.17"  # IP address of PC2 machine
+ip: "${PC2_IP:-192.168.100.17}"  # IP address of PC2 machine
 hostname: "PC2"       # Hostname for logging/display
 
 # PC2 services
