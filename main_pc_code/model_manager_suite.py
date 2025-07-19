@@ -1212,13 +1212,19 @@ class ModelManagerSuite(BaseAgent):
                 self.kv_cache_last_used.pop(conversation_id, None)
 
 # ---------------- Backward Compatibility Layer (Model Management Cleanup) ----------------
+# NOTE: Existing import section above, kept untouched.
+
+# Shared singleton (lazily constructed *without* IO/port binding)
 _suite_singleton = None
 
+
 def _get_suite_singleton():
-    """Lazily create a single ModelManagerSuite instance shared by all legacy wrappers."""
+    """Return a lazily-constructed ModelManagerSuite instance that **does not** bind ports."""
     global _suite_singleton
     if _suite_singleton is None:
-        _suite_singleton = ModelManagerSuite()
+        # Disable I/O to avoid duplicate port binding clashes when the real suite
+        # is started as a standalone service elsewhere (process-isolated).
+        _suite_singleton = ModelManagerSuite(start_io=False)
     return _suite_singleton
 
 
@@ -1234,9 +1240,10 @@ class _LegacyModelManagerProxy:
         return getattr(self._suite, name)
 
 
-# Expose legacy public names so imports continue to work untouched
+# Expose legacy public names so imports continue to work untouched.
+# NOTE: We intentionally **do not** shadow `model_manager_agent` to keep its
+# specialised coordination logic available in multi-process deployments.
 GGUFModelManager = _LegacyModelManagerProxy
-ModelManagerAgent = _LegacyModelManagerProxy
 PredictiveLoader = _LegacyModelManagerProxy
 ModelEvaluationFramework = _LegacyModelManagerProxy
 
@@ -1249,21 +1256,13 @@ def get_instance():
 
 
 # -----------------------------------------------------------------------------
-# Register legacy module paths so that "import main_pc_code.agents.gguf_model_manager"
-# and friends transparently resolve to this unified implementation. This step must be
-# done *after* the proxy class definitions so that any subsequent `import` pulls the
-# correct symbols from this module instead of loading the old duplicated source files.
-# -----------------------------------------------------------------------------
-import sys as _sys
-
+# Register aliases excluding `model_manager_agent` to avoid unintentional shadowing.
 for _alias in (
     'main_pc_code.agents.gguf_model_manager',
-    'main_pc_code.agents.model_manager_agent',
     'main_pc_code.agents.predictive_loader',
     'main_pc_code.agents.model_evaluation_framework',
 ):
     _sys.modules[_alias] = _sys.modules[__name__]
-
 # ---------------- End Backward Compatibility Layer ----------------
 
 if __name__ == "__main__":
