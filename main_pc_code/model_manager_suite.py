@@ -1431,6 +1431,9 @@ class _LegacyModelManagerProxy:
 GGUFModelManager = _LegacyModelManagerProxy
 PredictiveLoader = _LegacyModelManagerProxy
 ModelEvaluationFramework = _LegacyModelManagerProxy
+ModelManagerAgentProxy = _LegacyModelManagerProxy  # internal alias
+if os.environ.get('USE_MODEL_MANAGER_AGENT_PROXY', '1') != '0':
+    ModelManagerAgent = _LegacyModelManagerProxy
 
 
 # Legacy helper preserved for backward compatibility (e.g. get_instance())
