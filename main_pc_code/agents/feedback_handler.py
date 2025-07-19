@@ -432,9 +432,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             if hasattr(self, 'context') and self.context:
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             # Close any open file handles
             # [Add specific resource cleanup here]
             

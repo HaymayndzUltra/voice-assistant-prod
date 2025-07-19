@@ -222,7 +222,7 @@ class StreamingWhisperASR(BaseAgent):
             logger.info("Keyboard interrupt detected, stopping")
         finally:
             self.running = False
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             logger.info("Streaming Whisper ASR stopped.")
 
 

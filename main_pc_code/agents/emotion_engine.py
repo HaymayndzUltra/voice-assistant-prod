@@ -429,7 +429,7 @@ class EmotionEngine(BaseAgent):
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             try:
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
         
@@ -448,7 +448,7 @@ class EmotionEngine(BaseAgent):
         # Terminate context
         if hasattr(self, 'context') and self.context:
             try:
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             except Exception as e:
                 logger.error(f"Error terminating ZMQ context: {e}")
         

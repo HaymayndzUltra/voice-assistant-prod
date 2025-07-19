@@ -445,7 +445,7 @@ class RemoteConnectorAgent(BaseAgent):
         self.receiver.close()
         self.task_router.close()
         self.model_status.close()
-        self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         logger.info("Remote Connector Agent stopped")
 
     def report_error(self, error_type, message, severity="ERROR", context=None):

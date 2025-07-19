@@ -293,7 +293,7 @@ class ExecutorAgent(BaseAgent):
             if hasattr(self, 'feedback_socket'):
                 self.feedback_
             if hasattr(self, 'context'):
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         except Exception as e:
             logging.error(f"[Executor] Error during cleanup: {e}")
         

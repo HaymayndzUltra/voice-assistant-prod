@@ -355,8 +355,8 @@ class VoiceMeeterControlAgent(BaseAgent):
         try:
             if self.initialized:
                 self.vm_dll.VBVMR_Logout()
-            self.
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             logger.info("VoiceMeeter Control Agent cleaned up")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

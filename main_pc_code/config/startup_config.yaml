@@ -278,8 +278,8 @@ agent_groups:
   language_processing:
     ModelOrchestrator:
       script_path: main_pc_code/agents/model_orchestrator.py
-      port: 7210
-      health_check_port: 8210
+      port: 7213
+      health_check_port: 8213
       required: true
       dependencies:
       - RequestCoordinator

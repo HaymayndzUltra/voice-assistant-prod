@@ -165,9 +165,9 @@ class NLUAgent(BaseAgent):
         logger.info("Stopping NLUAgent")
         self.running = False
         if hasattr(self, 'socket'):
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         if hasattr(self, 'context'):
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
     def _handle_requests(self):
         """Handle incoming ZMQ requests."""
         while self.running:

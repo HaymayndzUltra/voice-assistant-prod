@@ -1996,7 +1996,7 @@ class TranslationService(BaseAgent):
         """Clean up resources."""
         try:
             if hasattr(self, 'socket') and self.socket:
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             # Clean up engine clients
             for engine_name, engine in self.engine_manager.engines.items():
                 if hasattr(engine, 'cleanup'):

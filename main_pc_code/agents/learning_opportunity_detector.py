@@ -608,7 +608,7 @@ class LearningOpportunityDetector(BaseAgent):
             self.coordinator_
             self.los_
             self.error_bus_pub.close()
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         except Exception as e:
             logger.error(f"Cleanup error: {e}")
         logger.info("LearningOpportunityDetector shutdown complete")

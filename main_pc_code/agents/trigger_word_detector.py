@@ -319,7 +319,7 @@ class TriggerWordDetector(BaseAgent):
         
         self.publisher.close()
         self.listener_sub.close()
-        self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         logger.info("Trigger Word Detector stopped")
 
 

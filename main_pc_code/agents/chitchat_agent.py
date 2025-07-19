@@ -378,7 +378,7 @@ class ChitchatAgent(BaseAgent):
         self.running = False
         
         # Close sockets
-        self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         self.health_
         self.llm_
         # Wait for threads to finish
@@ -412,7 +412,7 @@ class ChitchatAgent(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         if hasattr(self, 'health_socket'):
             self.health_
         if hasattr(self, 'llm_socket'):

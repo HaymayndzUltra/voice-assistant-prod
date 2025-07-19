@@ -117,7 +117,7 @@ services:
       - "7223:5575"  # GGUFModelManager (moved to 7223)
       - "7224:5570"  # ModelManagerAgent (moved to 7224)
       - "5572:5572"  # VRAMOptimizerAgent
-      - "7225:5617"  # PredictiveLoader (moved to 7225)
+      - "7226:5617"  # PredictiveLoader (moved to 7226 to avoid 7225 conflict)
     deploy:
       resources:
         reservations:
@@ -204,7 +204,7 @@ services:
       - core-services
       - memory-system
     ports:
-      - "7210:7210"  # ModelOrchestrator
+      - "7213:7213"  # ModelOrchestrator (moved to 7213 to avoid 7210 conflict)
       - "7205:7205"  # GoalManager
       - "5701:5701"  # IntentionValidatorAgent
       - "5709:5709"  # NLUAgent

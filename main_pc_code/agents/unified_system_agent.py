@@ -676,7 +676,7 @@ class UnifiedSystemAgent(BaseAgent):
         finally:
             self.router_
             self.health_
-            self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
     def _connect_to_agents(self):
         """Connect to all required agents."""
         try:
@@ -715,7 +715,7 @@ class UnifiedSystemAgent(BaseAgent):
                 for socket_name, socket in self.agent_sockets.items():
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
             logger.info("UnifiedSystemAgent cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
