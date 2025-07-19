@@ -319,7 +319,7 @@ class TriggerWordDetector(BaseAgent):
         
         self.publisher.close()
         self.listener_sub.close()
-        self.
+        self.close()
         logger.info("Trigger Word Detector stopped")
 
 

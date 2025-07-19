@@ -1,0 +1,1878 @@
+================================================================================
+MAINPC CODEBASE SYNTAX ERROR ANALYSIS REPORT
+================================================================================
+
+Total files with errors: 119
+
+
+SYNTAX ERROR (69 files):
+------------------------------------------------------------
+
+main_pc_code/NEWMUSTFOLLOW/agents/system_digital_twin.py:
+  Line 126: expected 'except' or 'finally' block (<unknown>, line 126)
+  Context:
+     121:                 self.running = True
+     122:                 self.metrics_thread = threading.Thread(
+     123:                     target=self._collect_metrics_loop,
+     124:                     daemon=True
+     125:                 )
+     126: >>>         self.metrics_thread.start()
+     127:             
+     128:                 # Start registry cleanup thread
+     129:                 self.registry_cleanup_thread = threading.Thread(
+     130:                     target=self._registry_cleanup_loop,
+     131:                     daemon=True
+
+
+main_pc_code/NEWMUSTFOLLOW/launch_mvs.py:
+  Line 45: unexpected indent (<unknown>, line 45)
+  Context:
+      40:             print(f"Skipping {name}: No file path specified")
+      41:             return None
+      42:         
+      43:         # Construct full path to the agent file - point to the original agents directory
+      44:     main_pc_code_dir = get_project_root()
+      45: >>>     full_path = os.path.join(main_pc_code_dir, "agents", file_path)
+      46:         
+      47:         # Check if file exists
+      48:         if not os.path.exists(full_path):
+      49:             print(f"Skipping {name}: Script not found at {full_path}")
+      50:             return None
+
+
+main_pc_code/agents/DynamicIdentityAgent.py:
+  Line 19: unmatched ')' (<unknown>, line 19)
+  Context:
+      14:     from pathlib import Path
+      15:     MAIN_PC_CODE_DIR = get_main_pc_code()
+      16:     if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
+      17:         sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+      18:     
+      19: >>> PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
+      20:     MAIN_PC_CODE = get_main_pc_code()
+      21:     if PROJECT_ROOT not in sys.path:
+      22:         sys.path.insert(0, PROJECT_ROOT)
+      23:     if MAIN_PC_CODE not in sys.path:
+      24:         sys.path.insert(0, MAIN_PC_CODE)
+
+
+main_pc_code/agents/EmpathyAgent.py:
+  Line 364: invalid syntax (<unknown>, line 364)
+  Context:
+     359:                     except zmq.error.ZMQError as zmq_err:
+     360:                         logger.error(f"ZMQ error sending response: {zmq_err}")
+     361:         
+     362:         def stop(self):
+     363:             """Stop the agent and clean up resources."""
+     364: >>>         self.
+     365:             self.emotion_sub_
+     366:             self.tts_
+     367:             self.
+     368:             logger.info("EmpathyAgent stopped")
+     369:     
+
+
+main_pc_code/agents/HumanAwarenessAgent.py:
+  Line 37: unmatched ')' (<unknown>, line 37)
+  Context:
+      32:     
+      33:     
+      34:     # Import path manager for containerization-friendly paths
+      35:     import sys
+      36:     import os
+      37: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      38:     from common.utils.path_env import get_path, join_path, get_file_path
+      39:     from common.env_helpers import get_env
+      40:     # ZMQ timeout settings
+      41:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+      42:     
+
+
+main_pc_code/agents/IntentionValidatorAgent.py:
+  Line 20: unmatched ')' (<unknown>, line 20)
+  Context:
+      15:     - Implements security checks
+      16:     """
+      17:     
+      18:     import sys
+      19:     import os
+      20: >>> PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
+      21:     MAIN_PC_CODE = get_main_pc_code()
+      22:     if PROJECT_ROOT not in sys.path:
+      23:         sys.path.insert(0, PROJECT_ROOT)
+      24:     if MAIN_PC_CODE not in sys.path:
+      25:         sys.path.insert(0, MAIN_PC_CODE)
+
+
+main_pc_code/agents/MetaCognitionAgent.py:
+  Line 693: invalid syntax (<unknown>, line 693)
+  Context:
+     688:                 thread.join(timeout=2.0)  # Add timeout to avoid hanging
+     689:             
+     690:             # Close sockets in a try-finally block to ensure they're all closed
+     691:             try:
+     692:                 if hasattr(self, 'socket'):
+     693: >>>                 self.
+     694:                     logger.debug("Closed main socket")
+     695:                 
+     696:                 if hasattr(self, 'cot_sub'):
+     697:                     self.cot_sub.close()
+     698:                     logger.debug("Closed CoT subscription socket")
+
+
+main_pc_code/agents/ProactiveAgent.py:
+  Line 340: invalid syntax (<unknown>, line 340)
+  Context:
+     335:         def cleanup(self):
+     336:             """Clean up resources when the agent is stopping."""
+     337:             try:
+     338:                 # Close ZMQ sockets
+     339:                 if hasattr(self, 'socket') and self.socket:
+     340: >>>                 self.
+     341:                 if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
+     342:                     self.coordinator_
+     343:                 if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+     344:                     self.error_bus_pub.close()
+     345:                 
+
+
+main_pc_code/agents/_archive/enhanced_model_router.py:
+  Line 27: unmatched ')' (<unknown>, line 27)
+  Context:
+      22:     
+      23:     
+      24:     # Import path manager for containerization-friendly paths
+      25:     import sys
+      26:     import os
+      27: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      28:     from common.utils.path_env import get_path, join_path, get_file_path
+      29:     from common.env_helpers import get_env
+      30:     # ZMQ timeout settings
+      31:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+      32:     
+
+
+main_pc_code/agents/_archive/interpreter.py:
+  Line 31: unmatched ')' (<unknown>, line 31)
+  Context:
+      26:     
+      27:     
+      28:     # Import path manager for containerization-friendly paths
+      29:     import sys
+      30:     import os
+      31: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      32:     from common.utils.path_env import get_path, join_path, get_file_path
+      33:     # Import the advanced context manager
+      34:     try:
+      35:     from main_pc_code.agents.context_manager import ContextManager, create_context_manager
+      36:         except ImportError as e:
+
+
+main_pc_code/agents/_archive/orchestrator.py:
+  Line 37: unmatched ')' (<unknown>, line 37)
+  Context:
+      32:     
+      33:     
+      34:     # Import path manager for containerization-friendly paths
+      35:     import sys
+      36:     import os
+      37: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      38:     from common.utils.path_env import get_path, join_path, get_file_path
+      39:     from common.env_helpers import get_env
+      40:     # Ensure virtual environment is active
+      41:     if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+      42:         print("WARNING: Virtual environment is not activated. Please activate your venv before running this script.")
+
+
+main_pc_code/agents/active_learning_monitor.py:
+  Line 200: invalid syntax (<unknown>, line 200)
+  Context:
+     195:             """Gracefully shutdown the monitor"""
+     196:             self.running = False
+     197:             self.umra_
+     198:             self.coordinator_
+     199:             self.orchestrator_
+     200: >>>         self.
+     201:             logger.info("ActiveLearningMonitor shutdown complete")
+     202:     
+     203:         def _get_health_status(self):
+     204:             """Overrides the base method to add agent-specific health metrics with ZMQ readiness check."""
+     205:             base_status = super()._get_health_status()
+
+
+main_pc_code/agents/advanced_suggestion_system.py:
+  Line 47: invalid syntax (<unknown>, line 47)
+  Context:
+      42:     from command_suggestion_optimized import CommandSuggestionOptimized
+      43:     
+      44:     # Import clustering if available
+      45:     try:
+      46:         from command_clustering import CommandClusteringEngine
+      47: >>>     except ImportError as e:
+      48:             print(f"Import error: {e}")
+      49:     
+      50:     # ZMQ timeout settings
+      51:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+      52:         CLUSTERING_AVAILABLE = True
+
+
+main_pc_code/agents/chitchat_agent.py:
+  Line 381: invalid syntax (<unknown>, line 381)
+  Context:
+     376:             """Stop the chitchat agent."""
+     377:             logger.info("Stopping chitchat agent")
+     378:             self.running = False
+     379:             
+     380:             # Close sockets
+     381: >>>         self.
+     382:             self.health_
+     383:             self.llm_
+     384:             # Wait for threads to finish
+     385:             if self.health_thread:
+     386:                 self.health_thread.join(timeout=1.0)
+
+
+main_pc_code/agents/code_generator_agent.py:
+  Line 40: unmatched ')' (<unknown>, line 40)
+  Context:
+      35:     
+      36:     
+      37:     # Import path manager for containerization-friendly paths
+      38:     import sys
+      39:     import os
+      40: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      41:     from common.utils.path_env import get_path, join_path, get_file_path
+      42:     from common.core.base_agent import BaseAgent
+      43:     from main_pc_code.utils.config_loader import load_config
+      44:     from main_pc_code.utils.env_loader import get_env
+      45:     from main_pc_code.agents.gguf_model_manager import GGUFModelManager
+
+
+main_pc_code/agents/core_memory/context_summarizer_agent.py:
+  Line 267: unexpected indent (<unknown>, line 267)
+  Context:
+     262:         def record_key_decision(self, session_id, decision):
+     263:             """Record an important design decision or choice"""
+     264:     
+     265:     # ZMQ timeout settings
+     266:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+     267: >>>         with self.lock:
+     268:                 if "summaries" not in self.context_store:
+     269:                     self.context_store["summaries"] = {}
+     270:                     
+     271:                 if session_id not in self.context_store["summaries"]:
+     272:                     self._update_session_summary(session_id)
+
+
+main_pc_code/agents/core_speech_output/streaming_tts_agent.py:
+  Line 23: unmatched ')' (<unknown>, line 23)
+  Context:
+      18:     import queue
+      19:     import numpy as np
+      20:     import sounddevice as sd
+      21:     # Path handling
+      22:     from pathlib import Path
+      23: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "../../.."))))
+      24:     from common.utils.path_env import get_path, join_path, get_file_path
+      25:     import hashlib
+      26:     import tempfile
+      27:     import re
+      28:     from collections import OrderedDict
+
+
+main_pc_code/agents/emotion_engine.py:
+  Line 432: invalid syntax (<unknown>, line 432)
+  Context:
+     427:             self.running = False
+     428:             
+     429:             # Close sockets
+     430:             if hasattr(self, 'socket') and self.socket:
+     431:                 try:
+     432: >>>                 self.
+     433:                 except Exception as e:
+     434:                     logger.error(f"Error closing main socket: {e}")
+     435:             
+     436:             if hasattr(self, 'health_socket') and self.health_socket:
+     437:                 try:
+
+
+main_pc_code/agents/executor.py:
+  Line 296: invalid syntax (<unknown>, line 296)
+  Context:
+     291:                 if hasattr(self, 'command_socket'):
+     292:                     self.command_
+     293:                 if hasattr(self, 'feedback_socket'):
+     294:                     self.feedback_
+     295:                 if hasattr(self, 'context'):
+     296: >>>                 self.
+     297:             except Exception as e:
+     298:                 logging.error(f"[Executor] Error during cleanup: {e}")
+     299:             
+     300:             # Call BaseAgent's cleanup
+     301:             super().cleanup()
+
+
+main_pc_code/agents/face_recognition_agent.py:
+  Line 680: invalid syntax (<unknown>, line 680)
+  Context:
+     675:         def stop(self):
+     676:             """Stop the agent."""
+     677:             logging.info("Stopping FaceRecognitionAgent")
+     678:             self.running = False
+     679:             if hasattr(self, 'socket'):
+     680: >>>             self.
+     681:             if hasattr(self, 'pub_socket'):
+     682:                 self.pub_
+     683:             if hasattr(self, 'context'):
+     684:                 self.
+     685:         def health_check(self):
+
+
+main_pc_code/agents/feedback_handler.py:
+  Line 435: invalid syntax (<unknown>, line 435)
+  Context:
+     430:             """Clean up resources before shutdown."""
+     431:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     432:             try:
+     433:                 # Close ZMQ sockets if they exist
+     434:                 if hasattr(self, 'socket') and self.socket:
+     435: >>>                 self.
+     436:                 if hasattr(self, 'context') and self.context:
+     437:                     self.
+     438:                 # Close any open file handles
+     439:                 # [Add specific resource cleanup here]
+     440:                 
+
+
+main_pc_code/agents/fused_audio_preprocessor.py:
+  Line 48: unmatched ')' (<unknown>, line 48)
+  Context:
+      43:     
+      44:     
+      45:     # Import path manager for containerization-friendly paths
+      46:     import sys
+      47:     import os
+      48: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      49:     from common.utils.path_env import get_path, join_path, get_file_path
+      50:     from common.env_helpers import get_env
+      51:     # Load configuration at module level
+      52:     config = load_config()
+      53:     
+
+
+main_pc_code/agents/human_awareness_agent.py:
+  Line 259: invalid syntax (<unknown>, line 259)
+  Context:
+     254:                             logger.error(f"Error closing {socket_name}: {e}")
+     255:                 
+     256:                 # Terminate ZMQ context
+     257:                 if hasattr(self, 'context') and self.context:
+     258:                     try:
+     259: >>>                     self.
+     260:                         logger.info("ZMQ context terminated")
+     261:                     except Exception as e:
+     262:                         logger.error(f"Error terminating ZMQ context: {e}")
+     263:                 
+     264:                 logger.info("Cleanup completed successfully")
+
+
+main_pc_code/agents/knowledge_base.py:
+  Line 240: invalid syntax (<unknown>, line 240)
+  Context:
+     235:             logger.info("KnowledgeBase cleanup start")
+     236:             try:
+     237:                 if hasattr(self, "error_bus_pub") and self.error_bus_pub:
+     238:                     self.error_bus_pub.close()
+     239:                 if hasattr(self, "context") and self.context:
+     240: >>>                 self.
+     241:                 logger.info("KnowledgeBase cleanup complete")
+     242:             except Exception as exc:
+     243:                 logger.error(f"Cleanup error: {exc}")
+     244:             super().cleanup()
+     245:     
+
+
+main_pc_code/agents/learning_manager.py:
+  Line 444: invalid syntax (<unknown>, line 444)
+  Context:
+     439:             """Stop the learning manager."""
+     440:             logger.info("Stopping learning manager")
+     441:             self.running = False
+     442:             
+     443:             if hasattr(self, 'socket'):
+     444: >>>             self.
+     445:             if hasattr(self, 'health_pub_socket'):
+     446:                 self.health_pub_
+     447:             if self.health_thread:
+     448:                 self.health_thread.join(timeout=1.0)
+     449:             
+
+
+main_pc_code/agents/learning_opportunity_detector.py:
+  Line 611: invalid syntax (<unknown>, line 611)
+  Context:
+     606:             try:
+     607:                 self.umra_
+     608:                 self.coordinator_
+     609:                 self.los_
+     610:                 self.error_bus_pub.close()
+     611: >>>             self.
+     612:             except Exception as e:
+     613:                 logger.error(f"Cleanup error: {e}")
+     614:             logger.info("LearningOpportunityDetector shutdown complete")
+     615:     
+     616:     if __name__ == '__main__':
+
+
+main_pc_code/agents/llm_runtime_tools.py:
+  Line 39: unmatched ')' (<unknown>, line 39)
+  Context:
+      34:     
+      35:     
+      36:     # Import path manager for containerization-friendly paths
+      37:     import sys
+      38:     import os
+      39: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      40:     from common.utils.path_env import get_path, join_path, get_file_path
+      41:     from common.env_helpers import get_env
+      42:     # Configure logging
+      43:     logging.basicConfig(
+      44:         level=logging.INFO,
+
+
+main_pc_code/agents/memory_client.py:
+  Line 684: invalid syntax (<unknown>, line 684)
+  Context:
+     679:             """Clean up resources before shutdown."""
+     680:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     681:             try:
+     682:                 # Close ZMQ sockets if they exist
+     683:                 if hasattr(self, 'socket') and self.socket:
+     684: >>>                 self.
+     685:                 if hasattr(self, 'context') and self.context:
+     686:                     self.
+     687:                 # Close any open file handles
+     688:                 # [Add specific resource cleanup here]
+     689:                 
+
+
+main_pc_code/agents/model_manager_agent.py:
+  Line 3988: expected an indented block after 'try' statement on line 3986 (<unknown>, line 3988)
+  Context:
+    3983:             Returns:
+    3984:                 dict: Response message with status and model information
+    3985:             """
+    3986:             try:
+    3987:                         # Unified API quick path — handle `{action: "generate"}` requests here
+    3988: >>>         if isinstance(request_data, dict):
+    3989:                 action = request_data.get("action")
+    3990:                 if action == "generate":
+    3991:                     return self._handle_generate_action(request_data)
+    3992:                 elif action == "clear_conversation":
+    3993:                     return self._handle_clear_conversation_action(request_data)
+
+
+main_pc_code/agents/needtoverify/agent_utils.py:
+  Line 516: unexpected indent (<unknown>, line 516)
+  Context:
+     511:             print(f"Import error: {e}")
+     512:     
+     513:     # ZMQ timeout settings
+     514:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+     515:             
+     516: >>>         info.update({
+     517:                 "cpu_count": psutil.cpu_count(),
+     518:                 "memory_total": psutil.virtual_memory().total,
+     519:                 "memory_available": psutil.virtual_memory().available,
+     520:                 "memory_percent": psutil.virtual_memory().percent,
+     521:                 "disk_usage": {str(part.mountpoint): {
+
+
+main_pc_code/agents/needtoverify/ai_studio_assistant.py:
+  Line 136: expected 'except' or 'finally' block (<unknown>, line 136)
+  Context:
+     131:             chrome_options.add_argument("--start-maximized")
+     132:             
+     133:             # Try to use webdriver_manager if installed
+     134:             try:
+     135:                 from webdriver_manager.chrome import ChromeDriverManager
+     136: >>>     except ImportError as e:
+     137:             print(f"Import error: {e}")
+     138:                 service = Service(ChromeDriverManager().install())
+     139:                 self.browser = webdriver.Chrome(service=service, options=chrome_options)
+     140:             except ImportError:
+     141:                 # Fallback to using system chromedriver
+
+
+main_pc_code/agents/needtoverify/auto_fixer_agent.py:
+  Line 135: unexpected indent (<unknown>, line 135)
+  Context:
+     130:     if __name__ == "__main__":
+     131:         import argparse
+     132:     
+     133:     # ZMQ timeout settings
+     134:     ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
+     135: >>>     parser = argparse.ArgumentParser(description="Auto-Fixer Agent: Auto-code correction and debugging loop.")
+     136:         parser.add_argument('--description', type=str, help='Task description for code generation')
+     137:         parser.add_argument('--language', type=str, default=None, help='Programming language (optional)')
+     138:         parser.add_argument('--server', action='store_true', help='Run in server mode, waiting for ZMQ requests')
+     139:         args = parser.parse_args()
+     140:         
+
+
+main_pc_code/agents/needtoverify/autonomous_agent_framework.py:
+  Line 106: invalid syntax (<unknown>, line 106)
+  Context:
+     101:                 "description": self.description,
+     102:                 "required_params": self.required_params,
+     103:                 "optional_params": self.optional_params
+     104:             }
+     105:     
+     106: >>> class WebSearchTool(BaseAgent)(Tool):
+     107:         """Tool for searching the web"""
+     108:         
+     109:         def __init__(self, port: int = None, **kwargs):
+     110:             super().__init__(port=port, name="AutonomousAgentFramework")
+     111:             super().__init__(
+
+
+main_pc_code/agents/needtoverify/command_suggestion_optimized.py:
+  Line 35: invalid syntax (<unknown>, line 35)
+  Context:
+      30:     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+      31:     
+      32:     # Import clustering if available
+      33:     try:
+      34:         from core_agents.command_clustering import CommandClusteringEngine
+      35: >>>     except ImportError as e:
+      36:             print(f"Import error: {e}")
+      37:         CLUSTERING_AVAILABLE = True
+      38:     except ImportError:
+      39:         CLUSTERING_AVAILABLE = False
+      40:     
+
+
+main_pc_code/agents/needtoverify/error_handler.py:
+  Line 16: invalid syntax (<unknown>, line 16)
+  Context:
+      11:     # Import path manager for containerization-friendly paths
+      12:     import sys
+      13:     import os
+      14:     sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
+      15:     from common.utils.path_env import get_path, join_path, get_file_path
+      16: >>> class ErrorSeverity(BaseAgent)(Enum):
+      17:         LOW = 1
+      18:         MEDIUM = 2
+      19:         HIGH = 3
+      20:         CRITICAL = 4
+      21:     
+
+
+main_pc_code/agents/needtoverify/fixed_model_config_loader.py:
+  Line 9: expected an indented block after 'try' statement on line 7 (<unknown>, line 9)
+  Context:
+       4:         Load model configurations from the central config
+       5:         Respects the active PC settings key (main_pc_settings or pc2_settings) based on environment variable
+       6:         """
+       7:         try:
+       8:             # Determine active PC settings key based on environment variable
+       9: >>> from main_pc_code.utils.config_loader import Config
+      10:             cfg = Config()
+      11:             active_pc_settings_key = cfg.active_pc_settings_key
+      12:             logger.info(f"Active PC settings key: {active_pc_settings_key}")
+      13:             
+      14:             # Get model configurations directly from config object
+
+
+main_pc_code/agents/nlu_agent.py:
+  Line 168: invalid syntax (<unknown>, line 168)
+  Context:
+     163:         def stop(self):
+     164:             """Stop the NLU Agent."""
+     165:             logger.info("Stopping NLUAgent")
+     166:             self.running = False
+     167:             if hasattr(self, 'socket'):
+     168: >>>             self.
+     169:             if hasattr(self, 'context'):
+     170:                 self.
+     171:         def _handle_requests(self):
+     172:             """Handle incoming ZMQ requests."""
+     173:             while self.running:
+
+
+main_pc_code/agents/pc2_zmq_health_report_win.py:
+  Line 20: unmatched ')' (<unknown>, line 20)
+  Context:
+      15:     
+      16:     
+      17:     # Import path manager for containerization-friendly paths
+      18:     import sys
+      19:     import os
+      20: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      21:     from common.utils.path_env import get_path, join_path, get_file_path
+      22:     # Set up logging
+      23:     current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+      24:     log_filename = fjoin_path("logs", "pc2_zmq_health_report_{current_time}.log")
+      25:     
+
+
+main_pc_code/agents/pc2_zmq_protocol_finder.py:
+  Line 14: unmatched ')' (<unknown>, line 14)
+  Context:
+       9:     
+      10:     
+      11:     # Import path manager for containerization-friendly paths
+      12:     import sys
+      13:     import os
+      14: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      15:     from common.utils.path_env import get_path, join_path, get_file_path
+      16:     # Configure logging
+      17:     log_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+      18:     log_file = fjoin_path("logs", "pc2_zmq_protocol_finder_{log_timestamp}.log")
+      19:     logging.basicConfig(
+
+
+main_pc_code/agents/pc2_zmq_protocol_finder_win.py:
+  Line 152: expected an indented block after 'finally' statement on line 150 (<unknown>, line 152)
+  Context:
+     147:             except Exception as e:
+     148:                 logging.error(f"Error communicating with {model_id}: {str(e)}")
+     149:                 print(f"[ERROR] | Payload: {payload} | Error: {str(e)}")
+     150:             finally:
+     151:             # Brief pause between attempts
+     152: >>>         time.sleep(0.5)
+     153:         
+     154:         # Print summary
+     155:         print(f"\nSummary for {model_id} ({display_name}):")
+     156:         if working_protocols:
+     157:             successful_protocols = [p for p in working_protocols if p["success"]]
+
+
+main_pc_code/agents/predictive_health_monitor.py:
+  Line 1267: expected an indented block after 'try' statement on line 1266 (<unknown>, line 1267)
+  Context:
+    1262:                 logger.warning(f"Agent {agent_name} health check failed: {str(e)}")
+    1263:                 return False
+    1264:             finally:
+    1265:                 # Ensure we clean up the socket resources even if an exception occurs
+    1266:                 try:
+    1267: >>>             except:
+    1268:                     pass
+    1269:                 return False  # Ensure we always return a boolean
+    1270:     
+    1271:         def _record_health_event(self, agent_name: str, event_type: str, details: Dict[str, Any]) -> None:
+    1272:             """Record a health event in the database.
+
+
+main_pc_code/agents/remote_connector_agent.py:
+  Line 448: invalid syntax (<unknown>, line 448)
+  Context:
+     443:                 self.status_thread.join(timeout=2)
+     444:             
+     445:             self.receiver.close()
+     446:             self.task_router.close()
+     447:             self.model_status.close()
+     448: >>>         self.
+     449:             logger.info("Remote Connector Agent stopped")
+     450:     
+     451:         def report_error(self, error_type, message, severity="ERROR", context=None):
+     452:             error_data = {
+     453:                 "error_type": error_type,
+
+
+main_pc_code/agents/request_coordinator.py:
+  Line 350: expected an indented block after 'if' statement on line 349 (<unknown>, line 350)
+  Context:
+     345:                 logger.error(f"Error in language analysis listener: {e}", exc_info=True)
+     346:             finally:
+     347:                 # Clean up socket resources
+     348:                 try:
+     349:                     if socket:
+     350: >>>                 if context:
+     351:                 except Exception as cleanup_error:
+     352:                     logger.error(f"Error cleaning up language analysis socket: {cleanup_error}")
+     353:                     
+     354:         def _start_threads(self):
+     355:             """Start all required background threads"""
+
+
+main_pc_code/agents/responder.py:
+  Line 802: invalid syntax (<unknown>, line 802)
+  Context:
+     797:                             logger.error(f"Error closing {socket_name}: {e}")
+     798:             
+     799:             # Terminate ZMQ context
+     800:             if self.context:
+     801:                 try:
+     802: >>>                 self.
+     803:                     logger.info("Terminated ZMQ context")
+     804:                 except Exception as e:
+     805:                     logger.error(f"Error terminating ZMQ context: {e}")
+     806:             
+     807:             logger.info("ResponderAgent stopped")
+
+
+main_pc_code/agents/streaming_audio_capture.py:
+  Line 43: unmatched ')' (<unknown>, line 43)
+  Context:
+      38:     
+      39:     
+      40:     # Import path manager for containerization-friendly paths
+      41:     import sys
+      42:     import os
+      43: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      44:     from common.utils.path_env import get_path, join_path, get_file_path
+      45:     # Add project root to the Python path to allow for absolute imports
+      46:     PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
+      47:     if PROJECT_ROOT not in sys.path:
+      48:         sys.path.insert(0, PROJECT_ROOT)
+
+
+main_pc_code/agents/streaming_interrupt_handler.py:
+  Line 344: unexpected indent (<unknown>, line 344)
+  Context:
+     339:             logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+     340:         except Exception as e:
+     341:             import traceback
+     342:     from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+     343:     from common.env_helpers import get_env
+     344: >>>         logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
+     345:             traceback.print_exc()
+     346:         finally:
+     347:             if agent and hasattr(agent, 'cleanup'):
+     348:                 logger.info(f"Cleaning up {agent.name}...")
+     349:                 agent.cleanup()
+
+
+main_pc_code/agents/streaming_language_analyzer.py:
+  Line 629: invalid syntax (<unknown>, line 629)
+  Context:
+     624:                 if hasattr(self, 'translation_socket') and self.translation_socket:
+     625:                     self.translation_
+     626:                     logger.info("Closed Translation socket")
+     627:                     
+     628:                 if hasattr(self, 'context') and self.context:
+     629: >>>                 self.
+     630:                     logger.info("Terminated ZMQ context")
+     631:                     
+     632:                 logger.info("All resources cleaned up successfully")
+     633:                 
+     634:                 # Call parent cleanup to handle BaseAgent resources
+
+
+main_pc_code/agents/streaming_tts_agent.py:
+  Line 733: unexpected indent (<unknown>, line 733)
+  Context:
+     728:             logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+     729:         except Exception as e:
+     730:             import traceback
+     731:     from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+     732:     from common.env_helpers import get_env
+     733: >>>         logger.error(f"An unexpected error occurred in {agent.name if agent else 'UltimateTTSAgent'}: {e}")
+     734:             traceback.print_exc()
+     735:         finally:
+     736:             if agent and hasattr(agent, 'cleanup'):
+     737:                 logger.info(f"Cleaning up {agent.name}...")
+     738:                 agent.cleanup()
+
+
+main_pc_code/agents/streaming_whisper_asr.py:
+  Line 225: invalid syntax (<unknown>, line 225)
+  Context:
+     220:                     time.sleep(0.1)
+     221:             except KeyboardInterrupt:
+     222:                 logger.info("Keyboard interrupt detected, stopping")
+     223:             finally:
+     224:                 self.running = False
+     225: >>>             self.
+     226:                 logger.info("Streaming Whisper ASR stopped.")
+     227:     
+     228:     
+     229:         def health_check(self):
+     230:             '''
+
+
+main_pc_code/agents/stt/dynamic_stt_manager.py:
+  Line 70: expected 'except' or 'finally' block (<unknown>, line 70)
+  Context:
+      65:                     self.logger.debug(f"Model '{model_id}' is already loaded.")
+      66:                     return self.loaded_models[model_id]
+      67:                 
+      68:                 try:
+      69:                     import whisper
+      70: >>>     except ImportError as e:
+      71:             print(f"Import error: {e}")
+      72:                     self.logger.info(f"Loading STT model '{model_id}'...")
+      73:                     start_time = time.time()
+      74:                     model = whisper.load_model(model_id)
+      75:                     self.loaded_models[model_id] = model
+
+
+main_pc_code/agents/test_meta_cognition.py:
+  Line 49: expected an indented block after 'finally' statement on line 48 (<unknown>, line 49)
+  Context:
+      44:             return response.get('status') == 'success'
+      45:         except Exception as e:
+      46:             logger.error(f"Error testing learning analysis: {str(e)}")
+      47:             return False
+      48:         finally:
+      49: >>> def test_memory_optimization():
+      50:         """Test memory optimization functionality."""
+      51:         context = None  # Using pool
+      52:         socket = get_req_socket(endpoint).socket
+      53:         socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
+      54:         socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
+
+
+main_pc_code/agents/tiered_responder.py:
+  Line 19: unmatched ')' (<unknown>, line 19)
+  Context:
+      14:     
+      15:     
+      16:     # Import path manager for containerization-friendly paths
+      17:     import sys
+      18:     import os
+      19: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      20:     from common.utils.path_env import get_path, join_path, get_file_path
+      21:     # Constants
+      22:     ZMQ_PULL_PORT = 5619
+      23:     ZMQ_PUSH_PORT = 5620
+      24:     MAX_QUEUE_SIZE = 1000
+
+
+main_pc_code/agents/tone_detector.py:
+  Line 599: invalid syntax (<unknown>, line 599)
+  Context:
+     594:                             logger.error(f"Error closing {socket_name}: {e}")
+     595:                 
+     596:                 # Terminate ZMQ context
+     597:                 if hasattr(self, 'context') and self.context:
+     598:                     try:
+     599: >>>                     self.
+     600:                         logger.info("ZMQ context terminated")
+     601:                     except Exception as e:
+     602:                         logger.error(f"Error terminating ZMQ context: {e}")
+     603:                 
+     604:                 # Clean up whisper model if it exists
+
+
+main_pc_code/agents/translation_service.py:
+  Line 1999: invalid syntax (<unknown>, line 1999)
+  Context:
+    1994:         
+    1995:         def cleanup(self):
+    1996:             """Clean up resources."""
+    1997:             try:
+    1998:                 if hasattr(self, 'socket') and self.socket:
+    1999: >>>                 self.
+    2000:                 # Clean up engine clients
+    2001:                 for engine_name, engine in self.engine_manager.engines.items():
+    2002:                     if hasattr(engine, 'cleanup'):
+    2003:                         try:
+    2004:                             engine.cleanup()
+
+
+main_pc_code/agents/trigger_word_detector.py:
+  Line 322: invalid syntax (<unknown>, line 322)
+  Context:
+     317:             if hasattr(self, 'timeout_thread') and self.timeout_thread.is_alive():
+     318:                 self.timeout_thread.join(timeout=2)
+     319:             
+     320:             self.publisher.close()
+     321:             self.listener_sub.close()
+     322: >>>         self.
+     323:             logger.info("Trigger Word Detector stopped")
+     324:     
+     325:     
+     326:     
+     327:         def health_check(self):
+
+
+main_pc_code/agents/unified_system_agent.py:
+  Line 679: invalid syntax (<unknown>, line 679)
+  Context:
+     674:                 logger.error(f"Fatal error in main loop: {str(e)}\n{traceback.format_exc()}")
+     675:                 raise
+     676:             finally:
+     677:                 self.router_
+     678:                 self.health_
+     679: >>>             self.
+     680:         def _connect_to_agents(self):
+     681:             """Connect to all required agents."""
+     682:             try:
+     683:                 # Connect to FaceRecognitionAgent
+     684:                 fra_port = self.config.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
+
+
+main_pc_code/agents/utils/data_optimizer.py:
+  Line 12: invalid syntax (<unknown>, line 12)
+  Context:
+       7:     from common.core.base_agent import BaseAgent
+       8:     
+       9:     class DataOptimizer:
+      10:         def __init__(self):
+      11:     
+      12: >>>         super().__init__(*args, **kwargs)        self.compression_level = 9
+      13:             self.serialization_methods = {
+      14:                 'json': self._serialize_json,
+      15:                 'msgpack': self._serialize_msgpack,
+      16:                 'compressed_json': self._serialize_compressed_json,
+      17:                 'compressed_msgpack': self._serialize_compressed_msgpack
+
+
+main_pc_code/agents/validate_pc2_zmq_services.py:
+  Line 15: unmatched ')' (<unknown>, line 15)
+  Context:
+      10:     
+      11:     
+      12:     # Import path manager for containerization-friendly paths
+      13:     import sys
+      14:     import os
+      15: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      16:     from common.utils.path_env import get_path, join_path, get_file_path
+      17:     # Set up logging with timestamp for unique filename
+      18:     current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+      19:     log_file = fjoin_path("logs", "pc2_zmq_validation_{current_time}.log")
+      20:     
+
+
+main_pc_code/agents/vision_capture_agent.py:
+  Line 31: unmatched ')' (<unknown>, line 31)
+  Context:
+      26:     
+      27:     
+      28:     # Import path manager for containerization-friendly paths
+      29:     import sys
+      30:     import os
+      31: >>> sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+      32:     from common.utils.path_env import get_path, join_path, get_file_path
+      33:     # Add the project's main_pc_code directory to the Python path
+      34:     MAIN_PC_CODE_DIR = os.path.abspath(join_path("main_pc_code", "..")))
+      35:     if MAIN_PC_CODE_DIR not in sys.path:
+      36:         sys.path.insert(0, MAIN_PC_CODE_DIR)
+
+
+main_pc_code/agents/voice_profiling_agent.py:
+  Line 349: invalid syntax (<unknown>, line 349)
+  Context:
+     344:                             logger.error(f"Error closing {socket_name}: {e}")
+     345:                 
+     346:                 # Terminate ZMQ context
+     347:                 if hasattr(self, 'context') and self.context:
+     348:                     try:
+     349: >>>                     self.
+     350:                         logger.info("ZMQ context terminated")
+     351:                     except Exception as e:
+     352:                         logger.error(f"Error terminating ZMQ context: {e}")
+     353:                 
+     354:                 # Save any pending voice profile updates
+
+
+main_pc_code/agents/voicemeeter_control_agent.py:
+  Line 358: invalid syntax (<unknown>, line 358)
+  Context:
+     353:         def cleanup(self):
+     354:             """Clean up resources"""
+     355:             try:
+     356:                 if self.initialized:
+     357:                     self.vm_dll.VBVMR_Logout()
+     358: >>>             self.
+     359:                 self.
+     360:                 logger.info("VoiceMeeter Control Agent cleaned up")
+     361:             except Exception as e:
+     362:                 logger.error(f"Error during cleanup: {e}")
+     363:     
+
+
+main_pc_code/agents/vram_optimizer_agent.py:
+  Line 397: unmatched ')' (<unknown>, line 397)
+  Context:
+     392:                             dt_port = 7120
+     393:                         self.sdt_socket.connect(f"tcp://{pc2_ip}:{dt_port}")
+     394:                         logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
+     395:                     except Exception as e:
+     396:                         # Fallback to local connection
+     397: >>>                     self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost")))
+     398:                         logger.info("Reconnected to local SystemDigitalTwinAgent.")
+     399:                     return {"recommendation": "proceed"}
+     400:             except Exception as e:
+     401:                 logger.error(f"Error consulting Digital Twin: {e}")
+     402:                 return {"recommendation": "proceed"}
+
+
+main_pc_code/scripts/auto_fix_health_checks.py:
+  Line 274: expected 'except' or 'finally' block (<unknown>, line 274)
+  Context:
+     269:             time.sleep(20)
+     270:             
+     271:             # Check agent health
+     272:             try:
+     273:                 import zmq
+     274: >>>     except ImportError as e:
+     275:             print(f"Import error: {e}")
+     276:                 healthy_count = 0
+     277:                 for agent_name, port in AGENT_PORTS.items():
+     278:                     if check_agent_health(agent_name, port):
+     279:                         healthy_count += 1
+
+
+main_pc_code/scripts/fix_agent_health_issues.py:
+  Line 79: expected 'except' or 'finally' block (<unknown>, line 79)
+  Context:
+      74:         def _load_agent_ports(self) -> Dict[str, int]:
+      75:             """Load agent port mappings."""
+      76:             try:
+      77:                 # Try to import agent_ports.py
+      78:                 sys.path.append(str(CONFIG_DIR.parent))
+      79: >>> from main_pc_code.config.agent_ports import AgentPorts
+      80:     from common.env_helpers import get_env
+      81:                 
+      82:                 agent_ports = AgentPorts()
+      83:                 return agent_ports.get_all_ports()
+      84:             except ImportError:
+
+
+main_pc_code/scripts/validate_agents.py:
+  Line 102: expected 'except' or 'finally' block (<unknown>, line 102)
+  Context:
+      97:             Returns:
+      98:                 True if agent is healthy, False otherwise
+      99:             """
+     100:             try:
+     101:                 import psutil
+     102: >>>     except ImportError as e:
+     103:             print(f"Import error: {e}")
+     104:                 process = psutil.Process(pid)
+     105:                 return process.is_running() and process.status() == psutil.STATUS_RUNNING
+     106:             except (psutil.NoSuchProcess, psutil.AccessDenied):
+     107:                 return False
+
+
+main_pc_code/system_launcher.py:
+  Line 47: invalid syntax (<unknown>, line 47)
+  Context:
+      42:         sys.path.insert(0, str(project_root))
+      43:     
+      44:     # Import common utilities
+      45:     try:
+      46:         from common_utils.env_loader import get_env, get_ip
+      47: >>>     except ImportError as e:
+      48:             print(f"Import error: {e}")
+      49:         USE_COMMON_UTILS = True
+      50:     except ImportError:
+      51:         USE_COMMON_UTILS = False
+      52:         print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
+
+
+main_pc_code/tests/end_to_end_test.py:
+  Line 33: invalid syntax (<unknown>, line 33)
+  Context:
+      28:         sys.path.insert(0, str(project_root))
+      29:     
+      30:     # Import common utilities if available
+      31:     try:
+      32:         from common_utils.env_loader import get_env, get_ip
+      33: >>>     except ImportError as e:
+      34:             print(f"Import error: {e}")
+      35:         USE_COMMON_UTILS = True
+      36:     except ImportError:
+      37:         USE_COMMON_UTILS = False
+      38:         print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
+
+
+main_pc_code/tests/test_voice_command_flow.py:
+  Line 143: invalid syntax (<unknown>, line 143)
+  Context:
+     138:             """
+     139:             # Create sockets to send and receive messages in the flow
+     140:             
+     141:             # Socket to send simulated speech recognition output
+     142:             self.speech_pub_socket = self.context.socket(zmq.PUB)
+     143: >>>         self.speech_pub_socket.bind(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:6599")  # Test-specific port for publishing
+     144:             logger.info(f"Bound speech simulation socket to tcp://127.0.0.1:6599")
+     145:             
+     146:             # Socket to request task routing
+     147:             self.task_router_socket = self.context.socket(zmq.REQ)
+     148:             self.task_router_socket.setsockopt(zmq.RCVTIMEO, REQUEST_TIMEOUT)
+
+
+main_pc_code/working_agent_health_test.py:
+  Line 110: expected an indented block after 'try' statement on line 109 (<unknown>, line 110)
+  Context:
+     105:         # Test MoodTrackerAgent
+     106:         print("🎯 Testing MoodTrackerAgent")
+     107:         print("-" * 60)
+     108:         
+     109:         try:
+     110: >>> from main_pc_code.agents.mood_tracker_agent import MoodTrackerAgent
+     111:         except ImportError as e:
+     112:             print(f"Import error: {e}")
+     113:             is_valid, response = test_agent_health(
+     114:                 MoodTrackerAgent, 
+     115:                 "MoodTrackerAgent", 
+
+
+INCOMPLETE SELF (27 files):
+------------------------------------------------------------
+
+main_pc_code/agents/EmpathyAgent.py:
+  Line 364: self.
+  Context:
+     359:                     except zmq.error.ZMQError as zmq_err:
+     360:                         logger.error(f"ZMQ error sending response: {zmq_err}")
+     361:         
+     362:         def stop(self):
+     363:             """Stop the agent and clean up resources."""
+     364: >>>         self.
+     365:             self.emotion_sub_
+     366:             self.tts_
+     367:             self.
+     368:             logger.info("EmpathyAgent stopped")
+     369:     
+
+  Line 367: self.
+  Context:
+     362:         def stop(self):
+     363:             """Stop the agent and clean up resources."""
+     364:             self.
+     365:             self.emotion_sub_
+     366:             self.tts_
+     367: >>>         self.
+     368:             logger.info("EmpathyAgent stopped")
+     369:     
+     370:     
+     371:         def health_check(self):
+     372:             '''
+
+  Line 467: self.
+  Context:
+     462:             """Clean up resources before shutdown."""
+     463:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     464:             try:
+     465:                 # Close ZMQ sockets if they exist
+     466:                 if hasattr(self, 'socket') and self.socket:
+     467: >>>                 self.
+     468:                 if hasattr(self, 'context') and self.context:
+     469:                     self.
+     470:                 # Close any open file handles
+     471:                 # [Add specific resource cleanup here]
+     472:                 
+
+  Line 469: self.
+  Context:
+     464:             try:
+     465:                 # Close ZMQ sockets if they exist
+     466:                 if hasattr(self, 'socket') and self.socket:
+     467:                     self.
+     468:                 if hasattr(self, 'context') and self.context:
+     469: >>>                 self.
+     470:                 # Close any open file handles
+     471:                 # [Add specific resource cleanup here]
+     472:                 
+     473:                 # Call parent class cleanup if it exists
+     474:                 super().cleanup()
+
+
+main_pc_code/agents/MetaCognitionAgent.py:
+  Line 693: self.
+  Context:
+     688:                 thread.join(timeout=2.0)  # Add timeout to avoid hanging
+     689:             
+     690:             # Close sockets in a try-finally block to ensure they're all closed
+     691:             try:
+     692:                 if hasattr(self, 'socket'):
+     693: >>>                 self.
+     694:                     logger.debug("Closed main socket")
+     695:                 
+     696:                 if hasattr(self, 'cot_sub'):
+     697:                     self.cot_sub.close()
+     698:                     logger.debug("Closed CoT subscription socket")
+
+  Line 716: self.
+  Context:
+     711:             except Exception as e:
+     712:                 logger.error(f"Error during socket cleanup: {e}")
+     713:             finally:
+     714:                 # Terminate ZMQ context
+     715:                 if hasattr(self, 'context'):
+     716: >>>                 self.
+     717:                     logger.debug("Terminated ZMQ context")
+     718:             
+     719:             logger.info("MetaCognitionAgent stopped successfully")
+     720:     
+     721:         def _observe_chain_of_thought(self):
+
+
+main_pc_code/agents/ProactiveAgent.py:
+  Line 340: self.
+  Context:
+     335:         def cleanup(self):
+     336:             """Clean up resources when the agent is stopping."""
+     337:             try:
+     338:                 # Close ZMQ sockets
+     339:                 if hasattr(self, 'socket') and self.socket:
+     340: >>>                 self.
+     341:                 if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
+     342:                     self.coordinator_
+     343:                 if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+     344:                     self.error_bus_pub.close()
+     345:                 
+
+  Line 348: self.
+  Context:
+     343:                 if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+     344:                     self.error_bus_pub.close()
+     345:                 
+     346:                 # Terminate ZMQ context
+     347:                 if hasattr(self, 'context') and self.context:
+     348: >>>                 self.
+     349:                 logger.info("Resources cleaned up")
+     350:             except Exception as e:
+     351:                 logger.error(f"Error in cleanup: {str(e)}")
+     352:     
+     353:         def health_check(self):
+
+
+main_pc_code/agents/active_learning_monitor.py:
+  Line 200: self.
+  Context:
+     195:             """Gracefully shutdown the monitor"""
+     196:             self.running = False
+     197:             self.umra_
+     198:             self.coordinator_
+     199:             self.orchestrator_
+     200: >>>         self.
+     201:             logger.info("ActiveLearningMonitor shutdown complete")
+     202:     
+     203:         def _get_health_status(self):
+     204:             """Overrides the base method to add agent-specific health metrics with ZMQ readiness check."""
+     205:             base_status = super()._get_health_status()
+
+  Line 290: self.
+  Context:
+     285:             """Clean up resources before shutdown."""
+     286:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     287:             try:
+     288:                 # Close ZMQ sockets if they exist
+     289:                 if hasattr(self, 'socket') and self.socket:
+     290: >>>                 self.
+     291:                 if hasattr(self, 'context') and self.context:
+     292:                     self.
+     293:                 # Close any open file handles
+     294:                 # [Add specific resource cleanup here]
+     295:                 
+
+  Line 292: self.
+  Context:
+     287:             try:
+     288:                 # Close ZMQ sockets if they exist
+     289:                 if hasattr(self, 'socket') and self.socket:
+     290:                     self.
+     291:                 if hasattr(self, 'context') and self.context:
+     292: >>>                 self.
+     293:                 # Close any open file handles
+     294:                 # [Add specific resource cleanup here]
+     295:                 
+     296:                 # Call parent class cleanup if it exists
+     297:                 super().cleanup()
+
+
+main_pc_code/agents/chitchat_agent.py:
+  Line 381: self.
+  Context:
+     376:             """Stop the chitchat agent."""
+     377:             logger.info("Stopping chitchat agent")
+     378:             self.running = False
+     379:             
+     380:             # Close sockets
+     381: >>>         self.
+     382:             self.health_
+     383:             self.llm_
+     384:             # Wait for threads to finish
+     385:             if self.health_thread:
+     386:                 self.health_thread.join(timeout=1.0)
+
+  Line 415: self.
+  Context:
+     410:             logger.info("Cleaning up ChitchatAgent")
+     411:             self.running = False
+     412:             
+     413:             # Close sockets
+     414:             if hasattr(self, 'socket'):
+     415: >>>             self.
+     416:             if hasattr(self, 'health_socket'):
+     417:                 self.health_
+     418:             if hasattr(self, 'llm_socket'):
+     419:                 self.llm_
+     420:             # Wait for threads to finish
+
+
+main_pc_code/agents/emotion_engine.py:
+  Line 432: self.
+  Context:
+     427:             self.running = False
+     428:             
+     429:             # Close sockets
+     430:             if hasattr(self, 'socket') and self.socket:
+     431:                 try:
+     432: >>>                 self.
+     433:                 except Exception as e:
+     434:                     logger.error(f"Error closing main socket: {e}")
+     435:             
+     436:             if hasattr(self, 'health_socket') and self.health_socket:
+     437:                 try:
+
+  Line 451: self.
+  Context:
+     446:                     logger.error(f"Error closing pub socket: {e}")
+     447:             
+     448:             # Terminate context
+     449:             if hasattr(self, 'context') and self.context:
+     450:                 try:
+     451: >>>                 self.
+     452:                 except Exception as e:
+     453:                     logger.error(f"Error terminating ZMQ context: {e}")
+     454:             
+     455:             logger.info(f"{self.name} stopped")
+     456:     
+
+
+main_pc_code/agents/executor.py:
+  Line 296: self.
+  Context:
+     291:                 if hasattr(self, 'command_socket'):
+     292:                     self.command_
+     293:                 if hasattr(self, 'feedback_socket'):
+     294:                     self.feedback_
+     295:                 if hasattr(self, 'context'):
+     296: >>>                 self.
+     297:             except Exception as e:
+     298:                 logging.error(f"[Executor] Error during cleanup: {e}")
+     299:             
+     300:             # Call BaseAgent's cleanup
+     301:             super().cleanup()
+
+
+main_pc_code/agents/face_recognition_agent.py:
+  Line 680: self.
+  Context:
+     675:         def stop(self):
+     676:             """Stop the agent."""
+     677:             logging.info("Stopping FaceRecognitionAgent")
+     678:             self.running = False
+     679:             if hasattr(self, 'socket'):
+     680: >>>             self.
+     681:             if hasattr(self, 'pub_socket'):
+     682:                 self.pub_
+     683:             if hasattr(self, 'context'):
+     684:                 self.
+     685:         def health_check(self):
+
+  Line 684: self.
+  Context:
+     679:             if hasattr(self, 'socket'):
+     680:                 self.
+     681:             if hasattr(self, 'pub_socket'):
+     682:                 self.pub_
+     683:             if hasattr(self, 'context'):
+     684: >>>             self.
+     685:         def health_check(self):
+     686:             """Perform a health check and return status."""
+     687:             try:
+     688:                 # Basic health check logic
+     689:                 is_healthy = True # Assume healthy unless a check fails
+
+  Line 749: self.
+  Context:
+     744:             """Clean up resources before shutdown."""
+     745:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     746:             try:
+     747:                 # Close ZMQ sockets if they exist
+     748:                 if hasattr(self, 'socket') and self.socket:
+     749: >>>                 self.
+     750:                 if hasattr(self, 'context') and self.context:
+     751:                     self.
+     752:                 # Close any open file handles
+     753:                 # [Add specific resource cleanup here]
+     754:                 
+
+  Line 751: self.
+  Context:
+     746:             try:
+     747:                 # Close ZMQ sockets if they exist
+     748:                 if hasattr(self, 'socket') and self.socket:
+     749:                     self.
+     750:                 if hasattr(self, 'context') and self.context:
+     751: >>>                 self.
+     752:                 # Close any open file handles
+     753:                 # [Add specific resource cleanup here]
+     754:                 
+     755:                 # Call parent class cleanup if it exists
+     756:                 super().cleanup()
+
+
+main_pc_code/agents/feedback_handler.py:
+  Line 435: self.
+  Context:
+     430:             """Clean up resources before shutdown."""
+     431:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     432:             try:
+     433:                 # Close ZMQ sockets if they exist
+     434:                 if hasattr(self, 'socket') and self.socket:
+     435: >>>                 self.
+     436:                 if hasattr(self, 'context') and self.context:
+     437:                     self.
+     438:                 # Close any open file handles
+     439:                 # [Add specific resource cleanup here]
+     440:                 
+
+  Line 437: self.
+  Context:
+     432:             try:
+     433:                 # Close ZMQ sockets if they exist
+     434:                 if hasattr(self, 'socket') and self.socket:
+     435:                     self.
+     436:                 if hasattr(self, 'context') and self.context:
+     437: >>>                 self.
+     438:                 # Close any open file handles
+     439:                 # [Add specific resource cleanup here]
+     440:                 
+     441:                 # Call parent class cleanup if it exists
+     442:                 super().cleanup()
+
+
+main_pc_code/agents/human_awareness_agent.py:
+  Line 259: self.
+  Context:
+     254:                             logger.error(f"Error closing {socket_name}: {e}")
+     255:                 
+     256:                 # Terminate ZMQ context
+     257:                 if hasattr(self, 'context') and self.context:
+     258:                     try:
+     259: >>>                     self.
+     260:                         logger.info("ZMQ context terminated")
+     261:                     except Exception as e:
+     262:                         logger.error(f"Error terminating ZMQ context: {e}")
+     263:                 
+     264:                 logger.info("Cleanup completed successfully")
+
+
+main_pc_code/agents/knowledge_base.py:
+  Line 240: self.
+  Context:
+     235:             logger.info("KnowledgeBase cleanup start")
+     236:             try:
+     237:                 if hasattr(self, "error_bus_pub") and self.error_bus_pub:
+     238:                     self.error_bus_pub.close()
+     239:                 if hasattr(self, "context") and self.context:
+     240: >>>                 self.
+     241:                 logger.info("KnowledgeBase cleanup complete")
+     242:             except Exception as exc:
+     243:                 logger.error(f"Cleanup error: {exc}")
+     244:             super().cleanup()
+     245:     
+
+
+main_pc_code/agents/learning_manager.py:
+  Line 444: self.
+  Context:
+     439:             """Stop the learning manager."""
+     440:             logger.info("Stopping learning manager")
+     441:             self.running = False
+     442:             
+     443:             if hasattr(self, 'socket'):
+     444: >>>             self.
+     445:             if hasattr(self, 'health_pub_socket'):
+     446:                 self.health_pub_
+     447:             if self.health_thread:
+     448:                 self.health_thread.join(timeout=1.0)
+     449:             
+
+  Line 477: self.
+  Context:
+     472:             logger.info("Cleaning up LearningManager")
+     473:             self.running = False
+     474:             
+     475:             # Close sockets
+     476:             if hasattr(self, 'socket'):
+     477: >>>             self.
+     478:             if hasattr(self, 'health_pub_socket'):
+     479:                 self.health_pub_
+     480:             # Wait for threads to finish
+     481:             if self.health_thread:
+     482:                 self.health_thread.join(timeout=1.0)
+
+
+main_pc_code/agents/learning_opportunity_detector.py:
+  Line 611: self.
+  Context:
+     606:             try:
+     607:                 self.umra_
+     608:                 self.coordinator_
+     609:                 self.los_
+     610:                 self.error_bus_pub.close()
+     611: >>>             self.
+     612:             except Exception as e:
+     613:                 logger.error(f"Cleanup error: {e}")
+     614:             logger.info("LearningOpportunityDetector shutdown complete")
+     615:     
+     616:     if __name__ == '__main__':
+
+
+main_pc_code/agents/memory_client.py:
+  Line 684: self.
+  Context:
+     679:             """Clean up resources before shutdown."""
+     680:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     681:             try:
+     682:                 # Close ZMQ sockets if they exist
+     683:                 if hasattr(self, 'socket') and self.socket:
+     684: >>>                 self.
+     685:                 if hasattr(self, 'context') and self.context:
+     686:                     self.
+     687:                 # Close any open file handles
+     688:                 # [Add specific resource cleanup here]
+     689:                 
+
+  Line 686: self.
+  Context:
+     681:             try:
+     682:                 # Close ZMQ sockets if they exist
+     683:                 if hasattr(self, 'socket') and self.socket:
+     684:                     self.
+     685:                 if hasattr(self, 'context') and self.context:
+     686: >>>                 self.
+     687:                 # Close any open file handles
+     688:                 # [Add specific resource cleanup here]
+     689:                 
+     690:                 # Call parent class cleanup if it exists
+     691:                 super().cleanup()
+
+
+main_pc_code/agents/nlu_agent.py:
+  Line 168: self.
+  Context:
+     163:         def stop(self):
+     164:             """Stop the NLU Agent."""
+     165:             logger.info("Stopping NLUAgent")
+     166:             self.running = False
+     167:             if hasattr(self, 'socket'):
+     168: >>>             self.
+     169:             if hasattr(self, 'context'):
+     170:                 self.
+     171:         def _handle_requests(self):
+     172:             """Handle incoming ZMQ requests."""
+     173:             while self.running:
+
+  Line 170: self.
+  Context:
+     165:             logger.info("Stopping NLUAgent")
+     166:             self.running = False
+     167:             if hasattr(self, 'socket'):
+     168:                 self.
+     169:             if hasattr(self, 'context'):
+     170: >>>             self.
+     171:         def _handle_requests(self):
+     172:             """Handle incoming ZMQ requests."""
+     173:             while self.running:
+     174:                 try:
+     175:                     # Only process requests if initialized
+
+
+main_pc_code/agents/predictive_health_monitor.py:
+  Line 1605: self.
+  Context:
+    1600:             """Clean up resources before shutdown."""
+    1601:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+    1602:             try:
+    1603:                 # Close ZMQ sockets if they exist
+    1604:                 if hasattr(self, 'socket') and self.socket:
+    1605: >>>                 self.
+    1606:                 if hasattr(self, 'context') and self.context:
+    1607:                     self.
+    1608:                 # Close any open file handles
+    1609:                 # [Add specific resource cleanup here]
+    1610:                 
+
+  Line 1607: self.
+  Context:
+    1602:             try:
+    1603:                 # Close ZMQ sockets if they exist
+    1604:                 if hasattr(self, 'socket') and self.socket:
+    1605:                     self.
+    1606:                 if hasattr(self, 'context') and self.context:
+    1607: >>>                 self.
+    1608:                 # Close any open file handles
+    1609:                 # [Add specific resource cleanup here]
+    1610:                 
+    1611:                 # Call parent class cleanup if it exists
+    1612:                 super().cleanup()
+
+
+main_pc_code/agents/remote_connector_agent.py:
+  Line 448: self.
+  Context:
+     443:                 self.status_thread.join(timeout=2)
+     444:             
+     445:             self.receiver.close()
+     446:             self.task_router.close()
+     447:             self.model_status.close()
+     448: >>>         self.
+     449:             logger.info("Remote Connector Agent stopped")
+     450:     
+     451:         def report_error(self, error_type, message, severity="ERROR", context=None):
+     452:             error_data = {
+     453:                 "error_type": error_type,
+
+
+main_pc_code/agents/request_coordinator.py:
+  Line 819: self.
+  Context:
+     814:             self.running = False
+     815:             logger.info("Stopping RequestCoordinator...")
+     816:             for sock in [self.main_socket, self.suggestion_socket, self.interrupt_socket, self.memory_socket, self.tts_socket, self.cot_socket, self.got_tot_socket]:
+     817:                 if sock and not sock.closed:
+     818:                     sock.close()
+     819: >>>         self.
+     820:             logger.info("RequestCoordinator stopped.")
+     821:     
+     822:         def run(self):
+     823:             logger.info("RequestCoordinator is running...")
+     824:             try:
+
+  Line 881: self.
+  Context:
+     876:             """Clean up resources before shutdown."""
+     877:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     878:             try:
+     879:                 # Close ZMQ sockets if they exist
+     880:                 if hasattr(self, 'socket') and self.socket:
+     881: >>>                 self.
+     882:                 if hasattr(self, 'context') and self.context:
+     883:                     self.
+     884:                 # Close any open file handles
+     885:                 # [Add specific resource cleanup here]
+     886:                 
+
+  Line 883: self.
+  Context:
+     878:             try:
+     879:                 # Close ZMQ sockets if they exist
+     880:                 if hasattr(self, 'socket') and self.socket:
+     881:                     self.
+     882:                 if hasattr(self, 'context') and self.context:
+     883: >>>                 self.
+     884:                 # Close any open file handles
+     885:                 # [Add specific resource cleanup here]
+     886:                 
+     887:                 # Call parent class cleanup if it exists
+     888:                 super().cleanup()
+
+
+main_pc_code/agents/responder.py:
+  Line 802: self.
+  Context:
+     797:                             logger.error(f"Error closing {socket_name}: {e}")
+     798:             
+     799:             # Terminate ZMQ context
+     800:             if self.context:
+     801:                 try:
+     802: >>>                 self.
+     803:                     logger.info("Terminated ZMQ context")
+     804:                 except Exception as e:
+     805:                     logger.error(f"Error terminating ZMQ context: {e}")
+     806:             
+     807:             logger.info("ResponderAgent stopped")
+
+  Line 904: self.
+  Context:
+     899:             """Clean up resources before shutdown."""
+     900:             logger.info(f"{self.__class__.__name__} cleaning up resources...")
+     901:             try:
+     902:                 # Close ZMQ sockets if they exist
+     903:                 if hasattr(self, 'socket') and self.socket:
+     904: >>>                 self.
+     905:                 if hasattr(self, 'context') and self.context:
+     906:                     self.
+     907:                 # Close any open file handles
+     908:                 # [Add specific resource cleanup here]
+     909:                 
+
+  Line 906: self.
+  Context:
+     901:             try:
+     902:                 # Close ZMQ sockets if they exist
+     903:                 if hasattr(self, 'socket') and self.socket:
+     904:                     self.
+     905:                 if hasattr(self, 'context') and self.context:
+     906: >>>                 self.
+     907:                 # Close any open file handles
+     908:                 # [Add specific resource cleanup here]
+     909:                 
+     910:                 # Call parent class cleanup if it exists
+     911:                 super().cleanup()
+
+
+main_pc_code/agents/streaming_language_analyzer.py:
+  Line 629: self.
+  Context:
+     624:                 if hasattr(self, 'translation_socket') and self.translation_socket:
+     625:                     self.translation_
+     626:                     logger.info("Closed Translation socket")
+     627:                     
+     628:                 if hasattr(self, 'context') and self.context:
+     629: >>>                 self.
+     630:                     logger.info("Terminated ZMQ context")
+     631:                     
+     632:                 logger.info("All resources cleaned up successfully")
+     633:                 
+     634:                 # Call parent cleanup to handle BaseAgent resources
+
+
+main_pc_code/agents/streaming_whisper_asr.py:
+  Line 225: self.
+  Context:
+     220:                     time.sleep(0.1)
+     221:             except KeyboardInterrupt:
+     222:                 logger.info("Keyboard interrupt detected, stopping")
+     223:             finally:
+     224:                 self.running = False
+     225: >>>             self.
+     226:                 logger.info("Streaming Whisper ASR stopped.")
+     227:     
+     228:     
+     229:         def health_check(self):
+     230:             '''
+
+
+main_pc_code/agents/tone_detector.py:
+  Line 599: self.
+  Context:
+     594:                             logger.error(f"Error closing {socket_name}: {e}")
+     595:                 
+     596:                 # Terminate ZMQ context
+     597:                 if hasattr(self, 'context') and self.context:
+     598:                     try:
+     599: >>>                     self.
+     600:                         logger.info("ZMQ context terminated")
+     601:                     except Exception as e:
+     602:                         logger.error(f"Error terminating ZMQ context: {e}")
+     603:                 
+     604:                 # Clean up whisper model if it exists
+
+
+main_pc_code/agents/translation_service.py:
+  Line 1999: self.
+  Context:
+    1994:         
+    1995:         def cleanup(self):
+    1996:             """Clean up resources."""
+    1997:             try:
+    1998:                 if hasattr(self, 'socket') and self.socket:
+    1999: >>>                 self.
+    2000:                 # Clean up engine clients
+    2001:                 for engine_name, engine in self.engine_manager.engines.items():
+    2002:                     if hasattr(engine, 'cleanup'):
+    2003:                         try:
+    2004:                             engine.cleanup()
+
+
+main_pc_code/agents/trigger_word_detector.py:
+  Line 322: self.
+  Context:
+     317:             if hasattr(self, 'timeout_thread') and self.timeout_thread.is_alive():
+     318:                 self.timeout_thread.join(timeout=2)
+     319:             
+     320:             self.publisher.close()
+     321:             self.listener_sub.close()
+     322: >>>         self.
+     323:             logger.info("Trigger Word Detector stopped")
+     324:     
+     325:     
+     326:     
+     327:         def health_check(self):
+
+
+main_pc_code/agents/unified_system_agent.py:
+  Line 679: self.
+  Context:
+     674:                 logger.error(f"Fatal error in main loop: {str(e)}\n{traceback.format_exc()}")
+     675:                 raise
+     676:             finally:
+     677:                 self.router_
+     678:                 self.health_
+     679: >>>             self.
+     680:         def _connect_to_agents(self):
+     681:             """Connect to all required agents."""
+     682:             try:
+     683:                 # Connect to FaceRecognitionAgent
+     684:                 fra_port = self.config.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
+
+  Line 718: self.
+  Context:
+     713:                 # Close agent sockets
+     714:                 if hasattr(self, 'agent_sockets'):
+     715:                     for socket_name, socket in self.agent_sockets.items():
+     716:                 # Terminate ZMQ context
+     717:                 if hasattr(self, 'context'):
+     718: >>>                 self.
+     719:                 logger.info("UnifiedSystemAgent cleaned up successfully")
+     720:             except Exception as e:
+     721:                 logger.error(f"Error during cleanup: {e}")
+     722:         
+     723:         def stop(self):
+
+
+main_pc_code/agents/voice_profiling_agent.py:
+  Line 349: self.
+  Context:
+     344:                             logger.error(f"Error closing {socket_name}: {e}")
+     345:                 
+     346:                 # Terminate ZMQ context
+     347:                 if hasattr(self, 'context') and self.context:
+     348:                     try:
+     349: >>>                     self.
+     350:                         logger.info("ZMQ context terminated")
+     351:                     except Exception as e:
+     352:                         logger.error(f"Error terminating ZMQ context: {e}")
+     353:                 
+     354:                 # Save any pending voice profile updates
+
+
+main_pc_code/agents/voicemeeter_control_agent.py:
+  Line 358: self.
+  Context:
+     353:         def cleanup(self):
+     354:             """Clean up resources"""
+     355:             try:
+     356:                 if self.initialized:
+     357:                     self.vm_dll.VBVMR_Logout()
+     358: >>>             self.
+     359:                 self.
+     360:                 logger.info("VoiceMeeter Control Agent cleaned up")
+     361:             except Exception as e:
+     362:                 logger.error(f"Error during cleanup: {e}")
+     363:     
+
+  Line 359: self.
+  Context:
+     354:             """Clean up resources"""
+     355:             try:
+     356:                 if self.initialized:
+     357:                     self.vm_dll.VBVMR_Logout()
+     358:                 self.
+     359: >>>             self.
+     360:                 logger.info("VoiceMeeter Control Agent cleaned up")
+     361:             except Exception as e:
+     362:                 logger.error(f"Error during cleanup: {e}")
+     363:     
+     364:     
+
+
+================================================================================
+FIX SUGGESTIONS
+================================================================================
+
+INCOMPLETE SELF STATEMENTS:
+Most common fix: self.context.term()
+Pattern found in cleanup/termination methods

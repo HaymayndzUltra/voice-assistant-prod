@@ -165,9 +165,9 @@ class NLUAgent(BaseAgent):
         logger.info("Stopping NLUAgent")
         self.running = False
         if hasattr(self, 'socket'):
-            self.
+            self.socket.close()
         if hasattr(self, 'context'):
-            self.
+            self.context.term()
     def _handle_requests(self):
         """Handle incoming ZMQ requests."""
         while self.running:

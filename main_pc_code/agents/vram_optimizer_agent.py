@@ -394,7 +394,7 @@ class VramOptimizerAgent(BaseAgent):
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
                 except Exception as e:
                     # Fallback to local connection
-                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost")))
+                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost"))
                     logger.info("Reconnected to local SystemDigitalTwinAgent.")
                 return {"recommendation": "proceed"}
         except Exception as e:

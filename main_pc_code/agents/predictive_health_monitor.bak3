@@ -1264,8 +1264,6 @@ class PredictiveHealthMonitor(BaseAgent):
         finally:
             # Ensure we clean up the socket resources even if an exception occurs
             try:
-            except Exception as e:
-                logger.error(f"Error: {e}")
             except:
                 pass
             return False  # Ensure we always return a boolean

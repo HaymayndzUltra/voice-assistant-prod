@@ -75,7 +75,7 @@ class BaseAgent:
             self.health_check_port = self.port + 1
             
         # HTTP health port should be separate to avoid conflicts with ZMQ health socket
-        self.http_health_port = self.health_check_port  # Use same port for HTTP health
+        self.http_health_port = self.health_check_port + 1
         
         self.context = zmq.Context()
         self.strict_port = kwargs.get('strict_port', True)  # If True, do not auto-switch ports on bind failure
@@ -202,10 +202,10 @@ class BaseAgent:
                         logger.warning(f"Error closing existing health socket: {e}")
                 
                 self.health_context = zmq.Context()
-        # self.health_socket = self.health_context.socket(zmq.REP)  # Disabled to avoid port conflict with HTTP health
-        # self.health_socket.setsockopt(zmq.LINGER, 0)
-        # self.health_socket.setsockopt(zmq.RCVTIMEO, 5000)  # Increased timeout
-        # self.health_socket.bind(f"tcp://*:{self.health_check_port}")
+                self.health_socket = self.health_context.socket(zmq.REP)
+                self.health_socket.setsockopt(zmq.LINGER, 0)
+                self.health_socket.setsockopt(zmq.RCVTIMEO, 5000)  # Increased timeout
+                self.health_socket.bind(f"tcp://*:{self.health_check_port}")
                 logger.debug(f"BaseAgent._init_sockets: Health socket bound to port {self.health_check_port}")
                 
                 logger.info(f"{self.name} successfully bound to ports {self.port} and {self.health_check_port}")
@@ -230,7 +230,7 @@ class BaseAgent:
                     config = getattr(self, 'config', {}) or {}
                     if not config.get('health_check_port') and self.health_check_port == old_port + 1:
                         self.health_check_port = self.port + 1
-                        self.http_health_port = self.health_check_port  # Use same port for HTTP health
+                        self.http_health_port = self.health_check_port + 1
                         logger.info(f"Auto-switching health check port to {self.health_check_port}, HTTP health to {self.http_health_port}")
                 else:
                     logger.error(f"Failed to initialize sockets after {max_retries} attempts")
@@ -266,16 +266,16 @@ class BaseAgent:
         logger.info(f"{self.name} health check loop started")
         while self.running:
             try:
-        # if not hasattr(self, 'health_socket') or self.health_socket is None:
+                if not hasattr(self, 'health_socket') or self.health_socket is None:
                     logger.warning("Health socket not initialized, waiting...")
                     time.sleep(1)
                     continue
                     
                 # Check for health check requests with proper error handling
                 try:
-        # if self.health_socket.poll(timeout=1000) != 0:
+                    if self.health_socket.poll(timeout=1000) != 0:
                         try:
-        # message = self.health_socket.recv()
+                            message = self.health_socket.recv()
                             logger.debug(f"{self.name} health check loop received message: {message}")
                         except zmq.error.Again:
                             # Timeout on receive, continue loop
@@ -295,13 +295,13 @@ class BaseAgent:
                                 
                             # Get health status and send response
                             response = self._get_health_status()
-        # self.health_socket.send_json(response)
+                            self.health_socket.send_json(response)
                             logger.debug(f"{self.name} sent health check response: {response}")
                         except Exception as e:
                             logger.error(f"Error processing health check: {e}")
                             # Try to send error response
                             try:
-        # self.health_socket.send_json({
+                                self.health_socket.send_json({
                                     "status": "error",
                                     "error": str(e)
                                 })
@@ -457,9 +457,9 @@ class BaseAgent:
                 logger.error(f"{self.name} error closing main socket: {e}")
         
         # Close health socket
-        # if hasattr(self, 'health_socket') and self.health_socket:
+        if hasattr(self, 'health_socket') and self.health_socket:
             try:
-        # self.health_socket.close()
+                self.health_socket.close()
                 logger.debug(f"{self.name} closed health socket")
             except Exception as e:
                 logger.error(f"{self.name} error closing health socket: {e}")
@@ -785,11 +785,11 @@ class BaseAgent:
                 pass
         
         try:
-            self.http_server = HTTPServer(('0.0.0.0', self.health_check_port), HealthHandler)
+            self.http_server = HTTPServer(('0.0.0.0', self.http_health_port), HealthHandler)
             thread = threading.Thread(target=self.http_server.serve_forever)
             thread.daemon = True
             thread.start()
-            logger.info(f"Started HTTP health server on port {self.health_check_port}")
+            logger.info(f"Started HTTP health server on port {self.http_health_port} (ZMQ health on {self.health_check_port})")
         except OSError as e:
             logger.warning(f"Failed to start HTTP health server on port {self.http_health_port}: {e}")
             logger.info(f"HTTP health endpoint unavailable, ZMQ health check still available on port {self.health_check_port}") 

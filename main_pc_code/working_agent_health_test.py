@@ -108,7 +108,7 @@ def main():
     
     try:
 from main_pc_code.agents.mood_tracker_agent import MoodTrackerAgent
-    except ImportError as e:
+        except ImportError as e:
         print(f"Import error: {e}")
         is_valid, response = test_agent_health(
             MoodTrackerAgent, 
@@ -142,7 +142,7 @@ from main_pc_code.agents.mood_tracker_agent import MoodTrackerAgent
     try:
 from main_pc_code.agents.human_awareness_agent import HumanAwarenessAgent
 from common.env_helpers import get_env
-    except ImportError as e:
+        except ImportError as e:
         print(f"Import error: {e}")
         is_valid, response = test_agent_health(
             HumanAwarenessAgent, 

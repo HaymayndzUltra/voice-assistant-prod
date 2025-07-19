@@ -347,7 +347,6 @@ class RequestCoordinator(BaseAgent):
             # Clean up socket resources
             try:
                 if socket:
-                    pass  # Handle condition
                 if context:
             except Exception as cleanup_error:
                 logger.error(f"Error cleaning up language analysis socket: {cleanup_error}")

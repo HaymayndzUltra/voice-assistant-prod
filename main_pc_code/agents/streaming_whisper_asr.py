@@ -222,7 +222,7 @@ class StreamingWhisperASR(BaseAgent):
             logger.info("Keyboard interrupt detected, stopping")
         finally:
             self.running = False
-            self.
+            self.close()
             logger.info("Streaming Whisper ASR stopped.")
 
 

@@ -9,7 +9,8 @@ from common.core.base_agent import BaseAgent
 class DataOptimizer:
     def __init__(self):
 
-        super().__init__(*args, **kwargs)        self.compression_level = 9
+        super().__init__(*args, **kwargs)
+        self.compression_level = 9
         self.serialization_methods = {
             'json': self._serialize_json,
             'msgpack': self._serialize_msgpack,

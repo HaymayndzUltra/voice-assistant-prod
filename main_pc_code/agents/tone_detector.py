@@ -596,7 +596,7 @@ class ToneDetector(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.
+                    self.context.term()
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")
