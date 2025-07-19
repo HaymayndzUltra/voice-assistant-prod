@@ -46,19 +46,51 @@ class DependencyResolver:
         self.build_dependency_graph()
     
     def extract_agents(self):
+        """Populate self.agents and self.dependencies from the loaded YAML config.
+
+        The YAML schema evolved over the project: early versions stored agents as a
+        *list* of dicts, each containing a ``name`` key.  The current schema
+        (see ``startup_config.yaml``) nests agents under the top-level key
+        ``agent_groups`` where each *group* is a mapping of ``agent_name ->
+        settings``.  This helper normalises both schemas so downstream logic is
+        agnostic to the file structure.
+        """
+
+        def _register_agent(agent_name: str, agent_cfg: dict):
+            """Add a single agent definition to internal structures."""
+            if not isinstance(agent_cfg, dict):
+                return
+            cfg = agent_cfg.copy()
+            cfg.setdefault("name", agent_name)
+
+            # basic validation – must have script_path to be startable
+            if "script_path" not in cfg:
+                return
+
+            self.agents[agent_name] = cfg
+
+            # record dependencies (empty list if not present)
+            for dep in cfg.get("dependencies", []):
+                self.dependencies[agent_name].add(dep)
+
         for section_name, section_data in self.config.items():
-            if not isinstance(section_data, list):
-                continue
-            for agent in section_data:
-                if not isinstance(agent, dict):
-                    continue
-                if 'name' not in agent or 'script_path' not in agent:
-                    continue
-                name = agent['name']
-                self.agents[name] = agent
-                if 'dependencies' in agent:
-                    for dep in agent['dependencies']:
-                        self.dependencies[name].add(dep)
+            # 1. New style – nested under "agent_groups"
+            if section_name == "agent_groups" and isinstance(section_data, dict):
+                for _group_name, agents_mapping in section_data.items():
+                    if not isinstance(agents_mapping, dict):
+                        continue
+                    for agent_name, agent_cfg in agents_mapping.items():
+                        _register_agent(agent_name, agent_cfg)
+
+            # 2. Legacy style – list of agent dicts at top level
+            elif isinstance(section_data, list):
+                for agent_cfg in section_data:
+                    if not isinstance(agent_cfg, dict):
+                        continue
+                    agent_name = agent_cfg.get("name")
+                    if not agent_name:
+                        continue
+                    _register_agent(agent_name, agent_cfg)
     def build_dependency_graph(self):
         for agent_name, deps in self.dependencies.items():
             for dep in deps:
