@@ -2,67 +2,52 @@
 
 #### Agent: ServiceRegistry
 - **Purpose:** A minimal, highly-available registry that stores and exposes metadata for all agents. It serves as the foundational discovery service for the entire system.
-- **Core Logic/Features:** Initializes with either an in-memory (default) or Redis backend for persistence and high availability. It handles agent registration (`register_agent`) and endpoint lookup (`get_agent_endpoint`) actions via ZMQ REQ/REP sockets. The design is intentionally simple with minimal dependencies to ensure it can start first.
-- **Health Check:** Provides a ZMQ health action (`health`) on its main port (`7200`) and a standard HTTP health check endpoint on the `health_check_port` (`8200`). The health status is inherited from the `BaseAgent` class.
+- **Core Logic/Features:** Inherits from `common.core.base_agent.BaseAgent`. Its `handle_request` method acts as a dispatcher, routing `register_agent` and `get_agent_endpoint` actions. It initializes with either an in-memory (default) or Redis backend for persistence. The design is intentionally simple with minimal dependencies to ensure it can start first.
+- **Health Check:** Implements the standard health check mechanism from `BaseAgent`, responding to `ping` and `health` actions via ZMQ on its main port (`7200`) and a standard HTTP health check endpoint on the `health_check_port` (`8200`).
 - **Error Handling:** Gracefully handles configuration and import errors (e.g., falls back from `orjson` to `json`). It uses try/except blocks for backend operations (like Redis connection) and logs all significant errors.
-- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.backend` ('memory' or 'redis'), `config.redis.url`, `config.redis.prefix`. Also configurable via environment variables: `SERVICE_REGISTRY_PORT`, `SERVICE_REGISTRY_HEALTH_PORT`, `SERVICE_REGISTRY_BACKEND`, `SERVICE_REGISTRY_REDIS_URL`.
-- **Inter-Agent Communication:** Used by nearly all agents for service discovery. It responds to ZMQ requests for agent registration and endpoint lookups. `SystemDigitalTwin` interacts with it to maintain a comprehensive view of the system.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.backend` ('memory' or 'redis'), `config.redis.url`, `config.redis.prefix`. Also configurable via environment variables.
+- **Inter-Agent Communication:** Used by nearly all agents for service discovery. It responds to ZMQ requests for agent registration and endpoint lookups.
 - **Dependencies:** None.
 
 #### Agent: SystemDigitalTwin
 - **Purpose:** Acts as the central "digital twin" of the AI system, maintaining a comprehensive, real-time model of all agents and system resources. It is the authoritative source for system state.
-- **Core Logic/Features:** Manages a database of registered agents and their statuses. It collects and stores system metrics (CPU, RAM, VRAM) using `psutil` and can connect to Prometheus for more advanced monitoring. It uses an SQLite database (`unified_memory.db`) for persistent state and a Redis cache for performance. It handles requests via a ZMQ REP socket.
-- **Health Check:** Exposes an HTTP health endpoint on its `health_check_port` (`8220`) and a ZMQ health action on its main port (`7220`). Its health status depends on the connectivity to its own database (SQLite) and Redis.
-- **Error Handling:** Implements an `ErrorPublisher` to report issues to a centralized error bus. It includes robust try/except blocks for all database, Redis, and ZMQ interactions to prevent crashes and log failures.
+- **Core Logic/Features:** Manages a database of registered agents and their statuses. It runs a background thread (`_collect_metrics_loop`) that uses the `psutil` library to gather system metrics. An HTTP health check is provided by a `BaseHTTPRequestHandler` running in its own thread (`_start_http_health_server`). It uses an SQLite database (`unified_memory.db`) for persistence and a Redis cache for performance.
+- **Health Check:** Exposes an HTTP health endpoint on its `health_check_port` (`8220`) and a ZMQ health action on its main port (`7220`). Its health status depends on connectivity to SQLite and Redis.
+- **Error Handling:** Uses a dedicated `ErrorPublisher` class to standardize and send error reports over a ZMQ PUB/SUB channel. It includes robust try/except blocks for all database, Redis, and ZMQ interactions.
 - **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.db_path`, `config.redis.host`, `config.redis.port`, `config.redis.db`, `config.zmq_request_timeout`.
 - **Inter-Agent Communication:** A critical hub. It receives registration updates, provides agent status and endpoint information to any agent that needs it (e.g., `RequestCoordinator`, `ObservabilityHub`), and receives metric updates from various system monitors.
 - **Dependencies:** `ServiceRegistry`.
 
 #### Agent: RequestCoordinator
 - **Purpose:** The primary entry point for external requests into the AI system. It orchestrates the flow of tasks, routing them to the appropriate specialized agents for processing.
-- **Core Logic/Features:** Manages a priority-based task queue to handle incoming requests. It can process different types of data, including text, audio, and vision. It uses ZMQ REQ sockets to communicate with downstream agents and implements a `CircuitBreaker` pattern to ensure resilience.
-- **Health Check:** Provides an HTTP health check on `health_check_port` (`27002`) and a ZMQ health check on its main port (`26002`). The health check often includes pinging its critical dependencies to ensure the pipeline is healthy.
-- **Error Handling:** Utilizes a `CircuitBreaker` for each downstream service to prevent cascading failures. It reports errors to a central error bus via a ZMQ PUB socket. All network requests and task processing steps are wrapped in try/except blocks.
+- **Core Logic/Features:** Features a multi-threaded architecture with a `_dispatch_loop` for managing a `heapq` (priority queue) of tasks and a `_listen_for_interrupts` thread to handle user barge-in. It uses Pydantic models (`TextRequest`, `AudioRequest`, etc.) for request validation. Task priority is determined by the `_calculate_priority` method.
+- **Health Check:** Provides an HTTP health check on `health_check_port` (`27002`) and a ZMQ health check on its main port (`26002`). The health check often includes pinging its critical dependencies.
+- **Error Handling:** Utilizes a `CircuitBreaker` class for each downstream service to prevent cascading failures. It reports errors to a central error bus via a ZMQ PUB socket. All network requests and task processing steps are wrapped in try/except blocks.
 - **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.enable_dynamic_prioritization`, `config.queue_max_size`, `config.default_task_timeout`.
-- **Inter-Agent Communication:** Receives requests from external interfaces or other high-level agents. It dispatches tasks to agents like `NLUAgent`, `ModelOrchestrator`, `FaceRecognitionAgent`, and `SessionMemoryAgent`. It queries `SystemDigitalTwin` for agent endpoints.
-- **Dependencies:** `SystemDigitalTwin`.
-
-#### Agent: UnifiedSystemAgent
-- **Purpose:** To provide a unified, high-level API for system-wide actions and queries, abstracting the complexity of the underlying agent architecture.
-- **Core Logic/Features:** Acts as a facade or gateway, receiving high-level commands (e.g., "get system status," "run diagnostics"). It translates these commands into a series of interactions with other agents like `SystemDigitalTwin` and `ObservabilityHub`.
-- **Health Check:** Exposes a ZMQ health check on its main port (`7225`) and an HTTP endpoint on its `health_check_port` (`8225`).
-- **Error Handling:** Forwards errors from downstream agents and reports its own operational errors. Uses standard try/except blocks and logging.
-- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
-- **Inter-Agent Communication:** Interacts with `SystemDigitalTwin` to get system state and with other agents as needed to fulfill high-level requests. It provides a simplified interface for control scripts or UIs.
-- **Dependencies:** `SystemDigitalTwin`.
-
-#### Agent: ObservabilityHub
-- **Purpose:** A centralized service for monitoring, logging, and health checking across the entire system. It aggregates data to provide a holistic view of system performance and stability.
-- **Core Logic/Features:** Runs parallel health checks against all registered agents. It can connect to a Prometheus instance to scrape and serve metrics. It may include a predictive component to forecast potential system failures based on telemetry data.
-- **Health Check:** Provides an HTTP health check on its `health_check_port` (`9100`) and a ZMQ health check on its main port (`9000`).
-- **Error Handling:** Designed to be highly resilient, as it is a core monitoring component. It logs failures in health checking or metric collection but continues to operate.
-- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.prometheus_enabled`, `config.parallel_health_checks`, `config.prediction_enabled`.
-- **Inter-Agent Communication:** Continuously polls other agents' health check endpoints. It queries `SystemDigitalTwin` to get the list of all active agents to monitor. Its findings might be consumed by other agents or external dashboards.
+- **Inter-Agent Communication:** Receives requests and dispatches them to specialized agents. It uses ZMQ REQ sockets for commands and a ZMQ SUB socket to listen for interrupts. It queries `SystemDigitalTwin` for agent endpoints.
 - **Dependencies:** `SystemDigitalTwin`.
 
 #### Agent: ModelManagerSuite
-- **Purpose:** Manages the lifecycle of AI models, including loading, unloading, and monitoring their resource consumption (especially VRAM).
-- **Core Logic/Features:** Keeps track of all available models and which are currently loaded into memory. It manages a VRAM budget, dynamically loading and unloading models based on usage and an idle timeout to optimize resource usage.
-- **Health Check:** Standard ZMQ health check on the main port (`7211`) and an HTTP endpoint on the `health_check_port` (`8211`).
-- **Error Handling:** Catches errors related to model loading (e.g., file not found, corrupt files) and VRAM allocation. It logs these errors and reports them.
-- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.models_dir`, `config.vram_budget_percentage`, `config.idle_timeout`.
-- **Inter-Agent Communication:** Any agent that needs to run inference with a specific model (e.g., `NLUAgent`, `TTSService`, `STTService`) requests the model from the `ModelManagerSuite`. It interacts with `SystemDigitalTwin` to report model status and VRAM usage.
+- **Purpose:** A consolidated service that manages the entire lifecycle of AI models. It combines the functionality of four previous agents: `GGUFModelManager`, `ModelManagerAgent`, `PredictiveLoader`, and `ModelEvaluationFramework`.
+- **Core Logic/Features:**
+    - **Architecture:** Runs five key background threads: a main ZMQ request loop (`_main_loop`), a health check loop (`_health_check_loop`), a VRAM management loop (`_vram_management_loop`), a predictive pre-loading loop (`_prediction_loop`), and a GGUF KV cache cleanup loop (`_kv_cache_cleanup_loop`).
+    - **VRAM Management:** The `_vram_management_loop` periodically calls `_check_idle_models`, which unloads models if their idle time exceeds `idle_unload_timeout_seconds` to stay within the VRAM budget.
+    - **Evaluation Framework:** Uses an SQLite database (`data/model_evaluation.db`) to log performance metrics and model evaluation scores, which can be queried via `get_performance_metrics`.
+- **Health Check:** Standard ZMQ health check on the main port (`7211`) and an HTTP endpoint on the `health_check_port` (`8211`). Health status includes details on loaded models and VRAM usage.
+- **Error Handling:** Uses a dedicated `report_error` method to publish structured errors to a central ZMQ `error_bus_pub` socket. Implements a `_LegacyModelManagerProxy` class to provide a critical backward-compatibility layer for older agents that import the previous, separate components.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.models_dir`, `config.vram_budget_percentage`, `config.idle_timeout`, `mef_db_path`.
+- **Inter-Agent Communication:** Any agent that needs to run inference requests a model from the `ModelManagerSuite`. It handles `load_model`, `unload_model`, and `generate_text` actions. It interacts with `SystemDigitalTwin` to report model status and VRAM usage.
 - **Dependencies:** `SystemDigitalTwin`.
 
 ### memory_system
 
 #### Agent: MemoryClient
 - **Purpose:** Provides a client interface to the memory system, abstracting the details of the underlying memory storage and orchestration.
-- **Core Logic/Features:** Acts as a thin client or proxy, forwarding memory-related requests (e.g., `add_memory`, `search_memory`) to the main `MemoryOrchestratorService`. It implements a `CircuitBreaker` pattern to handle connectivity issues with the orchestrator gracefully.
+- **Core Logic/Features:** Acts as a thin client or proxy, forwarding memory-related requests (e.g., `add_memory`, `search_memory`) to the main `MemoryOrchestratorService`.
 - **Health Check:** Exposes a standard health check on its main port (`5713`) and `health_check_port` (`6713`). Its health is dependent on its ability to connect to the `MemoryOrchestratorService`.
-- **Error Handling:** The `CircuitBreaker` prevents the agent from repeatedly trying to connect to a failed service. It reports connection errors and timeouts to the central error bus.
+- **Error Handling:** Implements a `CircuitBreaker` with `CLOSED`, `OPEN`, and `HALF_OPEN` states to gracefully handle connectivity issues. It uses a `reset_timeout` to attempt recovery. It reports connection errors and timeouts to the central error bus via a dedicated `error_bus_pub` socket.
 - **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`. It discovers the orchestrator via `SystemDigitalTwin`.
-- **Inter-Agent Communication:** Any agent needing to interact with memory (e.g., `SessionMemoryAgent`, `KnowledgeBase`, `GoalManager`) does so through the `MemoryClient`.
+- **Inter-Agent Communication:** Any agent needing to interact with memory (e.g., `SessionMemoryAgent`, `KnowledgeBase`) does so through the `MemoryClient`.
 - **Dependencies:** `SystemDigitalTwin`.
 
 #### Agent: SessionMemoryAgent
@@ -286,11 +271,11 @@
 
 #### Agent: NLUAgent
 - **Purpose:** Provides core Natural Language Understanding by extracting intents and entities from user text.
-- **Core Logic/Features:** Uses a set of regex patterns or a dedicated NLU model to parse text. It identifies the user's primary goal (intent) and key pieces of information (entities).
+- **Core Logic/Features:** The core of its logic relies on a list of pre-defined regex patterns stored in `self.intent_patterns` to perform intent extraction. The main processing is done in the `_extract_intent` and `_extract_entities` methods. This makes it fast and predictable for known commands but less flexible for novel inputs.
 - **Health Check:** Standard ZMQ/HTTP health checks on ports `5709`/`6709`.
-- **Error Handling:** Handles cases where it cannot understand the user's input, returning a "not understood" or low-confidence response. Reports errors via `ErrorPublisher`.
+- **Error Handling:** Handles cases where it cannot understand the user's input by returning a low-confidence response. Reports internal errors via a dedicated `ErrorPublisher`.
 - **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
-- **Inter-Agent Communication:** Is a fundamental service used by `RequestCoordinator` at the beginning of most user interactions. Its output determines which other agents get called.
+- **Inter-Agent Communication:** A fundamental service used by `RequestCoordinator` at the start of most interactions. Its output determines which other agents get called.
 - **Dependencies:** `SystemDigitalTwin`.
 
 #### Agent: AdvancedCommandHandler
@@ -454,10 +439,10 @@
 
 #### Agent: EmotionEngine
 - **Purpose:** The core of the emotion system, responsible for tracking and managing the AI's internal emotional state.
-- **Core Logic/Features:** Maintains an internal emotional model (e.g., using dimensions like valence and arousal). This state is influenced by the user's input (tone, words) and the AI's own actions. It publishes its current state for other agents to use. The implementation uses ZMQ PUB/SUB and REQ/REP patterns.
+- **Core Logic/Features:** Maintains an internal emotional model as a dictionary with keys like `tone`, `sentiment`, and `intensity`. It uses `emotion_thresholds` and `emotion_combinations` dictionaries to map raw sentiment scores and intensities to descriptive labels (e.g., a high negative sentiment with high intensity maps to `'furious'`). It broadcasts state changes via a ZMQ PUB socket in the `_broadcast_emotional_state` method.
 - **Health Check:** Has a dedicated health check loop running in a thread, responding to requests on `health_port` (`6590`). Its ZMQ REQ/REP socket is on port `5590`.
-- **Error Handling:** Reports errors to a central error bus. It has retry logic for binding ZMQ sockets and handles signals (SIGINT, SIGTERM) for graceful shutdown.
-- **Configuration/Parameters:** `port`, `health_check_port`, `pub_port`, `required`, `dependencies`. Can be configured via environment variables.
+- **Error Handling:** Reports errors to a central error bus. It has retry logic for binding ZMQ sockets and handles OS signals for graceful shutdown.
+- **Configuration/Parameters:** `port`, `health_check_port`, `pub_port`, `required`, `dependencies`.
 - **Inter-Agent Communication:** Publishes the AI's emotional state. `Responder` and other agents in the `emotion_system` consume this state to modify their behavior. It gets its inputs from agents like `ToneDetector`.
 - **Dependencies:** `SystemDigitalTwin`.
 
