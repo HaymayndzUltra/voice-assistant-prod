@@ -54,7 +54,7 @@ logger = logging.getLogger('LearningOrchestrationService')
 # --- Constants ---
 config = load_config()
 DEFAULT_PORT = config.get('los_port', 7210)
-HEALTH_CHECK_PORT = config.get('los_health_port', 7211)
+HEALTH_CHECK_PORT = config.get('los_health_port', 8212)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
 TRAINING_DB_PATH = config.get('los_db_path', join_path("data", "training_cycles.db"))
 

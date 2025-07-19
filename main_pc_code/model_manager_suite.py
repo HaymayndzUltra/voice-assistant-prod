@@ -10,8 +10,8 @@ This service consolidates the following agents into a unified service:
 - PredictiveLoader: Predicts and preloads models based on usage patterns
 - ModelEvaluationFramework: Tracks model performance and evaluation
 
-Port: 7011 (Main service)
-Health: 7112 (Health check)
+Port: 7211 (Main service)
+Health: 8211 (Health check)
 Hardware: MainPC (RTX 4090)
 
 CRITICAL REQUIREMENTS:
@@ -311,7 +311,7 @@ class ModelManagerSuite(BaseAgent):
     - ModelEvaluationFramework: Performance tracking and evaluation
     """
     
-    def __init__(self, port: int = 7011, health_port: int = 7112, start_io: bool = True, **kwargs):
+    def __init__(self, port: int = 7211, health_port: int = 8211, start_io: bool = True, **kwargs):
         """Initialize the ModelManagerSuite service"""
         super().__init__(name="ModelManagerSuite", port=port, health_check_port=health_port)
         
@@ -1456,8 +1456,8 @@ if __name__ == "__main__":
     # Parse command line arguments
     import argparse
     parser = argparse.ArgumentParser(description="ModelManagerSuite - Consolidated Model Management Service")
-    parser.add_argument("--port", type=int, default=7011, help="Main service port")
-    parser.add_argument("--health-port", type=int, default=7112, help="Health check port")
+    parser.add_argument("--port", type=int, default=7211, help="Main service port")
+    parser.add_argument("--health-port", type=int, default=8211, help="Health check port")
     parser.add_argument("--config", type=str, help="Configuration file path")
     
     args = parser.parse_args()

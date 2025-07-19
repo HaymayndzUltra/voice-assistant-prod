@@ -1,9 +1,8 @@
-version: "3.9"
+# version: "3.9"  # obsolete, removed
 
 networks:
   default:
-    external: true
-    name: default
+    driver: bridge
 
 volumes:
   logs:
@@ -72,10 +71,14 @@ services:
     ports:
       - "7200:7200"  # ServiceRegistry
       - "7220:7220"  # SystemDigitalTwin
+      - "8220:8220"  # SystemDigitalTwin Health
       - "26002:26002" # RequestCoordinator
       - "7225:7225"  # UnifiedSystemAgent
       - "9000:9000"  # ObservabilityHub
       - "7211:7211"  # ModelManagerSuite
+      - "8211:8211"  # ModelManagerSuite Health
+      - "7210:7210"  # LearningOrchestrationService
+      - "8212:8212"  # LearningOrchestrationService Health
     healthcheck:
       test: ["CMD", "python", "-c", "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://${LOCALHOST:-localhost}:7220'); s.send_string('health_check'); print('OK' if s.recv_string() else 'FAIL')"]
       interval: 30s

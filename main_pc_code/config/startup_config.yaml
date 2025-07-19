@@ -235,7 +235,7 @@ agent_groups:
   learning_knowledge:
     LearningOrchestrationService:
       script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: 7212
+      port: 7210
       health_check_port: 8212
       required: true
       dependencies:
