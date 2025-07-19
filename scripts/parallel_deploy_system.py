@@ -150,25 +150,30 @@ class ParallelDeployer:
         host = self.mainpc_ip if 'main_pc' in agent_spec.script_path else self.pc2_ip
         health_url = f"http://{host}:{agent_spec.health_check_port}/health"
         
-                 try:
-             # Use asyncio.wait_for for timeout instead of asyncio.timeout 
-             async def _get_health():
-                 loop = asyncio.get_event_loop()
-                 return await loop.run_in_executor(
-                     None, 
-                     lambda: requests.get(health_url, timeout=5)
-                 )
-             
-             response = await asyncio.wait_for(_get_health(), timeout=agent_spec.health_timeout)
-             
-             if response.status_code == 200:
-                 health_data = response.json()
-                 return health_data.get('status') == 'healthy'
-                    
-        except Exception as e:
-            print(f"  ⚠️  Health check failed for {agent_name}: {e}")
+        try:
+            # Use asyncio.wait_for for timeout instead of asyncio.timeout 
+            async def _get_health():
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(
+                    None, 
+                    lambda: requests.get(health_url, timeout=5)
+                )
             
-        return False
+            response = await asyncio.wait_for(_get_health(), timeout=30.0)
+            
+            if response.status_code == 200:
+                health_data = response.json()
+                if health_data.get('status') == 'ok':
+                    return True, None
+                else:
+                    return False, f"Health check returned: {health_data.get('status', 'unknown')}"
+            else:
+                return False, f"HTTP {response.status_code}"
+                
+        except asyncio.TimeoutError:
+            return False, "Health check timeout (30s)"
+        except Exception as e:
+            return False, f"Health check error: {str(e)}"
     
     async def start_agent(self, agent_name: str) -> bool:
         """Start a single agent"""

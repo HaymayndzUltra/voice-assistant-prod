@@ -187,36 +187,13 @@ agent_groups:
       dependencies:
       - SystemDigitalTwin
   gpu_infrastructure:
-    GGUFModelManager:
-      script_path: main_pc_code/agents/gguf_model_manager.py
-      port: 5575
-      health_check_port: 6575
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-    ModelManagerAgent:
-      script_path: main_pc_code/agents/model_manager_agent.py
-      port: 5570
-      health_check_port: 6570
-      required: true
-      dependencies:
-      - GGUFModelManager
-      - SystemDigitalTwin
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
       port: 5572
       health_check_port: 6572
       required: true
       dependencies:
-      - ModelManagerAgent
-      - RequestCoordinator
-      - SystemDigitalTwin
-    PredictiveLoader:
-      script_path: main_pc_code/agents/predictive_loader.py
-      port: 5617
-      health_check_port: 6617
-      required: true
-      dependencies:
+      - ModelManagerSuite
       - RequestCoordinator
       - SystemDigitalTwin
   reasoning_services:
@@ -256,13 +233,6 @@ agent_groups:
       - ModelManagerAgent
       - SystemDigitalTwin
   learning_knowledge:
-    ModelEvaluationFramework:
-      script_path: main_pc_code/agents/model_evaluation_framework.py
-      port: 7222
-      health_check_port: 8222
-      required: true
-      dependencies:
-      - SystemDigitalTwin
     LearningOrchestrationService:
       script_path: main_pc_code/agents/learning_orchestration_service.py
       port: 7212
