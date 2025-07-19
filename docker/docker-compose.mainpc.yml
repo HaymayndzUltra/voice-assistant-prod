@@ -51,7 +51,7 @@ services:
       context: ..
       dockerfile: docker/gpu_base/Dockerfile.optimized
     image: ai-system/core-services:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "core_services"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - LOG_LEVEL=INFO
@@ -98,7 +98,7 @@ services:
       context: ..
       dockerfile: docker/gpu_base/Dockerfile.optimized
     image: ai-system/gpu-infrastructure:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "gpu_infrastructure"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - LOG_LEVEL=INFO
@@ -134,7 +134,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/memory-system:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "memory_system"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -158,7 +158,7 @@ services:
       context: ..
       dockerfile: docker/gpu_base/Dockerfile.optimized
     image: ai-system/reasoning-services:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "reasoning_services"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - CUDA_VISIBLE_DEVICES=0
@@ -189,7 +189,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/language-processing:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "language_processing"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -222,7 +222,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/speech-services:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "speech_services"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -244,7 +244,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.audio.optimized
     image: ai-system/audio-interface:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "audio_interface"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -271,7 +271,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/emotion-system:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "emotion_system"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -296,7 +296,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/utility-services:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "utility_services"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -325,7 +325,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.base.optimized
     image: ai-system/learning-knowledge:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "learning_knowledge"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - SERVICE_REGISTRY_HOST=core-services
@@ -352,7 +352,7 @@ services:
       context: ..
       dockerfile: docker/gpu_base/Dockerfile.optimized
     image: ai-system/vision-processing:optimized
-    command: ["python", "/app/main_pc_code/scripts/start_system.py", "--group", "vision_processing"]
+    command: ["python", "/app/main_pc_code/scripts/start_system.py"]
     environment:
       - PYTHONPATH=/app:/app/main_pc_code:/app/common
       - CUDA_VISIBLE_DEVICES=0
