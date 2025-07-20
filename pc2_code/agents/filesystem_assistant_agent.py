@@ -508,7 +508,7 @@ class FileSystemAssistantAgent(BaseAgent):
         # Close main socket
         if hasattr(self, 'socket'):
             try:
-                self.
+                self.socket.close()
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
@@ -516,7 +516,7 @@ class FileSystemAssistantAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_
+                self.health_socket.close()
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")

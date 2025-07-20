@@ -756,7 +756,7 @@ class RemoteConnectorAgent(BaseAgent):
         # Terminate ZMQ context
         try:
             if hasattr(self, 'context') and self.context and not self.context.closed:
-                self.
+                self.context.term()
                 logger.info("ZMQ context terminated.")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)
@@ -808,10 +808,13 @@ class RemoteConnectorAgent(BaseAgent):
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to connect to {service_name} at {connect_address}: {e}", exc_info=True)
             socket.close() # Close the socket if connection fails
+            if socket and not socket.closed:
+                socket.close()
             return None
         except Exception as e:
             logger.error(f"An unexpected error occurred while connecting to {service_name}: {e}", exc_info=True)
             if socket and not socket.closed:
+                socket.close()
             return None
 
 

@@ -123,7 +123,8 @@ class AdaptiveLearningEngine:
         self.difficulty_model = self._init_difficulty_model()
         self.learning_style_model = self._init_learning_style_model()
         self.error_bus = setup_error_reporting(self)
-def _init_difficulty_model(self) -> nn.Module:
+
+    def _init_difficulty_model(self) -> nn.Module:
         """Initialize neural network for difficulty prediction"""
         model = nn.Sequential(
             nn.Linear(5, 32),
