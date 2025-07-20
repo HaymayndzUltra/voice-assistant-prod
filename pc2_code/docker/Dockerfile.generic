@@ -1,0 +1,20 @@
+# Generic Dockerfile for PC2 agents
+# Build with: docker build --build-arg SERVICE_NAME=AgentName --build-arg SERVICE_MODULE=module.path
+FROM pc2_code/docker:latest
+
+# Build arguments
+ARG SERVICE_NAME
+ARG SERVICE_MODULE
+ARG HEALTH_PORT=8100
+
+# Set environment variables from build args
+ENV SERVICE_NAME=${SERVICE_NAME}
+ENV SERVICE_MODULE=${SERVICE_MODULE}
+ENV HEALTH_PORT=${HEALTH_PORT}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1
+
+# Run the specified service
+CMD ["sh", "-c", "python -m ${SERVICE_MODULE}"]

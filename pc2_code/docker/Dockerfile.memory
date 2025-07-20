@@ -1,0 +1,25 @@
+# Dockerfile for MemoryOrchestratorService
+FROM pc2_code/docker:latest
+
+# Install additional dependencies for memory service
+RUN pip install --no-cache-dir \
+    sqlalchemy==2.0.23 \
+    aiosqlite==0.19.0 \
+    redis==5.0.1 \
+    hiredis==2.2.3
+
+# Create database directory
+USER root
+RUN mkdir -p /app/data/db && chown -R ai:ai /app/data
+USER ai
+
+# Set environment variables
+ENV SERVICE_NAME=MemoryOrchestratorService
+ENV SERVICE_MODULE=pc2_code.agents.memory_orchestrator_service
+
+# Health check specific to memory service
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_PORT:-8140}/health || exit 1
+
+# Run the memory orchestrator service
+CMD ["python", "-m", "pc2_code.agents.memory_orchestrator_service"]

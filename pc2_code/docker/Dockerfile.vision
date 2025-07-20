@@ -1,0 +1,64 @@
+# Dockerfile for VisionProcessingAgent with GPU support
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    build-essential \
+    libzmq3-dev \
+    libopenblas-dev \
+    gfortran \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory and user
+RUN useradd -m -s /bin/bash ai && \
+    mkdir -p /app/logs /app/data /app/models /app/cache && \
+    chown -R ai:ai /app
+
+WORKDIR /app
+
+# Install Python packages
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
+
+# Copy and install requirements
+COPY requirements/pc2_vision_requirements.txt /tmp/requirements.txt
+RUN python3.11 -m pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+
+# Install vision-specific packages
+RUN python3.11 -m pip install --no-cache-dir \
+    torch==2.1.0 \
+    torchvision==0.16.0 \
+    opencv-python-headless==4.8.1.78 \
+    pillow==10.1.0 \
+    transformers==4.35.2
+
+# Copy application code
+COPY --chown=ai:ai common/ /app/common/
+COPY --chown=ai:ai common_utils/ /app/common_utils/
+COPY --chown=ai:ai pc2_code/ /app/pc2_code/
+
+# Set Python path
+ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONUNBUFFERED=1
+
+# Switch to non-root user
+USER ai
+
+# Set environment variables
+ENV SERVICE_NAME=VisionProcessingAgent
+ENV SERVICE_MODULE=pc2_code.agents.VisionProcessingAgent
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_PORT:-8150}/health || exit 1
+
+# Run the vision processing agent
+CMD ["python3.11", "-m", "pc2_code.agents.VisionProcessingAgent"]
