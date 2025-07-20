@@ -1,0 +1,1043 @@
+version: '3.8'
+
+networks:
+  pc2_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  external_network:
+    driver: bridge
+
+volumes:
+  pc2_logs:
+  pc2_data:
+  pc2_models:
+  pc2_cache:
+
+services:
+  # Phase 1 - Integration Layer Agents
+
+  memory-orchestrator-service:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-memory-orchestrator-service
+    command: ["python", "-m", "pc2_code.agents.memory_orchestrator_service"]
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7140:7140"
+      - "8140:8140"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=MemoryOrchestratorService
+      - AGENT_PORT=7140
+      - HEALTH_CHECK_PORT=8140
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8140/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+    restart: unless-stopped
+
+  tiered-responder:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-tiered-responder
+    command: ["python", "-m", "pc2_code.agents.tiered_responder"]
+    depends_on:
+      - resource-manager
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7100:7100"
+      - "8100:8100"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=TieredResponder
+      - AGENT_PORT=7100
+      - HEALTH_CHECK_PORT=8100
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.3'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  async-processor:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-async-processor
+    command: ["python", "-m", "pc2_code.agents.async_processor"]
+    depends_on:
+      - resource-manager
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7101:7101"
+      - "8101:8101"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=AsyncProcessor
+      - AGENT_PORT=7101
+      - HEALTH_CHECK_PORT=8101
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8101/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  cache-manager:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-cache-manager
+    command: ["python", "-m", "pc2_code.agents.cache_manager"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7102:7102"
+      - "8102:8102"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=CacheManager
+      - AGENT_PORT=7102
+      - HEALTH_CHECK_PORT=8102
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8102/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  vision-processing-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-vision
+    image: pc2-vision:latest
+    container_name: pc2-vision-processing-agent
+    command: ["python", "-m", "pc2_code.agents.VisionProcessingAgent"]
+    depends_on:
+      - cache-manager
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7150:7150"
+      - "8150:8150"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=VisionProcessingAgent
+      - AGENT_PORT=7150
+      - HEALTH_CHECK_PORT=8150
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 6G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8150/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  # Phase 2 - PC2-Specific Core Agents
+
+  dreamworld-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-dreamworld-agent
+    command: ["python", "-m", "pc2_code.agents.DreamWorldAgent"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7104:7104"
+      - "8104:8104"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=DreamWorldAgent
+      - AGENT_PORT=7104
+      - HEALTH_CHECK_PORT=8104
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 4G
+        reservations:
+          cpus: '0.3'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8104/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+  unified-memory-reasoning-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-unified-memory-reasoning-agent
+    command: ["python", "-m", "pc2_code.agents.unified_memory_reasoning_agent"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7105:7105"
+      - "8105:8105"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=UnifiedMemoryReasoningAgent
+      - AGENT_PORT=7105
+      - HEALTH_CHECK_PORT=8105
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 6G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8105/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  tutor-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-tutor-agent
+    command: ["python", "-m", "pc2_code.agents.tutor_agent"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7108:7108"
+      - "8108:8108"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=TutorAgent
+      - AGENT_PORT=7108
+      - HEALTH_CHECK_PORT=8108
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  tutoring-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-tutoring-agent
+    command: ["python", "-m", "pc2_code.agents.tutoring_agent"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7131:7131"
+      - "8131:8131"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=TutoringAgent
+      - AGENT_PORT=7131
+      - HEALTH_CHECK_PORT=8131
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8131/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  context-manager:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-context-manager
+    command: ["python", "-m", "pc2_code.agents.context_manager"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7111:7111"
+      - "8111:8111"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=ContextManager
+      - AGENT_PORT=7111
+      - HEALTH_CHECK_PORT=8111
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8111/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  experience-tracker:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-experience-tracker
+    command: ["python", "-m", "pc2_code.agents.experience_tracker"]
+    depends_on:
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7112:7112"
+      - "8112:8112"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=ExperienceTracker
+      - AGENT_PORT=7112
+      - HEALTH_CHECK_PORT=8112
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8112/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  resource-manager:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-resource-manager
+    command: ["python", "-m", "pc2_code.agents.resource_manager"]
+    depends_on:
+      - observability-hub
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7113:7113"
+      - "8113:8113"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For container monitoring
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=ResourceManager
+      - AGENT_PORT=7113
+      - HEALTH_CHECK_PORT=8113
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8113/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  task-scheduler:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-task-scheduler
+    command: ["python", "-m", "pc2_code.agents.task_scheduler"]
+    depends_on:
+      - async-processor
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7115:7115"
+      - "8115:8115"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=TaskScheduler
+      - AGENT_PORT=7115
+      - HEALTH_CHECK_PORT=8115
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8115/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # ForPC2 Agents (PC2-Specific Services)
+
+  authentication-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-authentication-agent
+    command: ["python", "-m", "pc2_code.agents.ForPC2.AuthenticationAgent"]
+    depends_on:
+      - unified-utils-agent
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7116:7116"
+      - "8116:8116"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=AuthenticationAgent
+      - AGENT_PORT=7116
+      - HEALTH_CHECK_PORT=8116
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8116/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  unified-utils-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-unified-utils-agent
+    command: ["python", "-m", "pc2_code.agents.ForPC2.unified_utils_agent"]
+    depends_on:
+      - observability-hub
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7118:7118"
+      - "8118:8118"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=UnifiedUtilsAgent
+      - AGENT_PORT=7118
+      - HEALTH_CHECK_PORT=8118
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8118/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  proactive-context-monitor:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-proactive-context-monitor
+    command: ["python", "-m", "pc2_code.agents.ForPC2.proactive_context_monitor"]
+    depends_on:
+      - context-manager
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7119:7119"
+      - "8119:8119"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=ProactiveContextMonitor
+      - AGENT_PORT=7119
+      - HEALTH_CHECK_PORT=8119
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8119/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Additional PC2 Core Agents
+
+  agent-trust-scorer:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-agent-trust-scorer
+    command: ["python", "-m", "pc2_code.agents.AgentTrustScorer"]
+    depends_on:
+      - observability-hub
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7122:7122"
+      - "8122:8122"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=AgentTrustScorer
+      - AGENT_PORT=7122
+      - HEALTH_CHECK_PORT=8122
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8122/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  filesystem-assistant-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-filesystem-assistant-agent
+    command: ["python", "-m", "pc2_code.agents.filesystem_assistant_agent"]
+    depends_on:
+      - unified-utils-agent
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7123:7123"
+      - "8123:8123"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=FileSystemAssistantAgent
+      - AGENT_PORT=7123
+      - HEALTH_CHECK_PORT=8123
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  remote-connector-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-remote-connector-agent
+    command: ["python", "-m", "pc2_code.agents.remote_connector_agent"]
+    depends_on:
+      - advanced-router
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7124:7124"
+      - "8124:8124"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=RemoteConnectorAgent
+      - AGENT_PORT=7124
+      - HEALTH_CHECK_PORT=8124
+      - MAINPC_ENDPOINT=http://192.168.100.16:26002  # Cross-machine communication
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8124/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  unified-web-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-web
+    image: pc2-web:latest
+    container_name: pc2-unified-web-agent
+    command: ["python", "-m", "pc2_code.agents.unified_web_agent"]
+    depends_on:
+      - filesystem-assistant-agent
+      - memory-orchestrator-service
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7126:7126"
+      - "8126:8126"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=UnifiedWebAgent
+      - AGENT_PORT=7126
+      - HEALTH_CHECK_PORT=8126
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.3'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8126/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+  dreaming-mode-agent:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-dreaming-mode-agent
+    command: ["python", "-m", "pc2_code.agents.DreamingModeAgent"]
+    depends_on:
+      - dreamworld-agent
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7127:7127"
+      - "8127:8127"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=DreamingModeAgent
+      - AGENT_PORT=7127
+      - HEALTH_CHECK_PORT=8127
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8127/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  advanced-router:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-base
+    image: pc2-base:latest
+    container_name: pc2-advanced-router
+    command: ["python", "-m", "pc2_code.agents.advanced_router"]
+    depends_on:
+      - task-scheduler
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "7129:7129"
+      - "8129:8129"
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=AdvancedRouter
+      - AGENT_PORT=7129
+      - HEALTH_CHECK_PORT=8129
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8129/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # CONSOLIDATED MONITORING SOLUTION - Replaces legacy monitors
+  observability-hub:
+    build:
+      context: ../..
+      dockerfile: pc2_code/docker/Dockerfile.pc2-monitoring
+    image: pc2-monitoring:latest
+    container_name: pc2-observability-hub
+    command: ["python", "-m", "phase1_implementation.consolidated_agents.observability_hub.backup_observability_hub.observability_hub"]
+    networks:
+      - pc2_network
+      - external_network
+    ports:
+      - "9000:9000"   # Prometheus port
+      - "9100:9100"   # Health check port
+    volumes:
+      - pc2_logs:/app/logs
+      - pc2_data:/app/data
+      - pc2_models:/app/models
+      - pc2_cache:/app/cache
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - BIND_ADDRESS=0.0.0.0
+      - AGENT_NAME=ObservabilityHub
+      - AGENT_PORT=9000
+      - HEALTH_CHECK_PORT=9100
+      - SCOPE=pc2_agents
+      - PROMETHEUS_PORT=9000
+      - CROSS_MACHINE_SYNC=true
+      - MAINPC_HUB_ENDPOINT=http://192.168.100.16:9000
+      - PARALLEL_HEALTH_CHECKS=true
+      - PREDICTION_ENABLED=true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped

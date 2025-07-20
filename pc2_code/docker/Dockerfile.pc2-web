@@ -1,0 +1,40 @@
+# PC2 Web Agent Dockerfile
+FROM pc2-base:latest
+
+USER root
+
+# Install browser dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium-browser \
+    chromium-chromedriver \
+    xvfb \
+    wget \
+    gnupg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install web-specific Python packages
+RUN pip install --no-cache-dir \
+    playwright==1.37.0 \
+    selenium==4.11.2 \
+    beautifulsoup4==4.12.2 \
+    requests-html==0.10.0 \
+    fastapi==0.103.1 \
+    uvicorn==0.23.2 \
+    aiohttp==3.8.5 \
+    scrapy==2.10.0
+
+# Install Playwright browsers
+RUN python -m playwright install chromium && \
+    python -m playwright install firefox
+
+# Set display for headless browsers
+ENV DISPLAY=:99
+
+USER pc2user
+
+LABEL specialization="web_processing" \
+      browsers="chromium,firefox" \
+      automation="playwright,selenium"
+
+CMD ["python", "-c", "print('PC2 Web container ready')"]

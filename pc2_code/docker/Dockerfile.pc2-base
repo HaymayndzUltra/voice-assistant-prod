@@ -1,0 +1,65 @@
+# PC2 Base Dockerfile for Core Agents
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libzmq3-dev \
+    libsqlite3-dev \
+    git \
+    curl \
+    redis-tools \
+    htop \
+    procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
+COPY pc2_code/docker/requirements.common.txt ./requirements.common.txt
+COPY pc2_code/agents/requirements_pc2.txt ./requirements_pc2.txt
+COPY requirements.txt ./requirements_main.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.common.txt && \
+    pip install --no-cache-dir -r requirements_pc2.txt && \
+    pip install --no-cache-dir -r requirements_main.txt
+
+# Copy the entire project
+COPY . .
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV LOG_LEVEL=INFO
+ENV DEBUG_MODE=false
+ENV BIND_ADDRESS=0.0.0.0
+ENV PYTHONUNBUFFERED=1
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/config /app/models /app/cache && \
+    chmod -R 755 /app/logs /app/data /app/config /app/models /app/cache
+
+# Create non-root user
+RUN groupadd -r pc2user && useradd -r -g pc2user pc2user && \
+    chown -R pc2user:pc2user /app
+
+# Health check script
+COPY pc2_code/docker/health_check.py /app/health_check.py
+RUN chmod +x /app/health_check.py
+
+# Default health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python /app/health_check.py || exit 1
+
+USER pc2user
+
+# Security and metadata labels
+LABEL maintainer="PC2 AI System" \
+      version="1.0" \
+      security_level="hardened" \
+      user="non-root" \
+      work_package="WP-PC2"
+
+CMD ["python", "-c", "print('PC2 Base container ready')"]

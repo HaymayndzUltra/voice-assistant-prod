@@ -1,0 +1,41 @@
+# PC2 Vision Processing Dockerfile
+FROM pc2-base:latest
+
+USER root
+
+# Install vision-specific dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopencv-dev \
+    python3-opencv \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install vision-specific Python packages
+RUN pip install --no-cache-dir \
+    opencv-python==4.8.0.74 \
+    pillow==10.0.0 \
+    scikit-image==0.21.0 \
+    mediapipe==0.10.3 \
+    torch==2.0.1 \
+    torchvision==0.15.2 \
+    transformers==4.33.2 \
+    ultralytics==8.0.165 \
+    albumentations==1.3.1
+
+# Download and cache common vision models
+RUN python -c "from transformers import pipeline; pipeline('image-classification', model='microsoft/resnet-50')" && \
+    python -c "from transformers import pipeline; pipeline('object-detection', model='facebook/detr-resnet-50')"
+
+USER pc2user
+
+LABEL specialization="vision_processing" \
+      gpu_support="true" \
+      models="resnet-50,detr-resnet-50"
+
+CMD ["python", "-c", "print('PC2 Vision container ready')"]
