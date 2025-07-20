@@ -16,16 +16,12 @@ from collections import defaultdict
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's pc2_code directory to the Python path
-import sys
-import os
+# Import path utilities
+from common.utils.path_env import get_path, join_path, get_file_path, get_pc2_code
 from pathlib import Path
-PC2_CODE_DIR = get_main_pc_code()
+
+# Ensure pc2_code directory is on PYTHONPATH
+PC2_CODE_DIR = Path(get_pc2_code())
 if PC2_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR.as_posix())
 
@@ -436,9 +432,15 @@ class CacheManager(BaseAgent):
         
         # Close ZMQ sockets if they exist
         if hasattr(self, 'socket') and self.socket:
-            self.
+            try:
+                self.socket.close()
+            except Exception as e:
+                self.logger.warning(f"Error closing ZMQ socket: {e}")
         if hasattr(self, 'context') and self.context:
-            self.
+            try:
+                self.context.term()
+            except Exception as e:
+                self.logger.warning(f"Error terminating ZMQ context: {e}")
         # Call parent cleanup
         super().cleanup()
             
