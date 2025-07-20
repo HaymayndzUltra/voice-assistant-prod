@@ -14,7 +14,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,7 +29,7 @@ logger = logging.getLogger('TaskScheduler')
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -88,7 +88,7 @@ class TaskSchedulerAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+    def _setup_sockets(self):
         try:
             self.socket = self.context.socket(zmq.REP)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -105,7 +105,7 @@ def _setup_sockets(self):
             raise
         # Socket to communicate with AsyncProcessor
         self.async_socket = self.context.socket(zmq.REQ)
-        self.async_socket.connect(get_zmq_connection_string({self.async_processor_port}, "localhost")))
+        self.async_socket.connect(get_zmq_connection_string({self.async_processor_port}, "localhost"))
 
     def _start_health_check(self):
         def health_check_loop():

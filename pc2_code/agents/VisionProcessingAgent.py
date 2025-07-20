@@ -23,7 +23,7 @@ from PIL import Image
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_project_root()
@@ -43,12 +43,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "vision_processing_agent.log"))
+        logging.FileHandler(get_file_path("pc2_logs", "vision_processing_agent.log"))
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")
 
 class VisionProcessingAgent(BaseAgent):
+    pass  # TODO: Implement
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -71,12 +72,13 @@ class VisionProcessingAgent(BaseAgent):
         self.running = True
         
         # Create output directory if it doesn't exist
-        self.output_dir = join_path("data", "vision_output")
+        self.output_dir = get_file_path("pc2_data", "vision_output")
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
         self.error_bus = setup_error_reporting(self)
-def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""
         request_type = request.get("type", "")
         

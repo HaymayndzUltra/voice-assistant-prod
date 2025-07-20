@@ -27,7 +27,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -45,7 +45,7 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             import yaml
@@ -506,7 +506,7 @@ class AdvancedRouterAgent(BaseAgent):
         # Close all sockets
         if hasattr(self, 'socket'):
             try:
-                self.
+                pass  # TODO: Complete this
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")

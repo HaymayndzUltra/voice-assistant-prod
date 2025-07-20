@@ -10,7 +10,7 @@ import time
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
 class TieredResponder:
     def __init__(self):
@@ -67,7 +67,7 @@ class TieredResponder:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(join_path("logs", "tiered_responder.log")),
+                logging.FileHandler(get_file_path("pc2_logs", "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )

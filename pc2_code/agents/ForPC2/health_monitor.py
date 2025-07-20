@@ -27,7 +27,7 @@ import subprocess
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
 from pc2_code.agents.core_agents.http_server import setup_health_check_server
 from pc2_code.agents.utils.config_loader import Config
@@ -39,7 +39,7 @@ _agent_args = parse_agent_args()
 from pc2_code.config import system_config
 
 # Configure logging
-log_file_path = join_path("logs", "health_monitor.log")
+log_file_path = get_file_path("pc2_logs", "health_monitor.log")
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(

@@ -25,7 +25,7 @@ from collections import defaultdict
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # --- Path Setup ---
 # (I-adjust kung kinakailangan)
@@ -53,7 +53,7 @@ logger = logging.getLogger('MemoryOrchestratorService')
 
 # --- Constants ---
 DEFAULT_PORT = 7140 # Port para sa Orchestrator
-DB_PATH = join_path("data", "unified_memory.db")
+DB_PATH = get_file_path("pc2_data", "unified_memory.db")
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
@@ -1037,8 +1037,72 @@ class MemoryOrchestratorService(BaseAgent):
                 self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
         except Exception as e:
             logger.error(f"Failed to report error to error bus: {e}")
+    
+    def run(self):
+        """Main run loop for the Memory Orchestrator Service."""
+        logger.info(f"{self.name} starting main loop on port {self.port}")
+        self.running = True
+        
+        while self.running:
+            try:
+                # Wait for request with timeout
+                if self.socket.poll(1000):  # 1 second timeout
+                    request = self.socket.recv_json()
+                    response = self.handle_request(request)
+                    self.socket.send_json(response)
+            except zmq.ZMQError as e:
+                if e.errno == zmq.EAGAIN:
+                    continue  # Timeout, continue loop
+                else:
+                    logger.error(f"ZMQ error in main loop: {e}")
+                    break
+            except KeyboardInterrupt:
+                logger.info("Keyboard interrupt received")
+                break
+            except Exception as e:
+                logger.error(f"Error in main loop: {e}", exc_info=True)
+                # Send error response if possible
+                try:
+                    self.socket.send_json({
+                        "status": "error",
+                        "error": str(e)
+                    })
+                except:
+                    pass
+        
+        logger.info(f"{self.name} main loop ended")
+    
+    def cleanup(self):
+        """Clean up resources before shutdown."""
+        logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        try:
+            self.running = False
+            
+            # Stop lifecycle thread
+            if hasattr(self, 'lifecycle_thread') and self.lifecycle_thread:
+                self.lifecycle_thread.join(timeout=5)
+            
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                self.socket.close()
+            if hasattr(self, 'health_socket') and self.health_socket:
+                self.health_socket.close()
+            if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
+                self.error_bus_pub.close()
+            if hasattr(self, 'context') and self.context:
+                self.context.term()
+            
+            # Close database connection
+            if hasattr(self, 'storage') and self.storage:
+                if hasattr(self.storage, '_conn') and self.storage._conn:
+                    self.storage._conn.close()
+            
+            logger.info(f"{self.__class__.__name__} cleanup completed")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}", exc_info=True)
 
 if __name__ == '__main__':
+    agent = None
     try:
         agent = MemoryOrchestratorService()
         agent.run()
@@ -1047,39 +1111,5 @@ if __name__ == '__main__':
     except Exception as e:
         logger.critical(f"MemoryOrchestratorService failed to start: {e}", exc_info=True)
     finally:
-        if 'agent' in locals() and agent.running:
-            agent.cleanup()
-
-
-
-if __name__ == "__main__":
-    agent = None
-    try:
-        agent = MemoryOrchestratorService()
-        agent.run()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down...")
-    except Exception as e:
-        logger.error(f"Error in main: {e}", exc_info=True)
-    finally:
         if agent and hasattr(agent, 'cleanup'):
             agent.cleanup()
-
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.
-            if hasattr(self, 'context') and self.context:
-                self.
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)

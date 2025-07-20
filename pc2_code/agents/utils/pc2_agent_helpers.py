@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Import the BaseAgent from main_pc_code
 from common.core.base_agent import BaseAgent

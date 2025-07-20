@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "test_model_management.log")),
+        logging.FileHandler(get_file_path("pc2_logs", "test_model_management.log")),
         logging.StreamHandler()
     ]
 )

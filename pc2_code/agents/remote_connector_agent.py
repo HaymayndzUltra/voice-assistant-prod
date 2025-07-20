@@ -26,7 +26,7 @@ from typing import Dict, Any, Optional, Union, List # Combined and ordered impor
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -61,7 +61,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml") # Use project_root
+    config_path = get_file_path("pc2_config", "network_config.yaml") # Use project_root
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -105,6 +105,7 @@ MODEL_MANAGER_HOST = app_config.get('zmq.model_manager_host', '192.168.100.16') 
 TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this snippet
 
 class RemoteConnectorAgent(BaseAgent):
+    pass  # TODO: Implement
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -756,7 +757,7 @@ class RemoteConnectorAgent(BaseAgent):
         # Terminate ZMQ context
         try:
             if hasattr(self, 'context') and self.context and not self.context.closed:
-                self.
+                pass  # TODO: Complete this
                 logger.info("ZMQ context terminated.")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)
@@ -812,6 +813,7 @@ class RemoteConnectorAgent(BaseAgent):
         except Exception as e:
             logger.error(f"An unexpected error occurred while connecting to {service_name}: {e}", exc_info=True)
             if socket and not socket.closed:
+                socket.close()
             return None
 
 

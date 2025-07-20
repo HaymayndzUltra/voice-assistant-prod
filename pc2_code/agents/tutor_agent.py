@@ -22,7 +22,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -56,7 +56,7 @@ except Exception as e:
     print(f"Failed to load config: {e}")
     # Fallback to local config file
     try:
-        with open(join_path("config", "tutor_config.json"), "r") as f:
+        with open(get_file_path("pc2_config", "tutor_config.json"), "r") as f:
             TUTOR_CONFIG = json.load(f).get("tutor", {})
     except Exception as e:
         print(f"Failed to load local config: {e}")
@@ -403,6 +403,7 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
+    pass  # TODO: Implement
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -435,7 +436,7 @@ class TutorAgent(BaseAgent):
     def _load_lessons(self):
         """Load lesson data from storage"""
         try:
-            lessons_path = TUTOR_CONFIG.get("lessons_path", join_path("data", "lessons.json"))
+            lessons_path = TUTOR_CONFIG.get("lessons_path", get_file_path("pc2_data", "lessons.json"))
             if os.path.exists(lessons_path):
                 with open(lessons_path, "r") as f:
                     lessons_data = json.load(f)

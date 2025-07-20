@@ -15,7 +15,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
@@ -32,7 +32,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -88,7 +88,7 @@ class AgentTrustScorer(BaseAgent):
         )
         
         # Initialize database
-        self.db_path = join_path("cache", "cache"), "agent_trust_scores.db")
+        self.db_path = os.path.join(get_path("pc2_cache"), "agent_trust_scores.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         

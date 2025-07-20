@@ -95,6 +95,7 @@ TIMEOUT = 30  # seconds
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 
 class UnifiedWebAgent(BaseAgent):
+    pass  # TODO: Implement
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -714,6 +715,7 @@ class UnifiedWebAgent(BaseAgent):
 
                 """
                 Summarize the key findings from these search results:
+                    pass  # TODO: Implement
 
                 {json.dumps(results, indent=2)}
 
@@ -948,7 +950,7 @@ class UnifiedWebAgent(BaseAgent):
         try:
             if hasattr(self, 'context') and self.context:
                 if not self.context.closed:
-                    self.
+                    pass  # TODO: Complete this
                     logger.info("ZMQ context terminated")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)

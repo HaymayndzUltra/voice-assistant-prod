@@ -18,7 +18,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -72,7 +72,7 @@ class ContextManager(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def add_to_context(self, text, speaker=None, metadata=None):
+    def add_to_context(self, text, speaker=None, metadata=None):
         if not text:
             return
         timestamp = time.time()
@@ -319,6 +319,7 @@ class ContextManagerAgent:
                 time.sleep(1)
 
     def _get_health_status(self) -> dict:
+        pass  # TODO: Implement
 
         """Return health status information."""
 
@@ -340,6 +341,7 @@ class ContextManagerAgent:
 
 
     def cleanup(self):
+        pass  # TODO: Implement
 
         """Clean up resources before shutdown."""
 
@@ -381,7 +383,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

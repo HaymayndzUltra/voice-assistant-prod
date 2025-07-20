@@ -19,7 +19,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
 import sys
@@ -76,6 +76,7 @@ class ResourceMonitor:
         return stats['memory_percent'] <= self.memory_threshold
 
 class CacheManager(BaseAgent):
+    pass  # TODO: Implement
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -436,9 +437,9 @@ class CacheManager(BaseAgent):
         
         # Close ZMQ sockets if they exist
         if hasattr(self, 'socket') and self.socket:
-            self.
+            self.socket.close()
         if hasattr(self, 'context') and self.context:
-            self.
+            self.context.term()
         # Call parent cleanup
         super().cleanup()
             
@@ -464,7 +465,7 @@ def main():
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

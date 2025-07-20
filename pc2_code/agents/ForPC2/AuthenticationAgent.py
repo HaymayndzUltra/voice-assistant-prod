@@ -54,7 +54,7 @@ logger = logging.getLogger('AuthenticationAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = get_file_path("pc2_config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
