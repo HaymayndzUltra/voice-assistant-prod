@@ -20,10 +20,7 @@ from typing import Dict, Any, Optional
 from PIL import Image
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+# Import path utilities
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_project_root()
@@ -76,7 +73,8 @@ class VisionProcessingAgent(BaseAgent):
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
         self.error_bus = setup_error_reporting(self)
-def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""
         request_type = request.get("type", "")
         
@@ -182,21 +180,15 @@ if __name__ == "__main__":
         agent = VisionProcessingAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+        logger.info("Keyboard interrupt received, shutting down...")
     except Exception as e:
         import traceback
-
-from pc2_code.agents.utils.config_loader import Config
-
-# Load configuration at the module level
-config = Config().get_config()
-
-        logger.error(f"An unexpected error occurred in {agent.name if agent else 'VisionProcessingAgent'}: {e}")
+        logger.error(f"Error in VisionProcessingAgent main: {e}", exc_info=True)
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            logger.info(f"Cleaning up {agent.name}...")
-            agent.cleanup() 
+            agent.cleanup()
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"{self.__class__.__name__} cleaning up resources...")
