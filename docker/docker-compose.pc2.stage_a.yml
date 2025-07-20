@@ -1,0 +1,83 @@
+version: "3.9"
+
+volumes:
+  logs:
+  data:
+  cache_data:
+
+networks:
+  ai_system_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+
+x-common-env: &common-env
+  PYTHONPATH: /app
+  LOG_LEVEL: INFO
+  SERVICE_REGISTRY_HOST: ${SERVICE_REGISTRY_HOST:-192.168.100.16}
+  REDIS_HOST: ${REDIS_HOST:-192.168.100.16}
+  MAINPC_HOST: 192.168.100.16
+
+x-common-deploy: &common-deploy
+  resources:
+    limits:
+      cpus: "0.5"
+      memory: 2048M
+
+x-common-volumes: &common-volumes
+  - logs:/app/logs
+  - data:/app/data
+  - cache_data:/app/cache
+  - ../pc2_code/config:/app/pc2_code/config:ro
+
+services:
+  observability-hub:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/observability-hub:latest
+    command: ["python", "/app/phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py"]
+    environment:
+      <<: *common-env
+      PROMETHEUS_PORT: 9000
+      SCOPE: pc2_agents
+      CROSS_MACHINE_SYNC: "true"
+      MAINPC_HUB_ENDPOINT: "http://192.168.100.16:9000"
+    networks: [ai_system_net]
+    volumes: *common-volumes
+    ports:
+      - "9000:9000"
+      - "9100:9100"
+    deploy: *common-deploy
+
+  unified-utils-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/unified-utils-agent:latest
+    command: ["python", "/app/pc2_code/agents/ForPC2/unified_utils_agent.py"]
+    environment: *common-env
+    networks: [ai_system_net]
+    volumes: *common-volumes
+    depends_on:
+      - observability-hub
+    ports:
+      - "7118:7118"
+    deploy: *common-deploy
+
+  authentication-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: ai-system/authentication-agent:latest
+    command: ["python", "/app/pc2_code/agents/ForPC2/AuthenticationAgent.py"]
+    environment: *common-env
+    networks: [ai_system_net]
+    volumes: *common-volumes
+    depends_on:
+      - unified-utils-agent
+    ports:
+      - "7116:7116"
+    deploy: *common-deploy
