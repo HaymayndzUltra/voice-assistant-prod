@@ -180,3 +180,11 @@ certificates/*.crt
 **/*.secret
 **/private_keys/
 **/secrets/
+whisper.cpp/
+whisper.cpp
+models_cache/
+models_cache/
+models_cache/
+whisper.cpp/
+models_cache/
+whisper.cpp/
