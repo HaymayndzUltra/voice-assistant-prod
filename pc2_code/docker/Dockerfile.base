@@ -33,7 +33,7 @@ VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
 
 USER ai
 
-CMD
+CMD ["python"]
 # Security and metadata labels
 LABEL security_level="hardened" \
       user="non-root" \
