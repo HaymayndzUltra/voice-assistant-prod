@@ -150,14 +150,14 @@ model_tiers:
       path: /home/haymayndz/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf
       description: "Fast, low-resource, for simple Q&A and short instructions"
   medium:
-    - name: Mistral-7B-Instruct
-      type: Ollama
-      ollama_tag: mistral:7b-instruct
-      description: "General conversation, moderately complex tasks"
-    - name: Phi-2
+    - name: mistral-7b-gguf
       type: GGUF
-      path: /home/haymayndz/models/gguf/phi-2.Q4_0.gguf
-      description: "General-purpose, for reasoning and code"
+      path: /home/haymayndz/models/gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf
+      description: "General conversation, moderately complex tasks"
+    - name: phi-3-mini-gguf
+      type: GGUF
+      path: /home/haymayndz/models/gguf/phi-3-mini-4k-instruct-q4_K_M.gguf
+      description: "Fast GGUF model for reasoning and code"
   complex:
     - name: CodeLlama-13B
       type: Ollama

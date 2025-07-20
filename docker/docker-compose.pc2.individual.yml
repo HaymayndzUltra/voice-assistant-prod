@@ -32,6 +32,7 @@ x-common-volumes: &common-volumes
   - data:/app/data
   - cache_data:/app/cache
   - ../pc2_code/config:/app/pc2_code/config:ro
+  - ../models:/app/models:ro
 
 services:
   memory-orchestrator-service:

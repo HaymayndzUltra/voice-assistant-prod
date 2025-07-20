@@ -1,8 +1,8 @@
 # Defines which model to use for each quality preference.
 # The ModelManagerAgent will use this table for routing.
 load_policy:
-  fast: phi-2
-  quality: Mistral-7B-Instruct-v0.2
+  fast: phi-3-mini-gguf
+  quality: mistral-7b-gguf
   fallback: phi-2
   stt: whisper-large-v3
   tts: xtts-v2
@@ -46,9 +46,14 @@ models:
     repo_id: "microsoft/phi-3-mini-128k-instruct"
     type: "huggingface"
     quantization: "int4"  # Use 4-bit quantization for this model
-  Mistral-7B-Instruct-v0.2:
-    repo_id: "mistralai/Mistral-7B-Instruct-v0.2"
-    type: "huggingface"
+  mistral-7b-gguf:
+    model_path: "models/gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf"
+    type: "gguf"
+    quantization: "q4_K_M"
+  phi-3-mini-gguf:
+    model_path: "models/gguf/phi-3-mini-4k-instruct-q4_K_M.gguf"
+    type: "gguf"
+    quantization: "q4_K_M"
   phi-2:
     repo_id: "TheBloke/phi-2-GGUF"
     filename: "phi-2.Q4_0.gguf"
