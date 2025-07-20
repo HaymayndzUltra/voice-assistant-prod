@@ -18,7 +18,6 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -72,7 +71,7 @@ class ContextManager(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def add_to_context(self, text, speaker=None, metadata=None):
+    def add_to_context(self, text, speaker=None, metadata=None):
         if not text:
             return
         timestamp = time.time()

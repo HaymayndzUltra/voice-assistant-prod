@@ -16,7 +16,9 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 logging.basicConfig
 from common.core.base_agent import BaseAgent
@@ -88,7 +90,7 @@ class TaskSchedulerAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+    def _setup_sockets(self):
         try:
             self.socket = self.context.socket(zmq.REP)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -105,7 +107,7 @@ def _setup_sockets(self):
             raise
         # Socket to communicate with AsyncProcessor
         self.async_socket = self.context.socket(zmq.REQ)
-        self.async_socket.connect(get_zmq_connection_string({self.async_processor_port}, "localhost")))
+        self.async_socket.connect(get_zmq_connection_string(self.async_processor_port, "localhost"))
 
     def _start_health_check(self):
         def health_check_loop():
@@ -223,8 +225,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

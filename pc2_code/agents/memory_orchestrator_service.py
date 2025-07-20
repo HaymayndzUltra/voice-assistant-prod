@@ -22,14 +22,11 @@ from pydantic import BaseModel, Field
 from collections import defaultdict
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+# Import path manager for containerization-friendly paths (avoid premature join_path usage)
+from common.utils.path_env import get_path, join_path, get_file_path, get_main_pc_code
 # --- Path Setup ---
 # (I-adjust kung kinakailangan)
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = Path(get_main_pc_code())
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -40,7 +37,7 @@ from common.utils.data_models import ErrorSeverity
 # Standard imports for PC2 agents
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
-from pc2_code.agents.utils.config_loader import Config
+from pc2_code.agents.utils.config_loader import Config, parse_agent_args
 from common.env_helpers import get_env
 
 # Load configuration at the module level
@@ -1049,37 +1046,3 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup()
-
-
-
-if __name__ == "__main__":
-    agent = None
-    try:
-        agent = MemoryOrchestratorService()
-        agent.run()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down...")
-    except Exception as e:
-        logger.error(f"Error in main: {e}", exc_info=True)
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            agent.cleanup()
-
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.
-            if hasattr(self, 'context') and self.context:
-                self.
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)

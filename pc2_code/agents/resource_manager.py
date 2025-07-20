@@ -13,10 +13,7 @@ from typing import Dict, Any, Optional
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+# Import path utilities
 from common.utils.path_env import get_path, join_path, get_file_path
 # Try to import torch for GPU monitoring
 try:
@@ -28,7 +25,7 @@ except ImportError as e:
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig
+logging.basicConfig(level=logging.INFO)
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -52,7 +49,7 @@ class ResourceManager(BaseAgent):
 
          # Set up connection to main PC if needed
          self.main_pc_connections = {}
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+         logger.info(f"{self.__class__.__name__} initialized on PC2 port {self.port}")
          self.port = port
          self.health_port = health_port
          self.context = zmq.Context()
@@ -92,7 +89,7 @@ class ResourceManager(BaseAgent):
          self.error_bus_pub = self.context.socket(zmq.PUB)
 
          self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+    def _setup_sockets(self):
         """Setup ZMQ sockets."""
         # Main socket for handling requests
         try:
