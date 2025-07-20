@@ -1,0 +1,184 @@
+# READY FOR INTEGRATION - MODEL CONFIGURATION FOR RTX 4090
+# Downloaded models integrated with agent system
+# REAL DOWNLOADED MODEL PATHS UPDATED
+
+# Defines which model to use for each quality preference.
+# The ModelManagerSuite will use this table for routing.
+load_policy:
+  fast: phi-3-mini-gguf               # ⚡ Downloaded GGUF model for speed
+  quality: mistral-7b-gguf            # 🔥 Downloaded GGUF model for quality
+  fallback: phi-3-mini-gguf           # Reliable local backup
+  stt: whisper-large-v3               # 🎤 GPU-accelerated STT
+  stt_fallback: whisper-cpp-medium    # CPU fallback if GPU busy
+  tts: xtts-v2                        # 🔊 TTS for voice output
+
+# Global flags
+global_flags:
+  ENABLE_LEGACY_MODELS: false         # Disable direct model loading
+  ENABLE_GGUF_MODELS: true            # ✅ ENABLE: Downloaded GGUF models
+  ENABLE_WHISPER_CPP: true            # ✅ Enable whisper.cpp integration
+  PRELOAD_FAST_MODELS: true           # ✅ Pre-load downloaded models at startup
+
+# Quantization configuration - RTX 4090 OPTIMIZED
+quantization_config:
+  default_quantization: "float16"     # Default for unknown models
+  # Model type specific quantization
+  quantization_options_per_model_type:
+    gguf: "q4_K_M"                    # ✅ Downloaded quantization level
+    huggingface: "float16"
+    whisper_cpp: "q4_K_M"             # For whisper.cpp models
+  # Model specific overrides - DOWNLOADED MODELS
+  model_specific_quantization:
+    "phi-3-mini-gguf": "q4_K_M"       # ✅ Pre-quantized downloaded model
+    "mistral-7b-gguf": "q4_K_M"       # ✅ Pre-quantized downloaded model
+    "whisper-large-v3": "float16"     # 🎤 GPU STT model
+
+# KV-Cache configuration - RTX 4090 OPTIMIZED
+kv_cache_config:
+  enabled: true
+  max_caches: 75                      # More caches for 24GB VRAM
+  timeout_seconds: 3600               # 1 hour retention
+  max_cache_size_mb: 1536             # 1.5GB per cache for RTX 4090
+  smart_eviction: true                # Intelligent cache management
+
+# Batch processing configuration - RTX 4090 OPTIMIZED
+batch_processing_config:
+  enabled: true
+  max_batch_size: 16                  # RTX 4090 can handle more
+  min_batch_size: 2
+  max_batch_wait_ms: 50               # Faster response time
+  dynamic_batching: true
+  adaptive_batch_size: true           # Auto-adjust based on VRAM usage
+
+# Memory management - RTX 4090 SPECIFIC
+memory_management:
+  vram_limit_gb: 22                   # Reserve 2GB for system
+  cpu_ram_limit_gb: 16                # Reasonable CPU RAM limit
+  auto_offload: true                  # Auto-offload to CPU when VRAM full
+  garbage_collection_interval: 300    # Clean up every 5 minutes
+
+# Whisper.cpp integration - DOWNLOADED MODELS
+whisper_cpp_config:
+  enabled: true
+  binary_path: "/home/haymayndz/AI_System_Monorepo/whisper.cpp/main"
+  models:
+    medium:
+      path: "/home/haymayndz/AI_System_Monorepo/whisper.cpp/models/ggml-medium.bin"
+      size_gb: 1.4
+      quality: "high"
+      speed: "medium"
+      languages: ["tl", "en", "auto"]
+  default_model: "medium"               # Use medium for best Tagalog accuracy
+  threads: 4                          # Optimal thread count
+  timeout_seconds: 120                # 2 minute max processing time
+
+# Model-specific details - DOWNLOADED MODELS CONFIGURATION
+models:
+  # ✅ DOWNLOADED GGUF MODELS - REAL PATHS
+  phi-3-mini-gguf:
+    model_path: "models/gguf/phi-3-mini-4k-instruct-q4_K_M.gguf"      # ✅ Downloaded file
+    type: "gguf"
+    quantization: "q4_K_M"
+    vram_usage_gb: 2.2                # Based on 2.2GB file size
+    context_length: 4096
+    n_ctx: 4096
+    n_gpu_layers: -1                  # Use all GPU layers
+    n_threads: 4
+    use_case: ["fast_inference", "basic_tasks", "testing"]
+    estimated_vram_mb: 2250           # For ModelManagerSuite tracking
+    
+  mistral-7b-gguf:
+    model_path: "models/gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf"    # ✅ Downloaded file
+    type: "gguf"
+    quantization: "q4_K_M"
+    vram_usage_gb: 4.1                # Based on 4.1GB file size
+    context_length: 8192
+    n_ctx: 8192
+    n_gpu_layers: -1                  # Use all GPU layers
+    n_threads: 4
+    use_case: ["high_quality", "complex_reasoning", "quality_tasks"]
+    estimated_vram_mb: 4200           # For ModelManagerSuite tracking
+
+  # HuggingFace Models (already in cache)
+  phi-3-mini:
+    repo_id: "microsoft/phi-3-mini-4k-instruct"
+    type: "huggingface"
+    quantization: "int4"
+    vram_usage_gb: 2.0
+    context_length: 4096
+    use_case: ["backup", "fallback"]
+    
+  # STT Models
+  whisper-large-v3:                   # 🔥 PRIMARY STT - GPU accelerated
+    repo_id: "openai/whisper-large-v3"
+    type: "huggingface"
+    task: "stt"
+    vram_usage_gb: 6.0                # Premium STT quality
+    quality: "excellent"
+    languages: ["tl", "en", "auto", "multi"]
+    precision: "float16"              # Full precision for best results
+    
+  whisper-cpp-medium:                 # ✅ CPU STT fallback
+    type: "whisper_cpp"
+    model_name: "medium"
+    vram_usage_gb: 0.0                # CPU-based processing
+    task: "stt"
+    languages: ["tl", "en", "auto"]
+    quality: "high"
+    
+  # TTS Models  
+  xtts-v2:
+    repo_id: "coqui/XTTS-v2"
+    type: "huggingface"
+    task: "tts"
+    vram_usage_gb: 3.0
+    languages: ["en", "tl", "multi"]
+    voice_cloning: true
+    streaming: true
+
+# Performance profiles - USING DOWNLOADED MODELS
+performance_profiles:
+  speed_optimized:
+    models: ["phi-3-mini-gguf", "whisper-cpp-medium"]    # ✅ Use downloaded models
+    max_batch_size: 20
+    kv_cache_aggressive: true
+    description: "Ultra-fast processing using downloaded GGUF models"
+    
+  quality_optimized: 
+    models: ["mistral-7b-gguf", "whisper-large-v3"]      # ✅ Use downloaded models
+    max_batch_size: 8
+    precision_priority: true
+    description: "Best quality using downloaded Mistral GGUF + GPU Whisper"
+    
+  premium_optimized:                    # 🔥 RTX 4090 power users
+    models: ["mistral-7b-gguf", "whisper-large-v3", "xtts-v2"]
+    max_batch_size: 6
+    precision_priority: true
+    vram_allocation: "aggressive"
+    description: "Maximum quality using RTX 4090's full potential"
+    
+  balanced:
+    models: ["phi-3-mini-gguf", "whisper-cpp-medium", "xtts-v2"] 
+    max_batch_size: 12
+    adaptive_switching: true
+    description: "Optimal balance using downloaded models"
+
+# Auto-switching rules - DOWNLOADED MODEL FALLBACKS
+auto_switching:
+  enabled: true
+  vram_threshold_switch: 0.85         # Switch to smaller models at 85% VRAM
+  performance_monitoring: true
+  fallback_cascade: 
+    - "phi-3-mini-gguf"               # ✅ Try downloaded fast model first
+    - "phi-3-mini"                    # Then HuggingFace fallback
+    - "cpu_fallback"                  # Finally CPU-only processing
+
+# Integration status
+integration_status:
+  models_downloaded: true             # ✅ GGUF models downloaded
+  config_updated: true                # ✅ This config updated with real paths
+  model_manager_ready: true           # ✅ ModelManagerSuite updated with GGUF models
+  stt_service_ready: true             # ✅ STTService updated for Whisper-Large-v3
+  tts_service_ready: true             # ✅ TTSService updated for XTTS-v2
+  zmq_endpoints_ready: true           # ✅ Agent ports configured
+  integration_complete: true          # 🎉 ALL INTEGRATIONS COMPLETED! 

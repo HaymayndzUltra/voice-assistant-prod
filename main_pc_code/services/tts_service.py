@@ -219,20 +219,33 @@ class TTSService(BaseAgent):
                 # For now, just note that we're using it
                 params["voice_sample_path"] = voice_sample
                 
-            # Send request to ModelManagerAgent via model_client
-            response = model_client.generate(
-                prompt=text,  # Use the text as the prompt
-                quality="quality",  # Use high quality for speech synthesis
-                **params
-            )
+            # ✅ UPDATED: Use XTTS-v2 model specifically
+            request_params = {
+                "action": "generate_speech",
+                "model_id": "xtts-v2",  # Use downloaded TTS model
+                "text": text,
+                "voice_settings": {
+                    "speaker": "default",
+                    "language": language or "en",
+                    "speed": speed,
+                    "pitch": 1.0,
+                    "temperature": temperature
+                },
+                "streaming": True,  # Enable streaming for real-time response
+                "enable_streaming": True,  # Streaming support
+                "sample_rate": 22050,  # XTTS-v2 default
+                "request_id": str(uuid.uuid4())
+            }
+            
+            # Send request to ModelManagerSuite using XTTS-v2
+            response = model_client.request_inference(request_params)
             
             # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"PERF_METRIC: [TTSService] - [SpeechSynthesis] - Duration: {duration_ms:.2f}ms")
             
-            if response.get("status") == "success":
-                result = response.get("result", {})
-                audio_data = result.get("audio_data")
+            if response and response.get("success"):
+                audio_data = response.get("audio_data", [])
                 
                 if audio_data:
                     # Convert audio data to numpy array
@@ -243,9 +256,11 @@ class TTSService(BaseAgent):
                     
                     # Stream the audio
                     self._stream_audio(audio)
-                    return {"status": "success", "message": "Audio synthesized and playing"}
+                    
+                    logger.info(f"✅ TTS Success: '{text[:30]}...' ({len(audio_data)/22050:.2f}s)")
+                    return {"status": "success", "message": "XTTS-v2 audio synthesized and playing", "model_used": "xtts-v2"}
                 else:
-                    error_message = "No audio data received from ModelManagerAgent"
+                    error_message = "No audio data received from XTTS-v2"
                     logger.error(error_message)
                     self.report_error("SynthesisError", error_message)
                     return {"status": "error", "message": error_message}

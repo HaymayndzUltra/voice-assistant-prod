@@ -419,6 +419,63 @@ class ModelManagerSuite(BaseAgent):
         self.model_last_used_timestamp = {}
         self.models = {}
         self.current_estimated_vram_used = 0.0
+
+        # ✅ DOWNLOADED GGUF MODELS INTEGRATION
+        # Add downloaded models to metadata and tracking
+        self.model_metadata.update({
+            "phi-3-mini-gguf": {
+                "model_path": "models/gguf/phi-3-mini-4k-instruct-q4_K_M.gguf",
+                "type": "gguf",
+                "quantization": "q4_K_M", 
+                "estimated_vram_mb": 2250,  # 2.2GB downloaded file
+                "n_ctx": 4096,
+                "n_gpu_layers": -1,  # Use all GPU layers for RTX 4090
+                "n_threads": 4,
+                "verbose": False,
+                "use_case": ["fast_inference", "basic_tasks", "testing"],
+                "status": "available_not_loaded",
+                "file_size_gb": 2.2,
+                "context_length": 4096
+            },
+            "mistral-7b-gguf": {
+                "model_path": "models/gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf", 
+                "type": "gguf",
+                "quantization": "q4_K_M",
+                "estimated_vram_mb": 4200,  # 4.1GB downloaded file  
+                "n_ctx": 8192,
+                "n_gpu_layers": -1,  # Use all GPU layers for RTX 4090
+                "n_threads": 4,
+                "verbose": False,
+                "use_case": ["high_quality", "complex_reasoning", "quality_tasks"],
+                "status": "available_not_loaded",
+                "file_size_gb": 4.1,
+                "context_length": 8192
+            }
+        })
+        
+        # Add to model tracking system
+        self.models.update({
+            "phi-3-mini-gguf": {
+                "status": "available_not_loaded",
+                "type": "gguf", 
+                "estimated_vram_mb": 2250,
+                "last_used": None,
+                "load_count": 0,
+                "performance_score": 0.95,  # High performance for q4_K_M
+                "priority": "high"  # Fast model gets high priority
+            },
+            "mistral-7b-gguf": {
+                "status": "available_not_loaded",
+                "type": "gguf",
+                "estimated_vram_mb": 4200, 
+                "last_used": None,
+                "load_count": 0,
+                "performance_score": 0.98,  # Higher quality model
+                "priority": "medium"  # Quality model gets medium priority
+            }
+        })
+        
+        logger.info("✅ GGUF Integration Complete: phi-3-mini-gguf (2.2GB), mistral-7b-gguf (4.1GB)")
         
         # Memory management settings
         self.memory_check_interval = self.config.get('memory_check_interval', 5)

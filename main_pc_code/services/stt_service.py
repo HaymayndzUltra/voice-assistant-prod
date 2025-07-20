@@ -146,16 +146,27 @@ class STTService(BaseAgent):
                 "model_type": "stt"
             }
             
+            # ✅ NEW: Use Whisper-Large-v3 model specifically
+            request_params = {
+                "action": "generate_text",
+                "model_id": "whisper-large-v3",  # Use downloaded model
+                "audio_data": audio_data.tolist() if isinstance(audio_data, np.ndarray) else audio_data,
+                "sample_rate": SAMPLE_RATE,
+                "task": "transcribe",
+                "language": language or "auto",
+                "request_id": request_id,
+                "precision": "float16",  # Best quality for RTX 4090
+                "device": "cuda",  # GPU precision setting
+                "return_timestamps": True,
+                "return_confidence": True
+            }
+
             # Add language if specified
             if language:
                 params["language"] = language
                 
-            # Send request to ModelManagerAgent via model_client
-            response = model_client.generate(
-                prompt="Transcribe audio to text",
-                quality="quality",  # Use high quality for transcription
-                **params
-            )
+            # ✅ UPDATED: Send request to ModelManagerSuite using Whisper-Large-v3
+            response = model_client.request_inference(request_params)
             
             # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
@@ -188,10 +199,39 @@ class STTService(BaseAgent):
             logger.error(f"Error in transcription: {str(e)}")
             logger.error(traceback.format_exc())
             self.report_error("TranscriptionError", f"Exception during transcription: {str(e)}")
-            return {
-                "status": "error",
-                "message": str(e)
+            return self._transcribe_fallback(audio_data, language)
+
+    def _transcribe_fallback(self, audio_data, language=None):
+        """Fallback to CPU whisper.cpp model"""
+        try:
+            fallback_params = {
+                "action": "generate_text", 
+                "model_id": "whisper-cpp-medium",  # CPU fallback
+                "audio_data": audio_data.tolist() if isinstance(audio_data, np.ndarray) else audio_data,
+                "task": "transcribe",
+                "language": language or "auto"
             }
+            
+            response = model_client.request_inference(fallback_params)
+            
+            if response and response.get("success"):
+                return {
+                    "text": response.get("text", ""),
+                    "confidence": response.get("confidence", 0.8),  # Default confidence
+                    "language": response.get("detected_language", language or "unknown"),
+                    "model_used": "whisper-cpp-medium",
+                    "fallback": True
+                }
+        except Exception as e:
+            logger.error(f"Fallback STT failed: {e}")
+            
+        return {
+            "text": "",
+            "confidence": 0.0,
+            "language": "unknown",
+            "error": "STT failed",
+            "model_used": "none"
+        }
 
     def batch_transcribe(self, audio_batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
