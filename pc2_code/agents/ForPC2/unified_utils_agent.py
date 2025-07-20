@@ -16,9 +16,9 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parents[2]  # points to repo root
+sys.path.insert(0, str(BASE_DIR))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
