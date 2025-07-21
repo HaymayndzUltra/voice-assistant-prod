@@ -489,4 +489,4 @@ else
     exit 1
 fi
 
-echo -e "${GREEN}PC2 (RTX 3060) startup completed!${NC}"
+echo -e "${GREEN}PC2 (${GPU_MODEL}) startup completed!${NC}"
