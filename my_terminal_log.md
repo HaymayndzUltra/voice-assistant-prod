@@ -1,12 +1,70 @@
-haymayndz@DESKTOP-GC2ET1O:~/AI_System_Monorepo$ docker ps
-CONTAINER ID   IMAGE                                     COMMAND                  CREATED         STATUS                     PORTS                                                                                                                                                                                                                                                                                                                                                                                                                NAMES
-979a9f43ff92   ai-system/audio-interface:optimized       "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5562->5562/tcp, [::]:5562->5562/tcp, 0.0.0.0:5576->5576/tcp, [::]:5576->5576/tcp, 0.0.0.0:5579->5579/tcp, [::]:5579->5579/tcp, 0.0.0.0:5624->5624/tcp, [::]:5624->5624/tcp, 0.0.0.0:6550-6553->6550-6553/tcp, [::]:6550-6553->6550-6553/tcp                                                                                                                                                                  docker-audio-interface-1
-9ed214c22736   ai-system/language-processing:optimized   "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5595->5595/tcp, [::]:5595->5595/tcp, 0.0.0.0:5636-5637->5636-5637/tcp, [::]:5636-5637->5636-5637/tcp, 0.0.0.0:5701->5701/tcp, [::]:5701->5701/tcp, 0.0.0.0:5706->5706/tcp, [::]:5706->5706/tcp, 0.0.0.0:5709-5711->5709-5711/tcp, [::]:5709-5711->5709-5711/tcp, 0.0.0.0:5802->5802/tcp, [::]:5802->5802/tcp, 0.0.0.0:7205->7205/tcp, [::]:7205->7205/tcp, 0.0.0.0:7213->7213/tcp, [::]:7213->7213/tcp       docker-language-processing-1
-8a29001fba69   ai-system/gpu-infrastructure:optimized    "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5572->5572/tcp, [::]:5572->5572/tcp, 0.0.0.0:7224->5570/tcp, [::]:7224->5570/tcp, 0.0.0.0:7223->5575/tcp, [::]:7223->5575/tcp, 0.0.0.0:7226->5617/tcp, [::]:7226->5617/tcp                                                                                                                                                                                                                                   docker-gpu-infrastructure-1
-5478040160d6   ai-system/utility-services:optimized      "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5581->5581/tcp, [::]:5581->5581/tcp, 0.0.0.0:5584->5584/tcp, [::]:5584->5584/tcp, 0.0.0.0:5606->5606/tcp, [::]:5606->5606/tcp, 0.0.0.0:5613->5613/tcp, [::]:5613->5613/tcp, 0.0.0.0:5615->5615/tcp, [::]:5615->5615/tcp, 0.0.0.0:5642->5642/tcp, [::]:5642->5642/tcp, 0.0.0.0:5650->5650/tcp, [::]:5650->5650/tcp, 0.0.0.0:5660->5660/tcp, [::]:5660->5660/tcp                                               docker-utility-services-1
-57bb638f2832   ai-system/memory-system:optimized         "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5574->5574/tcp, [::]:5574->5574/tcp, 0.0.0.0:5713->5713/tcp, [::]:5713->5713/tcp, 0.0.0.0:5715->5715/tcp, [::]:5715->5715/tcp                                                                                                                                                                                                                                                                                docker-memory-system-1
-173695d26335   ai-system/emotion-system:optimized        "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5590->5590/tcp, [::]:5590->5590/tcp, 0.0.0.0:5625->5625/tcp, [::]:5625->5625/tcp, 0.0.0.0:5703-5705->5703-5705/tcp, [::]:5703-5705->5703-5705/tcp, 0.0.0.0:5708->5708/tcp, [::]:5708->5708/tcp                                                                                                                                                                                                               docker-emotion-system-1
-d276120821fa   ai-system/learning-knowledge:optimized    "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5580->5580/tcp, [::]:5580->5580/tcp, 0.0.0.0:5638->5638/tcp, [::]:5638->5638/tcp, 0.0.0.0:5643->5643/tcp, [::]:5643->5643/tcp, 0.0.0.0:7202->7202/tcp, [::]:7202->7202/tcp, 0.0.0.0:7212->7212/tcp, [::]:7212->7212/tcp, 0.0.0.0:7300->7222/tcp, [::]:7300->7222/tcp                                                                                                                                         docker-learning-knowledge-1
+Script started on 2025-07-21 17:40:38+08:00 [TERM="xterm-256color" TTY="/dev/pts/25" COLUMNS="128" LINES="22"]
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git status
+[?2004lOn branch model-management-analysis
+Your branch is up to date with 'origin/model-management-analysis'.
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	[31mmy_terminal_log.txt[m
+
+nothing added to commit but untracked files present (use "git add" to track)
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git add .
+[?2004l[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git m "[K[K[K[K[K[K[K[7m# 1. Add all changes (including automation tools)[27m
+[7mgit add -A[27m
+
+[7m# 2. Commit with descriptive message[27m
+[7mgit commit -m "Background Agent: Add automation tools and healthchecks[27m
+
+[7m- Created tools/add_healthchecks.py (socket-based health monitoring)[27m
+[7m- Created tools/legacy_port_sweep.py (found 1,022 legacy port references)[27m
+[7m- Created tools/compose_validate.py (validated 13 services)[27m
+[7m- Added healthchecks to all Docker services[27m
+[7m- Fixed NATS healthcheck (removed wget dependency)[27m
+[7m- Legacy ports: 5570(346), 5575(282), 5617(234), 7222(160)"[27m
+
+[7m# 3. Create new branch[27m
+[7mgit checkout -b background-agent-automation-tools[27m
+
+[7m# 4. Push new branch[27m
+[7mgit push origin background-agent-automation-tools[27m[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A# 1. Add all changes (including automation tools)
+git add -A
+
+# 2. Commit with descriptive message
+git commit -m "Background Agent: Add automation tools and healthchecks
+
+- Created tools/add_healthchecks.py (socket-based health monitoring)
+- Created tools/legacy_port_sweep.py (found 1,022 legacy port references)
+- Created tools/compose_validate.py (validated 13 services)
+- Added healthchecks to all Docker services
+- Fixed NATS healthcheck (removed wget dependency)
+- Legacy ports: 5570(346), 5575(282), 5617(234), 7222(160)"
+
+# 3. Create new branch
+git checkout -b background-agent-automation-tools
+
+# 4. Push new branch
+git push origin background-agent-automation-tools
+[?2004l[model-management-analysis e460774] Background Agent: Add automation tools and healthchecks
+ 1 file changed, 285 insertions(+)
+ create mode 100644 my_terminal_log.txt
+Switched to a new branch 'background-agent-automation-tools'
+Enumerating objects: 4, done.
+Counting objects:  25% (1/4)Counting objects:  50% (2/4)Counting objects:  75% (3/4)Counting objects: 100% (4/4)Counting objects: 100% (4/4), done.
+Delta compression using up to 24 threads
+Compressing objects:  33% (1/3)Compressing objects:  66% (2/3)Compressing objects: 100% (3/3)Compressing objects: 100% (3/3), done.
+Writing objects:  33% (1/3)Writing objects:  66% (2/3)Writing objects: 100% (3/3)Writing objects: 100% (3/3), 6.00 KiB | 6.00 MiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/1)[Kremote: Resolving deltas: 100% (1/1)[Kremote: Resolving deltas: 100% (1/1), completed with 1 local object.[K
+remote: 
+remote: Create a pull request for 'background-agent-automation-tools' on GitHub by visiting:[K
+remote:      https://github.com/HaymayndzUltra/voice-assistant-prod/pull/new/background-agent-automation-tools[K
+remote: 
+To https://github.com/HaymayndzUltra/voice-assistant-prod.git
+ * [new branch]      background-agent-automation-tools -> background-agent-automation-tools
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git status
+[?2004lOn branch background-agent-automation-tools
+nothing to commit, working tree clean
+[?2004h]0;haymayndz@DESKTOP-GC2E:5580->5580/tcp, 0.0.0.0:5638->5638/tcp, [::]:5638->5638/tcp, 0.0.0.0:5643->5643/tcp, [::]:5643->5643/tcp, 0.0.0.0:7202->7202/tcp, [::]:7202->7202/tcp, 0.0.0.0:7212->7212/tcp, [::]:7212->7212/tcp, 0.0.0.0:7300->7222/tcp, [::]:7300->7222/tcp                                                                                                                                         docker-learning-knowledge-1
 d973afb30807   ai-system/speech-services:optimized       "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5800-5801->5800-5801/tcp, [::]:5800-5801->5800-5801/tcp                                                                                                                                                                                                                                                                                                                                                      docker-speech-services-1
 ce8d94099bc5   ai-system/vision-processing:optimized     "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5610->5610/tcp, [::]:5610->5610/tcp                                                                                                                                                                                                                                                                                                                                                                          docker-vision-processing-1
 31a85188ff7d   ai-system/reasoning-services:optimized    "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5612->5612/tcp, [::]:5612->5612/tcp, 0.0.0.0:5641->5641/tcp, [::]:5641->5641/tcp, 0.0.0.0:5646->5646/tcp, [::]:5646->5646/tcp                                                                                                                                                                                                                                                                                docker-reasoning-services-1
