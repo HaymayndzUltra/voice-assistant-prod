@@ -4,6 +4,7 @@ Modern Agent System Startup Script v2.0
 =======================================
 Based on current startup_config.yaml structure with proper agent groups.
 Addresses Background Agent findings and removes all outdated references.
+Enhanced with Universal Config Manager support.
 """
 
 import os
@@ -19,6 +20,10 @@ from pathlib import Path
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from common.config_manager import load_unified_config, get_agents_by_machine, validate_config_consistency
 
 # --- CONFIGURATION ---
 RETRIES = 5
@@ -41,8 +46,8 @@ logger = logging.getLogger("SystemStartup")
 class ModernDependencyResolver:
     """Handles dependency resolution based on current startup_config.yaml structure"""
     
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, unified_config):
+        self.unified_config = unified_config
         self.agents = {}  # name -> agent dict with group info
         self.dependencies = defaultdict(set)  # name -> dependencies
         self.dependents = defaultdict(set)  # name -> dependents
@@ -51,30 +56,26 @@ class ModernDependencyResolver:
         self.build_dependency_graph()
     
     def extract_agents(self):
-        """Extract agents from modern agent_groups structure"""
-        agent_groups = self.config.get('agent_groups', {})
+        """Extract agents from unified config structure"""
+        # Get MainPC agents from unified config
+        mainpc_agents = get_agents_by_machine(self.unified_config, 'mainpc')
         
-        for group_name, agents_mapping in agent_groups.items():
-            if not isinstance(agents_mapping, dict):
-                continue
-                
-            self.agent_groups[group_name] = []
+        for agent_data in mainpc_agents:
+            agent_name = agent_data['name']
+            group_name = agent_data['group']
             
-            for agent_name, agent_config in agents_mapping.items():
-                if not isinstance(agent_config, dict):
-                    continue
-                
-                # Add group info to agent config
-                agent_config['name'] = agent_name
-                agent_config['group'] = group_name
-                
-                self.agents[agent_name] = agent_config
-                self.agent_groups[group_name].append(agent_name)
-                
-                # Extract dependencies
-                deps = agent_config.get('dependencies', [])
-                for dep in deps:
-                    self.dependencies[agent_name].add(dep)
+            # Store agent data
+            self.agents[agent_name] = agent_data
+            
+            # Group agents by group
+            if group_name not in self.agent_groups:
+                self.agent_groups[group_name] = []
+            self.agent_groups[group_name].append(agent_name)
+            
+            # Extract dependencies
+            deps = agent_data.get('dependencies', [])
+            for dep in deps:
+                self.dependencies[agent_name].add(dep)
     
     def build_dependency_graph(self):
         """Build reverse dependency graph"""
@@ -125,7 +126,7 @@ class ModernDependencyResolver:
         return [self.agents[name] for name in self.agent_groups.get(group_name, [])]
 
 class HealthChecker:
-    """Modern health checker with Redis ready signals and port checks"""
+    """Standardized health checker using unified health checking system"""
     
     def __init__(self):
         self.redis_client = None
@@ -148,52 +149,75 @@ class HealthChecker:
             logger.warning(f"Redis connection failed: {e}")
             self.redis_client = None
     
-    def check_agent_ready_signal(self, agent_name):
-        """Check if agent reported ready via Redis"""
-        if not self.redis_client:
-            return False, "Redis not available"
+    def check_agent_health(self, agent, timeout=HEALTH_CHECK_TIMEOUT):
+        """Use standardized health checking for comprehensive agent health"""
+        agent_name = agent['name']
+        port = agent.get('port', 0)
         
         try:
-            ready_key = f"agent:ready:{agent_name}"
-            is_ready = self.redis_client.get(ready_key) == "1"
-            return is_ready, "Ready signal found" if is_ready else "No ready signal"
+            # Import here to avoid circular imports during startup
+            from common.health.standardized_health import check_agent_health
+            
+            # Perform standardized health check
+            health = check_agent_health(agent_name, port)
+            
+            # Log detailed health information
+            logger.info(f"    📊 {agent_name} health: {health.status.value}")
+            
+            # Log individual check results
+            for check_name, result in health.checks.items():
+                status_icon = "✅" if result else "❌"
+                logger.info(f"      {status_icon} {check_name}")
+            
+            # Consider healthy or degraded as acceptable
+            is_healthy = health.status.value in ['healthy', 'degraded']
+            
+            if is_healthy:
+                logger.info(f"    ✅ {agent_name}: Health check passed ({health.status.value})")
+            else:
+                logger.warning(f"    ❌ {agent_name}: Health check failed ({health.status.value})")
+                if health.error_message:
+                    logger.warning(f"      Error: {health.error_message}")
+            
+            return is_healthy
+            
         except Exception as e:
-            return False, f"Redis error: {e}"
+            # Fallback to legacy check if standardized check fails
+            logger.warning(f"Standardized health check failed for {agent_name}: {e}")
+            return self._legacy_health_check(agent, timeout)
     
-    def check_port_connectivity(self, host, port, timeout=5):
-        """Check if port is responding"""
-        import socket
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            result = sock.connect_ex((host, port))
-            sock.close()
-            return result == 0
-        except Exception:
-            return False
-    
-    def check_agent_health(self, agent, timeout=HEALTH_CHECK_TIMEOUT):
-        """Comprehensive health check for an agent"""
+    def _legacy_health_check(self, agent, timeout):
+        """Fallback to legacy health checking"""
         agent_name = agent['name']
         
-        # Check 1: Redis ready signal (preferred)
-        ready_signal, signal_msg = self.check_agent_ready_signal(agent_name)
-        if ready_signal:
-            logger.info(f"    ✅ {agent_name}: {signal_msg}")
-            return True
+        # Check 1: Redis ready signal
+        if self.redis_client:
+            try:
+                ready_key = f"agent:ready:{agent_name}"
+                ready_data = self.redis_client.get(ready_key)
+                if ready_data:
+                    logger.info(f"    ✅ {agent_name}: Ready signal found")
+                    return True
+            except Exception as e:
+                logger.warning(f"Redis ready signal check failed: {e}")
         
-        # Check 2: Port connectivity (fallback)
+        # Check 2: Port connectivity
         port = agent.get('port')
         if port:
-            host = 'localhost'  # In container context
-            port_ready = self.check_port_connectivity(host, port, timeout)
-            if port_ready:
-                logger.info(f"    🔌 {agent_name}: Port {port} responding")
-                return True
-            else:
-                logger.warning(f"    ❌ {agent_name}: Port {port} not responding, ready signal: {signal_msg}")
-        else:
-            logger.warning(f"    ❌ {agent_name}: No port defined, ready signal: {signal_msg}")
+            try:
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                result = sock.connect_ex(('localhost', port))
+                sock.close()
+                
+                if result == 0:
+                    logger.info(f"    🔌 {agent_name}: Port {port} responding")
+                    return True
+                else:
+                    logger.warning(f"    ❌ {agent_name}: Port {port} not responding")
+            except Exception as e:
+                logger.warning(f"Port check failed for {agent_name}: {e}")
         
         return False
 
@@ -321,13 +345,21 @@ class ModernSystemStartup:
         self.load_config()
     
     def load_config(self):
-        """Load startup configuration"""
+        """Load startup configuration using unified config manager"""
         try:
-            with open(self.config_path, 'r') as f:
-                self.config = yaml.safe_load(f)
+            # Load unified config
+            self.unified_config = load_unified_config(str(self.config_path))
             
-            self.resolver = ModernDependencyResolver(self.config)
-            logger.info(f"✅ Loaded config with {len(self.resolver.agents)} agents in {len(self.resolver.agent_groups)} groups")
+            # Validate config for issues
+            issues = validate_config_consistency(self.unified_config)
+            if issues:
+                logger.warning(f"⚠️  Configuration issues found:")
+                for issue in issues[:5]:  # Show first 5 issues
+                    logger.warning(f"   - {issue}")
+            
+            # Create dependency resolver with unified config
+            self.resolver = ModernDependencyResolver(self.unified_config)
+            logger.info(f"✅ Loaded unified config with {len(self.resolver.agents)} agents in {len(self.resolver.agent_groups)} groups")
             
         except Exception as e:
             logger.error(f"❌ Failed to load config from {self.config_path}: {e}")
