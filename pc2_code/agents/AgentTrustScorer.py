@@ -88,7 +88,7 @@ class AgentTrustScorer(BaseAgent):
         )
         
         # Initialize database
-        self.db_path = join_path("cache", "cache"), "agent_trust_scores.db")
+        self.db_path = join_path("cache", "agent_trust_scores.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         

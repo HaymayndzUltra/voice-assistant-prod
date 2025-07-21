@@ -47,3 +47,23 @@ transformers>=4.30.0
 typer>=0.9.0
 uvicorn>=0.23.0
 websockets>=11.0.0
+
+# Missing packages for PC2 agents functionality
+selenium>=4.21
+webdriver-manager>=4.0
+beautifulsoup4>=4.12
+aiohttp>=3.9
+sentence-transformers>=2.5
+langchain>=0.1.4
+networkx>=3.2
+scipy>=1.12
+plotly>=5.19
+streamlit>=1.32
+bitsandbytes>=0.41.3
+peft>=0.7.1
+playwright>=1.42
+colorama>=0.4.6
+jsonschema>=4.0.0
+nltk>=3.8
+chromadb>=0.4.0
+faiss-cpu>=1.7.4
