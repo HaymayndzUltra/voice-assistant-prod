@@ -350,6 +350,27 @@ class ModelManagerSuite(BaseAgent):
                 self._init_error_reporting()
             except Exception:
                 pass
+
+            # ------------------------------------------------------------------
+            # Provide stubbed attributes expected by legacy code even when IO is
+            # disabled (background-only singleton). This avoids AttributeErrors
+            # caught by the recent audit (socket, health_socket, health_context)
+            # ------------------------------------------------------------------
+            try:
+                from types import SimpleNamespace
+                # Re-use the existing ZMQ DummySocket if available, else fallback
+                _StubSock = getattr(zmq, "_DummySocket", None) or SimpleNamespace
+                if not hasattr(self, "socket"):
+                    self.socket = _StubSock()
+                if not hasattr(self, "health_socket"):
+                    self.health_socket = _StubSock()
+                # Some legacy helpers expect self.health_context; alias to ctx
+                if not hasattr(self, "health_context"):
+                    self.health_context = self.context
+            except Exception:
+                # Silently ignore – these are best-effort stubs only.
+                pass
+
             logger.info("ModelManagerSuite instantiated in serverless mode (no port binding)")
     
     def __getattr__(self, name: str):
