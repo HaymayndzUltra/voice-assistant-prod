@@ -848,4 +848,70 @@ Fast-forward
  create mode 100644 DOCUMENTS_SOT/GPU_VALIDATED_STARTUP_ANALYSIS.md
  create mode 100644 DOCUMENTS_SOT/HEALTHCHECKS.md
  create mode 100644 DOCUMENTS_SOT/IMPORTS.md
- create mode 100644 DO
+ create mode 100644 DOCUMENTS_SOT/OUTDATED.md
+ create mode 100644 DOCUMENTS_SOT/README.md
+ create mode 100644 DOCUMENTS_SOT/TESTS.md
+ create mode 100644 DOCUMENTS_SOT/THIRD_PARTY.md
+ create mode 100644 DOCUMENTS_SOT/VALIDATION_REPORT.md
+ create mode 100644 docker/README_STARTUP.md
+ create mode 100755 docker/start_ai_system.sh
+ create mode 100755 docker/start_mainpc_docker.sh
+ create mode 100755 docker/start_mainpc_docker_corrected.sh
+ create mode 100755 docker/start_pc2_docker.sh
+ create mode 100755 docker/start_pc2_docker_corrected.sh
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git status
+[?2004lOn branch JULY-21-2025-5-48-PM
+Your branch is up to date with 'origin/JULY-21-2025-5-48-PM'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	[32mnew file:   DOCUMENTS_SOT/GPU_VALIDATED_STARTUP_ANALYSIS.MD[m
+	[32mmodified:   analysis_output/performance_optimization_audit_phase2.md[m
+	[32mmodified:   my_terminal_log.md[m
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	[31mmodified:   my_terminal_log.md[m
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	[31mDOCUMENTS_SOT/IMPLEMENTATION_PLAN.md[m
+	[31mDOCUMENTS_SOT/VALIDATION_CHECKLIST.md[m
+	[31mDOCUMENTS_SOT/patterns.md[m
+
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git add ,.[K[K.
+[?2004l[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git ---[K[K[7mgit status[27mgit status
+[?2004lunknown option: -git
+usage: git [--version] [--help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ [7mgit status[27mgit status
+[?2004lOn branch JULY-21-2025-5-48-PM
+Your branch is up to date with 'origin/JULY-21-2025-5-48-PM'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	[32mnew file:   DOCUMENTS_SOT/GPU_VALIDATED_STARTUP_ANALYSIS.MD[m
+	[32mnew file:   DOCUMENTS_SOT/IMPLEMENTATION_PLAN.md[m
+	[32mnew file:   DOCUMENTS_SOT/VALIDATION_CHECKLIST.md[m
+	[32mnew file:   DOCUMENTS_SOT/patterns.md[m
+	[32mmodified:   analysis_output/performance_optimization_audit_phase2.md[m
+	[32mmodified:   my_terminal_log.md[m
+
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ [7mgit add .[27mgit add .
+[?2004l[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ [7mgit commit -m "Documentation analysis and imple[27m[7mm[27m[7mentation plan updates [27m
+
+[7m- Added IMPLEMENTATION_PLAN.md with comprehensive phase-based approach[27m
+[7m- Updated VALIDATION_CHECKLIST.md with systematic verification items[27m
+[7m- Validated error handling, configuration, and health check patterns[27m
+[7m- Comprehensive background agent scan preparation complete"[27m[A[A[A[A[A[Agit commit -m "Documentation analysis and implementation plan updates
+
+- Added IMPLEMENTATION_PLAN.md with comprehensive phase-based approach
+- Updated VALIDATION_CHECKLIST.md with systematic verification items
+- Validated error handling, configuration, and health check patterns
+- Comprehensive background agent scan preparation complete"
+[?2004l[JUL
