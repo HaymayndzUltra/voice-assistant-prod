@@ -347,7 +347,9 @@ class RequestCoordinator(BaseAgent):
             # Clean up socket resources
             try:
                 if socket:
+                    socket.close()
                 if context:
+                    context.term()
             except Exception as cleanup_error:
                 logger.error(f"Error cleaning up language analysis socket: {cleanup_error}")
                 
@@ -878,9 +880,11 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.socket.close()
+                self.socket = None
             if hasattr(self, 'context') and self.context:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
+                self.context = None
             # Close any open file handles
             # [Add specific resource cleanup here]
             

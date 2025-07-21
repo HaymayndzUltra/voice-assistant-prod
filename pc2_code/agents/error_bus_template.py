@@ -41,7 +41,7 @@ from typing import Dict, Any, Optional, Union
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Removed circular import - functions are defined in this file
 
 
 # Configure logging

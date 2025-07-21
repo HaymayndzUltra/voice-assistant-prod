@@ -21,15 +21,12 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's pc2_code directory to the Python path
-import sys
-import os
 from pathlib import Path
-PC2_CODE_DIR = get_main_pc_code()
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+
+# Add project root to path
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -427,7 +424,7 @@ def main():
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(__file__).parent.parent.parent / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
