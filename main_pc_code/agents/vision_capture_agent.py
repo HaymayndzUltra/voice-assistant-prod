@@ -36,13 +36,13 @@ if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

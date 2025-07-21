@@ -27,7 +27,7 @@ BOLD = "\033[1m"
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def load_config():
+def load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")):
     """Load the MVS configuration"""
     config_path = join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config_local.yaml")
     if not os.path.exists(config_path):
@@ -58,7 +58,7 @@ def main():
     print(f"{BLUE}{BOLD}Port Binding Test{RESET}")
     
     # Load configuration
-    config = load_config()
+    config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
     if not config:
         print(f"{RED}Failed to load configuration{RESET}")
         return

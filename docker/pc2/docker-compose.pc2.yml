@@ -1,0 +1,197 @@
+version: '3.8'
+
+# PC2 Docker Compose - Lightweight Monitoring Forwarder (RTX 3060) 
+# Architecture: Local metrics collection + forwarding to MainPC
+
+services:
+  # Redis - Local data store
+  redis:
+    image: redis:7-alpine
+    container_name: pc2-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Lightweight ObservabilityHub - Forwarder only
+  observability-hub-forwarder:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile.observability
+    container_name: pc2-observability-hub
+    ports:
+      - "9000:9000"   # Local API only
+      - "9100:9100"   # Health checks
+    environment:
+      - HUB_MODE=forwarder
+      - MONITOR_SCOPE=pc2_agents
+      - MACHINE_TYPE=pc2
+      - MACHINE_IP=192.168.100.17
+      - PRIMARY_HUB=http://192.168.100.16:9000
+      - MAINPC_ENDPOINT=http://192.168.100.16:9000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONPATH=/app
+      - LOG_LEVEL=INFO
+      - PROMETHEUS_ENABLED=false  # No local Prometheus, forward to MainPC
+      - PARALLEL_HEALTH_CHECKS=true
+      - PREDICTION_ENABLED=false  # Analytics handled by MainPC
+      - CROSS_MACHINE_SYNC=true
+      - FORWARD_METRICS=true
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./cache:/app/cache
+      - ./pc2_code/config:/app/pc2_code/config:ro
+      - ./main_pc_code/config:/app/main_pc_code/config:ro
+    networks:
+      - ai_system_network
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # PC2 Core Infrastructure
+  resource-manager:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile.agent
+    container_name: pc2-resource-manager
+    ports:
+      - "7113:7113"
+      - "8113:8113"
+    environment:
+      - AGENT_NAME=ResourceManager
+      - AGENT_PORT=7113
+      - HEALTH_CHECK_PORT=8113
+      - AGENT_GROUP=core_infrastructure
+      - REDIS_HOST=redis
+      - PYTHONPATH=/app
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./pc2_code/config:/app/pc2_code/config:ro
+    networks:
+      - ai_system_network
+    depends_on:
+      - observability-hub-forwarder
+    restart: unless-stopped
+    command: python3 pc2_code/agents/resource_manager.py
+
+  # Memory Orchestrator Service
+  memory-orchestrator:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile.agent
+    container_name: pc2-memory-orchestrator
+    ports:
+      - "7140:7140"
+      - "8140:8140"
+    environment:
+      - AGENT_NAME=MemoryOrchestratorService
+      - AGENT_PORT=7140
+      - HEALTH_CHECK_PORT=8140
+      - AGENT_GROUP=memory_storage
+      - REDIS_HOST=redis
+      - PYTHONPATH=/app
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./pc2_code/config:/app/pc2_code/config:ro
+    networks:
+      - ai_system_network
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: python3 pc2_code/agents/memory_orchestrator_service.py
+
+  # Tiered Responder
+  tiered-responder:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile.agent
+    container_name: pc2-tiered-responder
+    ports:
+      - "7100:7100"
+      - "8100:8100"
+    environment:
+      - AGENT_NAME=TieredResponder
+      - AGENT_PORT=7100
+      - HEALTH_CHECK_PORT=8100
+      - AGENT_GROUP=response_processing
+      - REDIS_HOST=redis
+      - PYTHONPATH=/app
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./pc2_code/config:/app/pc2_code/config:ro
+    networks:
+      - ai_system_network
+    depends_on:
+      - resource-manager
+    restart: unless-stopped
+    command: python3 pc2_code/agents/tiered_responder.py
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Advanced Router
+  advanced-router:
+    build:
+      context: ../..
+      dockerfile: docker/pc2/Dockerfile.agent
+    container_name: pc2-advanced-router
+    ports:
+      - "7129:7129"
+      - "8129:8129"
+    environment:
+      - AGENT_NAME=AdvancedRouter
+      - AGENT_PORT=7129
+      - HEALTH_CHECK_PORT=8129
+      - AGENT_GROUP=routing_services
+      - REDIS_HOST=redis
+      - PYTHONPATH=/app
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./pc2_code/config:/app/pc2_code/config:ro
+    networks:
+      - ai_system_network
+    depends_on:
+      - resource-manager
+    restart: unless-stopped
+    command: python3 pc2_code/agents/advanced_router.py
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  ai_system_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1 

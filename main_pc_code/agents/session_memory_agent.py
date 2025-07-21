@@ -32,7 +32,7 @@ if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient
 
 # Configure logging

@@ -36,7 +36,7 @@ import noisereduce as nr
 from scipy import signal
 import librosa
 from main_pc_code.src.core.http_server import setup_health_check_server
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service
 from common.core.base_agent import BaseAgent
 import psutil
@@ -49,7 +49,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.env_helpers import get_env
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -162,7 +162,7 @@ class FusedAudioPreprocessor(BaseAgent):
         self._init_agc()
         
         # Load configuration
-        self._load_config()
+        self._load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         logger.info("Fused Audio Preprocessor initialized")
     

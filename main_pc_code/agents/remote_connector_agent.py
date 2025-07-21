@@ -232,7 +232,7 @@ class RemoteConnectorAgent(BaseAgent):
             }
         
         # Not in cache, make the actual request
-        deepseek_url = config.get('models.deepseek.url', 'http://192.168.1.100:8000')
+        deepseek_url = config.get('models.deepseek.url', 'get_service_url("deepseek")')
         url = f"{deepseek_url}/generate"
         
         # Prepare request data

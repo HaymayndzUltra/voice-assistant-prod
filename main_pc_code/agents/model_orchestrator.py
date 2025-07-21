@@ -35,14 +35,14 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker # Pansamantalang import
 
 # --- Logging Setup ---
 logger = logging.getLogger('ModelOrchestrator')
 
 # Load configuration at the module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # --- Constants ---
 DEFAULT_PORT = config.get('model_orchestrator_port', 7010)

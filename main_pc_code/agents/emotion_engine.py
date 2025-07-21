@@ -31,7 +31,7 @@ import psutil
 import signal
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
 from common.env_helpers import get_env
 

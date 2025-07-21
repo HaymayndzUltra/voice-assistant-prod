@@ -49,11 +49,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 # Import with canonical path
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Attempt to import health check server utility, fallback to no-op if unavailable
 try:

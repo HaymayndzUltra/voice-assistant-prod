@@ -34,7 +34,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union, cast, TypeVar
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_discovery_client
 from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env

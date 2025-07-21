@@ -40,13 +40,13 @@ import os
 from common.utils.path_env import get_path, join_path, get_file_path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.agents.gguf_model_manager import GGUFModelManager  # Optional dependency
 from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 log_file = Path(join_path("logs", "code_generator_agent.log"))
@@ -68,7 +68,7 @@ class CodeGeneratorAgent(BaseAgent):
     """Agent for generating code from natural language prompts. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Standard BaseAgent initialization at the beginning
-        self.config = load_config()
+        self.config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         super().__init__(
             name=getattr(self.config, 'name', 'CodeGeneratorAgent'),
             port=getattr(self.config, 'port', 5708)

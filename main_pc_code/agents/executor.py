@@ -14,12 +14,12 @@ import threading
 import logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 from datetime import datetime
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Logging setup
 LOG_PATH = "executor_agent.log"

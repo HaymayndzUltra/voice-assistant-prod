@@ -15,7 +15,7 @@ import psutil
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union, cast
 from pathlib import Path
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
 
 
@@ -25,7 +25,7 @@ import os
 sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.env_helpers import get_env
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -38,7 +38,7 @@ class VoiceProfilingAgent(BaseAgent):
     def __init__(self):
         """Initialize the Voice Profiling Agent"""
         # Get configuration
-        config_dict = load_config()
+        config_dict = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Initialize basic parameters
         agent_name = config_dict.get('name', 'VoiceProfilingAgent')
@@ -59,7 +59,7 @@ class VoiceProfilingAgent(BaseAgent):
         if config_path is None:
             config_path = join_path("config", join_path("config", "system_config.py"))
         self.config_path = config_path
-        self.load_config()
+        self.load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Initialize voice profiles storage
         self.profile_storage_path = self.config.get("voice_profiling", {}).get("profile_storage_path", join_path("data", "voice_profiles"))

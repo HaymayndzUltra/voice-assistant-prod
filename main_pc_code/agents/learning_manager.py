@@ -32,11 +32,11 @@ from typing import Dict, Any, List, Optional
 import psutil
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

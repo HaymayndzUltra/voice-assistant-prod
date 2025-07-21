@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 ObservabilityHub - Phase 1 Implementation
 Consolidates: PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthMonitor (7114), 
@@ -7,6 +6,7 @@ PerformanceLoggerAgent (7128), SystemHealthManager (7117)
 Target: Prometheus exporter, log shipper, anomaly detector threads (Port 7002)
 Hardware: PC2
 Enhanced with O3 requirements: Prometheus integration, predictive analytics, ZMQ broadcasting, parallel health checks
+Docker-compatible with centralized path management
 """
 
 import sys
@@ -29,21 +29,31 @@ from dataclasses import dataclass, field
 from collections import defaultdict, deque
 import uuid
 
-# Add project paths for imports
+# Add project paths for imports - Docker compatible
 project_root = Path(__file__).parent.parent.parent.parent.absolute()
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
+# Import Docker-compatible path utilities
+from common.utils.docker_paths import (
+    get_logs_dir, get_data_dir, get_cache_dir, get_temp_dir,
+    get_config_path, get_agent_log_path, get_agent_data_path,
+    get_agent_cache_dir, resolve_legacy_path
+)
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
 # Configure logging first (before prometheus import to avoid logger error)
+# Use Docker-compatible log path
+log_file_path = get_agent_log_path('observability_hub')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('phase1_implementation/logs/observability_hub.log')
+        logging.FileHandler(str(log_file_path))
     ]
 )
 logger = logging.getLogger("ObservabilityHub")
@@ -303,10 +313,10 @@ class AgentLifecycleManager:
     def load_agent_configs(self):
         """Load agent configurations for lifecycle management"""
         try:
-            # Load from config files
+            # Load from config files - Docker compatible
             config_paths = [
-                "pc2_code/config/startup_config.yaml",
-                "main_pc_code/config/startup_config.yaml"
+                str(get_config_path('pc2')),
+                str(get_config_path('mainpc'))
             ]
             
             import yaml
@@ -381,8 +391,12 @@ class AgentLifecycleManager:
 class PerformanceLogger:
     """PerformanceLoggerAgent Logic: Performance data logging and persistence"""
     
-    def __init__(self, db_path: str = "phase1_implementation/data/performance_metrics.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        # Use Docker-compatible data path
+        if db_path is None:
+            self.db_path = str(get_agent_data_path('observability_hub', 'performance_metrics.db'))
+        else:
+            self.db_path = str(resolve_legacy_path(db_path))
         self.db_lock = threading.Lock()
         self._init_database()
         
@@ -559,11 +573,11 @@ class RecoveryManager:
     def _clear_agent_state(self, agent_name: str):
         """Clear agent state (cache, temp files, etc.)"""
         try:
-            # Clear agent-specific cache directories
+            # Clear agent-specific cache directories - Docker compatible
             cache_dirs = [
-                f"cache/{agent_name}",
-                f"temp/{agent_name}",
-                f"logs/{agent_name}"
+                str(get_agent_cache_dir(agent_name)),
+                str(get_temp_dir() / agent_name),
+                str(get_logs_dir() / agent_name)
             ]
             
             import shutil

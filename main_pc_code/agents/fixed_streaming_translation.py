@@ -21,11 +21,11 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from datetime import datetime, timedelta
 from collections import defaultdict
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -47,7 +47,7 @@ ENABLE_CACHING = config.get("enable_caching", True)
 ENABLE_PERFORMANCE_MONITORING = config.get("enable_performance_monitoring", True)
 
 # PC2 Translator configuration
-PC2_IP = config.get("pc2_ip", "192.168.1.2")
+PC2_IP = config.get("pc2_ip", get_service_ip("pc2"))
 PC2_TRANSLATOR_PORT = config.get("pc2_translator_port", 5563)
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = config.get("pc2_performance_port", 5632)

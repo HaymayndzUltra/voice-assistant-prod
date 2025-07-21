@@ -1,5 +1,5 @@
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
@@ -50,7 +50,7 @@ from main_pc_code.src.network.secure_zmq import configure_secure_client, configu
 from collections import OrderedDict
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Add the parent directory to sys.path
 

@@ -34,14 +34,14 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
 from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 class HumanAwarenessAgent(BaseAgent):
     def __init__(self, port=None):
@@ -72,7 +72,7 @@ class HumanAwarenessAgent(BaseAgent):
         self.attention_level = 0
         
         # Load configuration
-        self.agent_config = self._load_config()
+        self.agent_config = self._load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Record start time for uptime calculation
         self.start_time = time.time()

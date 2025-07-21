@@ -1,5 +1,5 @@
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 
 """
@@ -28,7 +28,7 @@ import psutil
 from common.env_helpers import get_env
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

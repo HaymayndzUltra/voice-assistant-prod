@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 from collections import deque
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
 from typing import Any, Dict, cast
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
@@ -15,7 +15,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

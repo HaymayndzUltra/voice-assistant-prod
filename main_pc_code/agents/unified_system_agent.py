@@ -13,8 +13,8 @@ if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 aseAgent
-from main_pc_code.utils.config_loader import load_config
-config = load_config()
+from common.config_manager import load_unified_config
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 """
 Unified System Agent
 -------------------
@@ -458,7 +458,7 @@ class UnifiedSystemAgent(BaseAgent):
             logger.info("Starting background initialization...")
             
             # Load configuration
-            self.config = self._load_config()
+            self.config = self._load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
             logger.info("Configuration loaded successfully")
             
             # Discover services

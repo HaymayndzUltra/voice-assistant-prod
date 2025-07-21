@@ -34,7 +34,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.utils.learning_models import TrainingCycle
 
@@ -52,7 +52,7 @@ logging.basicConfig(
 logger = logging.getLogger('LearningOrchestrationService')
 
 # --- Constants ---
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 DEFAULT_PORT = config.get('los_port', 7210)
 HEALTH_CHECK_PORT = config.get('los_health_port', 8212)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)

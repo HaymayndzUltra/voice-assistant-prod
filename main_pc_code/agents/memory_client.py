@@ -15,10 +15,10 @@ import time
 from typing import Dict, Any, Optional, List, Union
 from common.core.base_agent import BaseAgent
 
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 # Load configuration at the module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 
 logger = logging.getLogger("MemoryClient")

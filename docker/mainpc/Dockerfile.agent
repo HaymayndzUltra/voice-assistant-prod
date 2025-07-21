@@ -1,0 +1,47 @@
+# MainPC Agent Dockerfile - General purpose agent container
+FROM python:3.11-slim-bullseye as base
+
+# System dependencies for AI/ML workloads
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libzmq3-dev \
+    libsndfile1-dev \
+    libsox-dev \
+    ffmpeg \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory  
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY docker-requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r docker-requirements.txt
+
+# Copy source code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/cache /app/models
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Create non-root user
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Health check (will be overridden by specific agent ports)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${HEALTH_CHECK_PORT:-8000}/health || exit 1
+
+# Default command (will be overridden in docker-compose)
+CMD ["python3", "-c", "print('Agent container ready')"] 

@@ -36,10 +36,10 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 # Parse agent arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -388,7 +388,7 @@ class VramOptimizerAgent(BaseAgent):
                         dt_port = int(parts[1])
                     else:
                         # Fallback values
-                        pc2_ip = '192.168.100.17'
+                        pc2_ip = get_service_ip('pc2')
                         dt_port = 7120
                     self.sdt_socket.connect(f"tcp://{pc2_ip}:{dt_port}")
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")

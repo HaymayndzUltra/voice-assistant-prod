@@ -157,8 +157,8 @@ MODEL_MANAGER_PORT = int(os.environ.get("MODEL_MANAGER_PORT", "5570"))
 TASK_ROUTER_PORT = int(os.environ.get("TASK_ROUTER_PORT", "5571"))
 
 # Import and load configuration at module level
-from main_pc_code.utils.config_loader import load_config
-config = load_config()
+from common.config_manager import load_unified_config
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Move this import to the top of the file
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
@@ -4439,7 +4439,7 @@ class ModelManagerAgent(BaseAgent):
                 self.pc2_services = load_pc2_services()
                 
                 if self.pc2_services.get('enabled', False):
-                    pc2_ip = self.pc2_services.get('ip', '192.168.100.17')
+                    pc2_ip = self.pc2_services.get('ip', get_service_ip('pc2'))
                     self.logger.info(f"PC2 services enabled, connecting to {pc2_ip}")
                     
                     # Get available services
@@ -4494,7 +4494,7 @@ class ModelManagerAgent(BaseAgent):
                 self.logger.warning("PC2 services not enabled in pc2_services.yaml configuration")
                 return service_status
                 
-            pc2_ip = pc2_config.get('ip', '192.168.100.17')
+            pc2_ip = pc2_config.get('ip', get_service_ip('pc2'))
             
             # Create temporary socket for health checks
             health_socket = self.context.socket(zmq.REQ)

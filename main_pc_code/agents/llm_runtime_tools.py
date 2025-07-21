@@ -133,7 +133,7 @@ except Exception as e:
     logger.warning(f"Could not connect to health dashboard: {e}")
 
 
-def load_config() -> Dict:
+def load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")) -> Dict:
     """Load model configuration from YAML file with caching"""
     global config_cache
     
@@ -347,7 +347,7 @@ def check_model_compatibility(model_name: str) -> Tuple[bool, Optional[str]]:
         (is_compatible, reason) tuple
     """
     try:
-        config = load_config()
+        config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         global_config = config.get('global', {})
         
         # Skip compatibility check if disabled in config
@@ -419,13 +419,13 @@ def check_model_compatibility(model_name: str) -> Tuple[bool, Optional[str]]:
         
 def get_model_version_history(model_name: str) -> List[Dict]:
     """Get version history for a model"""
-    config = load_config()
+    config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
     model_config = config.get('models', {}).get(model_name, {})
     return model_config.get('version_history', [])
 
 def get_model_url(model_name: str):
     """Get URL for model API"""
-    config = load_config()
+    config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
     model_config = config.get('models', {}).get(model_name, {})
     
     # Check if model has a configured URL
@@ -436,7 +436,7 @@ def get_model_url(model_name: str):
 
 def get_model_api_type(model_name: str):
     """Get API type for model"""
-    config = load_config()
+    config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
     model_config = config.get('models', {}).get(model_name, {})
     
     # Check if model has a configured API type
@@ -458,7 +458,7 @@ def collect_telemetry() -> None:
         # Collect model-specific metrics
         with models_lock:
             for model_name, model_info in active_models.items():
-                config = load_config()
+                config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
                 model_config = config.get('models', {}).get(model_name, {})
                 vram_mb = model_config.get('vram_mb', 0)
                 used_vram += vram_mb
@@ -882,7 +882,7 @@ def emergency_cleanup() -> None:
     
     try:
         with models_lock:
-            config = load_config()
+            config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
             models_to_keep = []
             
             # Find models marked as emergency_fallback

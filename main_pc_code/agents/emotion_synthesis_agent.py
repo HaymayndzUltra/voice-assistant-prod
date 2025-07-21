@@ -29,12 +29,12 @@ import logging
 import random
 from datetime import datetime
 from typing import Dict
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import time
 import psutil
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

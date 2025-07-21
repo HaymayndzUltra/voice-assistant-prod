@@ -40,11 +40,11 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 log_dir = os.path.join(MAIN_PC_CODE, 'logs')

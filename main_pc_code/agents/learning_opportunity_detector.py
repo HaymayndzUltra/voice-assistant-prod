@@ -42,7 +42,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from common.utils.learning_models import LearningOpportunity
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 # --- Shared Utilities ---
 from main_pc_code.agents.request_coordinator import CircuitBreaker
@@ -62,7 +62,7 @@ logging.basicConfig(
 logger = logging.getLogger('LearningOpportunityDetector')
 
 # --- Load configuration ---
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 DEFAULT_PORT = config.get('lod_port', 7200)
 HEALTH_CHECK_PORT = config.get('lod_health_port', 7201)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)

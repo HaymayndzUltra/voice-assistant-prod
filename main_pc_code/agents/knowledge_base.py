@@ -17,7 +17,7 @@ from typing import Dict, Any, List, Optional
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient
 from common.env_helpers import get_env
 
@@ -29,7 +29,7 @@ MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Ports are loaded from configuration or environment variables (Rule 2)
 DEFAULT_PORT = int(os.environ.get("KNOWLEDGE_BASE_PORT", config.get("knowledge_base", {}).get("port", 5715)))

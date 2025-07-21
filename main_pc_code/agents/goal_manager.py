@@ -34,10 +34,10 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
 from main_pc_code.agents.memory_client import MemoryClient
 
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 # Load configuration at the module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 
 # --- Shared Utilities ---

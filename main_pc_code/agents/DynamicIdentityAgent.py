@@ -30,13 +30,13 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, Any, List
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import threading
 from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

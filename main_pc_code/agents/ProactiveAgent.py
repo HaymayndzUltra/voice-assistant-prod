@@ -12,13 +12,13 @@ import traceback
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from common.env_helpers import get_env
 
 # Load configuration
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # ZMQ timeout settings from config
 ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout", 5000))  # 5 seconds timeout for requests

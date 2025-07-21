@@ -27,7 +27,7 @@ from threading import Thread
 import json
 from pathlib import Path
 import sys
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 
 # Import path manager for containerization-friendly paths
@@ -50,7 +50,7 @@ except ImportError:
 project_root = Path(__file__).resolve().parent.parent
 
 # Load configuration
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Load LLM configuration to check for ENABLE_LEGACY_MODELS flag
 llm_config_path = get_file_path("main_pc_config", "llm_config.yaml")

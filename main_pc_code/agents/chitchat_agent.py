@@ -33,10 +33,10 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -70,7 +70,7 @@ class ChitchatAgent(BaseAgent):
     def __init__(self):
         """Initialize the chitchat agent."""
         # Use config loader for agent args or set defaults
-        self.config = load_config() if callable(load_config) else {}
+        self.config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")) if callable(load_config) else {}
         super().__init__(
             name=getattr(self.config, 'name', 'ChitchatAgent'),
             port=getattr(self.config, 'port', 5711)

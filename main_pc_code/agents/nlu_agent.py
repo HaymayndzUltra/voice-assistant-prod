@@ -26,7 +26,7 @@ import re
 import threading
 import traceback
 from typing import Dict, Any, List, Tuple
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 
 # Import path manager for containerization-friendly paths
@@ -35,7 +35,7 @@ import os
 sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(

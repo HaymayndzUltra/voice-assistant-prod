@@ -26,12 +26,12 @@ import torch
 import logging
 import time
 import pickle
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 from common.env_helpers import get_env
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Get the directory of the current file for the log
 current_dir = os.path.dirname(os.path.abspath(__file__))

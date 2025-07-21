@@ -3505,7 +3505,7 @@ from common.env_helpers import get_env
             # Load PC2 services from config
             pc2_config = self.config.get('pc2_services', {})
             if pc2_config.get('enabled', False):
-                pc2_ip = pc2_config.get('ip', '192.168.1.2')
+                pc2_ip = pc2_config.get('ip', get_service_ip('pc2'))
                 self.logger.info(f"PC2 services enabled, connecting to {pc2_ip}")
                 
                 # Register PC2 services
@@ -3542,7 +3542,7 @@ from common.env_helpers import get_env
                 self.logger.warning("PC2 services not enabled in configuration")
                 return service_status
                 
-            pc2_ip = pc2_config.get('ip', '192.168.1.2')
+            pc2_ip = pc2_config.get('ip', get_service_ip('pc2'))
             
             # Create temporary socket for health checks
             health_socket = self.context.socket(zmq.REQ)

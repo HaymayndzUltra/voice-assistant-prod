@@ -42,7 +42,7 @@ class DiscoveryService(BaseAgent):
         self.running = False
         
         # Load configuration
-        self.config = self.load_config()
+        self.config = self.load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         if not self.config:
             logger.error("Failed to load configuration. Exiting.")
             sys.exit(1)
