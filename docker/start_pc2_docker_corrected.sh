@@ -38,7 +38,7 @@ check_service_health() {
     echo -e "${YELLOW}Checking health of ${service_name} on port ${port}...${NC}"
     
     for i in $(seq 1 $timeout); do
-        if docker exec ${service_name} python -c "
+        if docker exec "${service_name}" python -c "
 import zmq
 import json
 import sys
