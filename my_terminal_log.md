@@ -64,14 +64,71 @@ To https://github.com/HaymayndzUltra/voice-assistant-prod.git
 [?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git status
 [?2004lOn branch background-agent-automation-tools
 nothing to commit, working tree clean
-[?2004h]0;haymayndz@DESKTOP-GC2E:5580->5580/tcp, 0.0.0.0:5638->5638/tcp, [::]:5638->5638/tcp, 0.0.0.0:5643->5643/tcp, [::]:5643->5643/tcp, 0.0.0.0:7202->7202/tcp, [::]:7202->7202/tcp, 0.0.0.0:7212->7212/tcp, [::]:7212->7212/tcp, 0.0.0.0:7300->7222/tcp, [::]:7300->7222/tcp                                                                                                                                         docker-learning-knowledge-1
-d973afb30807   ai-system/speech-services:optimized       "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5800-5801->5800-5801/tcp, [::]:5800-5801->5800-5801/tcp                                                                                                                                                                                                                                                                                                                                                      docker-speech-services-1
-ce8d94099bc5   ai-system/vision-processing:optimized     "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5610->5610/tcp, [::]:5610->5610/tcp                                                                                                                                                                                                                                                                                                                                                                          docker-vision-processing-1
-31a85188ff7d   ai-system/reasoning-services:optimized    "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:5612->5612/tcp, [::]:5612->5612/tcp, 0.0.0.0:5641->5641/tcp, [::]:5641->5641/tcp, 0.0.0.0:5646->5646/tcp, [::]:5646->5646/tcp                                                                                                                                                                                                                                                                                docker-reasoning-services-1
-2819d4247cfd   ai-system/core-services:optimized         "python /app/main_pc…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:7200->7200/tcp, [::]:7200->7200/tcp, 0.0.0.0:7210-7211->7210-7211/tcp, [::]:7210-7211->7210-7211/tcp, 0.0.0.0:7220->7220/tcp, [::]:7220->7220/tcp, 0.0.0.0:7225->7225/tcp, [::]:7225->7225/tcp, 0.0.0.0:8211-8212->8211-8212/tcp, [::]:8211-8212->8211-8212/tcp, 0.0.0.0:8220->8220/tcp, [::]:8220->8220/tcp, 0.0.0.0:9000->9000/tcp, [::]:9000->9000/tcp, 0.0.0.0:26002->26002/tcp, [::]:26002->26002/tcp   docker-core-services-1
-cc4ffd799689   redis:7-alpine                            "docker-entrypoint.s…"   6 minutes ago   Up 6 minutes (healthy)     6379/tcp                                                                                                                                                                                                                                                                                                                                                                                                             docker-redis-1
-45284d732ba6   nats:2.10                                 "/nats-server -js -s…"   6 minutes ago   Up 6 minutes (unhealthy)   0.0.0.0:4222->4222/tcp, [::]:4222->4222/tcp, 0.0.0.0:8222->8222/tcp, [::]:8222->8222/tcp                                                                                                                                                                                                                                                                                                                             docker-nats-1
-010c20f4c73f   ghcr.io/github/github-mcp-server          "/server/github-mcp-…"   3 hours ago     Up 3 hours                                                                                                                                                                                                                                                                                                                                                                                                                                      modest_fermat
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git stt[Katus
+[?2004lOn branch background-agent-automation-tools
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	[31mdeleted:    my_terminal_log.txt[m
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	[31mmy_terminal_log.md[m
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ git add[K[K[K[K[K[K[K[7m# 1. Add all changes (including automation tools)[27m
+[7mgit add -A[27m
+
+[7m# 2. Commit with descriptive message[27m
+[7mgit commit -m "Background Agent: Add automation tools and healthchecks[27m
+
+[7m- Created tools/add_healthchecks.py (socket-based health monitoring)[27m
+[7m- Created tools/legacy_port_sweep.py (found 1,022 legacy port references)[27m
+[7m- Created tools/compose_validate.py (validated 13 services)[27m
+[7m- Added healthchecks to all Docker services[27m
+[7m- Fixed NATS healthcheck (removed wget dependency)[27m
+[7m- Legacy ports: 5570(346), 5575(282), 5617(234), 7222(160)"[27m
+
+[7m# 3. Create new branch[27m
+[7mgit checkout -b JULY-21-2025-5-48-PM[27m
+
+[7m# 4. Push new branch[27m
+[7mgit push origin  JULY-21-2025-5-48-PM[27m[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ # 1. Add all changes (including automation tools)
+git add -A
+
+# 2. Commit with descriptive message
+git commit -m "Background Agent: Add automation tools and healthchecks
+
+- Created tools/add_healthchecks.py (socket-based health monitoring)
+- Created tools/legacy_port_sweep.py (found 1,022 legacy port references)
+- Created tools/compose_validate.py (validated 13 services)
+- Added healthchecks to all Docker services
+- Fixed NATS healthcheck (removed wget dependency)
+- Legacy ports: 5570(346), 5575(282), 5617(234), 7222(160)"
+
+# 3. Create new branch
+git checkout -b JULY-21-2025-5-48-PM
+
+# 4. Push new branch
+git push origin  JULY-21-2025-5-48-PM
+[?2004l[background-agent-automation-tools 88ca3a0] Background Agent: Add automation tools and healthchecks
+ 1 file changed, 67 insertions(+), 9 deletions(-)
+ rename my_terminal_log.txt => my_terminal_log.md (90%)
+Switched to a new branch 'JULY-21-2025-5-48-PM'
+Enumerating objects: 4, done.
+Counting objects:  25% (1/4)Counting objects:  50% (2/4)Counting objects:  75% (3/4)Counting objects: 100% (4/4)Counting objects: 100% (4/4), done.
+Delta compression using up to 24 threads
+Compressing objects:  33% (1/3)Compressing objects:  66% (2/3)Compressing objects: 100% (3/3)Compressing objects: 100% (3/3), done.
+Writing objects:  33% (1/3)Writing objects:  66% (2/3)Writing objects: 100% (3/3)Writing objects: 100% (3/3), 6.59 KiB | 6.59 MiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/1)[Kremote: Resolving deltas: 100% (1/1)[Kremote: Resolving deltas: 100% (1/1), completed with 1 local object.[K
+remote: 
+remote: Create a pull request for 'JULY-21-2025-5-48-PM' on GitHub by visiting:[K
+remote:      https://github.com/HaymayndzUltra/voice-assistant-prod/pull/new/JULY-21-2025-5-48-PM[K
+remote: 
+To https://github.com/HaymayndzUltra/voice-assistant-prod.git
+ * [new branch]      JULY-21-2025-5-48-PM -> JULY-21-2025-5-48-PM
+[?2004h]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ [K]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_System_Monorepo[00m$ [K]0;haymayndz@DESKTOP-GC2ET1O: ~/AI_System_Monorepo[01;32mhaymayndz@DESKTOP-GC2ET1O[00m:[01;34m~/AI_S                                                                                                                                                                     modest_fermat
 681010653a7c   ai-system/mm-router:latest                "python /app/model_m…"   42 hours ago    Up 42 hours                0.0.0.0:5570->5570/tcp, [::]:5570->5570/tcp, 0.0.0.0:5575->5575/tcp, [::]:5575->5575/tcp, 0.0.0.0:5617->5617/tcp, [::]:5617->5617/tcp, 0.0.0.0:7222->7222/tcp, [::]:7222->7222/tcp                                                                                                                                                                                                                                   mm-router
 feafd2e8978c   grafana/grafana                           "/run.sh"                44 hours ago    Up 44 hours                0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp                                                                                                                                                                                                                                                                                                                                                                          grafana
 d6703beebcf8   prom/prometheus                           "/bin/prometheus --c…"   45 hours ago    Up 45 hours                0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp                                                                                                                                                                                                                                                                                                                                                                          prometheus

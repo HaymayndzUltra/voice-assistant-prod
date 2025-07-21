@@ -147,12 +147,34 @@ def check_socket_connection(host, port, timeout):
         return False
 
 def check_health(agent, timeout=HEALTH_CHECK_TIMEOUT):
+    """Enhanced health check that verifies agent ready signals"""
+    agent_name = agent.get('name')
+    
+    # First check if agent reported ready via Redis
+    try:
+        import redis
+        r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, db=0)
+        ready_key = f"agent:ready:{agent_name}"
+        if r.get(ready_key) == b'1':
+            print(f"    [READY] {agent_name} reported ready via Redis")
+            return True
+    except Exception as e:
+        print(f"    [WARNING] Redis ready check failed for {agent_name}: {e}")
+    
+    # Fallback to port check
     url = get_health_check_url(agent)
     if not url:
         return False
     host = url.split("://")[1].split(":")[0]
     port = int(url.split(":")[-1].split("/")[0])
-    return check_socket_connection(host, port, timeout)
+    port_ready = check_socket_connection(host, port, timeout)
+    
+    if port_ready:
+        print(f"    [PORT] {agent_name} port {port} responding")
+    else:
+        print(f"    [FAIL] {agent_name} port {port} not responding")
+    
+    return port_ready
 
 # --- PROCESS MANAGEMENT ---
 def kill_existing_agent(agent_name):
@@ -196,10 +218,8 @@ def start_agent(agent):
     if 'env_vars' in agent:
         env.update(agent['env_vars'])
     
-    # Skip agents with known issues for now
-    if agent_name in ["ModelManagerAgent", "TaskRouter"]:
-        print(f"[SKIPPED] {agent_name} - Known issues detected in logs")
-        return None
+    # Attempt to start all agents - let health checks determine viability
+    print(f"[ATTEMPTING] Starting {agent_name}...")
         
     # Start agent in background
     try:
@@ -239,11 +259,19 @@ def verify_phase_health(phase_agents, retries=RETRIES, delay=RETRY_DELAY):
             print(f"    [WAIT] Not healthy: {', '.join(failed)}. Retrying in {delay}s...")
             time.sleep(delay)
     
-    print(f"  [FAIL] The following agents failed health check after {retries} retries: {', '.join([n for n, ok in agent_status.items() if not ok])}")
+    failed_agents = [n for n, ok in agent_status.items() if not ok]
+    print(f"  [FAIL] The following agents failed health check after {retries} retries: {', '.join(failed_agents)}")
     
-    # For the purpose of this demo, consider the phase successful even if some agents failed
-    print("  [NOTICE] Proceeding despite failures for demonstration purposes")
-    return True
+    # Only proceed if critical agents are healthy
+    critical_agents = ['ServiceRegistry', 'SystemDigitalTwin', 'RequestCoordinator']
+    failed_critical = [agent for agent in failed_agents if agent in critical_agents]
+    
+    if failed_critical:
+        print(f"  [CRITICAL] Critical agents failed: {', '.join(failed_critical)}")
+        return False
+    else:
+        print(f"  [PARTIAL] {len(failed_agents)} non-critical agents failed, proceeding")
+        return True
 
 def main():
     parser = argparse.ArgumentParser(description="Phased System Startup Script")

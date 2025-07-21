@@ -1,0 +1,237 @@
+networks:
+  default:
+    driver: bridge
+
+services:
+  redis:
+    image: redis:7-alpine
+    networks:
+      - default
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  nats:
+    image: nats:2.10
+    command: ["-js", "-sd", "/data"]
+    networks:
+      - default
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  core-services:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system_v2.py", "--group", "core_services"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 1
+              driver: nvidia
+    environment:
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
+      - LOG_LEVEL=INFO
+      - DEBUG_MODE=false
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - NATS_HOST=nats
+      - CONTAINER_GROUP=core_services
+    healthcheck:
+      test: ["CMD", "python", "/app/main_pc_code/scripts/health_check_client.py", "core"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    image: ai-system/core-services:optimized
+    networks:
+      - default
+    ports:
+      - "7200:7200"  # ServiceRegistry
+      - "7220:7220"  # SystemDigitalTwin
+      - "8220:8220"  # SystemDigitalTwin health
+      - "26002:26002"  # RequestCoordinator
+      - "7225:7225"  # UnifiedSystemAgent
+      - "9000:9000"  # ObservabilityHub
+      - "7211:7211"  # ModelManagerSuite
+      - "8211:8211"  # ModelManagerSuite health
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - models:/app/models
+      - ./config:/app/config
+
+  memory-system:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base.optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system_v2.py", "--group", "memory_system"]
+    depends_on:
+      core-services:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - CONTAINER_GROUP=memory_system
+    healthcheck:
+      test: ["CMD", "python", "/app/main_pc_code/scripts/health_check_client.py", "memory"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    image: ai-system/memory-system:optimized
+    networks:
+      - default
+    ports:
+      - "5713:5713"  # MemoryClient
+      - "5574:5574"  # SessionMemoryAgent
+      - "5715:5715"  # KnowledgeBase
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+
+  utility-services:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base.optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system_v2.py", "--group", "utility_services"]
+    depends_on:
+      core-services:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - CONTAINER_GROUP=utility_services
+    healthcheck:
+      test: ["CMD", "python", "/app/main_pc_code/scripts/health_check_client.py", "utility"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    image: ai-system/utility-services:optimized
+    networks:
+      - default
+    ports:
+      - "5650:5650"  # CodeGenerator
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "5613:5613"  # PredictiveHealthMonitor
+      - "5584:5584"  # FixedStreamingTranslation
+      - "5606:5606"  # Executor
+      - "5615:5615"  # TinyLlamaServiceEnhanced
+      - "5642:5642"  # LocalFineTunerAgent
+      - "5581:5581"  # NLLBAdapter
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - ./config:/app/config
+
+  gpu-infrastructure:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system_v2.py", "--group", "gpu_infrastructure"]
+    depends_on:
+      core-services:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 1
+              driver: nvidia
+    environment:
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - CONTAINER_GROUP=gpu_infrastructure
+    healthcheck:
+      test: ["CMD", "python", "/app/main_pc_code/scripts/health_check_client.py", "gpu"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    image: ai-system/gpu-infrastructure:optimized
+    networks:
+      - default
+    ports:
+      - "5572:5572"  # VRAMOptimizerAgent
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - models:/app/models
+      - ./config:/app/config
+
+  reasoning-services:
+    build:
+      context: ..
+      dockerfile: docker/gpu_base/Dockerfile.optimized
+    command: ["python", "/app/main_pc_code/scripts/start_system_v2.py", "--group", "reasoning_services"]
+    depends_on:
+      gpu-infrastructure:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 1
+              driver: nvidia
+    environment:
+      - PYTHONPATH=/app:/app/main_pc_code:/app/common
+      - SERVICE_REGISTRY_HOST=core-services
+      - REDIS_HOST=redis
+      - CONTAINER_GROUP=reasoning_services
+    healthcheck:
+      test: ["CMD", "python", "/app/main_pc_code/scripts/health_check_client.py", "reasoning"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 120s
+    image: ai-system/reasoning-services:optimized
+    networks:
+      - default
+    ports:
+      - "5612:5612"  # ChainOfThoughtAgent
+      - "5646:5646"  # GoTToTAgent
+      - "5641:5641"  # CognitiveModelAgent
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+      - models:/app/models
+      - ./config:/app/config
+
+volumes:
+  data:
+  logs:
+  models:
+  nats_data:
+  redis_data: 
