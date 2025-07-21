@@ -417,7 +417,7 @@ class DreamingModeAgent(BaseAgent):
         # Close all sockets
         if hasattr(self, 'socket'):
             try:
-                self.
+                self.socket.close()
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
@@ -425,7 +425,7 @@ class DreamingModeAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_
+                self.health_socket.close()
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
@@ -433,7 +433,7 @@ class DreamingModeAgent(BaseAgent):
         # Close dreamworld socket
         if hasattr(self, 'dreamworld_socket') and self.dreamworld_socket:
             try:
-                self.dreamworld_
+                self.dreamworld_socket.close()
                 logger.info("Closed dreamworld socket")
             except Exception as e:
                 logger.error(f"Error closing dreamworld socket: {e}")

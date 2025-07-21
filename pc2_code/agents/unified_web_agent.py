@@ -948,7 +948,7 @@ class UnifiedWebAgent(BaseAgent):
         try:
             if hasattr(self, 'context') and self.context:
                 if not self.context.closed:
-                    self.
+                    self.context.term()
                     logger.info("ZMQ context terminated")
         except Exception as e:
             logger.error(f"Error terminating ZMQ context: {e}", exc_info=True)
