@@ -352,6 +352,44 @@ class ModelManagerSuite(BaseAgent):
                 pass
             logger.info("ModelManagerSuite instantiated in serverless mode (no port binding)")
     
+    def __getattr__(self, name: str):
+        """Gracefully handle legacy API calls that are not yet implemented.
+
+        If code tries to access an attribute / method that does not exist on
+        ModelManagerSuite (for example, advanced helper functions that were
+        available on the legacy ModelManagerAgent), return a stub callable
+        that logs an error and returns a standardized JSON error response.
+
+        This prevents hard AttributeError crashes and buys us time while we
+        port the remaining edge-case logic in incremental patches.
+        """
+        # Avoid infinite recursion (AttributeError inside logging etc.)
+        if name.startswith("__"):
+            raise AttributeError(name)
+
+        # Log only the first time we see a missing attribute to reduce noise
+        try:
+            missing_attrs_warned = object.__getattribute__(self, "_missing_attrs_warned")
+        except AttributeError:
+            object.__setattr__(self, "_missing_attrs_warned", set())
+            missing_attrs_warned = set()
+            
+        if name not in missing_attrs_warned:
+            logger.warning(
+                "ModelManagerSuite: requested unknown attribute '%s'. Returning NotImplemented stub.",
+                name,
+            )
+            missing_attrs_warned.add(name)
+
+        def _not_implemented_stub(*args, **kwargs):
+            logger.error("ModelManagerSuite: called unimplemented method '%s'", name)
+            return {
+                "status": "error",
+                "message": f"Method '{name}' not implemented in ModelManagerSuite – please port from legacy agent."
+            }
+
+        return _not_implemented_stub
+    
     def _init_core_components(self):
         """Initialize core service components"""
         self.running = True
