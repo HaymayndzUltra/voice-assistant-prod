@@ -394,7 +394,7 @@ class VramOptimizerAgent(BaseAgent):
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
                 except Exception as e:
                     # Fallback to local connection
-                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost")))
+                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost"))
                     logger.info("Reconnected to local SystemDigitalTwinAgent.")
                 return {"recommendation": "proceed"}
         except Exception as e:
@@ -1513,13 +1513,5 @@ if __name__ == "__main__":
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
-    except Exception as e:
-        import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+
+# Agent initialization completed

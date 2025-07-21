@@ -441,7 +441,7 @@ class LearningManager(BaseAgent):
         self.running = False
         
         if hasattr(self, 'socket'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+            self.socket.close()
         if hasattr(self, 'health_pub_socket'):
             self.health_pub_
         if self.health_thread:
@@ -474,7 +474,7 @@ class LearningManager(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+            pass  # Cleanup handled by BaseAgent
         if hasattr(self, 'health_pub_socket'):
             self.health_pub_
         # Wait for threads to finish

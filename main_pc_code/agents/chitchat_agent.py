@@ -412,7 +412,7 @@ class ChitchatAgent(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.socket.close()
         if hasattr(self, 'health_socket'):
             self.health_
         if hasattr(self, 'llm_socket'):
@@ -470,6 +470,7 @@ class ChitchatAgent(BaseAgent):
             return None
         finally:
             if 'socket' in locals() and not socket.closed:
+                socket.close()
 # Example usage
 if __name__ == "__main__":
     # Standardized main execution block

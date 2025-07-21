@@ -289,11 +289,11 @@ class ExecutorAgent(BaseAgent):
         # Close ZMQ sockets
         try:
             if hasattr(self, 'command_socket'):
-                self.command_
+                self.command_socket.close()
             if hasattr(self, 'feedback_socket'):
-                self.feedback_
+                self.feedback_socket.close()
             if hasattr(self, 'context'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
         except Exception as e:
             logging.error(f"[Executor] Error during cleanup: {e}")
         

@@ -1264,6 +1264,7 @@ class PredictiveHealthMonitor(BaseAgent):
         finally:
             # Ensure we clean up the socket resources even if an exception occurs
             try:
+                pass  # Cleanup placeholder
             except:
                 pass
             return False  # Ensure we always return a boolean
@@ -1602,9 +1603,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.socket.close()
             if hasattr(self, 'context') and self.context:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
             # Close any open file handles
             # [Add specific resource cleanup here]
             

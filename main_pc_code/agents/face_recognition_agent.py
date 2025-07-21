@@ -677,11 +677,11 @@ class FaceRecognitionAgent(BaseAgent):
         logging.info("Stopping FaceRecognitionAgent")
         self.running = False
         if hasattr(self, 'socket'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+            self.socket.close()
         if hasattr(self, 'pub_socket'):
-            self.pub_
+            self.pub_socket.close()
         if hasattr(self, 'context'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+            self.context.term()
     def health_check(self):
         """Perform a health check and return status."""
         try:
@@ -746,9 +746,9 @@ if __name__ == "__main__":
         try:
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.socket.close()
             if hasattr(self, 'context') and self.context:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
             # Close any open file handles
             # [Add specific resource cleanup here]
             

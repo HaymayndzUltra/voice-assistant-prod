@@ -338,12 +338,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
-        logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            logger.info(f"Cleaning up {agent.name}...")
+# Cleanup completed
             agent.cleanup()

@@ -37,12 +37,12 @@ import threading
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
 from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.agents.gguf_model_manager import GGUFModelManager
+# from main_pc_code.agents.gguf_model_manager import GGUFModelManager  # Optional dependency
 from common.env_helpers import get_env
 
 # Parse command line arguments
@@ -68,7 +68,7 @@ class CodeGeneratorAgent(BaseAgent):
     """Agent for generating code from natural language prompts. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
+        self.config = load_config()
         super().__init__(
             name=getattr(self.config, 'name', 'CodeGeneratorAgent'),
             port=getattr(self.config, 'port', 5708)
@@ -104,7 +104,7 @@ class CodeGeneratorAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def run(self):
+    def run(self):
         try:
             self.socket.bind(f"tcp://{self.bind_address}:{self.port}")
             self.logger.info(f"Code Generator Agent listening on port {self.port}")

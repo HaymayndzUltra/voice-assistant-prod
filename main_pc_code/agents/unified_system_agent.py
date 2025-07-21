@@ -713,9 +713,10 @@ class UnifiedSystemAgent(BaseAgent):
             # Close agent sockets
             if hasattr(self, 'agent_sockets'):
                 for socket_name, socket in self.agent_sockets.items():
+                    socket.close()
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
             logger.info("UnifiedSystemAgent cleaned up successfully")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

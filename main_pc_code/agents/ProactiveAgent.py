@@ -337,7 +337,7 @@ class ProactiveAgent(BaseAgent):
         try:
             # Close ZMQ sockets
             if hasattr(self, 'socket') and self.socket:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.socket.close()
             if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
                 self.coordinator_
             if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
@@ -345,7 +345,7 @@ class ProactiveAgent(BaseAgent):
             
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
-        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+                self.context.term()
             logger.info("Resources cleaned up")
         except Exception as e:
             logger.error(f"Error in cleanup: {str(e)}")

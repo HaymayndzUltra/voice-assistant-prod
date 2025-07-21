@@ -17,10 +17,10 @@ Intention Validator Agent
 
 import sys
 import os
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
-MAIN_PC_CODE = get_main_pc_code()
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+PROJECT_ROOT = os.path.abspath(os.path.join("main_pc_code", ".."))
+MAIN_PC_CODE = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 
@@ -37,7 +37,7 @@ from typing import Dict, Any, List, Set, Tuple
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
+sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
 from common.utils.path_env import get_path, join_path, get_file_path
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
