@@ -1,188 +1,161 @@
 """
-Universal Configuration Manager
-Handles both MainPC (agent_groups) and PC2 (pc2_services) formats
+Environment-Aware Configuration Manager
+Builds on common/env_helpers.py to provide intelligent environment configuration
+Handles development, production, testing, and container environments
 """
-import yaml
+
 import os
+import yaml
 from pathlib import Path
-from typing import Dict, List, Any, Union
+from typing import Dict, Any, Optional
+from common.env_helpers import get_env, get_int
 
-def load_unified_config(config_path: str) -> Dict[str, Any]:
-    """
-    Load config and normalize to standard format regardless of source
-    Returns: Unified agent list with standard fields
-    """
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
+class ConfigManager:
+    """Intelligent configuration manager that adapts to environment"""
     
-    if 'agent_groups' in config:
-        return normalize_mainpc_config(config)
-    elif 'pc2_services' in config:
-        return normalize_pc2_config(config)
-    else:
-        raise ValueError(f"Unknown config format in {config_path}")
-
-def normalize_mainpc_config(config: Dict) -> Dict[str, Any]:
-    """Convert MainPC agent_groups to unified format"""
-    unified_agents = []
+    def __init__(self, config_file: Optional[str] = None):
+        self.config_file = config_file or self._find_config_file()
+        self.env_type = get_env('ENV_TYPE', 'development')
+        self._config_cache = None
+        
+    def _find_config_file(self) -> str:
+        """Find the environment configuration file"""
+        possible_paths = [
+            'config/environment.yaml',
+            '../config/environment.yaml',
+            '../../config/environment.yaml',
+            os.path.join(os.path.dirname(__file__), '..', 'config', 'environment.yaml')
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+                
+        # Create default if not found
+        return 'config/environment.yaml'
     
-    for group_name, agents in config['agent_groups'].items():
-        for agent_name, agent_data in agents.items():
-            unified_agent = {
-                'name': agent_name,
-                'group': group_name,
-                'script_path': agent_data.get('script_path'),
-                'port': agent_data.get('port'),
-                'health_check_port': agent_data.get('health_check_port'),
-                'required': agent_data.get('required', False),
-                'dependencies': agent_data.get('dependencies', []),
-                'config': agent_data.get('config', {}),
-                'machine': 'mainpc'
+    def load_config(self) -> Dict[str, Any]:
+        """Load configuration for current environment"""
+        if self._config_cache is not None:
+            return self._config_cache
+            
+        try:
+            with open(self.config_file, 'r') as f:
+                all_configs = yaml.safe_load(f)
+        except FileNotFoundError:
+            # Return sensible defaults if config file missing
+            all_configs = self._get_default_config()
+        
+        # Get config for current environment
+        env_config = all_configs.get(self.env_type, all_configs.get('development', {}))
+        
+        # Process environment variable substitutions
+        self._config_cache = self._process_env_vars(env_config)
+        return self._config_cache
+    
+    def _process_env_vars(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Process ${VAR} substitutions using env_helpers"""
+        processed = {}
+        
+        for key, value in config.items():
+            if isinstance(value, str) and value.startswith('${') and value.endswith('}'):
+                # Extract variable name and default
+                var_spec = value[2:-1]  # Remove ${ and }
+                if ':-' in var_spec:
+                    var_name, default_val = var_spec.split(':-', 1)
+                else:
+                    var_name, default_val = var_spec, None
+                
+                # Use env_helpers to get value
+                processed[key] = get_env(var_name, default_val)
+            elif isinstance(value, dict):
+                processed[key] = self._process_env_vars(value)
+            else:
+                processed[key] = value
+                
+        return processed
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Provide sensible defaults if config file is missing"""
+        return {
+            'development': {
+                'mainpc_ip': '192.168.100.16',
+                'pc2_ip': '192.168.100.17',
+                'service_registry_host': '192.168.100.16',
+                'redis_host': '192.168.100.16',
+                'redis_port': 6379,
+                'debug_mode': True,
+                'log_level': 'DEBUG'
             }
-            unified_agents.append(unified_agent)
-    
-    return {
-        'unified_agents': unified_agents,
-        'global_settings': config.get('global_settings', {}),
-        'source_format': 'agent_groups'
-    }
-
-def normalize_pc2_config(config: Dict) -> Dict[str, Any]:
-    """Convert PC2 pc2_services to unified format"""
-    unified_agents = []
-    
-    for agent_data in config['pc2_services']:
-        unified_agent = {
-            'name': agent_data.get('name'),
-            'group': 'pc2_services',  # Default group for PC2
-            'script_path': agent_data.get('script_path'),
-            'port': agent_data.get('port'),
-            'health_check_port': agent_data.get('health_check_port'),
-            'required': agent_data.get('required', False),
-            'dependencies': agent_data.get('dependencies', []),
-            'config': agent_data.get('config', {}),
-            'machine': 'pc2'
         }
-        unified_agents.append(unified_agent)
     
-    return {
-        'unified_agents': unified_agents,
-        'global_settings': {
-            'environment': config.get('environment', {}),
-            'resource_limits': config.get('resource_limits', {}),
-            'health_checks': config.get('health_checks', {})
-        },
-        'source_format': 'pc2_services'
-    }
-
-def get_agents_by_machine(unified_config: Dict, machine: str) -> List[Dict]:
-    """Filter agents by machine type"""
-    return [agent for agent in unified_config['unified_agents'] 
-            if agent['machine'] == machine]
-
-def validate_config_consistency(unified_config: Dict) -> List[str]:
-    """Validate configuration for common issues"""
-    issues = []
-    ports_used = set()
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value by key"""
+        config = self.load_config()
+        return config.get(key, default)
     
-    for agent in unified_config['unified_agents']:
-        # Check port conflicts
-        port = agent.get('port')
-        health_port = agent.get('health_check_port')
+    def get_ip(self, service: str) -> str:
+        """Get IP address for a service"""
+        config = self.load_config()
         
-        if port in ports_used:
-            issues.append(f"Port conflict: {port} used by multiple agents")
-        if health_port in ports_used:
-            issues.append(f"Health port conflict: {health_port} used by multiple agents")
-        
-        if port:
-            ports_used.add(port)
-        if health_port:
-            ports_used.add(health_port)
-        
-        # Check script path exists
-        script_path = agent.get('script_path')
-        if script_path and not os.path.exists(script_path):
-            issues.append(f"Script not found: {script_path} for agent {agent['name']}")
-    
-    return issues
-
-# =====================================================================
-#                    LEGACY COMPATIBILITY FUNCTIONS
-# =====================================================================
-# These functions maintain compatibility with existing agent code
-
-def get_service_ip(service_name: str) -> str:
-    """
-    Get IP address for a service - maintains compatibility with existing code
-    
-    Args:
-        service_name: Service identifier (mainpc, pc2, redis, nats, etc.)
-    
-    Returns:
-        IP address for the service
-    """
-    # Default IP mappings for common services
-    service_ips = {
-        "mainpc": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-        "pc2": os.environ.get("PC2_IP", "192.168.100.17"),
-        "redis": os.environ.get("REDIS_HOST", "192.168.100.16"),
-        "nats": os.environ.get("NATS_HOST", "192.168.100.16"),
-        "service_registry": os.environ.get("SERVICE_REGISTRY_HOST", "192.168.100.16"),
-        "localhost": "127.0.0.1",
-        "docker": "host.docker.internal",
-    }
-    
-    # Check if running in Docker container
-    if os.path.exists("/.dockerenv"):
-        # In Docker, use service names instead of IPs
-        docker_services = {
-            "mainpc": "mainpc",
-            "pc2": "pc2", 
-            "redis": "redis",
-            "nats": "nats",
-            "service_registry": "service_registry"
+        ip_mappings = {
+            'mainpc': config.get('mainpc_ip', '192.168.100.16'),
+            'pc2': config.get('pc2_ip', '192.168.100.17'),
+            'service_registry': config.get('service_registry_host', '192.168.100.16'),
+            'redis': config.get('redis_host', '192.168.100.16')
         }
-        return docker_services.get(service_name, service_name)
+        
+        return ip_mappings.get(service, config.get(f'{service}_ip', '127.0.0.1'))
     
-    return service_ips.get(service_name, service_name)
+    def get_port(self, service: str, default_port: int) -> int:
+        """Get port for a service"""
+        config = self.load_config()
+        return config.get(f'{service}_port', default_port)
+    
+    def get_redis_url(self) -> str:
+        """Get complete Redis URL"""
+        config = self.load_config()
+        host = config.get('redis_host', '192.168.100.16')
+        port = config.get('redis_port', 6379)
+        db = config.get('redis_db', 0)
+        return f"redis://{host}:{port}/{db}"
+    
+    def get_zmq_url(self, service: str, port: int) -> str:
+        """Get ZMQ URL for a service"""
+        ip = self.get_ip(service)
+        return f"tcp://{ip}:{port}"
+    
+    def is_development(self) -> bool:
+        """Check if running in development mode"""
+        return self.env_type == 'development'
+    
+    def is_production(self) -> bool:
+        """Check if running in production mode"""
+        return self.env_type == 'production'
+    
+    def is_container(self) -> bool:
+        """Check if running in container environment"""
+        return self.env_type == 'container' or get_env('DOCKER_ENV', 'false').lower() == 'true'
 
-def get_service_url(service_name: str, port: int = None, protocol: str = "http") -> str:
-    """
-    Get full URL for a service
-    
-    Args:
-        service_name: Service identifier
-        port: Port number (optional)
-        protocol: Protocol (http, https, tcp, etc.)
-    
-    Returns:
-        Full service URL
-    """
-    ip = get_service_ip(service_name)
-    
-    if port:
-        return f"{protocol}://{ip}:{port}"
-    else:
-        # Default ports for common services
-        default_ports = {
-            "redis": 6379,
-            "nats": 4222,
-            "service_registry": 7001,
-        }
-        default_port = default_ports.get(service_name, 80)
-        return f"{protocol}://{ip}:{default_port}"
 
-def get_redis_url(database: int = 0) -> str:
-    """
-    Get Redis connection URL
-    
-    Args:
-        database: Redis database number
-    
-    Returns:
-        Redis URL
-    """
-    redis_host = get_service_ip("redis")
-    redis_port = os.environ.get("REDIS_PORT", "6379")
-    return f"redis://{redis_host}:{redis_port}/{database}"
+# Global instance for easy access
+_config_manager = None
+
+def get_config_manager() -> ConfigManager:
+    """Get global configuration manager instance"""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager
+
+def get_service_ip(service: str) -> str:
+    """Convenience function to get service IP"""
+    return get_config_manager().get_ip(service)
+
+def get_service_url(service: str, port: int) -> str:
+    """Convenience function to get service ZMQ URL"""
+    return get_config_manager().get_zmq_url(service, port)
+
+def get_redis_url() -> str:
+    """Convenience function to get Redis URL"""
+    return get_config_manager().get_redis_url() 

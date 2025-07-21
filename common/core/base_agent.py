@@ -1,6 +1,6 @@
 """
-Base Agent Class with Proper Initialization and Standardized Health Check Patterns
-Enhanced with unified health checking system
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+Base Agent Class with Proper Initialization and Health Check Patterns
 """
 import sys
 import os
@@ -30,13 +30,6 @@ from common.utils.data_models import (
 # Use centralized JSON logger
 from common.utils.logger_util import get_json_logger
 from common.env_helpers import get_env
-
-# Import standardized health checking
-from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-
-# Import unified error handling (replaces direct NATS import)
-from common.error_bus.unified_error_handler import UnifiedErrorHandler, create_unified_error_handler
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -94,29 +87,8 @@ class BaseAgent:
         self.start_time = time.time()
         self._cleanup_called = False  # Prevent multiple cleanup calls
         
-        # Add task management for proper lifecycle (FIX for "Event loop is closed")
-        self._error_reporting_tasks = set()  # Track all error reporting tasks
-        self._shutdown_event = None  # Will be initialized when async context is available
-        
         # Set up logging directory using PathManager
         self._setup_logging()
-        
-        # Initialize standardized health checker
-        self.health_checker = StandardizedHealthChecker(
-            agent_name=self.name,
-            port=self.port,
-            redis_host=kwargs.get('redis_host', 'localhost'),
-            redis_port=kwargs.get('redis_port', 6379)
-        )
-        
-        # Initialize unified error handler (handles both legacy ZMQ and modern NATS)
-        self.unified_error_handler: Optional[UnifiedErrorHandler] = None
-        self.error_handler_task = None
-        self._start_unified_error_handler_initialization(
-            enable_legacy=kwargs.get('enable_legacy_errors', True),
-            enable_nats=kwargs.get('enable_nats_errors', True),
-            nats_servers=kwargs.get('nats_servers', None)
-        )
         
         # Initialize sockets with proper error handling
         self._init_sockets()
@@ -288,19 +260,6 @@ class BaseAgent:
             raise
         finally:
             self.is_initialized.set()
-            
-            # Mark agent as ready in Redis using standardized health system
-            try:
-                initialization_details = {
-                    "initialized_at": datetime.now().isoformat(),
-                    "uptime": time.time() - self.start_time,
-                    "port": self.port,
-                    "health_check_port": self.health_check_port
-                }
-                self.health_checker.set_agent_ready(initialization_details)
-                logger.info(f"✅ {self.name} marked as ready in Redis")
-            except Exception as e:
-                logger.warning(f"Failed to set ready signal for {self.name}: {e}")
     
     def _health_check_loop(self):
         """Health check loop that handles incoming health check requests."""
@@ -359,131 +318,18 @@ class BaseAgent:
             time.sleep(0.1)
     
     def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status using standardized health checker."""
-        try:
-            # Use standardized health checker
-            health_check = self.health_checker.perform_health_check()
-            
-            # Convert to legacy format for backward compatibility
-            status = {
-                "status": "ok" if health_check.status == HealthStatus.HEALTHY else "degraded",
-                "ready": health_check.checks.get("ready_signal", False),
-                "initialized": self.is_initialized.is_set(),
-                "message": f"{self.name} is {health_check.status.value}",
-                "timestamp": health_check.timestamp.isoformat(),
-                "uptime": time.time() - self.start_time,
-                "active_threads": threading.active_count(),
-                # Add standardized health data
-                "health_checks": health_check.checks,
-                "health_details": health_check.details,
-                "health_status": health_check.status.value
-            }
-            
-            if health_check.error_message:
-                status["error"] = health_check.error_message
-                
-        except Exception as e:
-            # Fallback to basic status if standardized check fails
-            logger.error(f"Standardized health check failed for {self.name}: {e}")
-            status = {
-                "status": "error",
-                "ready": False,
-                "initialized": self.is_initialized.is_set(),
-                "message": f"{self.name} health check error: {e}",
-                "timestamp": datetime.now().isoformat(),
-                "uptime": time.time() - self.start_time,
-                "active_threads": threading.active_count(),
-                "error": str(e)
-            }
-            
+        """Get the current health status of the agent."""
+        status = {
+            "status": "ok",  # Always use lowercase 'ok' for consistency
+            "ready": True,
+            "initialized": self.is_initialized.is_set(),
+            "message": f"{self.name} is healthy",
+            "timestamp": datetime.now().isoformat(),
+            "uptime": time.time() - self.start_time,
+            "active_threads": threading.active_count()
+        }
         logger.debug(f"{self.name} health status: {status}")
         return status
-    
-    def _start_unified_error_handler_initialization(self, enable_legacy, enable_nats, nats_servers):
-        """Start unified error handler initialization in background thread"""
-        def init_unified_handler():
-            try:
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                async def connect_unified_handler():
-                    try:
-                        self.unified_error_handler = await create_unified_error_handler(
-                            agent_name=self.name,
-                            enable_legacy=enable_legacy,
-                            enable_nats=enable_nats,
-                            nats_servers=nats_servers
-                        )
-                        
-                        # Set up legacy error sending method (will be implemented separately)
-                        self.unified_error_handler.set_legacy_handler(self._send_error_to_digital_twin)
-                        
-                        logger.info(f"✅ Unified Error Handler initialized for {self.name}")
-                    except Exception as e:
-                        logger.warning(f"Unified Error Handler initialization failed for {self.name}: {e}")
-                        self.unified_error_handler = None
-                
-                loop.run_until_complete(connect_unified_handler())
-                loop.close()
-                
-            except Exception as e:
-                logger.warning(f"Unified error handler initialization failed for {self.name}: {e}")
-                self.unified_error_handler = None
-        
-        # Start in background thread
-        self.error_handler_task = threading.Thread(target=init_unified_handler, daemon=True)
-        self.error_handler_task.start()
-    
-    async def _send_error_to_digital_twin(self, error_report):
-        """Legacy method to send error to SystemDigitalTwin via ZMQ"""
-        try:
-            # This would be the existing ZMQ implementation to SystemDigitalTwin
-            # For now, we'll log it - actual implementation depends on existing ZMQ setup
-            logger.info(f"📤 Sending error to SystemDigitalTwin: {error_report.error_id}")
-            
-            # TODO: Implement actual ZMQ send to SystemDigitalTwin
-            # Example:
-            # if hasattr(self, 'digital_twin_socket') and self.digital_twin_socket:
-            #     self.digital_twin_socket.send_json(error_report.dict())
-            
-            return True
-        except Exception as e:
-            logger.error(f"❌ Failed to send error to SystemDigitalTwin: {e}")
-            return False
-    
-    async def _report_error_async(self,
-                                 error_type: str,
-                                 message: str,
-                                 severity,
-                                 details: Optional[Dict[str, Any]] = None,
-                                 category = None,
-                                 stack_trace: Optional[str] = None,
-                                 related_task_id: Optional[str] = None) -> Dict[str, bool]:
-        """
-        Internal async implementation for unified error reporting
-        """
-        if self.unified_error_handler:
-            try:
-                results = await self.unified_error_handler.report_error(
-                    severity=severity,
-                    message=message,
-                    error_type=error_type,
-                    details=details,
-                    category=category,
-                    stack_trace=stack_trace,
-                    related_task_id=related_task_id
-                )
-                
-                logger.debug(f"📊 Error reporting results: {results}")
-                return results
-                
-            except Exception as e:
-                logger.error(f"❌ Unified error reporting failed: {e}")
-        
-        # Fallback to basic logging if unified handler not available
-        logger.error(f"[FALLBACK] {severity}: {message} - Details: {details}")
-        return {"legacy": False, "nats": False}
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
@@ -572,25 +418,6 @@ class BaseAgent:
         
         self._cleanup_called = True
         logger.info(f"{self.name} cleaning up resources")
-        
-        # Mark agent as not ready in Redis
-        try:
-            self.health_checker.set_agent_not_ready("cleanup initiated")
-            logger.info(f"🛑 {self.name} marked as not ready in Redis")
-        except Exception as e:
-            logger.warning(f"Failed to remove ready signal for {self.name}: {e}")
-        
-        # Close unified error handler
-        if self.unified_error_handler:
-            try:
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.unified_error_handler.close())
-                loop.close()
-                logger.info(f"✅ Unified error handler closed for {self.name}")
-            except Exception as e:
-                logger.warning(f"Failed to close unified error handler for {self.name}: {e}")
         
         # Signal loops to stop
         self.running = False
@@ -897,207 +724,48 @@ class BaseAgent:
         except Exception as e:
             logger.error(f"Failed to send event {event_type}: {e}")
     
-
-    def report_error(self,
-                     error_type: str,  # MAINTAIN original first parameter
-                     message: str,     # MAINTAIN original second parameter  
-                     severity = None,  # Accept legacy enum or new string
-                     context: Optional[Dict[str, Any]] = None,  # Legacy name
-                     details: Optional[Dict[str, Any]] = None,  # New name
-                     category = None,  # New NATS category
-                     stack_trace: Optional[str] = None,
-                     related_task_id: Optional[str] = None,
-                     wait_for_completion: bool = False,  # NEW: Control async behavior
-                     **kwargs) -> Union[Dict[str, bool], Any]:
-        """
-        UNIFIED error reporting with PROPER TASK LIFECYCLE MANAGEMENT
-        
-        Supports both old and new calling patterns:
-        - Legacy: report_error("network_error", "Connection failed", ErrorSeverity.CRITICAL)
-        - Enhanced: report_error("network_error", "Connection failed", "critical", category=ErrorCategory.NETWORK)
-        - Synchronous: report_error("error", "message", wait_for_completion=True)
+    def report_error(
+        self, 
+        error_type: str, 
+        message: str, 
+        severity: ErrorSeverity = ErrorSeverity.ERROR,
+        context: Optional[Dict[str, Any]] = None,
+        stack_trace: Optional[str] = None,
+        related_task_id: Optional[str] = None
+    ) -> None:
+        """Report an error to the error management system.
         
         Args:
-            error_type: Type or category of error (legacy parameter)
+            error_type: Type or category of error
             message: Human-readable error message
-            severity: Error severity level (accepts legacy enum, NATS enum, or string)
-            context: Additional contextual information (legacy parameter name)
-            details: Additional error context (new parameter name, same as context)
-            category: NATS error category (new parameter for enhanced error bus)
+            severity: Error severity level
+            context: Additional contextual information
             stack_trace: Optional stack trace
             related_task_id: ID of related task if applicable
-            wait_for_completion: If True, waits for error reporting to complete (safer)
-            
-        Returns:
-            Dict with success status: {"legacy": bool, "nats": bool} or asyncio.Task if in async context
         """
-        # Import here to avoid circular imports
-        from common.utils.data_models import ErrorSeverity as LegacyErrorSeverity
-        
-        # Parameter unification and defaults
-        final_details = details or context or {}
-        final_severity = severity or LegacyErrorSeverity.ERROR
-        
-        # Enhanced async/sync handling with proper task management
         try:
-            import asyncio
+            error_report = ErrorReport(
+                error_id=str(uuid.uuid4()),
+                agent_id=self.name,
+                severity=severity,
+                error_type=error_type,
+                message=message,
+                context=context or {},
+                stack_trace=stack_trace,
+                related_task_id=related_task_id
+            )
             
-            # Check if we have a running event loop
-            try:
-                loop = asyncio.get_running_loop()
-                in_async_context = True
-            except RuntimeError:
-                # No running loop, we're in sync context
-                in_async_context = False
-                loop = None
-            
-            if in_async_context and not wait_for_completion:
-                # SAFE ASYNC: Managed task creation with proper cleanup
-                task = self._create_managed_error_task(
-                    error_type=error_type,
-                    message=message,
-                    severity=final_severity,
-                    details=final_details,
-                    category=category,
-                    stack_trace=stack_trace,
-                    related_task_id=related_task_id
-                )
-                return task  # Returns awaitable with cleanup
-            else:
-                # SYNCHRONOUS: Run to completion safely
-                return self._report_error_sync(
-                    error_type=error_type,
-                    message=message,
-                    severity=final_severity,
-                    details=final_details,
-                    category=category,
-                    stack_trace=stack_trace,
-                    related_task_id=related_task_id
-                )
+            self.send_request_to_agent(
+                "SystemDigitalTwin",
+                {
+                    "action": "report_error",
+                    "error": error_report.dict()
+                }
+            )
         except Exception as e:
-            logger.error(f"Error reporting failed: {e}")
-            # Fallback to basic logging
-            logger.error(f"[FALLBACK] {error_type}: {message} - Details: {final_details}")
-            return {"legacy": False, "nats": False}
-
-    def _ensure_shutdown_event(self):
-        """Ensure shutdown event is initialized in async context"""
-        if self._shutdown_event is None:
-            import asyncio
-            self._shutdown_event = asyncio.Event()
-
-    def _create_managed_error_task(self, **kwargs):
-        """Create error reporting task with proper lifecycle management"""
-        import asyncio
-        
-        # Ensure shutdown event is initialized
-        self._ensure_shutdown_event()
-        
-        async def managed_error_wrapper():
-            try:
-                # Check if shutdown is in progress
-                if self._shutdown_event and self._shutdown_event.is_set():
-                    logger.warning("Skipping error reporting - agent is shutting down")
-                    return {"legacy": False, "nats": False}
-                
-                # Perform actual error reporting
-                result = await self._report_error_async(**kwargs)
-                return result
-                
-            except Exception as e:
-                logger.error(f"Managed error reporting failed: {e}")
-                return {"legacy": False, "nats": False}
-            finally:
-                # Remove task from tracking set when done
-                current_task = asyncio.current_task()
-                self._error_reporting_tasks.discard(current_task)
-        
-        # Create and track the task
-        loop = asyncio.get_running_loop()
-        task = loop.create_task(managed_error_wrapper())
-        self._error_reporting_tasks.add(task)
-        
-        # Add callback to handle task completion
-        task.add_done_callback(lambda t: self._error_reporting_tasks.discard(t))
-        
-        return task
-
-    def _report_error_sync(self, **kwargs):
-        """Synchronous error reporting with proper event loop handling"""
-        import asyncio
-        
-        try:
-            # Try to get existing loop
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, but user wants sync behavior
-                # Create a new task and wait for it
-                task = loop.create_task(self._report_error_async(**kwargs))
-                
-                # Use asyncio.wait_for with timeout to prevent hanging
-                try:
-                    future = asyncio.wait_for(task, timeout=30.0)  # 30 second timeout
-                    return loop.run_until_complete(future)
-                except asyncio.TimeoutError:
-                    logger.error("Error reporting timed out after 30 seconds")
-                    task.cancel()
-                    return {"legacy": False, "nats": False}
-                    
-            except RuntimeError:
-                # No running loop, create new one
-                loop = asyncio.new_event_loop()
-                try:
-                    asyncio.set_event_loop(loop)
-                    return loop.run_until_complete(self._report_error_async(**kwargs))
-                finally:
-                    loop.close()
-                    
-        except Exception as e:
-            logger.error(f"Synchronous error reporting failed: {e}")
-            return {"legacy": False, "nats": False}
-
-    async def shutdown_gracefully(self, timeout: float = 30.0):
-        """Graceful shutdown with proper task cleanup"""
-        logger.info(f"Starting graceful shutdown for {self.name}")
-        
-        # Signal shutdown to prevent new tasks
-        self._ensure_shutdown_event()
-        if self._shutdown_event:
-            self._shutdown_event.set()
-        
-        # Wait for existing error reporting tasks to complete
-        if self._error_reporting_tasks:
-            logger.info(f"Waiting for {len(self._error_reporting_tasks)} error reporting tasks to complete")
-            
-            try:
-                await asyncio.wait_for(
-                    asyncio.gather(*self._error_reporting_tasks, return_exceptions=True),
-                    timeout=timeout
-                )
-                logger.info("All error reporting tasks completed successfully")
-            except asyncio.TimeoutError:
-                logger.warning(f"Some error reporting tasks didn't complete within {timeout}s, cancelling...")
-                for task in self._error_reporting_tasks:
-                    if not task.done():
-                        task.cancel()
-                
-                # Wait a bit more for cancellations to complete
-                try:
-                    await asyncio.wait_for(
-                        asyncio.gather(*self._error_reporting_tasks, return_exceptions=True),
-                        timeout=5.0
-                    )
-                except asyncio.TimeoutError:
-                    logger.error("Some tasks failed to cancel properly")
-        
-        # Shutdown unified error handler
-        if hasattr(self, 'unified_error_handler') and self.unified_error_handler:
-            try:
-                await self.unified_error_handler.shutdown()
-            except Exception as e:
-                logger.error(f"Error shutting down unified error handler: {e}")
-        
-        logger.info(f"Graceful shutdown completed for {self.name}") 
+            # Log locally if error reporting fails
+            logger.error(f"Error in report_error: {e}")
+            logger.error(f"Original error: {error_type} - {message}") 
 
     def _start_http_health_server(self):
         """Start a simple HTTP server for health checks on separate port to avoid ZMQ conflict."""
