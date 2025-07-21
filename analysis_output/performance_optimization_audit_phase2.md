@@ -1,112 +1,20 @@
-# ⚡ Performance Optimization Audit – Phase 2
+haymayndz@DESKTOP-GC2ET1O:~/AI_System_Monorepo$ docker ps -a
+CONTAINER ID   IMAGE                                     COMMAND                  CREATED          STATUS                      PORTS                                                                                                                                                                                                                                                                                                                                                                                                                NAMES
+659b5ecbac28   ai-system/core-services:optimized         "python /app/main_pc…"   24 minutes ago   Up 24 minutes (unhealthy)   0.0.0.0:7200->7200/tcp, [::]:7200->7200/tcp, 0.0.0.0:7210-7211->7210-7211/tcp, [::]:7210-7211->7210-7211/tcp, 0.0.0.0:7220->7220/tcp, [::]:7220->7220/tcp, 0.0.0.0:7225->7225/tcp, [::]:7225->7225/tcp, 0.0.0.0:8211-8212->8211-8212/tcp, [::]:8211-8212->8211-8212/tcp, 0.0.0.0:8220->8220/tcp, [::]:8220->8220/tcp, 0.0.0.0:9000->9000/tcp, [::]:9000->9000/tcp, 0.0.0.0:26002->26002/tcp, [::]:26002->26002/tcp   docker-core-services-1
+af5749002015   ai-system/utility-services:optimized      "python /app/main_pc…"   31 hours ago     Up 11 minutes               0.0.0.0:5581->5581/tcp, [::]:5581->5581/tcp, 0.0.0.0:5584->5584/tcp, [::]:5584->5584/tcp, 0.0.0.0:5606->5606/tcp, [::]:5606->5606/tcp, 0.0.0.0:5613->5613/tcp, [::]:5613->5613/tcp, 0.0.0.0:5615->5615/tcp, [::]:5615->5615/tcp, 0.0.0.0:5642->5642/tcp, [::]:5642->5642/tcp, 0.0.0.0:5650->5650/tcp, [::]:5650->5650/tcp, 0.0.0.0:5660->5660/tcp, [::]:5660->5660/tcp                                               docker-utility-services-1
+8d6ed2fc8b2b   ai-system/emotion-system:optimized        "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5590->5590/tcp, [::]:5590->5590/tcp, 0.0.0.0:5625->5625/tcp, [::]:5625->5625/tcp, 0.0.0.0:5703-5705->5703-5705/tcp, [::]:5703-5705->5703-5705/tcp, 0.0.0.0:5708->5708/tcp, [::]:5708->5708/tcp                                                                                                                                                                                                               docker-emotion-system-1
+9cc2c9ebde70   ai-system/audio-interface:optimized       "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5562->5562/tcp, [::]:5562->5562/tcp, 0.0.0.0:5576->5576/tcp, [::]:5576->5576/tcp, 0.0.0.0:5579->5579/tcp, [::]:5579->5579/tcp, 0.0.0.0:5624->5624/tcp, [::]:5624->5624/tcp, 0.0.0.0:6550-6553->6550-6553/tcp, [::]:6550-6553->6550-6553/tcp                                                                                                                                                                  docker-audio-interface-1
+28ea59e235fb   ai-system/vision-processing:optimized     "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5610->5610/tcp, [::]:5610->5610/tcp                                                                                                                                                                                                                                                                                                                                                                          docker-vision-processing-1
+4206e361d6af   ai-system/speech-services:optimized       "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5800-5801->5800-5801/tcp, [::]:5800-5801->5800-5801/tcp                                                                                                                                                                                                                                                                                                                                                      docker-speech-services-1
+0837c99f764e   ai-system/reasoning-services:optimized    "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5612->5612/tcp, [::]:5612->5612/tcp, 0.0.0.0:5641->5641/tcp, [::]:5641->5641/tcp, 0.0.0.0:5646->5646/tcp, [::]:5646->5646/tcp                                                                                                                                                                                                                                                                                docker-reasoning-services-1
+a9490938b5ca   ai-system/gpu-infrastructure:optimized    "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5572->5572/tcp, [::]:5572->5572/tcp, 0.0.0.0:7224->5570/tcp, [::]:7224->5570/tcp, 0.0.0.0:7223->5575/tcp, [::]:7223->5575/tcp, 0.0.0.0:7226->5617/tcp, [::]:7226->5617/tcp                                                                                                                                                                                                                                   docker-gpu-infrastructure-1
+4352f712a5fa   ai-system/language-processing:optimized   "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5595->5595/tcp, [::]:5595->5595/tcp, 0.0.0.0:5636-5637->5636-5637/tcp, [::]:5636-5637->5636-5637/tcp, 0.0.0.0:5701->5701/tcp, [::]:5701->5701/tcp, 0.0.0.0:5706->5706/tcp, [::]:5706->5706/tcp, 0.0.0.0:5709-5711->5709-5711/tcp, [::]:5709-5711->5709-5711/tcp, 0.0.0.0:5802->5802/tcp, [::]:5802->5802/tcp, 0.0.0.0:7205->7205/tcp, [::]:7205->7205/tcp, 0.0.0.0:7213->7213/tcp, [::]:7213->7213/tcp       docker-language-processing-1
+4a4d6336b2f0   ai-system/learning-knowledge:optimized    "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5580->5580/tcp, [::]:5580->5580/tcp, 0.0.0.0:5638->5638/tcp, [::]:5638->5638/tcp, 0.0.0.0:5643->5643/tcp, [::]:5643->5643/tcp, 0.0.0.0:7202->7202/tcp, [::]:7202->7202/tcp, 0.0.0.0:7212->7212/tcp, [::]:7212->7212/tcp, 0.0.0.0:7300->7222/tcp, [::]:7300->7222/tcp                                                                                                                                         docker-learning-knowledge-1
+fdf083018dae   ai-system/memory-system:optimized         "python /app/main_pc…"   31 hours ago     Up 31 hours                 0.0.0.0:5574->5574/tcp, [::]:5574->5574/tcp, 0.0.0.0:5713->5713/tcp, [::]:5713->5713/tcp, 0.0.0.0:5715->5715/tcp, [::]:5715->5715/tcp                                                                                                                                                                                                                                                                                docker-memory-system-1
+823b10a7cbcd   redis:7-alpine                            "docker-entrypoint.s…"   36 hours ago     Up 36 hours (healthy)       6379/tcp                                                                                                                                                                                                                                                                                                                                                                                                             docker-redis-1
+681010653a7c   ai-system/mm-router:latest                "python /app/model_m…"   37 hours ago     Up 37 hours                 0.0.0.0:5570->5570/tcp, [::]:5570->5570/tcp, 0.0.0.0:5575->5575/tcp, [::]:5575->5575/tcp, 0.0.0.0:5617->5617/tcp, [::]:5617->5617/tcp, 0.0.0.0:7222->7222/tcp, [::]:7222->7222/tcp                                                                                                                                                                                                                                   mm-router
+49a5f6b53b60   ghcr.io/github/github-mcp-server          "/server/github-mcp-…"   39 hours ago     Up 39 hours                                                                                                                                                                                                                                                                                                                                                                                                                                      nice_almeida
+feafd2e8978c   grafana/grafana                           "/run.sh"                39 hours ago     Up 39 hours                 0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp                                                                                                                                                                                                                                                                                                                                                                          grafana
+d6703beebcf8   prom/prometheus                           "/bin/prometheus --c…"   40 hours ago     Up 40 hours                 0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp                                                                                                                                                                                                                                                                                                                                                                          prometheus
+haymayndz@DESKTOP-GC2ET1O:~/AI_System_Monorepo$ 
 
-## 📅 Date: 2025-07-18
-
----
-
-### 🚀 Executive Summary
-Static analysis of 850+ Python modules uncovered numerous performance inefficiencies across the 84 active agents.  The most impactful bottlenecks stem from heavy model-loading blocking calls, repeated synchronous I/O in hot paths, and memory leaks due to unbounded caches.  Immediate optimization could reduce mean request latency by **45-60 %** and cut memory footprint by **2-3 GB** per host.
-
----
-
-### 1️⃣ Performance Hotspots Ranking
-```markdown
-## CRITICAL (>1 s/blocking call)
-1. ModelManagerAgent – Loads large GGUF models synchronously (5-20 s) at startup & on each reload.
-2. FileSystemAssistantAgent – Scans entire filesystem synchronously for every query (1-5 s).
-3. UnifiedWebAgent – Selenium-driven screenshot capture blocks async loop (0.8-2 s per op).
-
-## HIGH (100 ms-1 s)
-1. TranslationService – Performs on-the-fly MBart model load for infrequent languages (200-800 ms).
-2. CacheManager – Redis connection instantiated per request; connection handshake ~150 ms.
-3. VisionProcessingAgent – Uses OpenCV CPU path for scaling; vectorization absent (~300 ms).
-
-## MEDIUM (10-100 ms)
-1. Logging JSON serialization in 40+ agents without ujson/orjson (≈30 ms per event).
-2. Regex-heavy log parsing in ErrorBus pipeline (≈20 ms per msg).
-3. Dictionary lookups in SessionMemoryAgent loops (≈15 ms per cycle).
-```
-
----
-
-### 2️⃣ Memory Optimization Opportunities
-```markdown
-## MEMORY LEAK RISKS
-- UnifiedWebAgent – Selenium driver objects linger; GC unable to reclaim.
-- ModelManagerAgent – Torch tensors kept in global cache without eviction.
-- CacheManager – In-memory dict cache grows unbounded (hit >100 k entries in soak test).
-
-## HIGH MEMORY FOOTPRINT
-- StreamingTTSAgent – Keeps 3× voice models simultaneously (≈1.2 GB VRAM, 1 GB RAM).
-- STTService – Re-loads Whisper model per audio chunk when streaming (duplication).
-
-## OPTIMIZATION ACTIONS
-1. Introduce weakref + explicit `close()` hooks for Selenium.
-2. Implement LRU cache with size limit (e.g., cachetools) for ModelManager tensors.
-3. Add TTL eviction in CacheManager (Redis `EXPIRE`).
-4. Enable log rotation via `RotatingFileHandler` (reduce log buffer retention).
-```
-
----
-
-### 3️⃣ CPU Optimization Recommendations
-```markdown
-## ALGORITHM & CODE IMPROVEMENTS
-- Replace O(n²) service lookup loop in ServiceRegistry with dict lookup (PR #perf-44).
-- Vectorize token filtering in TranslationService using NumPy.
-- Pre-compile regex patterns in ErrorBus (store as module constants).
-
-## ASYNC OPPORTUNITIES
-- Convert file I/O in FileSystemAssistantAgent to `aiofiles`.
-- Replace `requests` blocking calls with `httpx.AsyncClient` in 12 agents.
-- Use `asyncio.create_task` for non-critical background updates (AgentTrustScorer).
-```
-
----
-
-### 4️⃣ Resource Pooling Recommendations
-```markdown
-## CONNECTION POOLING
-- Implement SQLAlchemy connection pool for SQLite fallback (MemoryOrchestratorService).
-- Use redis-pools (`redis.asyncio`) with max 10 connections shared.
-- Reuse ZMQ sockets via context pool in common/utils/zmq_helper.py.
-
-## OBJECT POOLING
-- Introduce `concurrent.futures.ThreadPoolExecutor` for CPU-bound image processing.
-- Maintain `transformers` model objects in a shared pool accessed via gRPC stub.
-```
-
----
-
-### 5️⃣ Caching Strategy Recommendations
-```markdown
-## HIGH-IMPACT CACHES
-1. TranslationService – Add Redis LRU cache (expected 80 % hit, 450 ms saved per repeat req).
-2. ModelManagerSuite – Memoize tokenizer loads (≈120 ms per call).
-3. ConfigurationLoader – Cache YAML/JSON config objects (95 % hit, 30 ms saved).
-
-## IMPLEMENTATION PRIORITY
-- Deploy central Redis cluster inside Docker-Compose network.
-- Provide `common/utils/cache.py` wrapper with LRU + TTL.
-```
-
----
-
-### ✅ Immediate Action Items
-1. Prototype async FS operations in FileSystemAssistantAgent (ETA 2 days).
-2. Integrate redis-pools & connection re-use (`CACHE_POOL_SIZE=10`) – all agents (ETA 3 days).
-3. Add lazy model loading in ModelManagerAgent using background preload coroutine.
-4. Replace standard `json` with `orjson` in high-volume logging paths (benchmark 3× speedup).
-5. Add pytest-bench marks to CI for regression detection.
-
----
-
-### 📑 Artefacts Generated
-- `analysis_output/performance_optimization_audit_phase2.md` (this report)
-- `analysis_output/performance_hotspots.csv` – Detailed hotspot list (345 entries)
-- `analysis_output/memory_leaks_candidates.json` – Potential leak sources
-- Updated JIRA backlog tickets: PERF-** series
-
----
-
-*Phase 2 completed. Proceeding to Phase 3 – API Consistency Audit.*
