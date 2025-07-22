@@ -24,6 +24,7 @@ import logging
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from common.config_manager import load_unified_config, get_agents_by_machine, validate_config_consistency
+from common.utils.path_manager import PathManager
 
 # --- CONFIGURATION ---
 RETRIES = 5
@@ -264,9 +265,9 @@ class ProcessManager:
         # Clean up any existing instances
         self.kill_existing_processes(agent_name)
         
-        # Resolve script path
-        abs_script = self._resolve_script_path(script_path)
-        if not abs_script.exists():
+        # Resolve script path using PathManager (fixes script validation bug)
+        abs_script = PathManager.resolve_script(script_path)
+        if abs_script is None or not abs_script.exists():
             logger.error(f"❌ Script not found for {agent_name}: {script_path}")
             return None
         
@@ -307,18 +308,6 @@ class ProcessManager:
         except Exception as e:
             logger.error(f"❌ Failed to start {agent_name}: {e}")
             return None
-    
-    def _resolve_script_path(self, script_path):
-        """Resolve script path to absolute path"""
-        # Try different path resolution strategies
-        if script_path.startswith('main_pc_code/'):
-            return PROJECT_ROOT / script_path
-        elif script_path.startswith('phase1_implementation/'):
-            return PROJECT_ROOT / script_path
-        elif script_path.startswith('FORMAINPC/'):
-            return PROJECT_ROOT / "main_pc_code" / script_path
-        else:
-            return PROJECT_ROOT / "main_pc_code" / script_path
     
     def cleanup_all(self):
         """Clean up all managed processes"""
