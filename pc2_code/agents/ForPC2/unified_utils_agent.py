@@ -19,7 +19,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]  # points to repo root
 sys.path.insert(0, str(BASE_DIR))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
@@ -52,7 +52,7 @@ logger = logging.getLogger('UnifiedUtilsAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

@@ -15,8 +15,8 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -40,7 +40,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = str(Path(PathManager.get_project_root()) / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -105,43 +105,14 @@ class AdvancedTutoringAgent(BaseAgent):
         )
         
         # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         # Start health check thread
         self._start_health_check()
         
         logger.info(f"AdvancedTutoringAgent initialized for topic: {self.current_topic}")
     
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom methods
     
     def _start_health_check(self):
         """Start health check thread."""
@@ -380,7 +351,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close all sockets
         if hasattr(self, 'socket'):
             try:
-                self.
+                self.socket.close()
                 logger.info("Closed main socket")
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")

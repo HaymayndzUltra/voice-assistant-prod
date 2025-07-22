@@ -11,8 +11,11 @@ import sys
 import os
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+from common.utils.path_env import get_main_pc_code, get_project_root
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
@@ -40,7 +43,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "emotion_engine.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "emotion_engine.log")),
         logging.StreamHandler()
     ]
 )
@@ -129,12 +132,7 @@ class EmotionEngine(BaseAgent):
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
 
-        # Setup error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         # Initialization complete
         logger.info(f"{self.name} initialized on port {self.port} (health: {self.health_port}, pub: {self.pub_port})")
@@ -458,6 +456,7 @@ class EmotionEngine(BaseAgent):
 if __name__ == "__main__":
     # Parse command line arguments
     import argparse
+from common.utils.path_env import get_main_pc_code, get_project_root
     parser = argparse.ArgumentParser(description='Emotion Engine')
     parser.add_argument('--name', type=str, default="EmotionEngine", help='Agent name')
     parser.add_argument('--port', type=int, default=None, help='Agent port')

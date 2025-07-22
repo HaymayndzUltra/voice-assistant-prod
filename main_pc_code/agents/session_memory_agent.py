@@ -22,14 +22,15 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Union
+from common.utils.path_manager import PathManager
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code'))
-if MAIN_PC_CODE_DIR not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
@@ -40,7 +41,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "session_memory_agent.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "session_memory_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -71,12 +72,7 @@ class SessionMemoryAgent(BaseAgent):
         self.memory_client = MemoryClient()
         self.memory_client.set_agent_id(self.name)
         
-        # Error bus configuration
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         # Initialize active sessions tracking
         self.active_sessions = {}

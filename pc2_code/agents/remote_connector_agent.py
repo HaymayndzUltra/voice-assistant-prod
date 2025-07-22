@@ -1,5 +1,4 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Remote Connector / API Client Agent
 - Handles API requests to remote/local models
 - Provides a unified interface for all AI models
@@ -7,7 +6,9 @@ Remote Connector / API Client Agent
 - Uses centralized configuration system
 - Implements response caching for improved performance
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+import zmq
 import json
 import time
 import logging
@@ -26,8 +27,8 @@ from typing import Dict, Any, Optional, Union, List # Combined and ordered impor
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -61,7 +62,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml") # Use project_root
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml" # Use project_root
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -697,18 +698,7 @@ class RemoteConnectorAgent(BaseAgent):
                     logger.error(f"Failed to send error response after exception: {send_error}")
         logger.info("Main request handling loop exited.")
 
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom method
 
     def run(self):
         """Run the remote connector agent. Overrides BaseAgent's run method."""

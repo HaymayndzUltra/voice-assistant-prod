@@ -6,15 +6,14 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-from common.utils.path_env import get_path, join_path, get_file_path, get_main_pc_code
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
+
+# Add the project's main_pc_code directory to the Python path
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# Path setup completed above
 
 """
 
@@ -55,9 +54,9 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 # Add the parent directory to sys.path
 
 # Configure logging
-log_dir = join_path("logs")
+log_dir = PathManager.get_logs_dir()
 os.makedirs(log_dir, exist_ok=True)
-log_file = join_path("logs", 'streaming_tts_agent.log')
+log_file = log_dir / 'streaming_tts_agent.log'
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -146,13 +145,13 @@ class UltimateTTSAgent(BaseAgent):
         self.stop_speaking = False
         
         # Set up voice samples directory
-        self.voice_samples_dir = join_path("data", "voice_samples")
+        self.voice_samples_dir = str(PathManager.get_data_dir() / "voice_samples")
         if not os.path.exists(self.voice_samples_dir):
             os.makedirs(self.voice_samples_dir)
             logger.info(f"Created voice samples directory at {self.voice_samples_dir}")
             
         # Check for Tetey voice sample (from deprecated version)
-        tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", join_path("data", "voice_samples", "tetey1.wav")) # Allow override
+        tetey_voice_path = os.environ.get("TETEY_VOICE_PATH", str(PathManager.get_data_dir() / "voice_samples" / "tetey1.wav")) # Allow override
         if os.path.exists(tetey_voice_path):
             self.speaker_wav = tetey_voice_path
             logger.info(f"Found Tetey voice sample at {tetey_voice_path}")
@@ -219,11 +218,7 @@ class UltimateTTSAgent(BaseAgent):
         
         logger.info("TTS Agent basic initialization complete")
 
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
 
     def _register_service(self):
         """Register this agent with the service discovery system"""

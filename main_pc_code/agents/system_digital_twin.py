@@ -19,7 +19,8 @@ from pathlib import Path
 
 
 # Utilities for path handling
-from common.utils.path_env import join_path
+from common.utils.path_manager import PathManager
+from pathlib import Path
 
 import time
 import json
@@ -43,9 +44,10 @@ from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 from common.env_helpers import get_env
 
 # Configure logging
-log_file_path = join_path("logs", "system_digital_twin.log")
-log_directory = os.path.dirname(log_file_path)
-os.makedirs(log_directory, exist_ok=True)
+project_root = Path(PathManager.get_project_root())
+logs_dir = project_root / "logs"
+logs_dir.mkdir(exist_ok=True)
+log_file_path = logs_dir / "system_digital_twin.log"
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -74,7 +76,7 @@ DEFAULT_CONFIG = {
     "ram_capacity_mb": 32000,
     "network_baseline_ms": 50,
     # Phase-3 new defaults
-    "db_path": join_path("data", "unified_memory.db"),
+    "db_path": str(Path(PathManager.get_project_root()) / "data" / "unified_memory.db"),
     "redis": {"host": get_service_ip("redis"), "port": 6379, "db": 0},
     "zmq_request_timeout": 5000,
 }
@@ -109,7 +111,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.config = DEFAULT_CONFIG.copy()
         self.config.update(config)
         # Extract frequently-used settings after merge
-        self.db_path = self.config.get("db_path", join_path("data", "unified_memory.db"))
+        self.db_path = self.config.get("db_path", str(Path(PathManager.get_project_root()) / "data" / "unified_memory.db"))
         self.redis_settings = self.config.get("redis", {"host": "localhost", "port": 6379, "db": 0})
         
         self.main_port = self.port
@@ -832,22 +834,20 @@ class SystemDigitalTwinAgent(BaseAgent):
             # Look for agent configuration in various places
             agent_config = {}
             
-            # Check in source_of_truth_config.yaml
-            config_file = join_path("config", join_path("config", "source_of_truth_config.yaml"))
+            # Check in startup_config.yaml (MainPC SOT)
+            config_file = str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml")
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
                     import yaml
                     config_data = yaml.safe_load(f)
                     
-                    # Look in all agent groups
-                    for group_name, agents in config_data.items():
-                        if isinstance(agents, list):
-                            for agent in agents:
-                                if isinstance(agent, dict) and agent.get("name") == agent_name:
-                                    agent_config = agent
-                                    break
-                            if agent_config:
-                                break
+                    # Look in agent_groups (MainPC SOT structure)
+                    agent_groups = config_data.get("agent_groups", {})
+                    for group_name, group_agents in agent_groups.items():
+                        if isinstance(group_agents, dict) and agent_name in group_agents:
+                            agent_config = group_agents[agent_name].copy()
+                            agent_config["group"] = group_name  # Add group info
+                            break
             
             # If we found config, add it to agent_info
             if agent_config:
@@ -863,11 +863,12 @@ class SystemDigitalTwinAgent(BaseAgent):
             # If we still don't have a script path, try to infer it
             if "script_path" not in agent_info:
                 # Common patterns for agent script paths
+                project_root = Path(PathManager.get_project_root())
                 possible_paths = [
-                    fjoin_path("main_pc_code", "agents/{agent_name.lower()}.py"),
-                    fjoin_path("main_pc_code", "agents/{agent_name}.py"),
-                    fjoin_path("pc2_code", "agents/{agent_name.lower()}.py"),
-                    fjoin_path("pc2_code", "agents/{agent_name}.py")
+                    str(project_root / "main_pc_code" / "agents" / f"{agent_name.lower()}.py"),
+                    str(project_root / "main_pc_code" / "agents" / f"{agent_name}.py"),
+                    str(project_root / "pc2_code" / "agents" / f"{agent_name.lower()}.py"),
+                    str(project_root / "pc2_code" / "agents" / f"{agent_name}.py")
                 ]
                 
                 for path in possible_paths:

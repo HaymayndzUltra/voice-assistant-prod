@@ -10,6 +10,7 @@ if MAIN_PC_CODE not in sys.path:
 from main_pc_code.utils.config_parser import parse_agent_args
 args = parse_agent_args()
 import time
+from common.utils.path_env import get_project_root
 
 def _get_health_status(self):
     # Default health status: Agent is running if its main loop is active.

@@ -26,8 +26,8 @@ import time
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, str(PathManager.get_project_root()))
+from common.utils.path_manager import PathManager
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -53,7 +53,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -136,7 +136,7 @@ class FileSystemAssistantAgent(BaseAgent):
         self.lock = threading.Lock()
         
         # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         # Start health check thread
         self._start_health_check_thread()
@@ -144,36 +144,7 @@ class FileSystemAssistantAgent(BaseAgent):
         logger.info(f"{self.name} initialized successfully.")
         logger.info(f"Working directory: {os.getcwd()}")
 
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom methods
 
     def _start_health_check_thread(self):
         """Start health check thread."""
@@ -521,13 +492,7 @@ class FileSystemAssistantAgent(BaseAgent):
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
         
-        # Close error bus socket
-        if hasattr(self, 'error_bus_pub'):
-            try:
-                self.error_bus_pub.close()
-                logger.info("Closed error bus socket")
-            except Exception as e:
-                logger.error(f"Error closing error bus socket: {e}")
+        # ✅ BaseAgent handles error bus cleanup automatically
         
         # Close any connections to other services
         for service_name, socket in getattr(self, 'main_pc_connections', {}).items():

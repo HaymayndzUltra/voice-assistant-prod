@@ -1,4 +1,5 @@
 import zmq
+from pathlib import Path
 import yaml
 import json
 import logging
@@ -14,7 +15,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path utilities
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Try to import torch for GPU monitoring
 try:
     import torch
@@ -78,17 +79,7 @@ class ResourceManager(BaseAgent):
          
          logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
     
-    
-
-         self.error_bus_port = 7150
-
-         self.error_bus_host = get_service_ip("pc2")
-
-         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-         self.error_bus_pub = self.context.socket(zmq.PUB)
-
-         self.error_bus_pub.connect(self.error_bus_endpoint)
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
     def _setup_sockets(self):
         """Setup ZMQ sockets."""
         # Main socket for handling requests
@@ -458,7 +449,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

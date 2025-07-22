@@ -106,13 +106,7 @@ class FeedbackHandler(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        # Deprecated direct PUB socket removed – handled by ErrorPublisher
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         
     def send_visual_feedback(self, message: str, status: str = "success", 

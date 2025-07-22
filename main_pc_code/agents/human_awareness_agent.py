@@ -27,11 +27,12 @@ import sys
 import os
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
@@ -77,14 +78,9 @@ class HumanAwarenessAgent(BaseAgent):
         # Record start time for uptime calculation
         self.start_time = time.time()
         
-        # Setup error bus
+        # Modern error reporting using BaseAgent.report_error()
         import zmq
         self.context = None  # Using pool
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
         
     def _load_config(self) -> Dict:
         """Load agent configuration."""
@@ -278,6 +274,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

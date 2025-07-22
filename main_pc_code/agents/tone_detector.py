@@ -9,27 +9,21 @@ def get_main_pc_code():
     main_pc_code_dir = current_dir.parent
     return main_pc_code_dir
 
-# First define a basic join_path function for bootstrapping
-def join_path(*args):
-    return os.path.join(*args)
-
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Path setup completed above
 
 from common.core.base_agent import BaseAgent
 # Tone detection for Human Awareness Agent
@@ -73,7 +67,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "tone_detector.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "tone_detector.log")),
         logging.StreamHandler()
     ]
 )
@@ -119,12 +113,7 @@ class ToneDetector(BaseAgent):
         self.tagalog_analyzer = None
         self.whisper_model = None
         
-        # Setup error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Start tone monitoring in background
         self.tone_thread = threading.Thread(target=self._start_tone_monitor, daemon=True)
@@ -682,6 +671,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

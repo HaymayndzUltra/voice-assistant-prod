@@ -27,6 +27,7 @@ from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
+from common.utils.path_env import get_main_pc_code, get_project_root
 
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -122,11 +123,7 @@ class StreamingInterruptHandler(BaseAgent):
         self.last_interrupt_time = 0
         self.interrupt_cooldown = 2.0  # Seconds between interrupts to prevent duplicates
         
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
     
     def _register_service(self, port):
         """Register this agent with the service discovery system"""

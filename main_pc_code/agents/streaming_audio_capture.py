@@ -40,12 +40,13 @@ import psutil
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # Add project root to the Python path to allow for absolute imports
-PROJECT_ROOT = os.path.abspath(os.path.join("main_pc_code", ".."))
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # Import with canonical path
 from common.core.base_agent import BaseAgent
@@ -193,15 +194,7 @@ class StreamingAudioCapture(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
 
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
     def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
@@ -214,12 +207,7 @@ class StreamingAudioCapture(BaseAgent):
             self.health_socket.setsockopt(zmq.LINGER, 0)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
             
-            # Error bus setup
-            self.error_bus_port = int(config.get("error_bus_port", 7150))
-            self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
+
             
             # Bind sockets with retry logic
             self._bind_socket_with_retry(self.pub_socket, self.pub_port)

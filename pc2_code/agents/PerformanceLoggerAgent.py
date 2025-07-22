@@ -367,20 +367,7 @@ class PerformanceLoggerAgent(BaseAgent):
         self.running = False
         self.cleanup_thread.join()
         
-        self.
-        self.
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+        # ✅ Using BaseAgent.report_error() and cleanup handled by BaseAgent
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents

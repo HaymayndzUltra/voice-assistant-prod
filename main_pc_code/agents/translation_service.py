@@ -21,8 +21,10 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Try importing optional dependencies
 try:
     import langdetect
@@ -900,7 +902,7 @@ class TranslationCache:
         self.estimated_memory_usage = 0
         
         # Initialize disk cache
-        self.cache_dir = Path(join_path("cache", "translation_cache"))
+        self.cache_dir = PathManager.get_project_root() / "cache" / "translation_cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize metrics

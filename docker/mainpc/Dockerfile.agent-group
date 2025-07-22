@@ -1,0 +1,50 @@
+FROM python:3.11-slim-bullseye AS base
+
+# Install system dependencies for AI/ML workloads
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libzmq3-dev \
+    libsqlite3-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY docker-requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r docker-requirements.txt
+
+# Copy entire codebase
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/data /app/cache /app/models
+
+# Create non-root user for security
+RUN groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Build argument for group name
+ARG GROUP_NAME
+ENV GROUP_NAME=${GROUP_NAME}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose common ports (will be overridden by docker-compose)
+EXPOSE 5000-8000
+
+# Entry point script for agent groups
+COPY docker/mainpc/start-agent-group.sh /start-agent-group.sh
+RUN chmod +x /start-agent-group.sh
+
+# Default command
+CMD ["/start-agent-group.sh"] 

@@ -1,5 +1,6 @@
 import zmq
 from typing import Dict, Any, Optional
+from pathlib import Path
 import yaml
 import json
 import logging
@@ -18,7 +19,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig
@@ -60,17 +61,7 @@ class ContextManager(BaseAgent):
         ]
         logger.info(f"[ContextManager] Initialized with size range {min_size}-{max_size}, current: {initial_size}")
 
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
     def add_to_context(self, text, speaker=None, metadata=None):
         if not text:
             return
@@ -380,7 +371,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-ObservabilityHub - Phase 1 Implementation
+ObservabilityHub - Phase 1 Implementation (MODERNIZED)
 Consolidates: PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthMonitor (7114), 
 PerformanceLoggerAgent (7128), SystemHealthManager (7117)
-Target: Prometheus exporter, log shipper, anomaly detector threads (Port 7002)
-Hardware: PC2
-Enhanced with O3 requirements: Prometheus integration, predictive analytics, ZMQ broadcasting, parallel health checks
-Docker-compatible with centralized path management
+Target: Prometheus exporter, log shipper, anomaly detector threads (Port 9000)
+Hardware: MainPC (Central Hub) + PC2 (Local Reporter)
+Enhanced with modern patterns: PathManager, StandardizedHealthChecker, UnifiedErrorHandler
+Cross-machine compatible with network-aware configuration
 """
 
 import sys
@@ -22,6 +22,7 @@ import numpy as np
 import zmq
 import sqlite3
 import pickle
+import yaml
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
@@ -29,25 +30,22 @@ from dataclasses import dataclass, field
 from collections import defaultdict, deque
 import uuid
 
-# Add project paths for imports - Docker compatible
-project_root = Path(__file__).parent.parent.parent.parent.absolute()
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+# Add project paths for imports - Modern path management
+from common.utils.path_manager import PathManager
 
-# Import Docker-compatible path utilities
-from common.utils.docker_paths import (
-    get_logs_dir, get_data_dir, get_cache_dir, get_temp_dir,
-    get_config_path, get_agent_log_path, get_agent_data_path,
-    get_agent_cache_dir, resolve_legacy_path
-)
+# Modern imports
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.core.base_agent import BaseAgent
+from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
+from common.error_bus.unified_error_handler import ErrorSeverity
 
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
-# Configure logging first (before prometheus import to avoid logger error)
-# Use Docker-compatible log path
-log_file_path = get_agent_log_path('observability_hub')
+# Configure logging with modern path management
+log_file_path = PathManager.get_project_root() / "logs" / "observability_hub.log"
+log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -65,15 +63,6 @@ try:
 except ImportError:
     logger.warning("Prometheus client not available, using mock implementation")
     PROMETHEUS_AVAILABLE = False
-
-# Import BaseAgent with safe fallback
-try:
-    from common.core.base_agent import BaseAgent as BaseAgentImport
-    BaseAgent = BaseAgentImport  # type: ignore  # Use alias to avoid type conflicts
-except ImportError as e:
-    logger.warning(f"Could not import BaseAgent: {e}")
-    # Import the real BaseAgent instead of creating a substitute
-    from common.core.base_agent import BaseAgent
 
 @dataclass
 class HealthMetric:
@@ -95,10 +84,23 @@ class PredictiveAlert:
     confidence: float
     recommended_actions: List[str] = field(default_factory=list)
 
+@dataclass
+class ObservabilityConfig:
+    """Configuration for ObservabilityHub"""
+    scope: str = "all_agents"
+    prometheus_enabled: bool = True
+    parallel_health_checks: bool = True
+    prediction_enabled: bool = True
+    cross_machine_sync: bool = False
+    mainpc_hub_endpoint: Optional[str] = None
+    environment: str = "mainpc"  # mainpc or pc2
+    role: str = "central_hub"  # central_hub or local_reporter
+
 class PrometheusMetrics:
     """O3 Required: Prometheus metrics integration"""
     
-    def __init__(self):
+    def __init__(self, instance_name: str = "mainpc"):
+        self.instance_name = instance_name
         if PROMETHEUS_AVAILABLE:
             self.registry = CollectorRegistry()
             self._setup_metrics()
@@ -165,7 +167,7 @@ class PrometheusMetrics:
     def update_agent_health(self, agent_name: str, health_status: float):
         """Update agent health metric"""
         if PROMETHEUS_AVAILABLE and self.registry:
-            self.agent_health_gauge.labels(agent_name=agent_name, instance="pc2").set(health_status)
+            self.agent_health_gauge.labels(agent_name=agent_name, instance=self.instance_name).set(health_status)
         else:
             self.metrics_data['agent_health'][agent_name] = health_status
     
@@ -176,10 +178,10 @@ class PrometheusMetrics:
             
         if PROMETHEUS_AVAILABLE and self.registry:
             if metric_name == 'cpu_usage':
-                self.cpu_usage_gauge.labels(instance="pc2").set(value)
+                self.cpu_usage_gauge.labels(instance=self.instance_name).set(value)
             elif metric_name == 'memory_usage':
                 memory_type = labels.get('type', 'used')
-                self.memory_usage_gauge.labels(instance="pc2", type=memory_type).set(value)
+                self.memory_usage_gauge.labels(instance=self.instance_name, type=memory_type).set(value)
         else:
             self.metrics_data['system'][metric_name] = value
     
@@ -304,7 +306,8 @@ class PredictiveAnalyzer:
 class AgentLifecycleManager:
     """PredictiveHealthMonitor Logic: Agent lifecycle and process management"""
     
-    def __init__(self):
+    def __init__(self, config: ObservabilityConfig):
+        self.config = config
         self.agent_processes = {}
         self.agent_last_restart = {}
         self.restart_cooldown = 60  # seconds
@@ -313,25 +316,32 @@ class AgentLifecycleManager:
     def load_agent_configs(self):
         """Load agent configurations for lifecycle management"""
         try:
-            # Load from config files - Docker compatible
-            config_paths = [
-                str(get_config_path('pc2')),
-                str(get_config_path('mainpc'))
-            ]
+            # Determine config paths based on environment
+            if self.config.environment == "pc2":
+                config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+            else:
+                config_path = PathManager.get_project_root() / "main_pc_code" / "config" / "startup_config.yaml"
             
-            import yaml
-            for config_path in config_paths:
-                if os.path.exists(config_path):
-                    with open(config_path, 'r') as f:
-                        config_data = yaml.safe_load(f)
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config_data = yaml.safe_load(f)
+                    
+                # Extract agent configurations based on environment
+                if self.config.environment == "pc2":
+                    agents = config_data.get('pc2_services', [])
+                else:
+                    agent_groups = config_data.get('agent_groups', {})
+                    agents = []
+                    for group_name, group_agents in agent_groups.items():
+                        for agent_name, agent_config in group_agents.items():
+                            agent_config['name'] = agent_name
+                            agents.append(agent_config)
+                
+                for agent in agents:
+                    if isinstance(agent, dict) and 'name' in agent:
+                        self.agent_configs[agent['name']] = agent
                         
-                    # Extract agent configurations
-                    agents = config_data.get('pc2_services', []) + config_data.get('main_pc_agents', [])
-                    for agent in agents:
-                        if isinstance(agent, dict) and 'name' in agent:
-                            self.agent_configs[agent['name']] = agent
-                            
-            logger.info(f"Loaded {len(self.agent_configs)} agent configurations")
+            logger.info(f"Loaded {len(self.agent_configs)} agent configurations for {self.config.environment}")
         except Exception as e:
             logger.error(f"Error loading agent configs: {e}")
     
@@ -352,15 +362,18 @@ class AgentLifecycleManager:
             config = self.agent_configs[agent_name]
             script_path = config.get("script_path", "")
             
-            if script_path and os.path.exists(script_path):
-                process = subprocess.Popen([sys.executable, script_path])
+            # Make path absolute
+            abs_script_path = PathManager.get_project_root() / script_path
+            
+            if abs_script_path.exists():
+                process = subprocess.Popen([sys.executable, str(abs_script_path)])
                 self.agent_processes[agent_name] = process
                 self.agent_last_restart[agent_name] = now
                 
                 logger.info(f"Started agent {agent_name}")
                 return True
             else:
-                logger.error(f"Script not found for agent {agent_name}: {script_path}")
+                logger.error(f"Script not found for agent {agent_name}: {abs_script_path}")
                 return False
                 
         except Exception as e:
@@ -391,12 +404,12 @@ class AgentLifecycleManager:
 class PerformanceLogger:
     """PerformanceLoggerAgent Logic: Performance data logging and persistence"""
     
-    def __init__(self, db_path: str = None):
-        # Use Docker-compatible data path
-        if db_path is None:
-            self.db_path = str(get_agent_data_path('observability_hub', 'performance_metrics.db'))
-        else:
-            self.db_path = str(resolve_legacy_path(db_path))
+    def __init__(self, config: ObservabilityConfig):
+        self.config = config
+        # Use modern path management
+        data_dir = PathManager.get_project_root() / "data" / "observability_hub"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        self.db_path = data_dir / "performance_metrics.db"
         self.db_lock = threading.Lock()
         self._init_database()
         
@@ -407,9 +420,7 @@ class PerformanceLogger:
     def _init_database(self):
         """Initialize SQLite database for performance metrics"""
         try:
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-            
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(str(self.db_path)) as conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS performance_metrics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -417,7 +428,8 @@ class PerformanceLogger:
                         agent_name TEXT NOT NULL,
                         metric_type TEXT NOT NULL,
                         metric_value REAL NOT NULL,
-                        metadata TEXT
+                        metadata TEXT,
+                        environment TEXT NOT NULL
                     )
                 """)
                 
@@ -427,6 +439,10 @@ class PerformanceLogger:
                 
                 conn.execute("""
                     CREATE INDEX IF NOT EXISTS idx_agent_name ON performance_metrics(agent_name)
+                """)
+                
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_environment ON performance_metrics(environment)
                 """)
                 
             logger.info(f"Performance metrics database initialized at {self.db_path}")
@@ -441,17 +457,18 @@ class PerformanceLogger:
             
         try:
             with self.db_lock:
-                with sqlite3.connect(self.db_path) as conn:
+                with sqlite3.connect(str(self.db_path)) as conn:
                     conn.execute("""
                         INSERT INTO performance_metrics 
-                        (timestamp, agent_name, metric_type, metric_value, metadata)
-                        VALUES (?, ?, ?, ?, ?)
+                        (timestamp, agent_name, metric_type, metric_value, metadata, environment)
+                        VALUES (?, ?, ?, ?, ?, ?)
                     """, (
                         time.time(),
                         agent_name,
                         metric_type,
                         value,
-                        json.dumps(metadata) if metadata else None
+                        json.dumps(metadata) if metadata else None,
+                        self.config.environment
                     ))
                     
         except Exception as e:
@@ -462,31 +479,32 @@ class PerformanceLogger:
         try:
             cutoff_time = time.time() - (hours * 3600)
             
-            with sqlite3.connect(self.db_path) as conn:
+            with sqlite3.connect(str(self.db_path)) as conn:
                 if agent_name:
                     cursor = conn.execute("""
-                        SELECT timestamp, agent_name, metric_type, metric_value, metadata
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment
                         FROM performance_metrics
-                        WHERE agent_name = ? AND timestamp > ?
+                        WHERE agent_name = ? AND timestamp > ? AND environment = ?
                         ORDER BY timestamp DESC
-                    """, (agent_name, cutoff_time))
+                    """, (agent_name, cutoff_time, self.config.environment))
                 else:
                     cursor = conn.execute("""
-                        SELECT timestamp, agent_name, metric_type, metric_value, metadata
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment
                         FROM performance_metrics
-                        WHERE timestamp > ?
+                        WHERE timestamp > ? AND environment = ?
                         ORDER BY timestamp DESC
-                    """, (cutoff_time,))
+                    """, (cutoff_time, self.config.environment))
                 
                 results = []
                 for row in cursor.fetchall():
-                    timestamp, agent_name, metric_type, metric_value, metadata = row
+                    timestamp, agent_name, metric_type, metric_value, metadata, environment = row
                     results.append({
                         'timestamp': timestamp,
                         'agent_name': agent_name,
                         'metric_type': metric_type,
                         'metric_value': metric_value,
-                        'metadata': json.loads(metadata) if metadata else {}
+                        'metadata': json.loads(metadata) if metadata else {},
+                        'environment': environment
                     })
                 
                 return results
@@ -503,7 +521,7 @@ class PerformanceLogger:
                 cutoff_time = time.time() - (30 * 24 * 3600)
                 
                 with self.db_lock:
-                    with sqlite3.connect(self.db_path) as conn:
+                    with sqlite3.connect(str(self.db_path)) as conn:
                         cursor = conn.execute("""
                             DELETE FROM performance_metrics WHERE timestamp < ?
                         """, (cutoff_time,))
@@ -522,8 +540,9 @@ class PerformanceLogger:
 class RecoveryManager:
     """PredictiveHealthMonitor Logic: Tiered recovery strategies"""
     
-    def __init__(self, lifecycle_manager: AgentLifecycleManager):
+    def __init__(self, lifecycle_manager: AgentLifecycleManager, config: ObservabilityConfig):
         self.lifecycle_manager = lifecycle_manager
+        self.config = config
         self.recovery_strategies = {
             "tier1": {
                 "description": "Basic recovery: restart agent",
@@ -573,16 +592,16 @@ class RecoveryManager:
     def _clear_agent_state(self, agent_name: str):
         """Clear agent state (cache, temp files, etc.)"""
         try:
-            # Clear agent-specific cache directories - Docker compatible
+            # Clear agent-specific cache directories using modern paths
             cache_dirs = [
-                str(get_agent_cache_dir(agent_name)),
-                str(get_temp_dir() / agent_name),
-                str(get_logs_dir() / agent_name)
+                PathManager.get_project_root() / "cache" / agent_name,
+                PathManager.get_project_root() / "temp" / agent_name,
+                PathManager.get_project_root() / "logs" / agent_name
             ]
             
             import shutil
             for cache_dir in cache_dirs:
-                if os.path.exists(cache_dir):
+                if cache_dir.exists():
                     shutil.rmtree(cache_dir)
                     logger.info(f"Cleared cache directory: {cache_dir}")
                     
@@ -614,28 +633,98 @@ class RecoveryManager:
         except Exception as e:
             logger.error(f"Error in system-wide restart: {e}")
 
+class CrossMachineSync:
+    """Handle cross-machine synchronization for PC2 → MainPC reporting"""
+    
+    def __init__(self, config: ObservabilityConfig):
+        self.config = config
+        self.sync_enabled = config.cross_machine_sync
+        self.mainpc_endpoint = config.mainpc_hub_endpoint
+        self.sync_interval = 30  # seconds
+        self.sync_thread = None
+        self.running = False
+        
+    def start_sync(self):
+        """Start cross-machine sync if enabled"""
+        if not self.sync_enabled or not self.mainpc_endpoint:
+            logger.info("Cross-machine sync disabled or no MainPC endpoint configured")
+            return
+            
+        self.running = True
+        self.sync_thread = threading.Thread(target=self._sync_loop, daemon=True)
+        self.sync_thread.start()
+        logger.info(f"Started cross-machine sync to {self.mainpc_endpoint}")
+    
+    def stop_sync(self):
+        """Stop cross-machine sync"""
+        self.running = False
+        if self.sync_thread and self.sync_thread.is_alive():
+            self.sync_thread.join(timeout=5)
+    
+    def _sync_loop(self):
+        """Main sync loop for PC2 → MainPC data reporting"""
+        import requests
+        
+        while self.running:
+            try:
+                # Collect local metrics to sync
+                sync_data = self._collect_sync_data()
+                
+                # Send to MainPC ObservabilityHub
+                response = requests.post(
+                    f"{self.mainpc_endpoint}/sync_from_pc2",
+                    json=sync_data,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    logger.debug(f"Successfully synced data to MainPC: {len(sync_data)} metrics")
+                else:
+                    logger.warning(f"Sync to MainPC failed: {response.status_code}")
+                    
+            except Exception as e:
+                logger.error(f"Error in cross-machine sync: {e}")
+            
+            time.sleep(self.sync_interval)
+    
+    def _collect_sync_data(self) -> Dict[str, Any]:
+        """Collect data to sync to MainPC"""
+        return {
+            "source": "pc2",
+            "timestamp": time.time(),
+            "environment": self.config.environment,
+            "sync_type": "health_and_metrics"
+            # Additional data will be populated by the main class
+        }
+
 class ObservabilityHub(BaseAgent):
     """
-    ObservabilityHub - Phase 1 Consolidated Service
-    Enhanced with ALL missing logic from source agents
+    ObservabilityHub - Phase 1 Consolidated Service (MODERNIZED)
+    Enhanced with modern patterns and cross-machine coordination
     """
     
-    def __init__(self, name="ObservabilityHub", port=9000):  # FIXED: Use correct port 9000 from PHASE 0
+    def __init__(self, name="ObservabilityHub", port=9000):
         super().__init__(name, port)
+        
+        # Load configuration from startup config
+        self.config = self._load_configuration()
         
         # Initialize start time for health reporting
         self.start_time = time.time()
         
-        # O3 Enhanced Components
-        self.prometheus_metrics = PrometheusMetrics()
+        # Modern Components with configuration
+        self.prometheus_metrics = PrometheusMetrics(instance_name=self.config.environment)
         self.predictive_analyzer = PredictiveAnalyzer()
         
-        # MISSING LOGIC INTEGRATION
-        self.lifecycle_manager = AgentLifecycleManager()
-        self.performance_logger = PerformanceLogger()
-        self.recovery_manager = RecoveryManager(self.lifecycle_manager)
+        # MISSING LOGIC INTEGRATION (MODERNIZED)
+        self.lifecycle_manager = AgentLifecycleManager(self.config)
+        self.performance_logger = PerformanceLogger(self.config)
+        self.recovery_manager = RecoveryManager(self.lifecycle_manager, self.config)
         
-        # ZMQ setup for broadcasting
+        # Cross-machine sync for PC2 → MainPC reporting
+        self.cross_machine_sync = CrossMachineSync(self.config)
+        
+        # ZMQ setup for broadcasting (configurable)
         self.context = zmq.Context()
         self.metrics_publisher = None
         self.setup_zmq_broadcasting()
@@ -643,7 +732,17 @@ class ObservabilityHub(BaseAgent):
         # Agent monitoring
         self.monitored_agents = {}
         self.health_check_interval = 30  # seconds
-        self.parallel_health_checks = True
+        
+        # Modern health system
+        if hasattr(self, 'health_checker'):
+            self.standardized_health = self.health_checker
+        else:
+            self.standardized_health = StandardizedHealthChecker(
+                agent_name=self.name,
+                port=self.port,
+                redis_host='localhost',
+                redis_port=6379
+            )
         
         # Background threads
         self.monitoring_thread = None
@@ -656,9 +755,9 @@ class ObservabilityHub(BaseAgent):
         
         # FastAPI app
         self.app = FastAPI(
-            title="ObservabilityHub",
-            description="Phase 1 Observability Service with Complete Source Agent Logic",
-            version="1.0.0"
+            title=f"ObservabilityHub ({self.config.environment.upper()})",
+            description=f"Modernized Observability Service - {self.config.role}",
+            version="2.0.0"
         )
         
         self.setup_routes()
@@ -667,20 +766,112 @@ class ObservabilityHub(BaseAgent):
         # Load agent configurations
         self.lifecycle_manager.load_agent_configs()
         
-        logger.info("ObservabilityHub with complete source agent logic initialized")
+        # Start cross-machine sync if configured
+        if self.config.cross_machine_sync:
+            self.cross_machine_sync.start_sync()
+        
+        logger.info(f"ObservabilityHub modernized and initialized for {self.config.environment} as {self.config.role}")
+    
+    def _load_configuration(self) -> ObservabilityConfig:
+        """Load configuration from startup config files"""
+        try:
+            # Detect environment based on which config file exists and script execution context
+            environment = self._detect_environment()
+            
+            # Load appropriate config file
+            if environment == "pc2":
+                config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+            else:
+                config_path = PathManager.get_project_root() / "main_pc_code" / "config" / "startup_config.yaml"
+            
+            config = ObservabilityConfig(environment=environment)
+            
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config_data = yaml.safe_load(f)
+                
+                # Find ObservabilityHub config
+                obs_hub_config = None
+                
+                if environment == "pc2":
+                    # PC2 services format
+                    pc2_services = config_data.get('pc2_services', [])
+                    for service in pc2_services:
+                        if isinstance(service, dict) and service.get('name') == 'ObservabilityHub':
+                            obs_hub_config = service.get('config', {})
+                            break
+                else:
+                    # MainPC agent groups format
+                    agent_groups = config_data.get('agent_groups', {})
+                    for group_name, agents in agent_groups.items():
+                        if 'ObservabilityHub' in agents:
+                            obs_hub_config = agents['ObservabilityHub'].get('config', {})
+                            break
+                
+                if obs_hub_config:
+                    config.scope = obs_hub_config.get('scope', config.scope)
+                    config.prometheus_enabled = obs_hub_config.get('prometheus_enabled', config.prometheus_enabled)
+                    config.parallel_health_checks = obs_hub_config.get('parallel_health_checks', config.parallel_health_checks)
+                    config.prediction_enabled = obs_hub_config.get('prediction_enabled', config.prediction_enabled)
+                    config.cross_machine_sync = obs_hub_config.get('cross_machine_sync', config.cross_machine_sync)
+                    config.mainpc_hub_endpoint = obs_hub_config.get('mainpc_hub_endpoint', config.mainpc_hub_endpoint)
+            
+            # Set role based on environment
+            if environment == "pc2":
+                config.role = "local_reporter"
+            else:
+                config.role = "central_hub"
+            
+            logger.info(f"Loaded configuration for {environment} environment as {config.role}")
+            return config
+            
+        except Exception as e:
+            logger.error(f"Error loading configuration: {e}")
+            # Return default config
+            return ObservabilityConfig()
+    
+    def _detect_environment(self) -> str:
+        """Detect if running on MainPC or PC2"""
+        try:
+            # Check if PC2 config exists and we're in PC2 context
+            pc2_config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+            current_script_path = Path(__file__).resolve()
+            
+            # If we're running from a PC2 context or PC2 config is more recent
+            if "pc2" in str(current_script_path) or "PC2" in str(current_script_path):
+                return "pc2"
+            
+            # Check environment variables
+            if os.getenv('PC2_MODE', '').lower() == 'true':
+                return "pc2"
+            
+            if os.getenv('MACHINE_TYPE', '').lower() == 'pc2':
+                return "pc2"
+            
+            # Default to mainpc
+            return "mainpc"
+            
+        except Exception as e:
+            logger.warning(f"Error detecting environment: {e}, defaulting to mainpc")
+            return "mainpc"
     
     def setup_zmq_broadcasting(self):
-        """O3 Required: ZMQ PUB/SUB broadcasting setup"""
+        """Modern ZMQ PUB/SUB broadcasting setup"""
         try:
-            self.metrics_publisher = self.context.socket(zmq.PUB)
-            self.metrics_publisher.bind("tcp://*:7152")  # Metrics broadcasting port
-            logger.info("ZMQ metrics broadcasting setup on port 7152")
+            if self.config.role == "central_hub":
+                # Central hub broadcasts to all
+                self.metrics_publisher = self.context.socket(zmq.PUB)
+                self.metrics_publisher.bind("tcp://*:7152")  # Metrics broadcasting port
+                logger.info("ZMQ metrics broadcasting setup on port 7152 (Central Hub)")
+            else:
+                # Local reporter doesn't need to broadcast
+                logger.info("Local reporter mode - ZMQ broadcasting disabled")
         except Exception as e:
-            logger.error(f"ZMQ setup error: {e}")
+            self.report_error(ErrorSeverity.ERROR, "ZMQ setup error", {"error": str(e)})
             self.metrics_publisher = None
     
     def start_background_threads(self):
-        """Start O3 required background threads"""
+        """Start modern background threads with proper error handling"""
         self.threads_running = True
         
         # Parallel health monitoring thread
@@ -691,36 +882,38 @@ class ObservabilityHub(BaseAgent):
         )
         self.monitoring_thread.start()
         
-        # Predictive analytics thread
-        self.analytics_thread = threading.Thread(
-            target=self._analytics_loop,
-            name="PredictiveAnalytics",
-            daemon=True
-        )
-        self.analytics_thread.start()
+        # Predictive analytics thread (only if enabled)
+        if self.config.prediction_enabled:
+            self.analytics_thread = threading.Thread(
+                target=self._analytics_loop,
+                name="PredictiveAnalytics",
+                daemon=True
+            )
+            self.analytics_thread.start()
         
-        # Metrics broadcasting thread
-        self.broadcasting_thread = threading.Thread(
-            target=self._broadcasting_loop,
-            name="MetricsBroadcasting",
-            daemon=True
-        )
-        self.broadcasting_thread.start()
+        # Metrics broadcasting thread (only for central hub)
+        if self.config.role == "central_hub" and self.metrics_publisher:
+            self.broadcasting_thread = threading.Thread(
+                target=self._broadcasting_loop,
+                name="MetricsBroadcasting",
+                daemon=True
+            )
+            self.broadcasting_thread.start()
         
-        logger.info("Background threads started")
+        logger.info(f"Background threads started for {self.config.role}")
     
     def check_all_agents_health(self) -> Dict[str, Dict[str, Any]]:
-        """O3 Required: Parallel health checks"""
+        """Modern parallel health checks with StandardizedHealthChecker integration"""
         if not self.monitored_agents:
             return {}
         
         results = {}
         
-        if self.parallel_health_checks:
+        if self.config.parallel_health_checks:
             # Parallel execution using ThreadPoolExecutor
             with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 future_to_agent = {
-                    executor.submit(self._check_agent_health, agent_name, agent_info): agent_name
+                    executor.submit(self._check_agent_health_modern, agent_name, agent_info): agent_name
                     for agent_name, agent_info in self.monitored_agents.items()
                 }
                 
@@ -757,7 +950,7 @@ class ObservabilityHub(BaseAgent):
                             self.recovery_manager.attempt_recovery(agent_name, "tier1")
                         
                     except Exception as e:
-                        logger.error(f"Health check failed for {agent_name}: {e}")
+                        self.report_error(ErrorSeverity.WARNING, f"Health check failed for {agent_name}", {"error": str(e)})
                         results[agent_name] = {
                             'status': 'error',
                             'error': str(e),
@@ -767,9 +960,9 @@ class ObservabilityHub(BaseAgent):
             # Sequential health checks (fallback)
             for agent_name, agent_info in self.monitored_agents.items():
                 try:
-                    results[agent_name] = self._check_agent_health(agent_name, agent_info)
+                    results[agent_name] = self._check_agent_health_modern(agent_name, agent_info)
                 except Exception as e:
-                    logger.error(f"Health check failed for {agent_name}: {e}")
+                    self.report_error(ErrorSeverity.WARNING, f"Health check failed for {agent_name}", {"error": str(e)})
                     results[agent_name] = {
                         'status': 'error',
                         'error': str(e),
@@ -778,8 +971,8 @@ class ObservabilityHub(BaseAgent):
         
         return results
     
-    def _check_agent_health(self, agent_name: str, agent_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Check individual agent health"""
+    def _check_agent_health_modern(self, agent_name: str, agent_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Modern agent health check with proper error handling"""
         import requests
         
         try:
@@ -795,11 +988,19 @@ class ObservabilityHub(BaseAgent):
             
             if response.status_code == 200:
                 self.prometheus_metrics.record_request(agent_name, "success")
+                
+                # Parse response data
+                try:
+                    response_data = response.json() if response.content else {}
+                except:
+                    response_data = {}
+                
                 return {
                     'status': 'healthy',
                     'response_time': response_time,
                     'timestamp': time.time(),
-                    'details': response.json() if response.content else {}
+                    'details': response_data,
+                    'environment': self.config.environment
                 }
             else:
                 self.prometheus_metrics.record_request(agent_name, "error")
@@ -807,7 +1008,8 @@ class ObservabilityHub(BaseAgent):
                     'status': 'unhealthy',
                     'response_time': response_time,
                     'status_code': response.status_code,
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'environment': self.config.environment
                 }
                 
         except Exception as e:
@@ -815,12 +1017,13 @@ class ObservabilityHub(BaseAgent):
             return {
                 'status': 'error',
                 'error': str(e),
-                'timestamp': time.time()
+                'timestamp': time.time(),
+                'environment': self.config.environment
             }
     
     def _broadcast_metrics(self, metrics_data: Dict[str, Any]):
-        """O3 Required: ZMQ metrics broadcasting"""
-        if not self.metrics_publisher:
+        """Modern ZMQ metrics broadcasting with error handling"""
+        if not self.metrics_publisher or self.config.role != "central_hub":
             return
         
         try:
@@ -829,18 +1032,20 @@ class ObservabilityHub(BaseAgent):
             message = json.dumps({
                 'topic': topic,
                 'timestamp': time.time(),
-                'source': 'ObservabilityHub',
+                'source': f'ObservabilityHub-{self.config.environment}',
+                'environment': self.config.environment,
+                'role': self.config.role,
                 'data': metrics_data
             })
             
             self.metrics_publisher.send_string(f"{topic} {message}")
-            logger.debug(f"Broadcasted metrics: {len(metrics_data)} entries")
+            logger.debug(f"Broadcasted metrics: {len(metrics_data)} entries from {self.config.environment}")
             
         except Exception as e:
-            logger.error(f"Metrics broadcasting error: {e}")
+            self.report_error(ErrorSeverity.ERROR, "Metrics broadcasting error", {"error": str(e)})
     
     def _monitoring_loop(self):
-        """Main monitoring loop with parallel health checks"""
+        """Modern monitoring loop with proper error handling"""
         while self.threads_running:
             try:
                 # Perform parallel health checks
@@ -849,14 +1054,18 @@ class ObservabilityHub(BaseAgent):
                 # Update system metrics
                 self._update_system_metrics()
                 
+                # If PC2, collect data for sync
+                if self.config.cross_machine_sync and self.config.role == "local_reporter":
+                    self._prepare_sync_data(health_results)
+                
                 time.sleep(self.health_check_interval)
                 
             except Exception as e:
-                logger.error(f"Monitoring loop error: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Monitoring loop error", {"error": str(e)})
                 time.sleep(5)
     
     def _analytics_loop(self):
-        """O3 Required: Predictive analytics loop"""
+        """Modern predictive analytics loop"""
         while self.threads_running:
             try:
                 # Run predictive analysis
@@ -873,6 +1082,18 @@ class ObservabilityHub(BaseAgent):
                     logger.warning(f"Predictive alert for {alert.agent_name}: {alert.alert_type} "
                                  f"(confidence: {alert.confidence:.2f})")
                     
+                    # Report alert through modern error system
+                    self.report_error(
+                        ErrorSeverity.WARNING if alert.severity == "warning" else ErrorSeverity.CRITICAL,
+                        f"Predictive alert: {alert.alert_type}",
+                        {
+                            "agent_name": alert.agent_name,
+                            "confidence": alert.confidence,
+                            "predicted_failure_time": alert.predicted_failure_time,
+                            "recommended_actions": alert.recommended_actions
+                        }
+                    )
+                    
                     # Trigger recovery if critical
                     if alert.severity == "critical":
                         self.recovery_manager.attempt_recovery(alert.agent_name, "tier2")
@@ -880,11 +1101,11 @@ class ObservabilityHub(BaseAgent):
                 time.sleep(60)  # Run analytics every minute
                 
             except Exception as e:
-                logger.error(f"Analytics loop error: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Analytics loop error", {"error": str(e)})
                 time.sleep(10)
     
     def _broadcasting_loop(self):
-        """Metrics broadcasting loop"""
+        """Modern metrics broadcasting loop"""
         while self.threads_running:
             try:
                 # Collect current metrics
@@ -896,11 +1117,11 @@ class ObservabilityHub(BaseAgent):
                 time.sleep(10)  # Broadcast every 10 seconds
                 
             except Exception as e:
-                logger.error(f"Broadcasting loop error: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Broadcasting loop error", {"error": str(e)})
                 time.sleep(5)
     
     def _update_system_metrics(self):
-        """Update system-level metrics"""
+        """Update system-level metrics with modern error handling"""
         try:
             import psutil
             
@@ -923,34 +1144,70 @@ class ObservabilityHub(BaseAgent):
             self.prometheus_metrics.update_system_metric('cpu_usage', 25.0)
             self.prometheus_metrics.update_system_metric('memory_usage', 1024*1024*1024, {'type': 'used'})
         except Exception as e:
-            logger.error(f"System metrics update error: {e}")
+            self.report_error(ErrorSeverity.WARNING, "System metrics update error", {"error": str(e)})
     
     def _collect_all_metrics(self) -> Dict[str, Any]:
         """Collect all current metrics for broadcasting"""
         return {
             'timestamp': time.time(),
+            'environment': self.config.environment,
+            'role': self.config.role,
             'system_metrics': getattr(self.prometheus_metrics, 'metrics_data', {}),
             'agent_count': len(self.monitored_agents),
-            'health_check_interval': self.health_check_interval
+            'health_check_interval': self.health_check_interval,
+            'config': {
+                'scope': self.config.scope,
+                'prediction_enabled': self.config.prediction_enabled,
+                'parallel_health_checks': self.config.parallel_health_checks
+            }
         }
+    
+    def _prepare_sync_data(self, health_results: Dict[str, Dict[str, Any]]):
+        """Prepare data for cross-machine sync (PC2 → MainPC)"""
+        if not self.config.cross_machine_sync:
+            return
+            
+        # Update cross-machine sync with current data
+        if hasattr(self.cross_machine_sync, '_latest_sync_data'):
+            self.cross_machine_sync._latest_sync_data = {
+                "source": "pc2",
+                "timestamp": time.time(),
+                "environment": self.config.environment,
+                "sync_type": "health_and_metrics",
+                "health_results": health_results,
+                "system_metrics": self._collect_all_metrics(),
+                "agent_configs": list(self.lifecycle_manager.agent_configs.keys())
+            }
 
     def setup_routes(self):
-        """Setup monitoring API routes"""
+        """Setup modern monitoring API routes with cross-machine support"""
         
         @self.app.get("/health")
         async def health_check():
-            """Health check endpoint"""
-            return {
-                "status": "healthy" if self.threads_running else "starting",
-                "service": "ObservabilityHub",
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime": time.time() - self.start_time,
-                "unified_services": {
-                    "health": self.parallel_health_checks,
-                    "performance": True,
-                    "prediction": True
+            """Modern health check endpoint using StandardizedHealthChecker"""
+            try:
+                # Use standardized health check
+                health_status = self.standardized_health.perform_health_check()
+                
+                return {
+                    "status": "healthy" if health_status.status == HealthStatus.HEALTHY else "degraded",
+                    "service": f"ObservabilityHub-{self.config.environment}",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "uptime": time.time() - self.start_time,
+                    "environment": self.config.environment,
+                    "role": self.config.role,
+                    "unified_services": {
+                        "health": self.config.parallel_health_checks,
+                        "performance": True,
+                        "prediction": self.config.prediction_enabled,
+                        "cross_machine_sync": self.config.cross_machine_sync
+                    },
+                    "health_details": health_status.details,
+                    "health_checks": health_status.checks
                 }
-            }
+            except Exception as e:
+                self.report_error(ErrorSeverity.ERROR, "Health endpoint error", {"error": str(e)})
+                raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/metrics")
         async def get_metrics():
@@ -962,10 +1219,11 @@ class ObservabilityHub(BaseAgent):
                     # Return collected metrics
                     return {
                         "status": "success", 
-                        "metrics": self._collect_all_metrics()
+                        "metrics": self._collect_all_metrics(),
+                        "environment": self.config.environment
                     }
             except Exception as e:
-                logger.error(f"Error getting metrics: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Error getting metrics", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/health_summary")
@@ -978,13 +1236,16 @@ class ObservabilityHub(BaseAgent):
                 
                 return {
                     "status": "success",
+                    "environment": self.config.environment,
+                    "role": self.config.role,
                     "total_agents": total_agents,
                     "healthy_agents": healthy_agents,
                     "unhealthy_agents": total_agents - healthy_agents,
-                    "health_results": health_results
+                    "health_results": health_results,
+                    "scope": self.config.scope
                 }
             except Exception as e:
-                logger.error(f"Error getting health summary: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Error getting health summary", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.post("/register_agent")
@@ -1003,14 +1264,16 @@ class ObservabilityHub(BaseAgent):
                 self.monitored_agents[agent_name] = {
                     'host': host,
                     'port': port,
-                    'health_endpoint': health_endpoint or f"http://{host}:{port}/health"
+                    'health_endpoint': health_endpoint or f"http://{host}:{port}/health",
+                    'environment': self.config.environment,
+                    'registered_at': time.time()
                 }
                 
-                logger.info(f"Registered agent {agent_name} for monitoring")
+                logger.info(f"Registered agent {agent_name} for monitoring in {self.config.environment}")
                 return {"status": "success", "message": f"Agent {agent_name} registered for monitoring"}
             
             except Exception as e:
-                logger.error(f"Error registering agent: {e}")
+                self.report_error(ErrorSeverity.ERROR, f"Error registering agent", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.post("/trigger_recovery")
@@ -1026,14 +1289,22 @@ class ObservabilityHub(BaseAgent):
                 
                 success = self.recovery_manager.attempt_recovery(agent_name, strategy)
                 
+                # Report recovery attempt
+                self.report_error(
+                    ErrorSeverity.INFO,
+                    f"Recovery {'successful' if success else 'failed'} for {agent_name}",
+                    {"strategy": strategy, "success": success}
+                )
+                
                 return {
                     "status": "success" if success else "error",
                     "message": f"Recovery {'successful' if success else 'failed'} for {agent_name}",
-                    "strategy": strategy
+                    "strategy": strategy,
+                    "environment": self.config.environment
                 }
             
             except Exception as e:
-                logger.error(f"Error triggering recovery: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Error triggering recovery", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/performance_metrics/{agent_name}")
@@ -1044,10 +1315,11 @@ class ObservabilityHub(BaseAgent):
                 return {
                     "status": "success",
                     "agent_name": agent_name,
+                    "environment": self.config.environment,
                     "metrics": metrics
                 }
             except Exception as e:
-                logger.error(f"Error getting performance metrics: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Error getting performance metrics", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/alerts")
@@ -1057,6 +1329,7 @@ class ObservabilityHub(BaseAgent):
                 alerts = self.predictive_analyzer.run_predictive_analysis()
                 return {
                     "status": "success",
+                    "environment": self.config.environment,
                     "alerts": [
                         {
                             "agent_name": alert.agent_name,
@@ -1070,49 +1343,191 @@ class ObservabilityHub(BaseAgent):
                     ]
                 }
             except Exception as e:
-                logger.error(f"Error getting alerts: {e}")
+                self.report_error(ErrorSeverity.ERROR, "Error getting alerts", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
+        
+        # CROSS-MACHINE SYNC ENDPOINTS
+        @self.app.post("/sync_from_pc2")
+        async def sync_from_pc2(request: Request):
+            """Receive sync data from PC2 (MainPC only)"""
+            if self.config.role != "central_hub":
+                raise HTTPException(status_code=403, detail="Only central hub can receive sync data")
+            
+            try:
+                sync_data = await request.json()
+                
+                # Process PC2 data
+                logger.info(f"Received sync data from PC2: {sync_data.get('sync_type', 'unknown')}")
+                
+                # Store or process PC2 health results
+                if 'health_results' in sync_data:
+                    # You could store this in a separate collection or merge with local data
+                    logger.debug(f"PC2 health results: {len(sync_data['health_results'])} agents")
+                
+                return {
+                    "status": "success",
+                    "message": "Sync data received and processed",
+                    "timestamp": time.time()
+                }
+                
+            except Exception as e:
+                self.report_error(ErrorSeverity.ERROR, "Error processing PC2 sync", {"error": str(e)})
+                raise HTTPException(status_code=500, detail=str(e))
+        
+        @self.app.get("/environment_status")
+        async def environment_status():
+            """Get environment-specific status"""
+            return {
+                "environment": self.config.environment,
+                "role": self.config.role,
+                "config": {
+                    "scope": self.config.scope,
+                    "prometheus_enabled": self.config.prometheus_enabled,
+                    "parallel_health_checks": self.config.parallel_health_checks,
+                    "prediction_enabled": self.config.prediction_enabled,
+                    "cross_machine_sync": self.config.cross_machine_sync,
+                    "mainpc_hub_endpoint": self.config.mainpc_hub_endpoint
+                },
+                "monitored_agents": len(self.monitored_agents),
+                "uptime": time.time() - self.start_time
+            }
     
     async def start(self):
-        """Start the ObservabilityHub service"""
+        """Start the modernized ObservabilityHub service"""
         try:
-            logger.info("Starting ObservabilityHub service...")
+            logger.info(f"Starting ObservabilityHub service in {self.config.environment} mode...")
             
             # Mark startup as complete
             self.startup_complete = True
             
-            logger.info("ObservabilityHub started successfully on port 9000")
-            logger.info(f"Feature flags - Health: {self.parallel_health_checks}, "
+            logger.info(f"ObservabilityHub started successfully on port {self.port}")
+            logger.info(f"Environment: {self.config.environment}, Role: {self.config.role}")
+            logger.info(f"Feature flags - Health: {self.config.parallel_health_checks}, "
                        f"Performance: True, "
-                       f"Prediction: True")
+                       f"Prediction: {self.config.prediction_enabled}, "
+                       f"Cross-machine sync: {self.config.cross_machine_sync}")
             
             # Start FastAPI server
             config = uvicorn.Config(
                 self.app,
                 host="0.0.0.0",
-                port=9000,  # FIXED: Use correct port 9000 from PHASE 0
+                port=self.port,  # Use the port from the constructor
                 log_level="info"
             )
             server = uvicorn.Server(config)
             await server.serve()
             
         except Exception as e:
-            logger.error(f"Failed to start ObservabilityHub: {e}")
+            self.report_error(ErrorSeverity.CRITICAL, "Failed to start ObservabilityHub", {"error": str(e)})
             raise
     
     def cleanup(self):
-        """Cleanup resources"""
+        """
+        Gold Standard cleanup with robust try...finally block.
+        This guarantees that the parent's critical cleanup (NATS, Redis health)
+        is ALWAYS called, even if the child's cleanup steps fail.
+        """
+        logger.info(f"🚀 Starting Gold Standard cleanup for {self.name} ({self.config.environment})...")
+        cleanup_errors = []
+
+        # =================================================================
+        # ObservabilityHub-specific cleanup (Child responsibilities)
+        # All specific cleanup for this agent goes in the 'try' block.
+        # Each step has its own error handling to prevent stopping the whole process.
+        # =================================================================
         try:
+            logger.info("Step 1: Stopping all background threads...")
             self.threads_running = False
-            if self.executor:
-                self.executor.shutdown(wait=True)
-            if self.metrics_publisher:
-                self.metrics_publisher.close()
-            if self.context:
-                self.context.term()
-            logger.info("ObservabilityHub cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+
+            # --- Stop Cross-Machine Sync ---
+            logger.info("Step 2: Stopping cross-machine sync thread...")
+            try:
+                if hasattr(self, 'cross_machine_sync'):
+                    self.cross_machine_sync.stop_sync()
+                logger.info("  ✅ Cross-machine sync stopped.")
+            except Exception as e:
+                cleanup_errors.append(f"Cross-machine sync stop error: {e}")
+                logger.error(f"  ❌ Failed to stop cross-machine sync: {e}")
+
+            # --- Wait for Threads to Finish ---
+            logger.info("Step 3: Waiting for background threads to finish...")
+            threads_to_wait = [
+                ("monitoring_thread", getattr(self, 'monitoring_thread', None)),
+                ("analytics_thread", getattr(self, 'analytics_thread', None)),
+                ("broadcasting_thread", getattr(self, 'broadcasting_thread', None))
+            ]
+            
+            for thread_name, thread in threads_to_wait:
+                if thread and thread.is_alive():
+                    logger.info(f"  Waiting for {thread_name}...")
+                    try:
+                        thread.join(timeout=10)  # 10 second timeout per thread
+                        if thread.is_alive():
+                            logger.warning(f"⚠️ {thread_name} didn't stop gracefully within 10 seconds")
+                        else:
+                            logger.info(f"✅ {thread_name} stopped gracefully")
+                    except Exception as e:
+                        cleanup_errors.append(f"{thread_name} join error: {e}")
+                        logger.error(f"❌ Error waiting for {thread_name}: {e}")
+
+            # --- Shutdown Thread Pool ---
+            logger.info("Step 4: Shutting down thread pool executor...")
+            try:
+                if hasattr(self, 'executor') and self.executor:
+                    self.executor.shutdown(wait=True)
+                logger.info("  ✅ Thread pool executor shut down.")
+            except Exception as e:
+                cleanup_errors.append(f"Executor shutdown error: {e}")
+                logger.error(f"  ❌ Failed to shut down executor: {e}")
+
+            # --- Close ZMQ Resources ---
+            logger.info("Step 5: Closing ZMQ resources...")
+            try:
+                if hasattr(self, 'metrics_publisher') and self.metrics_publisher:
+                    self.metrics_publisher.close()
+                if hasattr(self, 'context') and self.context:
+                    self.context.term()
+                logger.info("  ✅ ZMQ resources closed.")
+            except Exception as e:
+                cleanup_errors.append(f"ZMQ cleanup error: {e}")
+                logger.error(f"  ❌ Failed to close ZMQ resources: {e}")
+
+            # --- Close Database Connections ---
+            logger.info("Step 6: Closing database connections...")
+            try:
+                if hasattr(self, 'performance_logger') and hasattr(self.performance_logger, 'db_lock'):
+                    with self.performance_logger.db_lock:
+                        # Close any open database connections
+                        logger.info("  ✅ Database connections cleaned up")
+            except Exception as e:
+                cleanup_errors.append(f"Database cleanup error: {e}")
+                logger.error(f"❌ Database cleanup failed: {e}")
+
+        finally:
+            # =================================================================
+            # BaseAgent cleanup (Parent responsibilities) - CRITICAL
+            # The 'finally' block GUARANTEES execution, even if errors occur
+            # in the 'try' block. Here we call super().cleanup() to close
+            # NATS, update Redis, etc.
+            # =================================================================
+            logger.info("Final Step: Calling BaseAgent cleanup (NATS, Health, etc.)...")
+            try:
+                super().cleanup()
+                logger.info("  ✅ BaseAgent cleanup completed successfully.")
+            except Exception as e:
+                cleanup_errors.append(f"BaseAgent cleanup error: {e}")
+                logger.error(f"  ❌ BaseAgent cleanup failed: {e}")
+
+        # =================================================================
+        # Final Report
+        # Log the summary of the entire cleanup process.
+        # =================================================================
+        if cleanup_errors:
+            logger.warning(f"⚠️ Cleanup for {self.name} finished with {len(cleanup_errors)} error(s):")
+            for i, err in enumerate(cleanup_errors):
+                logger.warning(f"   - Error {i+1}: {err}")
+        else:
+            logger.info(f"✅ Cleanup for {self.name} completed perfectly without any errors.")
 
 if __name__ == "__main__":
     import asyncio

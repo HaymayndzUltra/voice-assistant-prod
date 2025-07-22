@@ -15,12 +15,12 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = get_main_pc_code()
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+PC2_CODE_DIR = PathManager.get_project_root()
+if str(PC2_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(PC2_CODE_DIR))
 
 # Import required modules
 from common.core.base_agent import BaseAgent
@@ -32,7 +32,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -88,45 +88,13 @@ class AgentTrustScorer(BaseAgent):
         )
         
         # Initialize database
-        self.db_path = join_path("cache", "agent_trust_scores.db")
+        self.db_path = PathManager.get_project_root() / "cache" / "agent_trust_scores.db"
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
-        # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         logger.info(f"AgentTrustScorer initialized on port {self.port}")
-    
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
     
     def _init_database(self):
         """Initialize SQLite database for trust scores."""
@@ -320,13 +288,7 @@ class AgentTrustScorer(BaseAgent):
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
         
-        # Close error bus socket
-        if hasattr(self, 'error_bus_pub'):
-            try:
-                self.error_bus_pub.close()
-                logger.info("Closed error bus socket")
-            except Exception as e:
-                logger.error(f"Error closing error bus socket: {e}")
+        # ✅ BaseAgent handles error bus cleanup automatically
         
         # Close any connections to other services
         for service_name, socket in self.main_pc_connections.items():

@@ -7,20 +7,13 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
@@ -96,12 +89,7 @@ class EmotionSynthesisAgent(BaseAgent):
         self.last_synthesis_time = None
         self.start_time = time.time()
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         logger.info(f"EmotionSynthesisAgent initialized on port {self.port}")
     
@@ -183,20 +171,7 @@ class EmotionSynthesisAgent(BaseAgent):
         else:
             return super().handle_request(request)
     
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def cleanup(self):
         """Gracefully shutdown the agent"""

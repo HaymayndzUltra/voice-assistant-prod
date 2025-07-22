@@ -26,8 +26,10 @@ from main_pc_code.utils.config_loader import load_config
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Load configuration at the module level
 config = load_config()
 
@@ -38,7 +40,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=join_path("logs", "self_training.log")
+    filename=str(PathManager.get_logs_dir() / "self_training.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -100,7 +102,7 @@ class SelfTrainingOrchestrator(BaseAgent):
         self.start_time = time.time()
         
         # Database setup
-        self.db_path = join_path("data", "self_training.db")
+        self.db_path = str(PathManager.get_data_dir() / "self_training.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         
         # Training cycle management
@@ -135,16 +137,7 @@ class SelfTrainingOrchestrator(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
         self.context = zmq.Context()
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
 
     def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""

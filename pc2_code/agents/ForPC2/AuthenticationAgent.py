@@ -1,13 +1,14 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Authentication Agent
 - Handles user authentication and authorization
 - Manages user sessions and tokens
 - Provides secure login/logout functionality
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import zmq
 import json
 import logging
+from pathlib import Path
 import threading
 import time
 import hashlib
@@ -22,7 +23,7 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 BASE_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(BASE_DIR))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent.parent
@@ -54,7 +55,7 @@ logger = logging.getLogger('AuthenticationAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

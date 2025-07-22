@@ -25,12 +25,13 @@ import psutil # Added for health check
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -52,13 +53,13 @@ MAX_REFINEMENT_ITERATIONS = config.get('max_refinement_iterations', 3) # Limitas
 
 # --- Embedding Model Constants ---
 EMBEDDING_MODEL_NAME = config.get('embedding_model', "all-MiniLM-L6-v2")  # Lightweight but effective sentence embedding model
-EMBEDDING_CACHE_FILE = config.get('embedding_cache_file', join_path("data", "task_embeddings_cache.pkl"))
+EMBEDDING_CACHE_FILE = config.get('embedding_cache_file', str(PathManager.get_data_dir() / "task_embeddings_cache.pkl"))
 EMBEDDING_DIMENSION = 384  # Dimension of embeddings from the model
 
 # --- Metrics Constants ---
 METRICS_LOG_INTERVAL = config.get('metrics_log_interval', 60)  # Log metrics every 60 seconds
 METRICS_SAVE_INTERVAL = config.get('metrics_save_interval', 300)  # Save metrics to file every 5 minutes
-METRICS_FILE = config.get('metrics_file', join_path("logs", "model_orchestrator_metrics.json"))
+METRICS_FILE = config.get('metrics_file', str(PathManager.get_logs_dir() / "model_orchestrator_metrics.json"))
 
 # ===================================================================
 #         ANG BAGONG UNIFIED MODEL ORCHESTRATOR

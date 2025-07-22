@@ -22,12 +22,13 @@ import zmq  # Added for error bus
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -37,7 +38,7 @@ from main_pc_code.agents.memory_client import MemoryClient
 from common.config_manager import load_unified_config
 
 # Load configuration at the module level
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))
 
 
 # --- Shared Utilities ---
@@ -110,12 +111,7 @@ class GoalManager(BaseAgent):
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
 
-        # --- Distributed Error Reporting ---
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         # --- Background Threads ---
         self._start_background_threads()
@@ -664,21 +660,7 @@ class GoalManager(BaseAgent):
         })
         return base_status
 
-    def report_error(self, error_type: str, message: str, severity: ErrorSeverity, **kwargs):
-        """Report an error to the central error bus."""
-        try:
-            error_data = {
-                "timestamp": time.time(),
-                "agent": self.name,
-                "error_type": error_type,
-                "message": message,
-                "severity": severity.value,
-                **kwargs
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"{error_type}: {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
             
     def cleanup(self):
         """Clean up resources before shutdown."""
@@ -692,7 +674,7 @@ if __name__ == "__main__":
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler(join_path("logs", "goal_manager.log")),
+            logging.FileHandler(str(PathManager.get_logs_dir() / "goal_manager.log")),
             logging.StreamHandler()
         ]
     )

@@ -1,484 +1,452 @@
+#!/usr/bin/env python3
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-Intention Validator Agent
-- Validates user intentions and commands
-- Maintains validation history
-- Implements security checks
+IntentionValidatorAgent - Validates and confirms user intentions
+Enhanced with modern BaseAgent infrastructure and unified error handling
 """
 
-import sys
-import os
-PROJECT_ROOT = os.path.abspath(os.path.join("main_pc_code", ".."))
-MAIN_PC_CODE = PathManager.get_project_root()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
-
-import zmq
+import asyncio
 import json
+import re
 import time
-import logging
-import sqlite3
 import threading
 from datetime import datetime
-from typing import Dict, Any, List, Set, Tuple
+from typing import Dict, Any, List, Optional, Tuple
+from dataclasses import dataclass
+from enum import Enum
 
+import zmq
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+# Modern imports using BaseAgent infrastructure
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
-from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
+from common.error_bus.unified_error_handler import ErrorSeverity
+from common.config_manager import get_service_ip, get_service_url
 
-# Parse command line arguments
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+class IntentionType(Enum):
+    """Types of user intentions"""
+    QUESTION = "question"
+    COMMAND = "command"
+    REQUEST = "request"
+    CLARIFICATION = "clarification"
+    GREETING = "greeting"
+    GOODBYE = "goodbye"
+    UNKNOWN = "unknown"
 
-# Configure logging
-log_dir = os.path.join(MAIN_PC_CODE, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'intention_validator.log')),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+class ConfidenceLevel(Enum):
+    """Confidence levels for intention validation"""
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    UNCLEAR = "unclear"
+
+@dataclass
+class ValidationResult:
+    """Result of intention validation"""
+    intention_type: IntentionType
+    confidence: ConfidenceLevel
+    key_entities: List[str]
+    requires_clarification: bool
+    suggested_response: Optional[str] = None
+    metadata: Dict[str, Any] = None
 
 class IntentionValidatorAgent(BaseAgent):
-    def __init__(self, port: int = None, name: str = None, host=get_env("BIND_ADDRESS", "0.0.0.0"), request_coordinator_host=None, request_coordinator_port=None, **kwargs):
-        """Initialize the IntentionValidatorAgent.
+    """
+    Modern IntentionValidatorAgent using BaseAgent infrastructure
+    Validates user intentions with high accuracy and confidence scoring
+    """
+    
+    def __init__(self, name="IntentionValidatorAgent", port=5701):
+        super().__init__(name, port)
         
-        Args:
-            port: Port to bind to (
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-default from _agent_args or 5572)
-            name: Agent name (default from _agent_args or "IntentionValidator")
-            host: Host to bind to (default: localhost)
-            request_coordinator_host: RequestCoordinator host (default: localhost)
-            request_coordinator_port: RequestCoordinator port (default: 5570)
-        """
-        self.initialization_status = {
-            "is_initialized": False,
-            "error": None,
-            "progress": 0.0
-        }
-        
-        # Get port and name from _agent_args with fallbacks
-        agent_port = config.get("port", 5572) if port is None else port
-        agent_name = config.get("name", 'IntentionValidator') if name is None else name
-        agent_port = config.get("port", 5000) if port is None else port
-        agent_name = config.get("name", 'IntentionValidatorAgent') if name is None else name
-        super().__init__(port=agent_port, name=agent_name)
-        
-        # Get RequestCoordinator connection details from command line args (lowercase)
-        self.request_coordinator_host = request_coordinator_host or config.get("request_coordinator_host", None) or get_env("BIND_ADDRESS", "0.0.0.0")
-        self.request_coordinator_port = request_coordinator_port or config.get("request_coordinator_port", None) or 5570
-        
-        # Also check for uppercase variant for backward compatibility
-        if hasattr(_agent_args, 'RequestCoordinator_host') and self.request_coordinator_host == get_env("BIND_ADDRESS", "0.0.0.0"):
-            self.request_coordinator_host = config.get("RequestCoordinator_host")
-        if hasattr(_agent_args, 'RequestCoordinator_port') and self.request_coordinator_port == 5570:
-            self.request_coordinator_port = config.get("RequestCoordinator_port")
-            
-        self.db_path = join_path("data", "intention_validation.db")
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        
-        self.sensitive_commands = {
-            'delete_file': ['file_path'],
-            'modify_system': ['component', 'action'],
-            'access_credentials': ['service', 'action'],
-            'execute_system_command': ['command', 'parameters'],
-            'modify_permissions': ['user', 'permission'],
-            'access_sensitive_data': ['data_type', 'purpose']
-        }
-        
-        # Set start time for health status
-        self.start_time = time.time()
-        self.running = True
-        
-        # Start initialization in background
-        threading.Thread(target=self._perform_initialization, daemon=True).start()
-        logger.info(f"IntentionValidatorAgent initialized on port {self.port}")
-        
-    def _perform_initialization(self):
-        """Perform agent initialization in background."""
-        try:
-            self._init_database()
-            self.initialization_status.update({
-                "is_initialized": True,
-                "progress": 1.0
-            })
-            logger.info("IntentionValidator initialization complete")
-        except Exception as e:
-            self.initialization_status.update({
-                "error": str(e),
-                "progress": 0.0
-            })
-            logger.error(f"Initialization error: {e}")
-            
-    def _init_database(self):
-        """Initialize SQLite database for validation history."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Create tables
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS validation_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    command TEXT,
-                    parameters TEXT,
-                    user_id TEXT,
-                    profile TEXT,
-                    validation_result BOOLEAN,
-                    reason TEXT,
-                    timestamp TIMESTAMP
-                )
-            ''')
-            
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS command_patterns (
-                    command TEXT PRIMARY KEY,
-                    required_params TEXT,
-                    risk_level INTEGER,
-                    description TEXT
-                )
-            ''')
-            
-            # Insert default command patterns
-            default_patterns = [
-                ('delete_file', '["file_path"]', 3, 'File deletion operation'),
-                ('modify_system', '["component", "action"]', 4, 'System modification'),
-                ('access_credentials', '["service", "action"]', 5, 'Credential access'),
-                ('execute_system_command', '["command", "parameters"]', 4, 'System command execution'),
-                ('modify_permissions', '["user", "permission"]', 5, 'Permission modification'),
-                ('access_sensitive_data', '["data_type", "purpose"]', 4, 'Sensitive data access')
+        # Validation patterns and rules
+        self.intention_patterns = {
+            IntentionType.QUESTION: [
+                r'\b(what|who|when|where|why|how|which|can|could|would|will|is|are|do|does|did)\b',
+                r'\?',
+                r'\b(tell me|explain|describe)\b'
+            ],
+            IntentionType.COMMAND: [
+                r'\b(please|can you|could you|would you)\s+(do|make|create|generate|write|build)\b',
+                r'\b(run|execute|start|stop|restart|launch)\b',
+                r'\b(open|close|save|delete|remove)\b'
+            ],
+            IntentionType.REQUEST: [
+                r'\b(I need|I want|I would like|help me|assist me)\b',
+                r'\b(can you help|please help|I require)\b'
+            ],
+            IntentionType.CLARIFICATION: [
+                r'\b(what do you mean|I don\'t understand|can you clarify|elaborate)\b',
+                r'\b(confused|unclear|not sure)\b'
+            ],
+            IntentionType.GREETING: [
+                r'\b(hello|hi|hey|good morning|good afternoon|good evening)\b',
+                r'\b(greetings|salutations)\b'
+            ],
+            IntentionType.GOODBYE: [
+                r'\b(goodbye|bye|see you|farewell|talk to you later|gtg)\b',
+                r'\b(thanks|thank you|that\'s all)\b'
             ]
-            
-            cursor.executemany('''
-                INSERT OR REPLACE INTO command_patterns 
-                (command, required_params, risk_level, description)
-                VALUES (?, ?, ?, ?)
-            ''', default_patterns)
-            
-            conn.commit()
-            conn.close()
-            
-            logger.info("Database initialized successfully")
-            
-        except Exception as e:
-            logger.error(f"Error initializing database: {e}")
-            raise
+        }
         
-    def _get_health_status(self) -> dict:
-        """Return standardized health status with SQLite connectivity and ZMQ readiness checks."""
-        base_status = super()._get_health_status() if hasattr(super(), '_get_health_status') else {}
-
-        # SQLite metrics
-        db_connected = False
-        history_count = -1
-        total = 0
-        successful = 0
+        # Entity extraction patterns
+        self.entity_patterns = {
+            'person': r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            'location': r'\b(in|at|to|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',
+            'time': r'\b(today|tomorrow|yesterday|now|later|morning|afternoon|evening|night)\b',
+            'number': r'\b(\d+)\b',
+            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            'file': r'\b[\w\-. ]+\.(txt|pdf|doc|docx|jpg|png|mp3|mp4|csv|json|xml|py|js|html|css)\b'
+        }
+        
+        # Confidence thresholds
+        self.confidence_thresholds = {
+            'high': 0.8,
+            'medium': 0.5,
+            'low': 0.2
+        }
+        
+        # ZMQ setup for communication
+        self.context = zmq.Context()
+        self.validation_publisher = self.context.socket(zmq.PUB)
+        self.validation_publisher.bind(f"tcp://*:{port + 100}")  # Validation updates port
+        
+        # Background processing
+        self.validation_queue = []
+        self.queue_lock = threading.Lock()
+        self.processing_thread = None
+        self.running = False
+        
+        # Statistics
+        self.validation_stats = {
+            'total_validations': 0,
+            'successful_validations': 0,
+            'failed_validations': 0,
+            'avg_confidence': 0.0,
+            'intention_distribution': {intent.value: 0 for intent in IntentionType}
+        }
+    
+    def extract_entities(self, text: str) -> Dict[str, List[str]]:
+        """Extract entities from text using pattern matching"""
+        entities = {}
+        
         try:
-            conn = sqlite3.connect(self.db_path, timeout=1)
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM validation_history")
-            history_count = cursor.fetchone()[0]
-            cursor.execute(
-                """
-                SELECT 
-                    COUNT(*)  as total,
-                    SUM(CASE WHEN validation_result = 1 THEN 1 ELSE 0 END) as successful
-                FROM validation_history 
-                WHERE timestamp > datetime('now', '-1 hour')
-                """
-            )
-            total, successful = cursor.fetchone()
-            conn.close()
-            db_connected = True
-            status.update({
-                "validation_history_count": history_count,
-                "recent_success_rate": f"{success_rate:.1f}%",
-                "sensitive_commands": list(self.sensitive_commands.keys())
-            })
+            for entity_type, pattern in self.entity_patterns.items():
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                if matches:
+                    if entity_type == 'location':
+                        # For location pattern, we want the second group (actual location)
+                        entities[entity_type] = [match[1] if isinstance(match, tuple) else match for match in matches]
+                    else:
+                        entities[entity_type] = matches
+            
+            return entities
             
         except Exception as e:
-            logger.error(f"Error getting health status: {e}")
-            status.update({
-                "validation_history_count": -1,
-                "recent_success_rate": "unknown",
-                "sensitive_commands": list(self.sensitive_commands.keys())
-            })
-        
-        return status
-        
-    def handle_request(self, request: dict) -> dict:
-        """Handle incoming validation requests."""
-        action = request.get('action')
-        
-        if action == 'validate_command':
-            command = request.get('command')
-            parameters = request.get('parameters', {})
-            user_id = request.get('user_id')
-            profile = request.get('profile')
+            self.report_error(ErrorSeverity.WARNING, "Entity extraction failed", {"error": str(e), "text": text[:100]})
+            return {}
+    
+    def calculate_intention_confidence(self, text: str, intention_type: IntentionType) -> float:
+        """Calculate confidence score for a specific intention type"""
+        try:
+            patterns = self.intention_patterns.get(intention_type, [])
+            matches = 0
+            total_patterns = len(patterns)
             
-            # Ensure required fields are present and not None
-            if not isinstance(command, str) or not isinstance(user_id, str) or not isinstance(profile, str):
-                return {
-                    'status': 'error',
-                    'message': 'Missing or invalid required fields: command, user_id, profile'
+            if total_patterns == 0:
+                return 0.0
+            
+            text_lower = text.lower()
+            
+            for pattern in patterns:
+                if re.search(pattern, text_lower):
+                    matches += 1
+            
+            # Base confidence from pattern matches
+            pattern_confidence = matches / total_patterns
+            
+            # Adjust based on text characteristics
+            length_factor = min(len(text.split()) / 10, 1.0)  # Longer text can be more confident
+            question_mark_bonus = 0.2 if '?' in text and intention_type == IntentionType.QUESTION else 0.0
+            
+            final_confidence = min(pattern_confidence + length_factor * 0.1 + question_mark_bonus, 1.0)
+            
+            return final_confidence
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Confidence calculation failed", {"error": str(e)})
+            return 0.0
+    
+    def validate_intention(self, user_input: str, context: Optional[Dict[str, Any]] = None) -> ValidationResult:
+        """Validate user intention with comprehensive analysis"""
+        try:
+            if not user_input or not user_input.strip():
+                return ValidationResult(
+                    intention_type=IntentionType.UNKNOWN,
+                    confidence=ConfidenceLevel.UNCLEAR,
+                    key_entities=[],
+                    requires_clarification=True,
+                    suggested_response="I didn't receive any input. Could you please tell me what you need?"
+                )
+            
+            # Calculate confidence for each intention type
+            intention_scores = {}
+            for intention_type in IntentionType:
+                if intention_type != IntentionType.UNKNOWN:
+                    score = self.calculate_intention_confidence(user_input, intention_type)
+                    intention_scores[intention_type] = score
+            
+            # Determine best intention match
+            if intention_scores:
+                best_intention = max(intention_scores, key=intention_scores.get)
+                best_score = intention_scores[best_intention]
+            else:
+                best_intention = IntentionType.UNKNOWN
+                best_score = 0.0
+            
+            # Determine confidence level
+            if best_score >= self.confidence_thresholds['high']:
+                confidence = ConfidenceLevel.HIGH
+            elif best_score >= self.confidence_thresholds['medium']:
+                confidence = ConfidenceLevel.MEDIUM
+            elif best_score >= self.confidence_thresholds['low']:
+                confidence = ConfidenceLevel.LOW
+            else:
+                confidence = ConfidenceLevel.UNCLEAR
+                best_intention = IntentionType.UNKNOWN
+            
+            # Extract entities
+            entities = self.extract_entities(user_input)
+            key_entities = []
+            for entity_list in entities.values():
+                key_entities.extend(entity_list)
+            
+            # Determine if clarification is needed
+            requires_clarification = (
+                confidence in [ConfidenceLevel.LOW, ConfidenceLevel.UNCLEAR] or
+                (best_intention == IntentionType.UNKNOWN) or
+                (best_intention == IntentionType.CLARIFICATION)
+            )
+            
+            # Generate suggested response
+            suggested_response = self._generate_suggested_response(
+                best_intention, confidence, key_entities, requires_clarification
+            )
+            
+            # Create result
+            result = ValidationResult(
+                intention_type=best_intention,
+                confidence=confidence,
+                key_entities=key_entities,
+                requires_clarification=requires_clarification,
+                suggested_response=suggested_response,
+                metadata={
+                    'all_scores': {intent.value: score for intent, score in intention_scores.items()},
+                    'entities': entities,
+                    'input_length': len(user_input),
+                    'word_count': len(user_input.split()),
+                    'context': context
                 }
+            )
             
-            # Validate command structure
-            structure_valid, structure_reason = self._validate_command_structure(command, parameters)
-            if not structure_valid:
-                self._log_validation(command, parameters, user_id, profile, False, structure_reason)
-                return {
-                    'status': 'error',
-                    'message': structure_reason
-                }
+            # Update statistics
+            self._update_statistics(result)
             
-            # Check command history
-            history_valid, history_reason = self._check_command_history(command, user_id, profile)
-            if not history_valid:
-                self._log_validation(command, parameters, user_id, profile, False, history_reason)
-                return {
-                    'status': 'error',
-                    'message': history_reason
-                }
+            # Publish validation result
+            self._publish_validation_result(user_input, result)
             
-            # Log successful validation
-            self._log_validation(command, parameters, user_id, profile, True, "Validation successful")
+            return result
             
-            return {
-                'status': 'ok',
-                'message': 'Command validated successfully'
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Intention validation failed", {"error": str(e), "input": user_input[:100]})
+            
+            return ValidationResult(
+                intention_type=IntentionType.UNKNOWN,
+                confidence=ConfidenceLevel.UNCLEAR,
+                key_entities=[],
+                requires_clarification=True,
+                suggested_response="I encountered an error while processing your request. Could you please try again?"
+            )
+    
+    def _generate_suggested_response(self, intention: IntentionType, confidence: ConfidenceLevel, 
+                                   entities: List[str], requires_clarification: bool) -> str:
+        """Generate appropriate response suggestion"""
+        try:
+            if requires_clarification:
+                if intention == IntentionType.UNKNOWN:
+                    return "I'm not sure what you're asking for. Could you please provide more details?"
+                elif confidence == ConfidenceLevel.LOW:
+                    return f"I think you're asking about {intention.value}, but I'm not entirely sure. Could you clarify?"
+                else:
+                    return "Could you provide more specific information about what you need?"
+            
+            # High confidence responses
+            response_templates = {
+                IntentionType.QUESTION: "I understand you have a question. Let me help you find the answer.",
+                IntentionType.COMMAND: "I understand you want me to perform an action. I'll process your command.",
+                IntentionType.REQUEST: "I understand you need assistance. I'm here to help.",
+                IntentionType.GREETING: "Hello! How can I assist you today?",
+                IntentionType.GOODBYE: "Goodbye! Feel free to return if you need more assistance.",
+                IntentionType.CLARIFICATION: "I understand you need clarification. Let me explain that better."
             }
             
-        elif action == 'get_validation_history':
-            user_id = request.get('user_id')
-            profile = request.get('profile')
-            limit = request.get('limit', 10)
+            base_response = response_templates.get(intention, "I understand your request.")
             
+            # Add entity context if relevant
+            if entities and len(entities) <= 3:
+                entity_text = ", ".join(entities[:3])
+                base_response += f" I noticed you mentioned: {entity_text}."
+            
+            return base_response
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Response generation failed", {"error": str(e)})
+            return "I understand your request and will do my best to help."
+    
+    def _update_statistics(self, result: ValidationResult):
+        """Update validation statistics"""
+        try:
+            self.validation_stats['total_validations'] += 1
+            
+            if result.confidence != ConfidenceLevel.UNCLEAR:
+                self.validation_stats['successful_validations'] += 1
+            else:
+                self.validation_stats['failed_validations'] += 1
+            
+            # Update intention distribution
+            self.validation_stats['intention_distribution'][result.intention_type.value] += 1
+            
+            # Update average confidence (simplified calculation)
+            confidence_values = {'high': 0.9, 'medium': 0.7, 'low': 0.4, 'unclear': 0.1}
+            current_avg = self.validation_stats['avg_confidence']
+            total = self.validation_stats['total_validations']
+            new_value = confidence_values.get(result.confidence.value, 0.1)
+            self.validation_stats['avg_confidence'] = ((current_avg * (total - 1)) + new_value) / total
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Statistics update failed", {"error": str(e)})
+    
+    def _publish_validation_result(self, input_text: str, result: ValidationResult):
+        """Publish validation result to interested services"""
+        try:
+            validation_event = {
+                'timestamp': time.time(),
+                'input': input_text[:100],  # Truncate for privacy
+                'intention_type': result.intention_type.value,
+                'confidence': result.confidence.value,
+                'entities_count': len(result.key_entities),
+                'requires_clarification': result.requires_clarification
+            }
+            
+            self.validation_publisher.send_string(f"VALIDATION_RESULT {json.dumps(validation_event)}")
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Validation result publishing failed", {"error": str(e)})
+    
+    def get_validation_statistics(self) -> Dict[str, Any]:
+        """Get current validation statistics"""
+        return {
+            'statistics': self.validation_stats.copy(),
+            'timestamp': time.time(),
+            'agent_name': self.name
+        }
+    
+    def process_batch_validation(self, inputs: List[str]) -> List[ValidationResult]:
+        """Process multiple validation requests in batch"""
+        results = []
+        
+        try:
+            for user_input in inputs:
+                result = self.validate_intention(user_input)
+                results.append(result)
+            
+            self.logger.info(f"Processed batch validation for {len(inputs)} inputs")
+            return results
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Batch validation failed", {"error": str(e), "batch_size": len(inputs)})
+            return results
+    
+    async def start(self):
+        """Start the IntentionValidatorAgent service"""
+        try:
+            self.logger.info(f"Starting IntentionValidatorAgent on port {self.port}")
+            
+            # Start background processing
+            self.running = True
+            self.processing_thread = threading.Thread(target=self._background_processing, daemon=True)
+            self.processing_thread.start()
+            
+            self.logger.info("IntentionValidatorAgent started successfully")
+            
+            # Keep the service running
+            while self.running:
+                await asyncio.sleep(1)
+                
+        except Exception as e:
+            self.report_error(ErrorSeverity.CRITICAL, "Failed to start IntentionValidatorAgent", {"error": str(e)})
+            raise
+    
+    def _background_processing(self):
+        """Background processing for queued validations"""
+        while self.running:
             try:
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
+                # Process any queued items
+                with self.queue_lock:
+                    if self.validation_queue:
+                        # Process queue items if needed
+                        pass
                 
-                if user_id and profile:
-                    cursor.execute('''
-                        SELECT command, parameters, validation_result, reason, timestamp 
-                        FROM validation_history 
-                        WHERE user_id = ? AND profile = ? 
-                        ORDER BY timestamp DESC 
-                        LIMIT ?
-                    ''', (user_id, profile, limit))
-                else:
-                    cursor.execute('''
-                        SELECT command, parameters, validation_result, reason, timestamp 
-                        FROM validation_history 
-                        ORDER BY timestamp DESC 
-                        LIMIT ?
-                    ''', (limit,))
+                # Periodic statistics logging
+                if self.validation_stats['total_validations'] % 100 == 0 and self.validation_stats['total_validations'] > 0:
+                    self.logger.info(f"Validation statistics: {self.get_validation_statistics()}")
                 
-                history = cursor.fetchall()
-                conn.close()
-                
-                return {
-                    'status': 'ok',
-                    'history': [
-                        {
-                            'command': cmd,
-                            'parameters': json.loads(params),
-                            'result': bool(result),
-                            'reason': reason,
-                            'timestamp': ts
-                        }
-                        for cmd, params, result, reason, ts in history
-                    ]
-                }
+                time.sleep(1)
                 
             except Exception as e:
-                logger.error(f"Error getting validation history: {e}")
-                return {
-                    'status': 'error',
-                    'message': f'Failed to get validation history: {str(e)}'
-                }
-            
-        return super().handle_request(request)
+                self.report_error(ErrorSeverity.WARNING, "Background processing error", {"error": str(e)})
+                time.sleep(5)
     
-    def _validate_command_structure(self, command: str, parameters: Dict[str, Any]) -> Tuple[bool, str]:
-        """Validate command structure and required parameters."""
-        if command not in self.sensitive_commands:
-            return False, f"Unknown sensitive command: {command}"
+    def cleanup(self):
+        """Modern cleanup using try...finally pattern"""
+        self.logger.info("Starting IntentionValidatorAgent cleanup...")
+        cleanup_errors = []
         
-        required_params = self.sensitive_commands[command]
-        missing_params = [param for param in required_params if param not in parameters]
+        try:
+            # Stop background processing
+            self.running = False
+            if self.processing_thread and self.processing_thread.is_alive():
+                self.processing_thread.join(timeout=5)
+            
+            # Close ZMQ resources
+            try:
+                if hasattr(self, 'validation_publisher'):
+                    self.validation_publisher.close()
+                if hasattr(self, 'context'):
+                    self.context.term()
+            except Exception as e:
+                cleanup_errors.append(f"ZMQ cleanup error: {e}")
+                
+        finally:
+            # Always call parent cleanup for BaseAgent resources
+            try:
+                super().cleanup()
+                self.logger.info("✅ IntentionValidatorAgent cleanup completed")
+            except Exception as e:
+                cleanup_errors.append(f"BaseAgent cleanup error: {e}")
         
-        if missing_params:
-            return False, f"Missing required parameters: {', '.join(missing_params)}"
-        
-        return True, "Command structure valid"
-    
-    def _check_command_history(self, command: str, user_id: str, profile: str) -> Tuple[bool, str]:
-        """Check command history for suspicious patterns."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Get recent command history
-            cursor.execute('''
-                SELECT COUNT(*) 
-                FROM validation_history 
-                WHERE command = ? AND user_id = ? AND profile = ? 
-                AND timestamp > datetime('now', '-1 hour')
-            ''', (command, user_id, profile))
-            
-            recent_count = cursor.fetchone()[0]
-            
-            # Get failure rate
-            cursor.execute('''
-                SELECT COUNT(*) 
-                FROM validation_history 
-                WHERE command = ? AND user_id = ? AND profile = ? 
-                AND validation_result = 0
-                AND timestamp > datetime('now', '-24 hours')
-            ''', (command, user_id, profile))
-            
-            failure_count = cursor.fetchone()[0]
-            
-            conn.close()
-            
-            if recent_count > 10:  # More than 10 attempts in the last hour
-                return False, "Too many recent attempts"
-            
-            if failure_count > 5:  # More than 5 failures in the last 24 hours
-                return False, "High failure rate in recent history"
-            
-            return True, "Command history acceptable"
-            
-        except Exception as e:
-            logger.error(f"Error checking command history: {e}")
-            return False, f"Error checking command history: {str(e)}"
-    
-    def _log_validation(self, command: str, parameters: Dict[str, Any], 
-                       user_id: str, profile: str, result: bool, reason: str):
-        """Log validation result."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO validation_history 
-                (command, parameters, user_id, profile, validation_result, reason, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                command,
-                json.dumps(parameters),
-                user_id,
-                profile,
-                result,
-                reason,
-                datetime.now()
-            ))
-            
-            conn.commit()
-            conn.close()
-            
-        except Exception as e:
-            logger.error(f"Error logging validation: {e}")
-
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = True # Assume healthy unless a check fails
-            
-            # TODO: Add agent-specific health checks here.
-            # For example, check if a required connection is alive.
-            # if not self.some_service_connection.is_alive():
-            #     is_healthy = False
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time if hasattr(self, 'start_time') else -1,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {} # Placeholder for agent-specific data
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name if hasattr(self, 'name') else self.__class__.__name__,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+        if cleanup_errors:
+            self.logger.warning(f"Cleanup completed with {len(cleanup_errors)} errors: {cleanup_errors}")
 
 if __name__ == "__main__":
-    # Standardized main execution block
-    agent = None
+    import asyncio
+    
+    agent = IntentionValidatorAgent()
+    
     try:
-        # Replace 'ClassName' with the actual agent class from the file.
-        agent = IntentionValidatorAgent()
-        agent.run()
+        asyncio.run(agent.start())
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'}...")
+        agent.logger.info("IntentionValidatorAgent interrupted by user")
     except Exception as e:
-        import traceback
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
+        agent.logger.error(f"IntentionValidatorAgent error: {e}")
     finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup() 
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)
+        agent.cleanup()

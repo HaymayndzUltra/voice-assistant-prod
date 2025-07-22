@@ -141,15 +141,7 @@ class ExecutorAgent(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
     def authenticate_user(self, user, password=None):
         """

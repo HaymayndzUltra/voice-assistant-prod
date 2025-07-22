@@ -45,6 +45,7 @@ from command_suggestion_optimized import CommandSuggestionOptimized
 # Import clustering if available
 try:
     from command_clustering import CommandClusteringEngine
+from common.utils.path_env import get_main_pc_code, get_project_root
     except ImportError as e:
         print(f"Import error: {e}")
 

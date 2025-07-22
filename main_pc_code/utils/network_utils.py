@@ -17,9 +17,9 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_env import get_path, join_path, get_file_path, get_project_root, get_main_pc_code
 from common.env_helpers import get_env
+sys.path.insert(0, get_project_root())
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = get_project_root()
 MAIN_PC_CODE = get_main_pc_code()

@@ -18,6 +18,7 @@ from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
+from common.utils.path_manager import PathManager
 from main_pc_code.agents.memory_client import MemoryClient
 from common.env_helpers import get_env
 
@@ -61,10 +62,7 @@ class KnowledgeBase(BaseAgent):
         # Memory client (external service, no local state)
         self.memory_client = MemoryClient()
 
-        # Error Bus (Rule 8)
-        self.context = zmq.Context.instance()
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(ERROR_BUS_ENDPOINT)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         self.start_time = time.time()
         self.request_count = 0

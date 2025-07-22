@@ -7,22 +7,13 @@ import sys
 import os
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
 
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-MAIN_PC_CODE = get_main_pc_code()
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
+# Add the project's main_pc_code directory to the Python path
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket

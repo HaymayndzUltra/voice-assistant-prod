@@ -52,21 +52,7 @@ class TutoringServiceAgent(BaseAgent):
         
         logger.info(f"Tutoring Service Agent initialized on {self.host}:{self.port}")
         
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        try:
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to error bus: {e}")
-            self.error_bus_pub = None
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""

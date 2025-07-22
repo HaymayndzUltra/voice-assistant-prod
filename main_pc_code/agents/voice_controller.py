@@ -24,6 +24,7 @@ from main_pc_code.agents.wake_word_detector import WakeWordDetector
 from main_pc_code.agents.speech_processor import SpeechProcessor
 import psutil
 from datetime import datetime
+from common.utils.path_env import get_main_pc_code, get_project_root
 
 # Configure logging
 logging.basicConfig(

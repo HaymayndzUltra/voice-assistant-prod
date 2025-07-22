@@ -1,404 +1,580 @@
-import sys
-import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+#!/usr/bin/env python3
+"""
+ProactiveAgent - Provides proactive assistance and suggestions
+Enhanced with modern BaseAgent infrastructure and unified error handling
+"""
+
+import asyncio
 import json
-import logging
+import threading
 import time
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
-import threading
-import psutil
-import traceback
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from typing import Dict, Any, List, Optional
+from dataclasses import dataclass, field
+from enum import Enum
 
+import zmq
+
+# Modern imports using BaseAgent infrastructure
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
-from main_pc_code.utils.service_discovery_client import discover_service, register_service
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
+from common.error_bus.unified_error_handler import ErrorSeverity
+from common.config_manager import get_service_ip, get_service_url
 
-# Load configuration
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+class ProactivityLevel(Enum):
+    """Levels of proactive engagement"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    ADAPTIVE = "adaptive"
 
-# ZMQ timeout settings from config
-ZMQ_REQUEST_TIMEOUT = int(config.get("zmq_request_timeout", 5000))  # 5 seconds timeout for requests
+class SuggestionType(Enum):
+    """Types of proactive suggestions"""
+    TASK_REMINDER = "task_reminder"
+    OPTIMIZATION = "optimization"
+    LEARNING_OPPORTUNITY = "learning_opportunity"
+    WORKFLOW_IMPROVEMENT = "workflow_improvement"
+    CONTEXT_AWARE_HELP = "context_aware_help"
+    PREVENTIVE_ACTION = "preventive_action"
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+@dataclass
+class ProactiveSuggestion:
+    """Proactive suggestion data structure"""
+    suggestion_id: str
+    suggestion_type: SuggestionType
+    title: str
+    description: str
+    priority: int  # 1-5, 5 being highest
+    context: Dict[str, Any] = field(default_factory=dict)
+    actions: List[str] = field(default_factory=list)
+    created_at: float = field(default_factory=time.time)
+    expires_at: Optional[float] = None
+    user_feedback: Optional[str] = None
 
 class ProactiveAgent(BaseAgent):
-    def __init__(self, **kwargs):
-        """Initialize the ProactiveAgent with ZMQ sockets."""
-        # Get configuration values with fallbacks
-        agent_port = kwargs.get('port') or int(config.get("port", 5624))
-        agent_name = kwargs.get('name') or config.get("name", "ProactiveAgent")
+    """
+    Modern ProactiveAgent using BaseAgent infrastructure
+    Provides intelligent proactive assistance and contextual suggestions
+    """
+    
+    def __init__(self, name="ProactiveAgent", port=5624):
+        super().__init__(name, port)
         
-        # Call BaseAgent's __init__ with proper parameters
-        super().__init__(name=agent_name, port=agent_port)
+        # Proactivity configuration
+        self.proactivity_level = ProactivityLevel.ADAPTIVE
+        self.suggestion_frequency = 300  # seconds
+        self.max_active_suggestions = 10
         
-        # Initialize configuration values
-        self.coordinator_address = config.get("coordinator_address", get_zmq_connection_string(26002, "localhost"))
-        self.suggestion_interval = int(config.get("suggestion_interval_seconds", 60))
-        self.tasks_file = config.get("tasks_file", "tasks.json")
-        
-        # Initialize ZMQ
-        self.context = None  # Using pool
-        
-        # Main REP socket for handling requests
-        self.socket = get_rep_socket(self.endpoint).socket
-        self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.socket.bind(f"tcp://*:{self.port}")
-        
-        # Store tasks and reminders
-        self.tasks = self._load_tasks()
-        
-        # Initialize coordinator socket (will be set up in async initialization)
-        self.coordinator_socket = None
-        
-        # Error bus connection
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-        
-        # Start monitoring thread
-        self.running = True
-        self.start_time = time.time()
-        self.monitor_thread = threading.Thread(target=self._monitor_tasks)
-        self.monitor_thread.daemon = True
-        self.monitor_thread.start()
-        
-        # Initialize the coordinator connection in a background thread
-        threading.Thread(target=self._init_coordinator, daemon=True).start()
-        
-        logger.info(f"ProactiveAgent initialized on port {self.port}")
-    
-    def _init_coordinator(self):
-        """Initialize connection to the RequestCoordinator."""
-        try:
-            # Try to discover coordinator via service discovery
-            coordinator_info = discover_service("RequestCoordinator")
-            if coordinator_info:
-                host = coordinator_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
-                port = coordinator_info.get("port", 5621)
-                self.coordinator_address = f"tcp://{host}:{port}"
-            
-            # Set up coordinator socket
-            self.coordinator_socket = self.context.socket(zmq.REQ)
-            self.coordinator_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.coordinator_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            self.coordinator_socket.connect(self.coordinator_address)
-            logger.info(f"Coordinator socket initialized at {self.coordinator_address}")
-        except Exception as e:
-            logger.error(f"Coordinator initialization error: {e}")
-    
-    def _get_health_status(self):
-        """Get the current health status of the agent."""
-        return {'status': 'ok', 'running': self.running}
-    
-    def _perform_initialization(self):
-        """Initialize agent components asynchronously."""
-        try:
-            # Already handled in __init__ and _init_coordinator
-            pass
-        except Exception as e:
-            logger.error(f"Initialization error: {e}")
-            raise
-    
-    def _load_tasks(self) -> Dict[str, Any]:
-        """Load tasks from JSON file."""
-        try:
-            if os.path.exists(self.tasks_file):
-                with open(self.tasks_file, 'r') as f:
-                    return json.load(f)
-            return {'tasks': [], 'reminders': []}
-        except Exception as e:
-            logger.error(f"Error loading tasks: {str(e)}")
-            return {'tasks': [], 'reminders': []}
-    
-    def _save_tasks(self):
-        """Save tasks to JSON file."""
-        try:
-            with open(self.tasks_file, 'w') as f:
-                json.dump(self.tasks, f, indent=2)
-        except Exception as e:
-            logger.error(f"Error saving tasks: {str(e)}")
-    
-    def _monitor_tasks(self):
-        """Monitor tasks and reminders in the background."""
-        while self.running:
-            try:
-                current_time = datetime.now()
-                
-                # Check tasks
-                for task in self.tasks['tasks']:
-                    if task['status'] == 'pending':
-                        scheduled_time = datetime.fromisoformat(task['scheduled_time'])
-                        if current_time >= scheduled_time:
-                            self._execute_task(task)
-                
-                # Check reminders
-                for reminder in self.tasks['reminders']:
-                    if reminder['status'] == 'pending':
-                        scheduled_time = datetime.fromisoformat(reminder['scheduled_time'])
-                        if current_time >= scheduled_time:
-                            self._execute_reminder(reminder)
-                
-                time.sleep(60)  # Check every minute
-                
-            except Exception as e:
-                logger.error(f"Error monitoring tasks: {str(e)}")
-                time.sleep(300)  # Wait 5 minutes before retrying
-    
-    def _execute_task(self, task: Dict[str, Any]):
-        """Execute a scheduled task."""
-        try:
-            if not self.coordinator_socket:
-                logger.warning("Coordinator socket not ready, skipping task execution")
-                return
-                
-            # Send task to RequestCoordinator
-            self.coordinator_socket.send_json({
-                'action': 'execute_task',
-                'task': task
-            })
-            
-            response = self.coordinator_socket.recv_json()
-            
-            if response['status'] == 'success':
-                task['status'] = 'completed'
-                task['completion_time'] = datetime.now().isoformat()
-                self._save_tasks()
-                logger.info(f"Task {task['id']} executed successfully")
-            else:
-                logger.error(f"Failed to execute task {task['id']}: {response.get('message', 'Unknown error')}")
-                
-        except Exception as e:
-            logger.error(f"Error executing task {task['id']}: {str(e)}")
-    
-    def _execute_reminder(self, reminder: Dict[str, Any]):
-        """Execute a reminder."""
-        try:
-            if not self.coordinator_socket:
-                logger.warning("Coordinator socket not ready, skipping reminder execution")
-                return
-                
-            # Send reminder to RequestCoordinator
-            self.coordinator_socket.send_json({
-                'action': 'send_reminder',
-                'reminder': reminder
-            })
-            
-            response = self.coordinator_socket.recv_json()
-            
-            if response['status'] == 'success':
-                reminder['status'] = 'completed'
-                reminder['completion_time'] = datetime.now().isoformat()
-                self._save_tasks()
-                logger.info(f"Reminder {reminder['id']} sent successfully")
-            else:
-                logger.error(f"Failed to send reminder {reminder['id']}: {response.get('message', 'Unknown error')}")
-                
-        except Exception as e:
-            logger.error(f"Error sending reminder {reminder['id']}: {str(e)}")
-    
-    def add_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Add a new scheduled task."""
-        try:
-            # Generate task ID
-            task['id'] = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            task['status'] = 'pending'
-            task['created_at'] = datetime.now().isoformat()
-            
-            self.tasks['tasks'].append(task)
-            self._save_tasks()
-            
-            return {
-                'status': 'success',
-                'task_id': task['id']
-            }
-            
-        except Exception as e:
-            logger.error(f"Error adding task: {str(e)}")
-            return {
-                'status': 'error',
-                'message': str(e)
-            }
-    
-    def add_reminder(self, reminder: Dict[str, Any]) -> Dict[str, Any]:
-        """Add a new reminder."""
-        try:
-            # Generate reminder ID
-            reminder['id'] = f"reminder_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            reminder['status'] = 'pending'
-            reminder['created_at'] = datetime.now().isoformat()
-            
-            self.tasks['reminders'].append(reminder)
-            self._save_tasks()
-            
-            return {
-                'status': 'success',
-                'reminder_id': reminder['id']
-            }
-            
-        except Exception as e:
-            logger.error(f"Error adding reminder: {str(e)}")
-            return {
-                'status': 'error',
-                'message': str(e)
-            }
-    
-    def get_tasks(self) -> Dict[str, Any]:
-        """Get all tasks and reminders."""
-        return {
-            'status': 'success',
-            'tasks': self.tasks
+        # Suggestion storage and management
+        self.active_suggestions: Dict[str, ProactiveSuggestion] = {}
+        self.suggestion_history: List[ProactiveSuggestion] = []
+        self.user_preferences = {
+            'preferred_suggestion_types': [
+                SuggestionType.OPTIMIZATION,
+                SuggestionType.WORKFLOW_IMPROVEMENT,
+                SuggestionType.CONTEXT_AWARE_HELP
+            ],
+            'quiet_hours': {'start': '22:00', 'end': '08:00'},
+            'max_suggestions_per_hour': 5,
+            'feedback_learning_enabled': True
         }
-    
-    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle incoming requests."""
-        action = request.get('action')
-
-        # Respond to orchestrator health checks
-        if action in ('health_check', 'health'):
-            return {
-                'status': 'ok',
-                'message': 'ProactiveAgent healthy',
-                'timestamp': datetime.now().isoformat()
-            }
         
-        if action == 'add_task':
-            return self.add_task(request['task'])
-            
-        elif action == 'add_reminder':
-            return self.add_reminder(request['reminder'])
-            
-        elif action == 'get_tasks':
-            return self.get_tasks()
-            
-        else:
-            return {
-                'status': 'error',
-                'message': f'Unknown action: {action}'
-            }
-    
-    def run(self):
-        """Main loop for handling requests."""
-        logger.info("ProactiveAgent started")
+        # Context monitoring
+        self.context_patterns = {
+            'work_hours': {'start': '09:00', 'end': '17:00'},
+            'frequent_tasks': {},
+            'error_patterns': {},
+            'performance_metrics': {},
+            'user_activity_patterns': {}
+        }
         
-        while self.running:
-            try:
-                # Wait for next request
-                message = self.socket.recv_json()
-                logger.debug(f"Received request: {message}")
-                
-                # Process request
-                response = self.handle_request(message)
-                
-                # Send response
-                self.socket.send_json(response)
-                logger.debug(f"Sent response: {response}")
-                
-            except zmq.error.Again:
-                # Socket timeout, continue loop
-                continue
-            except Exception as e:
-                logger.error(f"Error processing request: {str(e)}")
-                try:
-                    self.socket.send_json({
-                        'status': 'error',
-                        'message': str(e)
-                    })
-                except zmq.error.Again:
-                    pass  # Can't send response due to timeout
-    
-    def stop(self):
-        """Stop the agent and clean up resources."""
-        logger.info("Stopping ProactiveAgent...")
+        # ZMQ setup for communication
+        self.context = zmq.Context()
+        self.suggestion_publisher = self.context.socket(zmq.PUB)
+        self.suggestion_publisher.bind(f"tcp://*:{port + 100}")  # Suggestion broadcast port
+        
+        # Background monitoring and suggestion generation
+        self.monitoring_thread = None
+        self.suggestion_thread = None
         self.running = False
         
-        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
-            self.monitor_thread.join(timeout=5.0)
+        # Suggestion patterns and rules
+        self.suggestion_rules = self._initialize_suggestion_rules()
         
-        self.cleanup()
-        logger.info("ProactiveAgent stopped")
-
+        # Statistics
+        self.statistics = {
+            'suggestions_generated': 0,
+            'suggestions_accepted': 0,
+            'suggestions_dismissed': 0,
+            'avg_suggestion_relevance': 0.0,
+            'suggestion_type_performance': {stype.value: {'count': 0, 'acceptance_rate': 0.0} for stype in SuggestionType}
+        }
+    
+    def _initialize_suggestion_rules(self) -> Dict[str, Any]:
+        """Initialize suggestion generation rules"""
+        return {
+            'task_reminder': {
+                'triggers': ['scheduled_task', 'recurring_task', 'deadline_approaching'],
+                'conditions': ['time_based', 'context_based'],
+                'priority_factors': ['urgency', 'importance', 'user_preference']
+            },
+            'optimization': {
+                'triggers': ['repetitive_action', 'inefficient_workflow', 'resource_usage'],
+                'conditions': ['pattern_detected', 'threshold_exceeded'],
+                'priority_factors': ['potential_impact', 'ease_of_implementation']
+            },
+            'learning_opportunity': {
+                'triggers': ['new_feature_available', 'skill_gap_detected', 'best_practice_deviation'],
+                'conditions': ['user_readiness', 'relevance_score'],
+                'priority_factors': ['learning_value', 'current_context']
+            },
+            'workflow_improvement': {
+                'triggers': ['bottleneck_detected', 'alternative_approach', 'tool_suggestion'],
+                'conditions': ['improvement_potential', 'compatibility'],
+                'priority_factors': ['efficiency_gain', 'adoption_difficulty']
+            },
+            'context_aware_help': {
+                'triggers': ['user_struggle', 'error_pattern', 'unfamiliar_context'],
+                'conditions': ['help_needed', 'appropriate_timing'],
+                'priority_factors': ['urgency', 'relevance']
+            },
+            'preventive_action': {
+                'triggers': ['risk_detected', 'maintenance_due', 'resource_limit_approaching'],
+                'conditions': ['prevention_possible', 'action_required'],
+                'priority_factors': ['risk_level', 'prevention_cost']
+            }
+        }
+    
+    def generate_suggestion_id(self) -> str:
+        """Generate unique suggestion ID"""
+        import uuid
+        return f"suggestion_{uuid.uuid4().hex[:8]}_{int(time.time())}"
+    
+    def analyze_context(self, context_data: Dict[str, Any]) -> List[str]:
+        """Analyze context to identify suggestion opportunities"""
+        opportunities = []
+        
+        try:
+            current_time = datetime.now()
+            current_hour = current_time.hour
+            
+            # Check for work hours context
+            work_start = int(self.context_patterns['work_hours']['start'].split(':')[0])
+            work_end = int(self.context_patterns['work_hours']['end'].split(':')[0])
+            
+            if work_start <= current_hour <= work_end:
+                opportunities.append('work_context')
+            
+            # Check for repetitive patterns
+            if context_data.get('recent_actions'):
+                actions = context_data['recent_actions']
+                if len(actions) >= 3 and len(set(actions)) == 1:
+                    opportunities.append('repetitive_action')
+            
+            # Check for error patterns
+            if context_data.get('recent_errors'):
+                error_count = len(context_data['recent_errors'])
+                if error_count >= 2:
+                    opportunities.append('error_pattern')
+            
+            # Check for performance issues
+            if context_data.get('performance_metrics'):
+                perf = context_data['performance_metrics']
+                if perf.get('response_time', 0) > 5000:  # 5 seconds
+                    opportunities.append('performance_issue')
+            
+            # Check for learning opportunities
+            if context_data.get('new_features_available'):
+                opportunities.append('learning_opportunity')
+            
+            return opportunities
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Context analysis failed", {"error": str(e)})
+            return []
+    
+    def generate_suggestion(self, opportunity: str, context: Dict[str, Any]) -> Optional[ProactiveSuggestion]:
+        """Generate a specific suggestion based on opportunity and context"""
+        try:
+            suggestion_id = self.generate_suggestion_id()
+            current_time = time.time()
+            
+            if opportunity == 'repetitive_action':
+                return ProactiveSuggestion(
+                    suggestion_id=suggestion_id,
+                    suggestion_type=SuggestionType.OPTIMIZATION,
+                    title="Repetitive Task Detected",
+                    description="I noticed you're performing the same action repeatedly. Would you like me to help automate this task?",
+                    priority=4,
+                    context=context,
+                    actions=["create_automation", "learn_shortcuts", "batch_process"],
+                    expires_at=current_time + 3600  # 1 hour
+                )
+            
+            elif opportunity == 'error_pattern':
+                return ProactiveSuggestion(
+                    suggestion_id=suggestion_id,
+                    suggestion_type=SuggestionType.PREVENTIVE_ACTION,
+                    title="Error Pattern Detected",
+                    description="I've noticed recurring errors. Let me help you prevent these issues.",
+                    priority=5,
+                    context=context,
+                    actions=["diagnose_issue", "implement_fix", "create_prevention"],
+                    expires_at=current_time + 1800  # 30 minutes
+                )
+            
+            elif opportunity == 'performance_issue':
+                return ProactiveSuggestion(
+                    suggestion_id=suggestion_id,
+                    suggestion_type=SuggestionType.OPTIMIZATION,
+                    title="Performance Optimization",
+                    description="System performance seems slower than usual. I can help optimize it.",
+                    priority=3,
+                    context=context,
+                    actions=["analyze_performance", "optimize_resources", "clear_cache"],
+                    expires_at=current_time + 7200  # 2 hours
+                )
+            
+            elif opportunity == 'learning_opportunity':
+                return ProactiveSuggestion(
+                    suggestion_id=suggestion_id,
+                    suggestion_type=SuggestionType.LEARNING_OPPORTUNITY,
+                    title="New Feature Available",
+                    description="There are new features that might help improve your workflow.",
+                    priority=2,
+                    context=context,
+                    actions=["explore_features", "schedule_tutorial", "gradual_adoption"],
+                    expires_at=current_time + 86400  # 24 hours
+                )
+            
+            elif opportunity == 'work_context':
+                return ProactiveSuggestion(
+                    suggestion_id=suggestion_id,
+                    suggestion_type=SuggestionType.WORKFLOW_IMPROVEMENT,
+                    title="Work Day Optimization",
+                    description="Would you like me to suggest ways to optimize your work day?",
+                    priority=2,
+                    context=context,
+                    actions=["plan_tasks", "set_reminders", "organize_workspace"],
+                    expires_at=current_time + 14400  # 4 hours
+                )
+            
+            return None
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Suggestion generation failed", {"error": str(e), "opportunity": opportunity})
+            return None
+    
+    def evaluate_suggestion_relevance(self, suggestion: ProactiveSuggestion, current_context: Dict[str, Any]) -> float:
+        """Evaluate how relevant a suggestion is to the current context"""
+        try:
+            relevance_score = 0.0
+            
+            # Base priority contribution
+            relevance_score += suggestion.priority * 0.2
+            
+            # Time-based relevance
+            time_since_creation = time.time() - suggestion.created_at
+            if time_since_creation < 300:  # Recent suggestions are more relevant
+                relevance_score += 0.3
+            elif time_since_creation > 3600:  # Old suggestions lose relevance
+                relevance_score -= 0.2
+            
+            # Context match
+            context_overlap = len(set(suggestion.context.keys()) & set(current_context.keys()))
+            if context_overlap > 0:
+                relevance_score += context_overlap * 0.1
+            
+            # User preference alignment
+            if suggestion.suggestion_type in self.user_preferences.get('preferred_suggestion_types', []):
+                relevance_score += 0.3
+            
+            # Historical performance of suggestion type
+            type_performance = self.statistics['suggestion_type_performance'].get(suggestion.suggestion_type.value, {})
+            acceptance_rate = type_performance.get('acceptance_rate', 0.0)
+            relevance_score += acceptance_rate * 0.2
+            
+            return min(max(relevance_score, 0.0), 1.0)  # Clamp between 0 and 1
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Relevance evaluation failed", {"error": str(e)})
+            return 0.5  # Default relevance
+    
+    def should_generate_suggestion(self, current_context: Dict[str, Any]) -> bool:
+        """Determine if we should generate suggestions at this time"""
+        try:
+            current_time = datetime.now()
+            current_hour_str = current_time.strftime('%H:%M')
+            
+            # Check quiet hours
+            quiet_start = self.user_preferences['quiet_hours']['start']
+            quiet_end = self.user_preferences['quiet_hours']['end']
+            
+            if quiet_start <= current_hour_str or current_hour_str <= quiet_end:
+                return False
+            
+            # Check suggestion frequency limits
+            recent_suggestions = [s for s in self.suggestion_history 
+                                if s.created_at > time.time() - 3600]  # Last hour
+            
+            if len(recent_suggestions) >= self.user_preferences['max_suggestions_per_hour']:
+                return False
+            
+            # Check if we have too many active suggestions
+            if len(self.active_suggestions) >= self.max_active_suggestions:
+                return False
+            
+            # Adaptive proactivity based on user engagement
+            if self.proactivity_level == ProactivityLevel.ADAPTIVE:
+                recent_acceptance_rate = self._calculate_recent_acceptance_rate()
+                if recent_acceptance_rate < 0.2:  # Low acceptance rate
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Suggestion timing check failed", {"error": str(e)})
+            return False
+    
+    def _calculate_recent_acceptance_rate(self) -> float:
+        """Calculate recent suggestion acceptance rate"""
+        try:
+            recent_suggestions = [s for s in self.suggestion_history 
+                                if s.created_at > time.time() - 86400]  # Last 24 hours
+            
+            if not recent_suggestions:
+                return 0.5  # Default rate
+            
+            accepted = sum(1 for s in recent_suggestions if s.user_feedback == 'accepted')
+            return accepted / len(recent_suggestions)
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Acceptance rate calculation failed", {"error": str(e)})
+            return 0.5
+    
+    def process_user_feedback(self, suggestion_id: str, feedback: str, feedback_data: Optional[Dict[str, Any]] = None):
+        """Process user feedback on suggestions"""
+        try:
+            if suggestion_id in self.active_suggestions:
+                suggestion = self.active_suggestions[suggestion_id]
+                suggestion.user_feedback = feedback
+                
+                # Move to history
+                self.suggestion_history.append(suggestion)
+                del self.active_suggestions[suggestion_id]
+                
+                # Update statistics
+                self.statistics['suggestions_generated'] += 1
+                if feedback == 'accepted':
+                    self.statistics['suggestions_accepted'] += 1
+                elif feedback == 'dismissed':
+                    self.statistics['suggestions_dismissed'] += 1
+                
+                # Update suggestion type performance
+                type_key = suggestion.suggestion_type.value
+                type_stats = self.statistics['suggestion_type_performance'][type_key]
+                type_stats['count'] += 1
+                
+                if feedback == 'accepted':
+                    current_rate = type_stats['acceptance_rate']
+                    count = type_stats['count']
+                    type_stats['acceptance_rate'] = ((current_rate * (count - 1)) + 1.0) / count
+                else:
+                    current_rate = type_stats['acceptance_rate']
+                    count = type_stats['count']
+                    type_stats['acceptance_rate'] = (current_rate * (count - 1)) / count
+                
+                # Publish feedback event
+                self._publish_feedback_event(suggestion, feedback, feedback_data)
+                
+                self.logger.info(f"Processed feedback '{feedback}' for suggestion {suggestion_id}")
+                
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Feedback processing failed", {"error": str(e), "suggestion_id": suggestion_id})
+    
+    def _publish_feedback_event(self, suggestion: ProactiveSuggestion, feedback: str, feedback_data: Optional[Dict[str, Any]]):
+        """Publish user feedback event"""
+        try:
+            feedback_event = {
+                'timestamp': time.time(),
+                'suggestion_id': suggestion.suggestion_id,
+                'suggestion_type': suggestion.suggestion_type.value,
+                'feedback': feedback,
+                'suggestion_priority': suggestion.priority,
+                'feedback_data': feedback_data or {}
+            }
+            
+            self.suggestion_publisher.send_string(f"SUGGESTION_FEEDBACK {json.dumps(feedback_event)}")
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Feedback event publishing failed", {"error": str(e)})
+    
+    def cleanup_expired_suggestions(self):
+        """Remove expired suggestions"""
+        try:
+            current_time = time.time()
+            expired_ids = []
+            
+            for suggestion_id, suggestion in self.active_suggestions.items():
+                if suggestion.expires_at and current_time > suggestion.expires_at:
+                    expired_ids.append(suggestion_id)
+            
+            for suggestion_id in expired_ids:
+                expired_suggestion = self.active_suggestions.pop(suggestion_id)
+                self.suggestion_history.append(expired_suggestion)
+                self.logger.info(f"Expired suggestion {suggestion_id}")
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.WARNING, "Suggestion cleanup failed", {"error": str(e)})
+    
+    def get_active_suggestions(self) -> List[Dict[str, Any]]:
+        """Get all active suggestions"""
+        try:
+            suggestions = []
+            for suggestion in self.active_suggestions.values():
+                relevance = self.evaluate_suggestion_relevance(suggestion, {})
+                suggestions.append({
+                    'id': suggestion.suggestion_id,
+                    'type': suggestion.suggestion_type.value,
+                    'title': suggestion.title,
+                    'description': suggestion.description,
+                    'priority': suggestion.priority,
+                    'relevance': relevance,
+                    'actions': suggestion.actions,
+                    'created_at': suggestion.created_at,
+                    'expires_at': suggestion.expires_at
+                })
+            
+            # Sort by relevance and priority
+            suggestions.sort(key=lambda x: (x['relevance'], x['priority']), reverse=True)
+            return suggestions
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Error getting active suggestions", {"error": str(e)})
+            return []
+    
+    def process_context_update(self, context_data: Dict[str, Any]):
+        """Process context update and generate suggestions if appropriate"""
+        try:
+            if not self.should_generate_suggestion(context_data):
+                return
+            
+            # Analyze context for opportunities
+            opportunities = self.analyze_context(context_data)
+            
+            for opportunity in opportunities:
+                suggestion = self.generate_suggestion(opportunity, context_data)
+                if suggestion:
+                    self.active_suggestions[suggestion.suggestion_id] = suggestion
+                    
+                    # Publish new suggestion
+                    suggestion_event = {
+                        'timestamp': time.time(),
+                        'suggestion_id': suggestion.suggestion_id,
+                        'type': suggestion.suggestion_type.value,
+                        'title': suggestion.title,
+                        'description': suggestion.description,
+                        'priority': suggestion.priority,
+                        'actions': suggestion.actions
+                    }
+                    
+                    self.suggestion_publisher.send_string(f"NEW_SUGGESTION {json.dumps(suggestion_event)}")
+                    self.logger.info(f"Generated new suggestion: {suggestion.title}")
+            
+            # Cleanup expired suggestions
+            self.cleanup_expired_suggestions()
+            
+        except Exception as e:
+            self.report_error(ErrorSeverity.ERROR, "Context update processing failed", {"error": str(e)})
+    
+    async def start(self):
+        """Start the ProactiveAgent service"""
+        try:
+            self.logger.info(f"Starting ProactiveAgent on port {self.port}")
+            
+            # Start background monitoring
+            self.running = True
+            self.monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
+            self.monitoring_thread.start()
+            
+            self.logger.info("ProactiveAgent started successfully")
+            
+            # Keep the service running
+            while self.running:
+                await asyncio.sleep(1)
+                
+        except Exception as e:
+            self.report_error(ErrorSeverity.CRITICAL, "Failed to start ProactiveAgent", {"error": str(e)})
+            raise
+    
+    def _monitoring_loop(self):
+        """Background monitoring and suggestion generation loop"""
+        while self.running:
+            try:
+                # Periodic suggestion cleanup
+                self.cleanup_expired_suggestions()
+                
+                # Process any pending context updates
+                # This would typically be triggered by external events
+                
+                # Log statistics periodically
+                if self.statistics['suggestions_generated'] % 10 == 0 and self.statistics['suggestions_generated'] > 0:
+                    self.logger.info(f"Proactive statistics: {self.statistics}")
+                
+                time.sleep(self.suggestion_frequency)
+                
+            except Exception as e:
+                self.report_error(ErrorSeverity.WARNING, "Monitoring loop error", {"error": str(e)})
+                time.sleep(30)
+    
     def cleanup(self):
-        """Clean up resources when the agent is stopping."""
+        """Modern cleanup using try...finally pattern"""
+        self.logger.info("Starting ProactiveAgent cleanup...")
+        cleanup_errors = []
+        
         try:
-            # Close ZMQ sockets
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            if hasattr(self, 'coordinator_socket') and self.coordinator_socket:
-                self.coordinator_
-            if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
-                self.error_bus_pub.close()
+            # Stop background monitoring
+            self.running = False
+            if self.monitoring_thread and self.monitoring_thread.is_alive():
+                self.monitoring_thread.join(timeout=5)
             
-            # Terminate ZMQ context
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-            logger.info("Resources cleaned up")
-        except Exception as e:
-            logger.error(f"Error in cleanup: {str(e)}")
-
-    def health_check(self):
-        '''
-        Performs a health check on the agent, returning a dictionary with its status.
-        '''
-        try:
-            # Basic health check logic
-            is_healthy = self.running  # Assume healthy unless a check fails
+            # Save suggestion history if needed
+            try:
+                # Could save to file here if persistence is needed
+                pass
+            except Exception as e:
+                cleanup_errors.append(f"History save error: {e}")
             
-            # Check coordinator connection if needed
-            if self.coordinator_socket is None:
-                logger.warning("Coordinator socket not initialized")
-                # Don't mark as unhealthy, it might still be initializing
-
-            status_report = {
-                "status": "healthy" if is_healthy else "unhealthy",
-                "agent_name": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "uptime_seconds": time.time() - self.start_time,
-                "system_metrics": {
-                    "cpu_percent": psutil.cpu_percent(),
-                    "memory_percent": psutil.virtual_memory().percent
-                },
-                "agent_specific_metrics": {
-                    "tasks_count": len(self.tasks.get('tasks', [])),
-                    "reminders_count": len(self.tasks.get('reminders', [])),
-                    "coordinator_connected": self.coordinator_socket is not None
-                }
-            }
-            return status_report
-        except Exception as e:
-            # It's crucial to catch exceptions to prevent the health check from crashing
-            return {
-                "status": "unhealthy",
-                "agent_name": self.name,
-                "error": f"Health check failed with exception: {str(e)}"
-            }
+            # Close ZMQ resources
+            try:
+                if hasattr(self, 'suggestion_publisher'):
+                    self.suggestion_publisher.close()
+                if hasattr(self, 'context'):
+                    self.context.term()
+            except Exception as e:
+                cleanup_errors.append(f"ZMQ cleanup error: {e}")
+                
+        finally:
+            # Always call parent cleanup for BaseAgent resources
+            try:
+                super().cleanup()
+                self.logger.info("✅ ProactiveAgent cleanup completed")
+            except Exception as e:
+                cleanup_errors.append(f"BaseAgent cleanup error: {e}")
+        
+        if cleanup_errors:
+            self.logger.warning(f"Cleanup completed with {len(cleanup_errors)} errors: {cleanup_errors}")
 
 if __name__ == "__main__":
-    # Standardized main execution block
-    agent = None
+    import asyncio
+    
+    agent = ProactiveAgent()
+    
     try:
-        agent = ProactiveAgent()
-        agent.run()
+        asyncio.run(agent.start())
     except KeyboardInterrupt:
-        print(f"Shutting down {agent.name if agent else 'agent'}...")
+        agent.logger.info("ProactiveAgent interrupted by user")
     except Exception as e:
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
+        agent.logger.error(f"ProactiveAgent error: {e}")
     finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+        agent.cleanup()

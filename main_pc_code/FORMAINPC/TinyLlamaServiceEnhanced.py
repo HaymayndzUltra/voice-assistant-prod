@@ -244,12 +244,7 @@ class TinyLlamaService(BaseAgent):
         self.resource_manager = ResourceManager()
         self.model_state = ModelState.UNLOADED
         
-        # Setup error reporting
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Model configuration
         self.model_name = config.get("model_name", "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf")

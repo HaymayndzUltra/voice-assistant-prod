@@ -12,9 +12,9 @@ MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-aseAgent
-from common.config_manager import load_unified_config
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+from common.core.base_agent import BaseAgent
+from main_pc_code.utils.config_loader import load_config
+config = load_config()
 """
 Unified System Agent
 -------------------
@@ -71,53 +71,6 @@ def start_unified_system_agent():
         logger.exception("Unified System Agent crashed on startup: %s", str(e))
         raise
 
-class UnifiedSystemAgent(BaseAgent):
-    """Unified system management agent that handles orchestration, service discovery, and maintenance."""
-    
-    def __init__(self):
-        """Initialize the unified system agent."""
-        # Initialize basic properties before calling super().__init__()
-
-    
-        """Initialize the unified system agent."""
-
-    
-        try:
-
-    
-            logger.info("Starting UnifiedSystemAgent initialization...")
-
-    
-            self.start_time = time.time()
-
-    
-            # Initialize thread-safe data structures
-
-    
-            self.services_lock = threading.Lock()
-
-    
-            self.services = {}
-
-    
-            self.is_initialized = threading.Event()
-
-    
-            self.initialization_error = None
-
-    
-            # Initialize ZMQ context and sockets
-
-    
-            logger.info("Initializing ZMQ context...")
-
-    
-            self.context = None  # Using pool
-
-    
-            # ROUTER socket for main communication
-
-    
             logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
 
     
@@ -458,7 +411,7 @@ class UnifiedSystemAgent(BaseAgent):
             logger.info("Starting background initialization...")
             
             # Load configuration
-            self.config = self._load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+            self.config = self._load_config()
             logger.info("Configuration loaded successfully")
             
             # Discover services

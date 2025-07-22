@@ -45,8 +45,10 @@ import psutil
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from common.env_helpers import get_env
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -129,12 +131,7 @@ class FusedAudioPreprocessor(BaseAgent):
         # Initialize ZMQ context
         self.zmq_context = zmq.Context()
         
-        # Initialize error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", get_env("BIND_ADDRESS", "0.0.0.0")))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.zmq_context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         # Initialize sockets
         self._init_sockets()
@@ -169,7 +166,7 @@ class FusedAudioPreprocessor(BaseAgent):
     def _load_config(self):
         """Load configuration from config file if available."""
         try:
-            config_path = Path(join_path("config", "audio_preprocessing.json"))
+            config_path = Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "audio_preprocessing.json"
             if config_path.exists():
                 with open(config_path, 'r') as f:
                     config = json.load(f)
@@ -339,7 +336,7 @@ class FusedAudioPreprocessor(BaseAgent):
             logger.info(f"Using device: {self.device}")
             
             # Create model directory if it doesn't exist
-            model_dir = Path(join_path("models", "vad"))
+            model_dir = PathManager.get_project_root() / "models" / "vad"
             model_dir.mkdir(parents=True, exist_ok=True)
             
             # Download and load the model
@@ -963,6 +960,7 @@ if __name__ == "__main__":
         logger.info("FusedAudioPreprocessorAgent interrupted by user")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         logger.error(f"An unexpected error occurred in FusedAudioPreprocessorAgent: {e}")
         traceback.print_exc()
     finally:

@@ -32,8 +32,11 @@ from common.config_manager import load_unified_config
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+from common.utils.path_env import get_main_pc_code, get_project_root
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -43,7 +46,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "nlu_agent.log"))
+        logging.FileHandler(str(PathManager.get_logs_dir() / "nlu_agent.log"))
     ]
 )
 logger = logging.getLogger("NLUAgent")
@@ -118,9 +121,7 @@ class NLUAgent(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
     def _perform_initialization(self):
         """Perform ZMQ initialization in background."""
         try:
@@ -130,9 +131,7 @@ class NLUAgent(BaseAgent):
             self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
-            # Initialize Error Bus publisher after context creation
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
+            # Error reporting now handled by BaseAgent's UnifiedErrorHandler
             
             # Mark as initialized
             self.initialization_status.update({

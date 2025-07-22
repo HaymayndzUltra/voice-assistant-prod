@@ -122,11 +122,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         }
         
         # Use provided port or 
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
 
         self.pub_port = self.port if self.port else ZMQ_PUB_PORT
         logger.info(f"Using port {self.pub_port} for publishing")

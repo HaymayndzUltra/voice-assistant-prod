@@ -14,16 +14,17 @@ import hashlib
 from pathlib import Path
 from collections import defaultdict
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_pc2_code
 
 
 # Import path utilities
-from common.utils.path_env import get_path, join_path, get_file_path, get_pc2_code
+from common.utils.path_manager import PathManager
 from pathlib import Path
 
 # Ensure pc2_code directory is on PYTHONPATH
 PC2_CODE_DIR = Path(get_pc2_code())
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+if str(PC2_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(PC2_CODE_DIR))
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -466,7 +467,7 @@ def main():
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)

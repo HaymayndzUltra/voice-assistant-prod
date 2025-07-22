@@ -27,8 +27,10 @@ from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time
@@ -417,11 +419,7 @@ class PredictiveHealthMonitor(BaseAgent):
         
         logger.info("Predictive Health Monitor initialized")
 
-        self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
     def _create_tables(self) -> None:
         """Create necessary database tables."""
@@ -514,7 +512,7 @@ class PredictiveHealthMonitor(BaseAgent):
     def _load_agent_configs(self):
         """Load agent configurations from startup config"""
         try:
-            with open(join_path("config", "startup_config.yaml"), 'r') as f:
+            with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"), 'r') as f:
                 startup_config = yaml.safe_load(f)
             
             for agent in startup_config.get('agents', []):
@@ -1568,18 +1566,7 @@ class PredictiveHealthMonitor(BaseAgent):
             
         return health_status
 
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
 
 if __name__ == "__main__":
     # Standardized main execution block
@@ -1591,6 +1578,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

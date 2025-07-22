@@ -41,8 +41,10 @@ from main_pc_code.utils import model_client
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -71,7 +73,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=join_path("logs", "local_fine_tuner.log")
+    filename=str(PathManager.get_logs_dir() / "local_fine_tuner.log")
 )
 logger = logging.getLogger(__name__)
 
@@ -120,7 +122,7 @@ class LocalFineTunerAgent(BaseAgent):
             "database_status": "ok"
         }
         # Database setup
-        self.db_path = join_path("data", "local_fine_tuner.db")
+        self.db_path = str(PathManager.get_data_dir() / "local_fine_tuner.db")
         self._init_db()
         # Job management
         self.active_jobs = {}
@@ -140,15 +142,7 @@ class LocalFineTunerAgent(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
 
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
         
     def _init_db(self):
         """Initialize the SQLite database."""
@@ -836,6 +830,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

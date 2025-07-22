@@ -1,10 +1,10 @@
 version: '3.8'
 
-# MainPC Docker Compose - Primary Monitoring Hub (RTX 4090)
-# Architecture: Centralized observability with full analytics
-
 services:
-  # Redis - Shared data store
+  # ============================================================================
+  # INFRASTRUCTURE SERVICES (SOLO)
+  # ============================================================================
+  
   redis:
     image: redis:7-alpine
     container_name: mainpc-redis
@@ -12,143 +12,45 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    restart: unless-stopped
     networks:
       - ai_system_network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Primary ObservabilityHub - Full monitoring + analytics
+  # ============================================================================
+  # SOLO OBSERVABILITY HUB (MONITORING INFRASTRUCTURE)
+  # ============================================================================
+  
   observability-hub-primary:
     build:
-      context: ../..
+      context: ../../
       dockerfile: docker/mainpc/Dockerfile.observability
     container_name: mainpc-observability-hub
     ports:
-      - "9000:9000"   # Main API
-      - "9100:9100"   # Health checks
-      - "9090:9090"   # Prometheus metrics
-      - "7152:7152"   # ZMQ broadcasting
-    environment:
-      - HUB_MODE=primary
-      - MONITOR_SCOPE=all_systems
-      - MACHINE_TYPE=mainpc
-      - MACHINE_IP=192.168.100.16
-      - PC2_ENDPOINT=http://192.168.100.17:9000
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
-      - PROMETHEUS_ENABLED=true
-      - PARALLEL_HEALTH_CHECKS=true
-      - PREDICTION_ENABLED=true
-      - CROSS_MACHINE_SYNC=true
+      - "9000:9000"     # API
+      - "9100:9100"     # Health
+      - "9090:9090"     # Prometheus
+      - "7152:7152"     # ZMQ
     volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./cache:/app/cache
-      - ./models:/app/models
-      - ./main_pc_code/config:/app/main_pc_code/config:ro
-      - ./pc2_code/config:/app/pc2_code/config:ro
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../cache:/app/cache
+      - ../../models:/app/models
+      - ../../config:/app/config
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - ai_system_network
-    depends_on:
-      - redis
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-  # Core Services Group
-  service-registry:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile.agent
-    container_name: mainpc-service-registry
-    ports:
-      - "7200:7200"
-      - "8200:8200"
-    environment:
-      - AGENT_NAME=ServiceRegistry
-      - AGENT_PORT=7200
-      - HEALTH_CHECK_PORT=8200
-      - AGENT_GROUP=core_services
-      - REDIS_HOST=redis
-      - PYTHONPATH=/app
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./main_pc_code/config:/app/main_pc_code/config:ro
-    networks:
-      - ai_system_network
-    depends_on:
-      - redis
-      - observability-hub-primary
-    restart: unless-stopped
-    command: python3 main_pc_code/agents/service_registry_agent.py
-
-  system-digital-twin:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile.agent
-    container_name: mainpc-system-digital-twin
-    ports:
-      - "7220:7220"
-      - "8220:8220"
-    environment:
-      - AGENT_NAME=SystemDigitalTwin
-      - AGENT_PORT=7220
-      - HEALTH_CHECK_PORT=8220
-      - AGENT_GROUP=core_services
-      - REDIS_HOST=redis
-      - PYTHONPATH=/app
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./main_pc_code/config:/app/main_pc_code/config:ro
-    networks:
-      - ai_system_network
-    depends_on:
-      - service-registry
-    restart: unless-stopped
-    command: python3 main_pc_code/agents/system_digital_twin.py
-
-  # Model Manager Suite
-  model-manager-suite:
-    build:
-      context: ../..
-      dockerfile: docker/mainpc/Dockerfile.agent
-    container_name: mainpc-model-manager
-    ports:
-      - "7211:7211"
-      - "8211:8211"
-    environment:
-      - AGENT_NAME=ModelManagerSuite
-      - AGENT_PORT=7211
-      - HEALTH_CHECK_PORT=8211
-      - AGENT_GROUP=core_services
-      - REDIS_HOST=redis
-      - PYTHONPATH=/app
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./models:/app/models
-      - ./main_pc_code/config:/app/main_pc_code/config:ro
-    networks:
-      - ai_system_network
-    depends_on:
-      - system-digital-twin
-    restart: unless-stopped
-    command: python3 main_pc_code/model_manager_suite.py
     deploy:
       resources:
         reservations:
@@ -156,6 +58,207 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
+  # ============================================================================
+  # CORE INFRASTRUCTURE SERVICES (SOLO)
+  # ============================================================================
+  
+  service-registry:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent
+    container_name: mainpc-service-registry
+    ports:
+      - "7200:7200"
+      - "8200:8200"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    command: ["python", "-m", "main_pc_code.agents.service_registry_agent"]
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+
+  system-digital-twin:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent
+    container_name: mainpc-system-digital-twin
+    ports:
+      - "7220:7220"
+      - "8220:8220"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    command: ["python", "-m", "main_pc_code.agents.system_digital_twin"]
+    depends_on:
+      - service-registry
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+
+  # ============================================================================
+  # AGENT GROUPS (GROUPED SERVICES)
+  # ============================================================================
+
+  # CORE SERVICES GROUP (6 agents)
+  core-services-group:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent-group
+      args:
+        GROUP_NAME: core_services
+    container_name: mainpc-core-services
+    ports:
+      - "26002:26002"  # RequestCoordinator
+      - "7225:7225"    # UnifiedSystemAgent  
+      - "7211:7211"    # ModelManagerSuite
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../models:/app/models
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - system-digital-twin
+      - observability-hub-primary
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # MEMORY SYSTEM GROUP (3 agents)
+  memory-system-group:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent-group
+      args:
+        GROUP_NAME: memory_system
+    container_name: mainpc-memory-system
+    ports:
+      - "5713:5713"  # MemoryClient
+      - "5574:5574"  # SessionMemoryAgent
+      - "5715:5715"  # KnowledgeBase
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - core-services-group
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+
+  # UTILITY SERVICES GROUP (8 agents)
+  utility-services-group:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent-group
+      args:
+        GROUP_NAME: utility_services
+    container_name: mainpc-utility-services
+    ports:
+      - "5650:5650"  # CodeGenerator
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "5613:5613"  # PredictiveHealthMonitor
+      - "5584:5584"  # FixedStreamingTranslation
+      - "5606:5606"  # Executor
+      - "5615:5615"  # TinyLlamaServiceEnhanced
+      - "5642:5642"  # LocalFineTunerAgent
+      - "5581:5581"  # NLLBAdapter
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../models:/app/models
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - core-services-group
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # LANGUAGE PROCESSING GROUP (11 agents)
+  language-processing-group:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent-group
+      args:
+        GROUP_NAME: language_processing
+    container_name: mainpc-language-processing
+    ports:
+      - "7213:7213"  # ModelOrchestrator
+      - "7205:7205"  # GoalManager
+      - "5701:5701"  # IntentionValidatorAgent
+      - "5709:5709"  # NLUAgent
+      - "5710:5710"  # AdvancedCommandHandler
+      - "5711:5711"  # ChitchatAgent
+      - "5636:5636"  # FeedbackHandler
+      - "5637:5637"  # Responder
+      - "5595:5595"  # TranslationService
+      - "5802:5802"  # DynamicIdentityAgent
+      - "5706:5706"  # EmotionSynthesisAgent
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../models:/app/models
+    environment:
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - memory-system-group
+      - utility-services-group
+    restart: unless-stopped
+    networks:
+      - ai_system_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# ============================================================================
+# VOLUMES AND NETWORKS
+# ============================================================================
 
 volumes:
   redis_data:
@@ -167,5 +270,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1 
+        - subnet: 172.20.0.0/16 

@@ -17,17 +17,20 @@ import base64
 import io
 from datetime import datetime
 from typing import Dict, Any, Optional
+from pathlib import Path
 from PIL import Image
 
 
 # Import path utilities
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+from common.utils.path_env import get_project_root
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_project_root()
 if PC2_CODE_DIR not in sys.path:
     sys.path.insert(0, PC2_CODE_DIR)
 
 from common.core.base_agent import BaseAgent
+from pc2_code.utils.config_loader import parse_agent_args
 import psutil
 
 # Standard imports for PC2 agents
@@ -40,7 +43,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "vision_processing_agent.log"))
+        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / "vision_processing_agent.log")
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")
@@ -68,7 +71,7 @@ class VisionProcessingAgent(BaseAgent):
         self.running = True
         
         # Create output directory if it doesn't exist
-        self.output_dir = join_path("data", "vision_output")
+        self.output_dir = Path(PathManager.get_project_root()) / "data" / "vision_output"
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")

@@ -14,8 +14,10 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the parent directory to sys.path to import the config module
 from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 
@@ -58,7 +60,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Load configuration
-with open(join_path("config", "face_recognition_config.json"), "r") as f:
+with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "face_recognition_config.json"), "r") as f:
     CONFIG = json.load(f)["face_recognition"]
 
 LOG_PATH = "face_recognition_agent.log"
@@ -734,6 +736,7 @@ if __name__ == "__main__":
         logging.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         logging.error(f"An unexpected error occurred in {agent.name if agent else 'FaceRecognitionAgent'}: {e}")
         traceback.print_exc()
     finally:

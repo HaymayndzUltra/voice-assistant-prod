@@ -33,8 +33,10 @@ from collections import defaultdict
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 
@@ -79,15 +81,7 @@ class VramOptimizerAgent(BaseAgent):
         # Advanced management
         self.memory_pool = {}
         # TODO: Fix incomplete statement
-        self.error_bus_port = 7150
 
-        self.error_bus_host = get_service_ip("pc2")
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
 
         # Defragmentation threshold configuration
         self.defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
@@ -141,7 +135,7 @@ class VramOptimizerAgent(BaseAgent):
         """
         try:
             # Try to find config file in standard location
-            config_path = Path(join_path("config", "startup_config.yaml"))
+            config_path = Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"
             if not config_path.exists():
                 # Try relative to parent directory
                 config_path = Path(__file__).parent.parent / "config" / "startup_config.yaml"
@@ -1234,6 +1228,7 @@ class VramOptimizerAgent(BaseAgent):
         # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
+from common.utils.path_env import get_main_pc_code, get_project_root
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

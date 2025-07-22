@@ -227,11 +227,10 @@ def get_main_pc_code():
     main_pc_code_dir = current_dir.parent
     return main_pc_code_dir
 
-def join_path(*args):
-    return os.path.join(*args)
+from pathlib import Path
+from common.utils.path_manager import PathManager
 
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from common.utils.learning_models import PerformanceMetric, ModelEvaluationScore
@@ -533,7 +532,7 @@ class ModelManagerSuite(BaseAgent):
     
     def _init_evaluation_framework(self):
         """Initialize model evaluation framework"""
-        self.db_path = self.config.get('mef_db_path', join_path("data", "model_evaluation.db"))
+        self.db_path = self.config.get('mef_db_path', str(PathManager.get_data_dir() / "model_evaluation.db"))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
@@ -559,12 +558,8 @@ class ModelManagerSuite(BaseAgent):
         logger.info(f"ZMQ initialized - Main: {self.port}, Health: {self.health_check_port}")
     
     def _init_error_reporting(self):
-        """Initialize error reporting system"""
-        self.error_bus_port = self.config.get('error_bus_port', 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', self.config.get('error_bus_host', '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        """Initialize error reporting system - now using BaseAgent.report_error()"""
+        pass
     
     def _init_circuit_breakers(self):
         """Initialize circuit breakers for downstream services"""

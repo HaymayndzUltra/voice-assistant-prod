@@ -1,190 +1,156 @@
-from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 """
-Error Bus Integration Template
-
-This file provides a standardized template for integrating PC2 agents with the 
-central Error Bus service. This template ensures consistent error reporting across
-all agents in the distributed AI system.
-
-Usage:
-1. Import the setup_error_reporting function
-2. Call the function in your agent's __init__ method
-3. Use the report_error method to send errors to the Error Bus
-
-Example:
-    from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
-    
-    class MyAgent(BaseAgent):
-        
-    # Parse agent arguments
-    _agent_args = parse_agent_args()def __init__(self):
-            super().__init__(name="MyAgent", port=5555)
-            self.error_bus = setup_error_reporting(self)
-            
-        def some_method(self):
-            try:
-                # Some code that might fail
-                pass
-            except Exception as e:
-                report_error(self.error_bus, "operation_failed", str(e), "ERROR", {"details": "Additional context"})
+PC2 Error Bus Template
+Simple error reporting interface for PC2 agents
+Provides compatibility layer for agents that haven't been modernized to use BaseAgent
 """
 
-import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
-import time
 import logging
+import sys
 import traceback
-from typing import Dict, Any, Optional, Union
+from typing import Optional, Dict, Any
+from datetime import datetime
 
-# Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
-# Removed circular import - functions are defined in this file
+# Initialize logger
+logger = logging.getLogger("PC2ErrorBus")
 
+# Global error reporting state
+_error_reporting_initialized = False
+_error_count = 0
 
-# Configure logging
-logger = logging.getLogger(__name__)
-
-def setup_error_reporting(agent, error_bus_port: int = 7150) -> Optional[Dict[str, Any]]:
+def setup_error_reporting(agent_name: str = "Unknown", **kwargs) -> bool:
     """
-    Set up error reporting for an agent.
+    Setup error reporting for a PC2 agent
     
     Args:
-        agent: The agent instance (must have zmq.Context as self.context)
-        error_bus_port: Port for the central Error Bus service
+        agent_name: Name of the agent setting up error reporting
+        **kwargs: Additional configuration options
         
     Returns:
-        Optional[Dict[str, Any]]: Error bus configuration or None if setup failed
+        bool: True if setup successful, False otherwise
     """
-    # Get PC2_IP from environment or use default
-    error_bus_host = get_service_ip("pc2")
-    error_bus_endpoint = f"tcp://{error_bus_host}:{error_bus_port}"
-    
-    # Create PUB socket using the agent's ZMQ context
-    try:
-        error_bus_pub = agent.context.socket(zmq.PUB)
-        error_bus_pub.connect(error_bus_endpoint)
-        logger.info(f"Connected to Error Bus at {error_bus_endpoint}")
-        
-        # Return configuration for future use
-        return {
-            "socket": error_bus_pub,
-            "endpoint": error_bus_endpoint,
-            "host": error_bus_host,
-            "port": error_bus_port
-        }
-    except Exception as e:
-        logger.error(f"Failed to connect to Error Bus: {e}")
-        # Return None to indicate setup failure
-        return None
-
-def report_error(error_bus: Optional[Dict[str, Any]], error_type: str, message: str, 
-               severity: str = "ERROR", details: Optional[Dict[str, Any]] = None) -> bool:
-    """
-    Report an error to the central Error Bus.
-    
-    Args:
-        error_bus: Error bus configuration from setup_error_reporting
-        error_type: Type of error (e.g., "connection_error", "timeout", etc.)
-        message: Error message
-        severity: Error severity ("INFO", "WARNING", "ERROR", "CRITICAL")
-        details: Additional error details (optional)
-    
-    Returns:
-        bool: True if error was sent successfully, False otherwise
-    """
-    if not error_bus or "socket" not in error_bus:
-        logger.warning("Error bus not configured, error not reported")
-        return False
+    global _error_reporting_initialized
     
     try:
-        # Get the agent name from the error_bus object if available
-        agent_name = getattr(error_bus.get("agent", None), "name", "unknown")
+        # Simple setup - just ensure logging is configured
+        if not logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            formatter = logging.Formatter(
+                '%(asctime)s - PC2ErrorBus - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
         
-        # Prepare error data
-        error_data = {
-            "timestamp": time.time(),
-            "agent": agent_name,
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "details": details or {}
-        }
-        
-        # Add stack trace if available and this is an ERROR or CRITICAL
-        if severity in ("ERROR", "CRITICAL"):
-            error_data["details"]["stack_trace"] = traceback.format_exc()
-        
-        # Format message for Error Bus (ERROR: prefix + JSON)
-        error_message = f"ERROR:{json.dumps(error_data)}"
-        
-        # Send to Error Bus
-        error_bus["socket"].send_string(error_message)
+        _error_reporting_initialized = True
+        logger.info(f"Error reporting setup completed for agent: {agent_name}")
         return True
+        
     except Exception as e:
-        logger.error(f"Failed to report error to Error Bus: {e}")
+        print(f"Failed to setup error reporting for {agent_name}: {e}")
         return False
 
-def cleanup_error_reporting(error_bus: Optional[Dict[str, Any]]) -> None:
+def report_error(
+    message: str, 
+    severity: str = "ERROR", 
+    agent_name: str = "Unknown",
+    error_type: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    **kwargs
+) -> bool:
     """
-    Clean up error reporting resources.
+    Report an error through the error bus
     
     Args:
-        error_bus: Error bus configuration from setup_error_reporting
-    """
-    if error_bus and "socket" in error_bus:
-        try:
-            error_bus["socket"].close()
-        except Exception as e:
-            logger.warning(f"Error closing Error Bus socket: {e}")
-
-# Example decorator for error reporting
-def report_errors(error_type: str = "function_error", severity: str = "ERROR"):
-    """
-    Decorator to automatically report errors from a function.
-    
-    Args:
-        error_type: Type of error to report
-        severity: Error severity level
-    
-    Example:
-        @report_errors(error_type="database_error", severity="CRITICAL")
-        def database_operation(self):
-            # Function implementation
-    """
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                # Try to access error_bus attribute
-                if hasattr(self, "error_bus"):
-                    report_error(
-                        self.error_bus,
-                        error_type,
-                        f"Error in {func.__name__}: {str(e)}",
-                        severity,
-                        {"function": func.__name__, "args": str(args), "kwargs": str(kwargs)}
-                    )
-                # Re-raise the exception
-                raise
-        return wrapper
-    return decorator 
-    def _get_health_status(self) -> Dict[str, Any]:
-        """
-        Get the health status of the agent.
+        message: Error message
+        severity: Error severity (ERROR, WARNING, INFO, etc.)
+        agent_name: Name of the agent reporting the error
+        error_type: Type/category of error
+        details: Additional error details
+        **kwargs: Additional parameters
         
-        Returns:
-            Dict[str, Any]: Health status information
-        """
-        return {
-            "status": "ok",
-            "uptime": time.time() - self.start_time,
-            "name": self.name,
-            "version": getattr(self, "version", "1.0.0"),
-            "port": self.port,
-            "health_port": getattr(self, "health_port", None),
-            "error_reporting": bool(getattr(self, "error_bus", None))
+    Returns:
+        bool: True if error reported successfully, False otherwise
+    """
+    global _error_count
+    
+    try:
+        _error_count += 1
+        
+        # Format error message
+        timestamp = datetime.now().isoformat()
+        error_info = {
+            "timestamp": timestamp,
+            "agent": agent_name,
+            "severity": severity.upper(),
+            "message": message,
+            "error_type": error_type or "UnknownError",
+            "details": details or {},
+            "error_id": _error_count
         }
+        
+        # Log the error
+        log_message = f"[{agent_name}] {severity}: {message}"
+        if error_type:
+            log_message += f" (Type: {error_type})"
+        
+        # Log based on severity
+        if severity.upper() in ["ERROR", "CRITICAL"]:
+            logger.error(log_message)
+        elif severity.upper() == "WARNING":
+            logger.warning(log_message)
+        else:
+            logger.info(log_message)
+        
+        # Add stack trace for errors
+        if severity.upper() in ["ERROR", "CRITICAL"]:
+            stack_trace = traceback.format_stack()
+            logger.debug(f"Stack trace for error {_error_count}: {''.join(stack_trace)}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Failed to report error from {agent_name}: {e}")
+        return False
+
+def cleanup_error_reporting(agent_name: str = "Unknown") -> bool:
+    """
+    Cleanup error reporting resources for an agent
+    
+    Args:
+        agent_name: Name of the agent cleaning up
+        
+    Returns:
+        bool: True if cleanup successful, False otherwise
+    """
+    try:
+        logger.info(f"Error reporting cleanup completed for agent: {agent_name}")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to cleanup error reporting for {agent_name}: {e}")
+        return False
+
+# Compatibility aliases for different naming conventions
+setup_error_bus = setup_error_reporting
+report_error_to_bus = report_error
+cleanup_error_bus = cleanup_error_reporting
+
+# Module-level initialization
+if __name__ == "__main__":
+    # Test the module
+    print("Testing PC2 Error Bus Template...")
+    
+    # Test setup
+    success = setup_error_reporting("TestAgent")
+    print(f"Setup: {'✅' if success else '❌'}")
+    
+    # Test error reporting
+    success = report_error("Test error message", "ERROR", "TestAgent")
+    print(f"Error Report: {'✅' if success else '❌'}")
+    
+    # Test cleanup
+    success = cleanup_error_reporting("TestAgent")
+    print(f"Cleanup: {'✅' if success else '❌'}")
+    
+    print("PC2 Error Bus Template test completed!") 

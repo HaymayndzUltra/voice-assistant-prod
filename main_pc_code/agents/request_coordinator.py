@@ -20,12 +20,13 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Imports from Project ---
 from common.core.base_agent import BaseAgent
@@ -174,13 +175,7 @@ class RequestCoordinator(BaseAgent):
         self.context = None  # Using pool
         self._init_zmq_sockets()
 
-        # Error Bus PUB socket (connect to PC2 error bus)
-        self.error_bus_port = 7150  # Should match config on PC2
-        self.error_bus_host = get_service_ip("pc2")
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-        logger.info(f"Error Bus PUB socket connected to {self.error_bus_endpoint}")
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         self.running = True
         self.start_time = time.time()
@@ -213,7 +208,7 @@ class RequestCoordinator(BaseAgent):
             "last_updated": datetime.now().isoformat()
         }
         self.metrics_lock = threading.Lock()
-        self.metrics_file = join_path("logs", "request_coordinator_metrics.json")
+        self.metrics_file = str(PathManager.get_logs_dir() / "request_coordinator_metrics.json")
         self.last_metrics_log = time.time()
         self.last_metrics_save = time.time()
         self._load_metrics()
@@ -829,14 +824,7 @@ class RequestCoordinator(BaseAgent):
         except KeyboardInterrupt:
             self.stop()
 
-    def report_error(self, error_data: dict):
-        """Publish error to the Error Bus (topic 'ERROR:')."""
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-            logger.info(f"Published error to Error Bus: {error_data}")
-        except Exception as e:
-            logger.error(f"Failed to publish error to Error Bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Request Coordinator Agent')

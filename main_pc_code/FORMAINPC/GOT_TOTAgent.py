@@ -37,14 +37,16 @@ except ImportError:
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from main_pc_code.utils import model_client
 import sys
 import os
 
 # Setup logging
-LOG_PATH = join_path("logs", "got_tot_agent.log")
+LOG_PATH = str(PathManager.get_logs_dir() / "got_tot_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -393,6 +395,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
