@@ -38,6 +38,9 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Import unified error handling (replaces direct NATS import)
 from common.error_bus.unified_error_handler import UnifiedErrorHandler, create_unified_error_handler
 
+# Import Prometheus metrics support
+from common.utils.prometheus_exporter import create_agent_exporter, PrometheusExporter
+
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -100,6 +103,9 @@ class BaseAgent:
         
         # Set up logging directory using PathManager
         self._setup_logging()
+        
+        # Initialize Prometheus metrics exporter
+        self._setup_prometheus_metrics(kwargs)
         
         # Initialize standardized health checker
         self.health_checker = StandardizedHealthChecker(
@@ -169,6 +175,56 @@ class BaseAgent:
             "backup_count": 5,
             "rotation_enabled": True
         })
+    
+    def _setup_prometheus_metrics(self, kwargs: Dict[str, Any]):
+        """Initialize Prometheus metrics exporter for the agent."""
+        try:
+            # Check if metrics are enabled (default: True)
+            enable_metrics = kwargs.get('enable_prometheus_metrics', 
+                                       os.getenv('ENABLE_PROMETHEUS_METRICS', 'true').lower() == 'true')
+            
+            if enable_metrics:
+                # Create Prometheus exporter
+                self.prometheus_exporter = create_agent_exporter(
+                    agent_name=self.name,
+                    agent_port=self.port,
+                    enable_system_metrics=kwargs.get('enable_system_metrics', True)
+                )
+                
+                if self.prometheus_exporter:
+                    # Set initial health status
+                    self.prometheus_exporter.set_health_status('starting')
+                    
+                    # Record agent initialization
+                    self.prometheus_exporter.record_request(
+                        method='initialization',
+                        endpoint='agent_startup',
+                        status='success',
+                        duration=time.time() - self.start_time
+                    )
+                    
+                    self.logger.info("Prometheus metrics exporter initialized", extra={
+                        "metrics_enabled": True,
+                        "metrics_port": self.http_health_port,
+                        "agent_port": self.port,
+                        "component": "prometheus_metrics"
+                    })
+                else:
+                    self.logger.warning("Failed to initialize Prometheus exporter")
+                    self.prometheus_exporter = None
+            else:
+                self.prometheus_exporter = None
+                self.logger.info("Prometheus metrics disabled", extra={
+                    "metrics_enabled": False,
+                    "component": "prometheus_metrics"
+                })
+                
+        except Exception as e:
+            self.logger.error(f"Error setting up Prometheus metrics: {e}", extra={
+                "error": str(e),
+                "component": "prometheus_metrics"
+            })
+            self.prometheus_exporter = None
     
     def _setup_graceful_shutdown(self):
         """Setup graceful shutdown handlers for SIGTERM and SIGINT signals."""
@@ -313,6 +369,11 @@ class BaseAgent:
                 }
                 self.health_checker.set_agent_ready(initialization_details)
                 logger.info(f"✅ {self.name} marked as ready in Redis")
+                
+                # Update Prometheus health status to healthy
+                if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                    self.prometheus_exporter.set_health_status('healthy')
+                    logger.debug(f"Prometheus health status set to healthy for {self.name}")
             except Exception as e:
                 logger.warning(f"Failed to set ready signal for {self.name}: {e}")
     
@@ -593,6 +654,14 @@ class BaseAgent:
             logger.info(f"🛑 {self.name} marked as not ready in Redis")
         except Exception as e:
             logger.warning(f"Failed to remove ready signal for {self.name}: {e}")
+        
+        # Cleanup Prometheus metrics
+        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+            try:
+                self.prometheus_exporter.cleanup()
+                logger.info(f"✅ Prometheus metrics exporter cleaned up for {self.name}")
+            except Exception as e:
+                logger.warning(f"Failed to cleanup Prometheus exporter for {self.name}: {e}")
         
         # Close unified error handler
         if self.unified_error_handler:
@@ -1114,17 +1183,103 @@ class BaseAgent:
         logger.info(f"Graceful shutdown completed for {self.name}") 
 
     def _start_http_health_server(self):
-        """Start a simple HTTP server for health checks on separate port to avoid ZMQ conflict."""
+        """Start a simple HTTP server for health checks and metrics on separate port to avoid ZMQ conflict."""
         class HealthHandler(BaseHTTPRequestHandler):
             def do_GET(s):
+                start_time = time.time()
+                
                 if s.path == '/health':
-                    s.send_response(200)
-                    s.send_header('Content-type', 'application/json')
-                    s.end_headers()
-                    status = self._get_health_status()
-                    s.wfile.write(json.dumps(status).encode())
+                    try:
+                        s.send_response(200)
+                        s.send_header('Content-type', 'application/json')
+                        s.end_headers()
+                        status = self._get_health_status()
+                        s.wfile.write(json.dumps(status).encode())
+                        
+                        # Record metrics if available
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/health',
+                                status='200',
+                                duration=duration
+                            )
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('health_endpoint_error', 'error')
+                
+                elif s.path == '/metrics':
+                    try:
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            # Generate Prometheus metrics
+                            metrics_data = self.prometheus_exporter.export_metrics()
+                            content_type = self.prometheus_exporter.get_metrics_content_type()
+                            
+                            s.send_response(200)
+                            s.send_header('Content-type', content_type)
+                            s.end_headers()
+                            s.wfile.write(metrics_data.encode())
+                            
+                            # Record metrics request
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/metrics',
+                                status='200',
+                                duration=duration
+                            )
+                        else:
+                            # Metrics not available
+                            s.send_response(503)
+                            s.send_header('Content-type', 'text/plain')
+                            s.end_headers()
+                            s.wfile.write(b"Prometheus metrics not enabled or available")
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('metrics_endpoint_error', 'error')
+                
+                elif s.path == '/metrics/summary':
+                    try:
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            # Generate metrics summary for debugging
+                            summary = self.prometheus_exporter.get_metrics_summary()
+                            
+                            s.send_response(200)
+                            s.send_header('Content-type', 'application/json')
+                            s.end_headers()
+                            s.wfile.write(json.dumps(summary, indent=2).encode())
+                            
+                            # Record metrics summary request
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/metrics/summary',
+                                status='200',
+                                duration=duration
+                            )
+                        else:
+                            s.send_response(503)
+                            s.send_header('Content-type', 'application/json')
+                            s.end_headers()
+                            s.wfile.write(json.dumps({"error": "Metrics not available"}).encode())
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('metrics_summary_error', 'error')
+                
                 else:
                     s.send_error(404)
+                    if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                        duration = time.time() - start_time
+                        self.prometheus_exporter.record_request(
+                            method='GET',
+                            endpoint=s.path,
+                            status='404',
+                            duration=duration
+                        )
             
             def log_message(self, format, *args):
                 # Suppress HTTP server logs to reduce noise

@@ -1,11 +1,11 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-Agent Utilities
+Agent Utilities - UPDATED for BaseAgent Integration
 - Shared utilities for all agents
 - ZMQ communication helpers
 - Configuration management
 - Logging utilities
 - Error handling
+- DEPRECATION WARNING: AgentBase is deprecated, use common.core.base_agent.BaseAgent instead
 """
 import zmq
 import json
@@ -14,29 +14,29 @@ import logging
 import sys
 import os
 import traceback
+import warnings
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Callable
 import threading
 import uuid
 
+# Import standardized BaseAgent
+from common.core.base_agent import BaseAgent
+from common.utils.path_manager import PathManager
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.logger_util import get_json_logger
+
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
-from pc2_code.config.system_config import config
 
-# Configure logging
-log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "agent_utils.log"
-log_file.parent.mkdir(exist_ok=True)
+try:
+    from pc2_code.config.system_config import config
+except ImportError:
+    # Fallback config if system_config is not available
+    config = {'system': {'log_level': 'INFO', 'logs_dir': 'logs'}}
 
-logging.basicConfig(
-    level=getattr(logging, log_level),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("AgentUtils")
+# Configure logging with standardized logger
+logger = get_json_logger("AgentUtils")
 
 class ZMQClient:
     """ZMQ client for agent communication"""
@@ -48,7 +48,11 @@ class ZMQClient:
         self.timeout = timeout
         self.endpoint = endpoint
         
-        logger.info(f"ZMQ client connected to {endpoint}")
+        logger.info("ZMQ client connected", extra={
+            "endpoint": endpoint,
+            "socket_type": socket_type,
+            "component": "zmq_client"
+        })
     
     def send_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send a request and wait for response"""
@@ -63,204 +67,124 @@ class ZMQClient:
             if poller.poll(self.timeout):
                 response_str = self.socket.recv_string()
                 response = json.loads(response_str)
+                
+                logger.info("Request processed successfully", extra={
+                    "endpoint": self.endpoint,
+                    "request_type": request.get("request_type", "unknown"),
+                    "component": "zmq_client"
+                })
+                
                 return response
             else:
-                logger.error(f"Timeout waiting for response from {self.endpoint}")
-                return {"status": "error", "error": f"Timeout waiting for response from {self.endpoint}"}
+                error_msg = f"Timeout waiting for response from {self.endpoint}"
+                logger.error(error_msg, extra={
+                    "endpoint": self.endpoint,
+                    "timeout": self.timeout,
+                    "component": "zmq_client"
+                })
+                return {"status": "error", "error": error_msg}
         
         except Exception as e:
-            logger.error(f"Error sending request to {self.endpoint}: {str(e)}")
+            logger.error("Error sending request", extra={
+                "endpoint": self.endpoint,
+                "error": str(e),
+                "component": "zmq_client"
+            })
             return {"status": "error", "error": str(e)}
     
     def close(self):
         """Close the socket"""
         self.socket.close()
-        logger.info(f"ZMQ client disconnected from {self.endpoint}")
+        logger.info("ZMQ client disconnected", extra={
+            "endpoint": self.endpoint,
+            "component": "zmq_client"
+        })
 
 class ZMQServer:
     """ZMQ server for agent communication"""
-    def __init__(self, port: int, socket_type: int = zmq.REP, handler: Optional[Callable] = None):
+    def __init__(self, port: int, socket_type: int = zmq.REP):
         """Initialize ZMQ server"""
         self.context = zmq.Context()
         self.socket = self.context.socket(socket_type)
-        self.socket.bind(f"tcp://0.0.0.0:{port}")
-        self.port = port
-        self.handler = handler
-        self.running = threading.Event()
-        self.running.set()
-        
-        logger.info(f"ZMQ server bound to port {port}")
-    
-    def start(self):
-        """Start the server in a background thread"""
-        self.thread = threading.Thread(target=self._run)
-        self.thread.daemon = True
-        self.thread.start()
-        
-        logger.info(f"ZMQ server started on port {self.port}")
-    
-    def _run(self):
-        """Run the server loop"""
-        while self.running.is_set():
-            try:
-                # Set timeout to allow checking running flag
-                poller = zmq.Poller()
-                poller.register(self.socket, zmq.POLLIN)
-                
-                if poller.poll(1000):  # 1 second timeout
-                    # Receive request
-                    request_str = self.socket.recv_string()
-                    
-                    try:
-                        request = json.loads(request_str)
-                        
-                        # Handle request
-                        if self.handler:
-                            response = self.handler(request)
-                        else:
-                            response = {"status": "error", "error": "No handler registered"}
-                    
-                    except json.JSONDecodeError:
-                        response = {"status": "error", "error": "Invalid JSON in request"}
-                    except Exception as e:
-                        logger.error(f"Error handling request: {str(e)}")
-                        response = {"status": "error", "error": str(e)}
-                    
-                    # Send response
-                    self.socket.send_string(json.dumps(response))
-            
-            except zmq.Again:
-                # Timeout, continue loop
-                pass
-            except Exception as e:
-                logger.error(f"Error in server loop: {str(e)}")
-                traceback.print_exc()
-    
-    def stop(self):
-        """Stop the server"""
-        self.running.clear()
-        
-        if hasattr(self, 'thread') and self.thread.is_alive():
-            self.thread.join(timeout=2)
-        
-        self.socket.close()
-        logger.info(f"ZMQ server stopped on port {self.port}")
-
-class ZMQPublisher:
-    """ZMQ publisher for broadcasting messages"""
-    def __init__(self, port: int):
-        """Initialize ZMQ publisher"""
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.PUB)
-        self.socket.bind(f"tcp://0.0.0.0:{port}")
+        self.socket.bind(f"tcp://*:{port}")
         self.port = port
         
-        # Sleep briefly to allow subscribers to connect
-        time.sleep(0.1)
-        
-        logger.info(f"ZMQ publisher bound to port {port}")
+        logger.info("ZMQ server started", extra={
+            "port": port,
+            "socket_type": socket_type,
+            "component": "zmq_server"
+        })
     
-    def publish(self, topic: str, message: Dict[str, Any]):
-        """Publish a message on a topic"""
+    def recv_request(self) -> Optional[Dict[str, Any]]:
+        """Receive a request"""
         try:
-            # Convert message to JSON
-            message_str = json.dumps(message)
-            
-            # Publish message
-            self.socket.send_string(f"{topic} {message_str}")
-            
-            logger.debug(f"Published message on topic {topic}")
-        
+            request_str = self.socket.recv_string()
+            return json.loads(request_str)
         except Exception as e:
-            logger.error(f"Error publishing message: {str(e)}")
+            logger.error("Error receiving request", extra={
+                "error": str(e),
+                "component": "zmq_server"
+            })
+            return None
+    
+    def send_response(self, response: Dict[str, Any]):
+        """Send a response"""
+        try:
+            self.socket.send_string(json.dumps(response))
+        except Exception as e:
+            logger.error("Error sending response", extra={
+                "error": str(e),
+                "component": "zmq_server"
+            })
     
     def close(self):
-        """Close the socket"""
+        """Close the server"""
         self.socket.close()
-        logger.info(f"ZMQ publisher closed on port {self.port}")
+        logger.info("ZMQ server stopped", extra={
+            "port": self.port,
+            "component": "zmq_server"
+        })
 
-class ZMQSubscriber:
-    """ZMQ subscriber for receiving broadcast messages"""
-    def __init__(self, endpoint: str, topics: List[str] = None, handler: Optional[Callable] = None):
-        """Initialize ZMQ subscriber"""
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.SUB)
-        self.socket.connect(endpoint)
-        self.endpoint = endpoint
-        self.handler = handler
-        self.running = threading.Event()
-        self.running.set()
-        
-        # Subscribe to topics
-        if topics:
-            for topic in topics:
-                self.socket.setsockopt_string(zmq.SUBSCRIBE, topic)
-        else:
-            # Subscribe to all topics
-            self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        
-        logger.info(f"ZMQ subscriber connected to {endpoint}")
-    
-    def start(self):
-        """Start the subscriber in a background thread"""
-        self.thread = threading.Thread(target=self._run)
-        self.thread.daemon = True
-        self.thread.start()
-        
-        logger.info(f"ZMQ subscriber started for {self.endpoint}")
-    
-    def _run(self):
-        """Run the subscriber loop"""
-        while self.running.is_set():
-            try:
-                # Set timeout to allow checking running flag
-                poller = zmq.Poller()
-                poller.register(self.socket, zmq.POLLIN)
-                
-                if poller.poll(1000):  # 1 second timeout
-                    # Receive message
-                    message = self.socket.recv_string()
-                    
-                    try:
-                        # Parse topic and message
-                        parts = message.split(" ", 1)
-                        
-                        if len(parts) == 2:
-                            topic, msg_str = parts
-                            msg = json.loads(msg_str)
-                            
-                            # Handle message
-                            if self.handler:
-                                self.handler(topic, msg)
-                        else:
-                            logger.warning(f"Received malformed message: {message}")
-                    
-                    except json.JSONDecodeError:
-                        logger.warning(f"Received invalid JSON: {message}")
-                    except Exception as e:
-                        logger.error(f"Error handling message: {str(e)}")
-            
-            except zmq.Again:
-                # Timeout, continue loop
-                pass
-            except Exception as e:
-                logger.error(f"Error in subscriber loop: {str(e)}")
-                traceback.print_exc()
-    
-    def stop(self):
-        """Stop the subscriber"""
-        self.running.clear()
-        
-        if hasattr(self, 'thread') and self.thread.is_alive():
-            self.thread.join(timeout=2)
-        
-        self.socket.close()
-        logger.info(f"ZMQ subscriber stopped for {self.endpoint}")
-
+# DEPRECATED: Legacy AgentBase class - use common.core.base_agent.BaseAgent instead
 class AgentBase:
-    """Base class for all agents"""
+    """
+    DEPRECATED: Legacy base class for agents
+    
+    WARNING: This class is deprecated and will be removed in a future version.
+    Please use common.core.base_agent.BaseAgent instead for new agent development.
+    
+    Migration guide:
+    1. Import BaseAgent: from common.core.base_agent import BaseAgent
+    2. Change inheritance: class MyAgent(BaseAgent)
+    3. Update __init__ method to call super().__init__(name="MyAgent", ...)
+    4. Remove custom health check implementations (BaseAgent provides this)
+    5. Use BaseAgent.run() method for main execution
+    """
+    
     def __init__(self, agent_id: str, port: int, capabilities: List[str] = None):
-        """Initialize agent base"""
+        """
+        Initialize legacy agent base (DEPRECATED)
+        
+        Args:
+            agent_id: Unique identifier for the agent
+            port: Port number for the agent to bind to
+            capabilities: List of agent capabilities
+        """
+        # Issue deprecation warning
+        warnings.warn(
+            "AgentBase is deprecated. Use common.core.base_agent.BaseAgent instead. "
+            "See class docstring for migration guide.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
+        logger.warning("Using deprecated AgentBase class", extra={
+            "agent_id": agent_id,
+            "port": port,
+            "migration_guide": "Use common.core.base_agent.BaseAgent instead",
+            "component": "deprecated_agent_base"
+        })
+        
         self.agent_id = agent_id
         self.port = port
         self.capabilities = capabilities or []
@@ -271,18 +195,22 @@ class AgentBase:
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
         self.receiver.bind(f"tcp://0.0.0.0:{port}")
-        logger.info(f"Agent {agent_id} bound to port {port}")
+        logger.info(f"Legacy agent {agent_id} bound to port {port}")
         
         # Socket to communicate with autogen framework
         self.framework = self.context.socket(zmq.REQ)
-        self.framework.connect(get_zmq_connection_string({config.get(, "localhost"))zmq.autogen_framework_port', 5600)}")
-        logger.info(f"Connected to AutoGen Framework on port {config.get('zmq.autogen_framework_port', 5600)}")
+        try:
+            framework_port = config.get('zmq.autogen_framework_port', 5600)
+            self.framework.connect(f"tcp://localhost:{framework_port}")
+            logger.info(f"Connected to AutoGen Framework on port {framework_port}")
+        except Exception as e:
+            logger.error(f"Failed to connect to AutoGen Framework: {e}")
         
         # Running flag
         self.running = threading.Event()
         self.running.set()
         
-        logger.info(f"Agent {agent_id} initialized")
+        logger.info(f"Legacy agent {agent_id} initialized")
     
     def register_with_framework(self):
         """Register agent with the AutoGen framework"""
@@ -291,7 +219,7 @@ class AgentBase:
             self.framework.send_string(json.dumps({
                 "request_type": "register_agent",
                 "agent_id": self.agent_id,
-                "endpoint": fget_zmq_connection_string({self.port}, "localhost"),
+                "endpoint": f"tcp://localhost:{self.port}",
                 "capabilities": self.capabilities
             }))
             
@@ -405,27 +333,38 @@ class AgentBase:
         self.framework.close()
         self.context.term()
         
-        logger.info(f"Agent {self.agent_id} stopped")
+        logger.info(f"Legacy agent {self.agent_id} stopped")
 
+# UPDATED: Standardized agent utilities for BaseAgent
 def create_agent_logger(agent_name: str) -> logging.Logger:
-    """Create a logger for an agent"""
-    log_file = Path(config.get('system.logs_dir', 'logs')) / f"{agent_name.lower()}.log"
-    log_file.parent.mkdir(exist_ok=True)
+    """
+    Create a standardized JSON logger for an agent.
     
-    logger = logging.getLogger(agent_name)
-    logger.setLevel(getattr(logging, log_level))
+    This function is updated to use the standardized logging infrastructure.
+    """
+    return get_json_logger(agent_name)
+
+def create_baseagent_instance(agent_class, name: str, port: int = None, **kwargs):
+    """
+    Helper function to create a BaseAgent instance with standard configuration.
     
-    # Add file handler
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(file_handler)
+    Args:
+        agent_class: The agent class that inherits from BaseAgent
+        name: Name of the agent
+        port: Port for the agent (optional)
+        **kwargs: Additional configuration parameters
+        
+    Returns:
+        Configured agent instance
+    """
+    if not issubclass(agent_class, BaseAgent):
+        raise ValueError(f"Agent class {agent_class} must inherit from BaseAgent")
     
-    # Add console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(console_handler)
-    
-    return logger
+    return agent_class(
+        name=name,
+        port=port,
+        **kwargs
+    )
 
 def generate_unique_id() -> str:
     """Generate a unique ID"""
@@ -440,7 +379,10 @@ def safe_json_loads(json_str: str) -> Dict[str, Any]:
     try:
         return json.loads(json_str)
     except json.JSONDecodeError:
-        logger.error(f"Invalid JSON: {json_str}")
+        logger.error("Invalid JSON provided", extra={
+            "json_str": json_str[:100] + "..." if len(json_str) > 100 else json_str,
+            "component": "json_utils"
+        })
         return {}
 
 def safe_json_dumps(obj: Any) -> str:
@@ -448,7 +390,11 @@ def safe_json_dumps(obj: Any) -> str:
     try:
         return json.dumps(obj)
     except Exception as e:
-        logger.error(f"Error dumping to JSON: {str(e)}")
+        logger.error("Error dumping to JSON", extra={
+            "error": str(e),
+            "object_type": type(obj).__name__,
+            "component": "json_utils"
+        })
         return "{}"
 
 def get_agent_port(agent_name: str) -> int:
@@ -456,14 +402,16 @@ def get_agent_port(agent_name: str) -> int:
     port_key = f"zmq.{agent_name.lower()}_port"
     return config.get(port_key, 5600)
 
-def get_agent_endpoint(agent_name: str) -> str:
+def get_agent_endpoint(agent_name: str, host: str = "localhost") -> str:
     """Get the endpoint for an agent"""
     port = get_agent_port(agent_name)
-    return fget_zmq_connection_string({port}, "localhost")def is_port_in_use(port: int) -> bool:
+    return f"tcp://{host}:{port}"
+
+def is_port_in_use(port: int, host: str = "localhost") -> bool:
     """Check if a port is in use"""
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+        return s.connect_ex((host, port)) == 0
 
 def find_available_port(start_port: int = 5600, max_attempts: int = 100) -> int:
     """Find an available port starting from start_port"""
@@ -488,30 +436,82 @@ def get_system_info() -> Dict[str, Any]:
         "platform_version": platform.version(),
         "architecture": platform.machine(),
         "processor": platform.processor(),
-        "python_version": platform.python_version()
+        "python_version": platform.python_version(),
+        "timestamp": time.time()
     }
     
     # Add psutil information if available
     try:
         import psutil
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from common.env_helpers import get_env
-    except ImportError as e:
-        print(f"Import error: {e}")
         
         info.update({
             "cpu_count": psutil.cpu_count(),
             "memory_total": psutil.virtual_memory().total,
             "memory_available": psutil.virtual_memory().available,
             "memory_percent": psutil.virtual_memory().percent,
-            "disk_usage": {str(part.mountpoint): {
-                "total": part.total,
-                "used": part.used,
-                "free": part.free,
-                "percent": part.percent
-            } for part in psutil.disk_partitions() if part.fstype}
         })
+        
+        # Add disk usage information
+        disk_usage = {}
+        for partition in psutil.disk_partitions():
+            try:
+                partition_usage = psutil.disk_usage(partition.mountpoint)
+                disk_usage[partition.mountpoint] = {
+                    "total": partition_usage.total,
+                    "used": partition_usage.used,
+                    "free": partition_usage.free,
+                    "percent": (partition_usage.used / partition_usage.total) * 100
+                }
+            except PermissionError:
+                # Skip partitions we can't access
+                continue
+        
+        info["disk_usage"] = disk_usage
+        
     except ImportError:
-        pass
+        logger.warning("psutil not available, system info will be limited")
     
     return info
+
+# Migration helper functions
+def migrate_legacy_agent_to_baseagent(legacy_agent_file: str, output_file: str = None):
+    """
+    Helper function to assist in migrating legacy agents to BaseAgent.
+    
+    Args:
+        legacy_agent_file: Path to the legacy agent file
+        output_file: Path for the migrated agent file (optional)
+    """
+    warnings.warn(
+        "This migration helper is a placeholder. "
+        "Please use the BaseAgent migration template for proper migration.",
+        FutureWarning
+    )
+    
+    logger.info("Legacy agent migration requested", extra={
+        "legacy_file": legacy_agent_file,
+        "output_file": output_file,
+        "component": "migration_helper"
+    })
+
+if __name__ == "__main__":
+    # This module is a utility library and should not be run directly
+    print("Agent Utilities - Updated for BaseAgent Integration")
+    print("=" * 50)
+    print("This module provides utility functions for agents using BaseAgent.")
+    print("")
+    print("Key utilities:")
+    print("- ZMQClient/ZMQServer: ZMQ communication helpers")
+    print("- create_agent_logger(): Standardized logging")
+    print("- create_baseagent_instance(): BaseAgent instance helper")
+    print("- Various utility functions for agent development")
+    print("")
+    print("DEPRECATION WARNING:")
+    print("- AgentBase class is deprecated")
+    print("- Use common.core.base_agent.BaseAgent instead")
+    print("")
+    print("System Information:")
+    system_info = get_system_info()
+    for key, value in system_info.items():
+        if key != "disk_usage":  # Skip complex nested data
+            print(f"- {key}: {value}")

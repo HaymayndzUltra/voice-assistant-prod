@@ -17,7 +17,7 @@ logger = logging.getLogger("memory_hub.auth")
 
 class AuthConfig(BaseModel):
     """Authentication configuration."""
-    jwt_secret: str = "memory-hub-secret-key-change-in-production"
+    jwt_secret: str = ""  # Will be populated from SecretManager or environment
     jwt_algorithm: str = "HS256"
     jwt_expire_hours: int = 24
     require_auth: bool = True

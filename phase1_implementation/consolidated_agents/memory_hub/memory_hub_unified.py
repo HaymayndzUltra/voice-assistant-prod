@@ -122,8 +122,18 @@ async def lifespan(app: FastAPI):
             metadata_path=os.getenv("EMBEDDING_METADATA_PATH", "data/embeddings_metadata.json")
         )
         
+        # Secure JWT secret access
+        try:
+            from common.utils.secret_manager import SecretManager
+            jwt_secret = SecretManager.get_jwt_secret("MEMORY_HUB")
+        except (ImportError, Exception):
+            # Fallback for systems without SecretManager
+            jwt_secret = os.getenv("JWT_SECRET")
+            if not jwt_secret:
+                raise ValueError("JWT_SECRET not found - configure via SecretManager or environment variable")
+        
         auth_config = AuthConfig(
-            jwt_secret=os.getenv("JWT_SECRET", "memory-hub-secret-key-change-in-production"),
+            jwt_secret=jwt_secret,
             require_auth=os.getenv("REQUIRE_AUTH", "true").lower() == "true",
             trusted_agents=["CoreOrchestrator", "PlanningOrchestrator"]
         )

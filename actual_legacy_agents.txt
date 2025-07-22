@@ -1,0 +1,17 @@
+main_pc_code/agents/proactive_agent_interface.py
+main_pc_code/agents/tiered_responder.py
+main_pc_code/agents/pc2_zmq_protocol_finder.py
+main_pc_code/agents/advanced_command_handler.py
+main_pc_code/agents/pc2_zmq_protocol_finder_extended.py
+main_pc_code/agents/error_publisher.py
+main_pc_code/agents/pc2_zmq_health_report.py
+main_pc_code/agents/pc2_zmq_protocol_finder_win.py
+pc2_code/agents/auto_fixer_agent.py
+pc2_code/agents/agent_utils.py
+pc2_code/agents/integration/tiered_responder.py
+pc2_code/agents/integration/performance.py
+pc2_code/agents/core_agents/tutoring_agent.py
+pc2_code/agents/core_agents/tutoring_service_agent.py
+pc2_code/agents/core_agents/http_server.py
+pc2_code/agents/core_agents/LearningAdjusterAgent.py
+pc2_code/agents/backups/advanced_router.py

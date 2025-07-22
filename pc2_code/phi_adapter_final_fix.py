@@ -16,7 +16,15 @@ from datetime import datetime
 from common.env_helpers import get_env
 
 # --- Security Configuration ---
-AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")
+# Secure token access - no hardcoded fallback
+try:
+    from common.utils.secret_manager import SecretManager
+    AUTH_TOKEN = SecretManager.get_api_token("PHI_TRANSLATOR")
+except ImportError:
+    # Fallback for systems without SecretManager
+    AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN")
+    if not AUTH_TOKEN:
+        raise ValueError("PHI_TRANSLATOR_TOKEN not found - configure via SecretManager or environment variable")
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # --- Tagalog-English Translation Dictionary ---
