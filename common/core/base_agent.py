@@ -140,21 +140,35 @@ class BaseAgent:
         logger.info(f"{self.name} initialized on port {self.port} (health check: {self.health_check_port})")
     
     def _setup_logging(self):
-        """Configure per-agent JSON structured logging."""
+        """Configure per-agent JSON structured logging with rotation."""
         from pathlib import Path
+        from common.utils.logger_util import get_rotating_json_logger
+        
         project_root = Path(PathManager.get_project_root())
         logs_dir = project_root / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
         agent_log_file = logs_dir / f"{self.name.lower()}.log"
 
-        # Replace existing handlers with JSON handlers only once
-        self.logger = get_json_logger(self.name, logfile=str(agent_log_file))
+        # Use rotating JSON logger to prevent disk space issues
+        self.logger = get_rotating_json_logger(
+            name=self.name,
+            log_file=str(agent_log_file),
+            max_bytes=10*1024*1024,  # 10MB max file size
+            backup_count=5,          # Keep 5 old files
+            level=logging.INFO,
+            console_output=True      # Also log to console
+        )
 
         # Attach agent_name attribute to records automatically via LoggerAdapter
         self.logger = logging.LoggerAdapter(self.logger, extra={"agent_name": self.name})
 
-        self.logger.info(f"Initialized JSON logging -> {agent_log_file}")
+        self.logger.info(f"Initialized rotating JSON logging -> {agent_log_file}")
+        self.logger.info(f"Log rotation: 10MB max, 5 backups", extra={
+            "max_bytes": 10*1024*1024,
+            "backup_count": 5,
+            "rotation_enabled": True
+        })
     
     def _setup_graceful_shutdown(self):
         """Setup graceful shutdown handlers for SIGTERM and SIGINT signals."""
