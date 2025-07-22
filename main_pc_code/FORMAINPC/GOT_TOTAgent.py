@@ -5,13 +5,13 @@ A ZMQ-based agent that implements Graph/Tree-of-Thought reasoning for complex pr
 Provides multi-step, branching, and backtracking reasoning capabilities.
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
@@ -59,8 +59,8 @@ logger = logging.getLogger("GoTToTAgent")
 
 # ZMQ port for this agent
 GOT_TOT_PORT = 5646
-PROJECT_ROOT = get_project_root()
-MAIN_PC_CODE = get_main_pc_code()
+PROJECT_ROOT = PathManager.get_project_root()
+MAIN_PC_CODE = PathManager.get_main_pc_code()
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)  # Insert project root to path
 if MAIN_PC_CODE not in sys.path:

@@ -1,3 +1,7 @@
+# ENHANCED VERSION - Phase 1 Week 2 Day 3
+# Enhanced with performance monitoring and unified configuration
+# Original: main_pc_code/agents/emotion_engine.py
+
 """
 Emotion Engine Agent
 Manages and processes emotional states and responses
@@ -27,6 +31,9 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
+# Enhanced BaseAgent capabilities
+from common.core.enhanced_base_agent import EnhancedBaseAgent, PerformanceMetrics
+from common.core.unified_config_manager import UnifiedConfigManager
 from common.env_helpers import get_env
 
 # Configure logging

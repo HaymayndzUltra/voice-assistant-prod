@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
 # Helps LLMs break down problems and avoid common errors
@@ -32,7 +32,7 @@ import sys
 import os
 from pathlib import Path
 from common.env_helpers import get_env
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 

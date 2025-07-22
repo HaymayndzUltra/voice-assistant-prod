@@ -7,7 +7,6 @@ from common.env_helpers import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
-from common.utils.path_env import get_main_pc_code, get_project_root
 
 """
 
@@ -15,7 +14,7 @@ from common.utils.path_env import get_main_pc_code, get_project_root
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = Path(PathManager.get_main_pc_code())
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -34,7 +33,6 @@ from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
-from common.utils.path_env import get_main_pc_code, get_project_root
 
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

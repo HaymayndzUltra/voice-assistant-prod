@@ -1,6 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_main_pc_code, get_project_root
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -40,7 +39,6 @@ from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 from common.env_helpers import get_env
-from common.utils.path_env import get_main_pc_code, get_project_root
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 

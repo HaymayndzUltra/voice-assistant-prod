@@ -7,11 +7,15 @@ import os
 from pathlib import Path
 from typing import Dict, List, Any, Union
 
-def load_unified_config(config_path: str) -> Dict[str, Any]:
+def load_unified_config(config_path: str = None) -> Dict[str, Any]:
     """
     Load config and normalize to standard format regardless of source
     Returns: Unified agent list with standard fields
     """
+    if config_path is None:
+        # Default to MainPC config
+        config_path = "main_pc_code/config/startup_config.yaml"
+    
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     

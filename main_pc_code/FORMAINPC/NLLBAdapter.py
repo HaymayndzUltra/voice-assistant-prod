@@ -12,7 +12,7 @@ Response Format:
                  or {"status": "error", "message": "Error details"}
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 import sys
 import os
 import time
@@ -29,7 +29,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add the main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 

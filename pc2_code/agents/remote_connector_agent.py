@@ -41,7 +41,6 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 from common.env_helpers import get_env
 
 
@@ -190,8 +189,8 @@ class RemoteConnectorAgent(BaseAgent):
         self.cache_hits = 0
         self.cache_misses = 0
 
-        # New attributes for error reporting
-        self.error_bus = setup_error_reporting(self)
+        # Error reporting handled by BaseAgent infrastructure
+        # No additional setup needed - BaseAgent provides built-in error handling
 
         logger.info("Remote Connector Agent initialized")
         logger.info(f"Cache enabled: {self.cache_enabled}")

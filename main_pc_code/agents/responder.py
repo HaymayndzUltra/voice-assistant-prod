@@ -9,8 +9,8 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from pathlib import Path
-from common.utils.path_env import get_main_pc_code, get_project_root
-MAIN_PC_CODE_DIR = get_main_pc_code()
+from common.utils.path_manager import PathManager
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
 # Ensure the main_pc_code directory is in sys.path
 if str(MAIN_PC_CODE_DIR) not in sys.path:

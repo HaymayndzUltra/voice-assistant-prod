@@ -10,13 +10,9 @@ import os
 from datetime import datetime
 from typing import Dict, Any, Optional
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_project_root
-
+from common.utils.path_manager import PathManager
 
 # Import path manager for containerization-friendly paths
-import sys
-import os
-from common.utils.path_manager import PathManager
 sys.path.insert(0, str(PathManager.get_project_root()))
 
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip

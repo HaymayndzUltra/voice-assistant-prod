@@ -17,6 +17,7 @@ import threading
 import logging
 import shutil
 import yaml
+import zmq
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -26,13 +27,12 @@ import time
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, str(PathManager.get_project_root()))
 from common.utils.path_manager import PathManager
-# Add project root to Python path
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+
+# Set up paths using PathManager (after import)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -73,7 +73,7 @@ def load_network_config():
         }
 
 # Setup logging before any other imports that might use logging
-LOG_DIR = project_root / "logs" # Use project_root for consistency
+LOG_DIR = Path(project_root) / "logs" # Use project_root for consistency
 LOG_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(

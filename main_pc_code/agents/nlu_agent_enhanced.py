@@ -1,3 +1,7 @@
+# ENHANCED VERSION - Phase 1 Week 2 Day 3
+# Enhanced with performance monitoring and unified configuration
+# Original: main_pc_code/agents/nlu_agent.py
+
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
@@ -16,6 +20,9 @@ Natural Language Understanding agent that analyzes user input and extracts inten
 """
 
 from common.core.base_agent import BaseAgent
+# Enhanced BaseAgent capabilities
+from common.core.enhanced_base_agent import EnhancedBaseAgent, PerformanceMetrics
+from common.core.unified_config_manager import UnifiedConfigManager
 import os
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json

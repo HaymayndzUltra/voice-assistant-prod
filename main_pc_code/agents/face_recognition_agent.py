@@ -1,6 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 import sys
 import os
 import time
@@ -52,7 +52,7 @@ from main_pc_code.agents.error_publisher import ErrorPublisher
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
 # Ensure the main_pc_code directory is in sys.path
 if str(Path(MAIN_PC_CODE_DIR)) not in sys.path:
