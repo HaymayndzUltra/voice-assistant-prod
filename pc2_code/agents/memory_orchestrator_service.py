@@ -34,8 +34,9 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
-# Standard imports for PC2 agents
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 from pc2_code.agents.utils.config_loader import Config, parse_agent_args
 from common.env_helpers import get_env

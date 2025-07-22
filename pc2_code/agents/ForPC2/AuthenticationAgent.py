@@ -19,16 +19,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
-
-# Import path manager for containerization-friendly paths
-BASE_DIR = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(BASE_DIR))
+# ✅ MODERNIZED: Path management using standardized PathManager (consolidated)
 from common.utils.path_manager import PathManager
-# Add the project root to Python path
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+
+# Add project root to path using PathManager (single setup)
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import config module
 try:

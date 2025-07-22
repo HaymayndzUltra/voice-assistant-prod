@@ -52,7 +52,9 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus  
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 from common.env_helpers import get_env
 
 

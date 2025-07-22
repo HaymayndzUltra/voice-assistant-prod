@@ -1,23 +1,22 @@
 """
 Fused Audio Preprocessor
 -----------------------
-Optimized audio preprocessing agent tha
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-t combines noise reduction and voice activity detection:
+Optimized audio preprocessing agent that combines noise reduction and voice activity detection:
 - Subscribes to raw audio stream from streaming_audio_capture
 - Applies noise reduction algorithms to clean the audio
 - Performs voice activity detection on the cleaned audio
 - Publishes both cleaned audio and VAD events to downstream components
 - Reduces latency by processing in a single agent with no inter-agent communication
 """
+from common.utils.path_env import get_main_pc_code, get_project_root
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import zmq
 import pickle
@@ -35,7 +34,7 @@ from collections import deque
 import noisereduce as nr
 from scipy import signal
 import librosa
-from main_pc_code.src.core.http_server import setup_health_check_server
+# from main_pc_code.src.core.http_server import setup_health_check_server  # Module doesn't exist
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service
 from common.core.base_agent import BaseAgent
@@ -960,7 +959,6 @@ if __name__ == "__main__":
         logger.info("FusedAudioPreprocessorAgent interrupted by user")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         logger.error(f"An unexpected error occurred in FusedAudioPreprocessorAgent: {e}")
         traceback.print_exc()
     finally:

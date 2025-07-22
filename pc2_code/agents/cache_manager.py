@@ -14,22 +14,25 @@ import hashlib
 from pathlib import Path
 from collections import defaultdict
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.utils.path_env import get_pc2_code
+# ✅ MODERNIZED: Standardized path management using PathManager only  
+from common.utils.path_manager import PathManager
 
 
-# Import path utilities
+# ✅ MODERNIZED: Standardized path management using PathManager only
 from common.utils.path_manager import PathManager
 from pathlib import Path
 
-# Ensure pc2_code directory is on PYTHONPATH
-PC2_CODE_DIR = Path(get_pc2_code())
-if str(PC2_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(PC2_CODE_DIR))
+# Add project root to path using PathManager (standardized approach)
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.utils.config_loader import Config
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 from common.env_helpers import get_env
 
 # Load configuration at the module level
@@ -92,7 +95,7 @@ class CacheManager(BaseAgent):
         self.config = load_config()
         
         # Set up error reporting
-        self.error_bus = setup_error_reporting(self)
+        # ✅ MODERNIZED: No setup needed - using BaseAgent's UnifiedErrorHandler
         
         # Redis connection
         try:
@@ -107,8 +110,8 @@ class CacheManager(BaseAgent):
             self.redis_available = True
         except Exception as e:
             self.logger.error(f"Failed to connect to Redis: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "redis_connection_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Redis connection error: {e}")
             self.redis_available = False
         
         # Cache configuration - TTL and priorities
@@ -229,8 +232,8 @@ class CacheManager(BaseAgent):
             return {'status': 'error', 'message': 'Cache miss', 'data': None}
         except Exception as e:
             self.logger.error(f"Error getting memory from cache: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_get_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache get error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def cache_memory(self, memory_id: Union[int, str], data: Dict[str, Any], ttl: int = 3600) -> Dict[str, Any]:
@@ -245,8 +248,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Memory cached successfully'}
         except Exception as e:
             self.logger.error(f"Error caching memory: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_set_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache set error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def invalidate_memory_cache(self, memory_id: Union[int, str]) -> Dict[str, Any]:
@@ -262,8 +265,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Memory cache entry not found'}
         except Exception as e:
             self.logger.error(f"Error invalidating memory cache: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_delete_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache delete error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def get_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
@@ -279,8 +282,8 @@ class CacheManager(BaseAgent):
             return {'status': 'error', 'message': 'Cache miss', 'data': None}
         except Exception as e:
             self.logger.error(f"Error getting cache entry: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_get_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache get error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def put_cache_entry(self, cache_type: str, key: str, value: Any, ttl: Optional[int] = None) -> Dict[str, Any]:
@@ -302,8 +305,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Cache entry stored'}
         except Exception as e:
             self.logger.error(f"Error putting cache entry: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_set_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache set error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def invalidate_cache_entry(self, cache_type: str, key: str) -> Dict[str, Any]:
@@ -319,8 +322,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': 'Cache entry not found'}
         except Exception as e:
             self.logger.error(f"Error invalidating cache entry: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_delete_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache delete error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def flush_cache(self, cache_type: str) -> Dict[str, Any]:
@@ -343,8 +346,8 @@ class CacheManager(BaseAgent):
             return {'status': 'success', 'message': f'Flushed {deleted_count} cache entries'}
         except Exception as e:
             self.logger.error(f"Error flushing cache: {e}")
-            if self.error_bus:
-                report_error(self.error_bus, "cache_flush_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Cache flush error: {e}")
             return {'status': 'error', 'message': str(e)}
     
     def _run_maintenance(self):
@@ -361,8 +364,8 @@ class CacheManager(BaseAgent):
                     # based on priority and access patterns if needed
             except Exception as e:
                 self.logger.error(f"Error in cache maintenance: {e}")
-                if self.error_bus:
-                    report_error(self.error_bus, "cache_maintenance_error", str(e))
+                # ✅ MODERNIZED: Using BaseAgent's error reporting
+                self.report_error(f"Cache maintenance error: {e}")
             
             # Sleep for maintenance interval
             time.sleep(300)  # 5 minutes
@@ -412,40 +415,66 @@ class CacheManager(BaseAgent):
         return self._get_health_status()
     
     def cleanup(self):
-        """Clean up resources before shutdown."""
-        self.logger.info(f"{self.__class__.__name__} cleaning up resources...")
+        """
+        ✅ Gold Standard cleanup with robust try...finally block.
+        This guarantees that the parent's critical cleanup (NATS, Redis health)
+        is ALWAYS called, even if the child's cleanup steps fail.
+        """
+        self.logger.info(f"🚀 Starting Gold Standard cleanup for {self.__class__.__name__}...")
+        cleanup_errors = []
         
-        # Stop maintenance thread
-        self.stop()
-        
-        # Close Redis connection
-        if hasattr(self, 'redis') and self.redis:
-            try:
-                self.redis.close()
-                self.logger.info("Redis connection closed")
-            except Exception as e:
-                self.logger.error(f"Error closing Redis connection: {e}")
-        
-        # Clean up error reporting
-        if hasattr(self, 'error_bus') and self.error_bus:
-            from pc2_code.agents.error_bus_template import cleanup_error_reporting
-            cleanup_error_reporting(self.error_bus)
-        
-        # Close ZMQ sockets if they exist
-        if hasattr(self, 'socket') and self.socket:
-            try:
-                self.socket.close()
-            except Exception as e:
-                self.logger.warning(f"Error closing ZMQ socket: {e}")
-        if hasattr(self, 'context') and self.context:
-            try:
-                self.context.term()
-            except Exception as e:
-                self.logger.warning(f"Error terminating ZMQ context: {e}")
-        # Call parent cleanup
-        super().cleanup()
+        try:
+            # Stop maintenance thread
+            self.logger.info("Stopping maintenance thread...")
+            self.stop()
             
-        self.logger.info(f"{self.__class__.__name__} cleanup completed")
+            # Close Redis connection
+            if hasattr(self, 'redis') and self.redis:
+                try:
+                    self.redis.close()
+                    self.logger.info("✅ Redis connection closed")
+                except Exception as e:
+                    cleanup_errors.append(f"Redis close error: {e}")
+                    self.logger.error(f"❌ Error closing Redis connection: {e}")
+            
+            # Close ZMQ sockets if they exist
+            if hasattr(self, 'socket') and self.socket:
+                try:
+                    self.socket.close()
+                    self.logger.info("✅ ZMQ socket closed")
+                except Exception as e:
+                    cleanup_errors.append(f"ZMQ socket close error: {e}")
+                    self.logger.warning(f"❌ Error closing ZMQ socket: {e}")
+                    
+            if hasattr(self, 'context') and self.context:
+                try:
+                    self.context.term()
+                    self.logger.info("✅ ZMQ context terminated")
+                except Exception as e:
+                    cleanup_errors.append(f"ZMQ context term error: {e}")
+                    self.logger.warning(f"❌ Error terminating ZMQ context: {e}")
+                    
+        except Exception as e:
+            cleanup_errors.append(f"General cleanup error: {e}")
+            self.logger.error(f"❌ Unexpected error during cleanup: {e}")
+            
+        finally:
+            # ✅ CRITICAL: Always call parent cleanup regardless of errors above
+            self.logger.info("Final Step: Calling BaseAgent cleanup (NATS, Health, etc.)...")
+            try:
+                super().cleanup()
+                self.logger.info("✅ BaseAgent cleanup completed successfully")
+            except Exception as e:
+                cleanup_errors.append(f"BaseAgent cleanup error: {e}")
+                self.logger.error(f"❌ BaseAgent cleanup failed: {e}")
+        
+        # Report cleanup status
+        if cleanup_errors:
+            self.logger.warning(f"⚠️ Cleanup for {self.__class__.__name__} finished with {len(cleanup_errors)} error(s):")
+            for i, err in enumerate(cleanup_errors):
+                self.logger.warning(f"   - Error {i+1}: {err}")
+        else:
+            self.logger.info(f"✅ Cleanup for {self.__class__.__name__} completed perfectly without any errors.")
 
 def main():
     agent = None

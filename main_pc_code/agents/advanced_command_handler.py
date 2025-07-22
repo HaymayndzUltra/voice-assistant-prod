@@ -61,7 +61,7 @@ SCRIPT_TYPES = {
     ".js": "node"
 }
 
-class AdvancedCommandHandler(BaseAgent, CustomCommandHandler):
+class AdvancedCommandHandler(CustomCommandHandler):
     """
     Extends the custom command handler with advanced features for Phase 4 Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
@@ -773,9 +773,9 @@ class AdvancedCommandHandler(BaseAgent, CustomCommandHandler):
         
         # Close sockets
         if hasattr(self, 'executor_socket'):
-            self.executor_
+            self.executor_socket.close()
         if hasattr(self, 'coordinator_socket'):
-            self.coordinator_
+            self.coordinator_socket.close()
         # Call parent cleanup
         super().cleanup()
         logger.info("AdvancedCommandHandler shutdown complete")

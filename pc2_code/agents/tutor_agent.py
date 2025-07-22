@@ -37,7 +37,9 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 
 # Import common utilities if available
@@ -122,7 +124,7 @@ class AdaptiveLearningEngine:
         self.scaler = StandardScaler()
         self.difficulty_model = self._init_difficulty_model()
         self.learning_style_model = self._init_learning_style_model()
-        self.error_bus = setup_error_reporting(self)
+        # self.error_bus = setup_error_reporting(self) # Removed as per edit hint
 
     def _init_difficulty_model(self) -> nn.Module:
         """Initialize neural network for difficulty prediction"""

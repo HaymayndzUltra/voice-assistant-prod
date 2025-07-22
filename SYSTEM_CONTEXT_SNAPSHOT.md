@@ -6,7 +6,7 @@
 ## 🔄 RECENT ANALYSIS FINDINGS
 
 ### **Path Management Status**
-- **70+ agents** currently use `PathManager.get_project_root()` pattern
+- **50+ agents** currently use `PathManager.get_project_root()` pattern
 - **30+ agents** mix PathManager with legacy `path_env` functions  
 - **20+ agents** use manual path resolution patterns
 - **MIXED USAGE DETECTED**: Many SOT agents import both systems redundantly
@@ -76,9 +76,12 @@ Multiple agents have:
 **Risk**: Future developers may be confused about security implementation
 
 ### **2. Cross-Machine Dependencies**
-- ObservabilityHub runs on both machines (port 9000)
+- **ObservabilityHub shared service**: Runs on both machines with different roles
+  - MainPC: central_hub (port 9000) - aggregates system metrics
+  - PC2: local_reporter (port 9000) - reports to MainPC
+  - Cross-machine sync: PC2 → MainPC reporting every 30 seconds
 - Network config hardcoded in some agents
-- Potential for configuration drift
+- Potential for configuration drift between machines
 
 ### **3. Resource Management**
 - VRAMOptimizerAgent on MainPC
@@ -123,10 +126,11 @@ Multiple agents have:
 ## 🎯 STRATEGIC QUESTIONS
 
 ### **Architecture Concerns**
-1. **Scale implications**: How will 90+ agents perform under load?
+1. **Scale implications**: How will 77 agents (54 MainPC + 23 PC2) perform under load?
 2. **Network partitioning**: What happens if MainPC/PC2 connection fails?
-3. **Resource contention**: Are there hidden bottlenecks in current design?
-4. **Security posture**: What are the attack vectors in current agent communication?
+3. **Shared service coordination**: How does ObservabilityHub handle dual-machine synchronization?
+4. **Resource contention**: Are there hidden bottlenecks in current design?
+5. **Security posture**: What are the attack vectors in current agent communication?
 
 ### **Engineering Concerns**  
 1. **Onboarding complexity**: How long does it take new developers to understand the system?
@@ -150,10 +154,11 @@ Multiple agents have:
 
 Based on analysis, the system needs:
 
-1. **Path management standardization** (affects 50+ agents)
+1. **Path management standardization** (affects 50+ agents across both machines)
 2. **Configuration drift prevention** (cross-machine consistency)  
-3. **Dependency management** (startup order, failure handling)
-4. **Performance profiling** (resource utilization across 90+ agents)
+3. **Shared service coordination** (ObservabilityHub dual-machine architecture)
+4. **Dependency management** (startup order, failure handling)
+5. **Performance profiling** (resource utilization across 77 agents)
 
 ---
 

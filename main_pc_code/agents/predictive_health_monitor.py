@@ -64,8 +64,29 @@ RESTART_COOLDOWN = config.get('system.restart_cooldown', 60)  # seconds
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for health check requests
 
 # Load distributed config
-with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
-    distributed_config = json.load(f)
+try:
+    with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
+        distributed_config = json.load(f)
+except FileNotFoundError:
+    # Fallback configuration if file doesn't exist
+    distributed_config = {
+        "health_monitoring": {
+            "enabled": True,
+            "check_interval": 30,
+            "timeout": 10
+        },
+        "prediction": {
+            "enabled": True,
+            "model_path": "models/health_prediction.pkl",
+            "prediction_interval": 60
+        },
+        "recovery": {
+            "enabled": True,
+            "max_attempts": 3,
+            "backoff_factor": 2
+        }
+    }
+    print("Warning: distributed_config.json not found, using defaults")
 
 class PredictiveHealthMonitor(BaseAgent):
     """

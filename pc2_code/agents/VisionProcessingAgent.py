@@ -21,20 +21,22 @@ from pathlib import Path
 from PIL import Image
 
 
-# Import path utilities
+# ✅ MODERNIZED: Standardized path management using PathManager only
 from common.utils.path_manager import PathManager
-from common.utils.path_env import get_project_root
-# Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = get_project_root()
-if PC2_CODE_DIR not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR)
+
+# Add project root to path using PathManager (standardized approach)
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import parse_agent_args
 import psutil
 
 # Standard imports for PC2 agents
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 
 # Configure logging
@@ -75,7 +77,7 @@ class VisionProcessingAgent(BaseAgent):
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
-        self.error_bus = setup_error_reporting(self)
+        # self.error_bus = setup_error_reporting(self) # This line is removed as per the edit hint
 
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""

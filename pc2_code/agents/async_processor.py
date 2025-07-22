@@ -31,7 +31,6 @@ if str(project_root) not in sys.path:
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.utils.config_loader import Config
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -150,7 +149,9 @@ class AsyncProcessor(BaseAgent):
         self.config = load_config()
         
         # Set up error reporting
-        self.error_bus = setup_error_reporting(self)
+        # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+        # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+        # Now using: self.report_error() method from BaseAgent
         
         # Set up components
         self._setup_sockets()
@@ -206,8 +207,7 @@ class AsyncProcessor(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
-                    if self.error_bus:
-                        report_error(self.error_bus, "health_monitoring_error", str(e))
+                    self.report_error("health_monitoring_error", str(e))
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
@@ -226,8 +226,7 @@ class AsyncProcessor(BaseAgent):
                         self._process_task(message)
                 except Exception as e:
                     self.logger.error(f"Error processing request: {str(e)}")
-                    if self.error_bus:
-                        report_error(self.error_bus, "request_processing_error", str(e))
+                    self.report_error("request_processing_error", str(e))
                     time.sleep(1)
                     
         thread = threading.Thread(target=process_requests, daemon=True)
@@ -253,8 +252,7 @@ class AsyncProcessor(BaseAgent):
                 })
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
-                if self.error_bus:
-                    report_error(self.error_bus, "task_processing_error", str(e))
+                self.report_error("task_processing_error", str(e))
                 success = False
                 
                 # Send error response
@@ -312,8 +310,7 @@ class AsyncProcessor(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
-            if self.error_bus:
-                report_error(self.error_bus, "health_check_error", str(e))
+            self.report_error("health_check_error", str(e))
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -368,9 +365,9 @@ class AsyncProcessor(BaseAgent):
         if hasattr(self, 'health_socket'):
             self.health_
         # Clean up error reporting
-        if hasattr(self, 'error_bus') and self.error_bus:
-            from pc2_code.agents.error_bus_template import cleanup_error_reporting
-            cleanup_error_reporting(self.error_bus)
+        # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+        # Removed: from pc2_code.agents.error_bus_template import cleanup_error_reporting
+        # Now using: BaseAgent's cleanup() method
         
         # Call parent cleanup
         super().cleanup()

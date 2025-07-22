@@ -1,7 +1,7 @@
 # 🤖 BACKGROUND AGENT CONSULTATION REQUEST
 
 ## 📋 EXECUTIVE SUMMARY
-We are seeking strategic architectural guidance for a complex dual-machine AI agent system that has grown organically over time. The system consists of **MainPC** (primary processing) and **PC2** (secondary/distributed processing) with approximately **90+ active agents** across both machines.
+We are seeking strategic architectural guidance for a complex dual-machine AI agent system that has grown organically over time. The system consists of **MainPC** (primary processing) and **PC2** (secondary/distributed processing) with **77 total agents** (54 MainPC + 23 PC2) across both machines.
 
 ## 🎯 PRIMARY GOALS
 1. **Architectural Assessment**: Evaluate current system design patterns and identify potential systemic issues
@@ -14,13 +14,17 @@ We are seeking strategic architectural guidance for a complex dual-machine AI ag
 ### **MainPC System**
 - **Role**: Primary processing, model management, core AI services
 - **Hardware**: RTX 4090, high-performance workstation
-- **Agent Count**: 70+ active agents
+- **Agent Count**: 54 active agents
 - **Config**: `main_pc_code/config/startup_config.yaml`
 
 ### **PC2 System** 
 - **Role**: Distributed processing, specialized services, load balancing
-- **Agent Count**: 23+ active agents
+- **Agent Count**: 23 active agents
 - **Config**: `pc2_code/config/startup_config.yaml`
+
+### **Shared Services**
+- **ObservabilityHub**: Runs on both machines with different roles (MainPC = central_hub, PC2 = local_reporter)
+- **Cross-machine sync**: PC2 reports to MainPC for centralized monitoring
 
 ## 📊 CURRENT AGENT INVENTORY
 
@@ -99,8 +103,11 @@ We are seeking strategic architectural guidance for a complex dual-machine AI ag
 - DreamingModeAgent (7127) - Dream mode processing
 - AdvancedRouter (7129) - Advanced routing
 
-**Monitoring:**
-- ObservabilityHub (9000) - Consolidated monitoring
+**Monitoring (Shared Service):**
+- ObservabilityHub (9000) - Cross-machine monitoring hub
+  - MainPC role: central_hub (aggregates all system metrics)  
+  - PC2 role: local_reporter (reports to MainPC central hub)
+  - Features: Prometheus metrics, predictive analytics, cross-machine sync
 
 ## 🔍 SPECIFIC AREAS OF CONCERN
 
