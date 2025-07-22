@@ -13,6 +13,7 @@ import json
 import uuid
 import re
 import subprocess
+import zmq
 import tempfile
 import numpy as np
 from pathlib import Path

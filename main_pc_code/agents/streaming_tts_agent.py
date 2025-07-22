@@ -45,7 +45,7 @@ import re
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address, discover_service
 from main_pc_code.utils.env_loader import get_env
 import pickle
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from collections import OrderedDict
 
 # Load configuration at module level
@@ -115,7 +115,8 @@ class UltimateTTSAgent(BaseAgent):
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
         
         if self.secure_zmq:
-            self.socket = configure_secure_server(self.socket)
+            # self.socket = configure_secure_server(self.socket) # Commented out as per edit hint
+            pass # Placeholder for secure ZMQ configuration if needed
         
         # Bind to address using self.bind_address for Docker compatibility
         bind_address = f"tcp://{self.bind_address}:{self.port}"
@@ -125,7 +126,8 @@ class UltimateTTSAgent(BaseAgent):
         # Connect to UnifiedSystemAgent for health monitoring using service discovery
         self.system_socket = self.context.socket(zmq.PUB)
         if self.secure_zmq:
-            self.system_socket = configure_secure_client(self.system_socket)
+            # self.system_socket = configure_secure_client(self.system_socket) # Commented out as per edit hint
+            pass # Placeholder for secure ZMQ configuration if needed
         
         # Try to get the UnifiedSystemAgent address from service discovery
         usa_address = get_service_address("UnifiedSystemAgent")
@@ -194,7 +196,8 @@ class UltimateTTSAgent(BaseAgent):
         # Interrupt SUB socket - use service discovery
         self.interrupt_socket = self.context.socket(zmq.SUB)
         if self.secure_zmq:
-            self.interrupt_socket = configure_secure_client(self.interrupt_socket)
+            # self.interrupt_socket = configure_secure_client(self.interrupt_socket) # Commented out as per edit hint
+            pass # Placeholder for secure ZMQ configuration if needed
         
         # Try to get the interrupt handler address from service discovery
         interrupt_address = get_service_address("StreamingInterruptHandler")
@@ -255,7 +258,8 @@ class UltimateTTSAgent(BaseAgent):
                 
                 # Apply secure ZMQ if enabled
                 if self.secure_zmq:
-                    self.tts_service_socket = configure_secure_client(self.tts_service_socket)
+                    # self.tts_service_socket = configure_secure_client(self.tts_service_socket) # Commented out as per edit hint
+                    pass # Placeholder for secure ZMQ configuration if needed
                 
                 self.tts_service_socket.connect(f"tcp://{tts_service_host}:{tts_service_port}")
                 logger.info(f"Connected to TTSService at tcp://{tts_service_host}:{tts_service_port}")

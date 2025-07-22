@@ -39,7 +39,7 @@ from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_discovery_client
 from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
+# from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
 from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 from common.env_helpers import get_env
 

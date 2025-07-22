@@ -1225,10 +1225,10 @@ class VramOptimizerAgent(BaseAgent):
         socket.bind(bind_address)
         logger.info(f"VRAMOptimizerAgent listening on {bind_address}")
         
-        # Register with SystemDigitalTwin
+                # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
-from common.utils.path_env import get_main_pc_code, get_project_root
+            from common.utils.path_env import get_main_pc_code, get_project_root
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

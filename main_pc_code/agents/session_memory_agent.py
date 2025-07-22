@@ -36,12 +36,16 @@ from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient
 
+# Ensure logs directory exists
+logs_dir = PathManager.get_logs_dir()
+logs_dir.mkdir(parents=True, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "session_memory_agent.log")),
+        logging.FileHandler(str(logs_dir / "session_memory_agent.log")),
         logging.StreamHandler()
     ]
 )

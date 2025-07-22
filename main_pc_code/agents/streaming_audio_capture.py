@@ -1,5 +1,6 @@
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys

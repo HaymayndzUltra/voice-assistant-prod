@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
+from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 
 """

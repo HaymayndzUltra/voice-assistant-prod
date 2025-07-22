@@ -1,40 +1,38 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Chitchat Agent
 -------------
 Handles natural conversational interactions:
-- Processes casu
+- Processes casual conversation requests
+- Connects to local or remote LLM for responses
+- Maintains conversation context
+- Integrates with personality engine
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
-al conversation requests
-- Connects to local or remote LLM for responses
-- Maintains conversation context
-- Integrates with personality engine
-"""
-
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+import zmq
 import json
 import logging
 import time
 import threading
-import os
-import sys
 import uuid
 import psutil
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.env_helpers import get_env
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -371,8 +369,8 @@ class ChitchatAgent(BaseAgent):
         
         # Close sockets
         # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
-        self.health_
-        self.llm_
+        self.health_socket.close()
+        self.llm_socket.close()
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
@@ -406,9 +404,9 @@ class ChitchatAgent(BaseAgent):
         if hasattr(self, 'socket'):
                 self.socket.close()
         if hasattr(self, 'health_socket'):
-            self.health_
+            self.health_socket.close()
         if hasattr(self, 'llm_socket'):
-            self.llm_
+            self.llm_socket.close()
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
@@ -474,7 +472,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

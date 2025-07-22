@@ -7,13 +7,13 @@ import re
 import os
 import random
 import hashlib
+import zmq
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from common.config_manager import load_unified_config
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 

@@ -35,7 +35,8 @@ import traceback
 
 # Import with canonical paths
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
+from common.config_manager import load_unified_config, get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from common.env_helpers import get_env
 
@@ -801,23 +802,23 @@ class StreamingSpeechRecognition(BaseAgent):
         
         # Close all ZMQ sockets
         if hasattr(self, 'pub_socket') and self.pub_socket:
-            self.pub_
+            self.pub_socket.close()
         if hasattr(self, 'sub_socket') and self.sub_socket:
-            self.sub_
+            self.sub_socket.close()
         if hasattr(self, 'wake_word_socket') and self.wake_word_socket:
-            self.wake_word_
+            self.wake_word_socket.close()
         if hasattr(self, 'vad_socket') and self.vad_socket:
-            self.vad_
+            self.vad_socket.close()
         if hasattr(self, 'health_socket') and self.health_socket:
-            self.health_
+            self.health_socket.close()
         if hasattr(self, 'model_manager_socket') and self.model_manager_socket:
-            self.model_manager_
+            self.model_manager_socket.close()
         if hasattr(self, 'request_coordinator_connection') and self.request_coordinator_connection:
             self.request_coordinator_connection.close()
         
         # Terminate ZMQ context
         if self.zmq_context:
-            self.zmq_
+            self.zmq_context.term()
         logger.info("StreamingSpeechRecognition cleaned up successfully")
 
     def run(self):

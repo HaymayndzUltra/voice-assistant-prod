@@ -1,5 +1,4 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 NLLB Translation Adapter (Self-Managed)
 - Provides access to the NLLB translation model via ZMQ.
 - Implements self-managed on-demand loading and idle unloading.
@@ -12,6 +11,8 @@ Response Format:
 - For translation: {"status": "success", "translated_text": "Translated text"}
                  or {"status": "error", "message": "Error details"}
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_main_pc_code, get_project_root
 import sys
 import os
 import time
@@ -29,8 +30,8 @@ from datetime import datetime
 
 # Add the main_pc_code directory to the Python path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 # Import model_client for centralized model loading
 from main_pc_code.utils import model_client
@@ -632,7 +633,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

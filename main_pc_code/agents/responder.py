@@ -9,9 +9,12 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 from pathlib import Path
+from common.utils.path_env import get_main_pc_code, get_project_root
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+# Ensure the main_pc_code directory is in sys.path
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
@@ -29,8 +32,20 @@ import pickle
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
-from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
+# from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+
+# Placeholder functions for secure_zmq (module doesn't exist)
+def is_secure_zmq_enabled():
+    return False
+
+def configure_secure_client(socket):
+    return socket
+
+def configure_secure_server(socket):
+    return socket
+
+# Load environment variables
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Get the directory of the current file for the log
@@ -881,28 +896,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)

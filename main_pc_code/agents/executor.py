@@ -1,5 +1,6 @@
 import os, sys
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 # Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
@@ -17,6 +18,7 @@ import time
 from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 from datetime import datetime
+import zmq
 
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -53,7 +55,7 @@ def log_usage_analytics(user: str, command: str, status: str):
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.env_helpers import get_env
 ZMQ_LOG_PORT = 5600  # Central log collector port
-log_context = None  # Using pool
+log_context = zmq.Context()  # Initialize context instead of None
 log_socket = log_context.socket(zmq.PUB)
 log_collector_host = os.environ.get('LOG_COLLECTOR_HOST', 'localhost')
 log_socket.connect(f"tcp://{log_collector_host}:{ZMQ_LOG_PORT}")

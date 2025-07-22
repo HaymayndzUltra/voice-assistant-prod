@@ -12,7 +12,6 @@ MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 config = load_config()
 """
@@ -60,260 +59,16 @@ HEALTH_CHECK_PORT = 5569  # REP socket for health checks
 ZMQ_PORT_RANGE = (5500, 5600)
 HTTP_PORT_RANGE = (8000, 8100)
 
-def start_unified_system_agent():
-    """Start the Unified System Agent."""
-    try:
-        logger.info("Starting Unified System Agent...")
-        agent = UnifiedSystemAgent()
-        logger.info("Unified System Agent initialized, starting main loop...")
-        agent.run()
-    except Exception as e:
-        logger.exception("Unified System Agent crashed on startup: %s", str(e))
-        raise
+class UnifiedSystemAgent(BaseAgent):
+    """
+    Unified System Agent
+    -------------------
+    Central command center for system orchestration, service discovery, maintenance, and monitoring.
+    Provides comprehensive system management capabilities through ZMQ interface.
+    """
 
-            logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
-
-    
-            self.router_socket = self.context.socket(zmq.ROUTER)
-
-    
-            self.router_socket.setsockopt(zmq.LINGER, 0)
-
-    
-            self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
-
-    
-            self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
-
-    
-            self.router_socket.bind(f"tcp://*:{SYSTEM_AGENT_PORT}")
-
-    
-            logger.info(f"Successfully bound ROUTER socket to port {SYSTEM_AGENT_PORT}")
-
-    
-            # REP socket for health checks
-
-    
-            logger.info(f"Binding REP socket to port {HEALTH_CHECK_PORT}...")
-
-    
-            self.health_socket = self.context.socket(zmq.REP)
-
-    
-            self.health_socket.setsockopt(zmq.LINGER, 0)
-
-    
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
-
-    
-            self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
-
-    
-            self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
-
-    
-            logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
-
-    
-            # Start background initialization thread
-
-    
-            logger.info("Starting background initialization thread...")
-
-    
-            self.init_thread = threading.Thread(target=self._initialize_background, daemon=True)
-
-    
-            self.init_thread.start()
-
-    
-            # Start service monitoring thread
-
-    
-            logger.info("Starting service monitoring thread...")
-
-    
-            self.monitor_thread = threading.Thread(target=self._monitor_services, daemon=True)
-
-    
-            self.monitor_thread.start()
-
-    
-            # Create readiness file
-
-    
-            logger.info("Creating readiness file...")
-
-    
-            self._create_readiness_file()
-
-    
-            logger.info("UnifiedSystemAgent initialization completed successfully")
-
-    
-            # Instantiate ErrorPublisher after successful init
-            self.error_publisher = ErrorPublisher(self.__class__.__name__)
-
-    
-        except Exception as e:
-
-    
-            error_msg = f"Failed to initialize UnifiedSystemAgent: {str(e)}\n{traceback.format_exc()}"
-
-    
-            logger.error(error_msg)
-
-    
-            self.initialization_error = error_msg
-
-    
-            raise
-
-    
+    def __init__(self):
         """Initialize the unified system agent."""
-
-    
-        try:
-
-    
-            logger.info("Starting UnifiedSystemAgent initialization...")
-
-    
-            self.start_time = time.time()
-
-    
-            # Initialize thread-safe data structures
-
-    
-            self.services_lock = threading.Lock()
-
-    
-            self.services = {}
-
-    
-            self.is_initialized = threading.Event()
-
-    
-            self.initialization_error = None
-
-    
-            # Initialize ZMQ context and sockets
-
-    
-            logger.info("Initializing ZMQ context...")
-
-    
-            self.context = None  # Using pool
-
-    
-            # ROUTER socket for main communication
-
-    
-            logger.info(f"Binding ROUTER socket to port {SYSTEM_AGENT_PORT}...")
-
-    
-            self.router_socket = self.context.socket(zmq.ROUTER)
-
-    
-            self.router_socket.setsockopt(zmq.LINGER, 0)
-
-    
-            self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
-
-    
-            self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
-
-    
-            self.router_socket.bind(f"tcp://*:{SYSTEM_AGENT_PORT}")
-
-    
-            logger.info(f"Successfully bound ROUTER socket to port {SYSTEM_AGENT_PORT}")
-
-    
-            # REP socket for health checks
-
-    
-            logger.info(f"Binding REP socket to port {HEALTH_CHECK_PORT}...")
-
-    
-            self.health_socket = self.context.socket(zmq.REP)
-
-    
-            self.health_socket.setsockopt(zmq.LINGER, 0)
-
-    
-            self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
-
-    
-            self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
-
-    
-            self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
-
-    
-            logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
-
-    
-            # Start background initialization thread
-
-    
-            logger.info("Starting background initialization thread...")
-
-    
-            self.init_thread = threading.Thread(target=self._initialize_background, daemon=True)
-
-    
-            self.init_thread.start()
-
-    
-            # Start service monitoring thread
-
-    
-            logger.info("Starting service monitoring thread...")
-
-    
-            self.monitor_thread = threading.Thread(target=self._monitor_services, daemon=True)
-
-    
-            self.monitor_thread.start()
-
-    
-            # Create readiness file
-
-    
-            logger.info("Creating readiness file...")
-
-    
-            self._create_readiness_file()
-
-    
-            logger.info("UnifiedSystemAgent initialization completed successfully")
-
-    
-        except Exception as e:
-
-    
-            error_msg = f"Failed to initialize UnifiedSystemAgent: {str(e)}\n{traceback.format_exc()}"
-
-    
-            logger.error(error_msg)
-
-    
-            self.initialization_error = error_msg
-
-    
-            raise
-        self.name = "UnifiedSystemAgent"
-        self.port = int(config.get("port", 5702))
-        self.bind_address = config.get("bind_address", os.environ.get('BIND_ADDRESS', '<BIND_ADDR>'))
-        self.zmq_timeout = int(config.get("zmq_request_timeout", 5000))
-        self.start_time = time.time()
-        self.running = True
-        
-        # Call super().__init__() with correct parameters
-        super().__init__(name=self.name, port=self.port)
-        
         try:
             logger.info("Starting UnifiedSystemAgent initialization...")
             
@@ -333,7 +88,7 @@ def start_unified_system_agent():
             self.router_socket.setsockopt(zmq.LINGER, 0)
             self.router_socket.setsockopt(zmq.RCVTIMEO, 1000)
             self.router_socket.setsockopt(zmq.SNDTIMEO, 1000)
-            self.router_socket.bind(f"tcp://{self.bind_address}:{self.port}")
+            self.router_socket.bind(f"tcp://{config.get('host')}:{self.port}")
             logger.info(f"Successfully bound ROUTER socket to port {self.port}")
             
             # REP socket for health checks
@@ -342,7 +97,7 @@ def start_unified_system_agent():
             self.health_socket.setsockopt(zmq.LINGER, 0)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
             self.health_socket.setsockopt(zmq.SNDTIMEO, 1000)
-            self.health_socket.bind(f"tcp://{self.bind_address}:{HEALTH_CHECK_PORT}")
+            self.health_socket.bind(f"tcp://{config.get('host')}:{HEALTH_CHECK_PORT}")
             logger.info(f"Successfully bound REP socket to port {HEALTH_CHECK_PORT}")
             
             # Start background initialization thread

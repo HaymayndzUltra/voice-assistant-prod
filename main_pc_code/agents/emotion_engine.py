@@ -2,27 +2,19 @@
 Emotion Engine Agent
 Manages and processes emotional states and responses
 """
-
-import sys
-
+from common.utils.path_manager import PathManager
+from common.utils.path_env import get_main_pc_code, get_project_root
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-import os
-import sys
 from pathlib import Path
-from common.utils.path_manager import PathManager
-from common.utils.path_env import get_main_pc_code, get_project_root
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import os
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
@@ -433,13 +425,13 @@ class EmotionEngine(BaseAgent):
         
         if hasattr(self, 'health_socket') and self.health_socket:
             try:
-                self.health_
+                self.health_socket.close()
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
         
         if hasattr(self, 'pub_socket') and self.pub_socket:
             try:
-                self.pub_
+                self.pub_socket.close()
             except Exception as e:
                 logger.error(f"Error closing pub socket: {e}")
         
@@ -456,7 +448,6 @@ class EmotionEngine(BaseAgent):
 if __name__ == "__main__":
     # Parse command line arguments
     import argparse
-from common.utils.path_env import get_main_pc_code, get_project_root
     parser = argparse.ArgumentParser(description='Emotion Engine')
     parser.add_argument('--name', type=str, default="EmotionEngine", help='Agent name')
     parser.add_argument('--port', type=int, default=None, help='Agent port')
@@ -464,4 +455,13 @@ from common.utils.path_env import get_main_pc_code, get_project_root
     
     # Create and run the agent
     agent = EmotionEngine(name=args.name, port=args.port)
-    agent.run() 
+    try:
+        agent.run()
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

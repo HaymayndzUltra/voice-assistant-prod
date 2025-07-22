@@ -25,9 +25,10 @@ from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils import model_client
 from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
 
 # Parse command line arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

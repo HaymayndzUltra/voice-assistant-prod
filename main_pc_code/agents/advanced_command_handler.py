@@ -1,16 +1,6 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Advanced Command Handler for Voice Assistant
 --------------------------------------------
-
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 Extends the custom command handler with advanced features:
 1. Command Sequences - Execute multiple commands in sequence
@@ -18,8 +8,18 @@ Extends the custom command handler with advanced features:
 3. Domain-specific command modules
 4. Advanced coordination with Jarvis Memory Agent
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+
 import json
 import logging
 import time
@@ -34,6 +34,7 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
 import psutil
 
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.core.base_agent import BaseAgent
 # Import existing command handler as base
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler, ZMQ_JARVIS_MEMORY_PORT
@@ -806,7 +807,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

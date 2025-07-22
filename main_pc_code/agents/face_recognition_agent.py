@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
+from common.utils.path_env import get_main_pc_code, get_project_root
 import sys
 import os
 import time
@@ -19,7 +20,8 @@ from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the parent directory to sys.path to import the config module
-from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
+# from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
+from common.env_helpers import get_env
 
 import cv2
 import numpy as np
@@ -51,8 +53,10 @@ import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+# Ensure the main_pc_code directory is in sys.path
+if str(Path(MAIN_PC_CODE_DIR)) not in sys.path:
+    sys.path.insert(0, str(Path(MAIN_PC_CODE_DIR)))
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -60,8 +64,24 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Load configuration
-with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "face_recognition_config.json"), "r") as f:
-    CONFIG = json.load(f)["face_recognition"]
+try:
+    with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "face_recognition_config.json"), "r") as f:
+        CONFIG = json.load(f)["face_recognition"]
+except FileNotFoundError:
+    # Fallback configuration if file doesn't exist
+    CONFIG = {
+        "model": {
+            "name": "buffalo_l",
+            "root": "~/.insightface",
+            "providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
+            "ctx_id": 0,
+            "quantization": {"enabled": False}
+        },
+        "emotion_model": {
+            "path": "models/emotion_model.onnx"
+        }
+    }
+    print("Warning: face_recognition_config.json not found, using defaults")
 
 LOG_PATH = "face_recognition_agent.log"
 logging.basicConfig(
@@ -74,7 +94,8 @@ logging.basicConfig(
 )
 
 # Define ZMQ_PORT from system configuration
-ZMQ_PORT = SYS_CONFIG.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
+ZMQ_PORT = 5560  # Fallback port since SYS_CONFIG is commented out
+# ZMQ_PORT = SYS_CONFIG.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
 
 @dataclass
 class EmotionState:
@@ -736,7 +757,6 @@ if __name__ == "__main__":
         logging.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         logging.error(f"An unexpected error occurred in {agent.name if agent else 'FaceRecognitionAgent'}: {e}")
         traceback.print_exc()
     finally:

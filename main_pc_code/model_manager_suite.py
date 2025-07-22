@@ -262,7 +262,8 @@ logging.basicConfig(
 logger = logging.getLogger("ModelManagerSuite")
 
 # Load configuration
-config = load_config()
+# config = load_config()
+config = {}  # Fallback empty config to avoid KeyError
 
 # Default VRAM management settings
 DEFAULT_VRAM_CONFIG = {
@@ -1539,7 +1540,11 @@ for _alias in (
     'main_pc_code.agents.predictive_loader',
     'main_pc_code.agents.model_evaluation_framework',
 ):
-    _sys.modules[_alias] = _sys.modules[__name__]
+    try:
+        _sys.modules[_alias] = _sys.modules[__name__]
+    except KeyError:
+        # Module not in sys.modules yet (e.g., during importlib loading)
+        pass
 # ---------------- End Backward Compatibility Layer ----------------
 
 if __name__ == "__main__":

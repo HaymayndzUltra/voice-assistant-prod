@@ -1,28 +1,26 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Predictive Health Monitor
 - Uses machine learning to predict potential agent failures
-- Mo
+- Monitors system resources and agent performance
+- Implements tiered recovery strategies
+- Provides proactive health management
+- Coordinates agent lifecycle and dependencies
+- Supports distributed system deployment
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_main_pc_code, get_project_root
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-nitors system resources and agent performance
-- Implements tiered recovery strategies
-- Provides proactive health management
-- Coordinates agent lifecycle and dependencies
-- Supports distributed system deployment
-"""
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import logging
 import socket
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-
 
 # Import path manager for containerization-friendly paths
 import sys
@@ -1578,7 +1576,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

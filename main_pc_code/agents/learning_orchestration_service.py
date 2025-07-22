@@ -13,6 +13,7 @@ import time
 import logging
 import threading
 import json
+import zmq
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
 import psutil

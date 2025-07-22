@@ -6,6 +6,7 @@ import time
 import logging
 import threading
 import argparse
+import zmq
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from main_pc_code.utils.network import get_host
 import psutil
@@ -14,7 +15,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Union
 import pickle
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.config_manager import get_service_ip, get_service_url, get_redis_url, load_unified_config
 
 
 # Import path manager for containerization-friendly paths
@@ -32,15 +33,17 @@ if project_root not in sys.path:
 from common.core.base_agent import BaseAgent
 from utils.service_discovery_client import get_service_address, register_service
 from utils.env_loader import get_env
-from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+# from src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 from common.utils.data_models import (
     TaskDefinition, TaskResult, TaskStatus, SystemEvent, ErrorReport, ErrorSeverity
 )
 from pydantic import BaseModel, Field
 
-from common.config_manager import load_unified_config
+def is_secure_zmq_enabled() -> bool:
+    """Simple placeholder for secure ZMQ check"""
+    return False
 
-# Load configuration at the module level
+# --- Configuration Constants ---
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 

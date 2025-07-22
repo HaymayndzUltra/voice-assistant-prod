@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_env import get_main_pc_code, get_project_root
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
 # Helps LLMs break down problems and avoid common errors
@@ -32,8 +33,8 @@ import os
 from pathlib import Path
 from common.env_helpers import get_env
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 config = load_config()
 
@@ -486,7 +487,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-from common.utils.path_env import get_main_pc_code, get_project_root
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

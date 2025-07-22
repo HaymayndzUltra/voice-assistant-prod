@@ -25,7 +25,7 @@ from typing import Dict, Any, List, Optional
 import threading
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -74,8 +74,8 @@ class EmpathyAgent(BaseAgent):
             tts_address = get_service_address("StreamingTTSAgent")
             if tts_address:
                 self.tts_socket = self.context.socket(zmq.REQ)
-                if is_secure_zmq_enabled():
-                    configure_secure_client(self.tts_socket)
+                # if is_secure_zmq_enabled():
+                #     configure_secure_client(self.tts_socket)
                 self.tts_socket.setsockopt(zmq.RCVTIMEO, 5000)
                 self.tts_socket.setsockopt(zmq.SNDTIMEO, 5000)
                 self.tts_socket.connect(tts_address)

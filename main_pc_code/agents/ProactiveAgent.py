@@ -18,7 +18,7 @@ import zmq
 # Modern imports using BaseAgent infrastructure
 from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
-from common.error_bus.unified_error_handler import ErrorSeverity
+from common.utils.data_models import ErrorSeverity
 from common.config_manager import get_service_ip, get_service_url
 
 class ProactivityLevel(Enum):

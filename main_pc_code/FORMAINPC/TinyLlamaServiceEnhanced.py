@@ -1,5 +1,4 @@
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 TinyLLama Service
 - Provides access to the TinyLLama model via ZMQ
 - Supports on-demand loading/unloading for VRAM management
@@ -39,6 +38,8 @@ from datetime import datetime
 
 # Centralized LLM router client
 from main_pc_code.utils import model_client
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add project root to Python path for common_utils import
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))

@@ -36,14 +36,15 @@ from common.utils.path_manager import PathManager
 # Modern imports
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
+from common.utils.data_models import ErrorSeverity
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
-from common.error_bus.unified_error_handler import ErrorSeverity
 
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
 # Configure logging with modern path management
-log_file_path = PathManager.get_project_root() / "logs" / "observability_hub.log"
+log_file_path = Path(PathManager.get_project_root()) / "logs" / "observability_hub.log"
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
@@ -318,9 +319,9 @@ class AgentLifecycleManager:
         try:
             # Determine config paths based on environment
             if self.config.environment == "pc2":
-                config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+                config_path = Path(PathManager.get_project_root()) / "pc2_code" / "config" / "startup_config.yaml"
             else:
-                config_path = PathManager.get_project_root() / "main_pc_code" / "config" / "startup_config.yaml"
+                config_path = Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"
             
             if config_path.exists():
                 with open(config_path, 'r') as f:
@@ -363,7 +364,7 @@ class AgentLifecycleManager:
             script_path = config.get("script_path", "")
             
             # Make path absolute
-            abs_script_path = PathManager.get_project_root() / script_path
+            abs_script_path = Path(PathManager.get_project_root()) / script_path
             
             if abs_script_path.exists():
                 process = subprocess.Popen([sys.executable, str(abs_script_path)])
@@ -407,7 +408,7 @@ class PerformanceLogger:
     def __init__(self, config: ObservabilityConfig):
         self.config = config
         # Use modern path management
-        data_dir = PathManager.get_project_root() / "data" / "observability_hub"
+        data_dir = Path(PathManager.get_project_root()) / "data" / "observability_hub"
         data_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = data_dir / "performance_metrics.db"
         self.db_lock = threading.Lock()
@@ -594,9 +595,9 @@ class RecoveryManager:
         try:
             # Clear agent-specific cache directories using modern paths
             cache_dirs = [
-                PathManager.get_project_root() / "cache" / agent_name,
-                PathManager.get_project_root() / "temp" / agent_name,
-                PathManager.get_project_root() / "logs" / agent_name
+                Path(PathManager.get_project_root()) / "cache" / agent_name,
+                Path(PathManager.get_project_root()) / "temp" / agent_name,
+                Path(PathManager.get_project_root()) / "logs" / agent_name
             ]
             
             import shutil
@@ -780,9 +781,9 @@ class ObservabilityHub(BaseAgent):
             
             # Load appropriate config file
             if environment == "pc2":
-                config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+                config_path = Path(PathManager.get_project_root()) / "pc2_code" / "config" / "startup_config.yaml"
             else:
-                config_path = PathManager.get_project_root() / "main_pc_code" / "config" / "startup_config.yaml"
+                config_path = Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"
             
             config = ObservabilityConfig(environment=environment)
             
@@ -834,7 +835,7 @@ class ObservabilityHub(BaseAgent):
         """Detect if running on MainPC or PC2"""
         try:
             # Check if PC2 config exists and we're in PC2 context
-            pc2_config_path = PathManager.get_project_root() / "pc2_code" / "config" / "startup_config.yaml"
+            pc2_config_path = Path(PathManager.get_project_root()) / "pc2_code" / "config" / "startup_config.yaml"
             current_script_path = Path(__file__).resolve()
             
             # If we're running from a PC2 context or PC2 config is more recent
