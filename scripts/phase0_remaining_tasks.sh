@@ -56,9 +56,10 @@ echo "============================================================="
 
 # Helper for section banners
 section() {
-  echo "\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "┃ $1"
-  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 
 # ---------------------------------------------------------------------------
@@ -73,7 +74,7 @@ python3 scripts/validate_config.py --all --strict || {
 # ---------------------------------------------------------------------------
 # 2. Port linter – detect cross-system conflicts
 # ---------------------------------------------------------------------------
-section "2. Port usage audit"
+section "2. Port-usage audit"
 python3 scripts/port_linter.py || {
   echo "⚠️  Port linter reported issues. Review output above." >&2
 }
@@ -85,17 +86,17 @@ section "3. Secrets scan (NATS / REDIS / API_KEY / TOKEN)"
 GREP_PATTERN='(NATS_|REDIS_|API_KEY|TOKEN).*[=:]'
 SECRETS_FOUND=$(grep -R --line-number -E "$GREP_PATTERN" main_pc_code pc2_code || true)
 if [[ -n "$SECRETS_FOUND" ]]; then
-  echo "❌ Plain-text secrets detected:\n$SECRETS_FOUND"
+  echo -e "❌ Plain-text secrets detected:\n$SECRETS_FOUND"
   if ! $APPLY_CHANGES; then
     echo "Run again with --apply after moving secrets to SecretManager." >&2
   else
-    echo "\nAttempting automatic placeholder replacement…"
+    echo -e "\nAttempting automatic placeholder replacement…"
     while IFS= read -r line; do
       FILE="$(echo "$line" | cut -d: -f1)"
       sed -i.bak -E "s/$GREP_PATTERN/\${SECRET_PLACEHOLDER}/g" "$FILE"
       echo "  Replaced secrets in $FILE"
     done <<< "$SECRETS_FOUND"
-    echo "✅ Secret placeholders injected. Commit .bak files if needed for diff review."
+    echo "✅ Secret placeholders injected.  (.bak files left for diff review)"
   fi
 else
   echo "✅ No hard-coded secrets found."
@@ -114,24 +115,23 @@ python3 scripts/enforce_base_agent.py || {
 # ---------------------------------------------------------------------------
 section "5. Deep source-code scan & dependency graph"
 python3 source_code_scanner.py || {
-  echo "⚠️  Source-code scanner found issues (see above JSON reports)." >&2
+  echo "⚠️  Source-code scanner found issues (see JSON reports under analysis_output/)." >&2
 }
 
 # ---------------------------------------------------------------------------
-# 6. Observability Hub dual-deployment checks
+# 6. Observability-Hub dual-deployment checks
 # ---------------------------------------------------------------------------
-section "6. Observability Hub dual-deployment status"
+section "6. Observability-Hub dual-deployment status"
 EDGE_HUB_PORT=9100
-CENTRAL_HUB_PORT=9000
 
-# Simple check if Edge hub already running (localhost)
+# Simple check if EdgeHub already running (localhost)
 if lsof -i :$EDGE_HUB_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
   echo "✅ Edge ObservabilityHub already running on port $EDGE_HUB_PORT"
 else
   echo "ℹ️  Edge ObservabilityHub not detected on port $EDGE_HUB_PORT"
   if $APPLY_CHANGES; then
     echo "${DRY_RUN_MSG} Launching EdgeHub …"
-    # Use Python for now; replace with container invocation later
+    # Temporary Python launch; replace with container command in Phase-1
     python3 phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py --port $EDGE_HUB_PORT &
     EDGE_PID=$!
     echo "$EDGE_PID" > observability_edgehub.pid
@@ -144,23 +144,22 @@ fi
 # ---------------------------------------------------------------------------
 # 7. Prometheus exporter flag verification
 # ---------------------------------------------------------------------------
-section "7. Prometheus metrics toggle verification"
-MISSING_METRICS=$(grep -R --line-number -L "ENABLE_PROMETHEUS_METRICS" main_pc_code pc2_code  | grep -E "agents/.+\.py$" | head -n 20 || true)
+section "7. Prometheus-metrics toggle verification"
+MISSING_METRICS=$(grep -R --line-number -L "ENABLE_PROMETHEUS_METRICS" main_pc_code pc2_code | grep -E "agents/.+\\.py$" | head -n 20 || true)
 if [[ -n "$MISSING_METRICS" ]]; then
-  echo "⚠️  Some agents may not enable Prometheus metrics by default:" 
-  echo "$MISSING_METRICS"
+  echo -e "⚠️  The following agents may not enable Prometheus metrics by default:\n$MISSING_METRICS"
   echo "Add env var ENABLE_PROMETHEUS_METRICS=true in their startup or ensure migration to BaseAgent."
 else
-  echo "✅ All agents reference Prometheus metrics env flag."
+  echo "✅ All agents reference Prometheus metrics env-flag."
 fi
 
 # ---------------------------------------------------------------------------
 # 8. Final report
 # ---------------------------------------------------------------------------
 section "8. Phase-0 automation summary"
-echo "All checks/scripts executed. Review warnings above."
+echo "All checks/scripts executed.  Review any warnings above."
 if ! $APPLY_CHANGES; then
-  echo "No destructive changes were applied (dry-run mode). Use --apply to perform migrations/fixes."
+  echo "No destructive changes were applied (dry-run mode).  Use --apply to perform migrations/fixes."
 fi
 
 exit 0
