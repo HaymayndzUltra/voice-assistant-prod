@@ -25,8 +25,8 @@ This document provides instructions for deploying the AI system in containerized
 ```bash
 # On both MainPC and PC2
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+| curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add - |
+| curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list |
 
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
@@ -237,4 +237,4 @@ cp -r config config_backup_$(date +%Y%m%d)
 
 - [Model Configuration Guide](main_pc_code/_DOCUMENTSFINAL/implementation/models_configuration.md)
 - [Error Management Documentation](documentation/error_management/error_management_config.yaml)
-- [Cross-Machine Network Configuration](main_pc_code/_DOCUMENTSFINAL/implementation/cross_machine_network_config.md) 
+- [Cross-Machine Network Configuration](main_pc_code/_DOCUMENTSFINAL/implementation/cross_machine_network_config.md)

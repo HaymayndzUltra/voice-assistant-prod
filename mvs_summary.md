@@ -185,4 +185,4 @@ After the MVS is running stably:
 1. Fill in actual values for environment variables in `run_mvs.sh`
 2. Test each agent's functionality
 3. Gradually add more agents to the system
-4. Monitor system performance and stability 
+4. Monitor system performance and stability

@@ -10,7 +10,7 @@
 ### MAINPC AI (Current Session) - 40 agents
 **I will handle all MainPC agents** including:
 - Fix `get_project_root()` / `get_main_pc_code()` imports
-- Fix `PathManager` import issues  
+- Fix `PathManager` import issues
 - Fix `ErrorSeverity` import problems
 - Fix config file and permission issues
 - Fix typos (`aseAgent` → `BaseAgent`)
@@ -23,7 +23,7 @@
 ### PATTERN 1: Missing error_bus_template Module (6 agents)
 **Agents affected:**
 - `tiered_responder.py`
-- `async_processor.py` 
+- `async_processor.py`
 - `DreamWorldAgent.py`
 - `tutor_agent.py`
 - `remote_connector_agent.py`
@@ -150,7 +150,7 @@ from common.core.base_agent import BaseAgent
 
 **When to notify MainPC AI:**
 - ✅ Completed error_bus_template creation
-- ✅ Fixed major import pattern (5+ agents)  
+- ✅ Fixed major import pattern (5+ agents)
 - ❌ Stuck on specific error pattern
 - ❌ Need shared file modification
 

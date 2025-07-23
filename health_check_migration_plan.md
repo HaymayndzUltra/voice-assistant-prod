@@ -1,8 +1,8 @@
 # HEALTH CHECK MIGRATION PLAN
 
-**Target**: Remove duplicate health check implementations  
-**Scope**: 41+ agent files with custom `_health_check_loop`  
-**Expected Result**: 3,350+ lines eliminated, standardized health checks  
+**Target**: Remove duplicate health check implementations
+**Scope**: 41+ agent files with custom `_health_check_loop`
+**Expected Result**: 3,350+ lines eliminated, standardized health checks
 **Risk**: LOW (BaseAgent implementation already exists and tested)
 
 ---
@@ -10,13 +10,13 @@
 ## 🎯 **MIGRATION STRATEGY**
 
 ### **Phase 1: Safe Migrations (Agents that inherit BaseAgent)**
-**Target**: Agents with `class AgentName(BaseAgent)` + custom `_health_check_loop`  
-**Action**: Simply remove the custom implementation  
+**Target**: Agents with `class AgentName(BaseAgent)` + custom `_health_check_loop`
+**Action**: Simply remove the custom implementation
 **Risk**: VERY LOW (BaseAgent will handle health checks automatically)
 
-### **Phase 2: Class Definition Updates** 
-**Target**: Agents with custom health loops but not inheriting BaseAgent  
-**Action**: Update class definition + remove custom implementation  
+### **Phase 2: Class Definition Updates**
+**Target**: Agents with custom health loops but not inheriting BaseAgent
+**Action**: Update class definition + remove custom implementation
 **Risk**: LOW (well-tested pattern)
 
 ---
@@ -40,7 +40,7 @@ For each safe target:
 
 ### **Step 3: Create Migration Script**
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Health Check Migration Script
 Removes duplicate _health_check_loop implementations from agents that inherit BaseAgent
@@ -54,13 +54,13 @@ def remove_custom_health_loop(file_path):
     """Remove custom _health_check_loop method from file"""
     with open(file_path, 'r') as f:
         content = f.read()
-    
+
     # Pattern to match custom health check loop method
-    pattern = r'\n    def _health_check_loop\(self\):.*?(?=\n    def |\n\nclass |\nif __name__|\Z)'
-    
+| pattern = r'\n    def _health_check_loop\(self\):.*?(?=\n    def | \n\nclass | \nif __name__ | \Z)' |
+
     # Remove the custom implementation
     modified_content = re.sub(pattern, '', content, flags=re.DOTALL)
-    
+
     # Write back if changed
     if content != modified_content:
         with open(file_path, 'w') as f:
@@ -70,13 +70,13 @@ def remove_custom_health_loop(file_path):
 
 def main():
     safe_targets = []
-    
+
     # Read safe migration targets
     with open('safe_migration_targets.txt', 'r') as f:
         safe_targets = [line.strip() for line in f if line.strip()]
-    
+
     print(f"Found {len(safe_targets)} safe migration targets")
-    
+
     for target in safe_targets:
         print(f"Migrating: {target}")
         if remove_custom_health_loop(target):
@@ -120,4 +120,4 @@ After migration:
 
 ---
 
-**Next Action**: Execute Step 1 to identify safe migration targets 
+**Next Action**: Execute Step 1 to identify safe migration targets

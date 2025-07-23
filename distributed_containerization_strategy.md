@@ -162,7 +162,7 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
     command: ["python", "-u", "/app/main_pc_code/agents/system_digital_twin.py"]
-    
+
   # Other MainPC agents...
 ```
 
@@ -189,7 +189,7 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
     command: ["python", "-u", "/app/pc2_code/agents/authentication_agent.py"]
-    
+
   # Other PC2 agents...
 ```
 
@@ -224,7 +224,7 @@ LOG_LEVEL=INFO
 Create machine-specific deployment scripts:
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # scripts/deploy_mainpc.sh
 
 # Set environment variables
@@ -239,14 +239,14 @@ docker build -t ai_system/base:latest -f docker/common/Dockerfile.base --build-a
 docker build -t ai_system/mainpc:latest -f docker/mainpc/Dockerfile.mainpc .
 
 # Create network if it doesn't exist
-docker network create ai_system_network 2>/dev/null || true
+| docker network create ai_system_network 2>/dev/null |  | true |
 
 # Deploy using docker-compose
 docker-compose -f docker/mainpc/docker-compose.yml up -d
 ```
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # scripts/deploy_pc2.sh
 
 # Set environment variables
@@ -261,7 +261,7 @@ docker build -t ai_system/base:latest -f docker/common/Dockerfile.base --build-a
 docker build -t ai_system/pc2:latest -f docker/pc2/Dockerfile.pc2 .
 
 # Create network if it doesn't exist
-docker network create ai_system_network 2>/dev/null || true
+| docker network create ai_system_network 2>/dev/null |  | true |
 
 # Deploy using docker-compose
 docker-compose -f docker/pc2/docker-compose.yml up -d
@@ -285,16 +285,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build MainPC images
-        run: |
+| run: |
           docker build -t ai_system/base:latest -f docker/common/Dockerfile.base --build-arg MACHINE_TYPE=mainpc .
           docker build -t ai_system/mainpc:latest -f docker/mainpc/Dockerfile.mainpc .
-      
+
   build-pc2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build PC2 images
-        run: |
+| run: |
           docker build -t ai_system/base:latest -f docker/common/Dockerfile.base --build-arg MACHINE_TYPE=pc2 .
           docker build -t ai_system/pc2:latest -f docker/pc2/Dockerfile.pc2 .
 ```
@@ -311,11 +311,11 @@ def get_zmq_address(service_name, machine_type=None):
     # Get environment variables
     mainpc_ip = os.environ.get('MAINPC_IP', '172.20.0.10')
     pc2_ip = os.environ.get('PC2_IP', '172.20.1.10')
-    
+
     # Determine which IP to use based on service location
     if machine_type is None:
         machine_type = os.environ.get('MACHINE_TYPE', 'mainpc')
-    
+
     # Use the appropriate IP based on where the service is located
     if service_name in MAINPC_SERVICES:
         ip = mainpc_ip
@@ -324,10 +324,10 @@ def get_zmq_address(service_name, machine_type=None):
     else:
         # Default to local machine
         ip = mainpc_ip if machine_type == 'mainpc' else pc2_ip
-    
+
     # Get the port for this service
     port = SERVICE_PORTS.get(service_name, 5000)
-    
+
     return f"tcp://{ip}:{port}"
 ```
 
@@ -386,4 +386,4 @@ For shared data that needs to be consistent across machines:
 
 ## Conclusion
 
-This distributed containerization strategy allows you to maintain a single git repository while deploying to multiple machines. By using machine-specific Docker images and compose files, you can ensure that each machine runs only the agents it needs, while the shared codebase ensures consistency across the system. The fixed IP addressing and environment-specific configuration make cross-machine communication reliable and predictable. 
+This distributed containerization strategy allows you to maintain a single git repository while deploying to multiple machines. By using machine-specific Docker images and compose files, you can ensure that each machine runs only the agents it needs, while the shared codebase ensures consistency across the system. The fixed IP addressing and environment-specific configuration make cross-machine communication reliable and predictable.

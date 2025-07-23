@@ -268,7 +268,7 @@ ENV BIND_ADDRESS=0.0.0.0
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); s.recv(); s.close()" || exit 1
+| CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); s.recv(); s.close()" |  | exit 1 |
 
 # Default command (will be overridden)
 CMD ["python3", "main_pc_code/agents/system_digital_twin.py"]
@@ -392,7 +392,7 @@ ENV CUDA_VISIBLE_DEVICES=0
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-    CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); s.recv(); s.close()" || exit 1
+| CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); s.recv(); s.close()" |  | exit 1 |
 
 CMD ["python3", "main_pc_code/FORMAINPC/GOT_TOTAgent.py"]
 ```
@@ -457,7 +457,7 @@ ENV USE_DUMMY_AUDIO=true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); s.recv(); s.close()" || exit 1
+| CMD python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); s.recv(); s.close()" |  | exit 1 |
 
 CMD ["python3", "main_pc_code/agents/model_manager_agent.py"]
 ```
@@ -545,7 +545,7 @@ networks:
 
 ### 5.1 Network Setup Script
 ```bash
-#!/bin/bash
+# !/bin/bash
 # setup-networks.sh
 
 echo "Setting up Podman networks for AI System..."
@@ -568,7 +568,7 @@ echo "Networks created successfully!"
 
 ### 5.2 Build Script
 ```bash
-#!/bin/bash
+# !/bin/bash
 # build-images.sh
 
 echo "Building AI System container images..."
@@ -588,7 +588,7 @@ echo "All base images built successfully!"
 
 ### 5.3 Deployment Script
 ```bash
-#!/bin/bash
+# !/bin/bash
 # deploy-system.sh
 
 echo "Deploying AI System containers..."
@@ -618,30 +618,30 @@ echo "All services deployed successfully!"
 
 ### 5.4 Health Check Script
 ```bash
-#!/bin/bash
+# !/bin/bash
 # health-check.sh
 
 echo "Checking AI System health..."
 
 # Check core services
 echo "Core Services Health:"
-podman exec system-digital-twin python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); print('SystemDigitalTwin:', s.recv().decode()); s.close()" || echo "SystemDigitalTwin: FAILED"
+| podman exec system-digital-twin python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); print('SystemDigitalTwin:', s.recv().decode()); s.close()" |  | echo "SystemDigitalTwin: FAILED" |
 
-podman exec coordinator-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:26003'); s.send(b'health'); print('CoordinatorAgent:', s.recv().decode()); s.close()" || echo "CoordinatorAgent: FAILED"
+| podman exec coordinator-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:26003'); s.send(b'health'); print('CoordinatorAgent:', s.recv().decode()); s.close()" |  | echo "CoordinatorAgent: FAILED" |
 
-podman exec chain-of-thought-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5613'); s.send(b'health'); print('ChainOfThoughtAgent:', s.recv().decode()); s.close()" || echo "ChainOfThoughtAgent: FAILED"
+| podman exec chain-of-thought-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5613'); s.send(b'health'); print('ChainOfThoughtAgent:', s.recv().decode()); s.close()" |  | echo "ChainOfThoughtAgent: FAILED" |
 
 # Check system services
 echo "System Services Health:"
-podman exec model-manager-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); print('ModelManagerAgent:', s.recv().decode()); s.close()" || echo "ModelManagerAgent: FAILED"
+| podman exec model-manager-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); print('ModelManagerAgent:', s.recv().decode()); s.close()" |  | echo "ModelManagerAgent: FAILED" |
 
-podman exec emotion-engine python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5591'); s.send(b'health'); print('EmotionEngine:', s.recv().decode()); s.close()" || echo "EmotionEngine: FAILED"
+| podman exec emotion-engine python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5591'); s.send(b'health'); print('EmotionEngine:', s.recv().decode()); s.close()" |  | echo "EmotionEngine: FAILED" |
 
-podman exec audio-capture python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:6576'); s.send(b'health'); print('AudioCapture:', s.recv().decode()); s.close()" || echo "AudioCapture: FAILED"
+| podman exec audio-capture python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:6576'); s.send(b'health'); print('AudioCapture:', s.recv().decode()); s.close()" |  | echo "AudioCapture: FAILED" |
 
 # Check GPU services
 echo "GPU Services Health:"
-podman exec got-tot-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); print('GoTToTAgent:', s.recv().decode()); s.close()" || echo "GoTToTAgent: FAILED"
+| podman exec got-tot-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); print('GoTToTAgent:', s.recv().decode()); s.close()" |  | echo "GoTToTAgent: FAILED" |
 
 echo "Health check completed!"
 ```
@@ -652,7 +652,7 @@ echo "Health check completed!"
 
 ### 6.1 Unit Testing
 ```bash
-#!/bin/bash
+# !/bin/bash
 # test-containers.sh
 
 echo "Running container unit tests..."
@@ -678,7 +678,7 @@ echo "All unit tests completed!"
 
 ### 6.2 Integration Testing
 ```bash
-#!/bin/bash
+# !/bin/bash
 # test-integration.sh
 
 echo "Running integration tests..."
@@ -861,4 +861,4 @@ The plan addresses:
 - **Monitoring & Maintenance**: Comprehensive logging and monitoring setup
 - **Testing & Validation**: Thorough testing at each phase
 
-This approach ensures that the containerized system will be robust, scalable, and maintainable while preserving all existing functionality. 
+This approach ensures that the containerized system will be robust, scalable, and maintainable while preserving all existing functionality.

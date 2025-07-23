@@ -7,7 +7,7 @@ After a thorough examination of the codebase, I've identified several critical i
 ### 1. **Socket Binding Conflicts and ZMQ Socket State Errors**
 
 - **Root Cause**: Multiple ZMQ sockets attempting to bind to the same port, or sockets not being properly closed before rebinding
-- **Evidence**: 
+- **Evidence**:
   - SelfTrainingOrchestrator log: "Resource temporarily unavailable" followed by "Operation cannot be accomplished in current state"
   - StreamingAudioCapture log: "Operation not supported" errors in health check loop
   - Multiple agents trying to use the default port+1 pattern for health check ports
@@ -23,7 +23,7 @@ After a thorough examination of the codebase, I've identified several critical i
 ### 3. **Configuration Parameter Type Errors**
 
 - **Root Cause**: Some agents are not properly handling None values or type conversions in their configuration
-- **Evidence**: 
+- **Evidence**:
   - EmotionEngine error: `TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'`
   - This occurs when trying to convert None to int in the port assignment logic
 
@@ -35,7 +35,7 @@ After a thorough examination of the codebase, I've identified several critical i
     ```python
     # In base_agent.py
     PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-    
+
     # In other files
     MAIN_PC_CODE_DIR = Path(__file__).resolve().parent.parent
     PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -61,15 +61,15 @@ def __init__(self, config=None, **kwargs):
     """Initialize the agent with standardized parameters."""
     # Ensure config is a dictionary
     config = config or {}
-    
+
     # Get name and port from config or environment with proper fallbacks
     self.name = kwargs.get('name', os.environ.get("AGENT_NAME", "DefaultAgentName"))
     self.port = int(kwargs.get('port', os.environ.get("AGENT_PORT", config.get("port", 5000))))
     self.health_port = int(kwargs.get('health_check_port', os.environ.get("HEALTH_CHECK_PORT", config.get("health_check_port", self.port + 1))))
-    
+
     # Call BaseAgent's __init__ with proper parameters
     super().__init__(name=self.name, port=self.port, health_check_port=self.health_port)
-    
+
     # Additional initialization code...
 ```
 
@@ -82,21 +82,21 @@ def setup_zmq(self):
     """Set up ZMQ sockets with proper error handling"""
     try:
         self.context = zmq.Context()
-        
+
         # Main socket
         self.socket = self.context.socket(zmq.REP)
         self.socket.setsockopt(zmq.LINGER, 0)
         self.socket.setsockopt(zmq.RCVTIMEO, 1000)
-        
+
         # Health socket
         self.health_socket = self.context.socket(zmq.REP)
         self.health_socket.setsockopt(zmq.LINGER, 0)
         self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
-        
+
         # Bind sockets with retry logic
         self._bind_socket_with_retry(self.socket, self.port)
         self._bind_socket_with_retry(self.health_socket, self.health_port)
-        
+
         return True
     except Exception as e:
         logger.error(f"Error setting up ZMQ: {e}")
@@ -153,20 +153,20 @@ Ensure all agents properly clean up their resources:
 def cleanup(self):
     """Clean up resources with proper error handling"""
     self.running = False
-    
+
     # Close sockets
     if hasattr(self, 'socket') and self.socket:
         try:
             self.socket.close()
         except Exception as e:
             logger.error(f"Error closing main socket: {e}")
-    
+
     if hasattr(self, 'health_socket') and self.health_socket:
         try:
             self.health_socket.close()
         except Exception as e:
             logger.error(f"Error closing health socket: {e}")
-    
+
     # Terminate context
     if hasattr(self, 'context') and self.context:
         try:
@@ -209,4 +209,4 @@ After implementing these changes, we will:
 3. Start all Layer 0 agents together and verify their collective health
 4. Test the full MVS startup with all agents
 
-This comprehensive approach addresses all the identified root causes and should result in a stable Layer 0 foundation for the system. 
+This comprehensive approach addresses all the identified root causes and should result in a stable Layer 0 foundation for the system.

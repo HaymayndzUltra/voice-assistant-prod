@@ -38,7 +38,7 @@ Based on deep scan of 192 agent files, this plan provides a comprehensive phase-
 ```yaml
 # core-services-pod
 - SystemDigitalTwin
-- CoordinatorAgent  
+- CoordinatorAgent
 - ChainOfThoughtAgent
 - SelfTrainingOrchestrator
 ```
@@ -385,7 +385,7 @@ networks:
 
 ### setup-networks.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Setting up Podman networks for AI System..."
 
 podman network create ai-system-network --subnet 172.20.0.0/16
@@ -402,7 +402,7 @@ echo "Networks created successfully!"
 
 ### build-images.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Building AI System container images..."
 
 podman build -f Dockerfile.core -t ai-system-core:latest .
@@ -414,7 +414,7 @@ echo "All base images built successfully!"
 
 ### deploy-system.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Deploying AI System containers..."
 
 echo "Starting core services..."
@@ -433,28 +433,28 @@ echo "All services deployed successfully!"
 
 ### health-check.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Checking AI System health..."
 
 # Check core services
 echo "Core Services Health:"
-podman exec system-digital-twin python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); print('SystemDigitalTwin:', s.recv().decode()); s.close()" || echo "SystemDigitalTwin: FAILED"
+| podman exec system-digital-twin python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7121'); s.send(b'health'); print('SystemDigitalTwin:', s.recv().decode()); s.close()" |  | echo "SystemDigitalTwin: FAILED" |
 
-podman exec coordinator-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:26003'); s.send(b'health'); print('CoordinatorAgent:', s.recv().decode()); s.close()" || echo "CoordinatorAgent: FAILED"
+| podman exec coordinator-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:26003'); s.send(b'health'); print('CoordinatorAgent:', s.recv().decode()); s.close()" |  | echo "CoordinatorAgent: FAILED" |
 
-podman exec chain-of-thought-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5613'); s.send(b'health'); print('ChainOfThoughtAgent:', s.recv().decode()); s.close()" || echo "ChainOfThoughtAgent: FAILED"
+| podman exec chain-of-thought-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5613'); s.send(b'health'); print('ChainOfThoughtAgent:', s.recv().decode()); s.close()" |  | echo "ChainOfThoughtAgent: FAILED" |
 
 # Check system services
 echo "System Services Health:"
-podman exec model-manager-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); print('ModelManagerAgent:', s.recv().decode()); s.close()" || echo "ModelManagerAgent: FAILED"
+| podman exec model-manager-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5571'); s.send(b'health'); print('ModelManagerAgent:', s.recv().decode()); s.close()" |  | echo "ModelManagerAgent: FAILED" |
 
-podman exec emotion-engine python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5591'); s.send(b'health'); print('EmotionEngine:', s.recv().decode()); s.close()" || echo "EmotionEngine: FAILED"
+| podman exec emotion-engine python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:5591'); s.send(b'health'); print('EmotionEngine:', s.recv().decode()); s.close()" |  | echo "EmotionEngine: FAILED" |
 
-podman exec audio-capture python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:6576'); s.send(b'health'); print('AudioCapture:', s.recv().decode()); s.close()" || echo "AudioCapture: FAILED"
+| podman exec audio-capture python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:6576'); s.send(b'health'); print('AudioCapture:', s.recv().decode()); s.close()" |  | echo "AudioCapture: FAILED" |
 
 # Check GPU services
 echo "GPU Services Health:"
-podman exec got-tot-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); print('GoTToTAgent:', s.recv().decode()); s.close()" || echo "GoTToTAgent: FAILED"
+| podman exec got-tot-agent python3 -c "import zmq; ctx = zmq.Context(); s = ctx.socket(zmq.REQ); s.connect('tcp://localhost:7001'); s.send(b'health'); print('GoTToTAgent:', s.recv().decode()); s.close()" |  | echo "GoTToTAgent: FAILED" |
 
 echo "Health check completed!"
 ```
@@ -465,7 +465,7 @@ echo "Health check completed!"
 
 ### test-containers.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Running container unit tests..."
 
 # Test core services
@@ -489,7 +489,7 @@ echo "All unit tests completed!"
 
 ### test-integration.sh:
 ```bash
-#!/bin/bash
+# !/bin/bash
 echo "Running integration tests..."
 
 # Test inter-service communication
@@ -617,4 +617,4 @@ The plan addresses:
 - **Monitoring & Maintenance**: Comprehensive logging and monitoring setup
 - **Testing & Validation**: Thorough testing at each phase
 
-This approach ensures that the containerized system will be robust, scalable, and maintainable while preserving all existing functionality. 
+This approach ensures that the containerized system will be robust, scalable, and maintainable while preserving all existing functionality.

@@ -15,14 +15,14 @@ The validation test of the Agent Supervisor system showed that only 1 out of 60 
 
 ### Detailed Agent Status
 
-| Agent | Status | Notes |
-|-------|--------|-------|
-| TinyLlamaService | ✅ HEALTHY | Responds correctly to health checks with proper status information |
-| SystemDigitalTwin | ❌ ERROR | Connection refused on HTTP health check port |
-| ModelManagerAgent | ⌛ TIMEOUT | No response on ZMQ health check port |
-| CoordinatorAgent | ⌛ TIMEOUT | No response on ZMQ health check port |
-| ChainOfThoughtAgent | ⌛ TIMEOUT | No response on ZMQ health check port |
-| *All other agents* | ⌛ TIMEOUT | No response on respective health check ports |
+ | Agent | Status | Notes | 
+ | ------- | -------- | ------- | 
+ | TinyLlamaService | ✅ HEALTHY | Responds correctly to health checks with proper status information | 
+ | SystemDigitalTwin | ❌ ERROR | Connection refused on HTTP health check port | 
+ | ModelManagerAgent | ⌛ TIMEOUT | No response on ZMQ health check port | 
+ | CoordinatorAgent | ⌛ TIMEOUT | No response on ZMQ health check port | 
+ | ChainOfThoughtAgent | ⌛ TIMEOUT | No response on ZMQ health check port | 
+ | *All other agents* | ⌛ TIMEOUT | No response on respective health check ports | 
 
 ## Verification Steps
 
@@ -88,4 +88,4 @@ Based on the "Systemic Instability" phase criteria, the next step should be to a
 
 ## Conclusion
 
-The Agent Supervisor validation test reveals significant stability issues in the system. While TinyLlamaService demonstrates proper health check implementation, the majority of agents are unresponsive. Addressing the identified issues with the recommended actions should significantly improve system stability. 
+The Agent Supervisor validation test reveals significant stability issues in the system. While TinyLlamaService demonstrates proper health check implementation, the majority of agents are unresponsive. Addressing the identified issues with the recommended actions should significantly improve system stability.

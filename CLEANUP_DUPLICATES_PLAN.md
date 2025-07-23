@@ -6,12 +6,12 @@
 
 #### **1.1 ModelManagerSuite Cleanup**
 ```bash
-# KEEP: main_pc_code/11.py (this is your working version)  
+# KEEP: main_pc_code/11.py (this is your working version)
 # DELETE: phase1_implementation/group_02_model_manager_suite/
 # DELETE: phase1_implementation/consolidated_agents/model_manager_suite/
 ```
 
-#### **1.2 ResourceManagerSuite Cleanup**  
+#### **1.2 ResourceManagerSuite Cleanup**
 ```bash
 # ANALYZE FIRST: Check which version is being used
 # phase0_implementation/group_02_resource_scheduling/resource_manager_suite/ (2 classes)
@@ -58,7 +58,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 ```bash
 # KEEP ONLY: common/utils/path_env.py version
 # DELETE all local get_main_pc_code() definitions in:
-- main_pc_code/agents/gguf_model_manager.py  
+- main_pc_code/agents/gguf_model_manager.py
 - main_pc_code/agents/tone_detector.py
 - main_pc_code/11.py
 - phase1_implementation/group_02_model_manager_suite/
@@ -69,7 +69,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 # KEEP: scripts/restore_functionality.py (main version)
 # DELETE duplicates in:
 - scripts/pc2_restore_functionality.py
-- scripts/restore_all_agents.py  
+- scripts/restore_all_agents.py
 - cot_agent_audit_phase_c.md
 ```
 
@@ -83,7 +83,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 
 # Files to fix:
 - main_pc_code/agents/plugin_manager.py
-- main_pc_code/agents/llm_runtime_tools.py  
+- main_pc_code/agents/llm_runtime_tools.py
 - main_pc_code/agents/vram_manager copy.py
 ```
 
@@ -98,7 +98,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 
 ### **Script 1: Duplicate Class Remover**
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Remove duplicate class definitions safely"""
 
 DUPLICATE_PATHS_TO_DELETE = [
@@ -115,44 +115,44 @@ for path in DUPLICATE_PATHS_TO_DELETE:
 
 ### **Script 2: Import Path Fixer**
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Standardize all import paths"""
 
 def fix_base_agent_imports(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
-    
+
     # Fix BaseAgent imports
     content = re.sub(
         r'from main_pc_code\.src\.core\.base_agent import BaseAgent',
         'from common.core.base_agent import BaseAgent',
         content
     )
-    
-    # Fix config imports  
+
+    # Fix config imports
     content = re.sub(
         r'from.*config_parser.*import',
         'from main_pc_code.utils.config_loader import load_config',
         content
     )
-    
+
     with open(file_path, 'w') as f:
         f.write(content)
 ```
 
 ### **Script 3: sys.path Cleaner**
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Remove redundant sys.path statements"""
 
 def clean_sys_path(file_path):
     with open(file_path, 'r') as f:
         lines = f.readlines()
-    
+
     # Remove redundant sys.path.insert lines
     cleaned_lines = []
     path_insert_found = False
-    
+
     for line in lines:
         if 'sys.path.insert' in line and path_insert_found:
             continue  # Skip duplicate
@@ -161,7 +161,7 @@ def clean_sys_path(file_path):
             cleaned_lines.append(line)
         else:
             cleaned_lines.append(line)
-    
+
     with open(file_path, 'w') as f:
         f.writelines(cleaned_lines)
 ```
@@ -180,7 +180,7 @@ def clean_sys_path(file_path):
 # Test import resolution
 python -c "from common.core.base_agent import BaseAgent; print('✅ BaseAgent import OK')"
 
-# Test agent instantiation  
+# Test agent instantiation
 python -c "from main_pc_code.agents.model_manager_agent import ModelManagerAgent; print('✅ Agent import OK')"
 
 # Test path resolution
@@ -191,7 +191,7 @@ python -c "from common.utils.path_env import get_main_pc_code; print('✅ Path u
 
 1. **BACKUP FIRST**: Create full backup before any deletion
 2. **TEST INCREMENTALLY**: Test after each phase
-3. **CHECK DOCKER**: Update Dockerfiles if paths change  
+3. **CHECK DOCKER**: Update Dockerfiles if paths change
 4. **VERIFY CONFIGS**: Ensure startup configs still work
 5. **CHECK DEPENDENCIES**: Some agents may depend on "duplicate" paths
 
@@ -200,9 +200,9 @@ python -c "from common.utils.path_env import get_main_pc_code; print('✅ Path u
 After cleanup, you should have:
 - **Single BaseAgent** source of truth
 - **No duplicate class definitions**
-- **Standardized import patterns**  
+- **Standardized import patterns**
 - **Clean sys.path management**
 - **Working final system ready for Docker**
 
 ---
-**Next Step**: Execute Phase 1 (Class Duplicates) first, then test before proceeding. 
+**Next Step**: Execute Phase 1 (Class Duplicates) first, then test before proceeding.

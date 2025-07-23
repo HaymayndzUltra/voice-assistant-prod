@@ -13,7 +13,7 @@ Your analysis identified **8 critical hidden risks** and **29 legacy agents** th
 
 **CONTEXT**: You identified:
 - A: YAML/boot-script mismatch (start_system_v2.py validation bug)
-- B: Dependency graph edge-cases (PC2 deps causing socket hangs) 
+- B: Dependency graph edge-cases (PC2 deps causing socket hangs)
 - C: Port-space saturation (detection gaps in [5000-9000] range)
 - D: Partial BaseAgent adoption (29/77 agents bypass health checks)
 - E: File-based logging race (77 agents, no rotation, disk quota risk)
@@ -21,7 +21,7 @@ Your analysis identified **8 critical hidden risks** and **29 legacy agents** th
 - G: Config drift (nested vs list schemas)
 - H: Security leakage (NATS credentials in YAML → ps aux visible)
 
-**SPECIFIC REQUEST**: 
+**SPECIFIC REQUEST**:
 - Which risk creates **DEPENDENCY CHAINS** that block other fixes?
 - Which fixes can be done **IN PARALLEL** without conflicts?
 - Which require **SYSTEM DOWNTIME** vs can be done live?
@@ -197,7 +197,7 @@ Compatibility: PathManager is already imported by BaseAgent; adding one static m
 ──────────────────────────────────────────────────────────────────────────── IV. BASEAGENT MIGRATION PLAYBOOK ──────────────────────────────────────────────────────────────────────────── A. Exact identification method
 
 grep -R --include='*.py' -L 'class .*BaseAgent' main_pc_code pc2_code \
-     | grep -E 'agents/.+\.py$' | tee legacy_agents.txt
+| grep -E 'agents/.+\.py$' | tee legacy_agents.txt |
 
 Run once on each machine; filter out test and util folders. Result should list ~29 files.
 
@@ -319,8 +319,8 @@ Migration path: run validator in --warn mode first; gradually fix warnings → s
 
 ──────────────────────────────────────────────────────────────────────────── VII. SECRETS REMEDIATION ──────────────────────────────────────────────────────────────────────────── Grep patterns:
 
-grep -R --line-number -E '(NATS_|REDIS_|API_KEY|TOKEN).*=' pc2_code main_pc_code
-grep -R --line-number -E '("nats://.*:.*@)|(\snats_user:)|(\snats_password:)' *.yaml
+| grep -R --line-number -E '(NATS_ | REDIS_ | API_KEY | TOKEN).*=' pc2_code main_pc_code |
+| grep -R --line-number -E '("nats://.*:.*@) | (\snats_user:) | (\snats_password:)' *.yaml |
 
 Secure injection
 
@@ -371,7 +371,7 @@ Checkpoint & Go/No-Go review.
 
 Success metrics per task: unit + integration tests, CI passes, no alerts.
 
-──────────────────────────────────────────────────────────────────────────── IX. RISK ASSESSMENT MATRIX ──────────────────────────────────────────────────────────────────────────── | Risk (A–H) | Impact (1-10) | Complexity | Depends-On | Dev-Days | Ops-Cost | |------------|--------------|------------|------------|----------|----------| | G | 9 | 4 | none | 0.5 | Low | | A | 8 | 2 | G | 0.2 | Low | | C | 7 | 3 | G | 0.3 | Low | | D | 9 | 6 | G,C | 2 | Medium | | E | 6 | 2 | G | 0.4 | Low | | H | 8 | 4 | G | 1 | Medium | | F | 9 | 7 | C,D,E,H | 3 | Medium | | B | 5 | 5 | F | 2 | Medium |
+| ──────────────────────────────────────────────────────────────────────────── IX. RISK ASSESSMENT MATRIX ──────────────────────────────────────────────────────────────────────────── | Risk (A–H) | Impact (1-10) | Complexity | Depends-On | Dev-Days | Ops-Cost |  | ------------ | -------------- | ------------ | ------------ | ---------- | ---------- |  | G | 9 | 4 | none | 0.5 | Low |  | A | 8 | 2 | G | 0.2 | Low |  | C | 7 | 3 | G | 0.3 | Low |  | D | 9 | 6 | G,C | 2 | Medium |  | E | 6 | 2 | G | 0.4 | Low |  | H | 8 | 4 | G | 1 | Medium |  | F | 9 | 7 | C,D,E,H | 3 | Medium |  | B | 5 | 5 | F | 2 | Medium |
 
 ──────────────────────────────────────────────────────────────────────────── X. EMERGENCY PROTOCOLS ────────────────────────────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ Your analysis identified **8 critical hidden risks** and **29 legacy agents** th
 
 **CONTEXT**: You identified:
 - A: YAML/boot-script mismatch (start_system_v2.py validation bug)
-- B: Dependency graph edge-cases (PC2 deps causing socket hangs) 
+- B: Dependency graph edge-cases (PC2 deps causing socket hangs)
 - C: Port-space saturation (detection gaps in [5000-9000] range)
 - D: Partial BaseAgent adoption (29/77 agents bypass health checks)
 - E: File-based logging race (77 agents, no rotation, disk quota risk)
@@ -21,7 +21,7 @@ Your analysis identified **8 critical hidden risks** and **29 legacy agents** th
 - G: Config drift (nested vs list schemas)
 - H: Security leakage (NATS credentials in YAML → ps aux visible)
 
-**SPECIFIC REQUEST**: 
+**SPECIFIC REQUEST**:
 - Which risk creates **DEPENDENCY CHAINS** that block other fixes?
 - Which fixes can be done **IN PARALLEL** without conflicts?
 - Which require **SYSTEM DOWNTIME** vs can be done live?
@@ -162,4 +162,4 @@ SUCCESS: [How to know it worked]
 
 **REQUEST**: Convert your strategic analysis into **EXECUTABLE IMPLEMENTATION PROCEDURES** that our team can follow step-by-step to safely remediate the identified systemic risks while maintaining zero downtime for our production AI agent ecosystem.
 
-Provide **CONCRETE, ACTIONABLE GUIDANCE** - not just strategic direction. 
+Provide **CONCRETE, ACTIONABLE GUIDANCE** - not just strategic direction.

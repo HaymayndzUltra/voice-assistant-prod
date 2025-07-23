@@ -3,7 +3,7 @@
 ## Changes Made
 
 1. **Added a ZMQ Connection String Generator Function**
-   - Added `get_zmq_connection_string()` to `main_pc_code/utils/network_utils.py` 
+   - Added `get_zmq_connection_string()` to `main_pc_code/utils/network_utils.py`
    - This function properly handles generating ZeroMQ connection strings based on network configuration
 
 2. **Manually Updated Key Files**
@@ -56,4 +56,4 @@
 4. Created an automated script for bulk refactoring
 5. Verified that all targeted files were successfully updated
 
-The system now properly handles IP address configuration through a centralized configuration file rather than using hardcoded values, improving maintainability and deployment flexibility. 
+The system now properly handles IP address configuration through a centralized configuration file rather than using hardcoded values, improving maintainability and deployment flexibility.
