@@ -20,7 +20,7 @@ Constraints honoured:
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
@@ -50,7 +50,7 @@ except ImportError as e:
     USE_COMMON_UTILS = False
     print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
 
-CONFIG_REL_PATH = Path(join_path("config", "startup_config.yaml"))
+CONFIG_REL_PATH = Path(PathManager.join_path("config", "startup_config.yaml"))
 
 # Define active agent directories (exclude archive/reference folders)
 AGENT_DIRS = ["agents", "src", "FORMAINPC"]

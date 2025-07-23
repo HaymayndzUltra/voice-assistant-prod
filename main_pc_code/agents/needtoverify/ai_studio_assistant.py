@@ -31,15 +31,15 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.pc2_connections import get_connection_string
 from common.env_helpers import get_env
 
 # Setup logging
-LOG_PATH = join_path("logs", "ai_studio_assistant.log")
+LOG_PATH = PathManager.join_path("logs", "ai_studio_assistant.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(
@@ -266,7 +266,7 @@ class AIStudioAssistant(BaseAgent):
                     return {"status": "error", "error": f"Could not set max tokens: {str(e)}"}
             
             # Take screenshot of settings for confirmation
-            screenshot_path = join_path("logs", "ai_studio_settings.png")
+            screenshot_path = PathManager.join_path("logs", "ai_studio_settings.png")
             self.browser.save_screenshot(screenshot_path)
             
             return {
@@ -340,7 +340,7 @@ class AIStudioAssistant(BaseAgent):
                 self.last_response = response_text
                 
                 # Take screenshot of the conversation
-                screenshot_path = join_path("logs", "ai_studio_conversation.png")
+                screenshot_path = PathManager.join_path("logs", "ai_studio_conversation.png")
                 self.browser.save_screenshot(screenshot_path)
                 
                 logger.info(f"Received response. Screenshot saved to {screenshot_path}")
@@ -353,7 +353,7 @@ class AIStudioAssistant(BaseAgent):
                 }
                 
             except TimeoutException:
-                screenshot_path = join_path("logs", "ai_studio_timeout.png")
+                screenshot_path = PathManager.join_path("logs", "ai_studio_timeout.png")
                 self.browser.save_screenshot(screenshot_path)
                 return {
                     "status": "error",
@@ -420,7 +420,7 @@ class AIStudioAssistant(BaseAgent):
                 logger.info(f"Received code execution response")
                 
                 # Take screenshot of the execution result
-                screenshot_path = join_path("logs", "code_execution_result.png")
+                screenshot_path = PathManager.join_path("logs", "code_execution_result.png")
                 self.browser.save_screenshot(screenshot_path)
                 
                 return {

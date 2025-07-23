@@ -19,7 +19,7 @@ import sys
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class HealthCheckFixer:
-    def __init__(self, config_path: str = join_path("config", "startup_config.yaml")):
+    def __init__(self, config_path: str = PathManager.join_path("config", "startup_config.yaml")):
         self.config_path = config_path
         self.healthy_agents: Set[str] = set()
         self.unhealthy_agents: Dict[str, int] = {}  # agent_name -> retry_count

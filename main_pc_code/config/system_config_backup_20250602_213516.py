@@ -9,7 +9,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Base paths
 ROOT_DIR = Path(__file__).parent.parent.absolute()
@@ -85,7 +85,7 @@ DEFAULT_CONFIG = {
             "face_recognition_port": 5560, 
         },
         "whisper_model_config": {
-            "model_path": join_path("models", "whisper/large-ct2"),
+            "model_path": PathManager.join_path("models", "whisper/large-ct2"),
             "use_gpu": True,
             "compute_type": "float16",
         },

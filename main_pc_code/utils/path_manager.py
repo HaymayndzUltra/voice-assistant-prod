@@ -15,7 +15,7 @@ Usage:
     config_dir = PathManager.get_config_dir()
     
     # Resolve a path relative to project root
-    full_path = PathManager.resolve_path(join_path("main_pc_code", "agents/model_manager_agent.py"))
+    full_path = PathManager.resolve_path(PathManager.join_path("main_pc_code", "agents/model_manager_agent.py"))
     
     # Get logs directory
     logs_dir = PathManager.get_logs_dir()
@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Optional, Union, Dict
 
 # Define a simple join_path function for use in this module
-def join_path(*args):
+def PathManager.join_path(*args):
     return os.path.join(*args)
 
 # Define get_project_root function for bootstrapping
@@ -44,7 +44,7 @@ def get_project_root():
             ".git",
             "main_pc_code",
             "pc2_code",
-            join_path("config", "network_config.yaml")
+            PathManager.join_path("config", "network_config.yaml")
         ]):
             return current_dir
         
@@ -110,7 +110,7 @@ class PathManager:
                         ".git",
                         "main_pc_code",
                         "pc2_code",
-                        join_path("config", "network_config.yaml")
+                        PathManager.join_path("config", "network_config.yaml")
                     ]):
                         cls._project_root = current_dir
                         break
@@ -121,7 +121,7 @@ class PathManager:
                 # If we couldn't find the project root, use a reasonable default
                 if cls._project_root is None:
                     # If this file is in main_pc_code/utils, go up two directories
-                    if join_path("main_pc_code", "utils") in str(current_file):
+                    if PathManager.join_path("main_pc_code", "utils") in str(current_file):
                         cls._project_root = current_file.parent.parent.parent
                     else:
                         # Last resort: use current working directory
@@ -334,7 +334,7 @@ PathManager.get_project_root()
 # This should be at the end of the file
 try:
     # Now that the project root is properly set up, we can import path_env
-    from common.utils.path_env import get_path, get_file_path
+    from common.utils.path_manager import PathManager
     # Note: We already have our own join_path function defined above
 except ImportError:
     logger.warning("Could not import path_env module. Using built-in path functions.")
@@ -343,7 +343,7 @@ except ImportError:
         return PathManager.resolve_path(path_name)
     
     def get_file_path(directory, filename) -> Path:
-        return PathManager.resolve_path(join_path(directory, filename))
+        return PathManager.resolve_path(PathManager.join_path(directory, filename))
 
 if __name__ == "__main__":
     # Print key paths when run directly

@@ -25,10 +25,10 @@ from typing import List, Dict, Any, Tuple, Optional, Set
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Configure logging
-LOG_PATH = join_path("logs", "lazy_voting.log")
+LOG_PATH = PathManager.join_path("logs", "lazy_voting.log")
 Path(LOG_PATH).parent.mkdir(exist_ok=True)
 
 logging.basicConfig(

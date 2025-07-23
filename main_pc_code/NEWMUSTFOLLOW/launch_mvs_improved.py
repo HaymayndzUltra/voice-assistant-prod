@@ -22,7 +22,7 @@ import threading
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -53,9 +53,9 @@ def find_config_file():
     """Find the minimal system configuration file."""
     possible_paths = [
         os.path.join(SCRIPT_DIR, "minimal_system_config.yaml"),
-        join_path("config", join_path("config", "minimal_system_config.yaml")),
-        join_path("main_pc_code", join_path("config", "minimal_system_config.yaml")),
-        join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config.yaml"),
+        PathManager.join_path("config", PathManager.join_path("config", "minimal_system_config.yaml")),
+        PathManager.join_path("main_pc_code", PathManager.join_path("config", "minimal_system_config.yaml")),
+        PathManager.join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config.yaml"),
     ]
     
     for path in possible_paths:
@@ -86,8 +86,8 @@ def load_config():
 def find_agent_file(agent_name):
     """Find the Python file for an agent."""
     possible_locations = [
-        join_path("main_pc_code", "agents/{agent_name}.py"),
-        join_path("main_pc_code", "src/agents/{agent_name}.py"),
+        PathManager.join_path("main_pc_code", "agents/{agent_name}.py"),
+        PathManager.join_path("main_pc_code", "src/agents/{agent_name}.py"),
         os.path.join(PROJECT_ROOT, "src", "agents", f"{agent_name}.py"),
     ]
     

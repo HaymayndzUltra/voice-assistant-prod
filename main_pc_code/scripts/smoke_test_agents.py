@@ -8,9 +8,9 @@ from pathlib import Path
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 def load_config():
-    with open(join_path("config", "startup_config.yaml"), 'r') as f:
+    with open(PathManager.join_path("config", "startup_config.yaml"), 'r') as f:
         return yaml.safe_load(f)
 
 def smoke_test_agents():

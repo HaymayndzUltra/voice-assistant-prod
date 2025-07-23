@@ -38,7 +38,7 @@ from typing import Dict, Any
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -64,7 +64,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "rca_agent.log"))
+        logging.FileHandler(PathManager.join_path("logs", "rca_agent.log"))
     ]
 )
 logger = logging.getLogger("RCA_Agent")

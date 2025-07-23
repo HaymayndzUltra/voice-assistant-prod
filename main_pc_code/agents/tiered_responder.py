@@ -27,7 +27,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 
 # Import error publisher for compatibility
 from main_pc_code.agents.error_publisher import ErrorPublisher

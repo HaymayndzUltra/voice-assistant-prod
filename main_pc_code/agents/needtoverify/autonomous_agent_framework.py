@@ -41,14 +41,14 @@ from main_pc_code.agents.utils.data_optimizer import DataOptimizer
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.pc2_connections import get_connection_string
 
 # Setup logging
-LOG_PATH = join_path("logs", "autonomous_agent_framework.log")
+LOG_PATH = PathManager.join_path("logs", "autonomous_agent_framework.log")
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(
@@ -67,7 +67,7 @@ MODEL_MANAGER_PORT = 5556
 MEMORY_AGENT_PORT = 5596
 
 # Path for experience memory storage
-EXPERIENCE_DB_PATH = join_path("data", "experience_memory.pkl")
+EXPERIENCE_DB_PATH = PathManager.join_path("data", "experience_memory.pkl")
 os.makedirs(os.path.dirname(EXPERIENCE_DB_PATH), exist_ok=True)
 
 # Initialize DataOptimizer

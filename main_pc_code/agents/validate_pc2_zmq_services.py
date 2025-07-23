@@ -12,11 +12,11 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Set up logging with timestamp for unique filename
 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-log_file = fjoin_path("logs", "pc2_zmq_validation_{current_time}.log")
+log_file = fPathManager.join_path("logs", "pc2_zmq_validation_{current_time}.log")
 
 # Create logs directory if it doesn't exist
 Path('logs').mkdir(exist_ok=True)

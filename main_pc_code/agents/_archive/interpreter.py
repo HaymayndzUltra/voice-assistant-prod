@@ -28,8 +28,8 @@ from collections import deque
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Import the advanced context manager
 try:
 from main_pc_code.agents.context_manager import ContextManager, create_context_manager
@@ -49,7 +49,7 @@ MEMORY_AGENT_PORT = 5596  # Changed from 5590 to use the new unified memory agen
 # Settings
 ZMQ_LISTENER_PORT = 5555
 ZMQ_FACE_PORT = 5556  # Port for face recognition agent
-MODEL_PATH = join_path("models", "mistral")  # Change to your local LLM path
+MODEL_PATH = PathManager.join_path("models", "mistral")  # Change to your local LLM path
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LOG_PATH = "interpreter_agent.log"
 USER_PROFILE_PATH = "user_profile.json"

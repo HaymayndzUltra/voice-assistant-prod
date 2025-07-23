@@ -40,7 +40,7 @@ logging.basicConfig(
 logger = logging.getLogger("UltimateTTSAgent")
 
 # Add custom XTTS path
-xtts_path = rjoin_path("models", "xtts_local")
+xtts_path = rPathManager.join_path("models", "xtts_local")
 if os.path.exists(xtts_path):
     sys.path.append(xtts_path)
     logger.info(f"Added custom XTTS path: {xtts_path}")

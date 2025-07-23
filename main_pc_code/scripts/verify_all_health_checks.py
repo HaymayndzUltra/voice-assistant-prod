@@ -28,7 +28,7 @@ import subprocess
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -48,7 +48,7 @@ PORT_OVERRIDES = {
 
 def load_startup_config():
     """Load the startup configuration from the YAML file."""
-    config_path = join_path("main_pc_code", join_path("config", "startup_config.yaml"))
+    config_path = PathManager.join_path("main_pc_code", PathManager.join_path("config", "startup_config.yaml"))
     try:
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)

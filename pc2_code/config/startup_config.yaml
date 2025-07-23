@@ -22,8 +22,8 @@ pc2_services:
       name: MemoryOrchestratorService,
       script_path: pc2_code/agents/memory_orchestrator_service.py,
       host: 0.0.0.0,
-      port: 7140,
-      health_check_port: 8140,
+      port: "${PORT_OFFSET}+7140",
+      health_check_port: "${PORT_OFFSET}+8140",
       required: true,
       dependencies: [],
     }
@@ -31,8 +31,8 @@ pc2_services:
       name: TieredResponder,
       script_path: pc2_code/agents/tiered_responder.py,
       host: 0.0.0.0,
-      port: 7100,
-      health_check_port: 8100,
+      port: "${PORT_OFFSET}+7100",
+      health_check_port: "${PORT_OFFSET}+8100",
       required: true,
       dependencies: [ResourceManager],
     }
@@ -40,8 +40,8 @@ pc2_services:
       name: AsyncProcessor,
       script_path: pc2_code/agents/async_processor.py,
       host: 0.0.0.0,
-      port: 7101,
-      health_check_port: 8101,
+      port: "${PORT_OFFSET}+7101",
+      health_check_port: "${PORT_OFFSET}+8101",
       required: true,
       dependencies: [ResourceManager],
     }
@@ -49,8 +49,8 @@ pc2_services:
       name: CacheManager,
       script_path: pc2_code/agents/cache_manager.py,
       host: 0.0.0.0,
-      port: 7102,
-      health_check_port: 8102,
+      port: "${PORT_OFFSET}+7102",
+      health_check_port: "${PORT_OFFSET}+8102",
       required: true,
       dependencies: [MemoryOrchestratorService],
     }
@@ -59,8 +59,8 @@ pc2_services:
   #     name: PerformanceMonitor,
   #     script_path: pc2_code/agents/performance_monitor.py,
   #     host: 0.0.0.0,
-  #     port: 7103,
-  #     health_check_port: 8103,
+  #     port: "${PORT_OFFSET}+7103",
+  #     health_check_port: "${PORT_OFFSET}+8103",
   #     required: true,
   #     dependencies: [PerformanceLoggerAgent],
   #   }
@@ -68,8 +68,8 @@ pc2_services:
       name: VisionProcessingAgent,
       script_path: pc2_code/agents/VisionProcessingAgent.py,
       host: 0.0.0.0,
-      port: 7150,
-      health_check_port: 8150,
+      port: "${PORT_OFFSET}+7150",
+      health_check_port: "${PORT_OFFSET}+8150",
       required: true,
       dependencies: [CacheManager],
     }
@@ -79,8 +79,8 @@ pc2_services:
       name: DreamWorldAgent,
       script_path: pc2_code/agents/DreamWorldAgent.py,
       host: 0.0.0.0,
-      port: 7104,
-      health_check_port: 8104,
+      port: "${PORT_OFFSET}+7104",
+      health_check_port: "${PORT_OFFSET}+8104",
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
@@ -88,8 +88,8 @@ pc2_services:
       name: UnifiedMemoryReasoningAgent,
       script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
       host: 0.0.0.0,
-      port: 7105,
-      health_check_port: 8105,
+      port: "${PORT_OFFSET}+7105",
+      health_check_port: "${PORT_OFFSET}+8105",
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
@@ -97,8 +97,8 @@ pc2_services:
       name: TutorAgent,
       script_path: pc2_code/agents/tutor_agent.py,
       host: 0.0.0.0,
-      port: 7108,
-      health_check_port: 8108,
+      port: "${PORT_OFFSET}+7108",
+      health_check_port: "${PORT_OFFSET}+8108",
       required: true,
       dependencies: [MemoryOrchestratorService],
     }
@@ -106,8 +106,8 @@ pc2_services:
       name: TutoringAgent,
       script_path: pc2_code/agents/tutoring_agent.py,
       host: 0.0.0.0,
-      port: 7131,
-      health_check_port: 8131,
+      port: "${PORT_OFFSET}+7131",
+      health_check_port: "${PORT_OFFSET}+8131",
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
@@ -117,8 +117,8 @@ pc2_services:
       name: ContextManager,
       script_path: pc2_code/agents/context_manager.py,
       host: 0.0.0.0,
-      port: 7111,
-      health_check_port: 8111,
+      port: "${PORT_OFFSET}+7111",
+      health_check_port: "${PORT_OFFSET}+8111",
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
@@ -126,8 +126,8 @@ pc2_services:
       name: ExperienceTracker,
       script_path: pc2_code/agents/experience_tracker.py,
       host: 0.0.0.0,
-      port: 7112,
-      health_check_port: 8112,
+      port: "${PORT_OFFSET}+7112",
+      health_check_port: "${PORT_OFFSET}+8112",
       dependencies: [MemoryOrchestratorService],
       required: true,
     }
@@ -135,8 +135,8 @@ pc2_services:
       name: ResourceManager,
       script_path: pc2_code/agents/resource_manager.py,
       host: 0.0.0.0,
-      port: 7113,
-      health_check_port: 8113,
+      port: "${PORT_OFFSET}+7113",
+      health_check_port: "${PORT_OFFSET}+8113",
       required: true,
       dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
@@ -145,8 +145,8 @@ pc2_services:
   #     name: HealthMonitor,
   #     script_path: pc2_code/agents/health_monitor.py,
   #     host: 0.0.0.0,
-  #     port: 7114,
-  #     health_check_port: 8114,
+  #     port: "${PORT_OFFSET}+7114",
+  #     health_check_port: "${PORT_OFFSET}+8114",
   #     required: true,
   #     dependencies: [PerformanceMonitor],
   #   }
@@ -154,8 +154,8 @@ pc2_services:
       name: TaskScheduler,
       script_path: pc2_code/agents/task_scheduler.py,
       host: 0.0.0.0,
-      port: 7115,
-      health_check_port: 8115,
+      port: "${PORT_OFFSET}+7115",
+      health_check_port: "${PORT_OFFSET}+8115",
       dependencies: [AsyncProcessor],
       required: true,
     }
@@ -165,8 +165,8 @@ pc2_services:
       name: AuthenticationAgent,
       script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py,
       host: 0.0.0.0,
-      port: 7116,
-      health_check_port: 8116,
+      port: "${PORT_OFFSET}+7116",
+      health_check_port: "${PORT_OFFSET}+8116",
       required: true,
       dependencies: [UnifiedUtilsAgent],
     }
@@ -175,8 +175,8 @@ pc2_services:
   #     name: SystemHealthManager,
   #     script_path: pc2_code/agents/ForPC2/system_health_manager.py,
   #     host: 0.0.0.0,
-  #     port: 7117,
-  #     health_check_port: 8117,
+  #     port: "${PORT_OFFSET}+7117",
+  #     health_check_port: "${PORT_OFFSET}+8117",
   #     required: true,
   #     dependencies: [], # Removed HealthMonitor dependency to break circular reference
   #   }
@@ -184,8 +184,8 @@ pc2_services:
       name: UnifiedUtilsAgent,
       script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
       host: 0.0.0.0,
-      port: 7118,
-      health_check_port: 8118,
+      port: "${PORT_OFFSET}+7118",
+      health_check_port: "${PORT_OFFSET}+8118",
       required: true,
       dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
@@ -193,8 +193,8 @@ pc2_services:
       name: ProactiveContextMonitor,
       script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py,
       host: 0.0.0.0,
-      port: 7119,
-      health_check_port: 8119,
+      port: "${PORT_OFFSET}+7119",
+      health_check_port: "${PORT_OFFSET}+8119",
       dependencies: [ContextManager],
       required: true,
     }
@@ -204,8 +204,8 @@ pc2_services:
       name: AgentTrustScorer,
       script_path: pc2_code/agents/AgentTrustScorer.py,
       host: 0.0.0.0,
-      port: 7122,
-      health_check_port: 8122,
+      port: "${PORT_OFFSET}+7122",
+      health_check_port: "${PORT_OFFSET}+8122",
       required: true,
       dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
     }
@@ -213,8 +213,8 @@ pc2_services:
       name: FileSystemAssistantAgent,
       script_path: pc2_code/agents/filesystem_assistant_agent.py,
       host: 0.0.0.0,
-      port: 7123,
-      health_check_port: 8123,
+      port: "${PORT_OFFSET}+7123",
+      health_check_port: "${PORT_OFFSET}+8123",
       required: true,
       dependencies: [UnifiedUtilsAgent],
     }
@@ -222,8 +222,8 @@ pc2_services:
       name: RemoteConnectorAgent,
       script_path: pc2_code/agents/remote_connector_agent.py,
       host: 0.0.0.0,
-      port: 7124,
-      health_check_port: 8124,
+      port: "${PORT_OFFSET}+7124",
+      health_check_port: "${PORT_OFFSET}+8124",
       required: true,
       dependencies: [AdvancedRouter],
     }
@@ -231,8 +231,8 @@ pc2_services:
       name: UnifiedWebAgent,
       script_path: pc2_code/agents/unified_web_agent.py,
       host: 0.0.0.0,
-      port: 7126,
-      health_check_port: 8126,
+      port: "${PORT_OFFSET}+7126",
+      health_check_port: "${PORT_OFFSET}+8126",
       required: true,
       dependencies: [FileSystemAssistantAgent, MemoryOrchestratorService],
     }
@@ -240,8 +240,8 @@ pc2_services:
       name: DreamingModeAgent,
       script_path: pc2_code/agents/DreamingModeAgent.py,
       host: 0.0.0.0,
-      port: 7127,
-      health_check_port: 8127,
+      port: "${PORT_OFFSET}+7127",
+      health_check_port: "${PORT_OFFSET}+8127",
       dependencies: [DreamWorldAgent],
       required: true,
     }
@@ -250,8 +250,8 @@ pc2_services:
   #     name: PerformanceLoggerAgent,
   #     script_path: pc2_code/agents/PerformanceLoggerAgent.py,
   #     host: 0.0.0.0,
-  #     port: 7128,
-  #     health_check_port: 8128,
+  #     port: "${PORT_OFFSET}+7128",
+  #     health_check_port: "${PORT_OFFSET}+8128",
   #     required: true,
   #     dependencies: [], # Removed SystemHealthManager dependency to break circular reference
   #   }
@@ -259,8 +259,8 @@ pc2_services:
       name: AdvancedRouter,
       script_path: pc2_code/agents/advanced_router.py,
       host: 0.0.0.0,
-      port: 7129,
-      health_check_port: 8129,
+      port: "${PORT_OFFSET}+7129",
+      health_check_port: "${PORT_OFFSET}+8129",
       required: true,
       dependencies: [TaskScheduler],
     }
@@ -270,13 +270,13 @@ pc2_services:
       name: ObservabilityHub,
       script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py,
       host: 0.0.0.0,
-      port: 9100,
-      health_check_port: 9110,
+      port: "${PORT_OFFSET}+9100",
+      health_check_port: "${PORT_OFFSET}+9110",
       required: true,
       dependencies: [],  # Core monitoring service, no dependencies
       config: {
         scope: "pc2_agents",
-        prometheus_port: 9100,
+        prometheus_port: "${PORT_OFFSET}+9100",
         cross_machine_sync: true,
         mainpc_hub_endpoint: "http://192.168.100.16:9000",
         parallel_health_checks: true,
@@ -302,4 +302,4 @@ pc2_network:
 # DUPLICATE REMOVED - MemoryOrchestratorService already defined in pc2_services section above
 # This duplicate entry was causing port conflicts (7140 used twice) and health port confusion (8140 vs 7141)
 
-error_bus_port: 7150
+error_bus_port: "${PORT_OFFSET}+7150"

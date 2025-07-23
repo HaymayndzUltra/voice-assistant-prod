@@ -22,8 +22,8 @@ from bark import SAMPLE_RATE, generate_audio, preload_models
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -64,7 +64,7 @@ VOICE_PRESETS = {
 }
 
 # Cache directory for generated audio
-CACHE_DIR = Path(join_path("cache", "tts_cache"))
+CACHE_DIR = Path(PathManager.join_path("cache", "tts_cache"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 class BarkTTSAgent(BaseAgent):

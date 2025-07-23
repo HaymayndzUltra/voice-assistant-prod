@@ -16,8 +16,8 @@ from typing import Dict, List, Any, Optional, Tuple, Set
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 logger = logging.getLogger("CommandSuggestion")
 
 class CommandSuggestion(BaseAgent):
@@ -32,7 +32,7 @@ class CommandSuggestion(BaseAgent):
             min_confidence: Minimum confidence threshold for suggestions
             max_suggestions: Maximum number of suggestions to return
         """
-        self.data_file = data_file or join_path("data", "command_patterns.json")
+        self.data_file = data_file or PathManager.join_path("data", "command_patterns.json")
         
         # Ensure data directory exists
         os.makedirs(os.path.dirname(self.data_file), exist_ok=True)

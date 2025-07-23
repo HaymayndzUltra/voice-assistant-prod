@@ -27,14 +27,14 @@ import sys
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add parent directory to path for config import
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
 
 # Constants
-LOG_PATH = join_path("logs", "unified_memory_reasoning_agent.log")
+LOG_PATH = PathManager.join_path("logs", "unified_memory_reasoning_agent.log")
 CONTEXT_STORE_PATH = "memory_store.json"
 ERROR_PATTERNS_PATH = "error_patterns.json"
 ZMQ_PORT = 5596  # Unique port for PC2

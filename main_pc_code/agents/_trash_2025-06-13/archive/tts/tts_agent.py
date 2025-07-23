@@ -8,7 +8,7 @@ import re
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 
 # Import sounddevice configuration module to ensure correct device settings
 try:
@@ -96,7 +96,7 @@ def xtts_speak(text, voice_sample_path=None, language="en"):
         # Always use the user's provided default sample if none is given
         import os
         if not voice_sample_path:
-            voice_sample_path = join_path("data", "voice_samples", "voice.wav")
+            voice_sample_path = PathManager.join_path("data", "voice_samples", "voice.wav")
         
         # Check if voice sample exists
         if voice_sample_path and os.path.isfile(voice_sample_path):

@@ -361,7 +361,7 @@ if __name__ == "__main__":
     import argparse
     import psutil
     from datetime import datetime
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 
     parser = argparse.ArgumentParser(description="Trigger Word Detector: Detects trigger words/phrases in transcribed speech.")
     parser.add_argument('--passive', action='store_true', help='Run in passive mode, processing all speech')

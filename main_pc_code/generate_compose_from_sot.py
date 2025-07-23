@@ -6,8 +6,8 @@ import os
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
-SOT_PATH = join_path("config", "startup_config.yaml")
+from common.utils.path_manager import PathManager
+SOT_PATH = PathManager.join_path("config", "startup_config.yaml")
 COMPOSE_PATH = 'docker-compose.yml'
 
 # Sections in SOT that contain agents

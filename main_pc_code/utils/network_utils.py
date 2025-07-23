@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from common.utils.path_env import get_path, join_path, get_file_path, get_project_root, get_main_pc_code
+from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 sys.path.insert(0, get_project_root())
 # Add the project's main_pc_code directory to the Python path
@@ -52,7 +52,7 @@ def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     if config_path is None:
         config_path = os.environ.get(
             "NETWORK_CONFIG_PATH", 
-            join_path("config", "network_config.yaml")
+            PathManager.join_path("config", "network_config.yaml")
         )
     
     try:

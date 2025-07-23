@@ -24,8 +24,8 @@ import zmq
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # --- Path Setup ---
 MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
@@ -46,7 +46,7 @@ logger = logging.getLogger('ErrorManagementSystem')
 # --- Constants ---
 DEFAULT_PORT = 7125 # Main port for receiving commands
 ERROR_BUS_PORT = 7150 # Port for the ZMQ PUB/SUB Error Bus
-DB_PATH = join_path("data", "error_system.db")
+DB_PATH = PathManager.join_path("data", "error_system.db")
 LOGS_DIR = "logs"
 HEARTBEAT_INTERVAL = 15
 HEARTBEAT_TIMEOUT = 45

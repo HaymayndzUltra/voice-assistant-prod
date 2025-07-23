@@ -10,7 +10,7 @@ from datetime import datetime
 import sys
 import os
 from pathlib import Path
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())

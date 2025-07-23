@@ -18,8 +18,8 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+from common.utils.path_manager import PathManager
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from common.core.base_agent import BaseAgent
@@ -29,7 +29,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(join_path("logs", "unified_memory_reasoning_agent.log"), encoding="utf-8"),
+        logging.FileHandler(PathManager.join_path("logs", "unified_memory_reasoning_agent.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )

@@ -27,7 +27,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 # Constants for health reporting

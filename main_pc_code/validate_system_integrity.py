@@ -8,8 +8,8 @@ from collections import defaultdict
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
-SOT_CONFIG_PATH = Path(join_path("config", "source_of_truth_config.yaml"))
+from common.utils.path_manager import PathManager
+SOT_CONFIG_PATH = Path(PathManager.join_path("config", "source_of_truth_config.yaml"))
 PROJECT_ROOT = Path(__file__).parent
 
 class SystemValidator:

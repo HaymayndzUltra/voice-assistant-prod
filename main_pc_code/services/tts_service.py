@@ -24,7 +24,7 @@ from collections import OrderedDict
 
 # Add the project's main_pc_code directory to the Python path
 from common.utils.path_manager import PathManager
-from common.utils.path_env import get_project_root
+from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))

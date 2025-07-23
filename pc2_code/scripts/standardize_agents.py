@@ -27,7 +27,7 @@ from typing import Dict, List, Set, Optional, Union, Any, Tuple
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
@@ -38,7 +38,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "standardize_agents.log")),
+        logging.FileHandler(PathManager.join_path("logs", "standardize_agents.log")),
         logging.StreamHandler()
     ]
 )

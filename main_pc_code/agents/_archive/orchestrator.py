@@ -34,8 +34,8 @@ from typing import Dict, List, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Ensure virtual environment is active
 if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
@@ -44,8 +44,8 @@ if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.
     # Continue execution but with warning
 
 # Configuration
-LOG_PATH = join_path("logs", "orchestrator.log")
-AGENT_LOG_PATH = join_path("logs", "agents.log")
+LOG_PATH = PathManager.join_path("logs", "orchestrator.log")
+AGENT_LOG_PATH = PathManager.join_path("logs", "agents.log")
 ZMQ_HEALTH_PORT = 5599
 HEALTH_CHECK_INTERVAL = 10  # seconds
 RESTART_COOLDOWN = 30  # seconds between restart attempts for the same agent

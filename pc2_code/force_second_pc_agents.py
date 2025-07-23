@@ -9,9 +9,9 @@ import time
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 def get_config():
-    config_path = join_path("config", "distributed_config.json")
+    config_path = PathManager.join_path("config", "distributed_config.json")
     with open(config_path, "r") as f:
         return json.load(f)
 

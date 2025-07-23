@@ -17,11 +17,11 @@ import prettytable
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Set up logging
 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-log_filename = fjoin_path("logs", "pc2_zmq_health_report_{current_time}.log")
+log_filename = fPathManager.join_path("logs", "pc2_zmq_health_report_{current_time}.log")
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)

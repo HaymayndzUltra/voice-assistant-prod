@@ -35,8 +35,8 @@ import GPUtil
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add the parent directory to sys.path to import the config module
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -108,11 +108,11 @@ test_config_path = os.environ.get("MMA_CONFIG_PATH")
 if test_config_path:
     # Dedicated log file for test run
     test_log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    test_log_filename = fjoin_path("logs", "mma_test_{test_log_timestamp}.log")
+    test_log_filename = fPathManager.join_path("logs", "mma_test_{test_log_timestamp}.log")
     log_file_path = test_log_filename
 else:
     # Default log file with rotation
-    log_file_path = join_path("logs", "mma_PATCH_VERIFY_TEST.log")
+    log_file_path = PathManager.join_path("logs", "mma_PATCH_VERIFY_TEST.log")
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
@@ -915,7 +915,7 @@ from main_pc_code.utils.config_loader import Config
             
             # Then try to load additional GGUF models configuration if it exists
             try:
-                gguf_models_path = Path(join_path("config", "gguf_models.json"))
+                gguf_models_path = Path(PathManager.join_path("config", "gguf_models.json"))
                 if gguf_models_path.exists():
                     with open(gguf_models_path, 'r') as f:
                         gguf_models = json.load(f)

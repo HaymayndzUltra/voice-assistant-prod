@@ -14,7 +14,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Add project root to Python path for common_utils import
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +34,7 @@ except ImportError:
     print("[WARNING] common_utils modules not found. Using default environment settings.")
 
 # --- Configuration ---
-CONFIG_PATH = join_path("config", "startup_config.yaml")
+CONFIG_PATH = PathManager.join_path("config", "startup_config.yaml")
 LOGS_DIR = "logs"
 HEALTH_CHECK_TIMEOUT = 120  # seconds
 HEALTH_CHECK_INTERVAL = 2   # seconds

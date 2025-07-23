@@ -1,5 +1,5 @@
 from common.config_manager import get_service_ip, get_service_url
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
 from main_pc_code.src.core.base_agent import BaseAgent
 """
 
@@ -46,7 +46,7 @@ from command_suggestion_optimized import CommandSuggestionOptimized
 # Import clustering if available
 try:
     from command_clustering import CommandClusteringEngine
-from common.utils.path_env import get_main_pc_code, get_project_root
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
 

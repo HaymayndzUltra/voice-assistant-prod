@@ -16,7 +16,7 @@ import logging
 import zmq
 from typing import Dict, Any, Optional, Tuple, List, Union
 
-from common.utils.path_env import get_project_root, get_main_pc_code, join_path
+from common.utils.path_manager import PathManager
 PROJECT_ROOT = get_project_root()
 MAIN_PC_CODE = get_main_pc_code()
 if MAIN_PC_CODE not in sys.path:
