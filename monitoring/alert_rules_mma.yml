@@ -1,0 +1,73 @@
+groups:
+- name: modelmanager_agent_alerts
+  rules:
+  - alert: MMAGPUMemoryHigh
+    annotations:
+      description: GPU memory utilization is {{ $value }}% on device {{ $labels.gpu_device
+        }}
+      summary: ModelManagerAgent GPU memory usage is high
+    expr: mma_gpu_memory_utilization > 90
+    for: 2m
+    labels:
+      component: ModelManagerAgent
+      severity: warning
+  - alert: MMAGPUMemoryCritical
+    annotations:
+      description: GPU memory utilization is {{ $value }}% on device {{ $labels.gpu_device
+        }}. Immediate action required.
+      summary: ModelManagerAgent GPU memory usage is critical
+    expr: mma_gpu_memory_utilization > 95
+    for: 1m
+    labels:
+      component: ModelManagerAgent
+      severity: critical
+  - alert: MMAModelLoadingSlow
+    annotations:
+      description: Average model loading time is {{ $value }}s for model {{ $labels.model_name
+        }}
+      summary: ModelManagerAgent model loading is slow
+    expr: rate(mma_model_loading_duration_seconds_sum[5m]) / rate(mma_model_loading_duration_seconds_count[5m])
+      > 10
+    for: 3m
+    labels:
+      component: ModelManagerAgent
+      severity: warning
+  - alert: MMAThreadUnhealthy
+    annotations:
+      description: Thread {{ $labels.thread_name }} of type {{ $labels.thread_type
+        }} is unhealthy
+      summary: ModelManagerAgent thread is unhealthy
+    expr: mma_thread_health_status == 0
+    for: 1m
+    labels:
+      component: ModelManagerAgent
+      severity: critical
+  - alert: MMASocketDisconnected
+    annotations:
+      description: Socket {{ $labels.socket_type }} to {{ $labels.endpoint }} is disconnected
+      summary: ModelManagerAgent socket disconnected
+    expr: mma_socket_connection_status == 0
+    for: 30s
+    labels:
+      component: ModelManagerAgent
+      severity: warning
+  - alert: MMAGPUTemperatureHigh
+    annotations:
+      description: "GPU {{ $labels.gpu_device }} temperature is {{ $value }}\xB0C"
+      summary: ModelManagerAgent GPU temperature is high
+    expr: mma_gpu_temperature_celsius > 85
+    for: 2m
+    labels:
+      component: ModelManagerAgent
+      severity: warning
+  - alert: MMAMigrationRollbackTrigger
+    annotations:
+      description: Critical condition detected - consider migration rollback
+      summary: ModelManagerAgent migration rollback trigger activated
+    expr: mma_thread_health_status == 0 OR mma_gpu_memory_utilization > 98 OR mma_gpu_temperature_celsius
+      > 90
+    for: 1m
+    labels:
+      action: rollback
+      component: ModelManagerAgent
+      severity: critical

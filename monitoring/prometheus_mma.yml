@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+rule_files:
+- alert_rules_mma.yml
+scrape_configs:
+- job_name: modelmanager-agent
+  metrics_path: /metrics
+  scrape_interval: 5s
+  static_configs:
+  - targets:
+    - localhost:5570
+- job_name: observability-hub-mma
+  metrics_path: /metrics/mma
+  scrape_interval: 10s
+  static_configs:
+  - targets:
+    - localhost:9000
