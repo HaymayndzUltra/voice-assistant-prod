@@ -1,27 +1,3 @@
-# ============================================================================
-# MODELMANAGERAGENT MIGRATION APPLIED
-# Date: 2025-07-23T10:01:54.217345
-# Phase: 1 Week 4 Day 3
-# Status: Socket (53 patterns) + Threading (7 threads) → BaseAgent Integration
-# Migration ID: MMA_MIGRATION_1753236114
-# ============================================================================
-
-
-# SOCKET MIGRATION COMPLETE:
-# - 53 ZMQ socket patterns migrated to BaseAgent request handling
-# - REP sockets → BaseAgent.handle_request()
-# - PUB sockets → BaseAgent.publish_status()
-# - Raw sockets → BaseAgent health system
-
-# THREADING MIGRATION COMPLETE:
-# - 7 custom threads integrated with BaseAgent lifecycle
-# - Memory management → BaseAgent background tasks
-# - Health monitoring → BaseAgent health system
-# - Request handling → BaseAgent request processing
-
-# MIGRATION MARKER: Socket patterns migrated to BaseAgent
-# Date: 2025-07-23T10:00:27.201916
-# Status: 53 socket patterns processed
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
@@ -177,7 +153,7 @@ print(f"[MMA STARTUP] Logging to: {log_file_path}")
 logger.critical("--- EXECUTING MAIN MMA (agents/) Version: GGUF_GRANULAR_LOG_V_ULTIMATE ---")
 
 # ZMQ ports - using variables that won't trigger the audit check
-MODEL_MANAGER_PORT = int(os.environ.get("MODEL_MANAGER_PORT", "5570"))
+MODEL_MANAGER_PORT = int(os.environ.get("MODEL_MANAGER_PORT", "5571"))
 TASK_ROUTER_PORT = int(os.environ.get("TASK_ROUTER_PORT", "5571"))
 
 # Import and load configuration at module level
