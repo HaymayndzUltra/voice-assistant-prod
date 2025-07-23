@@ -57,8 +57,8 @@ from common.env_helpers import get_env
 DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
 DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
 DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
-DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", f"redis://{get_env('REDIS_HOST', 'redis')}:6379/0")
-DEFAULT_REDIS_PREFIX = os.getenv("SERVICE_REGISTRY_REDIS_PREFIX", "service_registry:")
+DEFAULT_${SECRET_PLACEHOLDER}6379/0")
+DEFAULT_${SECRET_PLACEHOLDER}")
 
 logger = logging.getLogger("ServiceRegistryAgent")
 
@@ -113,7 +113,7 @@ class RedisBackend:
     Provides persistence and high-availability.
     """
     
-    def __init__(self, redis_url: str, prefix: str = DEFAULT_REDIS_PREFIX) -> None:
+    def __init__(self, redis_url: str, prefix: str = DEFAULT_${SECRET_PLACEHOLDER}
         """Initialize Redis backend.
         
         Args:
@@ -163,7 +163,7 @@ class RedisBackend:
 class ServiceRegistryAgent(BaseAgent):
     """A service registry with configurable backend storage."""
 
-    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_REDIS_URL, **kwargs):
+    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_${SECRET_PLACEHOLDER}
         """Initialize the service registry.
         
         Args:

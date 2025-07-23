@@ -153,7 +153,7 @@ def check_health(agent, timeout=HEALTH_CHECK_TIMEOUT):
     # First check if agent reported ready via Redis
     try:
         import redis
-        r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, db=0)
+        r = redis.Redis(host=os.getenv('${SECRET_PLACEHOLDER}0)
         ready_key = f"agent:ready:{agent_name}"
         if r.get(ready_key) == b'1':
             print(f"    [READY] {agent_name} reported ready via Redis")

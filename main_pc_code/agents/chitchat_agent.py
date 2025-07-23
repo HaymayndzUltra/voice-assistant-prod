@@ -55,7 +55,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Conversation settings
 MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
-MAX_HISTORY_TOKENS = 2000  # Maximum number of tokens in history
+MAX_HISTORY_${SECRET_PLACEHOLDER} 2000  # Maximum number of tokens in history
 
 class ChitchatAgent(BaseAgent):
     """Agent for handling natural conversational interactions. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""

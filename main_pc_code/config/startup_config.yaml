@@ -11,27 +11,10 @@ global_settings:
     cpu_percent: 80
     memory_mb: 2048
     max_threads: 4
-  volumes:
-  - source: ./logs
-    target: /app/logs
-  - source: ./models
-    target: /app/models
-  - source: ./data
-    target: /app/data
-  - source: ./config
-    target: /app/config
   health_checks:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
-    start_period_seconds: 300
-  network:
-    name: ai_system_network
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.20.0.0/16
 agent_groups:
   core_services:
     ServiceRegistry:
@@ -79,7 +62,7 @@ agent_groups:
     ObservabilityHub:
       script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
       port: 9000
-      health_check_port: 9100
+      health_check_port: 9001
       required: true
       dependencies:
       - SystemDigitalTwin

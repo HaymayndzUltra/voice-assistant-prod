@@ -16,7 +16,12 @@ import threading
 import asyncio
 import json
 import concurrent.futures
-import numpy as np
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    logger.warning("NumPy not available, predictive analytics will be limited")
 import zmq
 import sqlite3
 import pickle
