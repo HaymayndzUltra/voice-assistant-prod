@@ -14,6 +14,7 @@ PRE-FLIGHT (DevOps AI)
 0.1 git pull origin main --rebase
 0.2 python3 generate_agent_inventory.py ➜ verify agent_inventory.csv (≈298 rows).
 0.3 Run python3 check_port_conflicts.py --max-count 1 — expect failures; continue to Step 2.
+0.4 python3 legacy_code_audit.py && python3 legacy_config_diff.py && python3 dep_freeze_compare.py — generate legacy_report.json and auto-create GitHub issues if conflicts detected.
 CI GUARDRAILS (Sprint 0.5 – P0)
 1.1 Create branch refactor/ci-guardrails
 1.2 Add scripts under .github/workflows/guardrails.yml (example below).

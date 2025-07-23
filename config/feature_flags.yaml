@@ -1,0 +1,5 @@
+# Feature flags for incremental refactors and experimental code paths
+# Set to true to enable new behaviour; false keeps legacy functionality.
+use_new_port_registry: false
+legacy_exception_wrapping: false
+predictive_loading_enabled: false 
