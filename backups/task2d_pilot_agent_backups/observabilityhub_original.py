@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Enhanced ObservabilityHub - RESTORED VERSION with Complete Functionality
-Combines distributed architecture features with all missing functionality:
-- PredictiveAnalyzer, AgentLifecycleManager, PerformanceLogger, RecoveryManager
-- Distributed Architecture: Central Hub (MainPC Port 9000) + Edge Hub (PC2 Port 9100)
-- Enhanced cross-machine metrics synchronization, failover, and comprehensive monitoring
+ObservabilityHub - Phase 1 Implementation (MODERNIZED)
+Consolidates: PredictiveHealthMonitor (5613), PerformanceMonitor (7103), HealthMonitor (7114), 
+PerformanceLoggerAgent (7128), SystemHealthManager (7117)
+Target: Prometheus exporter, log shipper, anomaly detector threads (Port 9000)
+Hardware: MainPC (Central Hub) + PC2 (Local Reporter)
+Enhanced with modern patterns: PathManager, StandardizedHealthChecker, UnifiedErrorHandler
+Cross-machine compatible with network-aware configuration
 """
 
 import sys
@@ -21,26 +23,27 @@ import zmq
 import sqlite3
 import pickle
 import yaml
-import requests
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from collections import defaultdict, deque
 import uuid
 
-# Add project paths for imports
+# Add project paths for imports - Modern path management
 from common.utils.path_manager import PathManager
+
+# Modern imports
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
 
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
-# Configure logging
+# Configure logging with modern path management
 log_file_path = Path(PathManager.get_project_root()) / "logs" / "observability_hub.log"
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -54,9 +57,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ObservabilityHub")
 
-# Prometheus integration
+# O3 Required: Prometheus integration
 try:
-    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server, push_to_gateway, generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, start_http_server, push_to_gateway
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     logger.warning("Prometheus client not available, using mock implementation")
@@ -84,39 +87,21 @@ class PredictiveAlert:
 
 @dataclass
 class ObservabilityConfig:
-    """Configuration for ObservabilityHub with distributed support"""
+    """Configuration for ObservabilityHub"""
     scope: str = "all_agents"
     prometheus_enabled: bool = True
     parallel_health_checks: bool = True
     prediction_enabled: bool = True
-    
-    # Enhanced distributed settings
     cross_machine_sync: bool = False
     mainpc_hub_endpoint: Optional[str] = None
     environment: str = "mainpc"  # mainpc or pc2
     role: str = "central_hub"  # central_hub or local_reporter
-    
-    # Distributed architecture settings
-    enable_failover: bool = True
-    failover_timeout: int = 10  # seconds
-    max_failover_attempts: int = 3
-    
-    # Data persistence
-    enable_data_persistence: bool = True
-    data_retention_days: int = 30
-    
-    # Performance settings
-    max_concurrent_health_checks: int = 50
-    health_check_timeout: int = 5
-    metrics_collection_interval: int = 30
 
 class PrometheusMetrics:
-    """Enhanced Prometheus metrics with distributed support"""
+    """O3 Required: Prometheus metrics integration"""
     
-    def __init__(self, config: ObservabilityConfig):
-        self.config = config
-        self.instance_name = f"{config.environment}_{config.role}"
-        
+    def __init__(self, instance_name: str = "mainpc"):
+        self.instance_name = instance_name
         if PROMETHEUS_AVAILABLE:
             self.registry = CollectorRegistry()
             self._setup_metrics()
@@ -125,15 +110,15 @@ class PrometheusMetrics:
             self._setup_mock_metrics()
     
     def _setup_metrics(self):
-        """Setup enhanced Prometheus metrics"""
+        """Setup Prometheus metrics"""
         if not PROMETHEUS_AVAILABLE:
             return
             
-        # Agent health metrics with distributed context
+        # Agent health metrics
         self.agent_health_gauge = Gauge(
             'agent_health_status',
             'Health status of agents (1=healthy, 0=unhealthy)',
-            ['agent_name', 'instance', 'environment', 'hub_role'],
+            ['agent_name', 'instance'],
             registry=self.registry
         )
         
@@ -141,14 +126,14 @@ class PrometheusMetrics:
         self.cpu_usage_gauge = Gauge(
             'system_cpu_usage_percent',
             'CPU usage percentage',
-            ['instance', 'hub_role'],
+            ['instance'],
             registry=self.registry
         )
         
         self.memory_usage_gauge = Gauge(
             'system_memory_usage_bytes',
             'Memory usage in bytes',
-            ['instance', 'hub_role', 'type'],
+            ['instance', 'type'],
             registry=self.registry
         )
         
@@ -156,7 +141,7 @@ class PrometheusMetrics:
         self.request_counter = Counter(
             'agent_requests_total',
             'Total number of requests per agent',
-            ['agent_name', 'status', 'hub_role'],
+            ['agent_name', 'status'],
             registry=self.registry
         )
         
@@ -164,7 +149,7 @@ class PrometheusMetrics:
         self.response_time_histogram = Histogram(
             'agent_response_time_seconds',
             'Response time in seconds',
-            ['agent_name', 'hub_role'],
+            ['agent_name'],
             registry=self.registry
         )
         
@@ -172,23 +157,7 @@ class PrometheusMetrics:
         self.failure_probability_gauge = Gauge(
             'agent_failure_probability',
             'Predicted failure probability (0-1)',
-            ['agent_name', 'hub_role'],
-            registry=self.registry
-        )
-        
-        # Distributed hub metrics
-        self.hub_status_gauge = Gauge(
-            'observability_hub_status',
-            'Status of observability hubs (1=active, 0=inactive)',
-            ['hub_role', 'environment'],
-            registry=self.registry
-        )
-        
-        # Cross-machine sync metrics
-        self.sync_success_counter = Counter(
-            'observability_sync_attempts_total',
-            'Total synchronization attempts',
-            ['source_hub', 'target_hub', 'status'],
+            ['agent_name'],
             registry=self.registry
         )
     
@@ -197,87 +166,52 @@ class PrometheusMetrics:
         self.metrics_data = defaultdict(dict)
     
     def update_agent_health(self, agent_name: str, health_status: float):
-        """Update agent health metric with distributed context"""
+        """Update agent health metric"""
         if PROMETHEUS_AVAILABLE and self.registry:
-            self.agent_health_gauge.labels(
-                agent_name=agent_name,
-                instance=self.instance_name,
-                environment=self.config.environment,
-                hub_role=self.config.role
-            ).set(health_status)
+            self.agent_health_gauge.labels(agent_name=agent_name, instance=self.instance_name).set(health_status)
         else:
             self.metrics_data['agent_health'][agent_name] = health_status
     
     def update_system_metric(self, metric_name: str, value: float, labels: Optional[Dict[str, str]] = None):
-        """Update system metric with hub context"""
+        """Update system metric"""
         if labels is None:
             labels = {}
             
         if PROMETHEUS_AVAILABLE and self.registry:
             if metric_name == 'cpu_usage':
-                self.cpu_usage_gauge.labels(
-                    instance=self.instance_name,
-                    hub_role=self.config.role
-                ).set(value)
+                self.cpu_usage_gauge.labels(instance=self.instance_name).set(value)
             elif metric_name == 'memory_usage':
                 memory_type = labels.get('type', 'used')
-                self.memory_usage_gauge.labels(
-                    instance=self.instance_name,
-                    hub_role=self.config.role,
-                    type=memory_type
-                ).set(value)
+                self.memory_usage_gauge.labels(instance=self.instance_name, type=memory_type).set(value)
         else:
             self.metrics_data['system'][metric_name] = value
     
     def record_request(self, agent_name: str, status: str):
-        """Record request metric with hub context"""
+        """Record request metric"""
         if PROMETHEUS_AVAILABLE and self.registry:
-            self.request_counter.labels(
-                agent_name=agent_name,
-                status=status,
-                hub_role=self.config.role
-            ).inc()
+            self.request_counter.labels(agent_name=agent_name, status=status).inc()
         else:
             key = f"{agent_name}_{status}"
             self.metrics_data['requests'][key] = self.metrics_data['requests'].get(key, 0) + 1
     
     def record_response_time(self, agent_name: str, response_time: float):
-        """Record response time metric with hub context"""
+        """Record response time metric"""
         if PROMETHEUS_AVAILABLE and self.registry:
-            self.response_time_histogram.labels(
-                agent_name=agent_name,
-                hub_role=self.config.role
-            ).observe(response_time)
+            self.response_time_histogram.labels(agent_name=agent_name).observe(response_time)
         else:
             if agent_name not in self.metrics_data['response_times']:
                 self.metrics_data['response_times'][agent_name] = []
             self.metrics_data['response_times'][agent_name].append(response_time)
     
     def update_failure_probability(self, agent_name: str, probability: float):
-        """Update predicted failure probability with hub context"""
+        """Update predicted failure probability"""
         if PROMETHEUS_AVAILABLE and self.registry:
-            self.failure_probability_gauge.labels(
-                agent_name=agent_name,
-                hub_role=self.config.role
-            ).set(probability)
+            self.failure_probability_gauge.labels(agent_name=agent_name).set(probability)
         else:
             self.metrics_data['failure_probability'][agent_name] = probability
-    
-    def record_sync_attempt(self, target_hub: str, success: bool):
-        """Record cross-machine synchronization attempt"""
-        if PROMETHEUS_AVAILABLE and self.registry:
-            status = "success" if success else "failure"
-            self.sync_success_counter.labels(
-                source_hub=self.instance_name,
-                target_hub=target_hub,
-                status=status
-            ).inc()
-        else:
-            key = f"sync_{target_hub}_{status}"
-            self.metrics_data['sync'][key] = self.metrics_data['sync'].get(key, 0) + 1
 
 class PredictiveAnalyzer:
-    """O3 Required: Predictive analytics algorithms (RESTORED)"""
+    """O3 Required: Predictive analytics algorithms"""
     
     def __init__(self):
         self.agent_metrics = defaultdict(lambda: deque(maxlen=100))  # Store last 100 metrics
@@ -369,9 +303,9 @@ class PredictiveAnalyzer:
         
         return alerts
 
-# RESTORED FUNCTIONALITY: Agent Process Management
+# MISSING LOGIC 1: Agent Process Management (from PredictiveHealthMonitor)
 class AgentLifecycleManager:
-    """PredictiveHealthMonitor Logic: Agent lifecycle and process management (RESTORED)"""
+    """PredictiveHealthMonitor Logic: Agent lifecycle and process management"""
     
     def __init__(self, config: ObservabilityConfig):
         self.config = config
@@ -467,23 +401,22 @@ class AgentLifecycleManager:
             logger.error(f"Error restarting agent {agent_name}: {e}")
             return False
 
-# RESTORED FUNCTIONALITY: Performance Data Persistence
+# MISSING LOGIC 2: Performance Data Persistence (from PerformanceLoggerAgent)
 class PerformanceLogger:
-    """PerformanceLoggerAgent Logic: Performance data logging and persistence (RESTORED)"""
+    """PerformanceLoggerAgent Logic: Performance data logging and persistence"""
     
     def __init__(self, config: ObservabilityConfig):
         self.config = config
         # Use modern path management
         data_dir = Path(PathManager.get_project_root()) / "data" / "observability_hub"
         data_dir.mkdir(parents=True, exist_ok=True)
-        self.db_path = data_dir / f"performance_metrics_{config.environment}.db"
+        self.db_path = data_dir / "performance_metrics.db"
         self.db_lock = threading.Lock()
         self._init_database()
         
         # Start cleanup thread
-        if config.enable_data_persistence:
-            self.cleanup_thread = threading.Thread(target=self._cleanup_old_metrics, daemon=True)
-            self.cleanup_thread.start()
+        self.cleanup_thread = threading.Thread(target=self._cleanup_old_metrics, daemon=True)
+        self.cleanup_thread.start()
     
     def _init_database(self):
         """Initialize SQLite database for performance metrics"""
@@ -497,8 +430,7 @@ class PerformanceLogger:
                         metric_type TEXT NOT NULL,
                         metric_value REAL NOT NULL,
                         metadata TEXT,
-                        environment TEXT NOT NULL,
-                        hub_role TEXT NOT NULL
+                        environment TEXT NOT NULL
                     )
                 """)
                 
@@ -521,9 +453,6 @@ class PerformanceLogger:
     
     def log_metric(self, agent_name: str, metric_type: str, value: float, metadata: Optional[Dict[str, Any]] = None):
         """Log a performance metric to database"""
-        if not self.config.enable_data_persistence:
-            return
-            
         if metadata is None:
             metadata = {}
             
@@ -532,16 +461,15 @@ class PerformanceLogger:
                 with sqlite3.connect(str(self.db_path)) as conn:
                     conn.execute("""
                         INSERT INTO performance_metrics 
-                        (timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        (timestamp, agent_name, metric_type, metric_value, metadata, environment)
+                        VALUES (?, ?, ?, ?, ?, ?)
                     """, (
                         time.time(),
                         agent_name,
                         metric_type,
                         value,
                         json.dumps(metadata) if metadata else None,
-                        self.config.environment,
-                        self.config.role
+                        self.config.environment
                     ))
                     
         except Exception as e:
@@ -555,14 +483,14 @@ class PerformanceLogger:
             with sqlite3.connect(str(self.db_path)) as conn:
                 if agent_name:
                     cursor = conn.execute("""
-                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment
                         FROM performance_metrics
                         WHERE agent_name = ? AND timestamp > ? AND environment = ?
                         ORDER BY timestamp DESC
                     """, (agent_name, cutoff_time, self.config.environment))
                 else:
                     cursor = conn.execute("""
-                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role
+                        SELECT timestamp, agent_name, metric_type, metric_value, metadata, environment
                         FROM performance_metrics
                         WHERE timestamp > ? AND environment = ?
                         ORDER BY timestamp DESC
@@ -570,15 +498,14 @@ class PerformanceLogger:
                 
                 results = []
                 for row in cursor.fetchall():
-                    timestamp, agent_name, metric_type, metric_value, metadata, environment, hub_role = row
+                    timestamp, agent_name, metric_type, metric_value, metadata, environment = row
                     results.append({
                         'timestamp': timestamp,
                         'agent_name': agent_name,
                         'metric_type': metric_type,
                         'metric_value': metric_value,
                         'metadata': json.loads(metadata) if metadata else {},
-                        'environment': environment,
-                        'hub_role': hub_role
+                        'environment': environment
                     })
                 
                 return results
@@ -591,8 +518,8 @@ class PerformanceLogger:
         """Cleanup old metrics periodically"""
         while True:
             try:
-                # Remove metrics older than retention period
-                cutoff_time = time.time() - (self.config.data_retention_days * 24 * 3600)
+                # Remove metrics older than 30 days
+                cutoff_time = time.time() - (30 * 24 * 3600)
                 
                 with self.db_lock:
                     with sqlite3.connect(str(self.db_path)) as conn:
@@ -610,9 +537,9 @@ class PerformanceLogger:
                 logger.error(f"Error in cleanup thread: {e}")
                 time.sleep(3600)  # Wait 1 hour before retrying
 
-# RESTORED FUNCTIONALITY: Recovery Strategies
+# MISSING LOGIC 3: Recovery Strategies (from PredictiveHealthMonitor)
 class RecoveryManager:
-    """PredictiveHealthMonitor Logic: Tiered recovery strategies (RESTORED)"""
+    """PredictiveHealthMonitor Logic: Tiered recovery strategies"""
     
     def __init__(self, lifecycle_manager: AgentLifecycleManager, config: ObservabilityConfig):
         self.lifecycle_manager = lifecycle_manager
@@ -718,11 +645,6 @@ class CrossMachineSync:
         self.sync_thread = None
         self.running = False
         
-        # Failover tracking
-        self.peer_hub_status = "unknown"
-        self.sync_failures = 0
-        self.failover_active = False
-        
     def start_sync(self):
         """Start cross-machine sync if enabled"""
         if not self.sync_enabled or not self.mainpc_endpoint:
@@ -746,59 +668,25 @@ class CrossMachineSync:
         
         while self.running:
             try:
-                # Check peer hub status first
-                self._check_peer_status()
-                
                 # Collect local metrics to sync
                 sync_data = self._collect_sync_data()
                 
-                if self.peer_hub_status == "healthy":
-                    # Send to MainPC ObservabilityHub
-                    response = requests.post(
-                        f"{self.mainpc_endpoint}/sync_from_pc2",
-                        json=sync_data,
-                        timeout=self.config.failover_timeout
-                    )
-                    
-                    if response.status_code == 200:
-                        logger.debug(f"Successfully synced data to MainPC: {len(sync_data)} metrics")
-                        self.sync_failures = 0
-                        self.failover_active = False
-                    else:
-                        logger.warning(f"Sync to MainPC failed: {response.status_code}")
-                        self.sync_failures += 1
+                # Send to MainPC ObservabilityHub
+                response = requests.post(
+                    f"{self.mainpc_endpoint}/sync_from_pc2",
+                    json=sync_data,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    logger.debug(f"Successfully synced data to MainPC: {len(sync_data)} metrics")
                 else:
-                    logger.warning(f"Peer hub status: {self.peer_hub_status}, skipping sync")
+                    logger.warning(f"Sync to MainPC failed: {response.status_code}")
                     
-                # Update failover status
-                if self.sync_failures >= self.config.max_failover_attempts:
-                    if not self.failover_active:
-                        self.failover_active = True
-                        logger.warning("Failover mode ACTIVATED due to repeated sync failures")
-                        
             except Exception as e:
                 logger.error(f"Error in cross-machine sync: {e}")
-                self.sync_failures += 1
             
             time.sleep(self.sync_interval)
-    
-    def _check_peer_status(self):
-        """Check status of peer hub"""
-        try:
-            import requests
-            response = requests.get(
-                f"{self.mainpc_endpoint}/health",
-                timeout=self.config.failover_timeout
-            )
-            
-            if response.status_code == 200:
-                self.peer_hub_status = "healthy"
-            else:
-                self.peer_hub_status = "unhealthy"
-                
-        except Exception as e:
-            self.peer_hub_status = "unreachable"
-            logger.debug(f"Peer hub unreachable: {e}")
     
     def _collect_sync_data(self) -> Dict[str, Any]:
         """Collect data to sync to MainPC"""
@@ -812,7 +700,7 @@ class CrossMachineSync:
 
 class ObservabilityHub(BaseAgent):
     """
-    ObservabilityHub - RESTORED with Complete Functionality
+    ObservabilityHub - Phase 1 Consolidated Service (MODERNIZED)
     Enhanced with modern patterns and cross-machine coordination
     """
     
@@ -825,11 +713,11 @@ class ObservabilityHub(BaseAgent):
         # Initialize start time for health reporting
         self.start_time = time.time()
         
-        # Enhanced Components with configuration
-        self.prometheus_metrics = PrometheusMetrics(self.config)
-        
-        # RESTORED FUNCTIONALITY INTEGRATION
+        # Modern Components with configuration
+        self.prometheus_metrics = PrometheusMetrics(instance_name=self.config.environment)
         self.predictive_analyzer = PredictiveAnalyzer()
+        
+        # MISSING LOGIC INTEGRATION (MODERNIZED)
         self.lifecycle_manager = AgentLifecycleManager(self.config)
         self.performance_logger = PerformanceLogger(self.config)
         self.recovery_manager = RecoveryManager(self.lifecycle_manager, self.config)
@@ -868,9 +756,9 @@ class ObservabilityHub(BaseAgent):
         
         # FastAPI app
         self.app = FastAPI(
-            title=f"ObservabilityHub RESTORED ({self.config.environment.upper()})",
-            description=f"Complete Observability Service - {self.config.role}",
-            version="2.1.0"
+            title=f"ObservabilityHub ({self.config.environment.upper()})",
+            description=f"Modernized Observability Service - {self.config.role}",
+            version="2.0.0"
         )
         
         self.setup_routes()
@@ -883,8 +771,7 @@ class ObservabilityHub(BaseAgent):
         if self.config.cross_machine_sync:
             self.cross_machine_sync.start_sync()
         
-        logger.info(f"ObservabilityHub RESTORED and initialized for {self.config.environment} as {self.config.role}")
-        logger.info(f"✅ ALL FUNCTIONALITY RESTORED: PredictiveAnalyzer, AgentLifecycleManager, PerformanceLogger, RecoveryManager")
+        logger.info(f"ObservabilityHub modernized and initialized for {self.config.environment} as {self.config.role}")
     
     def _load_configuration(self) -> ObservabilityConfig:
         """Load configuration from startup config files"""
@@ -996,7 +883,7 @@ class ObservabilityHub(BaseAgent):
         )
         self.monitoring_thread.start()
         
-        # RESTORED: Predictive analytics thread (only if enabled)
+        # Predictive analytics thread (only if enabled)
         if self.config.prediction_enabled:
             self.analytics_thread = threading.Thread(
                 target=self._analytics_loop,
@@ -1017,7 +904,7 @@ class ObservabilityHub(BaseAgent):
         logger.info(f"Background threads started for {self.config.role}")
     
     def check_all_agents_health(self) -> Dict[str, Dict[str, Any]]:
-        """Modern parallel health checks with RESTORED StandardizedHealthChecker integration"""
+        """Modern parallel health checks with StandardizedHealthChecker integration"""
         if not self.monitored_agents:
             return {}
         
@@ -1025,7 +912,7 @@ class ObservabilityHub(BaseAgent):
         
         if self.config.parallel_health_checks:
             # Parallel execution using ThreadPoolExecutor
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.max_concurrent_health_checks) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 future_to_agent = {
                     executor.submit(self._check_agent_health_modern, agent_name, agent_info): agent_name
                     for agent_name, agent_info in self.monitored_agents.items()
@@ -1041,7 +928,7 @@ class ObservabilityHub(BaseAgent):
                         health_status = 1.0 if health_result.get('status') == 'healthy' else 0.0
                         self.prometheus_metrics.update_agent_health(agent_name, health_status)
                         
-                        # RESTORED: Add to predictive analyzer
+                        # Add to predictive analyzer
                         metric = HealthMetric(
                             agent_name=agent_name,
                             metric_type="health_status",
@@ -1050,7 +937,7 @@ class ObservabilityHub(BaseAgent):
                         )
                         self.predictive_analyzer.add_metric(agent_name, metric)
                         
-                        # RESTORED: Log to performance database
+                        # Log to performance database
                         self.performance_logger.log_metric(
                             agent_name=agent_name,
                             metric_type="health_check",
@@ -1058,7 +945,7 @@ class ObservabilityHub(BaseAgent):
                             metadata=health_result
                         )
                         
-                        # RESTORED: Attempt recovery if unhealthy
+                        # Attempt recovery if unhealthy
                         if health_status == 0.0:
                             logger.warning(f"Agent {agent_name} is unhealthy, attempting recovery")
                             self.recovery_manager.attempt_recovery(agent_name, "tier1")
@@ -1094,7 +981,7 @@ class ObservabilityHub(BaseAgent):
             endpoint = agent_info.get('health_endpoint', f"http://{host}:{agent_info.get('port', 8000)}/health")
             
             start_time = time.time()
-            response = requests.get(endpoint, timeout=self.config.health_check_timeout)
+            response = requests.get(endpoint, timeout=5)
             response_time = time.time() - start_time
             
             # Record response time metric
@@ -1114,8 +1001,7 @@ class ObservabilityHub(BaseAgent):
                     'response_time': response_time,
                     'timestamp': time.time(),
                     'details': response_data,
-                    'environment': self.config.environment,
-                    'hub_role': self.config.role
+                    'environment': self.config.environment
                 }
             else:
                 self.prometheus_metrics.record_request(agent_name, "error")
@@ -1124,8 +1010,7 @@ class ObservabilityHub(BaseAgent):
                     'response_time': response_time,
                     'status_code': response.status_code,
                     'timestamp': time.time(),
-                    'environment': self.config.environment,
-                    'hub_role': self.config.role
+                    'environment': self.config.environment
                 }
                 
         except Exception as e:
@@ -1134,8 +1019,7 @@ class ObservabilityHub(BaseAgent):
                 'status': 'error',
                 'error': str(e),
                 'timestamp': time.time(),
-                'environment': self.config.environment,
-                'hub_role': self.config.role
+                'environment': self.config.environment
             }
     
     def _broadcast_metrics(self, metrics_data: Dict[str, Any]):
@@ -1182,7 +1066,7 @@ class ObservabilityHub(BaseAgent):
                 time.sleep(5)
     
     def _analytics_loop(self):
-        """RESTORED: Modern predictive analytics loop"""
+        """Modern predictive analytics loop"""
         while self.threads_running:
             try:
                 # Run predictive analysis
@@ -1211,7 +1095,7 @@ class ObservabilityHub(BaseAgent):
                         }
                     )
                     
-                    # RESTORED: Trigger recovery if critical
+                    # Trigger recovery if critical
                     if alert.severity == "critical":
                         self.recovery_manager.attempt_recovery(alert.agent_name, "tier2")
                 
@@ -1251,7 +1135,7 @@ class ObservabilityHub(BaseAgent):
             self.prometheus_metrics.update_system_metric('memory_usage', memory.used, {'type': 'used'})
             self.prometheus_metrics.update_system_metric('memory_usage', memory.available, {'type': 'available'})
             
-            # RESTORED: Log system metrics to database
+            # Log system metrics to database
             self.performance_logger.log_metric("system", "cpu_usage", cpu_percent)
             self.performance_logger.log_metric("system", "memory_usage", memory.used)
             
@@ -1275,9 +1159,7 @@ class ObservabilityHub(BaseAgent):
             'config': {
                 'scope': self.config.scope,
                 'prediction_enabled': self.config.prediction_enabled,
-                'parallel_health_checks': self.config.parallel_health_checks,
-                'cross_machine_sync': self.config.cross_machine_sync,
-                'failover_active': getattr(self.cross_machine_sync, 'failover_active', False)
+                'parallel_health_checks': self.config.parallel_health_checks
             }
         }
     
@@ -1299,7 +1181,7 @@ class ObservabilityHub(BaseAgent):
             }
 
     def setup_routes(self):
-        """Setup modern monitoring API routes with RESTORED cross-machine support"""
+        """Setup modern monitoring API routes with cross-machine support"""
         
         @self.app.get("/health")
         async def health_check():
@@ -1315,12 +1197,6 @@ class ObservabilityHub(BaseAgent):
                     "uptime": time.time() - self.start_time,
                     "environment": self.config.environment,
                     "role": self.config.role,
-                    "restored_functionality": {
-                        "predictive_analyzer": bool(self.predictive_analyzer),
-                        "lifecycle_manager": bool(self.lifecycle_manager),
-                        "performance_logger": bool(self.performance_logger),
-                        "recovery_manager": bool(self.recovery_manager)
-                    },
                     "unified_services": {
                         "health": self.config.parallel_health_checks,
                         "performance": True,
@@ -1339,10 +1215,7 @@ class ObservabilityHub(BaseAgent):
             """Get all system metrics"""
             try:
                 if PROMETHEUS_AVAILABLE:
-                    return PlainTextResponse(
-                        content=self.prometheus_metrics.export_metrics(),
-                        media_type=CONTENT_TYPE_LATEST
-                    )
+                    return {"status": "success", "message": "Prometheus metrics available at /metrics endpoint"}
                 else:
                     # Return collected metrics
                     return {
@@ -1406,7 +1279,7 @@ class ObservabilityHub(BaseAgent):
         
         @self.app.post("/trigger_recovery")
         async def trigger_recovery(request: Request):
-            """RESTORED: Trigger recovery for an agent"""
+            """Trigger recovery for an agent"""
             try:
                 data = await request.json()
                 agent_name = data.get('agent_name')
@@ -1437,7 +1310,7 @@ class ObservabilityHub(BaseAgent):
         
         @self.app.get("/performance_metrics/{agent_name}")
         async def get_performance_metrics(agent_name: str):
-            """RESTORED: Get performance metrics for an agent"""
+            """Get performance metrics for an agent"""
             try:
                 metrics = self.performance_logger.get_metrics(agent_name=agent_name)
                 return {
@@ -1452,7 +1325,7 @@ class ObservabilityHub(BaseAgent):
         
         @self.app.get("/alerts")
         async def get_alerts():
-            """RESTORED: Get active predictive alerts"""
+            """Get active predictive alerts"""
             try:
                 alerts = self.predictive_analyzer.run_predictive_analysis()
                 return {
@@ -1492,9 +1365,6 @@ class ObservabilityHub(BaseAgent):
                     # You could store this in a separate collection or merge with local data
                     logger.debug(f"PC2 health results: {len(sync_data['health_results'])} agents")
                 
-                # Record successful sync
-                self.prometheus_metrics.record_sync_attempt("pc2", True)
-                
                 return {
                     "status": "success",
                     "message": "Sync data received and processed",
@@ -1502,7 +1372,6 @@ class ObservabilityHub(BaseAgent):
                 }
                 
             except Exception as e:
-                self.prometheus_metrics.record_sync_attempt("pc2", False)
                 self.report_error(ErrorSeverity.ERROR, "Error processing PC2 sync", {"error": str(e)})
                 raise HTTPException(status_code=500, detail=str(e))
         
@@ -1521,26 +1390,19 @@ class ObservabilityHub(BaseAgent):
                     "mainpc_hub_endpoint": self.config.mainpc_hub_endpoint
                 },
                 "monitored_agents": len(self.monitored_agents),
-                "uptime": time.time() - self.start_time,
-                "restored_functionality": {
-                    "predictive_analyzer": bool(self.predictive_analyzer),
-                    "lifecycle_manager": bool(self.lifecycle_manager),
-                    "performance_logger": bool(self.performance_logger),
-                    "recovery_manager": bool(self.recovery_manager)
-                }
+                "uptime": time.time() - self.start_time
             }
     
     async def start(self):
-        """Start the RESTORED ObservabilityHub service"""
+        """Start the modernized ObservabilityHub service"""
         try:
-            logger.info(f"Starting ObservabilityHub RESTORED service in {self.config.environment} mode...")
+            logger.info(f"Starting ObservabilityHub service in {self.config.environment} mode...")
             
             # Mark startup as complete
             self.startup_complete = True
             
-            logger.info(f"ObservabilityHub RESTORED started successfully on port {self.port}")
+            logger.info(f"ObservabilityHub started successfully on port {self.port}")
             logger.info(f"Environment: {self.config.environment}, Role: {self.config.role}")
-            logger.info(f"✅ Complete functionality: Distributed + Predictive + Lifecycle + Performance + Recovery")
             logger.info(f"Feature flags - Health: {self.config.parallel_health_checks}, "
                        f"Performance: True, "
                        f"Prediction: {self.config.prediction_enabled}, "
@@ -1557,18 +1419,22 @@ class ObservabilityHub(BaseAgent):
             await server.serve()
             
         except Exception as e:
-            self.report_error(ErrorSeverity.CRITICAL, "Failed to start ObservabilityHub RESTORED", {"error": str(e)})
+            self.report_error(ErrorSeverity.CRITICAL, "Failed to start ObservabilityHub", {"error": str(e)})
             raise
     
     def cleanup(self):
         """
-        Gold Standard cleanup with robust try...finally block for RESTORED functionality.
+        Gold Standard cleanup with robust try...finally block.
+        This guarantees that the parent's critical cleanup (NATS, Redis health)
+        is ALWAYS called, even if the child's cleanup steps fail.
         """
-        logger.info(f"🚀 Starting Gold Standard cleanup for {self.name} RESTORED ({self.config.environment})...")
+        logger.info(f"🚀 Starting Gold Standard cleanup for {self.name} ({self.config.environment})...")
         cleanup_errors = []
 
         # =================================================================
-        # ObservabilityHub RESTORED cleanup (Child responsibilities)
+        # ObservabilityHub-specific cleanup (Child responsibilities)
+        # All specific cleanup for this agent goes in the 'try' block.
+        # Each step has its own error handling to prevent stopping the whole process.
         # =================================================================
         try:
             logger.info("Step 1: Stopping all background threads...")
@@ -1627,13 +1493,13 @@ class ObservabilityHub(BaseAgent):
                 cleanup_errors.append(f"ZMQ cleanup error: {e}")
                 logger.error(f"  ❌ Failed to close ZMQ resources: {e}")
 
-            # --- RESTORED: Close Database Connections ---
+            # --- Close Database Connections ---
             logger.info("Step 6: Closing database connections...")
             try:
                 if hasattr(self, 'performance_logger') and hasattr(self.performance_logger, 'db_lock'):
                     with self.performance_logger.db_lock:
                         # Close any open database connections
-                        logger.info("  ✅ Performance database connections cleaned up")
+                        logger.info("  ✅ Database connections cleaned up")
             except Exception as e:
                 cleanup_errors.append(f"Database cleanup error: {e}")
                 logger.error(f"❌ Database cleanup failed: {e}")
@@ -1641,6 +1507,9 @@ class ObservabilityHub(BaseAgent):
         finally:
             # =================================================================
             # BaseAgent cleanup (Parent responsibilities) - CRITICAL
+            # The 'finally' block GUARANTEES execution, even if errors occur
+            # in the 'try' block. Here we call super().cleanup() to close
+            # NATS, update Redis, etc.
             # =================================================================
             logger.info("Final Step: Calling BaseAgent cleanup (NATS, Health, etc.)...")
             try:
@@ -1652,13 +1521,14 @@ class ObservabilityHub(BaseAgent):
 
         # =================================================================
         # Final Report
+        # Log the summary of the entire cleanup process.
         # =================================================================
         if cleanup_errors:
-            logger.warning(f"⚠️ Cleanup for {self.name} RESTORED finished with {len(cleanup_errors)} error(s):")
+            logger.warning(f"⚠️ Cleanup for {self.name} finished with {len(cleanup_errors)} error(s):")
             for i, err in enumerate(cleanup_errors):
                 logger.warning(f"   - Error {i+1}: {err}")
         else:
-            logger.info(f"✅ Cleanup for {self.name} RESTORED completed perfectly without any errors.")
+            logger.info(f"✅ Cleanup for {self.name} completed perfectly without any errors.")
 
 if __name__ == "__main__":
     import asyncio
@@ -1673,8 +1543,8 @@ if __name__ == "__main__":
     try:
         asyncio.run(hub.start())
     except KeyboardInterrupt:
-        logger.info("ObservabilityHub RESTORED interrupted by user")
+        logger.info("ObservabilityHub interrupted by user")
     except Exception as e:
-        logger.error(f"ObservabilityHub RESTORED error: {e}")
+        logger.error(f"ObservabilityHub error: {e}")
     finally:
         hub.cleanup() 
