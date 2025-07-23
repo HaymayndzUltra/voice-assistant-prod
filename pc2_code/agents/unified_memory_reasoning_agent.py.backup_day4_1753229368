@@ -17,7 +17,7 @@ import time
 import logging
 import hashlib
 import traceback
-# LAZY LOADING: import numpy as np
+import numpy as np
 import re
 from datetime import datetime
 from collections import deque
@@ -248,36 +248,6 @@ class ContextManager:
             logger.debug(f"[ContextManager] Pruned {len(items_to_remove[:max_to_remove])} low-importance items")
 
 class UnifiedMemoryReasoningAgent(BaseAgent):
-
-    def _lazy_import_dependencies(self):
-        """Lazy import heavy dependencies only when needed"""
-        if not hasattr(self, '_dependencies_loaded'):
-            try:
-                import numpy as np
-                self._dependencies_loaded = True
-                if hasattr(self, 'logger'):
-                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
-            except ImportError as e:
-                self._dependencies_loaded = False
-                if hasattr(self, 'logger'):
-                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
-        return self._dependencies_loaded
-
-
-    def _lazy_import_dependencies(self):
-        """Lazy import heavy dependencies only when needed"""
-        if not hasattr(self, '_dependencies_loaded'):
-            try:
-# LAZY LOADING:                 import numpy as np
-                self._dependencies_loaded = True
-                if hasattr(self, 'logger'):
-                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
-            except ImportError as e:
-                self._dependencies_loaded = False
-                if hasattr(self, 'logger'):
-                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
-        return self._dependencies_loaded
-
     """Unified Memory and Reasoning Agent that handles context, digital twins, and error patterns"""
     
     def __init__(self, zmq_port=7105, health_check_port=7106):

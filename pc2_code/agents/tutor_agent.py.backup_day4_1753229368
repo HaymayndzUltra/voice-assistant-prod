@@ -3,17 +3,17 @@ import json
 import time
 import logging
 import threading
-# LAZY LOADING: import numpy as np
+import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 import zmq
-# LAZY LOADING: import torch
-# LAZY LOADING: import torch.nn as nn
-# LAZY LOADING: from torch.utils.data import DataLoader
-# LAZY LOADING: import pandas as pd
-# LAZY LOADING: from sklearn.preprocessing import StandardScaler
-# LAZY LOADING: from sklearn.cluster import KMeans
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 import uuid
 import sys
 from pathlib import Path
@@ -406,48 +406,6 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
-
-    def _lazy_import_dependencies(self):
-        """Lazy import heavy dependencies only when needed"""
-        if not hasattr(self, '_dependencies_loaded'):
-            try:
-                import numpy as np
-                import torch
-                import torch.nn as nn
-                from torch.utils.data import DataLoader
-                import pandas as pd
-                from sklearn.preprocessing import StandardScaler
-                from sklearn.cluster import KMeans
-                self._dependencies_loaded = True
-                if hasattr(self, 'logger'):
-                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
-            except ImportError as e:
-                self._dependencies_loaded = False
-                if hasattr(self, 'logger'):
-                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
-        return self._dependencies_loaded
-
-
-    def _lazy_import_dependencies(self):
-        """Lazy import heavy dependencies only when needed"""
-        if not hasattr(self, '_dependencies_loaded'):
-            try:
-# LAZY LOADING:                 import numpy as np
-# LAZY LOADING:                 import torch
-# LAZY LOADING:                 import torch.nn as nn
-# LAZY LOADING:                 from torch.utils.data import DataLoader
-# LAZY LOADING:                 import pandas as pd
-# LAZY LOADING:                 from sklearn.preprocessing import StandardScaler
-# LAZY LOADING:                 from sklearn.cluster import KMeans
-                self._dependencies_loaded = True
-                if hasattr(self, 'logger'):
-                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
-            except ImportError as e:
-                self._dependencies_loaded = False
-                if hasattr(self, 'logger'):
-                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
-        return self._dependencies_loaded
-
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
