@@ -143,4 +143,4 @@ Mga Pangunahing Pagbabago:
 Status: PENDING ⏳
 
 ## PHASE 5G: TESTING AND VALIDATION
-Status: PENDING ⏳ 
+Status: PENDING ⏳

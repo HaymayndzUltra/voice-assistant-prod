@@ -23,7 +23,7 @@ from common.health.standardized_health import check_agent_health, wait_for_agent
 def check_redis_connectivity():
     """Check if Redis is accessible and responsive"""
     try:
-        r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, db=0)
+        r = redis.Redis(host=os.getenv('${SECRET_PLACEHOLDER}0)
         r.ping()
         return True
     except Exception as e:
@@ -43,7 +43,7 @@ def check_nats_connectivity():
 def check_agent_ready_signals(service_type):
     """Check if agents have set ready signals in Redis"""
     try:
-        r = redis.Redis(host=os.getenv('REDIS_HOST', 'redis'), port=6379, db=0)
+        r = redis.Redis(host=os.getenv('${SECRET_PLACEHOLDER}0)
         
         # Define expected agents for each service type
         expected_agents = {

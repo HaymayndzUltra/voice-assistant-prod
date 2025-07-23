@@ -57,7 +57,7 @@ ZMQ_HEALTH_PORT = 6583  # Health status
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Memory settings
-MAX_CONTEXT_TOKENS = 2000  # Maximum tokens for context
+MAX_CONTEXT_${SECRET_PLACEHOLDER} 2000  # Maximum tokens for context
 MAX_SESSIONS = 100  # Maximum number of active sessions
 SESSION_TIMEOUT = 3600  # Session timeout in seconds (1 hour)
 

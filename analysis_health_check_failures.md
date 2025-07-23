@@ -104,4 +104,4 @@ The Agent Supervisor uses PathManager for path resolution, but there may be inco
 
 ## Conclusion
 
-The Agent Supervisor health check failures are likely due to a combination of timing issues, resource constraints, and inconsistent health check implementations across agents. By addressing these issues systematically, the system's stability and reliability can be significantly improved. 
+The Agent Supervisor health check failures are likely due to a combination of timing issues, resource constraints, and inconsistent health check implementations across agents. By addressing these issues systematically, the system's stability and reliability can be significantly improved.

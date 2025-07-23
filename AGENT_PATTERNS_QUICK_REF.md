@@ -89,7 +89,7 @@ print('✅ Working')
 ### **🔍 Check Patterns:**
 ```bash
 # Check for wrong patterns
-grep -n "join_path\|src/core\|src/network" agent.py
+| grep -n "join_path\ | src/core\ | src/network" agent.py |
 grep -n "as_posix()" agent.py
 grep -n "class.*BaseAgent" agent.py
 ```
@@ -112,4 +112,4 @@ grep -n "class.*BaseAgent" agent.py
 
 ---
 
-**🎯 Use this as your agent checklist during development!** 
+**🎯 Use this as your agent checklist during development!**

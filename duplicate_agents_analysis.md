@@ -195,4 +195,4 @@ pc2_code/agents/model_evaluation_framework.py
 - **MainPC:** 56 official agents (per startup_config.yaml)
 - **PC2:** 25 unique agents (after removing 1 duplicate)
 - **Total:** 81 unique agents (down from 100+ with duplicates)
-- **Status:** Clean, Docker-ready system with no duplicates 
+- **Status:** Clean, Docker-ready system with no duplicates

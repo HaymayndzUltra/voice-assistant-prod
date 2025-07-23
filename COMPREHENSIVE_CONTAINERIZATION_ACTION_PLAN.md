@@ -1,8 +1,8 @@
 # 🚀 COMPREHENSIVE AI SYSTEM CONTAINERIZATION ACTION PLAN
 
-**Date**: 2025-01-22  
-**Scope**: MainPC + PC2 Full Containerization  
-**Duration**: 6-8 hours estimated  
+**Date**: 2025-01-22
+**Scope**: MainPC + PC2 Full Containerization
+**Duration**: 6-8 hours estimated
 **Priority**: CRITICAL (Production Readiness)
 
 ---
@@ -15,7 +15,7 @@
 - **Architecture**: GROUP-BASED containers + SOLO ObservabilityHub
 - **Critical Issues Fixed**: ✅ Build context reduced 16GB → 1.9GB
 
-### **PC2 ANALYSIS**  
+### **PC2 ANALYSIS**
 - **Total Agents**: 127 Python files (23 active agents per startup_config.yaml)
 - **Compilation Status**: ❓ UNKNOWN (needs verification)
 - **Architecture**: Complex dependencies, shared ObservabilityHub
@@ -52,13 +52,13 @@
 ```bash
 # MainPC syntax check (update from previous ~98% success)
 for agent in main_pc_code/agents/*.py; do
-    python3 -m py_compile "$agent" || echo "❌ SYNTAX ERROR: $agent"
-done | tee mainpc_syntax_report.log
+| python3 -m py_compile "$agent" |  | echo "❌ SYNTAX ERROR: $agent" |
+| done | tee mainpc_syntax_report.log |
 
 # PC2 syntax check (UNKNOWN status)
-for agent in pc2_code/agents/*.py; do  
-    python3 -m py_compile "$agent" || echo "❌ SYNTAX ERROR: $agent"
-done | tee pc2_syntax_report.log
+for agent in pc2_code/agents/*.py; do
+| python3 -m py_compile "$agent" |  | echo "❌ SYNTAX ERROR: $agent" |
+| done | tee pc2_syntax_report.log |
 ```
 
 ### **P0.2: Dependency Analysis**
@@ -68,7 +68,7 @@ python3 -c "
 import yaml
 with open('main_pc_code/config/startup_config.yaml') as f:
     config = yaml.safe_load(f)
-    
+
 for group_name, agents in config['agent_groups'].items():
     print(f'📁 {group_name}: {len(agents)} agents')
 "
@@ -78,14 +78,14 @@ python3 -c "
 import yaml
 with open('pc2_code/config/startup_config.yaml') as f:
     config = yaml.safe_load(f)
-    
+
 pc2_agents = config['pc2_services']
 print(f'📊 PC2 Total: {len(pc2_agents)} agents')
 
 # Group by functionality
 groups = {
     'memory_services': [],
-    'ai_reasoning': [], 
+    'ai_reasoning': [],
     'web_services': [],
     'infrastructure': [],
     'monitoring': []
@@ -114,16 +114,16 @@ for group, agents in groups.items():
 ```bash
 # Check available system resources
 echo "💾 SYSTEM RESOURCES:"
-echo "RAM: $(free -h | awk '/^Mem:/ {print $2}')"
-echo "DISK: $(df -h / | awk 'NR==2 {print $4}')"
-echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader,nounits || echo 'No GPU detected')"
+| echo "RAM: $(free -h | awk '/^Mem:/ {print $2}')" |
+| echo "DISK: $(df -h / | awk 'NR==2 {print $4}')" |
+| echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader,nounits |  | echo 'No GPU detected')" |
 ```
 
 ---
 
 ## **PHASE 1: MAINPC GROUP CONTAINERIZATION** ⏱️ 2-3 hours
 
-### **P1.1: Fix Remaining MainPC Syntax Errors** 
+### **P1.1: Fix Remaining MainPC Syntax Errors**
 **Target**: 100% compilation success
 ```bash
 # From O3 Pro plan - apply remaining fixes
@@ -142,7 +142,7 @@ done
 ```
 
 ### **P1.2: Complete MainPC Docker Group Architecture**
-**Current**: 4 groups defined  
+**Current**: 4 groups defined
 **Target**: All 11 groups containerized
 
 **Missing Groups to Add:**
@@ -167,7 +167,7 @@ gpu-infrastructure-group:
             count: 1
             capabilities: [gpu]
 
-# REASONING SERVICES GROUP (3 agents)  
+# REASONING SERVICES GROUP (3 agents)
 reasoning-services-group:
   container_name: mainpc-reasoning-services
   ports:
@@ -177,7 +177,7 @@ reasoning-services-group:
 
 # VISION PROCESSING GROUP (1 agent)
 vision-processing-group:
-  container_name: mainpc-vision-processing  
+  container_name: mainpc-vision-processing
   ports:
     - "5610:5610"  # FaceRecognitionAgent
 
@@ -207,7 +207,7 @@ audio-interface-group:
     - "5576:5576"  # StreamingInterruptHandler
     - "6553:6553"  # StreamingSpeechRecognition
     - "5562:5562"  # StreamingTTSAgent
-    - "6552:6552"  # WakeWordDetector  
+    - "6552:6552"  # WakeWordDetector
     - "5579:5579"  # StreamingLanguageAnalyzer
     - "5624:5624"  # ProactiveAgent
 
@@ -250,7 +250,7 @@ docker compose -f docker-compose.mainpc.yml up -d memory-system-group
 echo "🔍 PC2 SYNTAX ANALYSIS:" > pc2_analysis_report.md
 for agent in pc2_code/agents/*.py; do
     echo "Testing: $(basename $agent)" >> pc2_analysis_report.md
-    python3 -m py_compile "$agent" 2>> pc2_analysis_report.md || echo "❌ FAILED" >> pc2_analysis_report.md
+| python3 -m py_compile "$agent" 2>> pc2_analysis_report.md |  | echo "❌ FAILED" >> pc2_analysis_report.md |
 done
 
 # Apply similar fixes as MainPC (if needed)
@@ -276,11 +276,11 @@ services:
     container_name: pc2-redis
     ports:
       - "6379:6379"
-  
+
   observability-hub-forwarder:
     build:
       context: ../../
-      dockerfile: docker/pc2/Dockerfile.observability  
+      dockerfile: docker/pc2/Dockerfile.observability
     container_name: pc2-observability-hub
     ports:
       - "9000:9000"     # Forwards to MainPC
@@ -293,7 +293,7 @@ services:
     container_name: pc2-memory-services
     ports:
       - "7140:7140"  # MemoryOrchestratorService
-      - "7102:7102"  # CacheManager  
+      - "7102:7102"  # CacheManager
       - "7105:7105"  # UnifiedMemoryReasoningAgent
       - "7111:7111"  # ContextManager
       - "7112:7112"  # ExperienceTracker
@@ -313,7 +313,7 @@ services:
     container_name: pc2-web-services
     ports:
       - "7123:7123"  # FileSystemAssistantAgent
-      - "7124:7124"  # RemoteConnectorAgent  
+      - "7124:7124"  # RemoteConnectorAgent
       - "7126:7126"  # UnifiedWebAgent
 
   # INFRASTRUCTURE & SECURITY GROUP (5 agents)
@@ -338,7 +338,7 @@ mkdir -p docker/pc2
 cp docker/mainpc/Dockerfile.agent docker/pc2/Dockerfile.agent-group
 
 # Build PC2 containers
-cd docker/pc2  
+cd docker/pc2
 docker compose -f docker-compose.pc2.yml build --parallel
 
 # Test startup
@@ -371,7 +371,7 @@ export MAINPC_IP=192.168.100.16
 export PC2_IP=192.168.100.17
 export OBSERVABILITY_ENDPOINT=http://192.168.100.16:9000
 
-# PC2 environment  
+# PC2 environment
 export MAINPC_IP=192.168.100.16
 export PC2_IP=192.168.100.17
 export OBSERVABILITY_ENDPOINT=http://192.168.100.16:9000
@@ -394,30 +394,30 @@ curl http://192.168.100.16:9000/metrics  # Should show both MainPC + PC2 data
 ### **P4.1: Deployment Scripts**
 ```bash
 # create docker/scripts/deploy-mainpc.sh
-#!/bin/bash
+# !/bin/bash
 echo "🚀 DEPLOYING MAINPC AI SYSTEM"
 cd docker/mainpc
 docker compose -f docker-compose.mainpc.yml up -d --build
 
-# create docker/scripts/deploy-pc2.sh  
-#!/bin/bash
+# create docker/scripts/deploy-pc2.sh
+# !/bin/bash
 echo "🚀 DEPLOYING PC2 AI SYSTEM"
 cd docker/pc2
 docker compose -f docker-compose.pc2.yml up -d --build
 
 # create docker/scripts/validate-deployment.sh
-#!/bin/bash
+# !/bin/bash
 echo "✅ VALIDATING DUAL-MACHINE DEPLOYMENT"
 # Health checks for all services
-curl -f http://192.168.100.16:9000/health_summary || echo "❌ MainPC unhealthy"
-curl -f http://192.168.100.17:9000/health || echo "❌ PC2 unhealthy"
+| curl -f http://192.168.100.16:9000/health_summary |  | echo "❌ MainPC unhealthy" |
+| curl -f http://192.168.100.17:9000/health |  | echo "❌ PC2 unhealthy" |
 ```
 
 ### **P4.2: Monitoring Dashboards**
 ```bash
 # Access monitoring dashboards
 echo "📊 MONITORING ENDPOINTS:"
-echo "MainPC Dashboard: http://192.168.100.16:9000"  
+echo "MainPC Dashboard: http://192.168.100.16:9000"
 echo "PC2 Forwarder: http://192.168.100.17:9000"
 echo "Prometheus Metrics: http://192.168.100.16:9090"
 echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
@@ -432,7 +432,7 @@ echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
 - ✅ **VERIFIED**: Build context tested and optimized
 - ✅ **MONITORED**: Include size checks in validation scripts
 
-### **P5.2: Syntax Error Prevention**  
+### **P5.2: Syntax Error Prevention**
 - 🎯 **STRATEGY**: Incremental testing after each fix
 - 🎯 **VALIDATION**: py_compile check before container build
 - 🎯 **ROLLBACK**: Git commit after each successful phase
@@ -452,7 +452,7 @@ echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
 - ✅ `start-agent-group.sh` (group startup script)
 - 🎯 `deploy-mainpc.sh` (deployment automation)
 
-### **PC2 DELIVERABLES**  
+### **PC2 DELIVERABLES**
 - 🎯 `docker-compose.pc2.yml` (5 agent groups)
 - 🎯 `Dockerfile.agent-group` (PC2 optimized)
 - 🎯 `start-agent-group.sh` (PC2 group startup)
@@ -473,7 +473,7 @@ echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
 - [ ] **Network Performance**: <100ms latency between MainPC ↔ PC2
 - [ ] **Resource Efficiency**: GPU properly allocated, memory under limits
 
-### **OPERATIONAL METRICS**  
+### **OPERATIONAL METRICS**
 - [ ] **Deployment Time**: Full system deployment under 10 minutes
 - [ ] **Health Monitoring**: All agents report healthy status
 - [ ] **Cross-Machine Sync**: ObservabilityHub receives PC2 metrics
@@ -483,13 +483,13 @@ echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
 
 ## 📅 **EXECUTION TIMELINE**
 
-| Phase | Duration | Priority | Dependencies |
-|-------|----------|----------|--------------|
-| **P0: Pre-flight** | 30 min | 🔴 CRITICAL | None |
-| **P1: MainPC** | 2-3 hrs | 🔴 CRITICAL | P0 complete |  
-| **P2: PC2** | 2-3 hrs | 🟡 HIGH | P1 complete |
-| **P3: Networking** | 1 hr | 🟡 HIGH | P1, P2 complete |
-| **P4: Production** | 1 hr | 🟢 MEDIUM | P3 complete |
+ | Phase | Duration | Priority | Dependencies | 
+ | ------- | ---------- | ---------- | -------------- | 
+ | **P0: Pre-flight** | 30 min | 🔴 CRITICAL | None | 
+ | **P1: MainPC** | 2-3 hrs | 🔴 CRITICAL | P0 complete | 
+ | **P2: PC2** | 2-3 hrs | 🟡 HIGH | P1 complete | 
+ | **P3: Networking** | 1 hr | 🟡 HIGH | P1, P2 complete | 
+ | **P4: Production** | 1 hr | 🟢 MEDIUM | P3 complete | 
 
 **TOTAL ESTIMATED TIME**: 6-8 hours
 
@@ -497,13 +497,13 @@ echo "Agent Health Summary: http://192.168.100.16:9000/health_summary"
 
 ---
 
-**🚀 READY FOR EXECUTION!** 
+**🚀 READY FOR EXECUTION!**
 
 This comprehensive plan addresses:
-✅ Previous GB consumption issues (SOLVED)  
-✅ MainPC group architecture (CONFIGURED)  
-✅ PC2 analysis requirements (PLANNED)  
-✅ Cross-machine communication (DESIGNED)  
-✅ Production deployment (AUTOMATED)  
+✅ Previous GB consumption issues (SOLVED)
+✅ MainPC group architecture (CONFIGURED)
+✅ PC2 analysis requirements (PLANNED)
+✅ Cross-machine communication (DESIGNED)
+✅ Production deployment (AUTOMATED)
 
-**NEXT STEP**: Execute Phase 0 pre-flight checks! 
+**NEXT STEP**: Execute Phase 0 pre-flight checks!

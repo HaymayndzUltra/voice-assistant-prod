@@ -1,6 +1,20 @@
 # Canonical Startup Configuration for PC2 Sub-System
 # Forged by CASCADE - Single Source of Truth
 
+global_settings:
+  environment:
+    PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
+    LOG_LEVEL: 'INFO'
+    DEBUG_MODE: 'false'
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 4096
+    max_threads: 8
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+
 # PC2 Services (Agents)
 pc2_services:
   # Phase 1 - Integration Layer Agents
@@ -256,13 +270,13 @@ pc2_services:
       name: ObservabilityHub,
       script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py,
       host: 0.0.0.0,
-      port: 9000,
-      health_check_port: 9100,
+      port: 9100,
+      health_check_port: 9110,
       required: true,
       dependencies: [],  # Core monitoring service, no dependencies
       config: {
         scope: "pc2_agents",
-        prometheus_port: 9000,
+        prometheus_port: 9100,
         cross_machine_sync: true,
         mainpc_hub_endpoint: "http://192.168.100.16:9000",
         parallel_health_checks: true,
@@ -271,23 +285,8 @@ pc2_services:
     }
 
 
-# Environment variables for all agents
-environment:
-  PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
-  LOG_LEVEL: 'INFO'
-  DEBUG_MODE: 'false'
-
-# Resource limits for all agents
-resource_limits:
-  cpu_percent: 80
-  memory_mb: 4096
-  max_threads: 8
-
-# Health check configuration
+# Health check configuration (additional settings)
 health_checks:
-  interval_seconds: 30
-  timeout_seconds: 10
-  retries: 3
   start_period_seconds: 300
 
 # PC2 Network Configuration

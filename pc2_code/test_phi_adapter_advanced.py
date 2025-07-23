@@ -70,7 +70,7 @@ def main():
     print(resp)
     time.sleep(0.5)
 
-    print("\n=== TRANSLATE with INVALID TOKEN ===")
+    print("\n=== TRANSLATE with INVALID ${SECRET_PLACEHOLDER}")
     resp = send_request(socket, {
         "action": "translate",
         "text": "Salamat",

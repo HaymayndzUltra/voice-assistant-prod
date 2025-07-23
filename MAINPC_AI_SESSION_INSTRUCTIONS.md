@@ -1,8 +1,8 @@
 # 🤝 MAINPC AI FRESH SESSION INSTRUCTIONS
 ## Detailed Coordination Plan - Work Division with PC2 AI
 
-**Date:** January 22, 2025  
-**Session Type:** Fresh MainPC AI start  
+**Date:** January 22, 2025
+**Session Type:** Fresh MainPC AI start
 **Coordination Partner:** PC2 AI (Infrastructure Specialist)
 
 ---
@@ -12,7 +12,7 @@
 ### ✅ WHAT'S ALREADY COMPLETED:
 - **PC2 AI Infrastructure Work:** 5/5 Background Agent priorities complete
   - Docker overlay network setup
-  - GPU allocation fixes  
+  - GPU allocation fixes
   - Resource limits implementation
   - Hardcoded IP migration framework
   - PC2 startup dependency ordering
@@ -25,7 +25,7 @@
 
 ### ⚠️ CRITICAL ISSUES DISCOVERED:
 - **Runtime crashes:** `.as_posix()` errors on string objects (15+ agents)
-- **Import failures:** Wrong BaseAgent import paths (8+ agents)  
+- **Import failures:** Wrong BaseAgent import paths (8+ agents)
 - **Production failures:** Relative imports will fail at runtime
 - **Legacy code:** `join_path` usage instead of PathManager
 
@@ -62,7 +62,7 @@ def is_secure_zmq_enabled() -> bool:
 
 # Files to fix:
 - main_pc_code/agents/streaming_tts_agent.py
-- main_pc_code/agents/fused_audio_preprocessor.py  
+- main_pc_code/agents/fused_audio_preprocessor.py
 - main_pc_code/agents/system_digital_twin.py
 - main_pc_code/agents/responder.py
 - main_pc_code/agents/streaming_language_analyzer.py
@@ -168,7 +168,7 @@ def configure_secure_client(socket):
     return socket
 
 def configure_secure_server(socket):
-    """Placeholder for secure server configuration"""  
+    """Placeholder for secure server configuration"""
     return socket
 
 # Also remove any commented secure_zmq imports:
@@ -213,12 +213,12 @@ try:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         print(f'✅ {agent_name} - IMPORT SUCCESSFUL')
-        
+
         # Try to find agent classes
-        agent_classes = [getattr(module, name) for name in dir(module) 
+        agent_classes = [getattr(module, name) for name in dir(module)
                         if name.endswith('Agent') and not name.startswith('_')]
         print(f'📋 Found classes: {[cls.__name__ for cls in agent_classes]}')
-        
+
 except Exception as e:
     print(f'❌ {agent_name} - ERROR: {type(e).__name__}: {str(e)[:100]}')
 "
@@ -230,7 +230,7 @@ except Exception as e:
 
 ### ❌ DO NOT DO THESE:
 1. **Don't touch PC2 AI's assigned files** (list above)
-2. **Don't use exec() for imports** - Use importlib.util only  
+2. **Don't use exec() for imports** - Use importlib.util only
 3. **Don't claim 50%+ success without production testing**
 4. **Don't add __init__.py files** - Project uses file-based imports
 5. **Don't fix .as_posix() errors** - PC2 AI handling these
@@ -249,7 +249,7 @@ except Exception as e:
 ### 🎯 YOUR TARGETS:
 ```bash
 Secure ZMQ cleanup: 12/12 agents (100%)
-Legacy join_path modernization: 8/8 agents (100%)  
+Legacy join_path modernization: 8/8 agents (100%)
 Startup config validation: 20+/25 agents (80%+)
 Import success rate: Document honestly
 Production readiness: Test actual functionality
@@ -261,7 +261,7 @@ Production readiness: Test actual functionality
 
 ### ✅ Completed:
 - Secure ZMQ: X/12 agents
-- join_path cleanup: X/8 agents  
+- join_path cleanup: X/8 agents
 - Validation: X/25 agents
 
 ### 📊 Testing Results:
@@ -284,7 +284,7 @@ Production readiness: Test actual functionality
 ### 📞 COMMUNICATION PROTOCOL:
 1. **Before starting:** Confirm PC2 AI is working on assigned files
 2. **Every 5 agents:** Report progress using format above
-3. **Any conflicts:** Stop and coordinate immediately  
+3. **Any conflicts:** Stop and coordinate immediately
 4. **Before claiming success:** Document testing methodology
 
 ### 🎯 END GOAL:
@@ -300,9 +300,9 @@ Production readiness: Test actual functionality
 **MainPC AI, when you start:**
 
 1. **Acknowledge this coordination plan**
-2. **Confirm PC2 AI file assignments** 
+2. **Confirm PC2 AI file assignments**
 3. **Begin with Batch 1: Secure ZMQ cleanup**
 4. **Use exact code patterns provided**
 5. **Report progress every 5 agents**
 
-**Let's achieve REAL 70%+ functionality together! 🎯** 
+**Let's achieve REAL 70%+ functionality together! 🎯**

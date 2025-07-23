@@ -49,10 +49,10 @@ PC2_AGENTS_ROOT = PROJECT_ROOT / 'pc2_code' / 'agents'
 # === TARGETED AGENTS ===
 # Comment out or remove this as we'll be using all agents from pc2_code/agents
 # TARGETED_AGENTS = [
-#     {'name': 'FusedAudioPreprocessor', 'script_path': 'src/audio/fused_audio_preprocessor.py'},
-#     {'name': 'WakeWordDetector', 'script_path': 'agents/wake_word_detector.py'},
-#     {'name': 'VisionCaptureAgent', 'script_path': 'src/vision/vision_capture_agent.py'},
-#     {'name': 'FaceRecognitionAgent', 'script_path': 'agents/face_recognition_agent.py'}
+# {'name': 'FusedAudioPreprocessor', 'script_path': 'src/audio/fused_audio_preprocessor.py'},
+# {'name': 'WakeWordDetector', 'script_path': 'agents/wake_word_detector.py'},
+# {'name': 'VisionCaptureAgent', 'script_path': 'src/vision/vision_capture_agent.py'},
+# {'name': 'FaceRecognitionAgent', 'script_path': 'agents/face_recognition_agent.py'}
 # ]
 
 # === COMPLIANCE CHECKS (UPDATED FOR CONFIG_LOADER) ===
@@ -63,7 +63,7 @@ def gather_agents_from_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     agents = []
-    
+
     # Process all sections in the config file
     for section_name, section_data in config.items():
         if isinstance(section_data, list):
@@ -74,26 +74,26 @@ def gather_agents_from_config(config_path):
                         'name': agent_name,
                         'script_path': agent['script_path']
                     })
-    
+
     return agents
 
 def gather_pc2_agents():
     """Gather all .py files from the pc2_code/agents directory."""
     agents = []
-    
+
     # Get all .py files in pc2_code/agents directory
     for file_path in PC2_AGENTS_ROOT.glob('**/*.py'):
         if '__pycache__' in str(file_path):
             continue
-        
+
         rel_path = file_path.relative_to(PROJECT_ROOT / 'pc2_code')
         agent_name = file_path.stem
-        
+
         agents.append({
             'name': agent_name,
             'script_path': str(rel_path)
         })
-    
+
     return agents
 
 # === MAIN AUDIT ===
@@ -101,16 +101,16 @@ def main():
     # Use PC2 agents instead of agents from startup_config.yaml
     agents = gather_pc2_agents()
     print(f"Auditing {len(agents)} agents from pc2_code/agents directory.")
-    
+
     results = []
 
     for agent in agents:
         agent_name = agent['name']
         rel_path = agent['script_path']
-        
+
         # Set the correct root directory for PC2 agents
         abs_path = (PROJECT_ROOT / 'pc2_code' / rel_path).resolve()
-        
+
         issues = []
         if not abs_path.exists():
             status = '❌ NON-COMPLIANT'
@@ -119,7 +119,7 @@ def main():
             try:
                 with open(abs_path, 'r', encoding='utf-8') as f:
                     code = f.read()
-                
+
                 # Run all checks
                 if not check_base_agent_inheritance(code): issues.append('C1/C2: No BaseAgent inheritance')
                 if not check_super_init_call(code): issues.append('C3: super().__init__ not called')
@@ -146,24 +146,24 @@ def main():
         })
 
     # Print markdown table
-    print('| Agent Name | File Path | Compliance Status | Issues Found |')
-    print('|------------|-----------|-------------------|--------------|')
+| print(' | Agent Name | File Path | Compliance Status | Issues Found | ') |
+| print(' | ------------ | ----------- | ------------------- | -------------- | ') |
     for r in results:
         issues_str = ', '.join(r['issues']) if r['issues'] else 'None'
-        print(f"| {r['name']} | {r['file']} | {r['status']} | {issues_str} |")
-    
+| print(f" | {r['name']} | {r['file']} | {r['status']} | {issues_str} | ") |
+
     # Print summary
     compliant = sum(1 for r in results if r['status'] == '✅ FULLY COMPLIANT')
     partially = sum(1 for r in results if r['status'] == '🟠 PARTIALLY COMPLIANT')
     non_compliant = sum(1 for r in results if r['status'] == '❌ NON-COMPLIANT')
-    
+
     print(f"\nSummary: {len(results)} agents audited")
     print(f"✅ Fully Compliant: {compliant} ({compliant/len(results)*100:.1f}%)")
     print(f"🟠 Partially Compliant: {partially} ({partially/len(results)*100:.1f}%)")
     print(f"❌ Non-Compliant: {non_compliant} ({non_compliant/len(results)*100:.1f}%)")
 
 if __name__ == '__main__':
-    main() 
+    main()
 ```
 
 Now let's run the enhanced_system_audit.py script to audit the PC2 agents:
@@ -172,7 +172,7 @@ Now let's run the enhanced_system_audit.py script to audit the PC2 agents:
 
 **User**
 
-ang gawin mo dito mo iset @startup_config.yaml 
+ang gawin mo dito mo iset @startup_config.yaml
 
 ---
 
@@ -197,7 +197,7 @@ def gather_agents_from_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     agents = []
-    
+
     # Process all sections in the config file
     for section_name, section_data in config.items():
         if isinstance(section_data, list):
@@ -208,7 +208,7 @@ def gather_agents_from_config(config_path):
                         'name': agent_name,
                         'script_path': agent['script_path']
                     })
-    
+
     return agents
 
 def gather_pc2_agents_from_config():
@@ -224,16 +224,16 @@ def main():
     # Use PC2 agents from startup_config.yaml
     agents = gather_pc2_agents_from_config()
     print(f"Auditing {len(agents)} agents from pc2_code/config/startup_config.yaml.")
-    
+
     results = []
 
     for agent in agents:
         agent_name = agent['name']
         rel_path = agent['script_path']
-        
+
         # Set the correct root directory for PC2 agents
         abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
-        
+
         issues = []
         if not abs_path.exists():
             status = '❌ NON-COMPLIANT'
@@ -242,7 +242,7 @@ def main():
             try:
                 with open(abs_path, 'r', encoding='utf-8') as f:
                     code = f.read()
-                
+
                 # Run all checks
                 if not check_base_agent_inheritance(code): issues.append('C1/C2: No BaseAgent inheritance')
                 if not check_super_init_call(code): issues.append('C3: super().__init__ not called')
@@ -269,17 +269,17 @@ def main():
         })
 
     # Print markdown table
-    print('| Agent Name | File Path | Compliance Status | Issues Found |')
-    print('|------------|-----------|-------------------|--------------|')
+| print(' | Agent Name | File Path | Compliance Status | Issues Found | ') |
+| print(' | ------------ | ----------- | ------------------- | -------------- | ') |
     for r in results:
         issues_str = ', '.join(r['issues']) if r['issues'] else 'None'
-        print(f"| {r['name']} | {r['file']} | {r['status']} | {issues_str} |")
-    
+| print(f" | {r['name']} | {r['file']} | {r['status']} | {issues_str} | ") |
+
     # Print summary
     compliant = sum(1 for r in results if r['status'] == '✅ FULLY COMPLIANT')
     partially = sum(1 for r in results if r['status'] == '🟠 PARTIALLY COMPLIANT')
     non_compliant = sum(1 for r in results if r['status'] == '❌ NON-COMPLIANT')
-    
+
     print(f"\nSummary: {len(results)} agents audited")
     print(f"✅ Fully Compliant: {compliant} ({compliant/len(results)*100:.1f}%)")
     print(f"🟠 Partially Compliant: {partially} ({partially/len(results)*100:.1f}%)")
@@ -301,7 +301,7 @@ kaya ba iautominate ntin para mabilis?
 Yes, we can automate the compliance fix process for the PC2 agents to make it faster. I'll create an automated script that will fix all the PC2 agents at once with the necessary compliance changes.
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Agents Compliance Fixer
 ---------------------------
@@ -353,7 +353,7 @@ def gather_agents_from_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     agents = []
-    
+
     # Process all sections in the config file
     for section_name, section_data in config.items():
         if isinstance(section_data, list):
@@ -364,30 +364,30 @@ def gather_agents_from_config(config_path):
                         'name': agent_name,
                         'script_path': agent['script_path']
                     })
-    
+
     return agents
 
 def add_base_agent_import(content: str) -> str:
     """Add BaseAgent import if it's missing."""
     if 'from main_pc_code.src.core.base_agent import BaseAgent' not in content:
         import_line = 'from main_pc_code.src.core.base_agent import BaseAgent'
-        
+
         # Find a good place to add the import
-        import_section_match = re.search(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| import_section_match = re.search(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
         if import_section_match:
             # Add after the last import
-            imports = re.findall(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| imports = re.findall(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
             last_import = imports[-1]
             last_import_pos = content.find(last_import) + len(last_import)
             content = content[:last_import_pos] + '\n' + import_line + content[last_import_pos:]
         else:
             # If no imports found, add at the top after any comments/docstrings
-            first_code_line = re.search(r'^(?:\s*#.*|\s*""".*?"""|[^\n]+)$', content, re.MULTILINE)
+| first_code_line = re.search(r'^(?:\s*#.* | \s*""".*?""" | [^\n]+)$', content, re.MULTILINE) |
             if first_code_line:
                 content = content[:first_code_line.end()] + '\n\n' + import_line + content[first_code_line.end():]
             else:
                 content = import_line + '\n' + content
-    
+
     return content
 
 def add_config_loader_import(content: str) -> str:
@@ -398,56 +398,56 @@ def add_config_loader_import(content: str) -> str:
         '',
         content
     )
-    
+
     # Add config_loader import if not already present
     if 'from main_pc_code.utils.config_loader import load_config' not in content:
         import_line = 'from main_pc_code.utils.config_loader import load_config'
-        
+
         # Find a good place to add the import
-        import_section_match = re.search(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| import_section_match = re.search(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
         if import_section_match:
             # Add after the last import
-            imports = re.findall(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| imports = re.findall(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
             last_import = imports[-1]
             last_import_pos = content.find(last_import) + len(last_import)
             content = content[:last_import_pos] + '\n' + import_line + content[last_import_pos:]
         else:
             # If no imports found, add at the top after any comments/docstrings
-            first_code_line = re.search(r'^(?:\s*#.*|\s*""".*?"""|[^\n]+)$', content, re.MULTILINE)
+| first_code_line = re.search(r'^(?:\s*#.* | \s*""".*?""" | [^\n]+)$', content, re.MULTILINE) |
             if first_code_line:
                 content = content[:first_code_line.end()] + '\n\n' + import_line + content[first_code_line.end():]
             else:
                 content = import_line + '\n' + content
-    
+
     # Add config at module level
     if 'config = load_config()' not in content:
         # Find the last import
-        imports = re.findall(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| imports = re.findall(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
         if imports:
             last_import = imports[-1]
             last_import_pos = content.find(last_import) + len(last_import)
             content = content[:last_import_pos] + '\n\n# Load configuration at the module level\nconfig = load_config()' + content[last_import_pos:]
-    
+
     # Replace usage of config_parser
     content = re.sub(
         r'_agent_args\s*=\s*parse_agent_args\(\)',
         '# Config is loaded at the module level',
         content
     )
-    
+
     # Replace references to _agent_args
     content = re.sub(
         r'_agent_args\.(\w+)',
         r'config.get("\1")',
         content
     )
-    
+
     content = re.sub(
         r'getattr\(_agent_args,\s*[\'"](\w+)[\'"],\s*([^)]+)\)',
         r'config.get("\1", \2)',
         content
     )
-    
+
     return content
 
 def add_base_agent_inheritance(content: str) -> str:
@@ -470,9 +470,9 @@ def add_super_init(content: str) -> str:
     class_match = re.search(r'class\s+(\w+)\s*\(\s*BaseAgent\s*\)\s*:', content)
     if not class_match:
         return content
-    
+
     class_name = class_match.group(1)
-    
+
     # Find the __init__ method
     init_match = re.search(r'def\s+__init__\s*\(self(?:,\s*[^)]*)\)\s*:', content)
     if init_match:
@@ -481,24 +481,24 @@ def add_super_init(content: str) -> str:
         next_def = content.find('def ', init_block_start)
         if next_def == -1:
             next_def = len(content)
-        
+
         init_block = content[init_block_start:next_def]
-        
+
         if 'super().__init__' not in init_block:
             # Extract parameters from __init__
             init_params = re.search(r'def\s+__init__\s*\(self(?:,\s*([^)]*))?\)\s*:', content)
             params = init_params.group(1) if init_params and init_params.group(1) else ''
-            
+
             # Parse parameters to extract port and name
             port_param = re.search(r'port\s*(?::\s*\w+)?\s*=\s*(\d+)', params)
             port_value = port_param.group(1) if port_param else 'None'
-            
+
             # Find first line of method body
-            method_body_start = re.search(r'def\s+__init__.*?:\s*(?:\n\s+|$)', content)
+| method_body_start = re.search(r'def\s+__init__.*?:\s*(?:\n\s+ | $)', content) |
             if method_body_start:
                 pos = method_body_start.end()
                 indentation = re.search(r'(\s+)', content[pos:]).group(1) if re.search(r'(\s+)', content[pos:]) else '    '
-                
+
                 # Add super().__init__ call
                 super_init_line = f"{indentation}super().__init__(name=\"{class_name}\", port={port_value})\n"
                 content = content[:pos] + super_init_line + content[pos:]
@@ -506,30 +506,30 @@ def add_super_init(content: str) -> str:
         # If no __init__ found, add one
         indentation = '    '  # Default indentation
         pos = class_match.end()
-        
+
         # Find the correct indentation from other methods
         other_method = re.search(r'(\s+)def\s+\w+', content[pos:])
         if other_method:
             indentation = other_method.group(1)
-        
+
         # Add __init__ method
         init_method = f"\n{indentation}def __init__(self, port: int = None):\n"
         init_method += f"{indentation}    super().__init__(name=\"{class_name}\", port=port)\n"
         init_method += f"{indentation}    self.start_time = time.time()\n"
-        
+
         content = content[:pos] + init_method + content[pos:]
-        
+
         # Also make sure time is imported
         if 'import time' not in content:
             content = add_time_import(content)
-    
+
     return content
 
 def add_time_import(content: str) -> str:
     """Add time import if not present."""
     if 'import time' not in content:
         # Find a good place to add the import
-        import_section_match = re.search(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| import_section_match = re.search(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
         if import_section_match:
             # Add after the first import
             first_import = import_section_match.group(1)
@@ -537,12 +537,12 @@ def add_time_import(content: str) -> str:
             content = content[:first_import_pos] + '\nimport time' + content[first_import_pos:]
         else:
             # If no imports found, add at the top after any comments/docstrings
-            first_code_line = re.search(r'^(?:\s*#.*|\s*""".*?"""|[^\n]+)$', content, re.MULTILINE)
+| first_code_line = re.search(r'^(?:\s*#.* | \s*""".*?""" | [^\n]+)$', content, re.MULTILINE) |
             if first_code_line:
                 content = content[:first_code_line.end()] + '\nimport time' + content[first_code_line.end():]
             else:
                 content = 'import time\n' + content
-    
+
     return content
 
 def add_health_status_method(content: str) -> str:
@@ -552,25 +552,25 @@ def add_health_status_method(content: str) -> str:
         class_match = re.search(r'class\s+(\w+)\s*\(\s*BaseAgent\s*\)\s*:', content)
         if not class_match:
             return content
-        
+
         # Find the end of the class
         class_name = class_match.group(1)
         class_start = class_match.start()
-        
+
         # Find the indentation of methods in the class
         method_match = re.search(r'(\s+)def\s+\w+\s*\(', content[class_start:])
         if not method_match:
             indentation = '    '  # Default indentation
         else:
             indentation = method_match.group(1)
-        
+
         # Find where to insert the method
         # Look for the last method in the class
         methods = list(re.finditer(r'(\s+)def\s+(\w+)\s*\(', content))
         if methods:
             last_method = methods[-1]
             last_method_name = last_method.group(2)
-            
+
             # Find the end of the last method
             last_method_pos = last_method.start()
             next_method_match = re.search(r'^\s+def\s+\w+\s*\(', content[last_method_pos + 1:], re.MULTILINE)
@@ -589,7 +589,7 @@ def add_health_status_method(content: str) -> str:
         else:
             # No methods found, insert after the class declaration
             insert_pos = class_match.end()
-            
+
         # Create the health status method
         health_method = f"\n{indentation}def _get_health_status(self) -> dict:\n"
         health_method += f"{indentation}    \"\"\"Return health status information.\"\"\"\n"
@@ -601,12 +601,12 @@ def add_health_status_method(content: str) -> str:
         health_method += f"{indentation}        'additional_info': {{}}\n"
         health_method += f"{indentation}    }})\n"
         health_method += f"{indentation}    return base_status\n"
-        
+
         content = content[:insert_pos] + health_method + content[insert_pos:]
-        
+
         # Also make sure time is imported
         content = add_time_import(content)
-    
+
     return content
 
 def add_cleanup_method(content: str) -> str:
@@ -616,20 +616,20 @@ def add_cleanup_method(content: str) -> str:
         class_match = re.search(r'class\s+(\w+)\s*\(\s*BaseAgent\s*\)\s*:', content)
         if not class_match:
             return content
-        
+
         # Find the indentation of methods in the class
         method_match = re.search(r'(\s+)def\s+\w+\s*\(', content[class_match.start():])
         if not method_match:
             indentation = '    '  # Default indentation
         else:
             indentation = method_match.group(1)
-        
+
         # Find where to insert the method (end of the class)
         methods = list(re.finditer(r'(\s+)def\s+(\w+)\s*\(', content))
         if methods:
             last_method = methods[-1]
             last_method_name = last_method.group(2)
-            
+
             # Find the end of the last method
             last_method_pos = last_method.start()
             next_method_match = re.search(r'^\s+def\s+\w+\s*\(', content[last_method_pos + 1:], re.MULTILINE)
@@ -644,30 +644,30 @@ def add_cleanup_method(content: str) -> str:
                     insert_pos = next_class
         else:
             insert_pos = class_match.end()
-            
+
         # Create the cleanup method
         cleanup_method = f"\n{indentation}def cleanup(self):\n"
         cleanup_method += f"{indentation}    \"\"\"Clean up resources before shutdown.\"\"\"\n"
         cleanup_method += f"{indentation}    logger.info(\"Cleaning up resources...\")\n"
         cleanup_method += f"{indentation}    # Add specific cleanup code here\n"
         cleanup_method += f"{indentation}    super().cleanup()\n"
-        
+
         content = content[:insert_pos] + cleanup_method + content[insert_pos:]
-    
+
     return content
 
 def standardize_main_block(content: str) -> str:
     """Standardize __main__ block according to the template."""
     # Check if there's already a __main__ block
     main_block_match = re.search(r'if\s+__name__\s*==\s*[\'"]__main__[\'"]\s*:', content)
-    
+
     # Find the class name
     class_match = re.search(r'class\s+(\w+)\s*\(\s*BaseAgent\s*\)\s*:', content)
     if not class_match:
         return content
-    
+
     class_name = class_match.group(1)
-    
+
     # Create a standardized __main__ block
     main_block = "\n\nif __name__ == \"__main__\":\n"
     main_block += "    # Standardized main execution block\n"
@@ -685,11 +685,11 @@ def standardize_main_block(content: str) -> str:
     main_block += "        if agent and hasattr(agent, 'cleanup'):\n"
     main_block += "            print(f\"Cleaning up {agent.name}...\")\n"
     main_block += "            agent.cleanup()"
-    
+
     if main_block_match:
         # Replace the existing main block
         main_block_start = main_block_match.start()
-        
+
         # Find where the main block ends (could be end of file or next top-level statement)
         indentation = re.search(r'(\s+)', content[main_block_match.end():]).group(1) if re.search(r'(\s+)', content[main_block_match.end():]) else ''
         next_top_level = re.search(r'\n(?!\s)', content[main_block_match.end():])
@@ -697,12 +697,12 @@ def standardize_main_block(content: str) -> str:
             main_block_end = main_block_match.end() + next_top_level.start()
         else:
             main_block_end = len(content)
-        
+
         content = content[:main_block_start] + main_block + content[main_block_end:]
     else:
         # Add main block at the end
         content = content.rstrip() + main_block
-    
+
     return content
 
 def add_run_method(content: str) -> str:
@@ -712,14 +712,14 @@ def add_run_method(content: str) -> str:
         class_match = re.search(r'class\s+(\w+)\s*\(\s*BaseAgent\s*\)\s*:', content)
         if not class_match:
             return content
-        
+
         # Find the indentation of methods in the class
         method_match = re.search(r'(\s+)def\s+\w+\s*\(', content[class_match.start():])
         if not method_match:
             indentation = '    '  # Default indentation
         else:
             indentation = method_match.group(1)
-        
+
         # Find where to insert the method (before cleanup method)
         cleanup_match = re.search(r'(\s+)def\s+cleanup\s*\(', content)
         if cleanup_match:
@@ -742,7 +742,7 @@ def add_run_method(content: str) -> str:
                         insert_pos = next_class
             else:
                 insert_pos = class_match.end()
-        
+
         # Create the run method
         run_method = f"\n{indentation}def run(self):\n"
         run_method += f"{indentation}    \"\"\"Run the agent's main loop.\"\"\"\n"
@@ -757,28 +757,28 @@ def add_run_method(content: str) -> str:
         run_method += f"{indentation}    except Exception as e:\n"
         run_method += f"{indentation}        logger.error(f\"Error in main loop: {{e}}\")\n"
         run_method += f"{indentation}        raise\n"
-        
+
         content = content[:insert_pos] + run_method + content[insert_pos:]
-    
+
     return content
 
 def fix_agent_compliance(agent: dict) -> bool:
     """Fix compliance issues in an agent file."""
     rel_path = agent['script_path']
     abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
-    
+
     if not abs_path.exists():
         logger.error(f"File not found: {abs_path}")
         return False
-    
+
     try:
         # Create backup
         backup_path = create_backup(abs_path)
-        
+
         # Read the file
         with open(abs_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Apply fixes
         content = add_base_agent_import(content)
         content = add_config_loader_import(content)
@@ -788,14 +788,14 @@ def fix_agent_compliance(agent: dict) -> bool:
         content = add_cleanup_method(content)
         content = add_run_method(content)
         content = standardize_main_block(content)
-        
+
         # Write the updated content
         with open(abs_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         logger.info(f"Successfully fixed compliance for {abs_path}")
         return True
-    
+
     except Exception as e:
         logger.error(f"Error fixing compliance for {abs_path}: {e}")
         return False
@@ -809,23 +809,23 @@ def main():
     except Exception as e:
         logger.error(f"Error loading PC2 config: {e}")
         return 1
-    
+
     if not agents:
         logger.error("No agents found in PC2 config")
         return 1
-    
+
     # Fix compliance for each agent
     success_count = 0
     for agent in agents:
         if fix_agent_compliance(agent):
             success_count += 1
-    
+
     logger.info(f"Successfully fixed compliance for {success_count}/{len(agents)} agents")
-    
+
     # Run compliance check to verify
     print("\nRunning compliance check...")
     os.system(f"python3 {PROJECT_ROOT}/scripts/enhanced_system_audit.py")
-    
+
     return 0 if success_count == len(agents) else 1
 
 if __name__ == "__main__":
@@ -845,7 +845,7 @@ dapat meron din tayong @restore_functionality.py  para hindi mawala ang mga func
 You're absolutely right. We need to create a modified version of restore_functionality.py for PC2 agents to make sure we preserve their functionality while making them compliant with architectural standards. Let me create that script for you:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Functionality Restoration Script
 -----------------------------------
@@ -887,7 +887,7 @@ def create_backup(file_path: Path) -> Path:
     """Create a backup of a file before modifying it."""
     # Make sure backup directory exists
     PC2_BACKUPS_DIR.mkdir(exist_ok=True)
-    
+
     # Create a backup in the backups directory with original filename
     backup_path = PC2_BACKUPS_DIR / file_path.name
     if not backup_path.exists():
@@ -928,19 +928,19 @@ def extract_init_content(init_method: str) -> str:
     """Extract the content of the __init__ method excluding the signature and super call."""
     if not init_method:
         return ""
-    
+
     # Split the method into lines
     lines = init_method.split('\n')
-    
+
     # Remove the method signature (first line)
     content_lines = lines[1:] if lines else []
-    
+
     # Remove any super().__init__ calls
     filtered_lines = []
     for line in content_lines:
         if not re.search(r'super\(\)\.__init__', line):
             filtered_lines.append(line)
-    
+
     # Find the common indentation
     common_indent = None
     for line in filtered_lines:
@@ -948,11 +948,11 @@ def extract_init_content(init_method: str) -> str:
             indent = len(line) - len(line.lstrip())
             if common_indent is None or indent < common_indent:
                 common_indent = indent
-    
+
     # Remove the common indentation
     if common_indent:
         filtered_lines = [line[common_indent:] if line.strip() else line for line in filtered_lines]
-    
+
     return '\n'.join(filtered_lines)
 
 def gather_agents_from_config() -> List[Dict]:
@@ -960,7 +960,7 @@ def gather_agents_from_config() -> List[Dict]:
     try:
         with open(PC2_CONFIG_PATH, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
-        
+
         agents = []
         # Process all sections in the config file
         for section_name, section_data in config.items():
@@ -972,7 +972,7 @@ def gather_agents_from_config() -> List[Dict]:
                             'name': agent_name,
                             'script_path': agent['script_path']
                         })
-        
+
         return agents
     except Exception as e:
         logger.error(f"Error loading config: {e}")
@@ -983,78 +983,78 @@ def restore_agent_functionality(agent: Dict) -> bool:
     rel_path = agent['script_path']
     agent_name = agent['name']
     abs_path = (PC2_CODE / rel_path).resolve()
-    
+
     # Path to the backup file
     backup_path = PC2_BACKUPS_DIR / os.path.basename(abs_path)
-    
+
     if not abs_path.exists():
         logger.error(f"Agent not found: {abs_path}")
         return False
-    
+
     if not backup_path.exists():
         logger.warning(f"No backup found for {agent_name}, creating one now")
         backup_path = create_backup(abs_path)
-    
+
     logger.info(f"Restoring functionality for {agent_name}")
-    
+
     # Read both files
     try:
         with open(abs_path, 'r', encoding='utf-8') as f:
             refactored_code = f.read()
-        
+
         with open(backup_path, 'r', encoding='utf-8') as f:
             original_code = f.read()
-        
+
         # Extract methods from both files
         refactored_methods = extract_methods(refactored_code)
         original_methods = extract_methods(original_code)
-        
+
         # Extract class names
         refactored_class = extract_class_name(refactored_code)
         original_class = extract_class_name(original_code)
-        
+
         if not refactored_class or not original_class:
             logger.error(f"Could not extract class names for {agent_name}")
             return False
-        
+
         logger.info(f"Found classes: {original_class} (original) -> {refactored_class} (refactored)")
-        
+
         # Find methods in original that are missing in refactored
         missing_methods = set(original_methods.keys()) - set(refactored_methods.keys())
-        
+
         # Exclude methods that should not be directly copied
         excluded_methods = {'__init__', '__enter__', '__exit__', '_get_health_status', 'cleanup'}
         missing_methods = missing_methods - excluded_methods
-        
+
         logger.info(f"Found {len(missing_methods)} missing methods to restore")
-        
+
         # Extract the original __init__ content to merge with refactored __init__
         original_init = original_methods.get('__init__', '')
         init_content = extract_init_content(original_init)
-        
+
         # Prepare the new code
         new_code = refactored_code
-        
+
         # Replace class name in original methods to match refactored class name
         if original_class != refactored_class:
             pattern = re.compile(r'\b' + re.escape(original_class) + r'\b')
-        
+
         # Add missing methods from original to refactored
         for method_name in sorted(missing_methods):
             method_code = original_methods[method_name]
-            
+
             # Replace class name if different
             if original_class != refactored_class:
                 method_code = pattern.sub(refactored_class, method_code)
-            
+
             # Find where to insert the method
             # Look for the last method in the class
-            last_method_match = re.search(r'(\s+)def\s+\w+\s*\([^)]*\):\s*(?:"""[\s\S]*?""")?\s*(?:#[^\n]*)?\s*(?:pass)?(?=\n\1\S|\n\n|\Z)', new_code)
-            
+| last_method_match = re.search(r'(\s+)def\s+\w+\s*\([^)]*\):\s*(?:"""[\s\S]*?""")?\s*(?:#[^\n]*)?\s*(?:pass)?(?=\n\1\S | \n\n | \Z)', new_code) |
+
             if last_method_match:
                 insert_pos = last_method_match.end()
                 indentation = last_method_match.group(1)
-                
+
                 # Ensure proper indentation of the method
                 method_lines = method_code.split('\n')
                 if method_lines and method_lines[0].startswith('def '):
@@ -1064,41 +1064,41 @@ def restore_agent_functionality(agent: Dict) -> bool:
                     for i in range(1, len(method_lines)):
                         if method_lines[i].strip():
                             method_lines[i] = indentation + method_lines[i]
-                    
+
                     method_code = '\n'.join(method_lines)
-                
+
                 new_code = new_code[:insert_pos] + '\n\n' + method_code + new_code[insert_pos:]
                 logger.info(f"Restored method: {method_name}")
             else:
                 logger.warning(f"Could not find position to insert method {method_name}")
-        
+
         # Merge __init__ content
         if init_content:
             # Find the __init__ method in the refactored code
             init_pattern = re.compile(r'(\s+)def\s+__init__\s*\([^)]*\):\s*(?:"""[\s\S]*?""")?\s*(?:#[^\n]*)?\s*super\(\)\.__init__\([^)]*\)')
             init_match = init_pattern.search(new_code)
-            
+
             if init_match:
                 # Find the end of super().__init__ line
                 super_init_end = init_match.end()
                 indentation = init_match.group(1) + '    '  # Add 4 spaces for content indentation
-                
+
                 # Format the init content with proper indentation
                 formatted_init = '\n'.join(indentation + line for line in init_content.split('\n') if line.strip())
-                
+
                 # Insert the init content after super().__init__
                 new_code = new_code[:super_init_end] + '\n' + formatted_init + new_code[super_init_end:]
                 logger.info("Merged __init__ content")
             else:
                 logger.warning("Could not find __init__ method in refactored code")
-        
+
         # Write the new code
         with open(abs_path, 'w', encoding='utf-8') as f:
             f.write(new_code)
-        
+
         logger.info(f"Successfully restored functionality for {agent_name}")
         return True
-    
+
     except Exception as e:
         logger.error(f"Error restoring functionality for {agent_name}: {e}")
         return False
@@ -1109,14 +1109,14 @@ def restore_all_agents():
     if not agents:
         logger.error("No agents found in config")
         return 0
-    
+
     logger.info(f"Found {len(agents)} agents in PC2 config")
-    
+
     success_count = 0
     for agent in agents:
         if restore_agent_functionality(agent):
             success_count += 1
-    
+
     logger.info(f"Successfully restored functionality for {success_count}/{len(agents)} agents")
     return success_count
 
@@ -1124,14 +1124,14 @@ def main():
     """Main function."""
     # Create backup directory if it doesn't exist
     PC2_BACKUPS_DIR.mkdir(exist_ok=True)
-    
+
     # Restore functionality for all agents
     restored_count = restore_all_agents()
-    
+
     # Run compliance check to verify
     print("\nRunning compliance check...")
     os.system(f"python3 {PROJECT_ROOT}/scripts/enhanced_system_audit.py")
-    
+
     return 0
 
 if __name__ == "__main__":
@@ -1141,7 +1141,7 @@ if __name__ == "__main__":
 Now let's create a combined script that will first fix the compliance issues and then restore functionality:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Compliance Automation Script
 -------------------------------
@@ -1196,27 +1196,27 @@ def run_script(script_path: Path) -> bool:
 def main():
     """Main function to run the automation process."""
     logger.info("Starting PC2 compliance automation process")
-    
+
     # Step 1: Run compliance fixer
     if not run_script(COMPLIANCE_FIXER):
         logger.error("Compliance fixing failed, aborting")
         return 1
     logger.info("Compliance fixing completed successfully")
-    
+
     # Step 2: Run functionality restoration
     if not run_script(FUNCTIONALITY_RESTORE):
         logger.error("Functionality restoration failed")
         return 2
     logger.info("Functionality restoration completed successfully")
-    
+
     # Step 3: Run enhanced audit to verify
     if not run_script(ENHANCED_AUDIT):
         logger.error("Final compliance verification failed")
         return 3
-    
+
     logger.info("PC2 compliance automation completed successfully!")
     logger.info("All agents are now compliant with architectural standards and retain their original functionality.")
-    
+
     return 0
 
 if __name__ == "__main__":
@@ -1307,7 +1307,7 @@ Ito ang aking recommendation:
 ### 1. Gumawa tayo ng isang clean reference template na gagamitin natin para sa mga agents:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Template for Compliant PC2 Agent
 --------------------------------
@@ -1341,39 +1341,39 @@ logger = logging.getLogger(__name__)
 
 class TemplateAgent(BaseAgent):
     """Template agent that demonstrates compliance with architectural standards."""
-    
+
     def __init__(self, port: int = None):
         """Initialize the agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="TemplateAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5000
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         base_status = super()._get_health_status()
-        
+
         # Add agent-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -1381,22 +1381,22 @@ class TemplateAgent(BaseAgent):
             'request_count': self.request_count,
             'additional_info': {}
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -1404,11 +1404,11 @@ class TemplateAgent(BaseAgent):
             'message': f'Processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
@@ -1416,16 +1416,16 @@ class TemplateAgent(BaseAgent):
                     if self.socket.poll(1000, zmq.POLLIN):
                         request = self.socket.recv_json()
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                     # Periodic tasks
                     # (Add any periodic tasks here)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -1436,7 +1436,7 @@ class TemplateAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -1444,20 +1444,20 @@ class TemplateAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__}...")
         self.running = False
-        
+
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         super().cleanup()
 
 
@@ -1494,7 +1494,7 @@ yung mga imports itama mo ang mga path niya dahil pc2 agents yan, igigit ko lang
 Oo tama ka. Kailangan kong ayusin ang mga import paths para sa PC2 agents. Let me update the template:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Template for Compliant PC2 Agent
 --------------------------------
@@ -1534,7 +1534,7 @@ Ngayon alamin natin kung saan rin ang path ng BaseAgent para sa PC2:
 Walang base_agent.py sa pc2_code. Ito ay malamang dahil ginagamit pa rin nila ang base_agent.py sa main_pc_code. Ayusin ko ang template:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Template for Compliant PC2 Agent
 --------------------------------
@@ -1572,7 +1572,7 @@ Tingnan natin muna ang content ng config_loader.py sa pc2_code para malaman kung
 Alright, I see the issue now. Let me fix the template with the correct import for PC2:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Template for Compliant PC2 Agent
 --------------------------------
@@ -1612,7 +1612,7 @@ Now, let's check how the rest of the template works. Let me see the full file to
 Now I'll fix the remaining linter errors related to type hinting:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Template for Compliant PC2 Agent
 --------------------------------
@@ -1649,39 +1649,39 @@ logger = logging.getLogger(__name__)
 
 class TemplateAgent(BaseAgent):
     """Template agent that demonstrates compliance with architectural standards."""
-    
+
     def __init__(self, port: Optional[int] = None):
         """Initialize the agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="TemplateAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5000
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         base_status = super()._get_health_status()
-        
+
         # Add agent-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -1689,22 +1689,22 @@ class TemplateAgent(BaseAgent):
             'request_count': self.request_count,
             'additional_info': {}
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -1712,11 +1712,11 @@ class TemplateAgent(BaseAgent):
             'message': f'Processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
@@ -1728,18 +1728,18 @@ class TemplateAgent(BaseAgent):
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                     # Periodic tasks
                     # (Add any periodic tasks here)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -1750,7 +1750,7 @@ class TemplateAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -1758,20 +1758,20 @@ class TemplateAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__}...")
         self.running = False
-        
+
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         super().cleanup()
 
 
@@ -1796,7 +1796,7 @@ if __name__ == "__main__":
 Let's test the template file by creating a simple PC2 agent based on it to see if it works correctly:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Test Compliant PC2 Agent
 ------------------------
@@ -1827,39 +1827,39 @@ logger = logging.getLogger(__name__)
 
 class TestCompliantAgent(BaseAgent):
     """Test agent that demonstrates compliance with PC2 architectural standards."""
-    
+
     def __init__(self, port: Optional[int] = None):
         """Initialize the agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="TestCompliantAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5050
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         base_status = super()._get_health_status()
-        
+
         # Add agent-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -1870,22 +1870,22 @@ class TestCompliantAgent(BaseAgent):
                 'pc2_specific': True
             }
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -1893,11 +1893,11 @@ class TestCompliantAgent(BaseAgent):
             'message': f'PC2 Agent processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
@@ -1909,15 +1909,15 @@ class TestCompliantAgent(BaseAgent):
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -1928,7 +1928,7 @@ class TestCompliantAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -1936,20 +1936,20 @@ class TestCompliantAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__}...")
         self.running = False
-        
+
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         super().cleanup()
 
 
@@ -1980,7 +1980,7 @@ Let me check the health status implementation of this agent:
 Let's create a modified version of the PC2 agent template:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2-Specific Template for Compliant Agent
 ----------------------------------------
@@ -2026,40 +2026,40 @@ logger = logging.getLogger(__name__)
 
 class PC2TemplateAgent(BaseAgent):
     """Template agent for PC2 that demonstrates compliance with architectural standards."""
-    
+
     def __init__(self, port: Optional[int] = None):
         """Initialize the PC2 agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="PC2TemplateAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5555
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
         self.last_health_check = time.time()
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -2073,23 +2073,23 @@ class PC2TemplateAgent(BaseAgent):
                 'environment': os.environ.get('PC2_ENV', 'development')
             }
         })
-        
+
         self.last_health_check = time.time()
         return base_status
-    
+
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -2097,11 +2097,11 @@ class PC2TemplateAgent(BaseAgent):
             'message': f'PC2 Template Agent processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
@@ -2109,21 +2109,21 @@ class PC2TemplateAgent(BaseAgent):
                     if self.socket.poll(1000, zmq.POLLIN):
                         # Receive message
                         message = self.socket.recv()
-                        
+
                         # Parse the message safely
                         try:
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.handle_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -2134,7 +2134,7 @@ class PC2TemplateAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -2142,20 +2142,20 @@ class PC2TemplateAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__}...")
         self.running = False
-        
+
         # Close sockets
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         super().cleanup()
 
 
@@ -2212,7 +2212,7 @@ Kung kailangan isa lang ang BaseAgent, mas maganda talagang gamitin yung nasa ma
 Good, nakikita na maraming PC2 agents na nagamit na ng BaseAgent mula sa main_pc_code/src/core/. Let's create a PC2-specific util module na mag-handle ng import at initialization issues para maging consistent at madali i-update ang PC2 agents:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Agent Helpers
 ----------------
@@ -2242,11 +2242,11 @@ def get_pc2_config():
 def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
     """
     Set up standardized logging for PC2 agents.
-    
+
     Args:
         agent_name: Name of the agent for the log file
         log_level: Logging level (default: INFO)
-    
+
     Returns:
         Logger instance
     """
@@ -2254,7 +2254,7 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
     log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, f"{agent_name.lower()}.log")
-    
+
     # Configure logging
     logging.basicConfig(
         level=log_level,
@@ -2265,24 +2265,24 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
         ],
         force=True  # Ensure this configuration is applied
     )
-    
+
     return logging.getLogger(agent_name)
 
 # Get PC2-specific health status
 def get_pc2_health_status(agent_instance, base_status=None):
     """
     Add PC2-specific fields to health status.
-    
+
     Args:
         agent_instance: The agent instance
         base_status: Base status dict from BaseAgent._get_health_status()
-    
+
     Returns:
         Dict with PC2-specific health fields
     """
     # If base_status not provided, use empty dict
     status = base_status or {}
-    
+
     # Add PC2-specific health information
     status.update({
         'service': agent_instance.__class__.__name__,
@@ -2291,63 +2291,63 @@ def get_pc2_health_status(agent_instance, base_status=None):
         'environment': os.environ.get('PC2_ENV', 'development'),
         'status': 'healthy'
     })
-    
+
     return status
 
 # Initialize ZMQ socket with standard PC2 settings
 def setup_zmq_socket(port, socket_type=zmq.REP, bind=True):
     """
     Set up a ZMQ socket with standard PC2 settings.
-    
+
     Args:
         port: Port number to bind/connect to
         socket_type: ZMQ socket type (default: REP)
         bind: Whether to bind or connect (default: True for bind)
-    
+
     Returns:
         Tuple of (context, socket)
     """
     context = zmq.Context()
     socket = context.socket(socket_type)
-    
+
     if bind:
         socket.bind(f"tcp://*:{port}")
     else:
         socket.connect(f"tcp://localhost:{port}")
-    
+
     return context, socket
 
 # Standard cleanup for PC2 agents
 def standard_cleanup(agent_instance, logger=None):
     """
     Perform standard cleanup for PC2 agents.
-    
+
     Args:
         agent_instance: The agent instance
         logger: Logger to use (optional)
     """
     log = logger or logging.getLogger(__name__)
-    
+
     log.info(f"Cleaning up {agent_instance.__class__.__name__}...")
-    
+
     # Mark as not running
     if hasattr(agent_instance, 'running'):
         agent_instance.running = False
-    
+
     # Close socket
     if hasattr(agent_instance, 'socket') and agent_instance.socket:
         try:
             agent_instance.socket.close()
         except Exception as e:
             log.error(f"Error closing socket: {e}")
-    
+
     # Terminate context
     if hasattr(agent_instance, 'context') and agent_instance.context:
         try:
             agent_instance.context.term()
         except Exception as e:
             log.error(f"Error terminating ZMQ context: {e}")
-    
+
     # Call parent cleanup if available
     if hasattr(agent_instance, 'cleanup') and callable(getattr(agent_instance, 'cleanup')):
         try:
@@ -2359,7 +2359,7 @@ def standard_cleanup(agent_instance, logger=None):
 Ngayon, gumawa tayo ng bagong template file na gumagamit ng helper na ginawa natin:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Improved PC2 Template Agent
 --------------------------
@@ -2389,66 +2389,66 @@ logger = setup_pc2_logging("PC2ImprovedTemplate")
 
 class PC2ImprovedTemplateAgent(BaseAgent):
     """PC2 template agent with improved structure using helper utilities."""
-    
+
     def __init__(self, port: Optional[int] = None):
         """Initialize the agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="PC2ImprovedTemplateAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5560
-        
+
         # Set up ZMQ socket using standard helper
         self.context, self.socket = setup_zmq_socket(self.port)
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
         self.last_health_check = time.time()
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         # Get base status from parent
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information using helper
         status = get_pc2_health_status(self, base_status)
-        
+
         # Add agent-specific information
         status.update({
             'request_count': self.request_count,
             'last_health_check': self.last_health_check
         })
-        
+
         self.last_health_check = time.time()
         return status
-    
+
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -2456,11 +2456,11 @@ class PC2ImprovedTemplateAgent(BaseAgent):
             'message': f'PC2 Improved Template processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
@@ -2468,21 +2468,21 @@ class PC2ImprovedTemplateAgent(BaseAgent):
                     if self.socket.poll(1000, zmq.POLLIN):
                         # Receive message
                         message = self.socket.recv()
-                        
+
                         # Parse the message safely
                         try:
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.handle_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -2493,7 +2493,7 @@ class PC2ImprovedTemplateAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -2501,7 +2501,7 @@ class PC2ImprovedTemplateAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         # Use standard cleanup helper
@@ -2529,7 +2529,7 @@ if __name__ == "__main__":
 Oops, we need to add the zmq import in the improved template:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Improved PC2 Template Agent
 --------------------------
@@ -2562,7 +2562,7 @@ logger = setup_pc2_logging("PC2ImprovedTemplate")
 Perfect! Now let me explain what I did:
 
 1. I created a PC2-specific helper module (`pc2_code/agents/utils/pc2_agent_helpers.py`) that:
-   - Imports BaseAgent from the main_pc_code 
+   - Imports BaseAgent from the main_pc_code
    - Provides standardized utility functions for PC2 agents
    - Makes it easier to create compliant PC2 agents with consistent behavior
 
@@ -2594,12 +2594,12 @@ ito naba talaga ang tamang paraan? kase parang pumangit diba?
 
 Hindi ko sinasabing ito ang pinakamahusay na paraan. May mga trade-offs talaga.
 
-Kung prefer mo ang mas simple at diretso, pwede nating bumalik sa original approach kung saan direktang ini-import ang BaseAgent mula sa main_pc_code sa bawat agent. 
+Kung prefer mo ang mas simple at diretso, pwede nating bumalik sa original approach kung saan direktang ini-import ang BaseAgent mula sa main_pc_code sa bawat agent.
 
 Gumawa tayo ng mas simple na template:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Simple PC2 Agent Template
 ------------------------
@@ -2640,40 +2640,40 @@ logger = logging.getLogger(__name__)
 
 class PC2SimpleAgent(BaseAgent):
     """Simple PC2 agent template with direct imports."""
-    
+
     def __init__(self, port: Optional[int] = None):
         """Initialize the agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name="PC2SimpleAgent", port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5570
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
-        
+
         logger.info(f"{self.__class__.__name__} initialized on port {self.port}")
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         # Get base status from parent
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -2682,22 +2682,22 @@ class PC2SimpleAgent(BaseAgent):
             'machine': 'pc2',
             'status': 'healthy'
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -2705,32 +2705,32 @@ class PC2SimpleAgent(BaseAgent):
             'message': f'Simple PC2 agent processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on port {self.port}")
-        
+
         try:
             while self.running:
                 try:
                     # Wait for request with timeout
                     if self.socket.poll(1000, zmq.POLLIN):
                         message = self.socket.recv()
-                        
+
                         # Parse message safely
                         try:
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -2741,7 +2741,7 @@ class PC2SimpleAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -2749,20 +2749,20 @@ class PC2SimpleAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__}...")
         self.running = False
-        
+
         # Close socket
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         # Call parent cleanup
         super().cleanup()
 
@@ -2829,7 +2829,7 @@ Sa ganitong setup, dapat mas maingat tayo sa imports dahil magkaibang machines a
 Salamat sa paglilinaw. Dahil ang PC2 agents ay tatakbo sa ibang machine, kailangan nating i-revise ang template natin para maging mas appropriate sa cross-machine architecture:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Cross-Machine Agent Template
 -------------------------------
@@ -2878,68 +2878,68 @@ logger = logging.getLogger("PC2Template")
 
 class PC2CrossMachineAgent(BaseAgent):
     """Template for agents running on the PC2 machine."""
-    
+
     def __init__(self, port: Optional[int] = None, name: str = "PC2CrossMachineAgent"):
         """Initialize the PC2 agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
             name: Name of the agent.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name=name, port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5580
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        
+
         # Bind to all interfaces so it can be accessed from main PC
         self.socket.bind(f"tcp://*:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
         self.hostname = PC2_HOSTNAME
-        
+
         # Set up connection to main PC if needed
         self.main_pc_connections = {}
-        
+
         logger.info(f"{self.__class__.__name__} initialized on {PC2_HOSTNAME} (IP: {PC2_IP}) port {self.port}")
-    
+
     def connect_to_main_pc(self, agent_name: str, port: int):
         """
         Connect to an agent on the main PC.
-        
+
         Args:
             agent_name: Name of the agent on main PC
             port: Port number of the agent on main PC
         """
         # Assuming main PC IP is stored in config or environment
         main_pc_ip = os.environ.get("MAIN_PC_IP", "192.168.1.1")
-        
+
         # Create a new socket for this connection
         socket = self.context.socket(zmq.REQ)
         socket.connect(f"tcp://{main_pc_ip}:{port}")
-        
+
         # Store the connection
         self.main_pc_connections[agent_name] = socket
-        
+
         logger.info(f"Connected to {agent_name} on main PC at {main_pc_ip}:{port}")
         return socket
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         # Get base status from parent
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -2950,22 +2950,22 @@ class PC2CrossMachineAgent(BaseAgent):
             'status': 'healthy',
             'main_pc_connections': list(self.main_pc_connections.keys())
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -2973,32 +2973,32 @@ class PC2CrossMachineAgent(BaseAgent):
             'message': f'PC2 agent on {PC2_HOSTNAME} processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on {PC2_HOSTNAME} port {self.port}")
-        
+
         try:
             while self.running:
                 try:
                     # Wait for request with timeout
                     if self.socket.poll(1000, zmq.POLLIN):
                         message = self.socket.recv()
-                        
+
                         # Parse message safely
                         try:
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -3009,7 +3009,7 @@ class PC2CrossMachineAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -3017,12 +3017,12 @@ class PC2CrossMachineAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__} on {PC2_HOSTNAME}...")
         self.running = False
-        
+
         # Close all connections to main PC
         for agent_name, socket in self.main_pc_connections.items():
             try:
@@ -3030,15 +3030,15 @@ class PC2CrossMachineAgent(BaseAgent):
                 logger.info(f"Closed connection to {agent_name} on main PC")
             except Exception as e:
                 logger.error(f"Error closing connection to {agent_name}: {e}")
-        
+
         # Close main socket
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         # Call parent cleanup
         super().cleanup()
 
@@ -3133,7 +3133,7 @@ Based sa mga nakita ko, ito ang pattern ng PC2-to-MainPC communication:
 Ang template na ginawa ko ay appropriate na for this architecture, pero let me make one more improvement:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Cross-Machine Agent Template
 -------------------------------
@@ -3206,70 +3206,70 @@ logger = logging.getLogger("PC2Template")
 
 class PC2CrossMachineAgent(BaseAgent):
     """Template for agents running on the PC2 machine."""
-    
+
     def __init__(self, port: Optional[int] = None, name: str = "PC2CrossMachineAgent"):
         """Initialize the PC2 agent.
-        
+
         Args:
             port: The port number to use for ZMQ communication.
             name: Name of the agent.
         """
         # Call the BaseAgent's __init__ with proper parameters
         super().__init__(name=name, port=port)
-        
+
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Agent-specific initialization
         self.port = port if port is not None else 5580
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        
+
         # Bind to all interfaces so it can be accessed from main PC
         self.socket.bind(f"tcp://{BIND_ADDRESS}:{self.port}")
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
         self.hostname = "PC2"
-        
+
         # Set up connection to main PC if needed
         self.main_pc_connections = {}
-        
+
         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
         logger.info(f"MainPC IP configured as: {MAIN_PC_IP}")
-    
+
     def connect_to_main_pc_service(self, service_name: str):
         """
         Connect to a service on the main PC using the network configuration.
-        
+
         Args:
             service_name: Name of the service in the network config ports section
-        
+
         Returns:
             ZMQ socket connected to the service
         """
         if service_name not in network_config.get("ports", {}):
             logger.error(f"Service {service_name} not found in network configuration")
             return None
-            
+
         port = network_config["ports"][service_name]
-        
+
         # Create a new socket for this connection
         socket = self.context.socket(zmq.REQ)
-        
+
         # Configure security if enabled
         if SECURE_ZMQ:
             cert_dir = network_config.get("zmq_key_directory", "certificates")
             cert_path = os.path.join(repo_root, cert_dir)
-            
+
             # Load client keys
             client_public = os.path.join(cert_path, "client.key")
             client_secret = os.path.join(cert_path, "client.key_secret")
-            
+
             # Load server key
             server_public = os.path.join(cert_path, "server.key")
-            
+
             if os.path.exists(client_public) and os.path.exists(client_secret) and os.path.exists(server_public):
                 with open(client_public, 'rb') as f:
                     client_key = f.read()
@@ -3277,33 +3277,33 @@ class PC2CrossMachineAgent(BaseAgent):
                     client_secret_key = f.read()
                 with open(server_public, 'rb') as f:
                     server_key = f.read()
-                
+
                 socket.curve_publickey = client_key
                 socket.curve_secretkey = client_secret_key
                 socket.curve_serverkey = server_key
-                
+
                 logger.info(f"Configured secure ZMQ for connection to {service_name}")
             else:
                 logger.warning(f"Secure ZMQ enabled but certificates not found in {cert_path}")
-        
+
         # Connect to the service
         socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-        
+
         # Store the connection
         self.main_pc_connections[service_name] = socket
-        
+
         logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
         return socket
-    
+
     def _get_health_status(self) -> Dict[str, Any]:
         """Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         """
         # Get base status from parent
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information
         base_status.update({
             'service': self.__class__.__name__,
@@ -3314,22 +3314,22 @@ class PC2CrossMachineAgent(BaseAgent):
             'status': 'healthy',
             'main_pc_connections': list(self.main_pc_connections.keys())
         })
-        
+
         return base_status
-    
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request.
-        
+
         Args:
             request: The request to process
-            
+
         Returns:
             Response dictionary
         """
         # Handle health check requests
         if request.get('action') == 'health_check':
             return self._get_health_status()
-        
+
         # Handle other request types
         self.request_count += 1
         return {
@@ -3337,32 +3337,32 @@ class PC2CrossMachineAgent(BaseAgent):
             'message': f'PC2 agent on PC2 processed request #{self.request_count}',
             'timestamp': time.time()
         }
-    
+
     def run(self):
         """Run the agent's main loop."""
         logger.info(f"Starting {self.__class__.__name__} on PC2 port {self.port}")
-        
+
         try:
             while self.running:
                 try:
                     # Wait for request with timeout
                     if self.socket.poll(1000, zmq.POLLIN):
                         message = self.socket.recv()
-                        
+
                         # Parse message safely
                         try:
                             request = json.loads(message)
                         except json.JSONDecodeError:
                             request = {"error": "Invalid JSON"}
-                            
+
                         logger.info(f"Received request: {request}")
-                        
+
                         # Process the request
                         response = self.process_request(request)
-                        
+
                         # Send the response
                         self.socket.send_json(response)
-                    
+
                 except Exception as e:
                     logger.error(f"Error in main loop: {e}")
                     # Send error response if socket is in a valid state
@@ -3373,7 +3373,7 @@ class PC2CrossMachineAgent(BaseAgent):
                         })
                     except zmq.ZMQError:
                         pass
-        
+
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt received, shutting down...")
         except Exception as e:
@@ -3381,12 +3381,12 @@ class PC2CrossMachineAgent(BaseAgent):
             raise
         finally:
             logger.info("Exiting main loop")
-    
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"Cleaning up {self.__class__.__name__} on PC2...")
         self.running = False
-        
+
         # Close all connections to main PC
         for service_name, socket in self.main_pc_connections.items():
             try:
@@ -3394,15 +3394,15 @@ class PC2CrossMachineAgent(BaseAgent):
                 logger.info(f"Closed connection to {service_name} on MainPC")
             except Exception as e:
                 logger.error(f"Error closing connection to {service_name}: {e}")
-        
+
         # Close main socket
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         # Call parent cleanup
         super().cleanup()
 
@@ -3633,7 +3633,7 @@ Now, let's update the compliance fixer script to use our new cross-machine templ
 Let's create a new improved automation script that combines the best of both:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Cross-Machine Compliance Fixer
 ---------------------------------
@@ -3693,7 +3693,7 @@ def create_backup(file_path: Path) -> Path:
     """Create a backup of a file before modifying it."""
     backup_dir = PC2_AGENTS_ROOT / 'backups'
     backup_dir.mkdir(exist_ok=True)
-    
+
     backup_path = backup_dir / file_path.name
     if not backup_path.exists():
         shutil.copy2(file_path, backup_path)
@@ -3705,7 +3705,7 @@ def gather_agents_from_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     agents = []
-    
+
     # Process all sections in the config file
     for section_name, section_data in config.items():
         if isinstance(section_data, list):
@@ -3717,7 +3717,7 @@ def gather_agents_from_config(config_path):
                         'script_path': agent['script_path'],
                         'port': agent.get('port', None)
                     })
-    
+
     return agents
 
 def load_template():
@@ -3736,12 +3736,12 @@ def extract_class_name(source_code: str) -> Optional[str]:
                     return node.name
     except Exception as e:
         logger.error(f"Error extracting class name: {e}")
-        
+
         # Fallback to regex if AST parsing fails
         class_match = re.search(r'class\s+(\w+)(?:\([\w,\s.]*\))?\s*:', source_code)
         if class_match:
             return class_match.group(1)
-    
+
     return None
 
 def extract_methods(source_code: str) -> Dict[str, str]:
@@ -3789,23 +3789,23 @@ MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
 PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 """
-        
+
         # Find a good place to add the network config code
-        import_section_match = re.search(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| import_section_match = re.search(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
         if import_section_match:
             # Add after the last import
-            imports = re.findall(r'((?:from|import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content)
+| imports = re.findall(r'((?:from | import)\s+[\w\.]+\s+(?:import\s+[\w\.,\s]+)?)', content) |
             last_import = imports[-1]
             last_import_pos = content.find(last_import) + len(last_import)
             content = content[:last_import_pos] + '\n' + network_config_code + content[last_import_pos:]
         else:
             # If no imports found, add at the top after any comments/docstrings
-            first_code_line = re.search(r'^(?:\s*#.*|\s*""".*?"""|[^\n]+)$', content, re.MULTILINE)
+| first_code_line = re.search(r'^(?:\s*#.* | \s*""".*?""" | [^\n]+)$', content, re.MULTILINE) |
             if first_code_line:
                 content = content[:first_code_line.end()] + '\n\n' + network_config_code + content[first_code_line.end():]
             else:
                 content = network_config_code + '\n' + content
-    
+
     return content
 
 def add_required_imports(content: str) -> str:
@@ -3813,12 +3813,12 @@ def add_required_imports(content: str) -> str:
     for import_line in REQUIRED_IMPORTS:
         if import_line not in content:
             # Add import at the top after any comments/docstrings
-            first_code_line = re.search(r'^(?:\s*#.*|\s*""".*?"""|[^\n]+)$', content, re.MULTILINE)
+| first_code_line = re.search(r'^(?:\s*#.* | \s*""".*?""" | [^\n]+)$', content, re.MULTILINE) |
             if first_code_line:
                 content = content[:first_code_line.end()] + '\n' + import_line + content[first_code_line.end():]
             else:
                 content = import_line + '\n' + content
-    
+
     return content
 
 def add_health_status_method(content: str, class_name: str) -> str:
@@ -3826,13 +3826,13 @@ def add_health_status_method(content: str, class_name: str) -> str:
     health_status_method = f"""
     def _get_health_status(self) -> Dict[str, Any]:
         \"\"\"Return health status information.
-        
+
         Returns:
             Dict containing health status information.
         \"\"\"
         # Get base status from parent
         base_status = super()._get_health_status()
-        
+
         # Add PC2-specific health information
         base_status.update({{
             'service': self.__class__.__name__,
@@ -3842,10 +3842,10 @@ def add_health_status_method(content: str, class_name: str) -> str:
             'status': 'healthy',
             'main_pc_connections': list(self.main_pc_connections.items()) if hasattr(self, 'main_pc_connections') else []
         }})
-        
+
         return base_status
 """
-    
+
     # Check if the method already exists
     if '_get_health_status' not in content:
         # Find the class definition
@@ -3854,18 +3854,18 @@ def add_health_status_method(content: str, class_name: str) -> str:
             # Find the end of the class
             class_start = class_match.end()
             class_indent = re.search(r'(\s+)', content[class_start:]).group(1) if re.search(r'(\s+)', content[class_start:]) else '    '
-            
+
             # Format the method with proper indentation
             indented_method = health_status_method.replace('\n    ', '\n' + class_indent)
-            
+
             # Find a good place to add the method
             next_class = content.find('class ', class_start)
             if next_class == -1:
                 next_class = len(content)
-            
+
             # Add the method before the next class or at the end
             content = content[:next_class] + indented_method + content[next_class:]
-    
+
     return content
 
 def add_connect_to_main_pc_method(content: str, class_name: str) -> str:
@@ -3874,35 +3874,35 @@ def add_connect_to_main_pc_method(content: str, class_name: str) -> str:
     def connect_to_main_pc_service(self, service_name: str):
         \"\"\"
         Connect to a service on the main PC using the network configuration.
-        
+
         Args:
             service_name: Name of the service in the network config ports section
-        
+
         Returns:
             ZMQ socket connected to the service
         \"\"\"
         if not hasattr(self, 'main_pc_connections'):
             self.main_pc_connections = {}
-            
+
         if service_name not in network_config.get("ports", {}):
             logger.error(f"Service {service_name} not found in network configuration")
             return None
-            
+
         port = network_config["ports"][service_name]
-        
+
         # Create a new socket for this connection
         socket = self.context.socket(zmq.REQ)
-        
+
         # Connect to the service
         socket.connect(f"tcp://{MAIN_PC_IP}:{port}")
-        
+
         # Store the connection
         self.main_pc_connections[service_name] = socket
-        
+
         logger.info(f"Connected to {service_name} on MainPC at {MAIN_PC_IP}:{port}")
         return socket
 """
-    
+
     # Check if the method already exists
     if 'connect_to_main_pc_service' not in content:
         # Find the class definition
@@ -3911,18 +3911,18 @@ def add_connect_to_main_pc_method(content: str, class_name: str) -> str:
             # Find the end of the class
             class_start = class_match.end()
             class_indent = re.search(r'(\s+)', content[class_start:]).group(1) if re.search(r'(\s+)', content[class_start:]) else '    '
-            
+
             # Format the method with proper indentation
             indented_method = connect_method.replace('\n    ', '\n' + class_indent)
-            
+
             # Find a good place to add the method
             next_class = content.find('class ', class_start)
             if next_class == -1:
                 next_class = len(content)
-            
+
             # Add the method before the next class or at the end
             content = content[:next_class] + indented_method + content[next_class:]
-    
+
     return content
 
 def update_init_method(content: str, class_name: str, port: Optional[int] = None) -> str:
@@ -3935,31 +3935,31 @@ def update_init_method(content: str, class_name: str, port: Optional[int] = None
         next_def = content.find('def ', init_block_start)
         if next_def == -1:
             next_def = len(content)
-        
+
         init_block = content[init_block_start:next_def]
-        
+
         # Add cross-machine initialization if not present
         cross_machine_init = """
         # Record start time for uptime calculation
         self.start_time = time.time()
-        
+
         # Initialize agent state
         self.running = True
         self.request_count = 0
-        
+
         # Set up connection to main PC if needed
         self.main_pc_connections = {}
-        
+
         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
 """
-        
+
         if 'self.start_time = time.time()' not in init_block:
             # Find the indentation level
             indentation = re.search(r'(\s+)', content[init_block_start:]).group(1) if re.search(r'(\s+)', content[init_block_start:]) else '        '
-            
+
             # Format the initialization with proper indentation
             indented_init = cross_machine_init.replace('\n        ', '\n' + indentation)
-            
+
             # Add after super().__init__ if it exists
             super_init = re.search(r'super\(\)\.__init__\([^)]*\)', init_block)
             if super_init:
@@ -3968,7 +3968,7 @@ def update_init_method(content: str, class_name: str, port: Optional[int] = None
             else:
                 # Add at the beginning of the method body
                 content = content[:init_block_start] + indented_init + content[init_block_start:]
-    
+
     return content
 
 def update_cleanup_method(content: str, class_name: str) -> str:
@@ -3978,7 +3978,7 @@ def update_cleanup_method(content: str, class_name: str) -> str:
         \"\"\"Clean up resources before shutdown.\"\"\"
         logger.info(f"Cleaning up {self.__class__.__name__} on PC2...")
         self.running = False
-        
+
         # Close all connections to main PC
         for service_name, socket in self.main_pc_connections.items():
             try:
@@ -3986,19 +3986,19 @@ def update_cleanup_method(content: str, class_name: str) -> str:
                 logger.info(f"Closed connection to {service_name} on MainPC")
             except Exception as e:
                 logger.error(f"Error closing connection to {service_name}: {e}")
-        
+
         # Close main socket
         if hasattr(self, 'socket') and self.socket:
             self.socket.close()
-        
+
         # Terminate context
         if hasattr(self, 'context') and self.context:
             self.context.term()
-        
+
         # Call parent cleanup
         super().cleanup()
 """
-    
+
     # Check if the method already exists
     if 'def cleanup' not in content:
         # Find the class definition
@@ -4007,18 +4007,18 @@ def update_cleanup_method(content: str, class_name: str) -> str:
             # Find the end of the class
             class_start = class_match.end()
             class_indent = re.search(r'(\s+)', content[class_start:]).group(1) if re.search(r'(\s+)', content[class_start:]) else '    '
-            
+
             # Format the method with proper indentation
             indented_method = cleanup_method.replace('\n    ', '\n' + class_indent)
-            
+
             # Find a good place to add the method
             next_class = content.find('class ', class_start)
             if next_class == -1:
                 next_class = len(content)
-            
+
             # Add the method before the next class or at the end
             content = content[:next_class] + indented_method + content[next_class:]
-    
+
     return content
 
 def standardize_main_block(content: str, class_name: str) -> str:
@@ -4042,12 +4042,12 @@ if __name__ == "__main__":
             print(f"Cleaning up {{agent.name}} on PC2...")
             agent.cleanup()
 """
-    
+
     # Check if the file already has a __main__ block
     if '__name__ == "__main__"' in content or "__name__ == '__main__'" in content:
         # Replace the existing __main__ block
         content = re.sub(
-            r'if\s+__name__\s*==\s*[\'"]__main__[\'"]\s*:.*?(?=\n\S|$)',
+| r'if\s+__name__\s*==\s*[\'"]__main__[\'"]\s*:.*?(?=\n\S | $)', |
             main_block,
             content,
             flags=re.DOTALL
@@ -4055,7 +4055,7 @@ if __name__ == "__main__":
     else:
         # Add the __main__ block at the end
         content += main_block
-    
+
     return content
 
 def fix_agent_compliance(agent: dict) -> bool:
@@ -4064,32 +4064,32 @@ def fix_agent_compliance(agent: dict) -> bool:
     agent_name = agent['name']
     port = agent.get('port')
     abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
-    
+
     if not abs_path.exists():
         logger.error(f"Agent not found: {abs_path}")
         return False
-    
+
     logger.info(f"Fixing compliance for {agent_name} ({abs_path})")
-    
+
     # Create backup
     backup_path = create_backup(abs_path)
-    
+
     # Read the agent file
     with open(abs_path, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Extract the class name
     class_name = extract_class_name(content)
     if not class_name:
         logger.error(f"Could not extract class name for {agent_name}")
         return False
-    
+
     logger.info(f"Found class name: {class_name}")
-    
+
     # Extract existing methods
     methods = extract_methods(content)
     logger.info(f"Found {len(methods)} methods in {agent_name}")
-    
+
     # Apply fixes
     content = add_required_imports(content)
     content = add_network_config_loading(content)
@@ -4098,36 +4098,36 @@ def fix_agent_compliance(agent: dict) -> bool:
     content = update_init_method(content, class_name, port)
     content = update_cleanup_method(content, class_name)
     content = standardize_main_block(content, class_name)
-    
+
     # Write the updated content
     with open(abs_path, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     logger.info(f"Successfully fixed compliance for {agent_name}")
     return True
 
 def main():
     """Main function to fix PC2 agent compliance."""
     logger.info("Starting PC2 Cross-Machine Compliance Fixer")
-    
+
     # Check if template exists
     if not TEMPLATE_PATH.exists():
         logger.error(f"Template file not found: {TEMPLATE_PATH}")
         return
-    
+
     # Gather agents from config
     agents = gather_agents_from_config(PC2_CONFIG_PATH)
     logger.info(f"Found {len(agents)} agents in config")
-    
+
     # Fix compliance for each agent
     success_count = 0
     for agent in agents:
         if fix_agent_compliance(agent):
             success_count += 1
-    
+
     # Generate report
     logger.info(f"Compliance fixing completed: {success_count}/{len(agents)} agents fixed")
-    
+
     # Write report to file
     report_path = PROJECT_ROOT / 'scripts' / f'pc2_compliance_report_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
     with open(report_path, 'w', encoding='utf-8') as f:
@@ -4136,14 +4136,14 @@ def main():
         f.write(f"Total agents: {len(agents)}\n")
         f.write(f"Successfully fixed: {success_count}\n")
         f.write(f"Failed: {len(agents) - success_count}\n\n")
-        
+
         f.write("Agent details:\n")
         for agent in agents:
             rel_path = agent['script_path']
             abs_path = (PC2_CODEBASE_ROOT / rel_path).resolve()
             status = "Fixed" if abs_path.exists() else "Failed"
             f.write(f"- {agent['name']}: {status}\n")
-    
+
     logger.info(f"Report written to {report_path}")
 
 if __name__ == "__main__":
@@ -4155,7 +4155,7 @@ Let me know when the file is ready, and then we'll create a master automation sc
 Now, let's create a master automation script that runs both the cross-machine fixer and the functionality restoration:
 
 ```python
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 PC2 Cross-Machine Automation Script
 ---------------------------------
@@ -4190,7 +4190,7 @@ RESTORE_SCRIPT = PROJECT_ROOT / 'scripts' / 'pc2_restore_functionality.py'
 def run_script(script_path: Path) -> bool:
     """Run a Python script and return whether it was successful."""
     logger.info(f"Running {script_path.name}...")
-    
+
     try:
         result = subprocess.run(
             [sys.executable, str(script_path)],
@@ -4198,38 +4198,38 @@ def run_script(script_path: Path) -> bool:
             capture_output=True,
             text=True
         )
-        
+
         # Log the output
         for line in result.stdout.splitlines():
             logger.info(f"[{script_path.name}] {line}")
-        
+
         logger.info(f"Successfully ran {script_path.name}")
         return True
-    
+
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running {script_path.name}: {e}")
-        
+
         # Log the error output
         for line in e.stdout.splitlines():
             logger.info(f"[{script_path.name}] {line}")
         for line in e.stderr.splitlines():
             logger.error(f"[{script_path.name}] {line}")
-        
+
         return False
 
 def generate_report(fixer_success: bool, restore_success: bool) -> Path:
     """Generate a comprehensive report."""
     report_path = PROJECT_ROOT / 'scripts' / f'pc2_automation_report_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.txt'
-    
+
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(f"PC2 Cross-Machine Automation Report\n")
         f.write(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        
+
         f.write(f"Cross-Machine Compliance Fixer: {'SUCCESS' if fixer_success else 'FAILED'}\n")
         f.write(f"Functionality Restoration: {'SUCCESS' if restore_success else 'FAILED'}\n\n")
-        
+
         f.write(f"Overall Status: {'SUCCESS' if fixer_success and restore_success else 'PARTIAL SUCCESS' if fixer_success or restore_success else 'FAILED'}\n\n")
-        
+
         f.write("Next Steps:\n")
         if not fixer_success:
             f.write("- Run the cross-machine fixer script manually to fix any issues\n")
@@ -4238,37 +4238,37 @@ def generate_report(fixer_success: bool, restore_success: bool) -> Path:
         if fixer_success and restore_success:
             f.write("- All agents have been successfully fixed and functionality restored\n")
             f.write("- Test the agents to ensure they work correctly\n")
-        
+
         f.write("\nRecommendations:\n")
         f.write("1. Check the logs for any specific errors\n")
         f.write("2. Manually inspect any agents that failed to be fixed\n")
         f.write("3. Run health checks on all agents to verify functionality\n")
-    
+
     logger.info(f"Report written to {report_path}")
     return report_path
 
 def main():
     """Main function to run the automation."""
     logger.info("Starting PC2 Cross-Machine Automation")
-    
+
     # Check if scripts exist
     if not FIXER_SCRIPT.exists():
         logger.error(f"Fixer script not found: {FIXER_SCRIPT}")
         return
-    
+
     if not RESTORE_SCRIPT.exists():
         logger.error(f"Restore script not found: {RESTORE_SCRIPT}")
         return
-    
+
     # Run the fixer script
     fixer_success = run_script(FIXER_SCRIPT)
-    
+
     # Run the restore script
     restore_success = run_script(RESTORE_SCRIPT)
-    
+
     # Generate report
     report_path = generate_report(fixer_success, restore_success)
-    
+
     # Print summary
     logger.info("\n" + "=" * 50)
     logger.info("PC2 Cross-Machine Automation Summary")
@@ -4424,7 +4424,7 @@ Ang mga changes na ito ay makakatulong para maging mas robust at maintainable an
 
 **User**
 
-gumawa ka ng utos para kay cascade ng pc2 
+gumawa ka ng utos para kay cascade ng pc2
 
 ---
 

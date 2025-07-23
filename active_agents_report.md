@@ -421,251 +421,251 @@ graph TD;
 
 ### Main PC Agents
 
-| Agent | Status | Error Bus | Ports | Health Ports | Dependencies |
-|-------|--------|-----------|-------|--------------|-------------|
-| AIStudioAssistant | 🔴 Not Running | ❌ | - | - | - |
-| APIRequestTool | 🔴 Not Running | ❌ | - | - | - |
-| ActiveLearningMonitor | 🔴 Not Running | ✅ | 5638, 7150, 5591 | 6591 | MemoryClient, LearningManager, ErrorBus, ServiceRegistry |
-| AdvancedCommandHandler | 🔴 Not Running | ✅ | 5710, 7150 | - | NLUAgent, CodeGenerator |
-| AdvancedSuggestionSystem | 🔴 Not Running | ❌ | - | - | - |
-| AdvancedTimeoutManager | 🔴 Not Running | ✅ | 5595, 7150 | - | - |
-| AgentBase | 🔴 Not Running | ❌ | - | - | - |
-| AgentRegistry | 🔴 Not Running | ❌ | - | - | - |
-| AgentStatus | 🔴 Not Running | ❌ | - | - | - |
-| AutoFixer | 🔴 Not Running | ❌ | - | - | - |
-| AutoFixerAgent | 🔴 Not Running | ❌ | 7135 | 8135 | HealthMonitor |
-| AutoGenFramework | 🔴 Not Running | ❌ | - | - | - |
-| Chitchat | 🔴 Not Running | ✅ | 7150 | - | - |
-| ChitchatAgent | 🔴 Not Running | ✅ | 7150, 5711 | - | NLUAgent |
-| CircuitBreaker | 🔴 Not Running | ✅ | 5713, 7140, 7150 | - | - |
-| CodeCommandHandler | 🔴 Not Running | ❌ | - | - | - |
-| CodeGenerationIntentHandler | 🔴 Not Running | ❌ | - | - | - |
-| CodeGenerator | 🔴 Not Running | ✅ | 5604, 7150 | - | ModelManagerAgent |
-| CodeGeneratorAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| CommandClusteringEngine | 🔴 Not Running | ❌ | - | - | - |
-| CommandConfirmation | 🔴 Not Running | ❌ | - | - | - |
-| CommandQueue | 🔴 Not Running | ❌ | - | - | - |
-| CommandSuggestion | 🔴 Not Running | ❌ | - | - | - |
-| CommandSuggestionOptimized | 🔴 Not Running | ❌ | - | - | - |
-| ConnectionPool | 🔴 Not Running | ✅ | 7150 | - | - |
-| ContextBridge | 🔴 Not Running | ❌ | - | - | - |
-| ContextBridgeAgent | 🔴 Not Running | ❌ | - | - | - |
-| ContextManager | 🔴 Not Running | ✅ | 7112, 5716, 7150, 7111 | 7112, 6716, 8111 | SessionMemoryAgent, MemoryManager, ErrorBus, MemoryClient |
-| ContextSummarizer | 🔴 Not Running | ❌ | 5592 | 6592 | MemoryClient, ContextManager, ErrorBus, ServiceRegistry |
-| ContextSummarizerAgent | 🔴 Not Running | ❌ | - | - | - |
-| CoordinatorModule | 🔴 Not Running | ❌ | - | - | - |
-| CustomCommandHandler | 🔴 Not Running | ❌ | - | - | - |
-| DataExtractionTool | 🔴 Not Running | ❌ | - | - | - |
-| DigitalTwin | 🔴 Not Running | ❌ | - | - | - |
-| DigitalTwinAgent | 🔴 Not Running | ❌ | - | - | - |
-| Discovery | 🔴 Not Running | ❌ | - | - | - |
-| DiscoveryService | 🔴 Not Running | ❌ | - | - | - |
-| DiskUsageInfo | 🔴 Not Running | ❌ | - | - | - |
-| DistributedLauncher | 🔴 Not Running | ❌ | - | - | - |
-| DynamicIdentity | 🔴 Not Running | ✅ | 7150 | - | - |
-| DynamicIdentityAgent | 🔴 Not Running | ✅ | 5702, 7150 | - | TaskRouter |
-| DynamicSTTModelManager | 🔴 Not Running | ❌ | - | - | - |
-| EmotionEngine | 🔴 Not Running | ✅ | 7150, 5575 | - | - |
-| EmotionSynthesis | 🔴 Not Running | ✅ | 7150 | - | - |
-| EmotionSynthesisAgent | 🔴 Not Running | ✅ | 5706, 7150 | - | CoordinatorAgent, ModelManagerAgent |
-| Empathy | 🔴 Not Running | ✅ | 7150 | - | - |
-| EmpathyAgent | 🔴 Not Running | ✅ | 7150, 5703 | - | EmotionEngine |
-| ErrorHandler | 🔴 Not Running | ❌ | - | - | - |
-| ErrorRecord | 🔴 Not Running | ❌ | - | - | - |
-| ErrorSeverity | 🔴 Not Running | ❌ | - | - | - |
-| Executor | 🔴 Not Running | ✅ | 5606, 7150 | - | - |
-| ExecutorAgent | 🟢 Running | ✅ | 7150 | - | - |
-| ExperienceMemory | 🔴 Not Running | ❌ | - | - | - |
-| FaceRecognition | 🔴 Not Running | ✅ | 7150 | - | - |
-| FaceRecognitionAgent | 🔴 Not Running | ✅ | 5610, 7150 | - | ModelManagerAgent, TaskRouter |
-| FeedbackHandler | 🔴 Not Running | ✅ | 5636, 7150 | - | NLUAgent |
-| FileOperationTool | 🔴 Not Running | ❌ | - | - | - |
-| FileSystemAssistant | 🔴 Not Running | ✅ | 7150 | - | - |
-| FileSystemAssistantAgent | 🔴 Not Running | ✅ | 7123, 7150 | 8123 | UnifiedUtilsAgent |
-| FixedStreamingTranslation | 🔴 Not Running | ✅ | 7150 | - | - |
-| FusedAudioPreprocessor | 🔴 Not Running | ✅ | 6578, 7150 | - | AudioCapture |
-| FusedAudioPreprocessorAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| GGUFModelManager | 🔴 Not Running | ✅ | 7150 | - | - |
-| GGUFStateTracker | 🔴 Not Running | ✅ | 7150 | - | - |
-| Goal | 🔴 Not Running | ❌ | - | - | - |
-| HumanAwareness | 🔴 Not Running | ✅ | 7150 | - | - |
-| HumanAwarenessAgent | 🔴 Not Running | ✅ | 5705, 7150 | - | EmotionEngine |
-| IntentionValidator | 🔴 Not Running | ✅ | 7150 | - | - |
-| IntentionValidatorAgent | 🔴 Not Running | ✅ | 5701, 7150 | - | TaskRouter |
-| KnowledgeBase | 🔴 Not Running | ✅ | 5578, 5715, 7150 | 6715 | ErrorBus, MemoryClient |
-| LazyVotingSystem | 🔴 Not Running | ❌ | - | - | - |
-| LearningManager | 🔴 Not Running | ✅ | 5579, 7150 | - | CoordinatorAgent, MemoryClient |
-| LearningOpportunityDetector | 🔴 Not Running | ✅ | 7150, 5710 | - | - |
-| LearningOrchestration | 🔴 Not Running | ✅ | 5720, 7150 | - | - |
-| LivenessDetector | 🔴 Not Running | ✅ | 7150 | - | - |
-| MemoryOrchestrator | 🔴 Not Running | ✅ | 5576, 7150 | - | - |
-| Message | 🔴 Not Running | ❌ | - | - | - |
-| MessageBus | 🔴 Not Running | ❌ | - | - | - |
-| MetaCognition | 🔴 Not Running | ✅ | 7150 | - | - |
-| MetaCognitionAgent | 🔴 Not Running | ✅ | 5630, 7150 | - | CoordinatorAgent, KnowledgeBase |
-| ModelManager | 🔴 Not Running | ✅ | 5604, 7150 | - | - |
-| ModelManagerAgent | 🔴 Not Running | ✅ | 5570, 5604, 7150 | - | - |
-| ModelOrchestrator | 🔴 Not Running | ❌ | 5571 | 6571 | MemoryClient, ContextManager, ErrorBus, ServiceRegistry |
-| ModelVotingAdapter | 🔴 Not Running | ❌ | - | - | - |
-| MoodTracker | 🔴 Not Running | ✅ | 7150 | - | - |
-| MoodTrackerAgent | 🔴 Not Running | ✅ | 5704, 7150 | - | EmotionEngine |
-| NLU | 🔴 Not Running | ✅ | 7150 | - | - |
-| NLUAgent | 🔴 Not Running | ✅ | 5709, 7150 | - | LanguageAndTranslationCoordinator |
-| NoiseReduction | 🔴 Not Running | ❌ | - | - | - |
-| NoiseReductionAgent | 🔴 Not Running | ❌ | - | - | - |
-| PerformanceMetrics | 🔴 Not Running | ✅ | 7150 | - | - |
-| PerformanceMonitor | 🔴 Not Running | ✅ | 7150, 7103 | 8103 | HealthMonitor |
-| PersonalityEngine | 🔴 Not Running | ❌ | - | - | - |
-| Plan | 🔴 Not Running | ❌ | - | - | - |
-| PluginEventHandler | 🔴 Not Running | ❌ | - | - | - |
-| PredictiveHealthMonitor | 🔴 Not Running | ✅ | 5613, 7150 | - | - |
-| PredictiveLoader | 🔴 Not Running | ✅ | 5617, 7150 | - | TaskRouter |
-| PrivacyManager | 🔴 Not Running | ✅ | 7150 | - | - |
-| Proactive | 🔴 Not Running | ✅ | 5624, 7150 | - | - |
-| ProactiveAgent | 🔴 Not Running | ✅ | 5624, 7150 | - | TaskRouter |
-| RecoveryAction | 🔴 Not Running | ❌ | - | - | - |
-| RemoteConnector | 🔴 Not Running | ✅ | 7150 | - | - |
-| RemoteConnectorAgent | 🔴 Not Running | ✅ | 7124, 7150 | 8124 | AdvancedRouter |
-| ResourceManager | 🔴 Not Running | ✅ | 7113, 7114, 7150 | 8113, 7114 | - |
-| ResourceType | 🔴 Not Running | ✅ | 5720, 7150 | - | - |
-| Responder | 🔴 Not Running | ✅ | 5637, 7150 | - | EmotionEngine, NLUAgent |
-| ResponderAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| SecureClient | 🔴 Not Running | ❌ | 5555 | - | - |
-| SecureServer | 🔴 Not Running | ❌ | 5555 | - | - |
-| SelfHealing | 🔴 Not Running | ❌ | - | - | - |
-| SelfHealingAgent | 🔴 Not Running | ❌ | 7125 | 8125 | PerformanceLoggerAgent |
-| SelfHealingDatabase | 🔴 Not Running | ❌ | - | - | - |
-| Session | 🔴 Not Running | ❌ | - | - | - |
-| SessionAgent | 🔴 Not Running | ❌ | - | - | - |
-| SessionMemory | 🔴 Not Running | ✅ | 7150 | - | - |
-| SessionMemoryAgent | 🔴 Not Running | ✅ | 5572, 5574, 7150 | 6583 | CoordinatorAgent, ErrorBus, MemoryClient |
-| SpeechProcessor | 🔴 Not Running | ❌ | - | - | - |
-| StreamingAudioCapture | 🔴 Not Running | ✅ | 7150, 6575 | - | - |
-| StreamingAudioCaptureAgent | 🔴 Not Running | ✅ | 7150, 6575 | - | - |
-| StreamingInterrupt | 🔴 Not Running | ❌ | - | - | - |
-| StreamingInterruptHandler | 🔴 Not Running | ✅ | 7150 | - | - |
-| StreamingLanguageAnalyzer | 🔴 Not Running | ✅ | 7150 | - | - |
-| StreamingLanguageToLLM | 🔴 Not Running | ❌ | - | - | - |
-| StreamingPartialTranscripts | 🔴 Not Running | ❌ | - | - | - |
-| StreamingSpeechRecognition | 🔴 Not Running | ✅ | 6580, 7150 | - | TaskRouter |
-| StreamingWhisperASR | 🔴 Not Running | ❌ | - | - | - |
-| SystemDigitalTwin | 🔴 Not Running | ✅ | 7120, 5590, 7150 | 6590 | MemoryClient, ErrorBus, ServiceRegistry |
-| SystemDigitalTwinAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| SystemResourceSnapshot | 🔴 Not Running | ❌ | - | - | - |
-| TTS | 🔴 Not Running | ✅ | 7150 | - | - |
-| TTSAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| TTSCache | 🔴 Not Running | ✅ | 5628, 7150 | - | - |
-| Task | 🔴 Not Running | ❌ | - | - | - |
-| TelemetryDashboardHandler | 🔴 Not Running | ❌ | - | - | - |
-| TelemetryServer | 🔴 Not Running | ❌ | - | - | - |
-| TextRequest | 🔴 Not Running | ✅ | 7150 | - | - |
-| TimelineUIServer | 🔴 Not Running | ❌ | - | - | - |
-| ToneDetector | 🔴 Not Running | ✅ | 5625, 7150 | - | EmotionEngine |
-| Tool | 🔴 Not Running | ❌ | - | - | - |
-| Translation | 🔴 Not Running | ❌ | 5595 | - | - |
-| TranslationCache | 🔴 Not Running | ✅ | 7150 | - | - |
-| TriggerWordDetector | 🔴 Not Running | ❌ | - | - | - |
-| UltimateTTS | 🔴 Not Running | ✅ | 7150 | - | - |
-| UltimateTTSAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| UnifiedSystem | 🔴 Not Running | ❌ | - | - | - |
-| UnifiedSystemAgent | 🔴 Not Running | ❌ | 5640 | - | UnifiedPlanningAgent |
-| UserProfile | 🔴 Not Running | ❌ | - | - | - |
-| VAD | 🔴 Not Running | ❌ | - | - | - |
-| VADAgent | 🔴 Not Running | ❌ | - | - | - |
-| VRAMManager | 🔴 Not Running | ❌ | - | - | - |
-| VRAMOptimizer | 🔴 Not Running | ✅ | 7120, 7150 | - | - |
-| VRAMOptimizerAgent | 🔴 Not Running | ✅ | 7120, 7150 | - | - |
-| VisionCapture | 🔴 Not Running | ✅ | 7150 | - | - |
-| VisionCaptureAgent | 🔴 Not Running | ✅ | 5592, 7150 | - | - |
-| VoiceController | 🔴 Not Running | ❌ | - | - | - |
-| VoiceMeeterControl | 🔴 Not Running | ❌ | - | - | - |
-| VoiceMeeterControlAgent | 🔴 Not Running | ❌ | - | - | - |
-| VoiceProfiling | 🔴 Not Running | ✅ | 7150 | - | - |
-| VoiceProfilingAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| WakeWordDetector | 🔴 Not Running | ✅ | 6577, 7150 | - | FusedAudioPreprocessor, AudioCapture |
-| WakeWordDetectorAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| WebSearchTool | 🔴 Not Running | ❌ | - | - | - |
-| ZMQAuthenticator | 🔴 Not Running | ❌ | - | - | - |
-| ZMQClient | 🔴 Not Running | ❌ | - | - | - |
-| ZMQPublisher | 🔴 Not Running | ❌ | - | - | - |
-| ZMQServer | 🔴 Not Running | ❌ | - | - | - |
-| ZMQSubscriber | 🔴 Not Running | ❌ | - | - | - |
-| and | 🔴 Not Running | ❌ | 8120 | 8120 | - |
-| base_suggestions | 🔴 Not Running | ❌ | - | - | - |
-| class | 🔴 Not Running | ✅ | 7150 | - | - |
-| for | 🔴 Not Running | ❌ | - | - | - |
-| from | 🔴 Not Running | ✅ | 7150 | - | - |
-| if | 🔴 Not Running | ❌ | - | - | - |
-| names | 🔴 Not Running | ❌ | - | - | - |
-| super | 🔴 Not Running | ❌ | - | - | - |
-| to | 🟢 Running | ❌ | - | - | - |
-| with | 🔴 Not Running | ❌ | - | - | - |
+ | Agent | Status | Error Bus | Ports | Health Ports | Dependencies | 
+ | ------- | -------- | ----------- | ------- | -------------- | ------------- | 
+ | AIStudioAssistant | 🔴 Not Running | ❌ | - | - | - | 
+ | APIRequestTool | 🔴 Not Running | ❌ | - | - | - | 
+ | ActiveLearningMonitor | 🔴 Not Running | ✅ | 5638, 7150, 5591 | 6591 | MemoryClient, LearningManager, ErrorBus, ServiceRegistry | 
+ | AdvancedCommandHandler | 🔴 Not Running | ✅ | 5710, 7150 | - | NLUAgent, CodeGenerator | 
+ | AdvancedSuggestionSystem | 🔴 Not Running | ❌ | - | - | - | 
+ | AdvancedTimeoutManager | 🔴 Not Running | ✅ | 5595, 7150 | - | - | 
+ | AgentBase | 🔴 Not Running | ❌ | - | - | - | 
+ | AgentRegistry | 🔴 Not Running | ❌ | - | - | - | 
+ | AgentStatus | 🔴 Not Running | ❌ | - | - | - | 
+ | AutoFixer | 🔴 Not Running | ❌ | - | - | - | 
+ | AutoFixerAgent | 🔴 Not Running | ❌ | 7135 | 8135 | HealthMonitor | 
+ | AutoGenFramework | 🔴 Not Running | ❌ | - | - | - | 
+ | Chitchat | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | ChitchatAgent | 🔴 Not Running | ✅ | 7150, 5711 | - | NLUAgent | 
+ | CircuitBreaker | 🔴 Not Running | ✅ | 5713, 7140, 7150 | - | - | 
+ | CodeCommandHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | CodeGenerationIntentHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | CodeGenerator | 🔴 Not Running | ✅ | 5604, 7150 | - | ModelManagerAgent | 
+ | CodeGeneratorAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | CommandClusteringEngine | 🔴 Not Running | ❌ | - | - | - | 
+ | CommandConfirmation | 🔴 Not Running | ❌ | - | - | - | 
+ | CommandQueue | 🔴 Not Running | ❌ | - | - | - | 
+ | CommandSuggestion | 🔴 Not Running | ❌ | - | - | - | 
+ | CommandSuggestionOptimized | 🔴 Not Running | ❌ | - | - | - | 
+ | ConnectionPool | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | ContextBridge | 🔴 Not Running | ❌ | - | - | - | 
+ | ContextBridgeAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | ContextManager | 🔴 Not Running | ✅ | 7112, 5716, 7150, 7111 | 7112, 6716, 8111 | SessionMemoryAgent, MemoryManager, ErrorBus, MemoryClient | 
+ | ContextSummarizer | 🔴 Not Running | ❌ | 5592 | 6592 | MemoryClient, ContextManager, ErrorBus, ServiceRegistry | 
+ | ContextSummarizerAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | CoordinatorModule | 🔴 Not Running | ❌ | - | - | - | 
+ | CustomCommandHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | DataExtractionTool | 🔴 Not Running | ❌ | - | - | - | 
+ | DigitalTwin | 🔴 Not Running | ❌ | - | - | - | 
+ | DigitalTwinAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | Discovery | 🔴 Not Running | ❌ | - | - | - | 
+ | DiscoveryService | 🔴 Not Running | ❌ | - | - | - | 
+ | DiskUsageInfo | 🔴 Not Running | ❌ | - | - | - | 
+ | DistributedLauncher | 🔴 Not Running | ❌ | - | - | - | 
+ | DynamicIdentity | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | DynamicIdentityAgent | 🔴 Not Running | ✅ | 5702, 7150 | - | TaskRouter | 
+ | DynamicSTTModelManager | 🔴 Not Running | ❌ | - | - | - | 
+ | EmotionEngine | 🔴 Not Running | ✅ | 7150, 5575 | - | - | 
+ | EmotionSynthesis | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | EmotionSynthesisAgent | 🔴 Not Running | ✅ | 5706, 7150 | - | CoordinatorAgent, ModelManagerAgent | 
+ | Empathy | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | EmpathyAgent | 🔴 Not Running | ✅ | 7150, 5703 | - | EmotionEngine | 
+ | ErrorHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | ErrorRecord | 🔴 Not Running | ❌ | - | - | - | 
+ | ErrorSeverity | 🔴 Not Running | ❌ | - | - | - | 
+ | Executor | 🔴 Not Running | ✅ | 5606, 7150 | - | - | 
+ | ExecutorAgent | 🟢 Running | ✅ | 7150 | - | - | 
+ | ExperienceMemory | 🔴 Not Running | ❌ | - | - | - | 
+ | FaceRecognition | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | FaceRecognitionAgent | 🔴 Not Running | ✅ | 5610, 7150 | - | ModelManagerAgent, TaskRouter | 
+ | FeedbackHandler | 🔴 Not Running | ✅ | 5636, 7150 | - | NLUAgent | 
+ | FileOperationTool | 🔴 Not Running | ❌ | - | - | - | 
+ | FileSystemAssistant | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | FileSystemAssistantAgent | 🔴 Not Running | ✅ | 7123, 7150 | 8123 | UnifiedUtilsAgent | 
+ | FixedStreamingTranslation | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | FusedAudioPreprocessor | 🔴 Not Running | ✅ | 6578, 7150 | - | AudioCapture | 
+ | FusedAudioPreprocessorAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | GGUFModelManager | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | GGUFStateTracker | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | Goal | 🔴 Not Running | ❌ | - | - | - | 
+ | HumanAwareness | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | HumanAwarenessAgent | 🔴 Not Running | ✅ | 5705, 7150 | - | EmotionEngine | 
+ | IntentionValidator | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | IntentionValidatorAgent | 🔴 Not Running | ✅ | 5701, 7150 | - | TaskRouter | 
+ | KnowledgeBase | 🔴 Not Running | ✅ | 5578, 5715, 7150 | 6715 | ErrorBus, MemoryClient | 
+ | LazyVotingSystem | 🔴 Not Running | ❌ | - | - | - | 
+ | LearningManager | 🔴 Not Running | ✅ | 5579, 7150 | - | CoordinatorAgent, MemoryClient | 
+ | LearningOpportunityDetector | 🔴 Not Running | ✅ | 7150, 5710 | - | - | 
+ | LearningOrchestration | 🔴 Not Running | ✅ | 5720, 7150 | - | - | 
+ | LivenessDetector | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | MemoryOrchestrator | 🔴 Not Running | ✅ | 5576, 7150 | - | - | 
+ | Message | 🔴 Not Running | ❌ | - | - | - | 
+ | MessageBus | 🔴 Not Running | ❌ | - | - | - | 
+ | MetaCognition | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | MetaCognitionAgent | 🔴 Not Running | ✅ | 5630, 7150 | - | CoordinatorAgent, KnowledgeBase | 
+ | ModelManager | 🔴 Not Running | ✅ | 5604, 7150 | - | - | 
+ | ModelManagerAgent | 🔴 Not Running | ✅ | 5570, 5604, 7150 | - | - | 
+ | ModelOrchestrator | 🔴 Not Running | ❌ | 5571 | 6571 | MemoryClient, ContextManager, ErrorBus, ServiceRegistry | 
+ | ModelVotingAdapter | 🔴 Not Running | ❌ | - | - | - | 
+ | MoodTracker | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | MoodTrackerAgent | 🔴 Not Running | ✅ | 5704, 7150 | - | EmotionEngine | 
+ | NLU | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | NLUAgent | 🔴 Not Running | ✅ | 5709, 7150 | - | LanguageAndTranslationCoordinator | 
+ | NoiseReduction | 🔴 Not Running | ❌ | - | - | - | 
+ | NoiseReductionAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | PerformanceMetrics | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | PerformanceMonitor | 🔴 Not Running | ✅ | 7150, 7103 | 8103 | HealthMonitor | 
+ | PersonalityEngine | 🔴 Not Running | ❌ | - | - | - | 
+ | Plan | 🔴 Not Running | ❌ | - | - | - | 
+ | PluginEventHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | PredictiveHealthMonitor | 🔴 Not Running | ✅ | 5613, 7150 | - | - | 
+ | PredictiveLoader | 🔴 Not Running | ✅ | 5617, 7150 | - | TaskRouter | 
+ | PrivacyManager | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | Proactive | 🔴 Not Running | ✅ | 5624, 7150 | - | - | 
+ | ProactiveAgent | 🔴 Not Running | ✅ | 5624, 7150 | - | TaskRouter | 
+ | RecoveryAction | 🔴 Not Running | ❌ | - | - | - | 
+ | RemoteConnector | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | RemoteConnectorAgent | 🔴 Not Running | ✅ | 7124, 7150 | 8124 | AdvancedRouter | 
+ | ResourceManager | 🔴 Not Running | ✅ | 7113, 7114, 7150 | 8113, 7114 | - | 
+ | ResourceType | 🔴 Not Running | ✅ | 5720, 7150 | - | - | 
+ | Responder | 🔴 Not Running | ✅ | 5637, 7150 | - | EmotionEngine, NLUAgent | 
+ | ResponderAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | SecureClient | 🔴 Not Running | ❌ | 5555 | - | - | 
+ | SecureServer | 🔴 Not Running | ❌ | 5555 | - | - | 
+ | SelfHealing | 🔴 Not Running | ❌ | - | - | - | 
+ | SelfHealingAgent | 🔴 Not Running | ❌ | 7125 | 8125 | PerformanceLoggerAgent | 
+ | SelfHealingDatabase | 🔴 Not Running | ❌ | - | - | - | 
+ | Session | 🔴 Not Running | ❌ | - | - | - | 
+ | SessionAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | SessionMemory | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | SessionMemoryAgent | 🔴 Not Running | ✅ | 5572, 5574, 7150 | 6583 | CoordinatorAgent, ErrorBus, MemoryClient | 
+ | SpeechProcessor | 🔴 Not Running | ❌ | - | - | - | 
+ | StreamingAudioCapture | 🔴 Not Running | ✅ | 7150, 6575 | - | - | 
+ | StreamingAudioCaptureAgent | 🔴 Not Running | ✅ | 7150, 6575 | - | - | 
+ | StreamingInterrupt | 🔴 Not Running | ❌ | - | - | - | 
+ | StreamingInterruptHandler | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | StreamingLanguageAnalyzer | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | StreamingLanguageToLLM | 🔴 Not Running | ❌ | - | - | - | 
+ | StreamingPartialTranscripts | 🔴 Not Running | ❌ | - | - | - | 
+ | StreamingSpeechRecognition | 🔴 Not Running | ✅ | 6580, 7150 | - | TaskRouter | 
+ | StreamingWhisperASR | 🔴 Not Running | ❌ | - | - | - | 
+ | SystemDigitalTwin | 🔴 Not Running | ✅ | 7120, 5590, 7150 | 6590 | MemoryClient, ErrorBus, ServiceRegistry | 
+ | SystemDigitalTwinAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | SystemResourceSnapshot | 🔴 Not Running | ❌ | - | - | - | 
+ | TTS | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TTSAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TTSCache | 🔴 Not Running | ✅ | 5628, 7150 | - | - | 
+ | Task | 🔴 Not Running | ❌ | - | - | - | 
+ | TelemetryDashboardHandler | 🔴 Not Running | ❌ | - | - | - | 
+ | TelemetryServer | 🔴 Not Running | ❌ | - | - | - | 
+ | TextRequest | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TimelineUIServer | 🔴 Not Running | ❌ | - | - | - | 
+ | ToneDetector | 🔴 Not Running | ✅ | 5625, 7150 | - | EmotionEngine | 
+ | Tool | 🔴 Not Running | ❌ | - | - | - | 
+ | Translation | 🔴 Not Running | ❌ | 5595 | - | - | 
+ | TranslationCache | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TriggerWordDetector | 🔴 Not Running | ❌ | - | - | - | 
+ | UltimateTTS | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | UltimateTTSAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | UnifiedSystem | 🔴 Not Running | ❌ | - | - | - | 
+ | UnifiedSystemAgent | 🔴 Not Running | ❌ | 5640 | - | UnifiedPlanningAgent | 
+ | UserProfile | 🔴 Not Running | ❌ | - | - | - | 
+ | VAD | 🔴 Not Running | ❌ | - | - | - | 
+ | VADAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | VRAMManager | 🔴 Not Running | ❌ | - | - | - | 
+ | VRAMOptimizer | 🔴 Not Running | ✅ | 7120, 7150 | - | - | 
+ | VRAMOptimizerAgent | 🔴 Not Running | ✅ | 7120, 7150 | - | - | 
+ | VisionCapture | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | VisionCaptureAgent | 🔴 Not Running | ✅ | 5592, 7150 | - | - | 
+ | VoiceController | 🔴 Not Running | ❌ | - | - | - | 
+ | VoiceMeeterControl | 🔴 Not Running | ❌ | - | - | - | 
+ | VoiceMeeterControlAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | VoiceProfiling | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | VoiceProfilingAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | WakeWordDetector | 🔴 Not Running | ✅ | 6577, 7150 | - | FusedAudioPreprocessor, AudioCapture | 
+ | WakeWordDetectorAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | WebSearchTool | 🔴 Not Running | ❌ | - | - | - | 
+ | ZMQAuthenticator | 🔴 Not Running | ❌ | - | - | - | 
+ | ZMQClient | 🔴 Not Running | ❌ | - | - | - | 
+ | ZMQPublisher | 🔴 Not Running | ❌ | - | - | - | 
+ | ZMQServer | 🔴 Not Running | ❌ | - | - | - | 
+ | ZMQSubscriber | 🔴 Not Running | ❌ | - | - | - | 
+ | and | 🔴 Not Running | ❌ | 8120 | 8120 | - | 
+ | base_suggestions | 🔴 Not Running | ❌ | - | - | - | 
+ | class | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | for | 🔴 Not Running | ❌ | - | - | - | 
+ | from | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | if | 🔴 Not Running | ❌ | - | - | - | 
+ | names | 🔴 Not Running | ❌ | - | - | - | 
+ | super | 🔴 Not Running | ❌ | - | - | - | 
+ | to | 🟢 Running | ❌ | - | - | - | 
+ | with | 🔴 Not Running | ❌ | - | - | - | 
 
 ### PC2 Agents
 
-| Agent | Status | Error Bus | Ports | Health Ports | Dependencies |
-|-------|--------|-----------|-------|--------------|-------------|
-| AdvancedRouter | 🔴 Not Running | ✅ | 7129, 5555, 7150 | 8129 | TaskScheduler |
-| AdvancedTutoring | 🔴 Not Running | ✅ | 5650, 7150 | - | - |
-| AdvancedTutoringAgent | 🔴 Not Running | ✅ | 5650, 7150 | - | - |
-| AgentStatus | 🔴 Not Running | ❌ | - | - | - |
-| AgentTrustScorer | 🔴 Not Running | ✅ | 7122, 5626, 7150 | 8122 | HealthMonitor |
-| Authentication | 🔴 Not Running | ✅ | 7150 | - | - |
-| CacheManager | 🔴 Not Running | ✅ | 7102, 7150 | 8102 | AsyncProcessor |
-| ContextManager | 🔴 Not Running | ✅ | 7112, 5716, 7150, 7111 | 7112, 6716, 8111 | SessionMemoryAgent, MemoryManager, ErrorBus, MemoryClient |
-| DreamWorld | 🔴 Not Running | ✅ | 7150 | - | - |
-| DreamingMode | 🔴 Not Running | ✅ | 7150 | - | - |
-| DreamingModeAgent | 🔴 Not Running | ✅ | 7150, 7127 | 8127 | DreamWorldAgent |
-| DummyArgs | 🔴 Not Running | ✅ | 7150 | - | - |
-| EpisodicMemory | 🔴 Not Running | ❌ | 7106 | - | - |
-| EpisodicMemoryAgent | 🔴 Not Running | ❌ | 7106, 5596 | 8106 | UnifiedMemoryReasoningAgent |
-| ErrorCollectorModule | 🔴 Not Running | ❌ | - | - | - |
-| ErrorPattern | 🔴 Not Running | ❌ | - | - | - |
-| ExperienceTracker | 🔴 Not Running | ✅ | 7112, 7113, 7106, 7150 | 8112, 7113 | EpisodicMemoryAgent |
-| ExperienceTrackerAgent | 🔴 Not Running | ✅ | 7112, 7113, 7106, 7150 | 7113 | - |
-| FileSystemAssistant | 🔴 Not Running | ✅ | 7150 | - | - |
-| FileSystemAssistantAgent | 🔴 Not Running | ✅ | 7123, 7150 | 8123 | UnifiedUtilsAgent |
-| HealthMonitor | 🔴 Not Running | ✅ | 7152, 7114, 7115, 7150 | 7153, 8114, 7115 | ServiceRegistry, ErrorBus, ResourceManager |
-| HealthMonitorAgent | 🔴 Not Running | ✅ | 7114, 7115, 7150 | 7115 | - |
-| LearningAdjuster | 🔴 Not Running | ❌ | - | - | - |
-| LearningAdjusterAgent | 🔴 Not Running | ❌ | 5643 | - | - |
-| MemoryEntry | 🔴 Not Running | ✅ | 7150 | - | - |
-| MemoryManager | 🔴 Not Running | ❌ | 7110 | 8110 | UnifiedMemoryReasoningAgent |
-| MemoryOrchestrator | 🔴 Not Running | ✅ | 5576, 7150 | - | - |
-| MemoryScheduler | 🔴 Not Running | ✅ | 7140, 7150 | - | - |
-| ModelEvaluationFramework | 🔴 Not Running | ✅ | 7150 | - | - |
-| Orchestrator | 🔴 Not Running | ❌ | - | - | - |
-| OrchestratorAgent | 🔴 Not Running | ❌ | - | - | - |
-| PerformanceLogger | 🔴 Not Running | ✅ | 7150 | - | - |
-| PerformanceLoggerAgent | 🔴 Not Running | ✅ | 7128, 7150 | 8128 | PerformanceMonitor |
-| PerformanceMonitor | 🔴 Not Running | ✅ | 7150, 7103 | 8103 | HealthMonitor |
-| ProactiveContextMonitor | 🔴 Not Running | ❌ | 7119 | 8119 | ContextManager |
-| RemoteConnector | 🔴 Not Running | ✅ | 7150 | - | - |
-| RemoteConnectorAgent | 🔴 Not Running | ✅ | 7124, 7150 | 8124 | AdvancedRouter |
-| ResourceManager | 🔴 Not Running | ✅ | 7113, 7114, 7150 | 8113, 7114 | - |
-| ResourceMonitor | 🔴 Not Running | ✅ | 7102, 7150, 7103 | - | - |
-| ScenarioType | 🔴 Not Running | ✅ | 7150 | - | - |
-| SystemHealthManager | 🔴 Not Running | ✅ | 7140, 7150, 7142 | - | - |
-| TaskQueue | 🔴 Not Running | ✅ | 7150 | - | - |
-| TaskScheduler | 🔴 Not Running | ✅ | 7115, 7116, 5555, 7150 | 8115, 7116 | HealthMonitor, AsyncProcessor |
-| TaskSchedulerAgent | 🔴 Not Running | ✅ | 7115, 7116, 5555, 7150 | 7116 | - |
-| TestCompliant | 🔴 Not Running | ❌ | - | - | - |
-| TieredResponder | 🔴 Not Running | ✅ | 7100, 7150 | 8100 | ResourceManager |
-| Tutor | 🔴 Not Running | ✅ | 7150 | - | - |
-| TutoringService | 🔴 Not Running | ✅ | 7150 | - | - |
-| TutoringServiceAgent | 🔴 Not Running | ✅ | 7130, 7150 | 8130 | UnifiedMemoryReasoningAgent |
-| UnifiedMemoryReasoning | 🔴 Not Running | ❌ | - | - | - |
-| UnifiedMemoryReasoningAgent | 🔴 Not Running | ❌ | 7105, 5596 | 8105 | HealthMonitor, MemoryOrchestrator, CacheManager |
-| UnifiedMonitor | 🔴 Not Running | ❌ | - | - | - |
-| UnifiedUtils | 🔴 Not Running | ✅ | 7150 | - | - |
-| UnifiedWeb | 🔴 Not Running | ✅ | 7150 | - | - |
-| UnifiedWebAgent | 🔴 Not Running | ✅ | 7126, 7150 | 8126 | UnifiedMemoryReasoningAgent, FileSystemAssistantAgent |
-| VisionProcessing | 🔴 Not Running | ✅ | 7150 | - | - |
-| VisionProcessingAgent | 🔴 Not Running | ✅ | 7150 | - | - |
-| class | 🔴 Not Running | ✅ | 7150 | - | - |
-| definitions | 🔴 Not Running | ✅ | 5555, 7150 | - | - |
-| for | 🔴 Not Running | ❌ | - | - | - |
-| from | 🔴 Not Running | ✅ | 7150 | - | - |
+ | Agent | Status | Error Bus | Ports | Health Ports | Dependencies | 
+ | ------- | -------- | ----------- | ------- | -------------- | ------------- | 
+ | AdvancedRouter | 🔴 Not Running | ✅ | 7129, 5555, 7150 | 8129 | TaskScheduler | 
+ | AdvancedTutoring | 🔴 Not Running | ✅ | 5650, 7150 | - | - | 
+ | AdvancedTutoringAgent | 🔴 Not Running | ✅ | 5650, 7150 | - | - | 
+ | AgentStatus | 🔴 Not Running | ❌ | - | - | - | 
+ | AgentTrustScorer | 🔴 Not Running | ✅ | 7122, 5626, 7150 | 8122 | HealthMonitor | 
+ | Authentication | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | CacheManager | 🔴 Not Running | ✅ | 7102, 7150 | 8102 | AsyncProcessor | 
+ | ContextManager | 🔴 Not Running | ✅ | 7112, 5716, 7150, 7111 | 7112, 6716, 8111 | SessionMemoryAgent, MemoryManager, ErrorBus, MemoryClient | 
+ | DreamWorld | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | DreamingMode | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | DreamingModeAgent | 🔴 Not Running | ✅ | 7150, 7127 | 8127 | DreamWorldAgent | 
+ | DummyArgs | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | EpisodicMemory | 🔴 Not Running | ❌ | 7106 | - | - | 
+ | EpisodicMemoryAgent | 🔴 Not Running | ❌ | 7106, 5596 | 8106 | UnifiedMemoryReasoningAgent | 
+ | ErrorCollectorModule | 🔴 Not Running | ❌ | - | - | - | 
+ | ErrorPattern | 🔴 Not Running | ❌ | - | - | - | 
+ | ExperienceTracker | 🔴 Not Running | ✅ | 7112, 7113, 7106, 7150 | 8112, 7113 | EpisodicMemoryAgent | 
+ | ExperienceTrackerAgent | 🔴 Not Running | ✅ | 7112, 7113, 7106, 7150 | 7113 | - | 
+ | FileSystemAssistant | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | FileSystemAssistantAgent | 🔴 Not Running | ✅ | 7123, 7150 | 8123 | UnifiedUtilsAgent | 
+ | HealthMonitor | 🔴 Not Running | ✅ | 7152, 7114, 7115, 7150 | 7153, 8114, 7115 | ServiceRegistry, ErrorBus, ResourceManager | 
+ | HealthMonitorAgent | 🔴 Not Running | ✅ | 7114, 7115, 7150 | 7115 | - | 
+ | LearningAdjuster | 🔴 Not Running | ❌ | - | - | - | 
+ | LearningAdjusterAgent | 🔴 Not Running | ❌ | 5643 | - | - | 
+ | MemoryEntry | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | MemoryManager | 🔴 Not Running | ❌ | 7110 | 8110 | UnifiedMemoryReasoningAgent | 
+ | MemoryOrchestrator | 🔴 Not Running | ✅ | 5576, 7150 | - | - | 
+ | MemoryScheduler | 🔴 Not Running | ✅ | 7140, 7150 | - | - | 
+ | ModelEvaluationFramework | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | Orchestrator | 🔴 Not Running | ❌ | - | - | - | 
+ | OrchestratorAgent | 🔴 Not Running | ❌ | - | - | - | 
+ | PerformanceLogger | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | PerformanceLoggerAgent | 🔴 Not Running | ✅ | 7128, 7150 | 8128 | PerformanceMonitor | 
+ | PerformanceMonitor | 🔴 Not Running | ✅ | 7150, 7103 | 8103 | HealthMonitor | 
+ | ProactiveContextMonitor | 🔴 Not Running | ❌ | 7119 | 8119 | ContextManager | 
+ | RemoteConnector | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | RemoteConnectorAgent | 🔴 Not Running | ✅ | 7124, 7150 | 8124 | AdvancedRouter | 
+ | ResourceManager | 🔴 Not Running | ✅ | 7113, 7114, 7150 | 8113, 7114 | - | 
+ | ResourceMonitor | 🔴 Not Running | ✅ | 7102, 7150, 7103 | - | - | 
+ | ScenarioType | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | SystemHealthManager | 🔴 Not Running | ✅ | 7140, 7150, 7142 | - | - | 
+ | TaskQueue | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TaskScheduler | 🔴 Not Running | ✅ | 7115, 7116, 5555, 7150 | 8115, 7116 | HealthMonitor, AsyncProcessor | 
+ | TaskSchedulerAgent | 🔴 Not Running | ✅ | 7115, 7116, 5555, 7150 | 7116 | - | 
+ | TestCompliant | 🔴 Not Running | ❌ | - | - | - | 
+ | TieredResponder | 🔴 Not Running | ✅ | 7100, 7150 | 8100 | ResourceManager | 
+ | Tutor | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TutoringService | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | TutoringServiceAgent | 🔴 Not Running | ✅ | 7130, 7150 | 8130 | UnifiedMemoryReasoningAgent | 
+ | UnifiedMemoryReasoning | 🔴 Not Running | ❌ | - | - | - | 
+ | UnifiedMemoryReasoningAgent | 🔴 Not Running | ❌ | 7105, 5596 | 8105 | HealthMonitor, MemoryOrchestrator, CacheManager | 
+ | UnifiedMonitor | 🔴 Not Running | ❌ | - | - | - | 
+ | UnifiedUtils | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | UnifiedWeb | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | UnifiedWebAgent | 🔴 Not Running | ✅ | 7126, 7150 | 8126 | UnifiedMemoryReasoningAgent, FileSystemAssistantAgent | 
+ | VisionProcessing | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | VisionProcessingAgent | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | class | 🔴 Not Running | ✅ | 7150 | - | - | 
+ | definitions | 🔴 Not Running | ✅ | 5555, 7150 | - | - | 
+ | for | 🔴 Not Running | ❌ | - | - | - | 
+ | from | 🔴 Not Running | ✅ | 7150 | - | - | 
 
 ## Detailed Agent Information
 
@@ -824,7 +824,7 @@ graph TD;
 ### AgentUtils
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7136
 - **Health Check Ports**: 8136
@@ -843,7 +843,7 @@ graph TD;
 ### AlertManager
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5593
 - **Configuration Files**:
@@ -852,7 +852,7 @@ graph TD;
 ### AsyncProcessor
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7101
 - **Health Check Ports**: 8101
@@ -873,7 +873,7 @@ graph TD;
 ### AudioCapture
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 6575
 - **Configuration Files**:
@@ -891,7 +891,7 @@ graph TD;
 ### AuthenticationAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7116
 - **Health Check Ports**: 8116
@@ -970,7 +970,7 @@ graph TD;
 ### ChainOfThoughtAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5612
 - **Configuration Files**:
@@ -1047,7 +1047,7 @@ graph TD;
 ### CognitiveModelAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5641
 - **Configuration Files**:
@@ -1105,7 +1105,7 @@ graph TD;
 ### ConsolidatedTranslator
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5563
 - **Configuration Files**:
@@ -1257,7 +1257,7 @@ graph TD;
 ### DreamWorldAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7104
 - **Health Check Ports**: 8104
@@ -1409,7 +1409,7 @@ graph TD;
 ### EnhancedContextualMemory
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7134
 - **Health Check Ports**: 8134
@@ -1423,7 +1423,7 @@ graph TD;
 ### EnhancedModelRouter
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5598
 - **Configuration Files**:
@@ -1460,7 +1460,7 @@ graph TD;
 ### ErrorBus
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7150
 - **Configuration Files**:
@@ -1697,7 +1697,7 @@ graph TD;
 ### GOT_TOTAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5646
 - **Configuration Files**:
@@ -1714,7 +1714,7 @@ graph TD;
 ### GoalManager
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5572
 - **Health Check Ports**: 6572
@@ -1725,7 +1725,7 @@ graph TD;
 ### GoalOrchestratorAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7001
 - **Dependencies**: TaskRouter
@@ -1735,7 +1735,7 @@ graph TD;
 ### HealthCheck
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5591
 - **Configuration Files**:
@@ -1803,7 +1803,7 @@ graph TD;
 ### InputProcessor
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5562
 - **Health Check Ports**: 6562
@@ -1814,7 +1814,7 @@ graph TD;
 ### IntentRecognizer
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5561
 - **Health Check Ports**: 6561
@@ -1860,7 +1860,7 @@ graph TD;
 ### KnowledgeBaseAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7109
 - **Dependencies**: CacheManager
@@ -1871,7 +1871,7 @@ graph TD;
 ### LanguageAndTranslationCoordinator
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 6581
 - **Dependencies**: TaskRouter
@@ -1910,7 +1910,7 @@ graph TD;
 ### LearningAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7107
 - **Dependencies**: EpisodicMemoryAgent
@@ -1960,7 +1960,7 @@ graph TD;
 ### LocalFineTunerAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5645
 - **Configuration Files**:
@@ -1969,7 +1969,7 @@ graph TD;
 ### MemoryClient
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5713
 - **Dependencies**: ErrorBus, ServiceRegistry
@@ -1980,7 +1980,7 @@ graph TD;
 ### MemoryDecayManager
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7133
 - **Health Check Ports**: 8133
@@ -2079,7 +2079,7 @@ graph TD;
 ### MetricsCollector
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5592
 - **Configuration Files**:
@@ -2159,7 +2159,7 @@ graph TD;
 ### MultiAgentSwarmManager
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5639
 - **Dependencies**: UnifiedPlanningAgent
@@ -2169,7 +2169,7 @@ graph TD;
 ### NLLBAdapter
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5581
 - **Configuration Files**:
@@ -2400,7 +2400,7 @@ graph TD;
 ### RCAAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7121
 - **Health Check Ports**: 8121
@@ -2459,7 +2459,7 @@ graph TD;
 ### RequestCoordinator
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5570
 - **Health Check Ports**: 6570
@@ -2539,7 +2539,7 @@ graph TD;
 ### ResponseGenerator
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5580
 - **Health Check Ports**: 6580
@@ -2611,7 +2611,7 @@ graph TD;
 ### SelfTrainingOrchestrator
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5644
 - **Configuration Files**:
@@ -2620,7 +2620,7 @@ graph TD;
 ### ServiceRegistry
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7151
 - **Dependencies**: ErrorBus
@@ -2677,7 +2677,7 @@ graph TD;
 ### SpeechToText
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5560
 - **Health Check Ports**: 6560
@@ -2760,7 +2760,7 @@ graph TD;
 ### StreamingTTS
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5582
 - **Health Check Ports**: 6582
@@ -2771,7 +2771,7 @@ graph TD;
 ### StreamingTTSAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5562
 - **Dependencies**: CoordinatorAgent
@@ -2859,7 +2859,7 @@ graph TD;
 ### TTSConnector
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5582
 - **Dependencies**: CoordinatorAgent
@@ -2886,7 +2886,7 @@ graph TD;
 ### TaskRouter
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 8570
 - **Configuration Files**:
@@ -2993,7 +2993,7 @@ graph TD;
 ### TinyLlamaService
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5615
 - **Configuration Files**:
@@ -3041,7 +3041,7 @@ graph TD;
 ### TranslationService
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5581
 - **Health Check Ports**: 6581
@@ -3070,7 +3070,7 @@ graph TD;
 ### TutorAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7108
 - **Health Check Ports**: 8108
@@ -3089,7 +3089,7 @@ graph TD;
 ### TutoringAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7131, 7108
 - **Health Check Ports**: 8131
@@ -3161,7 +3161,7 @@ graph TD;
 ### UnifiedErrorAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7117
 - **Health Check Ports**: 8117
@@ -3204,7 +3204,7 @@ graph TD;
 ### UnifiedMemoryReasoningAgentAlt
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7132
 - **Health Check Ports**: 8132
@@ -3231,7 +3231,7 @@ graph TD;
 ### UnifiedPlanningAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5634
 - **Dependencies**: IntentionValidatorAgent, GoalOrchestratorAgent
@@ -3278,7 +3278,7 @@ graph TD;
 ### UnifiedUtilsAgent
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 7118
 - **Health Check Ports**: 8118
@@ -3444,7 +3444,7 @@ graph TD;
 ### VoiceProfiler
 
 - **Status**: 🔴 Not Running
-- **Machines**: 
+- **Machines**:
 - **Error Bus Integration**: No
 - **Ports**: 5708
 - **Dependencies**: EmotionEngine

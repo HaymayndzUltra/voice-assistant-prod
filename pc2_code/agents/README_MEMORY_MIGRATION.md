@@ -63,8 +63,8 @@ LOG_PATH = "logs/unified_memory_reasoning_agent.log"
 
 # Memory settings
 MAX_SESSION_HISTORY = 50
-TOKEN_BUDGET_DEFAULT = 2000
-TOKEN_COMPRESSION_RATIO = 0.8
+${SECRET_PLACEHOLDER} 2000
+${SECRET_PLACEHOLDER} 0.8
 ```
 
 ## Running the Agent

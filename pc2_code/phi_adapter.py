@@ -15,11 +15,11 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Secure token access - no hardcoded fallback
 try:
     from common.utils.secret_manager import SecretManager
-    AUTH_TOKEN = SecretManager.get_api_token("PHI_TRANSLATOR")
+    AUTH_${SECRET_PLACEHOLDER} SecretManager.get_api_token("PHI_TRANSLATOR")
 except ImportError:
     # Fallback for systems without SecretManager
-    AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN")
-    if not AUTH_TOKEN:
+    AUTH_${SECRET_PLACEHOLDER} os.environ.get("PHI_TRANSLATOR_TOKEN")
+    if not AUTH_${SECRET_PLACEHOLDER}
         raise ValueError("PHI_TRANSLATOR_TOKEN not found - configure via SecretManager or environment variable")
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 

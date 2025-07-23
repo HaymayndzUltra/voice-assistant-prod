@@ -1,6 +1,6 @@
 # DAY 8 MIGRATION TARGETS - DEFERRED LOW-RISK AGENTS
-**Date:** $(date)  
-**Phase:** 0 Day 8 - BaseAgent Migration (Deferred Low-Risk Completion)  
+**Date:** $(date)
+**Phase:** 0 Day 8 - BaseAgent Migration (Deferred Low-Risk Completion)
 **Risk Level:** LOW - Utility and support components deferred from Day 6
 
 ## 🎯 SELECTED MIGRATION TARGETS
@@ -47,7 +47,7 @@ Execute migrations one at a time with thorough testing:
 
 ### **Risk Assessment - LOW**
 - **Minimal system impact** - All agents are support/utility functions
-- **Independent operation** - Limited interdependencies 
+- **Independent operation** - Limited interdependencies
 - **Easy rollback** - Simple restore procedures
 - **Non-critical functions** - System continues without these agents
 - **Well-understood patterns** - Similar to Day 6 successful migrations
@@ -123,7 +123,7 @@ cp pc2_code/agents/core_agents/LearningAdjusterAgent.py.backup pc2_code/agents/c
 
 # Restart affected services (if needed)
 systemctl restart health_reporter
-systemctl restart pc2_http_server  
+systemctl restart pc2_http_server
 systemctl restart learning_adjuster
 ```
 
@@ -157,7 +157,7 @@ systemctl restart learning_adjuster
 - Test cross-machine health communication
 - Validate monitoring data flow
 
-### **Phase 2: HTTP Server Migration (30 minutes)**  
+### **Phase 2: HTTP Server Migration (30 minutes)**
 - Backup and migrate `http_server.py`
 - Test web interface functionality
 - Validate API endpoint responses
@@ -174,4 +174,4 @@ systemctl restart learning_adjuster
 
 **Total Estimated Time:** 2 hours for complete Day 8 migration
 
-This systematic completion of deferred low-risk agents maintains our successful migration momentum while preparing the foundation for the final high-risk agent migrations. 
+This systematic completion of deferred low-risk agents maintains our successful migration momentum while preparing the foundation for the final high-risk agent migrations.

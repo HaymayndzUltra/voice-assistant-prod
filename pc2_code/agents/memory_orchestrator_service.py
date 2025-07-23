@@ -52,8 +52,8 @@ logger = logging.getLogger('MemoryOrchestratorService')
 # --- Constants ---
 DEFAULT_PORT = 7140 # Port para sa Orchestrator
 DB_PATH = Path(PathManager.get_project_root()) / "data" / "unified_memory.db"
-REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+${SECRET_PLACEHOLDER} os.environ.get('REDIS_HOST', 'localhost')
+${SECRET_PLACEHOLDER} int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
 
 # ===================================================================
@@ -424,7 +424,7 @@ class MemoryOrchestratorService(BaseAgent):
         # --- Backend Initialization ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+            self.redis_conn = redis.Redis(host=${SECRET_PLACEHOLDER}True)
             self.redis_conn.ping()
             logger.info("Successfully connected to Redis.")
         except Exception as e:

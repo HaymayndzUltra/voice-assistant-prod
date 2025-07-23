@@ -39,9 +39,9 @@ from common.env_helpers import get_env
 config = Config().get_config()
 
 # Constants
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+${SECRET_PLACEHOLDER} 'localhost'
+${SECRET_PLACEHOLDER} 6379
+${SECRET_PLACEHOLDER} 0
 HEALTH_PORT = 5618
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_CACHE_SIZE = 1000  # Maximum number of cache entries

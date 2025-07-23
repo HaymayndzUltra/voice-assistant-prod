@@ -9,7 +9,7 @@
 
 ### ✅ MAINPC AI TASKS:
 1. **Secure ZMQ cleanup** (12 agents) - Remove non-existent imports
-2. **join_path modernization** (8 agents) - Convert to PathManager  
+2. **join_path modernization** (8 agents) - Convert to PathManager
 3. **Startup config validation** (25+ agents) - Test functionality
 
 ## 🔧 KEY PATTERNS:
@@ -23,7 +23,7 @@ def is_secure_zmq_enabled() -> bool:
     return False
 ```
 
-### Pattern 2: join_path Fix  
+### Pattern 2: join_path Fix
 ```python
 # Remove:
 sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
@@ -41,4 +41,4 @@ spec.loader.exec_module(module)
 
 ## 🎯 TARGET: 40% → 70%+ functional agents
 
-**Read full details in MAINPC_AI_SESSION_INSTRUCTIONS.md** 
+**Read full details in MAINPC_AI_SESSION_INSTRUCTIONS.md**

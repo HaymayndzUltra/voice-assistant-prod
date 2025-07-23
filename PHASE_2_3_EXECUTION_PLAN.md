@@ -19,7 +19,7 @@
 **EXECUTION STEPS**:
 ```bash
 # Step 1: Identify agents with old error bus code
-find main_pc_code/agents -name "*.py" -exec grep -l "error_bus_port\|error_bus_host\|error_bus_pub" {} \;
+| find main_pc_code/agents -name "*.py" -exec grep -l "error_bus_port\ | error_bus_host\ | error_bus_pub" {} \; |
 
 # Step 2: Remove old error bus setup (bulk operation)
 find main_pc_code/agents -name "*.py" -exec sed -i '/self\.error_bus_port/d' {} \;
@@ -43,7 +43,7 @@ print(f'Failed agents: {failed}')
 
 ---
 
-### **P2.2: Health Check Validation** 
+### **P2.2: Health Check Validation**
 **TARGET**: Verify StandardizedHealthChecker is working across agents
 
 **PRIORITY**: Low (empirical testing showed auto-creation works)
@@ -80,10 +80,10 @@ for agent_name in test_agents:
 **EXECUTION STEPS**:
 ```bash
 # Step 1: Find agents using old load_config
-grep -r "load_config" main_pc_code/agents/ | cut -d: -f1 | sort | uniq
+| grep -r "load_config" main_pc_code/agents/ | cut -d: -f1 | sort | uniq |
 
 # Step 2: Update to unified config loading (targeted replacement)
-find main_pc_code/agents -name "*.py" -exec grep -l "load_config" {} \; | while read file; do
+| find main_pc_code/agents -name "*.py" -exec grep -l "load_config" {} \; | while read file; do |
     # Replace import
     sed -i 's/from main_pc_code.utils.config_loader import load_config/from common.config_manager import load_unified_config/g' "$file"
     # Replace function call
@@ -113,13 +113,13 @@ print(f'✅ Config loaded: {len(config.get(\"agent_groups\", {}))} groups')
 **EXECUTION STEPS**:
 ```bash
 # Step 1: Find hardcoded IP addresses
-grep -r "192\.168\." main_pc_code/agents/ | head -10
+| grep -r "192\.168\." main_pc_code/agents/ | head -10 |
 
 # Step 2: Replace with environment-aware calls
 find main_pc_code/agents -name "*.py" -exec sed -i 's/"192\.168\.100\.[0-9]*"/get_service_ip("mainpc")/g' {} \;
 
 # Step 3: Add get_service_ip import where needed
-find main_pc_code/agents -name "*.py" -exec grep -l "get_service_ip" {} \; | while read file; do
+| find main_pc_code/agents -name "*.py" -exec grep -l "get_service_ip" {} \; | while read file; do |
     if ! grep -q "from common.config_manager import.*get_service_ip" "$file"; then
         sed -i '1i from common.config_manager import get_service_ip' "$file"
     fi
@@ -145,7 +145,7 @@ print(f'PC2 IP: {get_service_ip(\"pc2\")}')
 **EXECUTION STEPS**:
 ```bash
 # Step 1: Find hardcoded file paths
-grep -r "/home/\|/tmp/\|C:\\\\" main_pc_code/agents/ | head -10
+| grep -r "/home/\ | /tmp/\ | C:\\\\" main_pc_code/agents/ | head -10 |
 
 # Step 2: Create Docker-safe path patterns
 python3 -c "
@@ -155,7 +155,7 @@ from pathlib import Path
 # Define Docker-safe paths
 docker_paths = {
     'logs': '/app/logs',
-    'models': '/app/models', 
+    'models': '/app/models',
     'config': '/app/config',
     'data': '/app/data'
 }
@@ -203,7 +203,7 @@ for group_name, group_agents in config['agent_groups'].items():
 
 with open('mainpc_agent_dependencies.json', 'w') as f:
     json.dump(agents, f, indent=2)
-    
+
 print(f'Generated dependency map for {len(agents)} agents')
 "
 
@@ -293,7 +293,7 @@ echo "Created docker/Dockerfile.mainpc"
 
 ### **Day 1: Phase 2 Infrastructure (4-6 hours)**
 - Morning: P2.1 Error reporting cleanup
-- Afternoon: P2.3 Configuration unification 
+- Afternoon: P2.3 Configuration unification
 - Evening: P2.2 Health check validation
 
 ### **Day 2: Phase 3 Docker Prep (8-10 hours)**
@@ -338,4 +338,4 @@ echo "Created docker/Dockerfile.mainpc"
 4. **Keep original Phase 1 success intact**
 
 **TOTAL ESTIMATED TIME**: 2-3 days (16-20 hours)
-**PRIORITY ORDER**: P2.3 → P3.1 → P3.3 → P2.1 → P3.2 → P2.2 
+**PRIORITY ORDER**: P2.3 → P3.1 → P3.3 → P2.1 → P3.2 → P2.2

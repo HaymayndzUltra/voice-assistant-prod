@@ -137,7 +137,7 @@ access_control.add_rule(AccessRule(
     priority=50,
     conditions={
         "request_frequency": {"range": [100, float('inf')]},
-        "user_agent": {"regex": r".*(bot|crawler).*"},
+| "user_agent": {"regex": r".*(bot | crawler).*"}, |
         "path": {"contains": "admin"}
     },
     action=AccessDecision.DENY
@@ -212,10 +212,10 @@ class SecureAIAgent:
         self.encryption_service = get_encryption_service()
         self.secrets_manager = get_secrets_manager()
         self.access_control = get_access_control_engine()
-        
+
         # Setup agent-specific security
         self.setup_security(agent_name)
-    
+
     def setup_security(self, agent_name: str):
         # Generate service account
         self.key_id, self.api_key = self.security_manager.create_api_key(
@@ -223,20 +223,20 @@ class SecureAIAgent:
             permissions={"agent:execute", "data:read", "data:write"},
             rate_limit=200
         )
-        
+
         # Setup encryption keys
         self.data_key_id = self.encryption_service.key_manager.generate_key(
             EncryptionAlgorithm.AES_256_GCM,
             purpose=f"{agent_name}_data"
         )
-        
+
         # Store configuration secrets
         self.secrets_manager.set_secret(f"{agent_name}_config", {
             "database_url": "postgresql://secure_connection",
             "external_api_key": "sk_secure_key_123",
             "encryption_passphrase": "ultra_secure_passphrase"
         })
-    
+
     @protect_endpoint(require_auth=True, allowed_roles=["admin", "operator"])
     @require_auth(resource=ResourceType.AGENT, action=PermissionLevel.EXECUTE)
     async def process_sensitive_data(self, data: dict, security_context):
@@ -246,14 +246,14 @@ class SecureAIAgent:
             "ip_address": data.get("client_ip"),
             "operation": "process_sensitive_data"
         })
-        
+
         if not allowed:
             raise PermissionError(f"Access denied: {info.get('reason')}")
-        
+
         # Encrypt sensitive fields
         sensitive_fields = ["ssn", "credit_card", "password", "api_key"]
         encrypted_data = data.copy()
-        
+
         for field in sensitive_fields:
             if field in data:
                 encrypted_value = self.encryption_service.encrypt(
@@ -261,10 +261,10 @@ class SecureAIAgent:
                     self.data_key_id
                 )
                 encrypted_data[field] = encrypted_value.to_dict()
-        
+
         # Process with full audit trail
         result = await self.secure_processing(encrypted_data, security_context)
-        
+
         # Log security event
         self.access_control._record_security_event(
             "sensitive_data_processed",
@@ -274,19 +274,19 @@ class SecureAIAgent:
             self.agent_name,
             f"Sensitive data processed by {security_context.user_id}"
         )
-        
+
         return result
-    
+
     async def secure_agent_communication(self, target_agent: str, message: dict):
         # Generate secure session
         session_key = secrets.token_urlsafe(32)
-        
+
         # Encrypt message
         encrypted_message = self.encryption_service.encrypt(
             json.dumps(message),
             self.data_key_id
         )
-        
+
         # Sign with HMAC for integrity
         timestamp = str(time.time())
         signature = self.security_manager.hmac_validator.generate_signature(
@@ -295,7 +295,7 @@ class SecureAIAgent:
             encrypted_message.to_json(),
             timestamp
         )
-        
+
         return {
             "encrypted_payload": encrypted_message.to_dict(),
             "signature": signature,
@@ -310,10 +310,10 @@ class SecurityMonitor:
     def __init__(self):
         self.access_control = get_access_control_engine()
         self.threat_patterns = self.load_threat_patterns()
-    
+
     async def analyze_request_patterns(self, requests: List[Dict]):
         threats_detected = []
-        
+
         for request in requests:
             # Check for SQL injection patterns
             if self.detect_sql_injection(request.get("query", "")):
@@ -322,7 +322,7 @@ class SecurityMonitor:
                     "severity": ThreatLevel.HIGH,
                     "request": request
                 })
-            
+
             # Check for brute force patterns
             if self.detect_brute_force(request.get("ip_address", "")):
                 threats_detected.append({
@@ -330,7 +330,7 @@ class SecurityMonitor:
                     "severity": ThreatLevel.MEDIUM,
                     "request": request
                 })
-            
+
             # Check for DDoS patterns
             if self.detect_ddos_pattern(request.get("ip_address", "")):
                 threats_detected.append({
@@ -338,26 +338,26 @@ class SecurityMonitor:
                     "severity": ThreatLevel.CRITICAL,
                     "request": request
                 })
-        
+
         # Respond to threats
         for threat in threats_detected:
             await self.respond_to_threat(threat)
-        
+
         return threats_detected
-    
+
     async def respond_to_threat(self, threat: Dict):
         if threat["severity"] == ThreatLevel.CRITICAL:
             # Immediate IP block
             ip_address = threat["request"].get("ip_address")
             add_ip_to_blacklist(f"{ip_address}/32")
-            
+
         elif threat["severity"] == ThreatLevel.HIGH:
             # Temporary block
             self.access_control.add_temporary_block(
                 threat["request"].get("ip_address"),
                 duration_minutes=60
             )
-        
+
         # Record security event
         self.access_control._record_security_event(
             threat["type"],
@@ -485,7 +485,7 @@ async def process_api_contract(contract: APIContract, security_context):
     # Validate API contract security
     if not security_context.has_permission("api:execute"):
         raise PermissionError("API execution permission required")
-    
+
     response = await contract.process_request(message)
     return response
 ```
@@ -509,10 +509,10 @@ async def secure_external_call(security_context):
 async def validate_security(request):
     with timer("auth_time").time_context():
         context = await authenticate_request(request)
-    
+
     with timer("authz_time").time_context():
         authorized = await authorize_request(context, request)
-    
+
     counter("security_checks").increment(
         result="success" if authorized else "denied"
     )
@@ -524,7 +524,7 @@ async def validate_security(request):
 async with tracer.async_span("secure_operation") as span:
     span.set_tag("user.id", security_context.user_id)
     span.set_tag("security.method", security_context.authentication_method.value)
-    
+
     await logger.info(
         "Secure operation executed",
         category=LogCategory.SECURITY,
@@ -566,6 +566,6 @@ The system is **battle-tested**, **performance-optimized**, and **seamlessly int
 
 ---
 
-**Status**: ✅ **COMPLETED**  
-**Confidence**: 🟢 **HIGH** - Production ready with comprehensive security testing  
-**Next Package**: Ready to proceed to WP-11 or focus on security deployment across critical agents 
+**Status**: ✅ **COMPLETED**
+**Confidence**: 🟢 **HIGH** - Production ready with comprehensive security testing
+**Next Package**: Ready to proceed to WP-11 or focus on security deployment across critical agents

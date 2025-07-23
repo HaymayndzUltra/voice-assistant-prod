@@ -10,7 +10,7 @@
 ### MAINPC AI (Current Session) - 54 agents
 **I will handle all MainPC agents** including:
 - Fix `get_project_root()` / `get_main_pc_code()` imports
-- Fix `PathManager` import issues  
+- Fix `PathManager` import issues
 - Fix `ErrorSeverity` import problems
 - Fix config file and permission issues
 - Fix typos (`aseAgent` → `BaseAgent`)
@@ -23,7 +23,7 @@
 ### PATTERN 1: Missing error_bus_template Module (6 agents)
 **Agents affected:**
 - `tiered_responder.py`
-- `async_processor.py` 
+- `async_processor.py`
 - `DreamWorldAgent.py`
 - `tutor_agent.py`
 - `remote_connector_agent.py`
@@ -150,7 +150,7 @@ from common.core.base_agent import BaseAgent
 
 **When to notify MainPC AI:**
 - ✅ Completed error_bus_template creation
-- ✅ Fixed major import pattern (5+ agents)  
+- ✅ Fixed major import pattern (5+ agents)
 - ❌ Stuck on specific error pattern
 - ❌ Need shared file modification
 
@@ -221,11 +221,11 @@ from typing import Dict, Any, Optional
 
 class ErrorBusTemplate:
     """Simple error bus interface for backward compatibility"""
-    
+
     def __init__(self):
         self.context = zmq.Context()
         self.publisher = None
-        
+
     def connect(self, endpoint: str):
         """Connect to error bus endpoint"""
         try:
@@ -233,7 +233,7 @@ class ErrorBusTemplate:
             self.publisher.connect(endpoint)
         except Exception as e:
             print(f"Error bus connection failed: {e}")
-    
+
     def publish_error(self, error_type: str, message: str, severity: str = "ERROR", context: Optional[Dict[str, Any]] = None):
         """Publish error message to bus"""
         try:
@@ -248,7 +248,7 @@ class ErrorBusTemplate:
                 self.publisher.send_string(f"ERROR:{json.dumps(error_data)}")
         except Exception as e:
             print(f"Failed to publish error: {e}")
-    
+
     def cleanup(self):
         """Cleanup resources"""
         try:
@@ -266,4 +266,4 @@ def report_error(error_type: str, message: str, severity: str = "ERROR", context
     error_bus.publish_error(error_type, message, severity, context)
 ```
 
-**This template will immediately fix 6 agents that import from error_bus_template!** 
+**This template will immediately fix 6 agents that import from error_bus_template!**

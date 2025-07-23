@@ -71,7 +71,7 @@ WP-01 successfully refactored hardcoded localhost/127.0.0.1 references to enviro
 
 ### **Files Modified:**
 1. `main_pc_code/agents/service_registry_agent.py` - Redis host configuration
-2. `main_pc_code/11.py` - RequestCoordinator connection  
+2. `main_pc_code/11.py` - RequestCoordinator connection
 3. `main_pc_code/agents/streaming_interrupt_handler.py` - STT host fallback
 4. `docker/config/env.template` - Complete environment configuration
 
@@ -98,7 +98,7 @@ host = get_env('SERVICE_HOST', 'service-name')
 # Before
 socket.connect("tcp://localhost:7200")
 
-# After  
+# After
 socket.connect(f"tcp://{get_env('SERVICE_REGISTRY_HOST', 'service-registry')}:7200")
 ```
 
@@ -123,7 +123,7 @@ cp docker/config/env.template .env
 
 # Key variables to customize:
 # - MAIN_PC_IP=your-mainpc-ip
-# - PC2_IP=your-pc2-ip  
+# - PC2_IP=your-pc2-ip
 # - REDIS_PASSWORD=your-redis-password
 # - JWT_SECRET_KEY=your-jwt-secret
 ```
@@ -183,4 +183,4 @@ WP-01 successfully established the foundation for containerized deployment by:
 
 ---
 
-*WP-01 completed successfully. Proceeding to WP-02 Non-Root Dockerfiles...* 
+*WP-01 completed successfully. Proceeding to WP-02 Non-Root Dockerfiles...*
