@@ -10,6 +10,7 @@ import json
 import time
 from datetime import datetime
 import sys
+from common.env_helpers import get_env
 
 def print_fancy_header(text):
     print("\n" + "=" * 80)
@@ -27,7 +28,7 @@ def main():
     # Set up ZMQ client
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    service_url = "tcp://localhost:5563"
+    service_url = f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5563"
     print(f"\nConnecting to translator_agent at {service_url}...")
     
     try:

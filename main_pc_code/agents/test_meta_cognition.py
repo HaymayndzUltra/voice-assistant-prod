@@ -3,6 +3,7 @@ import json
 import time
 import logging
 from datetime import datetime
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -16,11 +17,11 @@ logger = logging.getLogger(__name__)
 
 def test_learning_analysis():
     """Test learning analysis functionality."""
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    context = None  # Using pool
+    socket = get_req_socket(endpoint).socket
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {
@@ -45,16 +46,13 @@ def test_learning_analysis():
         logger.error(f"Error testing learning analysis: {str(e)}")
         return False
     finally:
-        socket.close()
-        context.term()
-
 def test_memory_optimization():
     """Test memory optimization functionality."""
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    context = None  # Using pool
+    socket = get_req_socket(endpoint).socket
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {
@@ -72,16 +70,13 @@ def test_memory_optimization():
         logger.error(f"Error testing memory optimization: {str(e)}")
         return False
     finally:
-        socket.close()
-        context.term()
-
 def test_system_monitoring():
     """Test system monitoring functionality."""
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
+    context = None  # Using pool
+    socket = get_req_socket(endpoint).socket
     socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
     socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-    socket.connect("tcp://localhost:5630")
+    socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5630")
     
     # Test data
     test_data = {
@@ -97,9 +92,6 @@ def test_system_monitoring():
         logger.error(f"Error testing system monitoring: {str(e)}")
         return False
     finally:
-        socket.close()
-        context.term()
-
 def run_tests():
     """Run all tests and generate report."""
     logger.info("Starting MetaCognition Agent Tests...")

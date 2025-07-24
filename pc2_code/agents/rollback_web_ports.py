@@ -2,20 +2,25 @@ import os
 import shutil
 import logging
 from datetime import datetime
+from common.core.base_agent import BaseAgent
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('web_ports_rollback.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_rollback.log")),
         logging.StreamHandler()
     ]
 )
 
 class WebPortRollback:
     def __init__(self):
-        self.backup_dir = "port_changes_backup"
+
+        super().__init__(*args, **kwargs)        self.backup_dir = "port_changes_backup"
         self.files_to_rollback = {
             'autonomous_web_assistant.py': {
                 'port': 5604,

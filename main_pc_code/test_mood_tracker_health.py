@@ -10,6 +10,7 @@ import time
 import subprocess
 import signal
 import os
+from common.env_helpers import get_env
 
 def test_mood_tracker_health():
     print("🎯 MOOD TRACKER AGENT HEALTH CHECK VALIDATION")
@@ -40,7 +41,7 @@ def test_mood_tracker_health():
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
     
     try:
-        socket.connect("tcp://localhost:5001")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5001")
         
         request = {"action": "health_check"}
         print(f"   📤 Sending request: {request}")

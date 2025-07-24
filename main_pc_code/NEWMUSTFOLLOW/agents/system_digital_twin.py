@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 SystemDigitalTwin Agent
 -----------------------
@@ -27,6 +28,7 @@ if str(parent_dir) not in sys.path:
     sys.path.append(str(parent_dir))
 
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

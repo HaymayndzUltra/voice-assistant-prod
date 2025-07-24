@@ -1,9 +1,10 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Check if ports can be bound to by ZMQ
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import yaml
 import os
 import sys
@@ -13,8 +14,8 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -26,9 +27,9 @@ BOLD = "\033[1m"
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def load_config():
+def load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")):
     """Load the MVS configuration"""
-    config_path = join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config_local.yaml")
+    config_path = PathManager.join_path("main_pc_code", "NEWMUSTFOLLOW/minimal_system_config_local.yaml")
     if not os.path.exists(config_path):
         print(f"Config file not found: {config_path}")
         return None
@@ -43,17 +44,13 @@ def load_config():
 
 def test_port(port):
     """Test if a port can be bound to by ZMQ"""
-    context = zmq.Context()
-    socket = context.socket(zmq.REP)
+    context = None  # Using pool
+    socket = get_rep_socket(endpoint).socket
     try:
         socket.bind(f"tcp://*:{port}")
-        socket.close()
-        context.term()
         return True
     except zmq.error.ZMQError as e:
         print(f"Failed to bind to port {port}: {e}")
-        socket.close()
-        context.term()
         return False
 
 def main():
@@ -61,7 +58,7 @@ def main():
     print(f"{BLUE}{BOLD}Port Binding Test{RESET}")
     
     # Load configuration
-    config = load_config()
+    config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
     if not config:
         print(f"{RED}Failed to load configuration{RESET}")
         return

@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 
 """
@@ -19,15 +20,16 @@ import json
 import os
 import logging
 import threading
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import pickle
 from datetime import datetime
 from typing import Optional, Dict, Any
 import psutil
+from common.env_helpers import get_env
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -85,7 +87,7 @@ class WakeWordDetector(BaseAgent):
         self.vad_last_update = 0        # Last time VAD status was updated
         
         # Initialize ZMQ
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
         self._init_zmq()
         
         # Initialize Porcupine
@@ -94,12 +96,7 @@ class WakeWordDetector(BaseAgent):
         # Set running flag
         self.running = True
         
-        # Initialize error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.zmq_context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         logger.info("Wake word detector initialized")
     
@@ -418,24 +415,19 @@ class WakeWordDetector(BaseAgent):
         try:
             # Close ZMQ sockets
             if hasattr(self, 'audio_socket') and self.audio_socket:
-                self.audio_socket.close()
-            
+                self.audio_
             if hasattr(self, 'pub_socket') and self.pub_socket:
-                self.pub_socket.close()
-            
+                self.pub_
             if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_socket.close()
-            
+                self.health_
             if hasattr(self, 'vad_socket') and self.vad_socket:
-                self.vad_socket.close()
-            
+                self.vad_
             if hasattr(self, 'error_bus_pub') and self.error_bus_pub:
                 self.error_bus_pub.close()
             
             # Terminate ZMQ context after all sockets are closed
             if hasattr(self, 'zmq_context') and self.zmq_context:
-                self.zmq_context.term()
-            
+                self.zmq_
             logger.info("Resources cleaned up")
         except Exception as e:
             logger.error(f"Error in cleanup: {str(e)}")

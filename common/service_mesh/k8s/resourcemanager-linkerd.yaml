@@ -1,0 +1,101 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: resourcemanager
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+    config.linkerd.io/proxy-cpu-limit: "0.5"
+    config.linkerd.io/proxy-memory-limit: "512Mi"
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: HTTP
+    name: main-port
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: health-port
+  selector:
+    app: resourcemanager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resourcemanager
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resourcemanager
+  template:
+    metadata:
+      labels:
+        app: resourcemanager
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: resourcemanager
+        image: ai-system/resourcemanager:latest
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        env:
+        - name: SERVICE_MESH_ENABLED
+          value: "true"
+        - name: LINKERD_PROXY_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerPolicy
+metadata:
+  name: resourcemanager-policy
+  namespace: ai-system
+spec:
+  targetRef:
+    group: apps
+    kind: Deployment
+    name: resourcemanager
+  requiredRoutes:
+  - pathRegex: "/health"
+  - pathRegex: "/ready"
+  - pathRegex: "/.*"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: resourcemanager-route
+  namespace: ai-system
+spec:
+  parentRefs:
+  - name: resourcemanager
+    kind: Service
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: resourcemanager
+      port: 8080
+      weight: 100
+    timeouts:
+      request: 30s

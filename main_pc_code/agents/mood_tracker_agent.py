@@ -1,21 +1,21 @@
 """
 MoodTrackerAgent
-Tracks and analyzes user mood over time based on emotional state update
+Tracks and analyzes user mood over time based on emotional state updates
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-s
-"""
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import sys
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import threading
@@ -24,17 +24,18 @@ import psutil
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List, Optional, Tuple
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('mood_tracker.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "mood_tracker.log")),
         logging.StreamHandler()
     ]
 )
@@ -44,7 +45,7 @@ class MoodTrackerAgent(BaseAgent):
     def __init__(self):
         """Initialize the MoodTrackerAgent (refactored for compliance)."""
         # Standard BaseAgent initialization at the beginning
-        config = load_config()
+        config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         self.config = config
         super().__init__(
             name=config.get('name', 'MoodTrackerAgent'),
@@ -93,12 +94,7 @@ class MoodTrackerAgent(BaseAgent):
             'frustrated': 'helpful'
         }
         
-        # Setup error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         # Start monitoring threads
         self.emotion_thread = threading.Thread(target=self._monitor_emotions)
@@ -415,7 +411,7 @@ class MoodTrackerAgent(BaseAgent):
         self.running = False
         time.sleep(0.5)  # Give threads time to exit
         
-        self.emotion_sub_socket.close()
+        self.emotion_sub_
         # Use BaseAgent's cleanup method
         super().cleanup()
         logger.info("MoodTrackerAgent shutdown complete")

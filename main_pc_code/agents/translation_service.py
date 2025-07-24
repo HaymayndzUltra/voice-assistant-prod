@@ -1,5 +1,5 @@
 import logging
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import uuid
 import json
@@ -7,21 +7,24 @@ import re
 import os
 import random
 import hashlib
+import zmq
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Try importing optional dependencies
 try:
     import langdetect
@@ -320,6 +323,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 # --- Add AdvancedTimeoutManager (from legacy) ---
 import numpy as np
 from collections import defaultdict
+from common.env_helpers import get_env
 
 class AdvancedTimeoutManager:
     """Manages dynamic timeouts for translation requests."""
@@ -473,7 +477,6 @@ class ConnectionManager:
         """Close all sockets and clean up resources."""
         for service_name, socket in list(self.sockets.items()):
             try:
-                socket.close()
                 self.logger.info(f"Socket for {service_name} closed")
             except Exception as e:
                 self.logger.error(f"Error closing socket for {service_name}: {e}")
@@ -899,7 +902,7 @@ class TranslationCache:
         self.estimated_memory_usage = 0
         
         # Initialize disk cache
-        self.cache_dir = Path(join_path("cache", "translation_cache"))
+        self.cache_dir = PathManager.get_project_root() / "cache" / "translation_cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize metrics
@@ -1768,7 +1771,7 @@ class TranslationService(BaseAgent):
     
     def _setup_sockets(self):
         """Set up ZMQ sockets with CurveZMQ security if enabled."""
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         
         # Apply CurveZMQ security if enabled
         if self.secure_zmq:
@@ -1996,7 +1999,6 @@ class TranslationService(BaseAgent):
         try:
             if hasattr(self, 'socket') and self.socket:
                 self.socket.close()
-                
             # Clean up engine clients
             for engine_name, engine in self.engine_manager.engines.items():
                 if hasattr(engine, 'cleanup'):

@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 import yaml
 import os
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -12,13 +13,14 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from threading import Thread
 from pc2_code.config.system_config import get_service_host, get_service_port
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 import traceback
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Add project root to Python path for common_utils import
@@ -29,6 +31,9 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     USE_COMMON_UTILS = True
 except ImportError as e:
     print(f"Import error: {e}")
@@ -39,7 +44,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_adjuster.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log")),
         logging.StreamHandler()
     ]
 )
@@ -145,29 +150,6 @@ class LearningAdjusterAgent(BaseAgent):
         self.health_thread.daemon = True
         self.health_thread.start()
         logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""

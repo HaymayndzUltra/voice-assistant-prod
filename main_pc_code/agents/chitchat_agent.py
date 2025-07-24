@@ -2,46 +2,45 @@
 Chitchat Agent
 -------------
 Handles natural conversational interactions:
-- Processes casu
+- Processes casual conversation requests
+- Connects to local or remote LLM for responses
+- Maintains conversation context
+- Integrates with personality engine
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-al conversation requests
-- Connects to local or remote LLM for responses
-- Maintains conversation context
-- Integrates with personality engine
-"""
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import zmq
 import json
 import logging
 import time
 import threading
-import os
-import sys
 import uuid
 import psutil
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.env_helpers import get_env
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('chitchat_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "chitchat_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -50,13 +49,13 @@ logger = logging.getLogger(__name__)
 # ZMQ Configuration
 ZMQ_CHITCHAT_PORT = 5573  # Port for receiving chitchat requests
 ZMQ_HEALTH_PORT = 6582  # Health status
-PC2_IP = "192.168.100.17"  # PC2 IP address
+PC2_IP = get_pc2_ip()  # PC2 IP address
 PC2_LLM_PORT = 5557  # Remote LLM on PC2
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Conversation settings
 MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
-MAX_HISTORY_TOKENS = 2000  # Maximum number of tokens in history
+MAX_HISTORY_${SECRET_PLACEHOLDER} 2000  # Maximum number of tokens in history
 
 class ChitchatAgent(BaseAgent):
     """Agent for handling natural conversational interactions. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
@@ -68,7 +67,7 @@ class ChitchatAgent(BaseAgent):
     def __init__(self):
         """Initialize the chitchat agent."""
         # Use config loader for agent args or set defaults
-        self.config = load_config() if callable(load_config) else {}
+        self.config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")) if callable(load_config) else {}
         super().__init__(
             name=getattr(self.config, 'name', 'ChitchatAgent'),
             port=getattr(self.config, 'port', 5711)
@@ -89,20 +88,12 @@ class ChitchatAgent(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
     def _init_sockets(self):
         """Set up ZMQ sockets."""
         try:
             # Main REP socket for chitchat requests with fallback if port in use
-            self.socket = self.context.socket(zmq.REP)
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             rep_port = self.chitchat_port
             while True:
@@ -376,10 +367,9 @@ class ChitchatAgent(BaseAgent):
         self.running = False
         
         # Close sockets
-        self.socket.close()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         self.health_socket.close()
         self.llm_socket.close()
-        
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
@@ -411,12 +401,11 @@ class ChitchatAgent(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-            self.socket.close()
+                self.socket.close()
         if hasattr(self, 'health_socket'):
             self.health_socket.close()
         if hasattr(self, 'llm_socket'):
             self.llm_socket.close()
-            
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
@@ -471,7 +460,6 @@ class ChitchatAgent(BaseAgent):
         finally:
             if 'socket' in locals() and not socket.closed:
                 socket.close()
-
 # Example usage
 if __name__ == "__main__":
     # Standardized main execution block
@@ -483,6 +471,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

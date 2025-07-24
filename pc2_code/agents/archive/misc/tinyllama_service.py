@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 TinyLLama Service
 - Provides access to the TinyLLama model via ZMQ
 - Implements robust self-managed on-demand loading and idle unloading
@@ -32,6 +33,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 try:
 from pc2_code.config.system_config import get_config_for_service, get_config_for_machine
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
     SERVICE_ID = "tinyllama-service-pc2"
@@ -57,7 +59,7 @@ except ImportError:
     CONFIG_IDLE_TIMEOUT = 300
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "tinyllama_service.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "tinyllama_service.log")
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
@@ -93,7 +95,7 @@ class TinyLlamaService:
                 try:
                     self.socket.bind(f"tcp://127.0.0.1:{self.service_port}")
                     logger.info(f"TinyLlama service bound to FALLBACK tcp://127.0.0.1:{self.service_port}")
-                    self.bind_address = "127.0.0.1"
+                    self.bind_address = "localhost"
                 except zmq.error.ZMQError as e2:
                     logger.error(f"Fallback bind also failed: {e2}")
                     raise RuntimeError(f"Cannot bind to port {self.service_port}") from e2
@@ -129,6 +131,9 @@ class TinyLlamaService:
             logger.info(f"Starting model load for {self.model_name} on target device: {self.device}")
             
             from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
             
             # Load tokenizer with logging
             logger.info(f"Loading tokenizer for {self.model_name}...")

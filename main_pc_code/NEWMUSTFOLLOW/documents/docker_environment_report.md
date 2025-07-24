@@ -123,7 +123,7 @@ services:
         condition: service_healthy
     environment:
       - SERVICE_REGISTRY_BACKEND=redis
-      - SERVICE_REGISTRY_REDIS_URL=redis://redis:6379/0
+      - SERVICE_REGISTRY_${SECRET_PLACEHOLDER}6379/0
     networks: [ai_system_network]
     restart: unless-stopped
 

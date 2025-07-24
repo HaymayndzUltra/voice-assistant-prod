@@ -1,0 +1,63 @@
+# Defines which model to use for each quality preference.
+# The ModelManagerAgent will use this table for routing.
+load_policy:
+  fast: phi-2
+  quality: Mistral-7B-Instruct-v0.2
+  fallback: phi-2
+  stt: whisper-large-v3
+  tts: xtts-v2
+
+# Global flags
+global_flags:
+  ENABLE_LEGACY_MODELS: false  # When false, all direct model loading is disabled
+
+# Quantization configuration
+quantization_config:
+  default_quantization: "float16"  # Default quantization type if not specified
+  # Model type specific quantization
+  quantization_options_per_model_type:
+    gguf: "int8"
+    huggingface: "float16"
+  # Model specific overrides
+  model_specific_quantization:
+    "phi-3-mini": "int4"
+    "phi-3-mini-128k-instruct": "int4"
+    "phi-3-small": "int4"
+    "phi-3-medium": "int4"
+
+# KV-Cache configuration
+kv_cache_config:
+  enabled: true
+  max_caches: 50
+  timeout_seconds: 3600  # 1 hour
+  max_cache_size_mb: 512  # Maximum size per cache in MB
+
+# Batch processing configuration
+batch_processing_config:
+  enabled: true
+  max_batch_size: 8  # Maximum number of items in a batch
+  min_batch_size: 2  # Minimum number of items to trigger batch processing
+  max_batch_wait_ms: 100  # Maximum time to wait for batch completion
+  dynamic_batching: true  # Dynamically adjust batch size based on available resources
+
+# Model-specific details (to be used later)
+models:
+  phi-3-mini-128k-instruct:
+    repo_id: "microsoft/phi-3-mini-128k-instruct"
+    type: "huggingface"
+    quantization: "int4"  # Use 4-bit quantization for this model
+  Mistral-7B-Instruct-v0.2:
+    repo_id: "mistralai/Mistral-7B-Instruct-v0.2"
+    type: "huggingface"
+  phi-2:
+    repo_id: "TheBloke/phi-2-GGUF"
+    filename: "phi-2.Q4_0.gguf"
+    type: "gguf"
+  whisper-large-v3:
+    repo_id: "openai/whisper-large-v3"
+    type: "huggingface"
+    task: "stt"
+  xtts-v2:
+    repo_id: "coqui/XTTS-v2"
+    type: "huggingface"
+    task: "tts" 

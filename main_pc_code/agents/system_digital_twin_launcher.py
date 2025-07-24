@@ -14,15 +14,15 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 # Add the project's main_pc_code directory to the Python path
 MAIN_PC_CODE_DIR = get_main_pc_code()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 # Import required modules
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -40,7 +40,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "system_digital_twin_launcher.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_digital_twin_launcher.log")))
     ]
 )
 logger = logging.getLogger("SystemDigitalTwinLauncher")
@@ -57,13 +57,12 @@ def custom_init(self, *args, **kwargs):
         logger.info(f"Overriding health check port from {self.health_check_port} to {custom_health_port}")
         # Close the existing health socket
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
+            self.health_
         if hasattr(self, 'health_context'):
-            self.health_context.term()
-            
+            self.health_
         # Create a new health socket with the custom port
         self.health_check_port = custom_health_port
-        self.health_context = zmq.Context()
+        self.health_context = None  # Using pool
         self.health_socket = self.health_context.socket(zmq.REP)
         self.health_socket.setsockopt(zmq.LINGER, 0)
         try:

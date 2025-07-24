@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Self-Healing Agent
 ---------------------
 Monitors and maintains the health of all agents in the distributed voice assistant system.
@@ -61,8 +62,8 @@ import uuid
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -81,7 +82,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = join_path("logs", "self_healing_agent.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "self_healing_agent.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -272,6 +273,7 @@ class SelfHealingAgent:
         """Handle proactive recommendation from RCA 
 from main_pc_code.src.core.base_agent import BaseAgentAgent.
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 # Load configuration at the module level
 config = load_config()"""

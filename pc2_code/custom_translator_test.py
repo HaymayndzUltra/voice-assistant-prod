@@ -11,13 +11,14 @@ import json
 import time
 import sys
 from colorama import init, Fore, Style
+from common.env_helpers import get_env
 
 # Initialize colorama for colored console output
 init()
 
 # Configuration
 TRANSLATOR_PORT = 5561  # Translator Agent REQ port
-HOST = "localhost"
+HOST = get_env("BIND_ADDRESS", "0.0.0.0")
 
 # New test cases with different words and phrases
 NEW_TEST_CASES = [

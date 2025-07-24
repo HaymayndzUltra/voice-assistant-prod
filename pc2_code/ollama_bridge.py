@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Ollama Bridge - HTTP API Server
 - Creates a FastAPI server that forwards requests to Ollama
 - Makes Ollama accessible over the network on port 8000
@@ -12,13 +13,17 @@ from typing import Optional, Dict, Any, List
 import logging
 import os
 import sys
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("ollama_bridge.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "ollama_bridge.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

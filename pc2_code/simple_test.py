@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Simple Test for Contextual Memory Agent
 """
@@ -6,6 +7,7 @@ import zmq
 import json
 import sys
 import os
+from common.env_helpers import get_env
 
 # Add the parent directory to sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

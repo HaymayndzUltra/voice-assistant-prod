@@ -17,24 +17,26 @@ import base64
 import io
 from datetime import datetime
 from typing import Dict, Any, Optional
+from pathlib import Path
 from PIL import Image
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = get_project_root()
-if PC2_CODE_DIR not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR)
+# ✅ MODERNIZED: Standardized path management using PathManager only
+from common.utils.path_manager import PathManager
 
-from agents.agent_utils import BaseAgent
+# Add project root to path using PathManager (standardized approach)
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from common.core.base_agent import BaseAgent
+from pc2_code.utils.config_loader import parse_agent_args
 import psutil
 
 # Standard imports for PC2 agents
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 
 # Configure logging
@@ -43,7 +45,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "vision_processing_agent.log"))
+        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log"))
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")
@@ -71,12 +73,13 @@ class VisionProcessingAgent(BaseAgent):
         self.running = True
         
         # Create output directory if it doesn't exist
-        self.output_dir = join_path("data", "vision_output")
+        self.output_dir = Path(PathManager.get_project_root()) / "data" / "vision_output"
         os.makedirs(self.output_dir, exist_ok=True)
 
         logger.info(f"VisionProcessingAgent initialized and listening on port {self.port}")
-        self.error_bus = setup_error_reporting(self)
-def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        # self.error_bus = setup_error_reporting(self) # This line is removed as per the edit hint
+
+    def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process a request and return a response"""
         request_type = request.get("type", "")
         
@@ -182,21 +185,15 @@ if __name__ == "__main__":
         agent = VisionProcessingAgent()
         agent.run()
     except KeyboardInterrupt:
-        logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
+        logger.info("Keyboard interrupt received, shutting down...")
     except Exception as e:
         import traceback
-
-from pc2_code.agents.utils.config_loader import Config
-
-# Load configuration at the module level
-config = Config().get_config()
-
-        logger.error(f"An unexpected error occurred in {agent.name if agent else 'VisionProcessingAgent'}: {e}")
+        logger.error(f"Error in VisionProcessingAgent main: {e}", exc_info=True)
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
-            logger.info(f"Cleaning up {agent.name}...")
-            agent.cleanup() 
+            agent.cleanup()
+
     def cleanup(self):
         """Clean up resources before shutdown."""
         logger.info(f"{self.__class__.__name__} cleaning up resources...")

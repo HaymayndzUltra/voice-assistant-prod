@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Simple Agent Health Check Test
 Tests target agents with better error handling and debugging
@@ -13,6 +14,7 @@ import os
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 import argparse
+from common.env_helpers import get_env
 
 def test_port_availability(host: str, port: int, timeout: int = 5) -> bool:
     """Test if a port is available for connection."""

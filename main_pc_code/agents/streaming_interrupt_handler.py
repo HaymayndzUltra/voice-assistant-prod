@@ -1,5 +1,12 @@
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
+from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from common.env_helpers import get_env
+# from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+import psutil
+from datetime import datetime
 
 """
 
@@ -7,7 +14,7 @@ from main_pc_code.utils.config_loader import load_config
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = Path(PathManager.get_main_pc_code())
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -23,12 +30,12 @@ import threading
 import os
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
 from datetime import datetime
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -82,7 +89,7 @@ class StreamingInterruptHandler(BaseAgent):
         stt_address = get_service_address("StreamingSpeechRecognition")
         if not stt_address:
             # Fall back to configured port
-            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, "localhost")
+            stt_address = get_zmq_connection_string({ZMQ_SUB_PORT}, get_env("STREAMING_STT_HOST", "streaming-stt"))
             
         self.sub_socket.connect(stt_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -121,11 +128,7 @@ class StreamingInterruptHandler(BaseAgent):
         self.last_interrupt_time = 0
         self.interrupt_cooldown = 2.0  # Seconds between interrupts to prevent duplicates
         
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
     
     def _register_service(self, port):
         """Register this agent with the service discovery system"""
@@ -337,11 +340,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
-        import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-        logger.error(f"An unexpected error occurred in {agent.name if agent else 'StreamingInterruptHandler'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            logger.info(f"Cleaning up {agent.name}...")
+# Cleanup completed
             agent.cleanup()

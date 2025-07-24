@@ -1,4 +1,6 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 """
 Enhanced Fixed Streaming Translation Agent with Intelligent Fallback
 Acts as a customer service interface for the main translator, handling translation requests
@@ -6,7 +8,7 @@ and managing communication between the main system and PC2's translation service
 Includes intelligent multi-layer fallback system and advanced performance monitoring.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -20,11 +22,11 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from datetime import datetime, timedelta
 from collections import defaultdict
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -32,7 +34,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', 'fixed_translation.log'))
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))
     ]
 )
 logger = logging.getLogger("FixedStreamingTranslation")
@@ -46,7 +48,7 @@ ENABLE_CACHING = config.get("enable_caching", True)
 ENABLE_PERFORMANCE_MONITORING = config.get("enable_performance_monitoring", True)
 
 # PC2 Translator configuration
-PC2_IP = config.get("pc2_ip", "192.168.1.2")
+PC2_IP = config.get("pc2_ip", get_pc2_ip())
 PC2_TRANSLATOR_PORT = config.get("pc2_translator_port", 5563)
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = config.get("pc2_performance_port", 5632)
@@ -71,12 +73,7 @@ class PerformanceMonitor(BaseAgent):
         self._running = False
         self._thread = None
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         logger.info("PerformanceMonitor initialized")
     
@@ -100,8 +97,8 @@ class PerformanceMonitor(BaseAgent):
     
     def _monitor_loop(self):
         """Main monitoring loop."""
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
+        context = None  # Using pool
+        socket = get_sub_socket(endpoint).socket
         socket.connect(f"tcp://{PC2_IP}:{PC2_PERFORMANCE_PORT}")
         socket.setsockopt(zmq.SUBSCRIBE, b"")
         
@@ -115,24 +112,7 @@ class PerformanceMonitor(BaseAgent):
                 logger.error(f"Error in performance monitoring: {e}")
                 self.report_error(f"Error in performance monitoring: {e}")
                 time.sleep(1)
-        
-        socket.close()
-        context.term()
-    
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def _update_metrics(self, data: Dict):
         """Update performance metrics from received data."""
@@ -203,12 +183,7 @@ class TranslationCache(BaseAgent):
         self.timestamps = {}
         self.lock = threading.Lock()
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         logger.info(f"TranslationCache initialized with size {self.max_size} and TTL {self.ttl}s")
     
@@ -255,20 +230,7 @@ class TranslationCache(BaseAgent):
             logger.error(f"Error clearing cache: {e}")
             self.report_error(f"Error clearing cache: {e}")
     
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def cleanup(self):
         """Cleanup resources when shutting down."""
@@ -298,12 +260,7 @@ class AdvancedTimeoutManager(BaseAgent):
         self.learning_rate = config.get("learning_rate", 0.1)
         self.min_samples = config.get("min_samples", 5)
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         logger.info(f"AdvancedTimeoutManager initialized with base={self.base_timeout}ms, max={self.max_timeout}ms")
     
@@ -360,20 +317,7 @@ class AdvancedTimeoutManager(BaseAgent):
             }
             return stats
     
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def cleanup(self):
         """Cleanup resources when shutting down."""
@@ -404,12 +348,7 @@ class PerformanceMetrics(BaseAgent):
         self.lock = threading.Lock()
         self.start_time = datetime.utcnow()
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         logger.info("PerformanceMetrics initialized")
     
@@ -464,20 +403,7 @@ class PerformanceMetrics(BaseAgent):
             self.response_times = []
             self.start_time = datetime.utcnow()
     
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def cleanup(self):
         """Cleanup resources when shutting down."""
@@ -529,12 +455,7 @@ class FixedStreamingTranslation(BaseAgent):
                 logger.error(f"Failed to initialize Google Translate fallback: {e}")
                 self.report_error(f"Failed to initialize Google Translate fallback: {e}")
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         
         # Health check thread
         self.health_thread = None
@@ -615,20 +536,7 @@ class FixedStreamingTranslation(BaseAgent):
         # Call BaseAgent's cleanup method
         super().cleanup()
     
-    def report_error(self, error_message, severity="WARNING", context=None):
-        """Report an error to the error bus"""
-        try:
-            error_data = {
-                "source": self.name,
-                "timestamp": datetime.utcnow().isoformat(),
-                "severity": severity,
-                "message": error_message,
-                "context": context or {}
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error: {error_message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def _get_health_status(self):
         """Get health status including component statuses."""
@@ -642,7 +550,7 @@ class FixedStreamingTranslation(BaseAgent):
             # Ping PC2 translator dependency
             pc2_reachable = False
             try:
-                context = zmq.Context()
+                context = None  # Using pool
                 sock = context.socket(zmq.REQ)
                 sock.setsockopt(zmq.LINGER, 0)
                 sock.setsockopt(zmq.RCVTIMEO, 2000)
@@ -733,6 +641,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

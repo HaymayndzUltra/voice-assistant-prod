@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
 # Helps LLMs break down problems and avoid common errors
@@ -14,15 +15,20 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import traceback
+from common.core.base_agent import BaseAgent
 
 # Add the parent directory to sys.path to import the config
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
 logs_dir.mkdir(exist_ok=True)
-LOG_PATH = logs_dir / "chain_of_thought_agent.log"
+LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector Agent port for model inference
 
@@ -36,9 +42,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ChainOfThoughtAgent")
 
-class ChainOfThoughtAgent:
+class ChainOfThoughtAgent(BaseAgent):
     def __init__(self, zmq_port=ZMQ_CHAIN_OF_THOUGHT_PORT):
-        logger.info("=" * 80)
+
+        super().__init__(*args, **kwargs)        logger.info("=" * 80)
         logger.info("Initializing Chain of Thought Agent")
         logger.info("=" * 80)
         

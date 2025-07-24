@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 Coordinator Module
 Manages and coordinates all modules in the voice assistant system
@@ -17,12 +17,15 @@ from datetime import datetime
 from typing import Dict, Optional
 from pathlib import Path
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('coordinator.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "coordinator.log")),
         logging.StreamHandler()
     ]
 )

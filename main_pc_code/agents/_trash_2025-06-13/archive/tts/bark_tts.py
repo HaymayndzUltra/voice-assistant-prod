@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Bark TTS Agent - Enhanced version with GPU optimizations
 # Usage: python agents/bark_tts.py "Your text here." [voice_preset]
 
@@ -15,6 +16,7 @@ import json
 import re
 from pathlib import Path
 from bark import SAMPLE_RATE, generate_audio, preload_models
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

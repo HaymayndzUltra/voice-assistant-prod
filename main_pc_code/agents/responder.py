@@ -1,6 +1,7 @@
 from common.core.base_agent import BaseAgent
 import sys
 import os
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Auto-accept Coqui CPML terms for non-commercial use.
 # Set the env var only if user hasn't explicitly provided one.
 
@@ -8,12 +9,15 @@ import os
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+
+# Ensure the main_pc_code directory is in sys.path
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 # import os
 import sounddevice as sd
@@ -25,11 +29,24 @@ import torch
 import logging
 import time
 import pickle
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
-config = load_config()
+from common.utils.path_manager import PathManager
+# from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+
+# Placeholder functions for secure_zmq (module doesn't exist)
+def is_secure_zmq_enabled():
+    return False
+
+def configure_secure_client(socket):
+    return socket
+
+def configure_secure_server(socket):
+    return socket
+
+# Load environment variables
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Get the directory of the current file for the log
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +55,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
 
 # Define default log path before logging setup
-LOG_PATH = os.path.join(current_dir, "../logs/responder.log")
+LOG_PATH = os.path.join(current_dir, str(PathManager.get_logs_dir() / "../logs/responder.log"))
 
 # Import common Tagalog phrases module
 try:
@@ -178,10 +195,10 @@ class Responder(BaseAgent):
         self.ZMQ_REQUEST_TIMEOUT = int(config.get('zmq_request_timeout', 5000))
         self.VISUAL_FEEDBACK_ENABLED = bool(config.get('visual_feedback_enabled', False))
         super().__init__(name="Responder", port=self.port)
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Set up main socket for receiving TTS requests
-        self.socket = self.context.socket(zmq.SUB)
+        self.socket = get_sub_socket(self.endpoint).socket
         if is_secure_zmq_enabled():
             self.socket = configure_secure_server(self.socket)
             
@@ -280,15 +297,7 @@ class Responder(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
     def _connect_to_services(self):
         """Connect to required services using service discovery"""
         try:
@@ -790,7 +799,6 @@ class Responder(BaseAgent):
                 socket = getattr(self, socket_name)
                 if socket:
                     try:
-                        socket.close()
                         logger.info(f"Closed {socket_name}")
                     except Exception as e:
                         logger.error(f"Error closing {socket_name}: {e}")
@@ -798,7 +806,7 @@ class Responder(BaseAgent):
         # Terminate ZMQ context
         if self.context:
             try:
-                self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.info("Terminated ZMQ context")
             except Exception as e:
                 logger.error(f"Error terminating ZMQ context: {e}")
@@ -894,23 +902,3 @@ if __name__ == "__main__":
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)

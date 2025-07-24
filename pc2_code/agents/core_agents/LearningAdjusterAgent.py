@@ -6,6 +6,7 @@ import random
 import threading
 from datetime import datetime
 from typing import Dict, Any
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path for common_utils import
 import sys
@@ -18,6 +19,7 @@ if str(project_root) not in sys.path:
 try:
     from common_utils.zmq_helper import create_socket
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True

@@ -28,6 +28,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import psutil
 from datetime import datetime
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
@@ -59,7 +62,7 @@ class UnifiedWebAgent(BaseAgent):
         
         # File handler
         file_handler = logging.FileHandler(
-            log_dir / "web_agent.log",
+            log_dir / str(PathManager.get_logs_dir() / "web_agent.log"),
             encoding='utf-8'
         )
         file_handler.setFormatter(formatter)

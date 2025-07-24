@@ -1,0 +1,88 @@
+./template_agent.py:    def _health_check_loop(self):
+./template_agent.py:        health_thread = threading.Thread(target=self._health_check_loop)
+./common/core/base_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./common/core/base_agent.py:    def _health_check_loop(self):
+./common/service_mesh/client.py:            asyncio.create_task(self._health_check_loop())
+./common/service_mesh/client.py:    async def _health_check_loop(self):
+./scripts/add_health_check_implementation.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./scripts/add_health_check_implementation.py:    def _health_check_loop(self):
+./scripts/add_health_check_implementation.py:    if "_health_check_loop" in content or "_start_health_check" in content:
+./scripts/migration/wp09_service_mesh.py:            asyncio.create_task(self._health_check_loop())
+./scripts/migration/wp09_service_mesh.py:    async def _health_check_loop(self):
+./common_utils/zmq_helper.py:def run_health_check_loop(socket: zmq.Socket, health_check_func, running_flag, poll_interval: int = 100) -> None:
+./minimal_agent.py:    def _health_check_loop(self):
+./minimal_agent.py:        health_thread = threading.Thread(target=self._health_check_loop)
+./phase1_implementation/consolidated_agents/model_manager_suite/backup_model_manager_suite/model_manager_suite.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./phase1_implementation/consolidated_agents/model_manager_suite/backup_model_manager_suite/model_manager_suite.py:    def _health_check_loop(self):
+./pc2_code/src/monitoring/alert_manager.py:            self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/src/monitoring/alert_manager.py:    def _health_check_loop(self):
+./pc2_code/src/monitoring/metrics_collector.py:            self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/src/monitoring/metrics_collector.py:    def _health_check_loop(self):
+./pc2_code/src/core/rca_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/src/core/rca_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/DreamingModeAgent.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/DreamingModeAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/advanced_router.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/advanced_router.py:    def _health_check_loop(self):
+./pc2_code/agents/tutoring_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/tutoring_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/ForPC2/health_monitor.py:        self.health_check_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/ForPC2/health_monitor.py:    def _health_check_loop(self):
+./pc2_code/agents/unified_web_agent.py:        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/unified_web_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/core_agents/tutoring_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/core_agents/tutoring_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/core_agents/tutoring_service_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/core_agents/tutoring_service_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/core_agents/LearningAdjusterAgent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/core_agents/LearningAdjusterAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/LearningAdjusterAgent.py:        self.health_thread = Thread(target=self._health_check_loop)
+./pc2_code/agents/LearningAdjusterAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/filesystem_assistant_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/filesystem_assistant_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/PerformanceLoggerAgent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/PerformanceLoggerAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/DreamingModeAgent.py:        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/backups/DreamingModeAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/tutoring_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/backups/tutoring_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/unified_web_agent.py:        health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/backups/unified_web_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/self_healing_agent.py:            self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/backups/self_healing_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/LearningAdjusterAgent.py:        self.health_thread = Thread(target=self._health_check_loop)
+./pc2_code/agents/backups/LearningAdjusterAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/filesystem_assistant_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/backups/filesystem_assistant_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/PerformanceLoggerAgent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/backups/PerformanceLoggerAgent.py:    def _health_check_loop(self):
+./pc2_code/agents/backups/remote_connector_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./pc2_code/agents/backups/remote_connector_agent.py:    def _health_check_loop(self):
+./pc2_code/agents/remote_connector_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True) # Set as daemon
+./pc2_code/agents/remote_connector_agent.py:    def _health_check_loop(self):
+./main_pc_code/model_manager_suite.py:            threading.Thread(target=self._health_check_loop, daemon=True),
+./main_pc_code/model_manager_suite.py:    def _health_check_loop(self):
+./main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py:    def _health_check_loop(self):
+./main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py:    def _health_check_loop(self):
+./main_pc_code/utils/agent_supervisor.py:                    target=self._health_check_loop
+./main_pc_code/utils/agent_supervisor.py:    def _health_check_loop(self):
+./main_pc_code/agents/model_manager_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop, name="model_health_check")
+./main_pc_code/agents/model_manager_agent.py:    def _health_check_loop(self):
+./main_pc_code/agents/model_manager_agent.py:            health_thread = threading.Thread(target=self._health_check_loop, name="health_check")
+./main_pc_code/agents/model_manager_agent.py:    def _health_check_loop(self):
+./main_pc_code/agents/predictive_health_monitor.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./main_pc_code/agents/predictive_health_monitor.py:    def _run_health_check_loop(self) -> None:
+./main_pc_code/agents/streaming_audio_capture.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./main_pc_code/agents/streaming_audio_capture.py:    def _health_check_loop(self):
+./main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent.py:        self.health_thread = threading.Thread(target=self._health_check_loop)
+./main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent.py:    def _health_check_loop(self):
+./main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent.py:            health_thread = threading.Thread(target=self._health_check_loop, name="health_check")
+./main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent.py:    def _health_check_loop(self):
+./main_pc_code/agents/emotion_engine.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./main_pc_code/agents/emotion_engine.py:    def _health_check_loop(self):
+./main_pc_code/agents/predictive_loader.py:        self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
+./main_pc_code/agents/predictive_loader.py:    def _health_check_loop(self):

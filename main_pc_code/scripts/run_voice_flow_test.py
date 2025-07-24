@@ -15,6 +15,9 @@ import subprocess
 import logging
 from pathlib import Path
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Add project root to path
 current_path = Path(__file__).resolve().parent
 project_root = current_path.parent.parent
@@ -27,7 +30,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(project_root, 'logs', 'voice_flow_test_runner.log'))
+        logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_flow_test_runner.log")))
     ]
 )
 logger = logging.getLogger("VoiceFlowTestRunner")
@@ -89,7 +92,7 @@ def start_agent(agent_info):
         logger.info(f"Starting agent: {agent_info['name']}")
         
         # Create log file path
-        log_file = os.path.join(project_root, 'logs', f"{agent_info['name'].lower()}_test.log")
+        log_file = os.path.join(project_root, 'logs', f"{agent_info['namestr(PathManager.get_logs_dir() / "].lower()}_test.log"))
         
         # Start the process
         cmd = [sys.executable, "-m", agent_info["module"]]

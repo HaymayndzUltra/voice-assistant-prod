@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Agent Health Check Validator
 Performs comprehensive health check validation on target agents
@@ -13,6 +14,7 @@ import sys
 import os
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
+from common.env_helpers import get_env
 
 class AgentHealthValidator:
     def __init__(self):

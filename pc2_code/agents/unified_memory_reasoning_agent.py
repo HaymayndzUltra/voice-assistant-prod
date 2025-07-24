@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Unified Memory and Reasoning Agent for PC2
 Combines features from:
@@ -8,7 +9,7 @@ Combines features from:
 - Error Pattern Memory
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 import threading
@@ -16,7 +17,7 @@ import time
 import logging
 import hashlib
 import traceback
-import numpy as np
+# LAZY LOADING: import numpy as np
 import re
 from datetime import datetime
 from collections import deque
@@ -27,19 +28,20 @@ import sys
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from common.core.base_agent import BaseAgent
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(join_path("logs", "unified_memory_reasoning_agent.log"), encoding="utf-8"),
+        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -246,6 +248,36 @@ class ContextManager:
             logger.debug(f"[ContextManager] Pruned {len(items_to_remove[:max_to_remove])} low-importance items")
 
 class UnifiedMemoryReasoningAgent(BaseAgent):
+
+    def _lazy_import_dependencies(self):
+        """Lazy import heavy dependencies only when needed"""
+        if not hasattr(self, '_dependencies_loaded'):
+            try:
+                import numpy as np
+                self._dependencies_loaded = True
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
+            except ImportError as e:
+                self._dependencies_loaded = False
+                if hasattr(self, 'logger'):
+                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
+        return self._dependencies_loaded
+
+
+    def _lazy_import_dependencies(self):
+        """Lazy import heavy dependencies only when needed"""
+        if not hasattr(self, '_dependencies_loaded'):
+            try:
+# LAZY LOADING:                 import numpy as np
+                self._dependencies_loaded = True
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
+            except ImportError as e:
+                self._dependencies_loaded = False
+                if hasattr(self, 'logger'):
+                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
+        return self._dependencies_loaded
+
     """Unified Memory and Reasoning Agent that handles context, digital twins, and error patterns"""
     
     def __init__(self, zmq_port=7105, health_check_port=7106):
@@ -839,7 +871,6 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         if hasattr(self, 'memory_agent_sockets'):
             for agent, socket in self.memory_agent_sockets.items():
                 try:
-                    socket.close()
                     logger.debug(f"Closed socket for memory agent {agent}")
                 except Exception as e:
                     logger.error(f"Error closing socket for memory agent {agent}: {e}")

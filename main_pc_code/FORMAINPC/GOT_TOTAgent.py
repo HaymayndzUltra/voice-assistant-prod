@@ -1,18 +1,19 @@
 """
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
 GoT/ToT Agent
 ------------
 A ZMQ-based agent that implements Graph/Tree-of-Thought reasoning for complex problem-solving.
 Provides multi-step, branching, and backtracking reasoning capabilities.
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import logging
 import json
@@ -36,14 +37,16 @@ except ImportError:
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from main_pc_code.utils import model_client
 import sys
 import os
 
 # Setup logging
-LOG_PATH = join_path("logs", "got_tot_agent.log")
+LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "got_tot_agent.log"))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -56,8 +59,8 @@ logger = logging.getLogger("GoTToTAgent")
 
 # ZMQ port for this agent
 GOT_TOT_PORT = 5646
-PROJECT_ROOT = get_project_root()
-MAIN_PC_CODE = get_main_pc_code()
+PROJECT_ROOT = PathManager.get_project_root()
+MAIN_PC_CODE = PathManager.get_main_pc_code()
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)  # Insert project root to path
 if MAIN_PC_CODE not in sys.path:
@@ -84,7 +87,7 @@ class Node:
 
         # --- Removed invalid error_bus wiring lines that belonged to Agent ---
         # self.error_bus_port = 7150
-        # self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        # self.error_bus_host = get_pc2_ip()
         # self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         # self.error_bus_pub = self.context.socket(zmq.PUB)
         # self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -392,6 +395,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

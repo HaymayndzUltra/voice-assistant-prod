@@ -1,0 +1,27 @@
+groups:
+- name: ai_system_alerts
+  rules:
+  - alert: AgentDown
+    annotations:
+      description: An agent has been unhealthy for more than 1 minute.
+      summary: Agent is down
+    expr: observability_agent_health_status == 0
+    for: 1m
+    labels:
+      severity: critical
+  - alert: HighResponseTime
+    annotations:
+      description: Agent response time is high.
+      summary: High response time
+    expr: observability_response_time_seconds > 2
+    for: 2m
+    labels:
+      severity: warning
+  - alert: LowActiveAgents
+    annotations:
+      description: Number of active agents is below threshold.
+      summary: Low active agents
+    expr: observability_active_agents_total < 10
+    for: 5m
+    labels:
+      severity: warning

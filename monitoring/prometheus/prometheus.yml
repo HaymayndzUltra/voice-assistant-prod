@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+- job_name: observability_hubs
+  metrics_path: /metrics
+  static_configs:
+  - targets:
+    - localhost:9000
+    - localhost:9100

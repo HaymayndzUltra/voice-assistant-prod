@@ -34,12 +34,31 @@ global_settings:
       - subnet: 172.20.0.0/16
 agent_groups:
   core_services:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies: []
+      config:
+        backend: memory
+        redis:
+          url: redis://localhost:6379/0
+          prefix: 'service_registry:'
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
       port: 7120
       health_check_port: 8120
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
       required: true
-      dependencies: []
+      dependencies:
+      - ServiceRegistry
     RequestCoordinator:
       script_path: main_pc_code/agents/request_coordinator.py
       port: 26002
@@ -54,6 +73,28 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9100
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        prometheus_enabled: true
+        parallel_health_checks: true
+        prediction_enabled: true
+    ModelManagerSuite:
+      script_path: phase1_implementation/consolidated_agents/model_manager_suite/backup_model_manager_suite/model_manager_suite.py
+      port: 7011
+      health_check_port: 7111
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        models_dir: models
+        vram_budget_percentage: 80
+        idle_timeout: 300
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
@@ -81,7 +122,7 @@ agent_groups:
       - SystemDigitalTwin
   utility_services:
     CodeGenerator:
-      script_path: main_pc_code/agents/code_generator.py
+      script_path: main_pc_code/agents/code_generator_agent.py
       port: 5650
       health_check_port: 6650
       required: true
@@ -158,6 +199,7 @@ agent_groups:
       dependencies:
       - GGUFModelManager
       - SystemDigitalTwin
+      - VRAMOptimizerAgent
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
       port: 5572
@@ -432,7 +474,7 @@ agent_groups:
     StreamingLanguageAnalyzer:
       script_path: main_pc_code/agents/streaming_language_analyzer.py
       port: 5579
-      health_check_port: 5597
+      health_check_port: 6579
       required: true
       dependencies:
       - StreamingSpeechRecognition

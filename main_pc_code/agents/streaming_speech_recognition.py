@@ -10,7 +10,7 @@ Features:
 - Multiple language support
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
@@ -19,7 +19,8 @@ import logging
 import os
 import tempfile
 import wave
-import json
+import orjson
+import json  # Fallback for compatibility
 from collections import deque
 from datetime import datetime
 import uuid
@@ -34,11 +35,13 @@ import traceback
 
 # Import with canonical paths
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config, get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -89,14 +92,9 @@ class ResourceManager:
         self.default_batch_size = DEFAULT_BATCH_SIZE
         self.max_batch_size = MAX_BATCH_SIZE
         self.enable_dynamic_quantization = ENABLE_DYNAMIC_QUANTIZATION
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
-        # Error bus connection
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
 
     def get_system_load(self):
         cpu = psutil.cpu_percent()
@@ -150,7 +148,7 @@ class StreamingSpeechRecognition(BaseAgent):
         self.process_thread = None
 
         # Initialize ZMQ context
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
 
         # Initialize sockets
         self._init_sockets()
@@ -554,7 +552,7 @@ class StreamingSpeechRecognition(BaseAgent):
                     # Check if message is a JSON error message
                     try:
                         if message.startswith(b'{"status":"error"'):
-                            error_data = json.loads(message)
+                            error_data = ororjson.loads(message)
                             if error_data.get("status") == "error":
                                 # Log received error
                                 logger.warning(f"Received error from upstream component: {error_data.get('source_agent')} - {error_data.get('message')}")
@@ -805,29 +803,22 @@ class StreamingSpeechRecognition(BaseAgent):
         # Close all ZMQ sockets
         if hasattr(self, 'pub_socket') and self.pub_socket:
             self.pub_socket.close()
-        
         if hasattr(self, 'sub_socket') and self.sub_socket:
             self.sub_socket.close()
-        
         if hasattr(self, 'wake_word_socket') and self.wake_word_socket:
             self.wake_word_socket.close()
-        
         if hasattr(self, 'vad_socket') and self.vad_socket:
             self.vad_socket.close()
-        
         if hasattr(self, 'health_socket') and self.health_socket:
             self.health_socket.close()
-        
         if hasattr(self, 'model_manager_socket') and self.model_manager_socket:
             self.model_manager_socket.close()
-        
         if hasattr(self, 'request_coordinator_connection') and self.request_coordinator_connection:
             self.request_coordinator_connection.close()
         
         # Terminate ZMQ context
         if self.zmq_context:
             self.zmq_context.term()
-        
         logger.info("StreamingSpeechRecognition cleaned up successfully")
 
     def run(self):
@@ -926,7 +917,7 @@ class StreamingSpeechRecognition(BaseAgent):
                     
                     # Publish transcription if not empty
                     if transcript["text"]:
-                        self.pub_socket.send_string(f"TRANSCRIPTION: {json.dumps(transcript)}")
+                        self.pub_socket.send_string(f"TRANSCRIPTION: {ororjson.dumps(transcript).decode().decode()}")
                         logger.info(f"Transcription: {transcript['text']} ({transcript['confidence']:.2f})")
                     else:
                         logger.info("Empty transcription result, nothing to publish")

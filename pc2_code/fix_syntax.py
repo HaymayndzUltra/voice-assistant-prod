@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Emergency Syntax Fix Script for phi_adapter.py
 This script will fix the unterminated triple-quoted string issue
 """
@@ -35,9 +36,10 @@ import re
 import argparse
 import random
 from datetime import datetime
+from common.env_helpers import get_env
 
 # --- Security Configuration ---
-AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")  # Set via env var or default
+AUTH_${SECRET_PLACEHOLDER} os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")  # Set via env var or default
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # Configure logging

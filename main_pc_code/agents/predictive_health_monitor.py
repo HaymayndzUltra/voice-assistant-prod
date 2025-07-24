@@ -1,33 +1,34 @@
 """
 Predictive Health Monitor
 - Uses machine learning to predict potential agent failures
-- Mo
-
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-nitors system resources and agent performance
+- Monitors system resources and agent performance
 - Implements tiered recovery strategies
 - Provides proactive health management
 - Coordinates agent lifecycle and dependencies
 - Supports distributed system deployment
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
+
+# Add the project's main_pc_code directory to the Python path
+import sys
+import os
+from pathlib import Path
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import logging
 import socket
-import zmq
-
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time
@@ -47,13 +48,15 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
 from common.core.base_agent import BaseAgent, logger
-from main_pc_code.utils.config_loader import load_config
+from common_utils.error_handling import SafeExecutor
+from common.config_manager import load_unified_config
+from common.env_helpers import get_env
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # Load config
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Constants
 HEALTH_MONITOR_PORT = config.get('zmq.health_monitor_port', 5605)
@@ -62,8 +65,29 @@ RESTART_COOLDOWN = config.get('system.restart_cooldown', 60)  # seconds
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for health check requests
 
 # Load distributed config
-with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
-    distributed_config = json.load(f)
+try:
+    with open(Path(__file__).parent.parent.parent / "config" / "distributed_config.json") as f:
+        distributed_config = json.load(f)
+except FileNotFoundError:
+    # Fallback configuration if file doesn't exist
+    distributed_config = {
+        "health_monitoring": {
+            "enabled": True,
+            "check_interval": 30,
+            "timeout": 10
+        },
+        "prediction": {
+            "enabled": True,
+            "model_path": str(PathManager.get_models_dir() / "health_prediction.pkl"),
+            "prediction_interval": 60
+        },
+        "recovery": {
+            "enabled": True,
+            "max_attempts": 3,
+            "backoff_factor": 2
+        }
+    }
+    print("Warning: distributed_config.json not found, using defaults")
 
 class PredictiveHealthMonitor(BaseAgent):
     """
@@ -90,16 +114,16 @@ class PredictiveHealthMonitor(BaseAgent):
         self.hostname = socket.gethostname()
 
     
-        try:
-
-    
+        def get_ip():
             self.ip_address = socket.gethostbyname(self.hostname)
-
-    
-        except:
-
-    
-            self.ip_address = "127.0.0.1"
+            return self.ip_address
+            
+        self.ip_address = SafeExecutor.execute_with_fallback(
+            get_ip,
+            fallback_value="localhost",
+            context="get hostname IP address",
+            expected_exceptions=(socket.gaierror, socket.herror, OSError)
+        )
 
     
         logger.info(f"Running on {self.hostname} ({self.ip_address})")
@@ -108,13 +132,13 @@ class PredictiveHealthMonitor(BaseAgent):
         # Initialize ZMQ
 
     
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
     
         # Socket to receive requests
 
     
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
 
     
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -300,7 +324,7 @@ class PredictiveHealthMonitor(BaseAgent):
             logger.warning("This machine is not in the distributed configuration")
         
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive requests
         self.receiver = self.context.socket(zmq.REP)
@@ -415,11 +439,7 @@ class PredictiveHealthMonitor(BaseAgent):
         
         logger.info("Predictive Health Monitor initialized")
 
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
     def _create_tables(self) -> None:
         """Create necessary database tables."""
@@ -512,7 +532,7 @@ class PredictiveHealthMonitor(BaseAgent):
     def _load_agent_configs(self):
         """Load agent configurations from startup config"""
         try:
-            with open(join_path("config", "startup_config.yaml"), 'r') as f:
+            with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"), 'r') as f:
                 startup_config = yaml.safe_load(f)
             
             for agent in startup_config.get('agents', []):
@@ -788,14 +808,15 @@ class PredictiveHealthMonitor(BaseAgent):
                 logger.error(f"Error in discovery service: {str(e)}")
                 traceback.print_exc()
                 
-                try:
-                    response = {
+                SafeExecutor.execute_with_fallback(
+                    lambda: self.discovery_socket.send_string(json.dumps({
                         "status": "error",
                         "error": f"Error in discovery service: {str(e)}"
-                    }
-                    self.discovery_socket.send_string(json.dumps(response))
-                except:
-                    pass 
+                    })),
+                    fallback_value=None,
+                    context="send discovery error response",
+                    expected_exceptions=(zmq.ZMQError, json.JSONEncodeError)
+                ) 
 
     def optimize_memory(self) -> Dict[str, Any]:
         """Optimize memory usage by identifying and managing high-memory processes.
@@ -1225,8 +1246,8 @@ class PredictiveHealthMonitor(BaseAgent):
         try:
             # Create a new context and socket for each health check
             # This prevents socket contention issues
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             
             # Set timeout values to prevent hanging
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
@@ -1245,13 +1266,9 @@ class PredictiveHealthMonitor(BaseAgent):
             # Check response
             if "status" in response and response["status"] == "ok":
                 logger.debug(f"Agent {agent_name} health check passed")
-                socket.close()
-                context.term()
                 return True
             else:
                 logger.warning(f"Agent {agent_name} returned unexpected health status: {response}")
-                socket.close()
-                context.term()
                 return False
                 
         except zmq.error.Again:
@@ -1265,11 +1282,12 @@ class PredictiveHealthMonitor(BaseAgent):
             return False
         finally:
             # Ensure we clean up the socket resources even if an exception occurs
-            try:
-                socket.close()
-                context.term()
-            except:
-                pass
+            SafeExecutor.execute_with_fallback(
+                lambda: None,  # Cleanup placeholder
+                fallback_value=None,
+                context="socket cleanup",
+                expected_exceptions=(Exception,)  # Generic cleanup can catch any exception
+            )
             return False  # Ensure we always return a boolean
 
     def _record_health_event(self, agent_name: str, event_type: str, details: Dict[str, Any]) -> None:
@@ -1470,7 +1488,7 @@ class PredictiveHealthMonitor(BaseAgent):
                             continue
                             
                         # Get agent host and port
-                        host = agent_config.get("host", "localhost")
+                        host = agent_config.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                         port = agent_config.get("health_port", agent_config.get("port", 0))
                         
                         if port > 0:
@@ -1571,18 +1589,7 @@ class PredictiveHealthMonitor(BaseAgent):
             
         return health_status
 
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
 
 if __name__ == "__main__":
     # Standardized main execution block
@@ -1607,10 +1614,8 @@ if __name__ == "__main__":
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
                 self.socket.close()
-            
             if hasattr(self, 'context') and self.context:
                 self.context.term()
-                
             # Close any open file handles
             # [Add specific resource cleanup here]
             

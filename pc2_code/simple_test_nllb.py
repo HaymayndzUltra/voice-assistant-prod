@@ -1,10 +1,12 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Simple NLLB Translation Test
 """
 import zmq
 import json
 import time
 import sys
+from common.env_helpers import get_env
 
 # Default server settings
 SERVER = "localhost"

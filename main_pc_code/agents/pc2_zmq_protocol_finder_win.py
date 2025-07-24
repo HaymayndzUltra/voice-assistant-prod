@@ -1,5 +1,5 @@
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -12,11 +12,11 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
+from common.utils.path_manager import PathManager
 # Configure logging
 log_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = fjoin_path("logs", "pc2_zmq_protocol_finder_{log_timestamp}.log")
+log_file = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "pc2_zmq_protocol_finder_{log_timestamp}.log"))
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -49,7 +49,7 @@ HEALTH_CHECK_VARIATIONS = [
 def extract_zmq_services_from_config():
     try:
         # Get absolute path to system_config.py
-        config_path = os.path.abspath(join_path("config", "system_config.py"))
+        config_path = os.path.abspath(PathManager.join_path("config", "system_config.py"))
         logging.debug(f"Reading config from {config_path}")
         
         with open(config_path, 'r') as f:
@@ -97,11 +97,11 @@ def find_working_health_check(service):
     working_protocols = []
     
     # Create ZMQ context
-    context = zmq.Context()
+    context = None  # Using pool
     
     for variation in HEALTH_CHECK_VARIATIONS:
         # Create socket for this attempt
-        socket = context.socket(zmq.REQ)
+        socket = get_req_socket(endpoint).socket
         socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         socket.setsockopt(zmq.LINGER, 0)  # Don't keep messages in memory after close
         socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
@@ -148,8 +148,6 @@ def find_working_health_check(service):
             logging.error(f"Error communicating with {model_id}: {str(e)}")
             print(f"[ERROR] | Payload: {payload} | Error: {str(e)}")
         finally:
-            socket.close()
-        
         # Brief pause between attempts
         time.sleep(0.5)
     

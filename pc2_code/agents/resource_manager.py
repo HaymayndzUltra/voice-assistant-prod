@@ -1,4 +1,5 @@
 import zmq
+from pathlib import Path
 import yaml
 import json
 import logging
@@ -10,13 +11,11 @@ import psutil
 from datetime import datetime
 from collections import deque
 from typing import Dict, Any, Optional
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+# Import path utilities
+from common.utils.path_manager import PathManager
 # Try to import torch for GPU monitoring
 try:
     import torch
@@ -27,7 +26,7 @@ except ImportError as e:
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-logging.basicConfig
+logging.basicConfig(level=logging.INFO)
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -51,7 +50,7 @@ class ResourceManager(BaseAgent):
 
          # Set up connection to main PC if needed
          self.main_pc_connections = {}
-         logger.info(f"{self.__class__.__name__} initialized on PC2 (IP: {PC2_IP}) port {self.port}")
+         logger.info(f"{self.__class__.__name__} initialized on PC2 port {self.port}")
          self.port = port
          self.health_port = health_port
          self.context = zmq.Context()
@@ -80,18 +79,8 @@ class ResourceManager(BaseAgent):
          
          logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
     
-    
-
-         self.error_bus_port = 7150
-
-         self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-         self.error_bus_pub = self.context.socket(zmq.PUB)
-
-         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
+    def _setup_sockets(self):
         """Setup ZMQ sockets."""
         # Main socket for handling requests
         try:
@@ -450,6 +439,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
@@ -460,7 +452,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -468,8 +460,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -478,6 +470,6 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")

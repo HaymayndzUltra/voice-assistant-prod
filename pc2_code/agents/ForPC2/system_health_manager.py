@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 System Health Manager
 
@@ -20,8 +21,8 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
@@ -38,6 +39,10 @@ from common.core.base_agent import BaseAgent
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 
 from pc2_code.agents.utils.config_loader import Config
+from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -49,7 +54,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "system_health_manager.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_health_manager.log"))),
         logging.StreamHandler()
     ]
 )
@@ -71,17 +76,17 @@ class SystemHealthManager(BaseAgent):
         super().__init__(name="SystemHealthManager", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = os.environ.get("PC2_IP", "localhost")
+        self.memory_orchestrator_host = get_pc2_ip())
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         
-        self.memory_scheduler_host = os.environ.get("PC2_IP", "localhost")
+        self.memory_scheduler_host = get_pc2_ip())
         self.memory_scheduler_port = 7142
         self.memory_scheduler_endpoint = f"tcp://{self.memory_scheduler_host}:{self.memory_scheduler_port}"
         
         # Error bus configuration
         self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_pc2_ip()
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         
         # ZMQ setup

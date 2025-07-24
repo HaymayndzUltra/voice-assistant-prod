@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+from common.env_helpers import get_env
 
 # Attempt to import central configuration
 try:
@@ -25,7 +26,7 @@ def get_bind_address(default: str = "0.0.0.0") -> str:
     )
 
 
-def get_host(env_var: str, config_key: Optional[str] = None, default: str = "localhost") -> str:
+def get_host(env_var: str, config_key: Optional[str] = None, default: str = get_env("BIND_ADDRESS", "0.0.0.0")) -> str:
     """Return the host used for *connect* calls.
 
     Priority order:

@@ -1,4 +1,5 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Auto-Fixer Agent
 - Orchestrates auto-code correction and debugging loop
@@ -19,6 +20,7 @@ from pathlib import Path
 # Ensure project root is in PYTHONPATH so we can import config
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import config
+from common.env_helpers import get_env
 
 # Configurable parameters sourced from centralized configuration
 CODE_GENERATOR_PORT = config.get('zmq.code_generator_port', 5604)

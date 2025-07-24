@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Agent Supervisor Process
 
@@ -25,6 +26,7 @@ from typing import Dict, List, Any, Optional, Tuple, Set
 
 # Import the PathManager for consistent path resolution
 from utils.path_manager import PathManager
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -38,7 +40,7 @@ logger = logging.getLogger('agent_supervisor')
 
 # Ensure the logs directory exists
 logs_dir = PathManager.get_logs_dir()
-file_handler = logging.FileHandler(logs_dir / 'agent_supervisor.log')
+file_handler = logging.FileHandler(logs_dir / str(PathManager.get_logs_dir() / "agent_supervisor.log"))
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 ))
@@ -89,8 +91,8 @@ class AgentProcess:
             
         # Open log files
         logs_dir = PathManager.get_logs_dir()
-        self.stdout_file = open(logs_dir / f"{self.name.lower()}_stdout.log", "a")
-        self.stderr_file = open(logs_dir / f"{self.name.lower()}_stderr.log", "a")
+        self.stdout_file = open(logs_dir / fstr(PathManager.get_logs_dir() / "{self.name.lower()}_stdout.log"), "a")
+        self.stderr_file = open(logs_dir / fstr(PathManager.get_logs_dir() / "{self.name.lower()}_stderr.log"), "a")
         
         # Prepare command and environment
         cmd = [sys.executable, str(self.path)]
@@ -561,6 +563,9 @@ class AgentSupervisor:
 def main():
     """Main entry point."""
     import argparse
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     
     parser = argparse.ArgumentParser(description="Agent Supervisor")
     parser.add_argument("--config", help="Path to configuration file")

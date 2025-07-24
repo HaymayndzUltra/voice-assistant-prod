@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script for DreamWorldAgent
 """
@@ -15,6 +16,7 @@ os.environ['DREAM_WORLD_PORT'] = '7200'
 try:
     print("Testing DreamWorldAgent import...")
 from pc2_code.agents.DreamWorldAgent import DreamWorldAgent
+from common.env_helpers import get_env
     
     print("Creating DreamWorldAgent instance...")
     agent = DreamWorldAgent()

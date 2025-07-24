@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Learning Opportunity Detector (LOD)
 
@@ -18,6 +19,7 @@ import logging
 import threading
 import json
 import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
 import psutil
 from pathlib import Path
@@ -30,21 +32,23 @@ from uuid import UUID
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 from common.utils.learning_models import LearningOpportunity
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 # --- Shared Utilities ---
 from main_pc_code.agents.request_coordinator import CircuitBreaker
+from common.env_helpers import get_env
 
 # --- Logging Setup ---
 log_dir = 'logs'
@@ -53,18 +57,18 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'learning_opportunity_detector.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_opportunity_detector.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger('LearningOpportunityDetector')
 
 # --- Load configuration ---
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 DEFAULT_PORT = config.get('lod_port', 7200)
 HEALTH_CHECK_PORT = config.get('lod_health_port', 7201)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-OPPORTUNITY_DB_PATH = config.get('lod_db_path', join_path("data", "learning_opportunities.db"))
+OPPORTUNITY_DB_PATH = config.get('lod_db_path', str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "learning_opportunities.db")))
 INTERACTION_BUFFER_SIZE = config.get('lod_buffer_size', 1000)
 SCORING_THRESHOLD = config.get('lod_scoring_threshold', 0.7)
 
@@ -94,11 +98,7 @@ class LearningOpportunityDetector(BaseAgent):
         self.downstream_services = ["LearningOrchestrationService", "MemoryClient"]
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
-        self.error_bus_port = config.get('error_bus_port', 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get('error_bus_host', '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         self.service_registry = {}
         self._register_with_service_discovery()
         self._start_background_threads()
@@ -584,29 +584,16 @@ class LearningOpportunityDetector(BaseAgent):
         """Expose health check endpoint."""
         return self._get_health_status()
     
-    def report_error(self, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR):
-        """Report an error to the central error bus."""
-        try:
-            error_data = {
-                "timestamp": datetime.now().isoformat(),
-                "agent": self.name,
-                "error_type": error_type,
-                "message": message,
-                "severity": severity.value
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error to bus: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
     
     def cleanup(self):
         self.running = False
         try:
-            self.umra_socket.close()
-            self.coordinator_socket.close()
-            self.los_socket.close()
+            self.umra_
+            self.coordinator_
+            self.los_
             self.error_bus_pub.close()
-            self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         except Exception as e:
             logger.error(f"Cleanup error: {e}")
         logger.info("LearningOpportunityDetector shutdown complete")

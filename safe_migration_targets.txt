@@ -1,0 +1,13 @@
+main_pc_code/agents/emotion_engine.py
+main_pc_code/agents/model_manager_agent.py
+main_pc_code/agents/predictive_health_monitor.py
+main_pc_code/agents/predictive_loader.py
+main_pc_code/agents/streaming_audio_capture.py
+pc2_code/agents/DreamingModeAgent.py
+pc2_code/agents/LearningAdjusterAgent.py
+pc2_code/agents/PerformanceLoggerAgent.py
+pc2_code/agents/advanced_router.py
+pc2_code/agents/filesystem_assistant_agent.py
+pc2_code/agents/remote_connector_agent.py
+pc2_code/agents/tutoring_agent.py
+pc2_code/agents/unified_web_agent.py

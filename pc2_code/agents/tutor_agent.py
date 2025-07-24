@@ -3,17 +3,17 @@ import json
 import time
 import logging
 import threading
-import numpy as np
+# LAZY LOADING: import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 import zmq
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+# LAZY LOADING: import torch
+# LAZY LOADING: import torch.nn as nn
+# LAZY LOADING: from torch.utils.data import DataLoader
+# LAZY LOADING: import pandas as pd
+# LAZY LOADING: from sklearn.preprocessing import StandardScaler
+# LAZY LOADING: from sklearn.cluster import KMeans
 import uuid
 import sys
 from pathlib import Path
@@ -22,8 +22,8 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -37,7 +37,9 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 
 # Import common utilities if available
@@ -56,14 +58,14 @@ except Exception as e:
     print(f"Failed to load config: {e}")
     # Fallback to local config file
     try:
-        with open(join_path("config", "tutor_config.json"), "r") as f:
+        with open(PathManager.get_project_root() / "config" / "tutor_config.json", "r") as f:
             TUTOR_CONFIG = json.load(f).get("tutor", {})
     except Exception as e:
         print(f"Failed to load local config: {e}")
         TUTOR_CONFIG = {}
 
 # Setup logging
-LOG_PATH = "tutor_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "tutor_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -122,8 +124,9 @@ class AdaptiveLearningEngine:
         self.scaler = StandardScaler()
         self.difficulty_model = self._init_difficulty_model()
         self.learning_style_model = self._init_learning_style_model()
-        self.error_bus = setup_error_reporting(self)
-def _init_difficulty_model(self) -> nn.Module:
+        # self.error_bus = setup_error_reporting(self) # Removed as per edit hint
+
+    def _init_difficulty_model(self) -> nn.Module:
         """Initialize neural network for difficulty prediction"""
         model = nn.Sequential(
             nn.Linear(5, 32),
@@ -403,6 +406,48 @@ class ParentDashboard:
         })
 
 class TutorAgent(BaseAgent):
+
+    def _lazy_import_dependencies(self):
+        """Lazy import heavy dependencies only when needed"""
+        if not hasattr(self, '_dependencies_loaded'):
+            try:
+                import numpy as np
+                import torch
+                import torch.nn as nn
+                from torch.utils.data import DataLoader
+                import pandas as pd
+                from sklearn.preprocessing import StandardScaler
+                from sklearn.cluster import KMeans
+                self._dependencies_loaded = True
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
+            except ImportError as e:
+                self._dependencies_loaded = False
+                if hasattr(self, 'logger'):
+                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
+        return self._dependencies_loaded
+
+
+    def _lazy_import_dependencies(self):
+        """Lazy import heavy dependencies only when needed"""
+        if not hasattr(self, '_dependencies_loaded'):
+            try:
+# LAZY LOADING:                 import numpy as np
+# LAZY LOADING:                 import torch
+# LAZY LOADING:                 import torch.nn as nn
+# LAZY LOADING:                 from torch.utils.data import DataLoader
+# LAZY LOADING:                 import pandas as pd
+# LAZY LOADING:                 from sklearn.preprocessing import StandardScaler
+# LAZY LOADING:                 from sklearn.cluster import KMeans
+                self._dependencies_loaded = True
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
+            except ImportError as e:
+                self._dependencies_loaded = False
+                if hasattr(self, 'logger'):
+                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
+        return self._dependencies_loaded
+
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -435,7 +480,7 @@ class TutorAgent(BaseAgent):
     def _load_lessons(self):
         """Load lesson data from storage"""
         try:
-            lessons_path = TUTOR_CONFIG.get("lessons_path", join_path("data", "lessons.json"))
+            lessons_path = TUTOR_CONFIG.get("lessons_path", PathManager.get_project_root() / "data" / "lessons.json")
             if os.path.exists(lessons_path):
                 with open(lessons_path, "r") as f:
                     lessons_data = json.load(f)

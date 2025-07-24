@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Memory Agent Protocol Testing Script
 For testing both payload formats with the Memory Agent
 """
@@ -8,6 +9,7 @@ import json
 import time
 import sys
 from colorama import Fore, Style, init
+from common.env_helpers import get_env
 
 init(autoreset=True)
 

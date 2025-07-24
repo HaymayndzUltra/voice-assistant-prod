@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 AutoGen-inspired Framework for AI Agent Coordination
 - Provides a framework for multiple agents to collaborate
@@ -19,12 +19,15 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Callable, Optional
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('autogen_framework.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "autogen_framework.log")),
         logging.StreamHandler()
     ]
 )

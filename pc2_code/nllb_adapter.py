@@ -20,7 +20,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 # Configure logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
-log_file = log_dir / "nllb_adapter.log"
+log_file = log_dir / str(PathManager.get_logs_dir() / "nllb_adapter.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -94,6 +94,9 @@ class NLLBTranslationAdapter:
             
             # Try to use GPU if available
             import torch
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
             if torch.cuda.is_available():
                 self.model = self.model.to("cuda")
                 self.device = "cuda"

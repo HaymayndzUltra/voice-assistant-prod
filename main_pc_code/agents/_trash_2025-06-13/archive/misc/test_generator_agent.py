@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 # Test Generator Agent - Automatically creates tests for generated code
 # Validates code functionality and helps identify issues before execution
@@ -14,8 +15,12 @@ import re
 import tempfile
 import subprocess
 from datetime import datetime
+from common.env_helpers import get_env
 
-LOG_PATH = "test_generator_agent.log"
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
+LOG_PATH = str(PathManager.get_logs_dir() / "test_generator_agent.log")
 ZMQ_TEST_GENERATOR_PORT = 5613  # New agent port
 
 logging.basicConfig(

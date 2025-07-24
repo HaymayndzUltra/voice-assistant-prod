@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Agent Health Check Test Script
 Tests each agent for health check functionality
@@ -9,6 +10,7 @@ import json
 import time
 import sys
 from pathlib import Path
+from common.env_helpers import get_env
 
 def test_agent_health(agent_name, port, timeout=5):
     """Test agent health check"""

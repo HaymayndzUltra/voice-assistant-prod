@@ -1,0 +1,95 @@
+# Environment Configuration for AI System
+# Uses common/env_helpers.py for loading with defaults
+# Can be overridden by setting environment variables
+
+# Development Environment (default)
+development:
+  mainpc_ip: "${MAINPC_IP:-192.168.100.16}"      # Default MainPC IP
+  pc2_ip: "${PC2_IP:-192.168.100.17}"         # Default PC2 IP
+  service_registry_host: "${MAINPC_IP:-192.168.100.16}"
+  redis_host: "${MAINPC_IP:-192.168.100.16}"
+  redis_port: 6379
+  redis_db: 0
+  
+  # Network settings
+  network_name: 'ai_system_network'
+  subnet: '172.20.0.0/16'
+  bind_address: '0.0.0.0'
+  
+  # Service discovery
+  service_discovery_timeout: 5000
+  service_discovery_retries: 3
+  service_registry_port: 7200
+  health_check_base_port: 8200
+  
+  # Debug settings
+  debug_mode: true
+  log_level: 'DEBUG'
+  metrics_enabled: true
+  secure_zmq: false
+
+# Production Environment
+production:
+  mainpc_ip: '${MAINPC_IP}'         # Must be set via environment
+  pc2_ip: '${PC2_IP}'               # Must be set via environment
+  service_registry_host: '${SERVICE_REGISTRY_HOST}'
+  redis_host: '${REDIS_HOST}'
+  redis_port: 6379
+  redis_db: 0
+  
+  # Network settings
+  network_name: 'ai_system_network_prod'
+  subnet: '172.21.0.0/16'
+  bind_address: '0.0.0.0'
+  
+  # Service discovery
+  service_discovery_timeout: 10000
+  service_discovery_retries: 5
+  service_registry_port: 7200
+  health_check_base_port: 8200
+  
+  # Production settings
+  debug_mode: false
+  log_level: 'INFO'
+  metrics_enabled: true
+  secure_zmq: true
+
+# Testing Environment
+testing:
+  mainpc_ip: '127.0.0.1'
+  pc2_ip: '127.0.0.1'
+  service_registry_host: '127.0.0.1'
+  redis_host: '127.0.0.1'
+  redis_port: 6379
+  redis_db: 1
+  
+  # Network settings  
+  network_name: 'ai_system_test'
+  subnet: '172.22.0.0/16'
+  bind_address: '127.0.0.1'
+  
+  # Test settings
+  debug_mode: true
+  log_level: 'DEBUG'
+  metrics_enabled: false
+  secure_zmq: false
+
+# Container Environment (Docker)
+container:
+  mainpc_ip: '${MAINPC_IP:-mainpc}'    # Service name or IP
+  pc2_ip: '${PC2_IP:-pc2}'             # Service name or IP
+  service_registry_host: '${SERVICE_REGISTRY_HOST:-mainpc}'
+  redis_host: '${REDIS_HOST:-redis}'
+  redis_port: 6379
+  redis_db: 0
+  
+  # Container network
+  network_name: 'ai_system_container'
+  subnet: '172.23.0.0/16'
+  bind_address: '0.0.0.0'
+  
+  # Container settings
+  debug_mode: false
+  log_level: 'INFO'
+  metrics_enabled: true
+  secure_zmq: false 

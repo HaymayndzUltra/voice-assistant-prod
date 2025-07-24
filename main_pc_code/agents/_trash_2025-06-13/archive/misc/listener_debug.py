@@ -16,8 +16,8 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add debug prints
 print("[DEBUG] Starting listener_debug.py")
 print("[DEBUG] Importing modules completed")
@@ -76,7 +76,7 @@ except ImportError:
 ZMQ_PUB_PORT = 5556  # Temporarily using 5556 to avoid port conflict
 print(f"[DEBUG] ZMQ_PUB_PORT: {ZMQ_PUB_PORT}")
 
-LOG_PATH = os.path.join(LOG_DIR, "listener_agent_debug.log")
+LOG_PATH = os.path.join(LOG_DIR, str(PathManager.get_logs_dir() / "listener_agent_debug.log"))
 print(f"[DEBUG] LOG_PATH: {LOG_PATH}")
 
 # Print all input devices for manual selection

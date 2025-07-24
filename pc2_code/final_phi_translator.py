@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Final Production-Ready Phi Translator
 ------------------------------------
 - Extreme reliability through multi-level fallbacks
@@ -16,9 +17,21 @@ import requests
 import re
 import argparse
 from datetime import datetime
+from common.env_helpers import get_env
 
 # --- Security Configuration ---
-AUTH_TOKEN = os.environ.get("PHI_TRANSLATOR_TOKEN", "supersecret")
+# Secure token access - no hardcoded fallback
+try:
+    from common.utils.secret_manager import SecretManager
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+    AUTH_${SECRET_PLACEHOLDER} SecretManager.get_api_token("PHI_TRANSLATOR")
+except ImportError:
+    # Fallback for systems without SecretManager
+    AUTH_${SECRET_PLACEHOLDER} os.environ.get("PHI_TRANSLATOR_TOKEN")
+    if not AUTH_${SECRET_PLACEHOLDER}
+        raise ValueError("PHI_TRANSLATOR_TOKEN not found - configure via SecretManager or environment variable")
 ENABLE_AUTH = True  # Can be disabled via command-line argument
 
 # Configure logging
@@ -26,7 +39,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("phi_translator.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "phi_translator.log")),
         logging.StreamHandler()
     ]
 )

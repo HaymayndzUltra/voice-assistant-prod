@@ -6,6 +6,7 @@ import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
 from port_config import ENHANCED_MODEL_ROUTER_PORT
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path for common_utils import
 import sys
@@ -192,6 +193,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level

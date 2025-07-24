@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Vision Capture Agent
 -------------------
@@ -27,21 +28,21 @@ import mss.tools
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add the project's main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = os.path.abspath(join_path("main_pc_code", "..")))
+MAIN_PC_CODE_DIR = os.path.abspath(PathManager.join_path("main_pc_code", "..")))
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 import psutil
 from datetime import datetime
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -49,7 +50,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "vision_capture_agent.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "vision_capture_agent.log")))
     ]
 )
 logger = logging.getLogger("VisionCaptureAgent")
@@ -81,7 +82,7 @@ class VisionCaptureAgent(BaseAgent):
         self.running = True
 
         # Create screenshot directory if it doesn't exist
-        self.screenshot_dir = Path(join_path("data", "screenshots"))
+        self.screenshot_dir = Path(PathManager.join_path("data", "screenshots"))
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize the screen capture tool
@@ -93,7 +94,7 @@ class VisionCaptureAgent(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_pc2_ip()
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 
@@ -216,6 +217,9 @@ if __name__ == "__main__":
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         logger.error(f"An unexpected error occurred in {agent.name if agent else 'VisionCaptureAgent'}: {e}")
         traceback.print_exc()
     finally:

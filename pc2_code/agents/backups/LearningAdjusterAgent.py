@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -29,7 +30,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_adjuster.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log")),
         logging.StreamHandler()
     ]
 )
@@ -174,6 +175,7 @@ from main_pc_code.src.core.base_agent import BaseAgentlast N hours."""
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
         try:
             end_time = datetime.now()
@@ -521,6 +523,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

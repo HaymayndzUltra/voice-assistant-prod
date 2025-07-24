@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
@@ -14,11 +15,15 @@ import re
 from datetime import datetime
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
-LOG_PATH = "chain_of_thought_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5613  # Main PC CoT Agent port
 CGA_PORT = 5604  # Main PC CodeGeneratorAgent port
 

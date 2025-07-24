@@ -1,0 +1,101 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: metacognition
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+    config.linkerd.io/proxy-cpu-limit: "0.5"
+    config.linkerd.io/proxy-memory-limit: "512Mi"
+spec:
+  ports:
+  - port: 7150
+    targetPort: 7150
+    protocol: HTTP
+    name: main-port
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: health-port
+  selector:
+    app: metacognition
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metacognition
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metacognition
+  template:
+    metadata:
+      labels:
+        app: metacognition
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: metacognition
+        image: ai-system/metacognition:latest
+        ports:
+        - containerPort: 7150
+        - containerPort: 8081
+        env:
+        - name: SERVICE_MESH_ENABLED
+          value: "true"
+        - name: LINKERD_PROXY_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerPolicy
+metadata:
+  name: metacognition-policy
+  namespace: ai-system
+spec:
+  targetRef:
+    group: apps
+    kind: Deployment
+    name: metacognition
+  requiredRoutes:
+  - pathRegex: "/health"
+  - pathRegex: "/ready"
+  - pathRegex: "/.*"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: metacognition-route
+  namespace: ai-system
+spec:
+  parentRefs:
+  - name: metacognition
+    kind: Service
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: metacognition
+      port: 7150
+      weight: 100
+    timeouts:
+      request: 30s

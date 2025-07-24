@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
 # Helps LLMs break down problems and avoid common errors
@@ -29,16 +31,17 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.env_helpers import get_env
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 config = load_config()
 
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
 logs_dir.mkdir(exist_ok=True)
-LOG_PATH = logs_dir / "chain_of_thought_agent.log"
+LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = config.get("chain_of_thought_port", 5612)
 REMOTE_CONNECTOR_PORT = config.get("remote_connector_port", 5557)
 
@@ -81,11 +84,7 @@ class ChainOfThoughtAgent(BaseAgent):
         self.successful_requests = 0
         self.failed_requests = 0
         
-        # Setup error bus connection
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_endpoint = get_zmq_connection_string(self.error_bus_port, "pc2")
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         logger.info(f"Chain of Thought Agent started on port {agent_port}")
         logger.info(f"Remote Connector port: {self.llm_router_port}")

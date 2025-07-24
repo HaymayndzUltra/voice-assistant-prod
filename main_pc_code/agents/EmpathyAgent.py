@@ -7,45 +7,36 @@ import sys
 import os
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
 
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-MAIN_PC_CODE = get_main_pc_code()
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-if MAIN_PC_CODE not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE)
+# Add the project's main_pc_code directory to the Python path
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import threading
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
-from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('empathy_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "empathy_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -59,7 +50,7 @@ class EmpathyAgent(BaseAgent):
 
         super().__init__(port=agent_port, name=agent_name)
 
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.tts_socket = None
         
         self.running = True
@@ -83,8 +74,8 @@ class EmpathyAgent(BaseAgent):
             tts_address = get_service_address("StreamingTTSAgent")
             if tts_address:
                 self.tts_socket = self.context.socket(zmq.REQ)
-                if is_secure_zmq_enabled():
-                    configure_secure_client(self.tts_socket)
+                # if is_secure_zmq_enabled():
+                #     configure_secure_client(self.tts_socket)
                 self.tts_socket.setsockopt(zmq.RCVTIMEO, 5000)
                 self.tts_socket.setsockopt(zmq.SNDTIMEO, 5000)
                 self.tts_socket.connect(tts_address)
@@ -361,10 +352,10 @@ class EmpathyAgent(BaseAgent):
     
     def stop(self):
         """Stop the agent and clean up resources."""
-        self.socket.close()
-        self.emotion_sub_socket.close()
-        self.tts_socket.close()
-        self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
+        self.emotion_sub_
+        self.tts_
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         logger.info("EmpathyAgent stopped")
 
 
@@ -465,10 +456,8 @@ if __name__ == "__main__":
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
                 self.socket.close()
-            
             if hasattr(self, 'context') and self.context:
                 self.context.term()
-                
             # Close any open file handles
             # [Add specific resource cleanup here]
             

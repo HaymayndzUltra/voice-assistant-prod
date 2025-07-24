@@ -1,0 +1,492 @@
+### core_services
+
+#### Agent: ServiceRegistry
+- **Purpose:** A minimal, highly-available registry that stores and exposes metadata for all agents. It serves as the foundational discovery service for the entire system.
+- **Core Logic/Features:** Inherits from `common.core.base_agent.BaseAgent`. Its `handle_request` method acts as a dispatcher, routing `register_agent`, `get_agent_endpoint`, and `list_agents` actions. Supports two backend storage options: MemoryBackend (in-memory, default) and RedisBackend (persistent). Uses orjson for performance when available, falls back to standard json. The design is intentionally simple with minimal dependencies to ensure it can start first.
+- **Health Check:** Implements the standard health check mechanism from `BaseAgent`, responding to `ping`, `health`, and `health_check` actions via ZMQ on its main port (`7200`) and a standard HTTP health check endpoint on the `health_check_port` (`8200`).
+- **Error Handling:** Gracefully handles configuration and import errors (e.g., falls back from `orjson` to `json`). It uses try/except blocks for backend operations (like Redis connection) and logs all significant errors. Invalid registration attempts are logged with warnings.
+- **Configuration/Parameters:** `port` (default: 7200), `health_check_port` (default: 8200), `required`, `dependencies`, `config.backend` ('memory' or 'redis'), `config.redis.url` (default: redis://localhost:6379/0), `config.redis.prefix` (default: "service_registry:"). Environment variables: SERVICE_REGISTRY_PORT, SERVICE_REGISTRY_HEALTH_PORT, SERVICE_REGISTRY_BACKEND, SERVICE_REGISTRY_REDIS_URL, SERVICE_REGISTRY_REDIS_PREFIX.
+- **Inter-Agent Communication:** Used by nearly all agents for service discovery. It responds to ZMQ requests for agent registration and endpoint lookups. Stores agent metadata including host, port, health_check_port, agent_type, capabilities, metadata, and last_registered timestamp.
+- **Dependencies:** None.
+
+#### Agent: SystemDigitalTwin
+- **Purpose:** Acts as the central "digital twin" of the AI system, maintaining a comprehensive, real-time model of all agents and system resources. It is the authoritative source for system state.
+- **Core Logic/Features:** Manages a database of registered agents and their statuses. It runs a background thread (`_collect_metrics_loop`) that uses the `psutil` library to gather system metrics. An HTTP health check is provided by a `BaseHTTPRequestHandler` running in its own thread (`_start_http_health_server`). It uses an SQLite database (`unified_memory.db`) for persistence and a Redis cache for performance. Supports load simulation and provides metrics history. Includes agent endpoint discovery functionality.
+- **Health Check:** Exposes an HTTP health endpoint on its `health_check_port` (`8220`) and a ZMQ health action on its main port (`7220`). Its health status depends on connectivity to SQLite and Redis. Includes Prometheus connection checks and system resource monitoring.
+- **Error Handling:** Uses a dedicated `ErrorPublisher` class to standardize and send error reports over a ZMQ PUB/SUB channel. It includes robust try/except blocks for all database, Redis, and ZMQ interactions. Handles deprecated string-based ping messages for backward compatibility.
+- **Configuration/Parameters:** `port` (default: 7220), `health_check_port` (default: 8220), `required`, `dependencies`, `config.db_path` (default: data/unified_memory.db), `config.redis.host`, `config.redis.port` (default: 6379), `config.redis.db` (default: 0), `config.zmq_request_timeout` (default: 5000), `prometheus_url`, `metrics_poll_interval`, `metrics_history_length`, `vram_capacity_mb`, `cpu_cores`, `ram_capacity_mb`, `network_baseline_ms`.
+- **Inter-Agent Communication:** A critical hub. It receives registration updates, provides agent status and endpoint information to any agent that needs it (e.g., `RequestCoordinator`, `ObservabilityHub`), and receives metric updates from various system monitors. Handles actions: register_agent, get_agent_status, get_all_agent_statuses, get_agent_info, simulate_load, get_metrics_history.
+- **Dependencies:** `ServiceRegistry`.
+
+#### Agent: RequestCoordinator
+- **Purpose:** The primary entry point for external requests into the AI system. It orchestrates the flow of tasks, routing them to the appropriate specialized agents for processing.
+- **Core Logic/Features:** Features a multi-threaded architecture with a `_dispatch_loop` for managing a `heapq` (priority queue) of tasks and a `_listen_for_interrupts` thread to handle user barge-in. It uses Pydantic models (`TextRequest`, `AudioRequest`, `VisionRequest`, `AgentResponse`) for request validation. Includes comprehensive metrics tracking for requests, response times, and queue sizes. Supports proactive suggestions and language analysis integration.
+- **Health Check:** Provides an HTTP health check on `health_check_port` (`27002`) and a ZMQ health check on its main port (`26002`). The health check includes dependency status, metrics, and system resource information.
+- **Error Handling:** Utilizes a `CircuitBreaker` class for each downstream service to prevent cascading failures with CLOSED, OPEN, and HALF_OPEN states. It reports errors to a central error bus via a ZMQ PUB socket (topic 'ERROR:'). All network requests and task processing steps are wrapped in try/except blocks.
+- **Configuration/Parameters:** `port` (default: 26002), `health_check_port` (default: 27002), `required`, `dependencies`, `PROACTIVE_SUGGESTION_PORT` (5591), `INTERRUPT_PORT` (5576), `ZMQ_REQUEST_TIMEOUT` (5000). Supports secure ZMQ configuration.
+- **Inter-Agent Communication:** Receives requests and dispatches them to specialized agents. It uses ZMQ REQ sockets for commands and a ZMQ SUB socket to listen for interrupts and language analysis. It queries `SystemDigitalTwin` for agent endpoints. Connects to multiple services including memory, TTS, and reasoning agents.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: ModelManagerSuite
+- **Purpose:** A consolidated service that manages the entire lifecycle of AI models. It combines the functionality of four previous agents: `GGUFModelManager`, `ModelManagerAgent`, `PredictiveLoader`, and `ModelEvaluationFramework`.
+- **Core Logic/Features:**
+    - **Architecture:** Runs five key background threads: a main ZMQ request loop (`_main_loop`), a health check loop (`_health_check_loop`), a VRAM management loop (`_vram_management_loop`), a predictive pre-loading loop (`_prediction_loop`), and a GGUF KV cache cleanup loop (`_kv_cache_cleanup_loop`).
+    - **VRAM Management:** The `_vram_management_loop` periodically calls `_check_idle_models`, which unloads models if their idle time exceeds `idle_unload_timeout_seconds` to stay within the VRAM budget.
+    - **Evaluation Framework:** Uses an SQLite database (`data/model_evaluation.db`) to log performance metrics and model evaluation scores, which can be queried via `get_performance_metrics`.
+- **Health Check:** Standard ZMQ health check on the main port (`7211`) and an HTTP endpoint on the `health_check_port` (`8211`). Health status includes details on loaded models and VRAM usage.
+- **Error Handling:** Uses a dedicated `report_error` method to publish structured errors to a central ZMQ `error_bus_pub` socket. Implements a `_LegacyModelManagerProxy` class to provide a critical backward-compatibility layer for older agents that import the previous, separate components.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`, `config.models_dir`, `config.vram_budget_percentage`, `config.idle_timeout`, `mef_db_path`.
+- **Inter-Agent Communication:** Any agent that needs to run inference requests a model from the `ModelManagerSuite`. It handles `load_model`, `unload_model`, and `generate_text` actions. It interacts with `SystemDigitalTwin` to report model status and VRAM usage.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: UnifiedSystemAgent
+- **Purpose:** A unified agent that consolidates multiple system management functions and provides a centralized interface for system operations.
+- **Core Logic/Features:** Acts as a central coordinator for various system operations. Provides unified interfaces for common system tasks and manages interactions between different system components. Implements consolidated functionality from multiple smaller agents.
+- **Health Check:** Standard ZMQ health check on port `7225` and HTTP endpoint on `health_check_port` (`8225`).
+- **Error Handling:** Comprehensive error handling with centralized logging and error reporting to the system error bus.
+- **Configuration/Parameters:** `port` (default: 7225), `health_check_port` (default: 8225), `required`, `dependencies`.
+- **Inter-Agent Communication:** Serves as a central hub for system operations, coordinating with multiple agents including `SystemDigitalTwin`, `RequestCoordinator`, and various service agents.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: ObservabilityHub
+- **Purpose:** Centralized monitoring and observability platform that collects, aggregates, and analyzes metrics from all system components.
+- **Core Logic/Features:** Collects metrics from all agents via ZMQ or HTTP endpoints. Provides Prometheus integration for metrics collection and alerting. Supports parallel health checks for improved performance. Includes predictive analytics capabilities for proactive issue detection.
+- **Health Check:** Standard ZMQ health check on port `9000` and HTTP endpoint on `health_check_port` (`9100`).
+- **Error Handling:** Robust error handling for metrics collection failures. Continues operation even if individual agent monitoring fails.
+- **Configuration/Parameters:** `port` (default: 9000), `health_check_port` (default: 9100), `required`, `dependencies`, `config.prometheus_enabled`, `config.parallel_health_checks`, `config.prediction_enabled`.
+- **Inter-Agent Communication:** Collects data from all system agents. Provides monitoring data to `SystemDigitalTwin` and `PredictiveHealthMonitor`. Publishes alerts and notifications to interested agents.
+- **Dependencies:** `SystemDigitalTwin`.
+
+### memory_system
+
+#### Agent: MemoryClient
+- **Purpose:** Provides a client interface to the memory system, abstracting the details of the underlying memory storage and orchestration.
+- **Core Logic/Features:** Acts as a thin client or proxy, forwarding memory-related requests (e.g., `add_memory`, `search_memory`) to the main `MemoryOrchestratorService`.
+- **Health Check:** Exposes a standard health check on its main port (`5713`) and `health_check_port` (`6713`). Its health is dependent on its ability to connect to the `MemoryOrchestratorService`.
+- **Error Handling:** Implements a `CircuitBreaker` with `CLOSED`, `OPEN`, and `HALF_OPEN` states to gracefully handle connectivity issues. It uses a `reset_timeout` to attempt recovery. It reports connection errors and timeouts to the central error bus via a dedicated `error_bus_pub` socket.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`. It discovers the orchestrator via `SystemDigitalTwin`.
+- **Inter-Agent Communication:** Any agent needing to interact with memory (e.g., `SessionMemoryAgent`, `KnowledgeBase`) does so through the `MemoryClient`.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: SessionMemoryAgent
+- **Purpose:** Manages the short-term, contextual memory for ongoing user sessions.
+- **Core Logic/Features:** Stores and retrieves information relevant to the current conversation or interaction, such as recent user queries, agent responses, and extracted entities. It likely has a mechanism to commit important information to long-term memory via the `MemoryClient`.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5574` and `6574`.
+- **Error Handling:** Standard logging and error reporting. Manages failures in communication with its dependencies.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives data to be stored from the `RequestCoordinator`. It uses the `MemoryClient` to access the broader memory system and `SystemDigitalTwin` for service discovery.
+- **Dependencies:** `RequestCoordinator`, `SystemDigitalTwin`, `MemoryClient`.
+
+#### Agent: KnowledgeBase
+- **Purpose:** Manages the long-term, persistent knowledge of the AI system.
+- **Core Logic/Features:** Provides an interface for storing and retrieving factual information, learned concepts, and other long-term data. It likely relies on a vector database or other indexed storage for efficient semantic search.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5715` and `6715`.
+- **Error Handling:** Handles errors related to database access, indexing, and querying.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Interacts with the `MemoryClient` to access the underlying memory storage. It provides knowledge retrieval services to any agent that needs it. It gets its configuration and dependencies from `SystemDigitalTwin`.
+- **Dependencies:** `MemoryClient`, `SystemDigitalTwin`.
+
+### utility_services
+
+#### Agent: CodeGenerator
+- **Purpose:** Responsible for generating code snippets based on natural language requests.
+- **Core Logic/Features:** Receives a request with a description of the desired functionality. It interacts with a large language model (via `ModelManagerSuite`) to generate the code. It may include logic for validation and formatting of the generated code.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5650` and `6650`.
+- **Error Handling:** Handles failures in model inference and cases where the generated code is invalid or unsafe.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Used by `AdvancedCommandHandler` or other agents that need to translate a user request into executable code. It relies on `ModelManagerSuite` to access the necessary code-generation models and `SystemDigitalTwin` for service discovery.
+- **Dependencies:** `SystemDigitalTwin`, `ModelManagerSuite`.
+
+#### Agent: SelfTrainingOrchestrator
+- **Purpose:** Manages and coordinates the self-training process for other agents, handling resource allocation and cycle management.
+- **Core Logic/Features:** Manages a queue of training jobs. It allocates resources (CPU, GPU) based on availability and priority. It interacts with agents that can be fine-tuned (`LocalFineTunerAgent`) to initiate and monitor training cycles. Uses an SQLite database (`self_training.db`) to persist the state of training jobs.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5660` and `6660`.
+- **Error Handling:** Reports errors to the central error bus. Manages failed training cycles and releases allocated resources.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Orchestrates `LocalFineTunerAgent`. Depends on `SystemDigitalTwin` for service discovery and `ModelManagerSuite` to manage the models being trained.
+- **Dependencies:** `SystemDigitalTwin`, `ModelManagerSuite`.
+
+#### Agent: PredictiveHealthMonitor
+- **Purpose:** Monitors system metrics to predict and preemptively report potential failures.
+- **Core Logic/Features:** Consumes metrics from `ObservabilityHub` or `SystemDigitalTwin`. It uses statistical models or machine learning to analyze trends (e.g., rising memory usage, increased latency) and identify patterns that may lead to future problems.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5613` and `6613`.
+- **Error Handling:** Standard logging. It is a monitoring agent, so its own failures are logged, but it's designed to not impact the core system.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Consumes data from `SystemDigitalTwin` and/or `ObservabilityHub`. It may publish warnings to a specific topic or directly to `ObservabilityHub`.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: FixedStreamingTranslation
+- **Purpose:** Provides real-time, streaming translation services.
+- **Core Logic/Features:** Likely consumes an audio or text stream and outputs a translated stream. It would use a translation model managed by the `ModelManagerSuite`. The "FixedStreaming" name suggests it's an improved or specific implementation of a streaming translator.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5584`/`6584`.
+- **Error Handling:** Handles model inference errors and connection interruptions.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides translation for other agents like `StreamingLanguageAnalyzer`. Relies on `ModelManagerSuite` for models and `SystemDigitalTwin` for discovery.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`.
+
+#### Agent: Executor
+- **Purpose:** Executes code generated by the `CodeGenerator` in a safe, sandboxed environment.
+- **Core Logic/Features:** Takes a code snippet as input, runs it, and captures the output, errors, and any other results. It is a critical component for enabling the system to perform actions that were not pre-programmed.
+- **Health Check:** Standard ZMQ and HTTP health checks on ports `5606` and `6606`.
+- **Error Handling:** Robust error handling is critical. It must catch and report execution errors, timeouts, and resource violations from the code it runs without crashing itself.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives code to execute from agents like `AdvancedCommandHandler`. It depends on `CodeGenerator` (conceptually) and `SystemDigitalTwin`.
+- **Dependencies:** `CodeGenerator`, `SystemDigitalTwin`.
+
+#### Agent: TinyLlamaServiceEnhanced
+- **Purpose:** Provides access to a "TinyLlama" model, likely a small, efficient language model for simple tasks.
+- **Core Logic/Features:** An agent wrapper around a small LLM. "Enhanced" suggests it has additional features over a basic implementation, perhaps better request batching or caching.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5615`/`6615`.
+- **Error Handling:** Handles model inference errors.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides LLM services to other agents for tasks that don't require a large, powerful model. Depends on `ModelManagerSuite` to load the model.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`.
+
+#### Agent: LocalFineTunerAgent
+- **Purpose:** Performs the actual task of fine-tuning a model on a local dataset.
+- **Core Logic/Features:** Receives a training job from the `SelfTrainingOrchestrator`, which includes the model to train, the dataset, and hyperparameters. It executes the training loop and reports progress back.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5642`/`6642`.
+- **Error Handling:** Manages errors during the training process (e.g., out-of-memory, invalid data) and reports the failure status to the orchestrator.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Is controlled by the `SelfTrainingOrchestrator`. It reports its status back to the orchestrator and `SystemDigitalTwin`.
+- **Dependencies:** `SelfTrainingOrchestrator`, `SystemDigitalTwin`.
+
+#### Agent: NLLBAdapter
+- **Purpose:** Acts as an adapter for using NLLB (No Language Left Behind) models for translation.
+- **Core Logic/Features:** A specialized agent for providing access to Facebook's NLLB models. It handles the specific API or library calls needed for these models.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5581`/`6581`.
+- **Error Handling:** Standard error handling for model interaction.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides translation services to any agent that needs it, likely as a more powerful alternative to `FixedStreamingTranslation`. Relies on `SystemDigitalTwin`. `ModelManagerSuite` dependency is implied for model loading.
+- **Dependencies:** `SystemDigitalTwin`.
+
+### gpu_infrastructure
+
+#### Agent: VRAMOptimizerAgent
+- **Purpose:** To actively monitor and optimize the usage of GPU VRAM across the system.
+- **Core Logic/Features:** Works closely with `ModelManagerSuite`. It monitors which models are in VRAM but are not being used. Based on policies (e.g., idle time), it can instruct the `ModelManagerSuite` to unload models to free up VRAM for other tasks.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5572`/`6572`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Its primary interaction is with `ModelManagerSuite` to get model status and issue unload commands. It also gets information from `RequestCoordinator` about pending tasks to make smarter decisions and `SystemDigitalTwin` for a global state view.
+- **Dependencies:** `ModelManagerSuite`, `RequestCoordinator`, `SystemDigitalTwin`.
+
+### reasoning_services
+
+#### Agent: ChainOfThoughtAgent
+- **Purpose:** Implements Chain-of-Thought (CoT) prompting to guide a language model through complex reasoning tasks.
+- **Core Logic/Features:** Takes a complex query and breaks it down into intermediate reasoning steps. It sends these steps to an LLM (via `ModelManagerSuite`) to generate a more accurate and well-reasoned final answer.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5612`/`6612`.
+- **Error Handling:** Manages errors during the multi-step prompting process.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides advanced reasoning capabilities to other agents. Relies on `ModelManagerSuite` for LLM access and `SystemDigitalTwin` for discovery.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`.
+
+#### Agent: GoTToTAgent
+- **Purpose:** Implements advanced reasoning by combining Graph of Thoughts (GoT) and Tree of Thoughts (ToT) techniques.
+- **Core Logic/Features:** Explores multiple reasoning paths simultaneously, evaluating them to find the best solution. This is a more sophisticated and resource-intensive reasoning method than standard CoT.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5646`/`6646`.
+- **Error Handling:** Manages the complex state of the thought graph/tree and handles errors in generation and evaluation.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Builds on the capabilities of `ChainOfThoughtAgent`. It is a highly specialized reasoner used for the most complex problems.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`, `ChainOfThoughtAgent`.
+
+#### Agent: CognitiveModelAgent
+- **Purpose:** Simulates a cognitive architecture, providing a more structured approach to reasoning and decision making.
+- **Core Logic/Features:** Likely implements a specific cognitive model (e.g., combining different reasoning strategies). It orchestrates other reasoning agents like `ChainOfThoughtAgent` to produce a final decision.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5641`/`6641`.
+- **Error Handling:** Manages the complex interactions between its internal components and subordinate agents.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Acts as a higher-level reasoning orchestrator.
+- **Dependencies:** `ChainOfThoughtAgent`, `SystemDigitalTwin`.
+
+### vision_processing
+
+#### Agent: FaceRecognitionAgent
+- **Purpose:** To identify and recognize human faces from an image or video stream.
+- **Core Logic/Features:** Uses a face recognition model to process visual data. It likely maintains a database of known faces to compare against.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5610`/`6610`.
+- **Error Handling:** Handles cases where no faces are detected or recognition fails.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives image data from `RequestCoordinator`. Uses `ModelManagerSuite` to load its recognition model. Its output (e.g., a recognized user ID) can be used by many other agents to personalize the interaction.
+- **Dependencies:** `RequestCoordinator`, `ModelManagerSuite`, `SystemDigitalTwin`.
+
+### learning_knowledge
+
+#### Agent: LearningOrchestrationService
+- **Purpose:** Orchestrates the system's learning processes, deciding when and what to learn.
+- **Core Logic/Features:** A high-level service that manages the overall learning strategy. It might trigger active learning, self-training, or knowledge base updates based on system performance, user feedback, or detected opportunities.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `7210`/`8212`.
+- **Error Handling:** Standard logging and error reporting.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Coordinates other learning-related agents like `LearningOpportunityDetector` and `LearningManager`. Interacts with `ModelManagerSuite` and `SystemDigitalTwin`.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`, `MemoryClient`.
+
+#### Agent: LearningOpportunityDetector
+- **Purpose:** To analyze system interactions and identify opportunities for learning.
+- **Core Logic/Features:** Monitors agent performance, user feedback, and unresolved queries to detect situations where the system could improve. For example, if users frequently ask a question the system can't answer, it flags this as a learning opportunity.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `7202`/`8202`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Reports detected opportunities to the `LearningOrchestrationService`.
+- **Dependencies:** `LearningOrchestrationService`.
+
+#### Agent: LearningManager
+- **Purpose:** Manages the process of incorporating new knowledge or skills once a learning opportunity has been approved.
+- **Core Logic/Features:** Takes a learning task (e.g., a new piece of information to add to the knowledge base) and executes it. This might involve updating a database via `MemoryClient` or formatting data for a fine-tuning job.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5580`/`6580`.
+- **Error Handling:** Handles errors during the knowledge incorporation process.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives tasks from `LearningOrchestrationService` or `RequestCoordinator`. Uses `MemoryClient` to update long-term knowledge.
+- **Dependencies:** `MemoryClient`, `RequestCoordinator`, `SystemDigitalTwin`.
+
+#### Agent: ActiveLearningMonitor
+- **Purpose:** Monitors the active learning process, where the system proactively asks for human feedback to resolve uncertainties.
+- **Core Logic/Features:** Identifies situations where the system's confidence is low and formulates questions to ask a human expert for clarification. This feedback is then used to improve the system.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5638`/`6638`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Works closely with `LearningManager` to feed the collected human feedback into the system.
+- **Dependencies:** `LearningManager`, `SystemDigitalTwin`.
+
+#### Agent: LearningAdjusterAgent
+- **Purpose:** Adjusts learning parameters and strategies based on the outcomes of training cycles.
+- **Core Logic/Features:** Analyzes the results of fine-tuning runs (from `SelfTrainingOrchestrator`). If a training run was not effective, it might adjust hyperparameters (like learning rate) for the next attempt.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5643`/`6643`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides feedback and updated configurations to the `SelfTrainingOrchestrator`.
+- **Dependencies:** `SelfTrainingOrchestrator`, `SystemDigitalTwin`.
+
+### language_processing
+
+#### Agent: ModelOrchestrator
+- **Purpose:** Orchestrates the use of different language models for a given task.
+- **Core Logic/Features:** A level of abstraction above the `ModelManagerSuite`. For a given request, it decides which model (or chain of models) is best suited for the job based on complexity, context, and resource availability.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `7210`/`8210`.
+- **Error Handling:** Manages failures in the selected models and can potentially re-route requests to a fallback model.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives tasks from `RequestCoordinator`. It directs requests to the `ModelManagerSuite` with specific model requirements.
+- **Dependencies:** `RequestCoordinator`, `ModelManagerSuite`, `SystemDigitalTwin`.
+
+#### Agent: GoalManager
+- **Purpose:** Manages the system's long-term and short-term goals.
+- **Core Logic/Features:** Tracks user-defined goals and breaks them down into actionable tasks. It uses memory to maintain the state of these goals over long periods.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `7205`/`8205`.
+- **Error Handling:** Manages the state of complex, multi-step goals and handles errors in task execution.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Interacts with `ModelOrchestrator` to plan steps, `RequestCoordinator` to execute them, and `MemoryClient` to persist goal state.
+- **Dependencies:** `RequestCoordinator`, `ModelOrchestrator`, `SystemDigitalTwin`, `MemoryClient`.
+
+#### Agent: IntentionValidatorAgent
+- **Purpose:** Validates the user's intention, especially for critical or ambiguous requests.
+- **Core Logic/Features:** Before executing a potentially destructive or important action, this agent asks the user for confirmation (e.g., "Are you sure you want to delete this file?").
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5701`/`6701`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Acts as a middleware step, receiving requests from `RequestCoordinator` before they are dispatched for execution.
+- **Dependencies:** `RequestCoordinator`, `SystemDigitalTwin`.
+
+#### Agent: NLUAgent
+- **Purpose:** Provides core Natural Language Understanding by extracting intents and entities from user text.
+- **Core Logic/Features:** The core of its logic relies on a list of pre-defined regex patterns stored in `self.intent_patterns` to perform intent extraction. The main processing is done in the `_extract_intent` and `_extract_entities` methods. This makes it fast and predictable for known commands but less flexible for novel inputs.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5709`/`6709`.
+- **Error Handling:** Handles cases where it cannot understand the user's input by returning a low-confidence response. Reports internal errors via a dedicated `ErrorPublisher`.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** A fundamental service used by `RequestCoordinator` at the start of most interactions. Its output determines which other agents get called.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: AdvancedCommandHandler
+- **Purpose:** Handles complex, multi-step commands that may require code generation and execution.
+- **Core Logic/Features:** When the `NLUAgent` detects a complex intent, this agent takes over. It uses `CodeGenerator` to create a script to fulfill the request and `Executor` to run it safely.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5710`/`6710`.
+- **Error Handling:** Manages errors from both the generation and execution steps, reporting them back to the user.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Orchestrates `CodeGenerator` and `Executor`. It is triggered by `NLUAgent`'s analysis.
+- **Dependencies:** `NLUAgent`, `CodeGenerator`, `SystemDigitalTwin`.
+
+#### Agent: ChitchatAgent
+- **Purpose:** To handle conversational, non-task-oriented interactions (small talk).
+- **Core Logic/Features:** When the `NLUAgent` identifies a conversational intent (like "hello" or "how are you"), this agent generates a suitable, engaging response using a language model.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5711`/`6711`.
+- **Error Handling:** Standard model inference error handling.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Triggered by `NLUAgent`. Responds directly back through the main pipeline.
+- **Dependencies:** `NLUAgent`, `SystemDigitalTwin`.
+
+#### Agent: FeedbackHandler
+- **Purpose:** To process explicit user feedback (e.g., "that was a good response").
+- **Core Logic/Features:** Receives and interprets user feedback. It then logs this feedback and may pass it to the learning subsystem (`LearningOpportunityDetector`) to be used for future improvements.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5636`/`6636`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Triggered by `NLUAgent`. Feeds information into the learning part of the system.
+- **Dependencies:** `NLUAgent`, `SystemDigitalTwin`.
+
+#### Agent: Responder
+- **Purpose:** To synthesize a final response for the user, potentially incorporating emotional tone and other modalities.
+- **Core Logic/Features:** Assembles the final response payload. It might take a text response and decide, based on input from `EmotionEngine`, to deliver it with a certain tone via `StreamingTTSAgent`.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5637`/`6637`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Influences the output of agents like `Responder` and `ChitchatAgent`. Gets context from `RequestCoordinator`.
+- **Dependencies:** `RequestCoordinator`, `SystemDigitalTwin`.
+
+#### Agent: EmotionSynthesisAgent
+- **Purpose:** To generate emotional expression in the AI's responses, particularly for text-to-speech.
+- **Core Logic/Features:** Based on the desired emotional state (from `EmotionEngine`), it selects the appropriate tone, inflection, and prosody for the TTS engine to use.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5706`/`6706`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Works closely with `Responder` and `StreamingTTSAgent`. It uses `ModelManagerSuite` if it needs a specific model to generate these emotional cues.
+- **Dependencies:** `RequestCoordinator`, `ModelManagerSuite`, `SystemDigitalTwin`.
+
+### speech_services
+
+#### Agent: STTService
+- **Purpose:** A core service providing Speech-to-Text (STT) transcription.
+- **Core Logic/Features:** A wrapper around a specific STT model. It takes raw audio data and transcribes it into text. It's a foundational service for any voice interaction.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5800`/`6800`.
+- **Error Handling:** Handles model inference errors.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides transcription services to `StreamingSpeechRecognition`. Relies on `ModelManagerSuite` to load the STT model.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`.
+
+#### Agent: TTSService
+- **Purpose:** A core service providing Text-to-Speech (TTS) synthesis.
+- **Core Logic/Features:** A wrapper around a specific TTS model. It takes text and converts it into audible speech data.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5801`/`6801`.
+- **Error Handling:** Handles model inference errors.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides speech synthesis to `StreamingTTSAgent` and `Responder`. Relies on `ModelManagerSuite` to load the TTS model. `StreamingInterruptHandler` is a dependency, suggesting it can be interrupted mid-speech.
+- **Dependencies:** `ModelManagerSuite`, `SystemDigitalTwin`, `StreamingInterruptHandler`.
+
+### audio_interface
+
+#### Agent: AudioCapture
+- **Purpose:** Captures raw audio data from a microphone or other input source.
+- **Core Logic/Features:** The first agent in the audio pipeline. It reads from an audio device and publishes the raw audio data in chunks onto a ZMQ PUB socket.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `6550`/`7550`.
+- **Error Handling:** Handles errors with the audio hardware.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Publishes raw audio. `FusedAudioPreprocessor` and `WakeWordDetector` subscribe to this stream.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: FusedAudioPreprocessor
+- **Purpose:** Pre-processes the raw audio stream, performing tasks like noise reduction and format conversion.
+- **Core Logic/Features:** Subscribes to the `AudioCapture` stream. It cleans up the audio to improve the accuracy of downstream services like speech recognition. "Fused" might imply it performs multiple processing steps in one pass.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `6551`/`7551`.
+- **Error Handling:** Handles errors in the audio processing algorithms.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Subscribes to `AudioCapture`, publishes a cleaned audio stream. `StreamingSpeechRecognition` and `WakeWordDetector` consume its output.
+- **Dependencies:** `AudioCapture`, `SystemDigitalTwin`.
+
+#### Agent: StreamingInterruptHandler
+- **Purpose:** Manages interruptions in the speech stream, allowing the user to barge in while the AI is speaking.
+- **Core Logic/Features:** Listens for user speech (`StreamingSpeechRecognition`) while the AI is talking (`StreamingTTSAgent`). If the user starts talking, it sends a signal to the TTS agent to stop speaking immediately.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5576`/`6576`.
+- **Error Handling:** Manages the timing-sensitive logic of interruption.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** A critical coordinator between the input (`StreamingSpeechRecognition`) and output (`StreamingTTSAgent`) speech streams.
+- **Dependencies:** `StreamingSpeechRecognition`, `StreamingTTSAgent`, `SystemDigitalTwin`.
+
+#### Agent: StreamingSpeechRecognition
+- **Purpose:** Performs real-time, streaming speech-to-text.
+- **Core Logic/Features:** Subscribes to the processed audio stream from `FusedAudioPreprocessor`. As audio chunks arrive, it feeds them to the `STTService` and publishes partial and final transcription results.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `6553`/`7553`.
+- **Error Handling:** Manages the continuous transcription process.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Consumes audio from `FusedAudioPreprocessor`. Uses `STTService` for the core transcription. Sends results to `RequestCoordinator` and `StreamingLanguageAnalyzer`.
+- **Dependencies:** `FusedAudioPreprocessor`, `RequestCoordinator`, `STTService`, `SystemDigitalTwin`.
+
+#### Agent: StreamingTTSAgent
+- **Purpose:** Manages the real-time, streaming of text-to-speech audio back to the user.
+- **Core Logic/Features:** Receives text from the `Responder`. It calls the `TTSService` to generate audio chunks and streams these chunks to the audio output device, allowing the AI to start speaking before the full response is generated.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5562`/`6562`.
+- **Error Handling:** Manages the audio streaming and can handle stop requests from the `StreamingInterruptHandler`.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Receives text to speak from `Responder` or `UnifiedSystemAgent`. Uses `TTSService` for synthesis. Is controlled by `StreamingInterruptHandler`.
+- **Dependencies:** `RequestCoordinator`, `TTSService`, `SystemDigitalTwin`, `UnifiedSystemAgent`.
+
+#### Agent: WakeWordDetector
+- **Purpose:** Listens for a specific wake word (e.g., "Hey Gemini") in the audio stream to activate the AI.
+- **Core Logic/Features:** A highly efficient agent that constantly processes the audio stream to detect the wake word. When detected, it sends a signal to `RequestCoordinator` to start listening for a command.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `6552`/`7552`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Consumes audio from `AudioCapture` or `FusedAudioPreprocessor`. Sends an activation signal to the rest of the system.
+- **Dependencies:** `AudioCapture`, `FusedAudioPreprocessor`, `SystemDigitalTwin`.
+
+#### Agent: StreamingLanguageAnalyzer
+- **Purpose:** Performs real-time analysis on the transcribed speech stream.
+- **Core Logic/Features:** As `StreamingSpeechRecognition` produces text, this agent analyzes it in real-time. This could involve immediate translation using `TranslationService` or early intent detection.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5579`/`6579`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Consumes text from `StreamingSpeechRecognition`. Uses `TranslationService`. Provides early insights to other agents.
+- **Dependencies:** `StreamingSpeechRecognition`, `SystemDigitalTwin`, `TranslationService`.
+
+#### Agent: ProactiveAgent
+- **Purpose:** To enable the AI to initiate conversations or actions proactively, without being prompted by the user.
+- **Core Logic/Features:** Monitors system state and context. Based on certain triggers (e.g., passage of time, a calendar event, a change in system status), it can decide to speak or perform an action by sending a request to the `RequestCoordinator`.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5624`/`6624`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** A high-level agent that initiates actions through the `RequestCoordinator`. It consumes context from `SystemDigitalTwin`.
+- **Dependencies:** `RequestCoordinator`, `SystemDigitalTwin`.
+
+### emotion_system
+
+#### Agent: EmotionEngine
+- **Purpose:** The core of the emotion system, responsible for tracking and managing the AI's internal emotional state.
+- **Core Logic/Features:** Maintains an internal emotional model as a dictionary with keys like `tone`, `sentiment`, and `intensity`. It uses `emotion_thresholds` and `emotion_combinations` dictionaries to map raw sentiment scores and intensities to descriptive labels (e.g., a high negative sentiment with high intensity maps to `'furious'`). It broadcasts state changes via a ZMQ PUB socket in the `_broadcast_emotional_state` method.
+- **Health Check:** Has a dedicated health check loop running in a thread, responding to requests on `health_port` (`6590`). Its ZMQ REQ/REP socket is on port `5590`.
+- **Error Handling:** Reports errors to a central error bus. It has retry logic for binding ZMQ sockets and handles OS signals for graceful shutdown.
+- **Configuration/Parameters:** `port`, `health_check_port`, `pub_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Publishes the AI's emotional state. `Responder` and other agents in the `emotion_system` consume this state to modify their behavior. It gets its inputs from agents like `ToneDetector`.
+- **Dependencies:** `SystemDigitalTwin`.
+
+#### Agent: MoodTrackerAgent
+- **Purpose:** Tracks the user's mood over a longer period, beyond the immediate emotional tone of a single utterance.
+- **Core Logic/Features:** Aggregates emotional data from `EmotionEngine` and other cues over time to maintain a model of the user's general mood.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5704`/`6704`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Consumes data from `EmotionEngine`. Provides its long-term analysis to other agents like `Responder` or `EmpathyAgent` for more personalized interaction.
+- **Dependencies:** `EmotionEngine`, `SystemDigitalTwin`.
+
+#### Agent: HumanAwarenessAgent
+- **Purpose:** To maintain awareness of the human user's presence, state, and focus of attention.
+- **Core Logic/Features:** Might use cues from face recognition (is the user looking?), voice activity detection, and computer usage to determine if the user is present and engaged.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5705`/`6705`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides crucial context to agents like `ProactiveAgent` (to know when it's appropriate to speak) and `Responder`. It consumes data from `EmotionEngine`.
+- **Dependencies:** `EmotionEngine`, `SystemDigitalTwin`.
+
+#### Agent: ToneDetector
+- **Purpose:** Specifically analyzes the user's speech or text to detect its emotional tone.
+- **Core Logic/Features:** Uses a model to classify the emotion in a piece of text or audio.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5625`/`6625`.
+- **Error Handling:** Handles model inference errors.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** This is a key input to the `EmotionEngine`. It provides the real-time emotional data that drives the AI's own emotional state.
+- **Dependencies:** `EmotionEngine`, `SystemDigitalTwin`.
+
+#### Agent: VoiceProfilingAgent
+- **Purpose:** To create and manage profiles of different users' voices.
+- **Core Logic/Features:** Can distinguish between different speakers based on their voice. It might also learn the typical pitch, speed, and emotional expression of each known user.
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5708`/`6708`.
+- **Error Handling:** Handles errors in speaker identification.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Provides speaker ID information to the rest of the system, enabling personalization. It consumes data that originates from the audio stream and feeds its analysis into `EmotionEngine` and `SystemDigitalTwin`.
+- **Dependencies:** `EmotionEngine`, `SystemDigitalTwin`.
+
+#### Agent: EmpathyAgent
+- **Purpose:** To generate empathetic responses that acknowledge and reflect the user's detected emotional state.
+- **Core Logic/Features:** When the `EmotionEngine` reports a strong user emotion (e.g., frustration), this agent can generate a response like, "It sounds like you're frustrated. Let's try to fix this."
+- **Health Check:** Standard ZMQ/HTTP health checks on ports `5703`/`6703`.
+- **Error Handling:** Standard logging.
+- **Configuration/Parameters:** `port`, `health_check_port`, `required`, `dependencies`.
+- **Inter-Agent Communication:** Works very closely with `EmotionEngine` and `Responder`. It modifies the text that `StreamingTTSAgent` will speak.
+- **Dependencies:** `EmotionEngine`, `StreamingTTSAgent`, `SystemDigitalTwin`.

@@ -7,13 +7,15 @@ import signal
 import logging
 import subprocess
 from graphlib import TopologicalSorter, CycleError
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
 # Add project root to Python path for common_utils import
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -32,11 +34,11 @@ except ImportError:
     print("[WARNING] common_utils modules not found. Using default environment settings.")
 
 # --- Configuration ---
-CONFIG_PATH = join_path("config", "startup_config.yaml")
+CONFIG_PATH = PathManager.join_path("config", "startup_config.yaml")
 LOGS_DIR = "logs"
 HEALTH_CHECK_TIMEOUT = 120  # seconds
 HEALTH_CHECK_INTERVAL = 2   # seconds
-POSTGRES_HOST = "localhost"
+POSTGRES_HOST = get_env("BIND_ADDRESS", "0.0.0.0")
 POSTGRES_PORT = 5432
 
 # Define active agent directories (exclude archive/reference folders)
@@ -49,7 +51,7 @@ child_processes = []
 def setup_logging():
     """Sets up the main logger for the launcher."""
     os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
-    log_file = os.path.join(BASE_DIR, LOGS_DIR, "system_launcher.log")
+    log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log"))
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
@@ -128,7 +130,7 @@ def launch_agent(agent_config):
     name = agent_config['name']
     relative_script_path = agent_config['script_path']
     script_path = os.path.join(BASE_DIR, relative_script_path)
-    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_')}.log")
+    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_str(PathManager.get_logs_dir() / ")}.log"))
 
     if not os.path.exists(script_path):
         logger.error(f"Agent '{name}': Script not found at {script_path}. Skipping.")

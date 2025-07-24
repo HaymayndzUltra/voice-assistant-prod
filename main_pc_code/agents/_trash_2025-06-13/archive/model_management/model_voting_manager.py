@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 """
 Model Voting Manager
@@ -23,16 +24,17 @@ from typing import Dict, Any, List, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Import the LazyVoting system
 from lazy_voting import LazyVotingSystem
+from common.env_helpers import get_env
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
-LOG_PATH = join_path("logs", "model_voting_manager.log")
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "model_voting_manager.log"))
 Path(LOG_PATH).parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -76,7 +78,7 @@ class ModelVotingManager(BaseAgent):
         self.model_backend_socket = self.context.socket(zmq.REQ)
         self.model_backend_socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.model_backend_socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        self.model_backend_socket.connect("tcp://127.0.0.1:5556")  # Model Manager port
+        self.model_backend_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5556")  # Model Manager port
         
         self.running = True
         self.request_count = 0
@@ -85,7 +87,7 @@ class ModelVotingManager(BaseAgent):
     
     def load_model_config(self):
         """Load model configuration from config file if available"""
-        config_path = Path(join_path("config", "model_voting_config.json"))
+        config_path = Path(PathManager.join_path("config", "model_voting_config.json"))
         
         if config_path.exists():
             try:

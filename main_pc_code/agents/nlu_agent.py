@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -16,7 +17,7 @@ Natural Language Understanding agent that analyzes user input and extracts inten
 
 from common.core.base_agent import BaseAgent
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -25,16 +26,18 @@ import re
 import threading
 import traceback
 from typing import Dict, Any, List, Tuple
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -42,7 +45,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(join_path("logs", "nlu_agent.log"))
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "nlu_agent.log")))
     ]
 )
 logger = logging.getLogger("NLUAgent")
@@ -117,21 +120,17 @@ class NLUAgent(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
     def _perform_initialization(self):
         """Perform ZMQ initialization in background."""
         try:
             # Create ZMQ context and socket
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REP)
+            self.context = None  # Using pool
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
             self.socket.bind(f"tcp://*:{self.port}")
-            # Initialize Error Bus publisher after context creation
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
+            # Error reporting now handled by BaseAgent's UnifiedErrorHandler
             
             # Mark as initialized
             self.initialization_status.update({
@@ -167,7 +166,6 @@ class NLUAgent(BaseAgent):
             self.socket.close()
         if hasattr(self, 'context'):
             self.context.term()
-    
     def _handle_requests(self):
         """Handle incoming ZMQ requests."""
         while self.running:

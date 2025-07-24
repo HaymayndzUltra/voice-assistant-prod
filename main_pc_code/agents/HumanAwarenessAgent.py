@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -33,13 +34,16 @@ from datetime import datetime
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
+from common.env_helpers import get_env
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Setup logging
-LOG_PATH = join_path("logs", "human_awareness_agent.log")
+LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "human_awareness_agent.log"))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

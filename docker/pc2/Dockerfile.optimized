@@ -1,0 +1,106 @@
+# Multi-Stage Optimized PC2 Dockerfile (RTX 3060)
+# Target: Reduce image size by ~1.1GB through optimization
+# Features: RTX 3060 optimized CUDA, multi-stage builds, dependency caching
+
+# Stage 1: Base Builder (~500MB)
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 as builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    git \
+    wget \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Upgrade pip and install build tools
+RUN pip install --no-cache-dir -U pip setuptools wheel
+
+# Copy requirements and install dependencies
+COPY requirements/base.txt /tmp/base.txt
+COPY docker/pc2/requirements.pc2.txt /tmp/pc2_requirements.txt
+
+# Install base dependencies
+RUN pip install --no-cache-dir -r /tmp/base.txt
+
+# Install PyTorch with CUDA 12.1 support optimized for RTX 3060 (compute capability 8.6)
+RUN pip install --no-cache-dir torch torchvision torchaudio \
+    --extra-index-url https://download.pytorch.org/whl/cu121
+
+# Install PC2 specific requirements
+RUN pip install --no-cache-dir -r /tmp/pc2_requirements.txt && \
+    pip install --no-cache-dir transformers[sentencepiece] sacremoses ctranslate2 && \
+    pip install --no-cache-dir pyyaml requests psutil prometheus-client
+
+# Clean up pip cache and compiled files
+RUN pip cache purge && \
+    find /usr/local/lib/python3.10 -name __pycache__ | xargs rm -rf && \
+    find /usr/local/lib/python3.10 -name "*.pyc" | xargs rm -rf
+
+# Stage 2: Runtime Image (~2-3GB total)
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128 \
+    MALLOC_TRIM_THRESHOLD_=100000 \
+    TZ=UTC \
+    LOG_LEVEL=INFO
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    procps \
+    htop \
+    curl \
+    ffmpeg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Copy Python environment from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Create non-root user for security
+RUN groupadd -r ai && useradd -r -g ai ai
+
+# Create application directory
+WORKDIR /app
+
+# Copy application code with proper ownership
+COPY --chown=ai:ai . /app/
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/models /app/config /app/cache && \
+    chown -R ai:ai /app
+
+# Make scripts executable
+RUN chmod +x /app/pc2_code/scripts/container_healthcheck.py
+
+# Declare volumes for persistent data
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+# Use non-root user
+USER ai
+
+# Set default command
+CMD ["python", "/app/pc2_code/scripts/agent_starter.py"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python /app/pc2_code/scripts/container_healthcheck.py 

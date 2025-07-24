@@ -11,6 +11,8 @@ Response Format:
 - For translation: {"status": "success", "translated_text": "Translated text"}
                  or {"status": "error", "message": "Error details"}
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 import sys
 import os
 import time
@@ -27,9 +29,9 @@ from pathlib import Path
 from datetime import datetime
 
 # Add the main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 # Import model_client for centralized model loading
 from main_pc_code.utils import model_client
@@ -38,6 +40,7 @@ from main_pc_code.utils.network_utils import get_zmq_connection_string, get_mach
 
 # Import base agent class
 from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Define proxy classes for model_client integration
 class ModelClientModel:
@@ -167,7 +170,7 @@ if 'NLLB_IDLE_TIMEOUT' in os.environ:
     CONFIG_IDLE_TIMEOUT = int(os.environ['NLLB_IDLE_TIMEOUT'])
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "nllb_translation_adapter.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "nllb_translation_adapter.log")
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
@@ -210,11 +213,7 @@ class NLLBTranslationAdapter(BaseAgent):
         self.service_port = CONFIG_ZMQ_PORT
         self.bind_address = CONFIG_ZMQ_BIND_ADDRESS
         
-        # Error bus setup
-        self.error_bus_port = config.get("error_bus_port", 7150)
-        self.error_bus_endpoint = get_zmq_connection_string(self.error_bus_port, "pc2")
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Socket binding will be handled below with retry/fallback logic to avoid duplicate bind attempts
         
@@ -246,10 +245,10 @@ class NLLBTranslationAdapter(BaseAgent):
             if self.bind_address == "0.0.0.0":
                 self.logger.warning(f"Attempting fallback bind to localhost")
                 try:
-                    fallback_endpoint = get_zmq_connection_string(self.service_port, "bind", "127.0.0.1")
+                    fallback_endpoint = get_zmq_connection_string(self.service_port, "bind", "localhost")
                     self.socket.bind(fallback_endpoint)
                     self.logger.info(f"NLLB Translation Adapter bound to FALLBACK {fallback_endpoint}")
-                    self.bind_address = "127.0.0.1"
+                    self.bind_address = "localhost"
                 except zmq.error.ZMQError as e2:
                     self.logger.error(f"Fallback bind also failed: {e2}")
                     self.report_error(f"Fallback bind also failed: {e2}")

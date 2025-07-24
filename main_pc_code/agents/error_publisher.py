@@ -1,10 +1,11 @@
+from __future__ import annotations
+from common.core.base_agent import BaseAgent
 """Utility class for standardized error-bus publishing.
 
 All agents should use `ErrorPublisher` (instantiated once, ideally in `__init__`) and call
 `publish_error()` whenever a critical or noteworthy error occurs. This sends a JSON message
 matching the system-wide standard to the central error-bus (ZMQ PUB/SUB).
 """
-from __future__ import annotations
 
 import json
 import logging
@@ -13,7 +14,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.env_helpers import get_env
 
 
 class ErrorPublisher:
@@ -26,6 +28,9 @@ class ErrorPublisher:
     endpoint : Optional[str]
         Full ZMQ endpoint (e.g. ``tcp://host:port``).  If *None*, it is constructed
         from environment variables ``ERROR_BUS_HOST`` / ``PC2_IP`` and
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         ``ERROR_BUS_PORT`` (default ``7150``).
     context : Optional[zmq.Context]
         Existing ZMQ context.  If *None*, the global instance is used.
@@ -38,7 +43,7 @@ class ErrorPublisher:
         self.context = context or zmq.Context.instance()
 
         try:
-            self.socket = self.context.socket(zmq.PUB)
+            self.socket = get_pub_socket(self.endpoint).socket
             # PUB sockets must *connect* to the central SUB (collector) or vice-versa.
             # We assume collector is a SUB‐binding central bus; agents therefore connect.
             self.socket.connect(self.endpoint)
@@ -109,7 +114,7 @@ class ErrorPublisher:
     # ------------------------------------------------------------------
     @staticmethod
     def _build_default_endpoint() -> str:
-        host = os.environ.get("ERROR_BUS_HOST") or os.environ.get("PC2_IP", "localhost")
+        host = os.environ.get("ERROR_BUS_HOST") or get_pc2_ip())
         port = int(os.environ.get("ERROR_BUS_PORT", 7150))
         return f"tcp://{host}:{port}"
 

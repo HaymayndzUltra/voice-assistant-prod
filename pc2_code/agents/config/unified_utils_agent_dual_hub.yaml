@@ -1,0 +1,42 @@
+dual_hub_config:
+  failover_config:
+    backoff_multiplier: 2.0
+    exponential_backoff: true
+    failover_threshold: 3
+    health_check_interval_seconds: 30
+    max_backoff_seconds: 300
+    max_retries: 3
+    recovery_timeout_seconds: 300
+  fallback_hub:
+    health_endpoint: /health
+    metrics_endpoint: /metrics
+    name: CentralHub
+    url: http://localhost:9000
+  nats_integration:
+    alerts_subject_prefix: observability.alerts
+    cluster_nats_url: nats://localhost:4223
+    health_subject_prefix: observability.health
+    metrics_subject_prefix: observability.metrics
+    primary_nats_url: nats://localhost:4222
+  primary_hub:
+    health_endpoint: /health
+    metrics_endpoint: /metrics
+    name: EdgeHub
+    url: http://localhost:9100
+  pushgateway_config:
+    fallback_url: http://localhost:9092
+    job_name_prefix: phase2_pilot
+    primary_url: http://localhost:9091
+    push_interval_seconds: 15
+unified_utils_agent:
+  agent_name: UnifiedUtilsAgent
+  cross_machine_utilities: true
+  health_check_port: 8118
+  health_reporting_interval_seconds: 60
+  nats_subject: observability.utils.metrics
+  port: 7118
+  utility_services:
+  - file_operations
+  - system_info
+  - validation
+  - formatting

@@ -15,7 +15,7 @@ Trigger Word Detector
 - More reliable than audio-based wake word detection
 - Supports multiple trigger phrases in Filipino and English
 """
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 
@@ -35,7 +35,7 @@ from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "trigger_word_detector.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "trigger_word_detector.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -60,7 +60,7 @@ class TriggerWordDetector(BaseAgent):
         super().__init__(port=port, name="TriggerWordDetector")
         """Initialize the trigger word detector"""
         # Initialize ZMQ
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket to receive transcribed speech from listener
         self.listener_sub = self.context.socket(zmq.SUB)
@@ -319,7 +319,7 @@ class TriggerWordDetector(BaseAgent):
         
         self.publisher.close()
         self.listener_sub.close()
-        self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
         logger.info("Trigger Word Detector stopped")
 
 
@@ -361,6 +361,7 @@ if __name__ == "__main__":
     import argparse
     import psutil
     from datetime import datetime
+from common.utils.path_manager import PathManager
 
     parser = argparse.ArgumentParser(description="Trigger Word Detector: Detects trigger words/phrases in transcribed speech.")
     parser.add_argument('--passive', action='store_true', help='Run in passive mode, processing all speech')

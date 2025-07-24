@@ -1,0 +1,101 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifiedsystem
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+    config.linkerd.io/proxy-cpu-limit: "0.5"
+    config.linkerd.io/proxy-memory-limit: "512Mi"
+spec:
+  ports:
+  - port: 5568
+    targetPort: 5568
+    protocol: HTTP
+    name: main-port
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: health-port
+  selector:
+    app: unifiedsystem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unifiedsystem
+  namespace: ai-system
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unifiedsystem
+  template:
+    metadata:
+      labels:
+        app: unifiedsystem
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: unifiedsystem
+        image: ai-system/unifiedsystem:latest
+        ports:
+        - containerPort: 5568
+        - containerPort: 8081
+        env:
+        - name: SERVICE_MESH_ENABLED
+          value: "true"
+        - name: LINKERD_PROXY_ENABLED
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerPolicy
+metadata:
+  name: unifiedsystem-policy
+  namespace: ai-system
+spec:
+  targetRef:
+    group: apps
+    kind: Deployment
+    name: unifiedsystem
+  requiredRoutes:
+  - pathRegex: "/health"
+  - pathRegex: "/ready"
+  - pathRegex: "/.*"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: unifiedsystem-route
+  namespace: ai-system
+spec:
+  parentRefs:
+  - name: unifiedsystem
+    kind: Service
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: unifiedsystem
+      port: 5568
+      weight: 100
+    timeouts:
+      request: 30s

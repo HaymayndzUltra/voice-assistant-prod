@@ -1,5 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -13,10 +13,13 @@ import socket
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import DEFAULT_CONFIG
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Setup logging
 log_dir = Path(__file__).parent.parent / "logs"
 log_dir.mkdir(exist_ok=True)
-log_filename = f"pc2_zmq_protocol_finder_extended_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+log_filename = f"pc2_zmq_protocol_finder_extended_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 log_filepath = log_dir / log_filename
 logging.basicConfig(
     level=logging.DEBUG,
@@ -134,8 +137,8 @@ def test_service_protocols(service_id, service_info):
     for payload in payloads:
         try:
             # Create a new context and socket for each test for robustness
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             socket.setsockopt(zmq.LINGER, 0)
             socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2 second timeout
             socket.setsockopt(zmq.SNDTIMEO, 2000)  # 2 second timeout for send
@@ -199,8 +202,6 @@ def test_service_protocols(service_id, service_info):
             logger.warning(f"[ERROR] | Payload: {payload} | Error: {str(e)[:50]}...")
             print(f"[ERROR] | Payload: {payload} | Error: {str(e)[:50]}...")
         finally:
-            socket.close()
-            context.term()
             time.sleep(0.5)  # Brief pause between attempts
     
     return successful_protocols

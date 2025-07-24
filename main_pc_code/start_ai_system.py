@@ -7,6 +7,8 @@ import logging
 from dotenv import load_dotenv
 from pathlib import Path
 import argparse
+from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Load environment variables
 load_dotenv()

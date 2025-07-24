@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script specifically for the REQ/REP socket connection 
 between Main PC and translator_agent.py
@@ -13,6 +14,7 @@ import time
 import uuid
 import argparse
 from colorama import init, Fore, Style
+from common.env_helpers import get_env
 
 # Initialize colorama
 init(autoreset=True)

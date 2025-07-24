@@ -2,21 +2,21 @@
 Learning Manager Agent
 ------------------
 Responsible for:
-- Managing the learning process
+- Managing the learning process of the AI system
+- Tracking learning progress and performance
+- Adjusting learning parameters based on feedback
+- Coordinating with other agents for continuous learning
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
- of the AI system
-- Tracking learning progress and performance
-- Adjusting learning parameters based on feedback
-- Coordinating with other agents for continuous learning
-"""
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import zmq
 import json
@@ -31,17 +31,18 @@ from typing import Dict, Any, List, Optional
 import psutil
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_manager.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_manager.log")),
         logging.StreamHandler()
     ]
 )
@@ -93,12 +94,7 @@ class LearningManager(BaseAgent):
         
         self.health_thread = None
 
-        # Error Bus setup
-        self.error_bus_port = int(os.environ.get('ERROR_BUS_PORT', 7150))
-        self.error_bus_host = os.environ.get('ERROR_BUS_HOST', os.environ.get('PC2_IP', 'localhost'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
     def _perform_initialization(self):
         try:
@@ -441,8 +437,7 @@ class LearningManager(BaseAgent):
         if hasattr(self, 'socket'):
             self.socket.close()
         if hasattr(self, 'health_pub_socket'):
-            self.health_pub_socket.close()
-        
+            self.health_pub_
         if self.health_thread:
             self.health_thread.join(timeout=1.0)
         
@@ -473,10 +468,9 @@ class LearningManager(BaseAgent):
         
         # Close sockets
         if hasattr(self, 'socket'):
-            self.socket.close()
+            pass  # Cleanup handled by BaseAgent
         if hasattr(self, 'health_pub_socket'):
-            self.health_pub_socket.close()
-            
+            self.health_pub_
         # Wait for threads to finish
         if self.health_thread:
             self.health_thread.join(timeout=1.0)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 PC2 Agent Helpers
 ----------------
@@ -17,14 +18,15 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Import the BaseAgent from main_pc_code
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 
 # Import Config class for PC2
 from pc2_code.agents.utils.config_loader import Config
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 # Standard PC2 configuration setup
 def get_pc2_config():
@@ -46,7 +48,7 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
     # Create logs directory if it doesn't exist
     log_dir = get_path("logs")
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{agent_name.lower()}.log")
+    log_file = os.path.join(log_dir, fstr(PathManager.get_logs_dir() / "{agent_name.lower()}.log"))
     
     # Configure logging
     logging.basicConfig(

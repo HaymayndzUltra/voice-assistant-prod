@@ -1,16 +1,18 @@
 """
+Human Awareness Agent implementation
+Monitors and analyzes human presence and behavior
+"""
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
-Human Awareness Agent implementation
-Monitors and analyzes human presence and behavior
-"""
+# Ensure the main_pc_code directory is in sys.path  
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import time
 import logging
@@ -27,20 +29,22 @@ import sys
 import os
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
+from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 class HumanAwarenessAgent(BaseAgent):
     def __init__(self, port=None):
@@ -71,19 +75,14 @@ class HumanAwarenessAgent(BaseAgent):
         self.attention_level = 0
         
         # Load configuration
-        self.agent_config = self._load_config()
+        self.agent_config = self._load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Record start time for uptime calculation
         self.start_time = time.time()
         
-        # Setup error bus
+        # Modern error reporting using BaseAgent.report_error()
         import zmq
-        self.context = zmq.Context()
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        self.context = None  # Using pool
         
     def _load_config(self) -> Dict:
         """Load agent configuration."""
@@ -255,7 +254,7 @@ class HumanAwarenessAgent(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")

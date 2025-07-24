@@ -1,0 +1,713 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI System Monitoring Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .metrics { display: flex; justify-content: space-around; margin: 20px 0; }
+        .metric { background: #ecf0f1; padding: 20px; border-radius: 10px; text-align: center; }
+        .metric h3 { margin: 0; color: #2c3e50; }
+        .metric .value { font-size: 2em; font-weight: bold; color: #3498db; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #bdc3c7; border-radius: 5px; }
+        .warning { color: #e74c3c; }
+        .success { color: #27ae60; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #f8f9fa; margin: 5px 0; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 AI System Monitoring Dashboard</h1>
+        <p>Generated: 2025-07-19 07:48:09</p>
+    </div>
+    
+    <div class="metrics">
+        <div class="metric">
+            <h3>Total Agents</h3>
+            <div class="value">71</div>
+        </div>
+        <div class="metric">
+            <h3>Healthy Agents</h3>
+            <div class="value success">71</div>
+        </div>
+        <div class="metric">
+            <h3>Critical Agents</h3>
+            <div class="value">6</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🔍 System Health Analysis</h2>
+        <h3>Dependency Cycles ✅</h3>
+        <p class="success">No circular dependencies detected!</p>
+        
+        <h3>Performance Bottlenecks</h3>
+        <p class="success">No performance bottlenecks detected!</p>
+        
+        <h3>Security Analysis</h3>
+        <p>Agents without security imports: 71</p>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Agent Details</h2>
+        <table border="1" style="width: 100%; border-collapse: collapse;">
+            <tr style="background: #34495e; color: white;">
+                <th>Agent Name</th>
+                <th>Group</th>
+                <th>Priority</th>
+                <th>Port</th>
+                <th>Performance Score</th>
+                <th>Dependencies</th>
+            </tr>
+
+            <tr>
+                <td><strong>EmpathyAgent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>74</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>MetaCognitionAgent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>270</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>ProactiveAgent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>106</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>active_learning_monitor</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>111</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>advanced_command_handler</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>107</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>auto_fixer_agent</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>0</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>check_gpu</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>6</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>check_pc2_zmq_services</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>10</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>check_ports</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>41</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>check_pytorch_cuda</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>6</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>chitchat_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>152</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>custom_tutoring_test</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5558</td>
+                <td>33</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>direct_emr_test</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5598</td>
+                <td>31</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>emotion_engine</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>112</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>emotion_synthesis_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>66</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>error_bus_template</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5555</td>
+                <td>43</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>error_publisher</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>46</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>executor</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>131</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>face_recognition_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>129</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>feedback_handler</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>128</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>fixed_streaming_translation</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>200</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>generate_code_with_cga_method</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>29</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>gguf_model_manager</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>7150</td>
+                <td>59</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>goal_manager</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>7150</td>
+                <td>61</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>human_awareness_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>66</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>knowledge_base</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>47</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>learning_manager</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5588</td>
+                <td>76</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>learning_opportunity_detector</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>183</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>learning_orchestration_service</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>155</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>memory_client</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7140</td>
+                <td>62</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>model_evaluation_framework</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>171</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>model_orchestrator</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>50</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>mood_tracker_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>81</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>nlu_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>81</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>noise_reduction_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>6575</td>
+                <td>108</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>pc2_zmq_health_report</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>52</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>pc2_zmq_protocol_finder_extended</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>45</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>pc2_zmq_protocol_finder_win</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>44</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>port_config</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5598</td>
+                <td>2</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>predictive_health_monitor</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>7150</td>
+                <td>278</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>proactive_agent_interface</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>33</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>record_and_transcribe</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>28</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>remote_connector_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>131</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>request_coordinator</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>7150</td>
+                <td>228</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>responder</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>226</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>sd_config</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>8</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>service_registry_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>34</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>session_memory_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>7150</td>
+                <td>60</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_interrupt</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>5562</td>
+                <td>45</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_language_analyzer</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7150</td>
+                <td>236</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_language_to_llm</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5577</td>
+                <td>66</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_partial_transcripts</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5570</td>
+                <td>88</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_speech_recognition</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>266</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_translation</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>18</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>streaming_whisper_asr</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>6575</td>
+                <td>96</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>system_digital_twin</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>7120</td>
+                <td>122</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>system_digital_twin_launcher</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>8120</td>
+                <td>60</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>test_dreamworld_updates</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5599</td>
+                <td>35</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>test_meta_cognition</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5630</td>
+                <td>81</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>test_tutoring_feature</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>5558</td>
+                <td>31</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>test_web_connections</strong></td>
+                <td>PC2</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>31</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>tone_detector</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5575</td>
+                <td>127</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>translation_service</strong></td>
+                <td>MainPC</td>
+                <td style="color: #e74c3c; font-weight: bold;">critical</td>
+                <td>5595</td>
+                <td>107</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>trigger_word_detector</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>82</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>tutoring_service_agent</strong></td>
+                <td>PC2</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>7150</td>
+                <td>52</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>unified_system_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>5568</td>
+                <td>244</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>unified_web_agent</strong></td>
+                <td>PC2</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>7126</td>
+                <td>212</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>voice_controller</strong></td>
+                <td>MainPC</td>
+                <td style="color: #27ae60; font-weight: bold;">low</td>
+                <td>0</td>
+                <td>16</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>voice_profiling_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>0</td>
+                <td>70</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>voicemeeter_control_agent</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f1c40f; font-weight: bold;">medium</td>
+                <td>5645</td>
+                <td>64</td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td><strong>wake_word_detector</strong></td>
+                <td>MainPC</td>
+                <td style="color: #f39c12; font-weight: bold;">high</td>
+                <td>0</td>
+                <td>151</td>
+                <td></td>
+            </tr>
+
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>📈 Dependency Graph</h2>
+        <img src="dependency_graph.png" alt="Dependency Graph" style="max-width: 100%; height: auto;">
+    </div>
+    
+</body>
+</html>

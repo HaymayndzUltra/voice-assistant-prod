@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 """
 MVS Health Checker
@@ -24,7 +25,8 @@ from typing import Dict, Any, List, Optional, Union, cast
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -103,7 +105,7 @@ try:
     possible_paths = [
         os.path.join(script_dir, "minimal_system_config_local.yaml"),  # Local config (preferred)
         os.path.join(script_dir, "minimal_system_config.yaml"),  # Same directory as script
-        join_path("config", join_path("config", "minimal_system_config.yaml")),  # In config directory
+        PathManager.join_path("config", PathManager.join_path("config", "minimal_system_config.yaml")),  # In config directory
         "minimal_system_config.yaml",  # Current working directory
     ]
     

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from common.core.base_agent import BaseAgent
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -10,7 +11,10 @@ import threading
 import time
 import logging
 
-LOG_PATH = "learning_mode_agent.log"
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
+LOG_PATH = str(PathManager.get_logs_dir() / "learning_mode_agent.log")
 LEARNING_MODE_STORE_PATH = "learning_mode_store.json"
 ZMQ_LEARNING_MODE_PORT = 5599
 
@@ -23,12 +27,13 @@ logging.basicConfig(
     ]
 )
 
-class LearningModeAgent:
+class LearningModeAgent(BaseAgent):
     def broadcast_learning_suggestion(self, text, user=None, emotion="neutral"):
         send_proactive_event(event_type="suggestion", text=text, user=user, emotion=emotion)
 
     def __init__(self, zmq_port=ZMQ_LEARNING_MODE_PORT):
-        self.context = zmq.Context()
+
+        super().__init__(*args, **kwargs)        self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind(f"tcp://0.0.0.0:{zmq_port}")
         self.learning_data = self.load_learning_data()

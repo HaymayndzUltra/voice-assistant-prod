@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Minimal test of EmotionEngine health check
 """
@@ -11,6 +12,7 @@ from main_pc_code.agents.emotion_engine import EmotionEngine
 import zmq
 import json
 import time
+from common.env_helpers import get_env
 
 def test_emotion_engine_health():
     print("🧪 Testing EmotionEngine health check...")

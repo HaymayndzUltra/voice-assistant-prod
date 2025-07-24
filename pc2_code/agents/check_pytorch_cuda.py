@@ -1,5 +1,6 @@
 import torch
 import os
+from common.core.base_agent import BaseAgent
 
 print("=" * 50)
 print("PyTorch CUDA Checker")

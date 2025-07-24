@@ -1,0 +1,311 @@
+name: 🚀 CI Migration Pipeline - WP Rollout
+
+on:
+  push:
+    branches: 
+      - wp*-*  # WP-01, WP-02, etc.
+      - feature/wp-*
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      work_package:
+        description: 'Work Package to execute (WP-01, WP-02, etc.)'
+        required: true
+        default: 'WP-01'
+
+jobs:
+  
+  # Phase 1: Dependency & Environment Setup
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect-changes.outputs.matrix }}
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Dependencies  
+        run: |
+          python -m pip install --upgrade pip
+          pip install orjson tenacity pydantic
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f test-requirements.txt ]; then pip install -r test-requirements.txt; fi
+
+      - name: 🔍 Detect Changed Files
+        id: detect-changes
+        run: |
+          echo "matrix={\"include\":[{\"os\":\"ubuntu-latest\",\"python\":\"3.11\"}]}" >> $GITHUB_OUTPUT
+
+  # Phase 2: Code Quality & Linting
+  lint-and-typecheck:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Linting Tools
+        run: |
+          pip install flake8 mypy black isort pylint
+          
+      - name: 🔨 Code Formatting Check
+        run: |
+          black --check --diff main_pc_code/ pc2_code/ common/ scripts/
+          
+      - name: 📐 Import Sorting Check  
+        run: |
+          isort --check-only --diff main_pc_code/ pc2_code/ common/ scripts/
+          
+      - name: 🧹 Linting (Flake8)
+        run: |
+          flake8 main_pc_code/ pc2_code/ common/ scripts/ --max-line-length=120 --ignore=E203,W503
+          
+      - name: 🔍 Type Checking (MyPy)
+        run: |
+          mypy common/ --ignore-missing-imports
+        continue-on-error: true  # Type checking is advisory for now
+
+  # Phase 3: Unit Tests
+  unit-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: 🧪 Run Unit Tests
+        run: |
+          pytest tests/ -v --tb=short --cov=common --cov-report=xml
+          
+      - name: 📊 Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  # Phase 4: Integration Tests
+  integration-tests:
+    needs: [setup, unit-tests]
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: 🏗️ Setup Test Environment
+        run: |
+          export REDIS_URL=redis://localhost:6379/0
+          export BIND_ADDRESS=0.0.0.0
+          export SERVICE_REGISTRY_HOST=localhost
+          export LOG_LEVEL=DEBUG
+          
+      - name: 🧪 Run Integration Tests
+        run: |
+          pytest tests/test_integration_*.py -v --tb=short
+        env:
+          REDIS_URL: redis://localhost:6379/0
+          BIND_ADDRESS: 0.0.0.0
+
+  # Phase 5: Docker Build & Validation
+  docker-validation:
+    needs: [lint-and-typecheck, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🏗️ Build Base Image (Non-Root)
+        run: |
+          docker build -t ai_system/base:test -f Dockerfile.production .
+          
+      - name: 🔍 Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ai_system/base:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+        
+      - name: 🧪 Container Health Check
+        run: |
+          docker run --rm -d --name test-container ai_system/base:test sleep 30
+          sleep 5
+          docker exec test-container python -c "from common.env_helpers import get_env; print('✅ Imports OK')"
+          docker stop test-container
+
+  # Phase 6: Schema Validation
+  schema-validation:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Schema Tools
+        run: |
+          pip install pydantic jsonschema
+          
+      - name: ✅ Validate API Contracts
+        run: |
+          python -c "
+          from common.api.contract import *
+          print('✅ Pydantic models valid')
+          "
+          
+      - name: ✅ Validate Configuration Schema
+        run: |
+          python -c "
+          import yaml
+          with open('main_pc_code/config/startup_config.yaml') as f:
+              config = yaml.safe_load(f)
+          print('✅ YAML configuration valid')
+          "
+
+  # Phase 7: Performance Benchmark
+  performance-check:
+    needs: [unit-tests, integration-tests]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Install Benchmark Tools
+        run: |
+          pip install pytest-benchmark
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: ⚡ Run Performance Benchmarks
+        run: |
+          pytest tests/benchmark_*.py --benchmark-only --benchmark-json=benchmark.json
+        continue-on-error: true
+        
+      - name: 📊 Upload Benchmark Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmark.json
+
+  # Phase 8: Deployment Readiness Check
+  deployment-check:
+    needs: [docker-validation, schema-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Check Localhost Occurrences
+        run: |
+          echo "🔍 Scanning for remaining localhost references..."
+          localhost_count=$(grep -r "localhost\|127\.0\.0\.1" main_pc_code/ pc2_code/ --include="*.py" | wc -l || echo "0")
+          echo "Found $localhost_count localhost references"
+          
+          if [ "$localhost_count" -gt "10" ]; then
+            echo "❌ Too many localhost references ($localhost_count). WP-01 incomplete."
+            exit 1
+          else
+            echo "✅ Localhost references within acceptable range ($localhost_count)"
+          fi
+          
+      - name: 🔍 Verify Environment Variables
+        run: |
+          if [ -f "docker/config/env.template" ]; then
+            echo "✅ Environment template exists"
+            cat docker/config/env.template
+          else
+            echo "❌ Missing environment template"
+            exit 1
+          fi
+          
+      - name: ✅ Deployment Readiness Summary
+        run: |
+          echo "🎉 DEPLOYMENT READINESS CHECK PASSED"
+          echo "✅ Code quality validated"
+          echo "✅ Tests passing"
+          echo "✅ Docker builds successfully"
+          echo "✅ Schema validation passed"
+          echo "✅ Localhost references minimized"
+          echo "✅ Environment configuration present"
+
+  # Phase 9: Auto-merge (if all checks pass)
+  auto-merge:
+    needs: [lint-and-typecheck, unit-tests, integration-tests, docker-validation, schema-validation, deployment-check]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/wp')
+    steps:
+      - name: 🛎️ Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🚀 Auto-merge WP Branch
+        run: |
+          echo "🎉 ALL CHECKS PASSED - AUTO-MERGING WP BRANCH"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Switch to main and merge
+          git checkout main
+          git merge ${{ github.ref_name }} --no-ff -m "🚀 Auto-merge ${{ github.ref_name }} - All CI checks passed"
+          git push origin main
+          
+          echo "✅ ${{ github.ref_name }} successfully merged to main"
+          echo "🚀 WP pipeline continues to next work package..." 

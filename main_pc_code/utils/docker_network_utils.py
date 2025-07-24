@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Docker Network Utilities
 
@@ -15,6 +16,7 @@ from typing import Dict, Any, Optional, List, Tuple
 
 # Import the environment loader
 from main_pc_code.utils.env_loader import get_env, ENV
+from common.env_helpers import get_env
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -41,7 +43,7 @@ def get_container_ip() -> str:
         return socket.gethostbyname(hostname)
     except Exception as e:
         logger.warning(f"Could not get container IP: {e}, falling back to localhost")
-        return "127.0.0.1"
+        return "localhost"
 
 def get_service_host(service_name: str) -> str:
     """

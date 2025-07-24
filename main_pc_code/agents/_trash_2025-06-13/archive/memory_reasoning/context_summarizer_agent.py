@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 # Context Summarizer Agent - For maintaining context in conversations with large LLMs
 # Maintains a rolling summary of code, discussions, errors, and previous interactions
@@ -12,8 +13,9 @@ import time
 import logging
 import hashlib
 from datetime import datetime
+from common.env_helpers import get_env
 
-LOG_PATH = "context_summarizer_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "context_summarizer_agent.log")
 CONTEXT_STORE_PATH = "context_store.json"
 ZMQ_CONTEXT_SUMMARIZER_PORT = 5610  # New agent port
 
@@ -152,6 +154,9 @@ class ContextSummarizerAgent(BaseAgent):
         
         # Extract function names, class names(BaseAgent), and other important structures
         import re
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         functions = re.findall(r"def\s+(\w+)\s*\(", all_code)
         classes = re.findall(r"class\s+(\w+)\s*", all_code)
         imports = re.findall(r"import\s+(\w+)", all_code)

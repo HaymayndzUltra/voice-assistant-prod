@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Comprehensive Test Suite for Phi Translator Service
 --------------------------------------------------
 Evaluates translation quality, reliability, and performance metrics
@@ -13,13 +14,14 @@ import argparse
 import colorama
 from colorama import Fore, Style
 from datetime import datetime
+from common.env_helpers import get_env
 
 # Initialize colorama for colored output
 colorama.init()
 
 # Test configuration
 DEFAULT_PHI_PORT = 5581
-DEFAULT_PHI_HOST = "localhost"  # Use localhost for local testing
+DEFAULT_PHI_HOST = get_env("BIND_ADDRESS", "0.0.0.0")  # Use localhost for local testing
 
 # Comprehensive test suite organized by categories
 TEST_CASES = {

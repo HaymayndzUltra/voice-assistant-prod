@@ -1,3 +1,4 @@
+from common.core.base_agent import BaseAgent
 #!/usr/bin/env python3
 """
 Memory Agent
@@ -18,9 +19,12 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "memory_agent.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "memory_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -33,9 +37,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MemoryAgent")
 
-class MemoryAgent:
+class MemoryAgent(BaseAgent):
     def __init__(self, port=5590, bind_address="0.0.0.0"):
-        """Initialize the Memory Agent"""
+
+        super().__init__(*args, **kwargs)        """Initialize the Memory Agent"""
         self.port = port
         self.bind_address = bind_address
         self.context = zmq.Context()

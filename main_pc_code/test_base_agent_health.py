@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test BaseAgent health check mechanism
 """
@@ -12,6 +13,7 @@ import zmq
 import json
 import time
 import threading
+from common.env_helpers import get_env
 
 def test_base_agent_health():
     print("🧪 Testing BaseAgent health check mechanism...")

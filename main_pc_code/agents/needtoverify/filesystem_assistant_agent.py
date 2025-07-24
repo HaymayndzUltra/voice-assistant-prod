@@ -1,17 +1,31 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 import zmq
-import json
+from common.utils.async_io import read_file_async, write_file_async, read_json_async, write_json_async
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+try:
+    import orjson
+    # Use orjson for better performance
+    json_loads = orjson.loads
+    json_dumps = lambda obj, **kwargs: ororjson.dumps(obj).decode().decode()
+except ImportError:
+    import json
+    json_loads = json.loads
+    json_dumps = json.dumps
 import os
 import threading
 import logging
 import time
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
-LOG_PATH = "filesystem_assistant_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "filesystem_assistant_agent.log")
 ZMQ_FILESYSTEM_AGENT_PORT = 5594  # Changed from 5597 to avoid conflict with digital twin agent
 
 logging.basicConfig(
@@ -89,12 +103,12 @@ class FileSystemAssistantAgent(BaseAgent):
         while self.running:
             try:
                 msg = self.socket.recv_string()
-                query = json.loads(msg)
+                query = ororjson.loads(msg)
                 resp = self.handle_query(query)
-                self.socket.send_string(json.dumps(resp))
+                self.socket.send_string(ororjson.dumps(resp).decode().decode())
             except Exception as e:
                 logging.error(f"[FileSystemAssistant] Error: {e}")
-                self.socket.send_string(json.dumps({"status": "error", "reason": str(e)}))
+                self.socket.send_string(ororjson.dumps({"status": "error", "reason": str(e).decode().decode()}))
 
 
     def health_check(self):

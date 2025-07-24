@@ -10,11 +10,16 @@ import threading
 import time
 from pathlib import Path
 from collections import defaultdict
+from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Constants
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+${SECRET_PLACEHOLDER} 'localhost'
+${SECRET_PLACEHOLDER} 6379
+${SECRET_PLACEHOLDER} 0
 HEALTH_PORT = 5618
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_CACHE_SIZE = 1000  # Maximum number of cache entries
@@ -45,7 +50,7 @@ class ResourceMonitor:
         return stats['memory_percent'] <= self.memory_threshold
 
 class CacheManager:
-    def __init__(self, redis_host=REDIS_HOST, redis_port=REDIS_PORT, db=REDIS_DB):
+    def __init__(self, redis_host=${SECRET_PLACEHOLDER}
         self.redis = redis.Redis(host=redis_host, port=redis_port, db=db)
         self.resource_monitor = ResourceMonitor()
         self._setup_logging()
@@ -90,7 +95,7 @@ class CacheManager:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'cache_manager.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
                 logging.StreamHandler()
             ]
         )

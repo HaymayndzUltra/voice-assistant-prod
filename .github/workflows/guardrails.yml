@@ -1,0 +1,46 @@
+name: Guardrails
+
+on:
+  pull_request:
+    branches: ["main", "refactor/**"]
+  push:
+    branches: ["main"]
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r pc2_code/requirements.txt -r main_pc_code/requirements.txt flake8 pytest pytest-cov pyyaml
+
+      - name: Run Dependency Drift Checker
+        run: python scripts/dependency_drift_checker.py
+
+      - name: Run Port Conflict Checker
+        run: python scripts/check_port_conflicts.py
+
+      - name: Legacy Code Audit
+        run: python automation/legacy_code_audit.py --output legacy_report.json --fail-on-critical
+
+      - name: Legacy Config Diff
+        run: python automation/legacy_config_diff.py --fail-on-critical
+
+      - name: Dependency Freeze Compare
+        run: python automation/dep_freeze_compare.py --baseline requirements_main.txt --fail-on-drift
+
+      - name: Run flake8 for bare except
+        run: flake8 --exit-zero --select=E900 .
+
+      - name: Run tests with coverage
+        run: pytest --cov=.
+
+      - name: Enforce coverage threshold
+        run: python automation/coverage_enforcer.py --min 40 

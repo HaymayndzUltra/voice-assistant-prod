@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test Script for Secure Communication between SystemDigitalTwin and UnifiedMemoryReasoningAgent
 
@@ -24,6 +25,7 @@ if str(project_root) not in sys.path:
 # Import the SystemDigitalTwin and UnifiedMemoryReasoningAgent
 from main_pc_code.agents.system_digital_twin import SystemDigitalTwin
 from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -44,8 +46,8 @@ class TestSecureConnection:
             logger.info("Secure ZMQ disabled")
             
         # Override configuration for local testing
-        os.environ["MAINPC_IP"] = "127.0.0.1"
-        os.environ["PC2_IP"] = "127.0.0.1"
+        os.environ["MAINPC_IP"] = "localhost"
+        os.environ["PC2_IP"] = "localhost"
         os.environ["SYSTEM_DIGITAL_TWIN_PORT"] = "7120"
         os.environ["UNIFIED_MEMORY_REASONING_PORT"] = "7230"
         
@@ -112,7 +114,7 @@ class TestSecureConnection:
                 logger.error(f"Error configuring secure ZMQ: {e}")
         
         # Connect to SystemDigitalTwin
-        socket.connect("tcp://127.0.0.1:7120")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7120")
         
         # Send health check request
         logger.info("Sending health check request...")

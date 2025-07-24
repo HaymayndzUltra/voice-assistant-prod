@@ -1,4 +1,6 @@
 from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 """
 Feedback Handler Module
 Provides visual and voice confirmation feedback for command execution
@@ -6,18 +8,19 @@ Provides visual and voice confirmation feedback for command execution
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import threading
 import time
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple, Union
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
+from common.env_helpers import get_env
 
 # Load config at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 logger = logging.getLogger("FeedbackHandler")
 
@@ -63,7 +66,7 @@ class FeedbackHandler(BaseAgent):
         self.feedback_received_count = 0
         self.last_feedback_time = None
         super().__init__(name=self.name, port=self.port)
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Socket for GUI feedback (visual)
         self.gui_socket = self.context.socket(zmq.PUB)
@@ -104,13 +107,7 @@ class FeedbackHandler(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        # Deprecated direct PUB socket removed – handled by ErrorPublisher
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         
     def send_visual_feedback(self, message: str, status: str = "success", 
@@ -300,7 +297,7 @@ class FeedbackHandler(BaseAgent):
         self.last_gui_reconnect = current_time
         try:
             # Close and recreate socket
-            self.gui_socket.close()
+            self.gui_
             self.gui_socket = self.context.socket(zmq.PUB)
             self.gui_socket.bind(f"tcp://*:5578")
             self.gui_connected = True
@@ -318,7 +315,7 @@ class FeedbackHandler(BaseAgent):
         self.last_voice_reconnect = current_time
         try:
             # Close and recreate socket
-            self.voice_socket.close()
+            self.voice_
             self.voice_socket = self.context.socket(zmq.PUB)
             self.voice_socket.connect(f"tcp://{config.get('host', '127.0.0.1')}:5574")
             self.voice_connected = True
@@ -348,8 +345,8 @@ class FeedbackHandler(BaseAgent):
         time.sleep(0.2)  # Give thread time to exit
         
         try:
-            self.gui_socket.close()
-            self.voice_socket.close()
+            self.gui_
+            self.voice_
             logger.info("Feedback handler shutdown complete")
         except Exception as e:
             logger.error(f"Error during feedback handler shutdown: {e}")
@@ -431,10 +428,8 @@ if __name__ == "__main__":
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
                 self.socket.close()
-            
             if hasattr(self, 'context') and self.context:
                 self.context.term()
-                
             # Close any open file handles
             # [Add specific resource cleanup here]
             

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 EmotionEngine Health Check Validation Script
 Performs comprehensive health check validation on EmotionEngine agent
@@ -13,6 +14,7 @@ import signal
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 class EmotionEngineHealthChecker:
     def __init__(self, main_port: int = 5575, script_path: str = "agents/emotion_engine.py"):

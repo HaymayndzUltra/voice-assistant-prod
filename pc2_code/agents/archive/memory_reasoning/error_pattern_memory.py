@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Error Pattern Memory - For tracking, learning, and suggesting fixes for common errors
 # Maintains a database of encountered errors and their successful fixes
 # Enables more intelligent auto-fix workflows
@@ -13,9 +14,13 @@ import re
 import hashlib
 from pathlib import Path
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Setup logging
-LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / "error_pattern_memory.log"
+LOG_PATH = Path(os.path.dirname(__file__)).parent / "logs" / str(PathManager.get_logs_dir() / "error_pattern_memory.log")
 LOG_PATH.parent.mkdir(exist_ok=True)
 ERROR_STORE_PATH = Path(os.path.dirname(__file__)).parent / "data" / "error_pattern_store.json"
 ERROR_STORE_PATH.parent.mkdir(exist_ok=True)

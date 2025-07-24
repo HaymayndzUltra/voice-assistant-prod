@@ -34,6 +34,9 @@ except ImportError:
 
 try:
     import ctranslate2
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     CTRANSLATE_AVAILABLE = True
 except ImportError:
     CTRANSLATE_AVAILABLE = False
@@ -48,7 +51,7 @@ logger = logging.getLogger("llm_model_manager")
 # Default paths
 BASE_DIR = Path(os.environ.get("MODEL_DIR", "/app/models"))
 CONFIG_FILE = BASE_DIR / "model_config.json"
-CACHE_DIR = Path("/tmp/model_cache")
+CACHE_DIR = Path(str(PathManager.get_temp_dir() / "model_cache"))
 
 # Model definitions
 DEFAULT_MODELS = {

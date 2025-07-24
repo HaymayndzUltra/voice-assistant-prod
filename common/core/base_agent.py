@@ -1,5 +1,6 @@
 """
-Base Agent Class with Proper Initialization and Health Check Patterns
+Base Agent Class with Proper Initialization and Standardized Health Check Patterns
+Enhanced with unified health checking system
 """
 import sys
 import os
@@ -13,6 +14,9 @@ import socket
 from typing import Dict, Any, cast, Optional, Union, List, Tuple, TypeVar, cast
 from datetime import datetime
 from abc import ABC, abstractmethod
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
 
 # Import the PathManager for consistent path resolution
 from common.utils.path_manager import PathManager
@@ -25,6 +29,17 @@ from common.utils.data_models import (
 
 # Use centralized JSON logger
 from common.utils.logger_util import get_json_logger
+from common.env_helpers import get_env
+
+# Import standardized health checking
+from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+
+# Import unified error handling (replaces direct NATS import)
+from common.error_bus.unified_error_handler import UnifiedErrorHandler, create_unified_error_handler
+
+# Import Prometheus metrics support
+from common.utils.prometheus_exporter import create_agent_exporter, PrometheusExporter
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -68,6 +83,9 @@ class BaseAgent:
                 self.health_check_port = self.port + 1
         else:
             self.health_check_port = self.port + 1
+            
+        # HTTP health port should be separate to avoid conflicts with ZMQ health socket
+        self.http_health_port = self.health_check_port + 1
         
         self.context = zmq.Context()
         self.strict_port = kwargs.get('strict_port', True)  # If True, do not auto-switch ports on bind failure
@@ -77,15 +95,41 @@ class BaseAgent:
         self.is_initialized = threading.Event()
         self.initialization_error = None
         self.start_time = time.time()
+        self._cleanup_called = False  # Prevent multiple cleanup calls
+        
+        # Add task management for proper lifecycle (FIX for "Event loop is closed")
+        self._error_reporting_tasks = set()  # Track all error reporting tasks
+        self._shutdown_event = None  # Will be initialized when async context is available
         
         # Set up logging directory using PathManager
         self._setup_logging()
+        
+        # Initialize Prometheus metrics exporter
+        self._setup_prometheus_metrics(kwargs)
+        
+        # Initialize standardized health checker
+        self.health_checker = StandardizedHealthChecker(
+            agent_name=self.name,
+            port=self.port,
+            redis_host=kwargs.get('redis_host', 'localhost'),
+            redis_port=kwargs.get('redis_port', 6379)
+        )
+        
+        # Initialize unified error handler (handles both legacy ZMQ and modern NATS)
+        self.unified_error_handler: Optional[UnifiedErrorHandler] = None
+        self.error_handler_task = None
+        self._start_unified_error_handler_initialization(
+            enable_legacy=kwargs.get('enable_legacy_errors', True),
+            enable_nats=kwargs.get('enable_nats_errors', True),
+            nats_servers=kwargs.get('nats_servers', None)
+        )
         
         # Initialize sockets with proper error handling
         self._init_sockets()
         
         # Start health check thread immediately
         self._start_health_check()
+        self._start_http_health_server()
         
         # Start initialization in background
         self._start_initialization()
@@ -93,25 +137,104 @@ class BaseAgent:
         # Get agent capabilities for registration
         self.capabilities = kwargs.get('capabilities', self._get_default_capabilities())
         
+        # Set up graceful shutdown handlers
+        self._setup_graceful_shutdown()
+        
         # Set up auto-registration with SystemDigitalTwin
         self._register_with_digital_twin()
         
         logger.info(f"{self.name} initialized on port {self.port} (health check: {self.health_check_port})")
     
     def _setup_logging(self):
-        """Configure per-agent JSON structured logging."""
-        logs_dir = PathManager.get_logs_dir()
+        """Configure per-agent JSON structured logging with rotation."""
+        from pathlib import Path
+        from common.utils.logger_util import get_rotating_json_logger
+        
+        project_root = Path(PathManager.get_project_root())
+        logs_dir = project_root / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
         agent_log_file = logs_dir / f"{self.name.lower()}.log"
 
-        # Replace existing handlers with JSON handlers only once
-        self.logger = get_json_logger(self.name, logfile=str(agent_log_file))
+        # Use rotating JSON logger to prevent disk space issues
+        self.logger = get_rotating_json_logger(
+            name=self.name,
+            log_file=str(agent_log_file),
+            max_bytes=10*1024*1024,  # 10MB max file size
+            backup_count=5,          # Keep 5 old files
+            level=logging.INFO,
+            console_output=True      # Also log to console
+        )
 
         # Attach agent_name attribute to records automatically via LoggerAdapter
         self.logger = logging.LoggerAdapter(self.logger, extra={"agent_name": self.name})
 
-        self.logger.info(f"Initialized JSON logging -> {agent_log_file}")
+        self.logger.info(f"Initialized rotating JSON logging -> {agent_log_file}")
+        self.logger.info(f"Log rotation: 10MB max, 5 backups", extra={
+            "max_bytes": 10*1024*1024,
+            "backup_count": 5,
+            "rotation_enabled": True
+        })
+    
+    def _setup_prometheus_metrics(self, kwargs: Dict[str, Any]):
+        """Initialize Prometheus metrics exporter for the agent."""
+        try:
+            # Check if metrics are enabled (default: True)
+            enable_metrics = kwargs.get('enable_prometheus_metrics', 
+                                       os.getenv('ENABLE_PROMETHEUS_METRICS', 'true').lower() == 'true')
+            
+            if enable_metrics:
+                # Create Prometheus exporter
+                self.prometheus_exporter = create_agent_exporter(
+                    agent_name=self.name,
+                    agent_port=self.port,
+                    enable_system_metrics=kwargs.get('enable_system_metrics', True)
+                )
+                
+                if self.prometheus_exporter:
+                    # Set initial health status
+                    self.prometheus_exporter.set_health_status('starting')
+                    
+                    # Record agent initialization
+                    self.prometheus_exporter.record_request(
+                        method='initialization',
+                        endpoint='agent_startup',
+                        status='success',
+                        duration=time.time() - self.start_time
+                    )
+                    
+                    self.logger.info("Prometheus metrics exporter initialized", extra={
+                        "metrics_enabled": True,
+                        "metrics_port": self.http_health_port,
+                        "agent_port": self.port,
+                        "component": "prometheus_metrics"
+                    })
+                else:
+                    self.logger.warning("Failed to initialize Prometheus exporter")
+                    self.prometheus_exporter = None
+            else:
+                self.prometheus_exporter = None
+                self.logger.info("Prometheus metrics disabled", extra={
+                    "metrics_enabled": False,
+                    "component": "prometheus_metrics"
+                })
+                
+        except Exception as e:
+            self.logger.error(f"Error setting up Prometheus metrics: {e}", extra={
+                "error": str(e),
+                "component": "prometheus_metrics"
+            })
+            self.prometheus_exporter = None
+    
+    def _setup_graceful_shutdown(self):
+        """Setup graceful shutdown handlers for SIGTERM and SIGINT signals."""
+        
+    
+    def _atexit_cleanup(self):
+        """Cleanup method called on normal Python exit."""
+        if self.running:
+            self.logger.info(f"{self.name} performing atexit cleanup...")
+            self.cleanup()
     
     def _find_available_port(self, start_port: int = 5000, max_attempts: int = 100) -> int:
         """Find an available port starting from start_port.
@@ -205,7 +328,8 @@ class BaseAgent:
                     config = getattr(self, 'config', {}) or {}
                     if not config.get('health_check_port') and self.health_check_port == old_port + 1:
                         self.health_check_port = self.port + 1
-                        logger.info(f"Auto-switching health check port to {self.health_check_port}")
+                        self.http_health_port = self.health_check_port + 1
+                        logger.info(f"Auto-switching health check port to {self.health_check_port}, HTTP health to {self.http_health_port}")
                 else:
                     logger.error(f"Failed to initialize sockets after {max_retries} attempts")
                     self.cleanup()
@@ -234,6 +358,24 @@ class BaseAgent:
             raise
         finally:
             self.is_initialized.set()
+            
+            # Mark agent as ready in Redis using standardized health system
+            try:
+                initialization_details = {
+                    "initialized_at": datetime.now().isoformat(),
+                    "uptime": time.time() - self.start_time,
+                    "port": self.port,
+                    "health_check_port": self.health_check_port
+                }
+                self.health_checker.set_agent_ready(initialization_details)
+                logger.info(f"✅ {self.name} marked as ready in Redis")
+                
+                # Update Prometheus health status to healthy
+                if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                    self.prometheus_exporter.set_health_status('healthy')
+                    logger.debug(f"Prometheus health status set to healthy for {self.name}")
+            except Exception as e:
+                logger.warning(f"Failed to set ready signal for {self.name}: {e}")
     
     def _health_check_loop(self):
         """Health check loop that handles incoming health check requests."""
@@ -292,18 +434,131 @@ class BaseAgent:
             time.sleep(0.1)
     
     def _get_health_status(self) -> Dict[str, Any]:
-        """Get the current health status of the agent."""
-        status = {
-            "status": "ok",  # Always use lowercase 'ok' for consistency
-            "ready": True,
-            "initialized": self.is_initialized.is_set(),
-            "message": f"{self.name} is healthy",
-            "timestamp": datetime.now().isoformat(),
-            "uptime": time.time() - self.start_time,
-            "active_threads": threading.active_count()
-        }
+        """Get the current health status using standardized health checker."""
+        try:
+            # Use standardized health checker
+            health_check = self.health_checker.perform_health_check()
+            
+            # Convert to legacy format for backward compatibility
+            status = {
+                "status": "ok" if health_check.status == HealthStatus.HEALTHY else "degraded",
+                "ready": health_check.checks.get("ready_signal", False),
+                "initialized": self.is_initialized.is_set(),
+                "message": f"{self.name} is {health_check.status.value}",
+                "timestamp": health_check.timestamp.isoformat(),
+                "uptime": time.time() - self.start_time,
+                "active_threads": threading.active_count(),
+                # Add standardized health data
+                "health_checks": health_check.checks,
+                "health_details": health_check.details,
+                "health_status": health_check.status.value
+            }
+            
+            if health_check.error_message:
+                status["error"] = health_check.error_message
+                
+        except Exception as e:
+            # Fallback to basic status if standardized check fails
+            logger.error(f"Standardized health check failed for {self.name}: {e}")
+            status = {
+                "status": "error",
+                "ready": False,
+                "initialized": self.is_initialized.is_set(),
+                "message": f"{self.name} health check error: {e}",
+                "timestamp": datetime.now().isoformat(),
+                "uptime": time.time() - self.start_time,
+                "active_threads": threading.active_count(),
+                "error": str(e)
+            }
+            
         logger.debug(f"{self.name} health status: {status}")
         return status
+    
+    def _start_unified_error_handler_initialization(self, enable_legacy, enable_nats, nats_servers):
+        """Start unified error handler initialization in background thread"""
+        def init_unified_handler():
+            try:
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                async def connect_unified_handler():
+                    try:
+                        self.unified_error_handler = await create_unified_error_handler(
+                            agent_name=self.name,
+                            enable_legacy=enable_legacy,
+                            enable_nats=enable_nats,
+                            nats_servers=nats_servers
+                        )
+                        
+                        # Set up legacy error sending method (will be implemented separately)
+                        self.unified_error_handler.set_legacy_handler(self._send_error_to_digital_twin)
+                        
+                        logger.info(f"✅ Unified Error Handler initialized for {self.name}")
+                    except Exception as e:
+                        logger.warning(f"Unified Error Handler initialization failed for {self.name}: {e}")
+                        self.unified_error_handler = None
+                
+                loop.run_until_complete(connect_unified_handler())
+                loop.close()
+                
+            except Exception as e:
+                logger.warning(f"Unified error handler initialization failed for {self.name}: {e}")
+                self.unified_error_handler = None
+        
+        # Start in background thread
+        self.error_handler_task = threading.Thread(target=init_unified_handler, daemon=True)
+        self.error_handler_task.start()
+    
+    async def _send_error_to_digital_twin(self, error_report):
+        """Legacy method to send error to SystemDigitalTwin via ZMQ"""
+        try:
+            # This would be the existing ZMQ implementation to SystemDigitalTwin
+            # For now, we'll log it - actual implementation depends on existing ZMQ setup
+            logger.info(f"📤 Sending error to SystemDigitalTwin: {error_report.error_id}")
+            
+            # TODO: Implement actual ZMQ send to SystemDigitalTwin
+            # Example:
+            # if hasattr(self, 'digital_twin_socket') and self.digital_twin_socket:
+            #     self.digital_twin_socket.send_json(error_report.dict())
+            
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to send error to SystemDigitalTwin: {e}")
+            return False
+    
+    async def _report_error_async(self,
+                                 error_type: str,
+                                 message: str,
+                                 severity,
+                                 details: Optional[Dict[str, Any]] = None,
+                                 category = None,
+                                 stack_trace: Optional[str] = None,
+                                 related_task_id: Optional[str] = None) -> Dict[str, bool]:
+        """
+        Internal async implementation for unified error reporting
+        """
+        if self.unified_error_handler:
+            try:
+                results = await self.unified_error_handler.report_error(
+                    severity=severity,
+                    message=message,
+                    error_type=error_type,
+                    details=details,
+                    category=category,
+                    stack_trace=stack_trace,
+                    related_task_id=related_task_id
+                )
+                
+                logger.debug(f"📊 Error reporting results: {results}")
+                return results
+                
+            except Exception as e:
+                logger.error(f"❌ Unified error reporting failed: {e}")
+        
+        # Fallback to basic logging if unified handler not available
+        logger.error(f"[FALLBACK] {severity}: {message} - Details: {details}")
+        return {"legacy": False, "nats": False}
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle incoming requests."""
@@ -386,7 +641,40 @@ class BaseAgent:
     
     def cleanup(self):
         """Clean up resources with proper error handling and ensure all background threads are joined."""
+        if self._cleanup_called:
+            logger.debug(f"{self.name} cleanup already called, skipping")
+            return
+        
+        self._cleanup_called = True
         logger.info(f"{self.name} cleaning up resources")
+        
+        # Mark agent as not ready in Redis
+        try:
+            self.health_checker.set_agent_not_ready("cleanup initiated")
+            logger.info(f"🛑 {self.name} marked as not ready in Redis")
+        except Exception as e:
+            logger.warning(f"Failed to remove ready signal for {self.name}: {e}")
+        
+        # Cleanup Prometheus metrics
+        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+            try:
+                self.prometheus_exporter.cleanup()
+                logger.info(f"✅ Prometheus metrics exporter cleaned up for {self.name}")
+            except Exception as e:
+                logger.warning(f"Failed to cleanup Prometheus exporter for {self.name}: {e}")
+        
+        # Close unified error handler
+        if self.unified_error_handler:
+            try:
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self.unified_error_handler.close())
+                loop.close()
+                logger.info(f"✅ Unified error handler closed for {self.name}")
+            except Exception as e:
+                logger.warning(f"Failed to close unified error handler for {self.name}: {e}")
+        
         # Signal loops to stop
         self.running = False
 
@@ -447,6 +735,11 @@ class BaseAgent:
             except Exception as e:
                 logger.error(f"{self.name} error terminating health context: {e}")
         
+        # Shutdown HTTP server if exists
+        if hasattr(self, 'http_server'):
+            self.http_server.shutdown()
+            self.http_server.server_close()
+        
         logger.info(f"{self.name} cleanup complete")
         
     def _safe_int(self, value: Any, default: int = 0) -> int:
@@ -485,7 +778,7 @@ class BaseAgent:
             try:
                 ip_address = socket.gethostbyname(hostname)
             except socket.gaierror:
-                ip_address = "127.0.0.1"
+                ip_address = "localhost"
                 logger.warning(f"Could not resolve hostname, using {ip_address}")
             
             # Prepare registration data
@@ -503,6 +796,10 @@ class BaseAgent:
                 }
             )
             
+            # Get Digital Twin endpoint from env vars
+            dt_host = os.getenv('DIGITAL_TWIN_HOST', '0.0.0.0')
+            dt_port = int(os.getenv('DIGITAL_TWIN_PORT', 7120))
+            
             # Send registration to SystemDigitalTwin
             self.send_request_to_agent(
                 "SystemDigitalTwin",
@@ -513,10 +810,12 @@ class BaseAgent:
                     "location": "MainPC",  # Default to MainPC, can be overridden
                     "registration_data": registration.dict()
                 },
+                host=dt_host,
+                port=dt_port,
                 retries=3,
                 retry_delay=2.0
             )
-            logger.info(f"Successfully registered {self.name} with SystemDigitalTwin")
+            logger.info(f"Successfully registered {self.name} with SystemDigitalTwin at {dt_host}:{dt_port}")
         except Exception as e:
             logger.warning(f"Failed to register with SystemDigitalTwin: {e}. Will continue without registration.")
     
@@ -536,14 +835,14 @@ class BaseAgent:
             response = self.send_request_to_agent(
                 "ServiceRegistry",
                 {"action": "get_agent_endpoint", "agent_name": agent_name},
-                host=os.getenv("SERVICE_REGISTRY_HOST", "localhost"),
+                host=os.getenv("SERVICE_REGISTRY_HOST", get_env("BIND_ADDRESS", "0.0.0.0")),
                 port=int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
             )
             
             if response.get("status") != "success":
                 raise RuntimeError(f"Failed to get endpoint for {agent_name}: {response.get('error', 'Unknown error')}")
             
-            host = response.get("host", "localhost")
+            host = response.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             port = response.get("port")
             
             if port is None:
@@ -583,7 +882,7 @@ class BaseAgent:
         """
         # Special case for SystemDigitalTwin - use hardcoded values if discovery not available
         if agent_name == "SystemDigitalTwin" and (host is None or port is None):
-            host = host or "localhost"
+            host = host or get_env("BIND_ADDRESS", "0.0.0.0")
             port = port or 7120  # Default SystemDigitalTwin port from config
         
         # Try to discover the agent if host/port not provided
@@ -595,7 +894,7 @@ class BaseAgent:
             except Exception as e:
                 if agent_name == "SystemDigitalTwin":
                     # For SystemDigitalTwin, fall back to default if discovery fails
-                    host = "localhost"
+                    host = get_env("BIND_ADDRESS", "0.0.0.0")
                     port = 7120
                     logger.warning(f"Using default SystemDigitalTwin endpoint: {host}:{port}")
                 else:
@@ -603,7 +902,7 @@ class BaseAgent:
         
         # Ensure host and port are not None at this point
         if host is None:
-            host = "localhost"
+            host = get_env("BIND_ADDRESS", "0.0.0.0")
             logger.warning(f"Host was None for {agent_name}, using default: {host}")
         
         if port is None:
@@ -681,45 +980,317 @@ class BaseAgent:
         except Exception as e:
             logger.error(f"Failed to send event {event_type}: {e}")
     
-    def report_error(
-        self, 
-        error_type: str, 
-        message: str, 
-        severity: ErrorSeverity = ErrorSeverity.ERROR,
-        context: Optional[Dict[str, Any]] = None,
-        stack_trace: Optional[str] = None,
-        related_task_id: Optional[str] = None
-    ) -> None:
-        """Report an error to the error management system.
+
+    def report_error(self,
+                     error_type: str,  # MAINTAIN original first parameter
+                     message: str,     # MAINTAIN original second parameter  
+                     severity = None,  # Accept legacy enum or new string
+                     context: Optional[Dict[str, Any]] = None,  # Legacy name
+                     details: Optional[Dict[str, Any]] = None,  # New name
+                     category = None,  # New NATS category
+                     stack_trace: Optional[str] = None,
+                     related_task_id: Optional[str] = None,
+                     wait_for_completion: bool = False,  # NEW: Control async behavior
+                     **kwargs) -> Union[Dict[str, bool], Any]:
+        """
+        UNIFIED error reporting with PROPER TASK LIFECYCLE MANAGEMENT
+        
+        Supports both old and new calling patterns:
+        - Legacy: report_error("network_error", "Connection failed", ErrorSeverity.CRITICAL)
+        - Enhanced: report_error("network_error", "Connection failed", "critical", category=ErrorCategory.NETWORK)
+        - Synchronous: report_error("error", "message", wait_for_completion=True)
         
         Args:
-            error_type: Type or category of error
+            error_type: Type or category of error (legacy parameter)
             message: Human-readable error message
-            severity: Error severity level
-            context: Additional contextual information
+            severity: Error severity level (accepts legacy enum, NATS enum, or string)
+            context: Additional contextual information (legacy parameter name)
+            details: Additional error context (new parameter name, same as context)
+            category: NATS error category (new parameter for enhanced error bus)
             stack_trace: Optional stack trace
             related_task_id: ID of related task if applicable
-        """
-        try:
-            error_report = ErrorReport(
-                error_id=str(uuid.uuid4()),
-                agent_id=self.name,
-                severity=severity,
-                error_type=error_type,
-                message=message,
-                context=context or {},
-                stack_trace=stack_trace,
-                related_task_id=related_task_id
-            )
+            wait_for_completion: If True, waits for error reporting to complete (safer)
             
-            self.send_request_to_agent(
-                "SystemDigitalTwin",
-                {
-                    "action": "report_error",
-                    "error": error_report.dict()
-                }
-            )
+        Returns:
+            Dict with success status: {"legacy": bool, "nats": bool} or asyncio.Task if in async context
+        """
+        # Import here to avoid circular imports
+        from common.utils.data_models import ErrorSeverity as LegacyErrorSeverity
+        
+        # Parameter unification and defaults
+        final_details = details or context or {}
+        final_severity = severity or LegacyErrorSeverity.ERROR
+        
+        # Enhanced async/sync handling with proper task management
+        try:
+            import asyncio
+            
+            # Check if we have a running event loop
+            try:
+                loop = asyncio.get_running_loop()
+                in_async_context = True
+            except RuntimeError:
+                # No running loop, we're in sync context
+                in_async_context = False
+                loop = None
+            
+            if in_async_context and not wait_for_completion:
+                # SAFE ASYNC: Managed task creation with proper cleanup
+                task = self._create_managed_error_task(
+                    error_type=error_type,
+                    message=message,
+                    severity=final_severity,
+                    details=final_details,
+                    category=category,
+                    stack_trace=stack_trace,
+                    related_task_id=related_task_id
+                )
+                return task  # Returns awaitable with cleanup
+            else:
+                # SYNCHRONOUS: Run to completion safely
+                return self._report_error_sync(
+                    error_type=error_type,
+                    message=message,
+                    severity=final_severity,
+                    details=final_details,
+                    category=category,
+                    stack_trace=stack_trace,
+                    related_task_id=related_task_id
+                )
         except Exception as e:
-            # Log locally if error reporting fails
-            logger.error(f"Error in report_error: {e}")
-            logger.error(f"Original error: {error_type} - {message}") 
+            logger.error(f"Error reporting failed: {e}")
+            # Fallback to basic logging
+            logger.error(f"[FALLBACK] {error_type}: {message} - Details: {final_details}")
+            return {"legacy": False, "nats": False}
+
+    def _ensure_shutdown_event(self):
+        """Ensure shutdown event is initialized in async context"""
+        if self._shutdown_event is None:
+            import asyncio
+            self._shutdown_event = asyncio.Event()
+
+    def _create_managed_error_task(self, **kwargs):
+        """Create error reporting task with proper lifecycle management"""
+        import asyncio
+        
+        # Ensure shutdown event is initialized
+        self._ensure_shutdown_event()
+        
+        async def managed_error_wrapper():
+            try:
+                # Check if shutdown is in progress
+                if self._shutdown_event and self._shutdown_event.is_set():
+                    logger.warning("Skipping error reporting - agent is shutting down")
+                    return {"legacy": False, "nats": False}
+                
+                # Perform actual error reporting
+                result = await self._report_error_async(**kwargs)
+                return result
+                
+            except Exception as e:
+                logger.error(f"Managed error reporting failed: {e}")
+                return {"legacy": False, "nats": False}
+            finally:
+                # Remove task from tracking set when done
+                current_task = asyncio.current_task()
+                self._error_reporting_tasks.discard(current_task)
+        
+        # Create and track the task
+        loop = asyncio.get_running_loop()
+        task = loop.create_task(managed_error_wrapper())
+        self._error_reporting_tasks.add(task)
+        
+        # Add callback to handle task completion
+        task.add_done_callback(lambda t: self._error_reporting_tasks.discard(t))
+        
+        return task
+
+    def _report_error_sync(self, **kwargs):
+        """Synchronous error reporting with proper event loop handling"""
+        import asyncio
+        
+        try:
+            # Try to get existing loop
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context, but user wants sync behavior
+                # Create a new task and wait for it
+                task = loop.create_task(self._report_error_async(**kwargs))
+                
+                # Use asyncio.wait_for with timeout to prevent hanging
+                try:
+                    future = asyncio.wait_for(task, timeout=30.0)  # 30 second timeout
+                    return loop.run_until_complete(future)
+                except asyncio.TimeoutError:
+                    logger.error("Error reporting timed out after 30 seconds")
+                    task.cancel()
+                    return {"legacy": False, "nats": False}
+                    
+            except RuntimeError:
+                # No running loop, create new one
+                loop = asyncio.new_event_loop()
+                try:
+                    asyncio.set_event_loop(loop)
+                    return loop.run_until_complete(self._report_error_async(**kwargs))
+                finally:
+                    loop.close()
+                    
+        except Exception as e:
+            logger.error(f"Synchronous error reporting failed: {e}")
+            return {"legacy": False, "nats": False}
+
+    async def shutdown_gracefully(self, timeout: float = 30.0):
+        """Graceful shutdown with proper task cleanup"""
+        logger.info(f"Starting graceful shutdown for {self.name}")
+        
+        # Signal shutdown to prevent new tasks
+        self._ensure_shutdown_event()
+        if self._shutdown_event:
+            self._shutdown_event.set()
+        
+        # Wait for existing error reporting tasks to complete
+        if self._error_reporting_tasks:
+            logger.info(f"Waiting for {len(self._error_reporting_tasks)} error reporting tasks to complete")
+            
+            try:
+                await asyncio.wait_for(
+                    asyncio.gather(*self._error_reporting_tasks, return_exceptions=True),
+                    timeout=timeout
+                )
+                logger.info("All error reporting tasks completed successfully")
+            except asyncio.TimeoutError:
+                logger.warning(f"Some error reporting tasks didn't complete within {timeout}s, cancelling...")
+                for task in self._error_reporting_tasks:
+                    if not task.done():
+                        task.cancel()
+                
+                # Wait a bit more for cancellations to complete
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(*self._error_reporting_tasks, return_exceptions=True),
+                        timeout=5.0
+                    )
+                except asyncio.TimeoutError:
+                    logger.error("Some tasks failed to cancel properly")
+        
+        # Shutdown unified error handler
+        if hasattr(self, 'unified_error_handler') and self.unified_error_handler:
+            try:
+                await self.unified_error_handler.shutdown()
+            except Exception as e:
+                logger.error(f"Error shutting down unified error handler: {e}")
+        
+        logger.info(f"Graceful shutdown completed for {self.name}") 
+
+    def _start_http_health_server(self):
+        """Start a simple HTTP server for health checks and metrics on separate port to avoid ZMQ conflict."""
+        class HealthHandler(BaseHTTPRequestHandler):
+            def do_GET(s):
+                start_time = time.time()
+                
+                if s.path == '/health':
+                    try:
+                        s.send_response(200)
+                        s.send_header('Content-type', 'application/json')
+                        s.end_headers()
+                        status = self._get_health_status()
+                        s.wfile.write(json.dumps(status).encode())
+                        
+                        # Record metrics if available
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/health',
+                                status='200',
+                                duration=duration
+                            )
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('health_endpoint_error', 'error')
+                
+                elif s.path == '/metrics':
+                    try:
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            # Generate Prometheus metrics
+                            metrics_data = self.prometheus_exporter.export_metrics()
+                            content_type = self.prometheus_exporter.get_metrics_content_type()
+                            
+                            s.send_response(200)
+                            s.send_header('Content-type', content_type)
+                            s.end_headers()
+                            s.wfile.write(metrics_data.encode())
+                            
+                            # Record metrics request
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/metrics',
+                                status='200',
+                                duration=duration
+                            )
+                        else:
+                            # Metrics not available
+                            s.send_response(503)
+                            s.send_header('Content-type', 'text/plain')
+                            s.end_headers()
+                            s.wfile.write(b"Prometheus metrics not enabled or available")
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('metrics_endpoint_error', 'error')
+                
+                elif s.path == '/metrics/summary':
+                    try:
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            # Generate metrics summary for debugging
+                            summary = self.prometheus_exporter.get_metrics_summary()
+                            
+                            s.send_response(200)
+                            s.send_header('Content-type', 'application/json')
+                            s.end_headers()
+                            s.wfile.write(json.dumps(summary, indent=2).encode())
+                            
+                            # Record metrics summary request
+                            duration = time.time() - start_time
+                            self.prometheus_exporter.record_request(
+                                method='GET',
+                                endpoint='/metrics/summary',
+                                status='200',
+                                duration=duration
+                            )
+                        else:
+                            s.send_response(503)
+                            s.send_header('Content-type', 'application/json')
+                            s.end_headers()
+                            s.wfile.write(json.dumps({"error": "Metrics not available"}).encode())
+                    except Exception as e:
+                        s.send_error(500)
+                        if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                            self.prometheus_exporter.record_error('metrics_summary_error', 'error')
+                
+                else:
+                    s.send_error(404)
+                    if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
+                        duration = time.time() - start_time
+                        self.prometheus_exporter.record_request(
+                            method='GET',
+                            endpoint=s.path,
+                            status='404',
+                            duration=duration
+                        )
+            
+            def log_message(self, format, *args):
+                # Suppress HTTP server logs to reduce noise
+                pass
+        
+        try:
+            self.http_server = HTTPServer(('0.0.0.0', self.http_health_port), HealthHandler)
+            thread = threading.Thread(target=self.http_server.serve_forever)
+            thread.daemon = True
+            thread.start()
+            logger.info(f"Started HTTP health server on port {self.http_health_port} (ZMQ health on {self.health_check_port})")
+        except OSError as e:
+            logger.warning(f"Failed to start HTTP health server on port {self.http_health_port}: {e}")
+            logger.info(f"HTTP health endpoint unavailable, ZMQ health check still available on port {self.health_check_port}") 

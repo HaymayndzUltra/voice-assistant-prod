@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Ultimate TTS Agent
 Provides advanced text-to-speech capabilities with 4-tier fallback system:
@@ -22,6 +23,7 @@ import hashlib
 import tempfile
 import re
 from collections import OrderedDict
+from common.env_helpers import get_env
 
 # Add the parent directory to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -32,13 +34,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).resolve().parent.parent.parent, 'modular_system', 'logs', 'ultimate_tts_agent.py.log'))
+        logging.FileHandler(os.path.join(Path(__file__).resolve().parent.parent.parent, 'modular_system', 'logs', str(PathManager.get_logs_dir() / "ultimate_tts_agent.py.log")))
     ]
 )
 logger = logging.getLogger("UltimateTTSAgent")
 
 # Add custom XTTS path
-xtts_path = rjoin_path("models", "xtts_local")
+xtts_path = rPathManager.join_path("models", "xtts_local")
 if os.path.exists(xtts_path):
     sys.path.append(xtts_path)
     logger.info(f"Added custom XTTS path: {xtts_path}")
@@ -253,6 +255,9 @@ class UltimateTTSAgent(BaseAgent):
             
             # Read audio file
             import soundfile as sf
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

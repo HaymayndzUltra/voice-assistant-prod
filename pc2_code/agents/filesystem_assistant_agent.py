@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 FileSystem Assistant Agent
 --------------------------
@@ -8,7 +9,7 @@ to perform controlled file operations across the distributed system.
 The agent runs with a REP socket pattern to handle requests and provide responses.
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 import sys
@@ -16,6 +17,7 @@ import threading
 import logging
 import shutil
 import yaml
+import zmq
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -25,13 +27,12 @@ import time
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add project root to Python path
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+from common.utils.path_manager import PathManager
+
+# Set up paths using PathManager (after import)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
@@ -52,7 +53,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -60,8 +61,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -72,7 +73,7 @@ def load_network_config():
         }
 
 # Setup logging before any other imports that might use logging
-LOG_DIR = project_root / "logs" # Use project_root for consistency
+LOG_DIR = Path(project_root) / "logs" # Use project_root for consistency
 LOG_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -88,8 +89,8 @@ logger = logging.getLogger("FilesystemAssistant")
 network_config = load_network_config()
 
 # Get machine IPs from network config
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 
 # Get port configuration from network config
@@ -135,7 +136,7 @@ class FileSystemAssistantAgent(BaseAgent):
         self.lock = threading.Lock()
         
         # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         # Start health check thread
         self._start_health_check_thread()
@@ -143,36 +144,7 @@ class FileSystemAssistantAgent(BaseAgent):
         logger.info(f"{self.name} initialized successfully.")
         logger.info(f"Working directory: {os.getcwd()}")
 
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom methods
 
     def _start_health_check_thread(self):
         """Start health check thread."""
@@ -180,32 +152,6 @@ class FileSystemAssistantAgent(BaseAgent):
         self.health_thread.start()
         logger.info("Health check thread started")
     
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100) == 0: # 100ms timeout, zmq.POLLIN is default for poll()
-                    continue
-                
-                # Receive request (content is usually not important for health checks)
-                _ = self.health_socket.recv()
-                
-                # Get health data (calls the overridden _get_health_status)
-                health_data = self._get_health_status()
-                
-                # Send response
-                self.health_socket.send_json(health_data)
-                
-            except zmq.error.Again: # Timeout, no request received
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                self.report_error("HEALTH_CHECK_ERROR", str(e))
-                time.sleep(1) # Sleep longer on error
-
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent. Overrides BaseAgent's method."""
         base_status = super()._get_health_status() # Get base status from BaseAgent
@@ -546,18 +492,11 @@ class FileSystemAssistantAgent(BaseAgent):
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
         
-        # Close error bus socket
-        if hasattr(self, 'error_bus_pub'):
-            try:
-                self.error_bus_pub.close()
-                logger.info("Closed error bus socket")
-            except Exception as e:
-                logger.error(f"Error closing error bus socket: {e}")
+        # ✅ BaseAgent handles error bus cleanup automatically
         
         # Close any connections to other services
         for service_name, socket in getattr(self, 'main_pc_connections', {}).items():
             try:
-                socket.close()
                 logger.info(f"Closed connection to {service_name}")
             except Exception as e:
                 logger.error(f"Error closing connection to {service_name}: {e}")
@@ -624,6 +563,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

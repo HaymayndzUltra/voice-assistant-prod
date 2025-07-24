@@ -1,9 +1,10 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Streaming Language Analyzer Module
 Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import logging
 import re
@@ -20,15 +21,17 @@ import socket
 from typing import Dict, Optional, Any
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
+# from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils import model_client
+from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Optional fastText language ID
 try:
@@ -120,11 +123,7 @@ class StreamingLanguageAnalyzer(BaseAgent):
         }
         
         # Use provided port or 
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
 
         self.pub_port = self.port if self.port else ZMQ_PUB_PORT
         logger.info(f"Using port {self.pub_port} for publishing")
@@ -604,27 +603,27 @@ class StreamingLanguageAnalyzer(BaseAgent):
         logger.info("Cleaning up resources")
         try:
             if hasattr(self, 'sub_socket') and self.sub_socket:
-                self.sub_socket.close()
+                self.sub_
                 logger.info("Closed subscription socket")
                 
             if hasattr(self, 'pub_socket') and self.pub_socket:
-                self.pub_socket.close()
+                self.pub_
                 logger.info("Closed publisher socket")
                 
             if hasattr(self, 'health_socket') and self.health_socket:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
                 
             if hasattr(self, 'tagabert_socket') and self.tagabert_socket:
-                self.tagabert_socket.close()
+                self.tagabert_
                 logger.info("Closed TagaBERTa socket")
                 
             if hasattr(self, 'translation_socket') and self.translation_socket:
-                self.translation_socket.close()
+                self.translation_
                 logger.info("Closed Translation socket")
                 
             if hasattr(self, 'context') and self.context:
-                self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.info("Terminated ZMQ context")
                 
             logger.info("All resources cleaned up successfully")

@@ -14,6 +14,7 @@ import time
 import argparse
 from pathlib import Path
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -40,7 +41,7 @@ COLORS = {
 }
 
 class SecureSDTClient:
-    def __init__(self, use_secure_zmq: bool = False, host: str = "127.0.0.1", port: int = 7120):
+    def __init__(self, use_secure_zmq: bool = False, host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 7120):
         """
         Initialize the secure client.
         
@@ -206,7 +207,7 @@ def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Secure SystemDigitalTwin Client")
     parser.add_argument("--secure", action="store_true", help="Use secure ZMQ")
-    parser.add_argument("--host", default="127.0.0.1", help="SystemDigitalTwin host address")
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="SystemDigitalTwin host address")
     parser.add_argument("--port", type=int, default=7120, help="SystemDigitalTwin port number")
     parser.add_argument("--register", action="store_true", help="Register test agent")
     parser.add_argument("--agent-name", default="SecureTestAgent", help="Name of the test agent to register")

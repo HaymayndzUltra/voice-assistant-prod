@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import re
+from common.core.base_agent import BaseAgent
 
 # Direct parsing approach to scan for PC2 ZMQ services
 def scan_config_for_zmq_services():

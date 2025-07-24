@@ -1,10 +1,12 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
+MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
@@ -39,19 +41,21 @@ import psutil
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # Add project root to the Python path to allow for absolute imports
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", "..")))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # Import with canonical path
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Attempt to import health check server utility, fallback to no-op if unavailable
 try:
@@ -127,7 +131,7 @@ class StreamingAudioCapture(BaseAgent):
         self.running = True
         self.start_time = time.time()
         # Project root setup
-        self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(join_path("main_pc_code", ".."))))
+        self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(os.path.join("main_pc_code", "..")))
         if self.project_root not in sys.path:
             sys.path.insert(0, self.project_root)
         # Call BaseAgent's __init__
@@ -191,15 +195,7 @@ class StreamingAudioCapture(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
     def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
@@ -212,12 +208,7 @@ class StreamingAudioCapture(BaseAgent):
             self.health_socket.setsockopt(zmq.LINGER, 0)
             self.health_socket.setsockopt(zmq.RCVTIMEO, 1000)
             
-            # Error bus setup
-            self.error_bus_port = int(config.get("error_bus_port", 7150))
-            self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
+
             
             # Bind sockets with retry logic
             self._bind_socket_with_retry(self.pub_socket, self.pub_port)
@@ -244,23 +235,6 @@ class StreamingAudioCapture(BaseAgent):
                     raise
                 time.sleep(1)
         return False
-
-    def _health_check_loop(self):
-        logger.info("Starting health check loop")
-        while self.running:
-            try:
-                if self.health_socket and self.health_socket.poll(100) != 0:
-                    message = self.health_socket.recv() if self.health_socket else None
-                    logger.debug(f"Received health check request: {message}")
-                    response = self._get_health_status()
-                    if self.health_socket:
-                        self.health_socket.send_json(response)
-                        logger.debug("Sent health check response")
-            except zmq.error.Again:
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-            time.sleep(0.1)
 
     def _get_health_status(self):
         return {

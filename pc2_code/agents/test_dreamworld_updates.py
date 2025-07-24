@@ -3,22 +3,26 @@ import time
 import json
 import logging
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('dreamworld_test.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "dreamworld_test.log")),
         logging.StreamHandler()
     ]
 )
 
 class DreamWorldTester:
     def __init__(self):
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.sub_socket = self.context.socket(zmq.SUB)
-        self.sub_socket.connect("tcp://localhost:5599")  # New port
+        self.sub_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5599")  # New port
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         self.received_updates = []
 
@@ -39,9 +43,8 @@ class DreamWorldTester:
                 break
 
     def cleanup(self):
-        self.sub_socket.close()
-        self.context.term()
-
+        self.sub_
+        self.
 def main():
     tester = DreamWorldTester()
     try:

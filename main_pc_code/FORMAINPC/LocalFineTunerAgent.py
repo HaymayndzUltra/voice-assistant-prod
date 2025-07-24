@@ -1,17 +1,18 @@
 """
+Local Fine Tuner Agent
+Purpose: Manages model fine-tuning and artifact management
+Features: Model tuning, artifact management, job queuing
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-Local Fine Tuner Agent
-Purpose: Manages model fine-tuning and artifact management
-Features: Model tuning, artifact management, job queuing
-"""
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import zmq
 import json
@@ -40,8 +41,10 @@ from main_pc_code.utils import model_client
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -70,7 +73,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=join_path("logs", "local_fine_tuner.log")
+    filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "local_fine_tuner.log"))
 )
 logger = logging.getLogger(__name__)
 
@@ -119,7 +122,7 @@ class LocalFineTunerAgent(BaseAgent):
             "database_status": "ok"
         }
         # Database setup
-        self.db_path = join_path("data", "local_fine_tuner.db")
+        self.db_path = str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "local_fine_tuner.db"))
         self._init_db()
         # Job management
         self.active_jobs = {}
@@ -139,15 +142,7 @@ class LocalFineTunerAgent(BaseAgent):
     
     
 
-        self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
         
     def _init_db(self):
         """Initialize the SQLite database."""

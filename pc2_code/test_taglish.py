@@ -5,11 +5,12 @@ import zmq
 import time
 import json
 from colorama import Fore, Style, init
+from common.env_helpers import get_env
 
 # Initialize colorama
 init()
 
-def connect_to_translation_service(host="localhost", port=5581):
+def connect_to_translation_service(host=get_env("BIND_ADDRESS", "0.0.0.0"), port=5581):
     """Connect to the translation service"""
     context = zmq.Context()
     socket = context.socket(zmq.REQ)

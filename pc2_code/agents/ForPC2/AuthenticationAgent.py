@@ -4,9 +4,11 @@ Authentication Agent
 - Manages user sessions and tokens
 - Provides secure login/logout functionality
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 import zmq
 import json
 import logging
+from pathlib import Path
 import threading
 import time
 import hashlib
@@ -17,17 +19,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
+# ✅ MODERNIZED: Path management using standardized PathManager (consolidated)
+from common.utils.path_manager import PathManager
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project root to Python path
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+# Add project root to path using PathManager (single setup)
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import config module
 try:
@@ -54,7 +52,7 @@ logger = logging.getLogger('AuthenticationAgent')
 # Load configuration at the module level
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -62,8 +60,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -76,8 +74,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 AUTH_PORT = network_config.get("ports", {}).get("auth_agent", int(os.environ.get("AUTH_PORT", 7116)))
 AUTH_HEALTH_PORT = network_config.get("ports", {}).get("auth_health", int(os.environ.get("AUTH_HEALTH_PORT", 8116)))
@@ -457,6 +455,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

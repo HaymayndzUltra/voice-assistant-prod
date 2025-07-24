@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 End-to-End Functional Execution Test with Dependency Validation for PC2
 
@@ -18,6 +19,7 @@ import socket
 import zmq
 import json
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent

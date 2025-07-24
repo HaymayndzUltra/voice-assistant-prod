@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Service Registry Agent
 
 A minimal, highly-available registry that other agents can query to discover
@@ -16,28 +17,85 @@ Supports multiple backend storage options:
 - In-memory (default): Fast but non-persistent
 - Redis: Persistent and supports high-availability
 """
-from __future__ import annotations
 
 import argparse
-import json
+# Prefer orjson for performance if available, but gracefully fall back to the
+# standard library ``json`` so the agent can run even when the optional
+# dependency is not installed inside the Docker image.
+try:
+    import orjson as _json  # type: ignore
+    _dumps = _json.dumps  # returns bytes
+    _loads = _json.loads
+except ImportError:  # pragma: no cover – orjson is optional
+    import json as _json  # noqa: F401 – fallback
+
+    def _dumps(obj):  # type: ignore
+        """Mimic orjson.dumps signature but return bytes for consistency."""
+        text = _json.dumps(obj, separators=(",", ":"))
+        return text.encode("utf-8")
+
+    def _loads(data):  # type: ignore
+        if isinstance(data, (bytes, bytearray)):
+            data = data.decode("utf-8")
+        return _json.loads(data)
+
+# Expose dumps / loads helpers for this module
+dumps = _dumps
+loads = _loads
 import logging
 import os
+import time
+import threading
 from datetime import datetime
 from typing import Dict, Any, Optional, Protocol, runtime_checkable
 
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
+from common.env_helpers import get_env
+from common_utils.port_registry import get_port
+from common.pools.redis_pool import get_redis_client_sync
 
 # ---------------------------------------------------------------------------
-# Configuration defaults
+# Configuration defaults with port registry integration
 # ---------------------------------------------------------------------------
-DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
-DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
+# Fixed: Use port registry consistently instead of env fallbacks
+try:
+    DEFAULT_PORT = get_port("ServiceRegistry")
+    DEFAULT_HEALTH_PORT = get_port("ServiceRegistry") + 1000  # Standard health port pattern
+except Exception:
+    # Fallback only if port registry completely fails
+    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7200))
+    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8200))
+    
 DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
 DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
-DEFAULT_REDIS_PREFIX = os.getenv("SERVICE_REGISTRY_REDIS_PREFIX", "service_registry:")
+DEFAULT_PREFIX = os.getenv("SERVICE_REGISTRY_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
+
+def _start_http_health_server(port: int):
+    """Start a minimal HTTP /health endpoint so k8s/docker can probe."""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class _H(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            if self.path in ("/", "/health", "/healthz"):
+                payload = dumps({"status": "healthy", "timestamp": time.time()})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def log_message(self, *_args):  # silence
+            return
+
+    server = HTTPServer(("0.0.0.0", port), _H)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logger.info("HTTP health endpoint available at http://0.0.0.0:%s/health", port)
 
 
 @runtime_checkable
@@ -87,25 +145,20 @@ class MemoryBackend:
 class RedisBackend:
     """Redis-backed storage for the service registry.
     
-    Provides persistence and high-availability.
+    Provides persistence and high-availability using shared connection pool.
     """
     
-    def __init__(self, redis_url: str, prefix: str = DEFAULT_REDIS_PREFIX) -> None:
+    def __init__(self, redis_url: str = None, prefix: str = DEFAULT_PREFIX):
         """Initialize Redis backend.
         
         Args:
-            redis_url: Redis connection URL (redis://host:port/db)
-            prefix: Key prefix for Redis keys
+            redis_url: Redis connection URL (unused, kept for compatibility)
+            prefix: Key prefix for agent data
         """
-        try:
-            import redis
-        except ImportError:
-            logger.error("Redis package not installed. Install with: pip install redis")
-            raise
-        
         self.prefix = prefix
-        self.redis = redis.from_url(redis_url)
-        logger.info("Connected to Redis at %s", redis_url)
+        # Use shared Redis pool instead of creating new connection
+        self.redis = get_redis_client_sync()
+        logger.info("Connected to Redis using shared connection pool")
     
     def _key(self, agent_id: str) -> str:
         """Get the Redis key for an agent."""
@@ -116,14 +169,16 @@ class RedisBackend:
         data = self.redis.get(self._key(agent_id))
         if data:
             try:
-                return json.loads(data)
-            except json.JSONDecodeError:
+                return loads(data)
+            except Exception:  # noqa: BLE001 – handle any decode error gracefully
                 logger.error("Invalid JSON data for agent %s", agent_id)
         return None
     
     def set(self, agent_id: str, data: Dict[str, Any]) -> None:
         """Store agent data by ID."""
-        self.redis.set(self._key(agent_id), json.dumps(data))
+        # Redis expects ``bytes`` or ``str``.  ``dumps`` returns *bytes* for
+        # both the orjson and stdlib fallback, so we can send it directly.
+        self.redis.set(self._key(agent_id), dumps(data))
     
     def list_agents(self) -> list[str]:
         """List all registered agent IDs."""
@@ -132,13 +187,14 @@ class RedisBackend:
     
     def close(self) -> None:
         """Close Redis connection."""
-        self.redis.close()
+        # Connection is managed by shared pool, no need to close individual connection
+        pass
 
 
 class ServiceRegistryAgent(BaseAgent):
     """A service registry with configurable backend storage."""
 
-    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_REDIS_URL, **kwargs):
+    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_REDIS_URL, **kwargs) -> None:
         """Initialize the service registry.
         
         Args:
@@ -159,6 +215,10 @@ class ServiceRegistryAgent(BaseAgent):
         health = int(kwargs.pop("health_check_port", DEFAULT_HEALTH_PORT))
 
         super().__init__(name="ServiceRegistry", port=port, health_check_port=health, **kwargs)
+        
+        # Start HTTP health endpoint for container/k8s health checks
+        self.health_port = health
+        _start_http_health_server(self.health_port)
 
     # ---------------------------------------------------------------------
     # Request handling

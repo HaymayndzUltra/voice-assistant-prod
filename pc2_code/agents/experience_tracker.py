@@ -1,5 +1,6 @@
 import zmq
 from typing import Dict, Any, Optional
+from pathlib import Path
 import yaml
 import json
 import logging
@@ -8,13 +9,14 @@ import time
 import sys
 import os
 from datetime import datetime
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 logging.basicConfig # This line is functionally incomplete as per your request not to change code
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = str(Path(PathManager.get_project_root()) / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -36,8 +38,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -46,8 +48,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 class ExperienceTrackerAgent(BaseAgent):
@@ -79,18 +81,9 @@ class ExperienceTrackerAgent(BaseAgent):
         self._init_thread.start()
         logger.info(f"ExperienceTrackerAgent starting on port {port} (health: {health_port})")
 
-    
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+    def _setup_sockets(self):
         try:
             self.socket = self.context.socket(zmq.REP)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -107,7 +100,7 @@ def _setup_sockets(self):
             raise
         # Socket to communicate with EpisodicMemoryAgent
         self.episodic_socket = self.context.socket(zmq.REQ)
-        self.episodic_socket.connect(get_zmq_connection_string({self.episodic_agent_port}, "localhost")))
+        self.episodic_socket.connect(get_zmq_connection_string({self.episodic_agent_port}, "localhost"))
 
     def _start_health_check(self):
         def health_check_loop():
@@ -235,7 +228,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

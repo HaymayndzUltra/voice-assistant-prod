@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Learning Orchestration Service (LOS)
 
@@ -13,6 +14,7 @@ import logging
 import threading
 import json
 import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
 import psutil
 from pathlib import Path
@@ -23,17 +25,18 @@ from typing import Dict, Any, List, Optional, cast
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
 # --- Path Setup ---
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.utils.learning_models import TrainingCycle
 
@@ -44,18 +47,18 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'learning_orchestration_service.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_orchestration_service.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger('LearningOrchestrationService')
 
 # --- Constants ---
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 DEFAULT_PORT = config.get('los_port', 7210)
-HEALTH_CHECK_PORT = config.get('los_health_port', 7211)
+HEALTH_CHECK_PORT = config.get('los_health_port', 8212)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-TRAINING_DB_PATH = config.get('los_db_path', join_path("data", "training_cycles.db"))
+TRAINING_DB_PATH = config.get('los_db_path', str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "training_cycles.db")))
 
 class LearningOrchestrationService(BaseAgent):
     """
@@ -80,16 +83,12 @@ class LearningOrchestrationService(BaseAgent):
         self.db_path = TRAINING_DB_PATH
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self._setup_zmq()
         self.downstream_services = ["ModelEvaluationFramework"]
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._init_circuit_breakers()
-        self.error_bus_port = config.get('error_bus_port', 7150)
-        self.error_bus_host = os.environ.get('PC2_IP', config.get('error_bus_host', '192.168.100.17'))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
         self.service_registry = {}
         self._register_with_service_discovery()
         self._start_background_threads()
@@ -150,7 +149,7 @@ class LearningOrchestrationService(BaseAgent):
             self.report_error("database_init_error", str(e), ErrorSeverity.ERROR)
 
     def _setup_zmq(self):
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.bind(f"tcp://*:{self.port}")
         self.health_socket = self.context.socket(zmq.REP)
         self.health_socket.bind(f"tcp://*:{HEALTH_CHECK_PORT}")
@@ -331,19 +330,7 @@ class LearningOrchestrationService(BaseAgent):
         })
         return base_status
 
-    def report_error(self, error_type: str, message: str, severity: ErrorSeverity = ErrorSeverity.ERROR):
-        try:
-            error_data = {
-                "timestamp": datetime.now().isoformat(),
-                "agent": self.name,
-                "error_type": error_type,
-                "message": message,
-                "severity": severity.value
-            }
-            self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-            logger.error(f"Reported error to bus: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
 
     def cleanup(self):
         logger.info("Cleaning up resources...")

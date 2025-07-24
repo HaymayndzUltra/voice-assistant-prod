@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Configuration loader utility for PC2 agents.
 Provides standardized access to configuration parameters.
@@ -8,6 +9,10 @@ import os
 import yaml
 import logging
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +55,8 @@ def load_config(config_path=None):
         logger.error(f"Error loading config from {config_path}: {e}")
         # Return default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         } 

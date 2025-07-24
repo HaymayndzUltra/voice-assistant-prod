@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from typing import Dict, Any, Optional, Union, List, Tuple
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -21,6 +21,7 @@ import tempfile
 import socket
 import yaml
 import pickle
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import Selenium for browser automation
 from selenium import webdriver
@@ -51,7 +52,10 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus  
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
+from common.env_helpers import get_env
 
 
 # Import secure ZMQ utilities if available
@@ -66,7 +70,7 @@ except ImportError as e:
 config = Config().get_config() # This seems to be pc2_code.agents.utils.config_loader.Config
 
 # Configure logging
-log_file_path = project_root / 'logs' / 'unified_web_agent.log' # Use project_root
+log_file_path = project_root / 'logs' / str(PathManager.get_logs_dir() / "unified_web_agent.log") # Use project_root
 os.makedirs(log_file_path.parent, exist_ok=True) # Use .parent for directory
 
 logging.basicConfig(
@@ -124,10 +128,10 @@ class UnifiedWebAgent(BaseAgent):
             logger.info(f"Using explicitly provided port {self.port} overriding config.")
 
         # ZMQ setup
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
         # Main socket for requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
 
         # Secure ZMQ configuration
         self.secure_zmq = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -907,38 +911,6 @@ class UnifiedWebAgent(BaseAgent):
             logger.error(f"An unexpected error occurred in {self.name}'s main loop: {e}", exc_info=True)
         finally:
             self.cleanup() # Call cleanup method
-
-    def _health_check_loop(self):
-        """Background thread for handling health checks"""
-        logger.info("Starting health check loop")
-
-        while self.running:
-            try:
-                # Wait for a health check request with a timeout
-                poller = zmq.Poller()
-                poller.register(self.health_socket, zmq.POLLIN)
-
-                # Poll with a 1 second timeout
-                if poller.poll(1000):
-                    # Receive the request (content doesn't matter for basic health check)
-                    request_raw = self.health_socket.recv()
-
-                    # Perform health check
-                    health_data = self._health_check()
-
-                    # Send the response
-                    self.health_socket.send_json(health_data)
-
-            except zmq.error.Again:
-                # Timeout, continue the loop (no request received within timeout)
-                continue
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                try:
-                    self.health_socket.send_json({"status": "error", "message": str(e)})
-                except Exception as send_error:
-                    logger.error(f"Failed to send health check error response: {send_error}")
-        logger.info("Health check loop exited")
 
     def cleanup(self):
         """Clean up resources before exit. Overrides BaseAgent's cleanup method."""
@@ -1917,6 +1889,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2 due to keyboard interrupt...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

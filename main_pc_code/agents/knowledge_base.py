@@ -14,11 +14,16 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.utils.path_manager import PathManager
 from main_pc_code.agents.memory_client import MemoryClient
+from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # -----------------------------------------------------------------------------
 # Configuration & Logging
@@ -28,14 +33,14 @@ MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Ports are loaded from configuration or environment variables (Rule 2)
 DEFAULT_PORT = int(os.environ.get("KNOWLEDGE_BASE_PORT", config.get("knowledge_base", {}).get("port", 5715)))
 DEFAULT_HEALTH_PORT = int(os.environ.get("KNOWLEDGE_BASE_HEALTH_PORT", config.get("knowledge_base", {}).get("health_port", 6715)))
 
 # Error Bus settings (Rule 8)
-ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", os.environ.get("PC2_IP", "localhost"))
+ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", get_pc2_ip()))
 ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 ERROR_BUS_ENDPOINT = f"tcp://{ERROR_BUS_HOST}:{ERROR_BUS_PORT}"
 
@@ -60,10 +65,7 @@ class KnowledgeBase(BaseAgent):
         # Memory client (external service, no local state)
         self.memory_client = MemoryClient()
 
-        # Error Bus (Rule 8)
-        self.context = zmq.Context.instance()
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(ERROR_BUS_ENDPOINT)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         self.start_time = time.time()
         self.request_count = 0

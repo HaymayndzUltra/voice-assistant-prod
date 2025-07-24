@@ -258,28 +258,28 @@ monitoring:
 # Main PC to PC2 Connection Requirements
 main_pc_to_pc2_connections:
   # Core Communication Agents (Main PC -> PC2)
-  - { name: RemoteConnectorAgent, main_pc_ip: "192.168.100.16", main_pc_port: 5557, pc2_ip: "192.168.100.17", pc2_port: 7124, purpose: "Model inference requests" }
-  - { name: AdvancedRouter, main_pc_ip: "192.168.100.16", main_pc_port: 5558, pc2_ip: "192.168.100.17", pc2_port: 7129, purpose: "Task routing and classification" }
-  - { name: EnhancedModelRouter, main_pc_ip: "192.168.100.16", main_pc_port: 5598, pc2_ip: "192.168.100.17", pc2_port: 7100, purpose: "Model routing coordination" }
+  - { name: RemoteConnectorAgent, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5557, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7124, purpose: "Model inference requests" }
+  - { name: AdvancedRouter, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5558, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7129, purpose: "Task routing and classification" }
+  - { name: EnhancedModelRouter, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5598, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7100, purpose: "Model routing coordination" }
   
   # Memory and Context Agents (Main PC -> PC2)
-  - { name: UnifiedMemoryReasoningAgent, main_pc_ip: "192.168.100.16", main_pc_port: 5596, pc2_ip: "192.168.100.17", pc2_port: 7105, purpose: "Memory operations and reasoning" }
-  - { name: ContextManager, main_pc_ip: "192.168.100.16", main_pc_port: 5576, pc2_ip: "192.168.100.17", pc2_port: 7111, purpose: "Context management and retrieval" }
+  - { name: UnifiedMemoryReasoningAgent, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5596, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7105, purpose: "Memory operations and reasoning" }
+  - { name: ContextManager, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5576, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7111, purpose: "Context management and retrieval" }
   
   # Authentication and Security (Main PC -> PC2)
-  - { name: AuthenticationAgent, main_pc_ip: "192.168.100.16", main_pc_port: 5584, pc2_ip: "192.168.100.17", pc2_port: 7116, purpose: "User authentication and session management" }
+  - { name: AuthenticationAgent, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5584, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7116, purpose: "User authentication and session management" }
   
   # Health and Monitoring (Main PC <-> PC2)
-  - { name: HealthMonitor, main_pc_ip: "192.168.100.16", main_pc_port: 5587, pc2_ip: "192.168.100.17", pc2_port: 7114, purpose: "System health monitoring" }
-  - { name: PerformanceMonitor, main_pc_ip: "192.168.100.16", main_pc_port: 5625, pc2_ip: "192.168.100.17", pc2_port: 7103, purpose: "Performance metrics collection" }
+  - { name: HealthMonitor, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5587, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7114, purpose: "System health monitoring" }
+  - { name: PerformanceMonitor, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5625, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7103, purpose: "Performance metrics collection" }
   
   # Cache and Resource Management (Main PC <-> PC2)
-  - { name: CacheManager, main_pc_ip: "192.168.100.16", main_pc_port: 5628, pc2_ip: "192.168.100.17", pc2_port: 7102, purpose: "Shared cache management" }
-  - { name: ResourceManager, main_pc_ip: "192.168.100.16", main_pc_port: 5626, pc2_ip: "192.168.100.17", pc2_port: 7113, purpose: "Resource allocation and monitoring" }
+  - { name: CacheManager, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5628, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7102, purpose: "Shared cache management" }
+  - { name: ResourceManager, main_pc_ip: "${MAINPC_IP:-192.168.100.16}", main_pc_port: 5626, pc2_ip: "${PC2_IP:-192.168.100.17}", pc2_port: 7113, purpose: "Resource allocation and monitoring" }
 
 # PC2 Network Configuration
 pc2_network:
-  host: "192.168.100.17"  # PC2 IP address
+  host: "${PC2_IP:-192.168.100.17}"  # PC2 IP address
   subnet: "192.168.100.0/24"
   gateway: "192.168.100.1"
   dns: ["8.8.8.8", "8.8.4.4"]
@@ -297,7 +297,7 @@ pc2_network:
 
 # Main PC Network Configuration
 main_pc_network:
-  host: "192.168.100.16"  # Main PC IP address
+  host: "${MAINPC_IP:-192.168.100.16}"  # Main PC IP address
   subnet: "192.168.100.0/24"
   gateway: "192.168.100.1"
   dns: ["8.8.8.8", "8.8.4.4"]

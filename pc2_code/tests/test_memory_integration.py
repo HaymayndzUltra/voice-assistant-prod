@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # -*- coding: utf-8 -*-
 """
 Test module for memory integration.
@@ -19,6 +20,10 @@ from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the services to test
 from pc2_code.agents.memory_orchestrator_service import MemoryOrchestratorService
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 class MemoryClient:
     """Simple client to interact with MemoryOrchestratorService for testing"""
@@ -93,7 +98,7 @@ class TestMemoryIntegration(unittest.TestCase):
         # Create a temporary directory for test files
         cls.temp_dir = os.path.join(get_project_root(), "tests", "temp_test_db")
         os.makedirs(cls.temp_dir, exist_ok=True)
-        cls.db_path = os.path.join(cls.temp_dir, "test_memory.db")
+        cls.db_path = os.path.join(cls.temp_dir, str(PathManager.get_data_dir() / "test_memory.db"))
         
         # Start MemoryOrchestratorService in a separate thread
         cls.memory_service = MemoryOrchestratorService(

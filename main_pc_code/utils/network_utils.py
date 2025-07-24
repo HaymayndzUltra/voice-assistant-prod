@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Network Utilities
 
@@ -14,14 +15,18 @@ from typing import Dict, Any, Optional
 
 
 # Import path manager for containerization-friendly paths
-from common.utils.path_env import get_path, join_path, get_file_path, get_project_root, get_main_pc_code
+import sys
+import os
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
+# Import standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env as get_std_env
+sys.path.insert(0, get_project_root())
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = get_project_root()
 MAIN_PC_CODE = get_main_pc_code()
-if str(MAIN_PC_CODE) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE))
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+if MAIN_PC_CODE not in sys.path:
+    sys.path.insert(0, MAIN_PC_CODE)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -49,7 +54,7 @@ def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     if config_path is None:
         config_path = os.environ.get(
             "NETWORK_CONFIG_PATH", 
-            join_path("config", "network_config.yaml")
+            PathManager.join_path("config", "network_config.yaml")
         )
     
     try:
@@ -99,13 +104,13 @@ def load_network_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             "environment": {
                 "development": {
                     "use_local_mode": True,
-                    "mainpc_ip": "127.0.0.1",
-                    "pc2_ip": "127.0.0.1"
+                    "mainpc_ip": "localhost",
+                    "pc2_ip": "localhost"
                 }
             },
             "machines": {
-                "mainpc": {"ip": "127.0.0.1"},
-                "pc2": {"ip": "127.0.0.1"}
+                "mainpc": {"ip": "localhost"},
+                "pc2": {"ip": "localhost"}
             }
         }
 
@@ -163,44 +168,27 @@ def get_current_machine() -> str:
 
 def get_machine_ip(machine: Optional[str] = None) -> str:
     """
-    Get the IP address for the specified machine.
+    Get the IP address for the specified machine using standardized environment variables.
     
     Args:
         machine: Machine name ('MAINPC', 'PC2'), or None for current machine
     
     Returns:
-        IP address as string, or '127.0.0.1' if not found
+        IP address as string
     """
     if machine is None:
         machine = get_current_machine()
     
     machine = machine.lower()
     
-    # Check environment variables first
+    # Use standardized environment variables (Blueprint.md Step 4)
     if machine == "mainpc":
-        env_ip = os.environ.get("MAINPC_IP")
-        if env_ip:
-            return env_ip
+        return get_mainpc_ip()
     elif machine == "pc2":
-        env_ip = os.environ.get("PC2_IP")
-        if env_ip:
-            return env_ip
-    
-    # Then check configuration
-    config = load_network_config()
-    if "machines" in config and machine in config["machines"]:
-        machine_config = config["machines"][machine]
-        if "ip" in machine_config:
-            return machine_config["ip"]
-    
-    # Default to loopback for development
-    env_type = os.environ.get("ENV_TYPE", "development")
-    if env_type == "development":
-        logger.debug(f"Using loopback IP for {machine} in development mode")
-        return "127.0.0.1"
-    
-    logger.warning(f"Could not find IP for machine {machine}, using loopback")
-    return "127.0.0.1"
+        return get_pc2_ip()
+    else:
+        logger.warning(f"Unknown machine: {machine}, using localhost")
+        return "localhost"
 
 def is_local_mode() -> bool:
     """
@@ -246,7 +234,7 @@ def get_zmq_connection_string(port: int, machine: str = "localhost", bind_addres
         return f"tcp://{bind_address}:{port}"
     
     # For localhost, use IP from network configuration
-    if machine.lower() == "localhost" or machine.lower() == "127.0.0.1":
+    if machine.lower() == "localhost" or machine.lower() == get_env("BIND_ADDRESS", "0.0.0.0"):
         # In local mode, use actual localhost
         if is_local_mode():
             return f"tcp://127.0.0.1:{port}"

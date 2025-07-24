@@ -15,13 +15,16 @@ from datetime import datetime
 # Import Hugging Face Transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("nllb_translator.log")
+        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_translator.log"))
     ]
 )
 logger = logging.getLogger("NLLBTranslatorAgent")

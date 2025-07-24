@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Health Monitor Agent
 - Monitors the health of all system agents and services
@@ -26,8 +27,8 @@ import subprocess
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 from pc2_code.agents.core_agents.http_server import setup_health_check_server
 from pc2_code.agents.utils.config_loader import Config
 config = Config()  # Instantiate the global config object
@@ -38,7 +39,7 @@ _agent_args = parse_agent_args()
 from pc2_code.config import system_config
 
 # Configure logging
-log_file_path = join_path("logs", "health_monitor.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_monitor.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -61,6 +62,7 @@ from pc2_code.src.core.base_agent import BaseAgent
 import signal
 import psutil
 from pathlib import Path
+from common.env_helpers import get_env
 
 class OrchestratorAgent(BaseAgent):
     # (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with HealthMonitor)

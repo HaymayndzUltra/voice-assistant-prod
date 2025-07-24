@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Direct SystemDigitalTwin Command Test
 
@@ -14,8 +15,9 @@ from pathlib import Path
 
 # Configure arguments
 import argparse
+from common.env_helpers import get_env
 parser = argparse.ArgumentParser(description="Send commands directly to SystemDigitalTwin")
-parser.add_argument("--host", default="127.0.0.1", help="SystemDigitalTwin host")
+parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="SystemDigitalTwin host")
 parser.add_argument("--port", type=int, default=7120, help="SystemDigitalTwin port")
 parser.add_argument("--command", choices=["register", "discover", "ping", "status"], default="status", 
                    help="Command to send")
@@ -46,7 +48,7 @@ try:
             "payload": {
                 "name": args.name,
                 "location": "CLI-Test",
-                "ip": "127.0.0.1",
+                "ip": "localhost",
                 "port": 9999,
                 "source": "direct_command_test"
             }

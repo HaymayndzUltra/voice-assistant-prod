@@ -1,6 +1,7 @@
 from main_pc_code.src.core.base_agent import BaseAgent
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 import zmq
 import json
@@ -12,11 +13,15 @@ import time
 import logging
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
-LOG_PATH = "learning_mode_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "learning_mode_agent.log")
 LEARNING_MODE_STORE_PATH = "learning_mode_store.json"
 ZMQ_LEARNING_MODE_PORT = 5598  # Changed from 5599 to avoid conflict with health monitoring
 

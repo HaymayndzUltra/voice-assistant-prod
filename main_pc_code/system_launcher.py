@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 Path-Aware System Launcher
 
@@ -13,14 +14,13 @@ Constraints honoured:
 • Read-only – no subprocesses are started.
 • Python 3 and PyYAML required.
 """
-from __future__ import annotations
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
@@ -34,6 +34,7 @@ import time
 import socket
 import signal
 import re
+from common.env_helpers import get_env
 
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent
@@ -43,14 +44,13 @@ if str(project_root) not in sys.path:
 # Import common utilities
 try:
     from common_utils.env_loader import get_env, get_ip
-    except ImportError as e:
-        print(f"Import error: {e}")
     USE_COMMON_UTILS = True
-except ImportError:
+except ImportError as e:
+    print(f"Import error: {e}")
     USE_COMMON_UTILS = False
     print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
 
-CONFIG_REL_PATH = Path(join_path("config", "startup_config.yaml"))
+CONFIG_REL_PATH = Path(PathManager.join_path("config", "startup_config.yaml"))
 
 # Define active agent directories (exclude archive/reference folders)
 AGENT_DIRS = ["agents", "src", "FORMAINPC"]
@@ -146,7 +146,7 @@ def wait_for_batch_healthy(batch_agents: List[Dict[str, Any]], timeout_seconds: 
     while time.time() - start < timeout_seconds and remaining:
         for name, agent in list(remaining.items()):
             # Use environment variables for host if available
-            host = agent.get("host", "localhost")
+            host = agent.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             if host == "0.0.0.0" and USE_COMMON_UTILS:
                 host = get_ip("main_pc")
             port = int(agent.get("port"))
@@ -214,7 +214,7 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
             print(f"[ERROR] Failed to check health implementation for {agent_cfg['name']}: {e}")
             return None
     
-    log_file = logs_dir / f"{agent_cfg['name']}.log"
+    log_file = logs_dir / f"{agent_cfg['namestr(PathManager.get_logs_dir() / "]}.log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_file, "a", buffering=1)  # line-buffered
 
@@ -257,7 +257,7 @@ def print_failed_agent_logs(failed_agents: List[str], logs_dir: Path):
     """Prints the last 20 lines of the log file for each failed agent."""
     print("\n--- FAILED AGENT LOGS ---", file=sys.stderr)
     for name in failed_agents:
-        log_file = logs_dir / f"{name}.log"
+        log_file = logs_dir / fstr(PathManager.get_logs_dir() / "{name}.log")
         print(f"--- Log for {name} ({log_file}) ---", file=sys.stderr)
         if log_file.exists() and log_file.stat().st_size > 0:
             try:

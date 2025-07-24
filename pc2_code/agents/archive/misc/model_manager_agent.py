@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Model Manager / Resource Monitor Agent
 - Tracks status and availability of all models
 - Provides model selection based on capabilities, availability and task requirements
@@ -34,12 +35,13 @@ logger = logging.getLogger("ModelManager")
 try:
     # Import config module
 from pc2_code.config.system_config import config
+from common.env_helpers import get_env
     
     # Configure logging with config settings
     log_level = config.get('system.log_level', 'INFO')
     logs_dir = Path(config.get('system.logs_dir', 'logs'))
     logs_dir.mkdir(exist_ok=True)
-    log_file = logs_dir / "model_manager.log"
+    log_file = logs_dir / str(PathManager.get_logs_dir() / "model_manager.log")
     
     # Add file handler to logger
     file_handler = logging.FileHandler(log_file)
@@ -443,5 +445,8 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         logger.error(traceback.format_exc())
         sys.exit(1)

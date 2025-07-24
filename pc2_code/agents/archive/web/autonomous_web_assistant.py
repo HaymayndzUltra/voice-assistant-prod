@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Autonomous Web Assistant
 ------------------------
 This agent has autonomous decision-making capabilities to:
@@ -33,14 +34,15 @@ import urllib.parse
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.pc2_connections import get_connection_string
+from common.env_helpers import get_env
 
 # Setup logging
-LOG_PATH = join_path("logs", "autonomous_web_assistant.log")
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_web_assistant.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(
@@ -107,7 +109,7 @@ class AutonomousWebAssistant:
             logger.info("Connected to Contextual Memory Agent on PC2")
         except (ImportError, ValueError):
             # Use the new port for consolidated Contextual Memory Agent (5596)
-            self.memory_agent.connect("tcp://localhost:5596")
+            self.memory_agent.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596")
             logger.info("Connected to Contextual Memory Agent on port 5596")
         
         # Browser session

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Discovery Integration Test
 
@@ -35,6 +36,7 @@ if str(project_root) not in sys.path:
 
 # Import service discovery client
 from main_pc_code.utils.service_discovery_client import register_service, discover_service
+from common.env_helpers import get_env
 
 # ANSI color codes for terminal output
 COLORS = {
@@ -102,8 +104,8 @@ def start_unified_memory_agent(secure: bool = False) -> subprocess.Popen:
     env["SECURE_ZMQ"] = "1" if secure else "0"
     
     # Force local IP addresses for testing
-    env["MAINPC_IP"] = "127.0.0.1"
-    env["PC2_IP"] = "127.0.0.1"
+    env["MAINPC_IP"] = "localhost"
+    env["PC2_IP"] = "localhost"
     
     # Start the process 
     process = subprocess.Popen(
@@ -120,7 +122,7 @@ def start_unified_memory_agent(secure: bool = False) -> subprocess.Popen:
     
     return process
 
-def test_service_discovery(host: str = "127.0.0.1", secure: bool = False) -> bool:
+def test_service_discovery(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), secure: bool = False) -> bool:
     """
     Test the service discovery mechanism.
     
@@ -234,7 +236,7 @@ def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description="Test the service discovery mechanism")
     parser.add_argument("--secure", action="store_true", help="Use secure ZMQ")
-    parser.add_argument("--host", default="127.0.0.1", help="Host address for testing")
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="Host address for testing")
     parser.add_argument("--skip-agents", action="store_true", help="Skip starting agents (assume they are already running)")
     
     args = parser.parse_args()

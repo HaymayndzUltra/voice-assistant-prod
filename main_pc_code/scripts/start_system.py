@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Phased System Startup Script
 
@@ -13,6 +14,7 @@ import yaml
 import subprocess
 import signal
 import psutil
+import argparse
 from pathlib import Path
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -46,19 +48,33 @@ class DependencyResolver:
         self.build_dependency_graph()
     
     def extract_agents(self):
+        """Handle both current agent_groups schema and legacy list schema."""
         for section_name, section_data in self.config.items():
-            if not isinstance(section_data, list):
-                continue
-            for agent in section_data:
-                if not isinstance(agent, dict):
-                    continue
-                if 'name' not in agent or 'script_path' not in agent:
-                    continue
-                name = agent['name']
-                self.agents[name] = agent
-                if 'dependencies' in agent:
-                    for dep in agent['dependencies']:
-                        self.dependencies[name].add(dep)
+            # Current schema: agent_groups -> group_name -> agent_name -> config
+            if section_name == "agent_groups" and isinstance(section_data, dict):
+                for group_name, agents_mapping in section_data.items():
+                    if not isinstance(agents_mapping, dict):
+                        continue
+                    for agent_name, agent_cfg in agents_mapping.items():
+                        if not isinstance(agent_cfg, dict) or 'script_path' not in agent_cfg:
+                            continue
+                        agent_cfg['name'] = agent_name
+                        self.agents[agent_name] = agent_cfg
+                        for dep in agent_cfg.get('dependencies', []):
+                            self.dependencies[agent_name].add(dep)
+            
+            # Legacy schema: list of agent dicts
+            elif isinstance(section_data, list):
+                for agent in section_data:
+                    if not isinstance(agent, dict):
+                        continue
+                    if 'name' not in agent or 'script_path' not in agent:
+                        continue
+                    name = agent['name']
+                    self.agents[name] = agent
+                    if 'dependencies' in agent:
+                        for dep in agent['dependencies']:
+                            self.dependencies[name].add(dep)
     def build_dependency_graph(self):
         for agent_name, deps in self.dependencies.items():
             for dep in deps:
@@ -102,17 +118,18 @@ class DependencyResolver:
 # --- HEALTH CHECK LOGIC (reuse from verify_all_health_checks.py) ---
 import socket
 import json
+from common.env_helpers import get_env
 
 def get_health_check_url(agent):
     name = agent.get('name')
     # Port override for SystemDigitalTwin
     if name == "SystemDigitalTwin":
-        host = "localhost"
+        host = get_env("BIND_ADDRESS", "0.0.0.0")
         health_port = agent.get('health_check_port', 8100)
     else:
         host = agent.get('host', 'localhost')
         if host == "0.0.0.0":
-            host = "localhost"
+            host = get_env("BIND_ADDRESS", "0.0.0.0")
         port = agent.get('port')
         if port is None:
             return None
@@ -130,12 +147,37 @@ def check_socket_connection(host, port, timeout):
         return False
 
 def check_health(agent, timeout=HEALTH_CHECK_TIMEOUT):
+    """Enhanced health check that verifies agent ready signals"""
+    agent_name = agent.get('name')
+    
+    # First check if agent reported ready via Redis
+    try:
+        import redis
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+        r = redis.Redis(host=os.getenv('${SECRET_PLACEHOLDER}0)
+        ready_key = f"agent:ready:{agent_name}"
+        if r.get(ready_key) == b'1':
+            print(f"    [READY] {agent_name} reported ready via Redis")
+            return True
+    except Exception as e:
+        print(f"    [WARNING] Redis ready check failed for {agent_name}: {e}")
+    
+    # Fallback to port check
     url = get_health_check_url(agent)
     if not url:
         return False
     host = url.split("://")[1].split(":")[0]
     port = int(url.split(":")[-1].split("/")[0])
-    return check_socket_connection(host, port, timeout)
+    port_ready = check_socket_connection(host, port, timeout)
+    
+    if port_ready:
+        print(f"    [PORT] {agent_name} port {port} responding")
+    else:
+        print(f"    [FAIL] {agent_name} port {port} not responding")
+    
+    return port_ready
 
 # --- PROCESS MANAGEMENT ---
 def kill_existing_agent(agent_name):
@@ -173,16 +215,14 @@ def start_agent(agent):
     if not LOGS_DIR.exists():
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         
-    log_file = LOGS_DIR / f"{agent_name}.log"
+    log_file = LOGS_DIR / fstr(PathManager.get_logs_dir() / "{agent_name}.log")
     env = os.environ.copy()
     # Add agent-specific env vars if any
     if 'env_vars' in agent:
         env.update(agent['env_vars'])
     
-    # Skip agents with known issues for now
-    if agent_name in ["ModelManagerAgent", "TaskRouter"]:
-        print(f"[SKIPPED] {agent_name} - Known issues detected in logs")
-        return None
+    # Attempt to start all agents - let health checks determine viability
+    print(f"[ATTEMPTING] Starting {agent_name}...")
         
     # Start agent in background
     try:
@@ -222,22 +262,38 @@ def verify_phase_health(phase_agents, retries=RETRIES, delay=RETRY_DELAY):
             print(f"    [WAIT] Not healthy: {', '.join(failed)}. Retrying in {delay}s...")
             time.sleep(delay)
     
-    print(f"  [FAIL] The following agents failed health check after {retries} retries: {', '.join([n for n, ok in agent_status.items() if not ok])}")
+    failed_agents = [n for n, ok in agent_status.items() if not ok]
+    print(f"  [FAIL] The following agents failed health check after {retries} retries: {', '.join(failed_agents)}")
     
-    # For the purpose of this demo, consider the phase successful even if some agents failed
-    print("  [NOTICE] Proceeding despite failures for demonstration purposes")
-    return True
+    # Only proceed if critical agents are healthy
+    critical_agents = ['ServiceRegistry', 'SystemDigitalTwin', 'RequestCoordinator']
+    failed_critical = [agent for agent in failed_agents if agent in critical_agents]
+    
+    if failed_critical:
+        print(f"  [CRITICAL] Critical agents failed: {', '.join(failed_critical)}")
+        return False
+    else:
+        print(f"  [PARTIAL] {len(failed_agents)} non-critical agents failed, proceeding")
+        return True
 
 def main():
+    parser = argparse.ArgumentParser(description="Phased System Startup Script")
+    parser.add_argument('--demo', action='store_true', help="Run in demo mode (only Phase 1)")
+    args = parser.parse_args()
+    
     print("[SYSTEM STARTUP] Loading configuration and resolving dependencies...")
     config = load_startup_config()
     resolver = DependencyResolver(config)
     phases = resolver.get_startup_phases()
     print(f"[SYSTEM STARTUP] {len(phases)} phases detected.")
     
-    # For demonstration, only run Phase 1 with a subset of agents
-    demo_mode = True
+    demo_mode = args.demo
     max_phases = 1 if demo_mode else len(phases)
+    
+    total_agents = sum(len(phase) for phase in phases)
+    if total_agents == 0:
+        print("[ERROR] No agents detected in configuration! Aborting startup.")
+        sys.exit(1)
     
     all_procs = []
     for idx, phase_agents in enumerate(phases):
@@ -264,6 +320,30 @@ def main():
         print(f"[SYSTEM STARTUP] Phase {idx+1} complete.")
     
     print("\n[SYSTEM STARTUP] All phases complete. System is fully started.")
+    
+    # Keep container alive by monitoring agents
+    print("[SYSTEM STARTUP] Monitoring agents. Press Ctrl+C to stop...")
+    try:
+        while True:
+            # Keep the container running and monitor agent health
+            time.sleep(30)  # Check every 30 seconds
+            
+            # Optional: Check if critical agents are still running
+            # You can add health monitoring logic here
+            alive_count = sum(1 for p in all_procs if p.poll() is None)
+            if alive_count == 0:
+                print("[WARNING] All agent processes have exited. System may need restart.")
+                break
+                
+    except KeyboardInterrupt:
+        print("\n[SYSTEM STARTUP] Shutdown signal received. Stopping all agents...")
+        for proc in all_procs:
+            try:
+                proc.terminate()
+                proc.wait(timeout=5)
+            except:
+                proc.kill()
+        print("[SYSTEM STARTUP] All agents stopped. Exiting.")
 
 if __name__ == "__main__":
     main() 

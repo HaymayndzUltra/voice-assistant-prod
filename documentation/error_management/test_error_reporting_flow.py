@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Script to test the error reporting flow in the system.
 This script will:
@@ -30,7 +31,7 @@ except ImportError:
     print("[WARNING] common_utils.env_loader not found. Using default environment settings.")
 
 # Default values
-DEFAULT_ERROR_BUS_HOST = "127.0.0.1"
+DEFAULT_ERROR_BUS_HOST = "localhost"
 DEFAULT_ERROR_BUS_PORT = 7150
 DEFAULT_ERROR_BUS_TOPIC = "ERROR:"
 DEFAULT_TEST_DURATION = 60  # seconds

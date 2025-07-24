@@ -5,13 +5,15 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 import threading
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
 # Constants
 PERFORMANCE_TOPIC = "performance_metrics"
 PUB_PORT = 5614  # For broadcasting metrics
@@ -22,7 +24,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "performance_metrics.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "performance_metrics.log"))),
         logging.StreamHandler()
     ]
 )

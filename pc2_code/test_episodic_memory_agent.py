@@ -16,6 +16,7 @@ os.environ['EPISODIC_MEMORY_PORT'] = '7206'
 try:
     print("Testing EpisodicMemoryAgent import...")
 from pc2_code.agents.EpisodicMemoryAgent import EpisodicMemoryAgent
+from common.env_helpers import get_env
     
     print("Creating EpisodicMemoryAgent instance...")
     agent = EpisodicMemoryAgent(port=7206, health_port=7207)
@@ -38,7 +39,7 @@ from pc2_code.agents.EpisodicMemoryAgent import EpisodicMemoryAgent
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-    socket.connect(f"tcp://localhost:7207")
+    socket.connect(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7207")
     
     request = {'action': 'health_check'}
     socket.send_json(request)

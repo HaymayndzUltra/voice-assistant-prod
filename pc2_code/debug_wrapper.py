@@ -13,8 +13,11 @@ import subprocess
 import logging
 from datetime import datetime
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
-log_file = f"debug_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+log_file = f"debug_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',

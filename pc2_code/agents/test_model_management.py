@@ -3,7 +3,7 @@ Test suite for Model Management Hierarchy components
 Tests the Enhanced Model Router, Remote Connector Agent, and TinyLlama Service
 """
 import unittest
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import threading
@@ -18,8 +18,8 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+from common.utils.path_manager import PathManager
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -27,13 +27,14 @@ sys.path.append(str(Path(__file__).parent.parent))
 from enhanced_model_router import EnhancedModelRouter
 from remote_connector_agent import RemoteConnectorAgent
 from tinyllama_service_enhanced import TinyLlamaService
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "test_model_management.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "test_model_management.log"))),
         logging.StreamHandler()
     ]
 )
@@ -89,25 +90,24 @@ class TestModelManagementHierarchy(unittest.TestCase):
     
     def setUp(self):
         """Set up each test"""
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Create sockets for each component
         self.router_socket = self.context.socket(zmq.REQ)
-        self.router_socket.connect("tcp://localhost:5610")
+        self.router_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5610")
         
         self.connector_socket = self.context.socket(zmq.REQ)
-        self.connector_socket.connect("tcp://localhost:5611")
+        self.connector_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5611")
         
         self.tinyllama_socket = self.context.socket(zmq.REQ)
-        self.tinyllama_socket.connect("tcp://localhost:5615")
+        self.tinyllama_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5615")
     
     def tearDown(self):
         """Clean up each test"""
-        self.router_socket.close()
-        self.connector_socket.close()
-        self.tinyllama_socket.close()
-        self.context.term()
-    
+        self.router_
+        self.connector_
+        self.tinyllama_
+        self.
     def test_router_health_check(self):
         """Test router health check"""
         logger.info("Testing router health check")

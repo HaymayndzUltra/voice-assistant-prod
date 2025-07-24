@@ -9,6 +9,9 @@ from typing import Dict, Any, List, Set
 import psutil
 from datetime import datetime
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -17,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('security_policy.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "security_policy.log")),
         logging.StreamHandler()
     ]
 )
@@ -35,7 +38,7 @@ class SecurityPolicyAgent(BaseAgent):
         self.socket.bind(f"tcp://*:{port}")
         
         # Initialize database
-        self.db_path = "security_policy.db"
+        self.db_path = str(PathManager.get_data_dir() / "security_policy.db")
         self._init_database()
         
         logger.info(f"SecurityPolicyAgent initialized on port {port}")

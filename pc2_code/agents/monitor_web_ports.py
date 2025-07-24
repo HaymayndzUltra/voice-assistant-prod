@@ -3,20 +3,27 @@ import time
 import sys
 import logging
 from datetime import datetime
+from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('web_ports_monitor.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_monitor.log")),
         logging.StreamHandler()
     ]
 )
 
 class WebPortMonitor:
     def __init__(self):
-        self.context = zmq.Context()
+
+        super().__init__(*args, **kwargs)        self.context = zmq.Context()
         self.ports = {
             'unified_web': 5604,
             'autonomous_web': 5605

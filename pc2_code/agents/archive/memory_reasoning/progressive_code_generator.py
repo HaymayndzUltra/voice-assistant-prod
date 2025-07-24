@@ -1,3 +1,5 @@
+from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Progressive Code Generator
 - Breaks down complex tasks into smaller, testable components
@@ -21,10 +23,11 @@ import threading
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
 from pc2_code.agents.error_database import ErrorDatabase
+from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "progressive_code_generator.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "progressive_code_generator.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -47,7 +50,8 @@ class ProgressiveCodeGenerator:
     """Progressive code generator that builds code incrementally with testing"""
     
     def __init__(self):
-        """Initialize the progressive code generator"""
+
+        super().__init__(*args, **kwargs)        """Initialize the progressive code generator"""
         # Initialize ZMQ
         self.context = zmq.Context()
         
@@ -770,6 +774,9 @@ Please fix all errors in the code. Only provide the fully corrected code, no exp
 
 if __name__ == "__main__":
     import argparse
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     parser = argparse.ArgumentParser(description="Progressive Code Generator: Builds code incrementally with testing.")
     parser.add_argument('--server', action='store_true', help='Run in server mode, waiting for ZMQ requests')
     args = parser.parse_args()

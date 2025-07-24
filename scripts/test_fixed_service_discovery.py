@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Discovery Fix Verification Test
 
@@ -16,6 +17,7 @@ import logging
 import signal
 import argparse
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent
@@ -225,8 +227,8 @@ def main():
         
         # Start UnifiedMemoryReasoningAgent with forced local mode
         umr_env = {
-            "MAINPC_IP": "127.0.0.1",  # Force localhost connections for MainPC
-            "PC2_IP": "127.0.0.1",     # Force localhost connections for PC2
+            "MAINPC_IP": "localhost",  # Force localhost connections for MainPC
+            "PC2_IP": "localhost",     # Force localhost connections for PC2
             "FORCE_LOCAL_SDT": "1"     # Force local SDT mode
         }
         

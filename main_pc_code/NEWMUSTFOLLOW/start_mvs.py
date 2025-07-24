@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 """
 MVS Startup Script
@@ -27,11 +28,12 @@ from typing import Dict, List, Any, Optional, Union
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
 # Set up logging
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
-log_file = f"{log_dir}/mvs_startup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+log_file = f"{log_dir}/mvs_startup_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 
 logging.basicConfig(
     level=logging.INFO,

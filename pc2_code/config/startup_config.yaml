@@ -3,536 +3,303 @@
 
 global_settings:
   environment:
-    PYTHONPATH: /app
-    LOG_LEVEL: INFO
+    PYTHONPATH: '${PYTHONPATH}:${PWD}/..'
+    LOG_LEVEL: 'INFO'
     DEBUG_MODE: 'false'
-    ENABLE_METRICS: 'true'
-    ENABLE_TRACING: 'true'
-    # Phase 1 Consolidation Flags - O3 Enhanced
-    ENABLE_PHASE1_CONSOLIDATION: 'true'
-    OBSERVABILITY_HUB_MODE: 'unified'  # Options: unified, delegation, gradual
-    ENABLE_O3_ENHANCEMENTS: 'true'    # Enable O3 specific features
-    ENABLE_PROMETHEUS_METRICS: 'true'  # Prometheus integration
-    ENABLE_PREDICTIVE_ANALYTICS: 'true' # Predictive analytics
-    ENABLE_ZMQ_BROADCASTING: 'true'    # ZMQ metrics broadcasting
-    ENABLE_PARALLEL_HEALTH_CHECKS: 'true' # Parallel health monitoring
   resource_limits:
-    cpu_percent: 75
-    memory_mb: 1536
-    max_threads: 6  # Increased for O3 threading
-  volumes:
-  - source: ./logs
-    target: /app/logs
-  - source: ./models
-    target: /app/models
-  - source: ./data
-    target: /app/data
-  - source: ./config
-    target: /app/config
-  - source: ./phase1_implementation/data
-    target: /app/phase1_data  # Phase 1 data directory
+    cpu_percent: 80
+    memory_mb: 4096
+    max_threads: 8
   health_checks:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
-    start_period_seconds: 300
-  network:
-    name: ai_system_network
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.20.0.0/16
 
-agent_groups:
-  # ===================================================================
-  # PHASE 1 CONSOLIDATED SERVICES - O3 ENHANCED (PC2)
-  # ===================================================================
-  phase1_consolidated_services:
-    ObservabilityHub:
-      script_path: phase1_implementation/consolidated_agents/observability_hub/observability_hub.py
-      port: 9000
-      health_check_port: 9100
-      required: true
-      dependencies: []
-      config:
-        # O3 Enhanced Observability Configuration
-        enable_prometheus_metrics: true
-        enable_predictive_analytics: true
-        enable_zmq_broadcasting: true
-        enable_parallel_health_checks: true
-        prometheus_port: 9090
-        metrics_broadcast_port: 7152
-        health_check_interval: 30
-        analytics_interval: 60
-        max_parallel_checks: 20
-        anomaly_threshold: 2.0
-        predictive_confidence_threshold: 0.6
-        # MainPC Integration
-        mainpc_services:
-          core_orchestrator: "http://172.20.0.10:7000"
-          resource_manager: "http://172.20.0.11:9001"  # ResourceManager moved to PC2
-          error_bus: "http://172.20.0.11:9002"         # ErrorBus moved to PC2
-          security_gateway: "http://172.20.0.10:7005"
-      environment:
-        ENABLE_O3_ENHANCEMENTS: 'true'
-        ENABLE_PROMETHEUS_METRICS: 'true'
-        ENABLE_PREDICTIVE_ANALYTICS: 'true'
-        ENABLE_ZMQ_BROADCASTING: 'true'
-        ENABLE_PARALLEL_HEALTH_CHECKS: 'true'
-        PROMETHEUS_PORT: '9090'
-        METRICS_BROADCAST_PORT: '7152'
-        MAINPC_CORE_ORCHESTRATOR: 'http://172.20.0.10:7000'
-      startup:
-        order: 1
-        wait_for_dependencies: false
-      logging:
-        level: INFO
-        file: "phase1_implementation/logs/observability_hub.log"
+# PC2 Services (Agents)
+pc2_services:
+  # Phase 1 - Integration Layer Agents
+  - {
+      name: MemoryOrchestratorService,
+      script_path: pc2_code/agents/memory_orchestrator_service.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7140",
+      health_check_port: "${PORT_OFFSET}+8140",
+      required: true,
+      dependencies: [],
+    }
+  - {
+      name: TieredResponder,
+      script_path: pc2_code/agents/tiered_responder.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7100",
+      health_check_port: "${PORT_OFFSET}+8100",
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: AsyncProcessor,
+      script_path: pc2_code/agents/async_processor.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7101",
+      health_check_port: "${PORT_OFFSET}+8101",
+      required: true,
+      dependencies: [ResourceManager],
+    }
+  - {
+      name: CacheManager,
+      script_path: pc2_code/agents/cache_manager.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7102",
+      health_check_port: "${PORT_OFFSET}+8102",
+      required: true,
+      dependencies: [MemoryOrchestratorService],
+    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: PerformanceMonitor,
+  #     script_path: pc2_code/agents/performance_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: "${PORT_OFFSET}+7103",
+  #     health_check_port: "${PORT_OFFSET}+8103",
+  #     required: true,
+  #     dependencies: [PerformanceLoggerAgent],
+  #   }
+  - {
+      name: VisionProcessingAgent,
+      script_path: pc2_code/agents/VisionProcessingAgent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7150",
+      health_check_port: "${PORT_OFFSET}+8150",
+      required: true,
+      dependencies: [CacheManager],
+    }
 
-    ResourceManagerSuite:
-      script_path: phase1_implementation/consolidated_agents/resource_manager_suite/resource_manager_suite.py
-      port: 9001
-      health_check_port: 9101
-      required: true
-      dependencies: [ObservabilityHub]
-      config:
-        # O3 Enhanced Resource Management
-        enable_circuit_breakers: true
-        enable_priority_queues: true
-        enable_vram_tracking: true
-        enable_async_processing: true
-        circuit_breaker_threshold: 5
-        circuit_breaker_timeout: 60
-        max_queue_size: 25
-        vram_optimization_enabled: true
-      environment:
-        ENABLE_CIRCUIT_BREAKERS: 'true'
-        ENABLE_PRIORITY_QUEUES: 'true'
-        ENABLE_VRAM_TRACKING: 'true'
-      startup:
-        order: 2
-        wait_for_dependencies: true
-        dependency_timeout: 60
-      logging:
-        level: INFO
-        file: "phase1_implementation/logs/resource_manager_suite.log"
+  # Phase 2 - PC2-Specific Core Agents
+  - {
+      name: DreamWorldAgent,
+      script_path: pc2_code/agents/DreamWorldAgent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7104",
+      health_check_port: "${PORT_OFFSET}+8104",
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: UnifiedMemoryReasoningAgent,
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7105",
+      health_check_port: "${PORT_OFFSET}+8105",
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: TutorAgent,
+      script_path: pc2_code/agents/tutor_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7108",
+      health_check_port: "${PORT_OFFSET}+8108",
+      required: true,
+      dependencies: [MemoryOrchestratorService],
+    }
+  - {
+      name: TutoringAgent,
+      script_path: pc2_code/agents/tutoring_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7131",
+      health_check_port: "${PORT_OFFSET}+8131",
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
 
-    ErrorBusSuite:
-      script_path: phase1_implementation/consolidated_agents/error_bus/error_bus_suite.py
-      port: 9002
-      health_check_port: 9102
-      required: true
-      dependencies: [ObservabilityHub]
-      config:
-        # O3 Enhanced Error Management
-        enable_zmq_pub_sub: true
-        enable_error_classification: true
-        enable_recovery_mechanisms: true
-        error_bus_port: 7150
-        zmq_broadcast_port: 7151
-        error_retention_hours: 24
-      environment:
-        ENABLE_ZMQ_PUB_SUB: 'true'
-        ERROR_BUS_PORT: '7150'
-        ZMQ_BROADCAST_PORT: '7151'
-      startup:
-        order: 3
-        wait_for_dependencies: true
-        dependency_timeout: 60
-      logging:
-        level: INFO
-        file: "phase1_implementation/logs/error_bus_suite.log"
 
-    MemoryHub:
-      script_path: phase1_implementation/consolidated_agents/memory_hub/memory_hub.py
-      port: 7010
-      health_check_port: 7110
-      required: true
-      dependencies: [ObservabilityHub, ErrorBusSuite]
-      config:
-        # PHASE 1 Memory Consolidation - O3 Enhanced
-        enable_redis_cache: true
-        enable_sqlite_integration: true
-        enable_context_reasoning: true
-        enable_auth_middleware: true
-        enable_trust_scoring: true
-        redis_host: "localhost"
-        redis_port: 6379
-        redis_db: 2
-        sqlite_db_path: "phase1_implementation/data/memory_hub.db"
-        context_retention_hours: 72
-        session_timeout_minutes: 120
-        trust_score_threshold: 0.7
-        # MainPC Integration
-        mainpc_core_orchestrator: "http://172.20.0.10:7000"
-        mainpc_security_gateway: "http://172.20.0.10:7005"
-      environment:
-        ENABLE_REDIS_CACHE: 'true'
-        ENABLE_SQLITE_INTEGRATION: 'true'
-        ENABLE_CONTEXT_REASONING: 'true'
-        ENABLE_AUTH_MIDDLEWARE: 'true'
-        ENABLE_TRUST_SCORING: 'true'
-        REDIS_HOST: 'localhost'
-        REDIS_PORT: '6379'
-        REDIS_DB: '2'
-        MAINPC_CORE_ORCHESTRATOR: 'http://172.20.0.10:7000'
-        MAINPC_SECURITY_GATEWAY: 'http://172.20.0.10:7005'
-      startup:
-        order: 4
-        wait_for_dependencies: true
-        dependency_timeout: 90
-      logging:
-        level: INFO
-        file: "phase1_implementation/logs/memory_hub.log"
+  - {
+      name: ContextManager,
+      script_path: pc2_code/agents/context_manager.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7111",
+      health_check_port: "${PORT_OFFSET}+8111",
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: ExperienceTracker,
+      script_path: pc2_code/agents/experience_tracker.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7112",
+      health_check_port: "${PORT_OFFSET}+8112",
+      dependencies: [MemoryOrchestratorService],
+      required: true,
+    }
+  - {
+      name: ResourceManager,
+      script_path: pc2_code/agents/resource_manager.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7113",
+      health_check_port: "${PORT_OFFSET}+8113",
+      required: true,
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
+    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution  
+  # - {
+  #     name: HealthMonitor,
+  #     script_path: pc2_code/agents/health_monitor.py,
+  #     host: 0.0.0.0,
+  #     port: "${PORT_OFFSET}+7114",
+  #     health_check_port: "${PORT_OFFSET}+8114",
+  #     required: true,
+  #     dependencies: [PerformanceMonitor],
+  #   }
+  - {
+      name: TaskScheduler,
+      script_path: pc2_code/agents/task_scheduler.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7115",
+      health_check_port: "${PORT_OFFSET}+8115",
+      dependencies: [AsyncProcessor],
+      required: true,
+    }
 
-  # ===================================================================
-  # LEGACY SERVICES (GRADUALLY DEPRECATED)
-  # ===================================================================
-  legacy_services:
-    # These services will be gradually phased out as Phase 1 consolidation completes
-    PredictiveHealthMonitor:
-      script_path: pc2_code/agents/predictive_health_monitor.py
-      port: 5613
-      health_check_port: 6613
-      required: false  # Not required when Phase 1 is enabled
-      dependencies: []
-      config:
-        deprecation_notice: "This service is being replaced by ObservabilityHub"
-        phase_out_date: "2025-02-01"
-      environment:
-        PHASE1_FALLBACK_MODE: 'true'
-      startup:
-        order: 100  # Start after Phase 1 services
-        enabled: false  # Disabled when Phase 1 is enabled
+  # ForPC2 Agents (PC2-Specific Services)
+  - {
+      name: AuthenticationAgent,
+      script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7116",
+      health_check_port: "${PORT_OFFSET}+8116",
+      required: true,
+      dependencies: [UnifiedUtilsAgent],
+    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: SystemHealthManager,
+  #     script_path: pc2_code/agents/ForPC2/system_health_manager.py,
+  #     host: 0.0.0.0,
+  #     port: "${PORT_OFFSET}+7117",
+  #     health_check_port: "${PORT_OFFSET}+8117",
+  #     required: true,
+  #     dependencies: [], # Removed HealthMonitor dependency to break circular reference
+  #   }
+  - {
+      name: UnifiedUtilsAgent,
+      script_path: pc2_code/agents/ForPC2/unified_utils_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7118",
+      health_check_port: "${PORT_OFFSET}+8118",
+      required: true,
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
+    }
+  - {
+      name: ProactiveContextMonitor,
+      script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7119",
+      health_check_port: "${PORT_OFFSET}+8119",
+      dependencies: [ContextManager],
+      required: true,
+    }
 
-    PerformanceMonitor:
-      script_path: pc2_code/agents/performance_monitor.py
-      port: 7103
-      health_check_port: 8103
-      required: false  # Not required when Phase 1 is enabled
-      dependencies: []
-      config:
-        deprecation_notice: "This service is being replaced by ObservabilityHub"
-        phase_out_date: "2025-02-01"
-      environment:
-        PHASE1_FALLBACK_MODE: 'true'
-      startup:
-        order: 101
-        enabled: false  # Disabled when Phase 1 is enabled
+  # Additional PC2 Core Agents
+  - {
+      name: AgentTrustScorer,
+      script_path: pc2_code/agents/AgentTrustScorer.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7122",
+      health_check_port: "${PORT_OFFSET}+8122",
+      required: true,
+      dependencies: [ObservabilityHub], # Updated to use consolidated monitoring
+    }
+  - {
+      name: FileSystemAssistantAgent,
+      script_path: pc2_code/agents/filesystem_assistant_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7123",
+      health_check_port: "${PORT_OFFSET}+8123",
+      required: true,
+      dependencies: [UnifiedUtilsAgent],
+    }
+  - {
+      name: RemoteConnectorAgent,
+      script_path: pc2_code/agents/remote_connector_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7124",
+      health_check_port: "${PORT_OFFSET}+8124",
+      required: true,
+      dependencies: [AdvancedRouter],
+    }
+  - {
+      name: UnifiedWebAgent,
+      script_path: pc2_code/agents/unified_web_agent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7126",
+      health_check_port: "${PORT_OFFSET}+8126",
+      required: true,
+      dependencies: [FileSystemAssistantAgent, MemoryOrchestratorService],
+    }
+  - {
+      name: DreamingModeAgent,
+      script_path: pc2_code/agents/DreamingModeAgent.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7127",
+      health_check_port: "${PORT_OFFSET}+8127",
+      dependencies: [DreamWorldAgent],
+      required: true,
+    }
+  # REPLACED BY ObservabilityHub - Consolidated monitoring solution
+  # - {
+  #     name: PerformanceLoggerAgent,
+  #     script_path: pc2_code/agents/PerformanceLoggerAgent.py,
+  #     host: 0.0.0.0,
+  #     port: "${PORT_OFFSET}+7128",
+  #     health_check_port: "${PORT_OFFSET}+8128",
+  #     required: true,
+  #     dependencies: [], # Removed SystemHealthManager dependency to break circular reference
+  #   }
+  - {
+      name: AdvancedRouter,
+      script_path: pc2_code/agents/advanced_router.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+7129",
+      health_check_port: "${PORT_OFFSET}+8129",
+      required: true,
+      dependencies: [TaskScheduler],
+    }
 
-    HealthMonitor:
-      script_path: pc2_code/agents/health_monitor.py
-      port: 7114
-      health_check_port: 8114
-      required: false  # Not required when Phase 1 is enabled
-      dependencies: []
-      config:
-        deprecation_notice: "This service is being replaced by ObservabilityHub"
-        phase_out_date: "2025-02-01"
-      environment:
-        PHASE1_FALLBACK_MODE: 'true'
-      startup:
-        order: 102
-        enabled: false  # Disabled when Phase 1 is enabled
+  # CONSOLIDATED MONITORING SOLUTION - Replaces legacy monitors
+  - {
+      name: ObservabilityHub,
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py,
+      host: 0.0.0.0,
+      port: "${PORT_OFFSET}+9100",
+      health_check_port: "${PORT_OFFSET}+9110",
+      required: true,
+      dependencies: [],  # Core monitoring service, no dependencies
+      config: {
+        scope: "pc2_agents",
+        prometheus_port: "${PORT_OFFSET}+9100",
+        cross_machine_sync: true,
+        mainpc_hub_endpoint: "http://192.168.100.16:9000",
+        parallel_health_checks: true,
+        prediction_enabled: true
+      }
+    }
 
-    PerformanceLoggerAgent:
-      script_path: pc2_code/agents/performance_logger_agent.py
-      port: 7128
-      health_check_port: 8128
-      required: false  # Not required when Phase 1 is enabled
-      dependencies: []
-      config:
-        deprecation_notice: "This service is being replaced by ObservabilityHub"
-        phase_out_date: "2025-02-01"
-      environment:
-        PHASE1_FALLBACK_MODE: 'true'
-      startup:
-        order: 103
-        enabled: false  # Disabled when Phase 1 is enabled
 
-    SystemHealthManager:
-      script_path: pc2_code/agents/system_health_manager.py
-      port: 7117
-      health_check_port: 8117
-      required: false  # Not required when Phase 1 is enabled
-      dependencies: []
-      config:
-        deprecation_notice: "This service is being replaced by ObservabilityHub"
-        phase_out_date: "2025-02-01"
-      environment:
-        PHASE1_FALLBACK_MODE: 'true'
-      startup:
-        order: 104
-        enabled: false  # Disabled when Phase 1 is enabled
-
-  # ===================================================================
-  # ESSENTIAL PC2 SERVICES (CONTINUE RUNNING)
-  # ===================================================================
-  essential_services:
-    TranslatorAgent:
-      script_path: pc2_code/agents/translator_agent.py
-      port: 5001
-      health_check_port: 6001
-      required: true
-      dependencies: [ObservabilityHub]
-      config:
-        enable_phase1_integration: true
-        observability_hub_endpoint: "http://localhost:7002"
-        mainpc_core_orchestrator: "http://172.20.0.10:7000"
-        enable_health_reporting: true
-      startup:
-        order: 10
-        wait_for_dependencies: true
-        dependency_timeout: 120
-
-    RemoteConnectorAgent:
-      script_path: pc2_code/agents/remote_connector_agent.py
-      port: 5002
-      health_check_port: 6002
-      required: true
-      dependencies: [ObservabilityHub]
-      config:
-        enable_phase1_integration: true
-        observability_hub_endpoint: "http://localhost:7002"
-        enable_health_reporting: true
-      startup:
-        order: 11
-        wait_for_dependencies: true
-
-    AuthenticationAgent:
-      script_path: pc2_code/agents/authentication_agent.py
-      port: 5003
-      health_check_port: 6003
-      required: true
-      dependencies: [ObservabilityHub]
-      config:
-        enable_phase1_integration: true
-        observability_hub_endpoint: "http://localhost:7002"
-        mainpc_security_gateway: "http://172.20.0.10:7005"
-        enable_health_reporting: true
-      startup:
-        order: 12
-        wait_for_dependencies: true
-
-    AgentTrustScorer:
-      script_path: pc2_code/agents/agent_trust_scorer.py
-      port: 5004
-      health_check_port: 6004
-      required: true
-      dependencies: [ObservabilityHub, AuthenticationAgent]
-      config:
-        enable_phase1_integration: true
-        observability_hub_endpoint: "http://localhost:7002"
-        mainpc_security_gateway: "http://172.20.0.10:7005"
-        enable_health_reporting: true
-      startup:
-        order: 13
-        wait_for_dependencies: true
-
-# ===================================================================
-# PHASE 1 SPECIFIC CONFIGURATIONS (PC2)
-# ===================================================================
-phase1_config:
-  deployment_mode: "production"  # Options: development, staging, production
-  consolidation_level: "complete"  # Options: partial, gradual, complete
-  hardware_role: "monitoring_hub"  # PC2 serves as monitoring and observability hub
-  
-  feature_flags:
-    enable_o3_enhancements: true
-    enable_prometheus_metrics: true
-    enable_predictive_analytics: true
-    enable_zmq_broadcasting: true
-    enable_parallel_health_checks: true
-    enable_cross_system_monitoring: true  # Monitor MainPC services
-    enable_anomaly_detection: true
-    enable_failure_prediction: true
-
-  observability_config:
-    prometheus_enabled: true
-    prometheus_port: 9090
-    metrics_retention_days: 7
-    health_check_interval: 30
-    parallel_check_workers: 20
-    analytics_interval: 60
-    broadcast_interval: 10
-    anomaly_threshold: 2.0
-    failure_prediction_confidence: 0.6
-
-  cross_system_integration:
-    mainpc_ip: "172.20.0.10"
-    mainpc_services:
-      core_orchestrator:
-        endpoint: "http://172.20.0.10:7000"
-        health_endpoint: "http://172.20.0.10:7000/health"
-        critical: true
-      resource_manager_suite:
-        endpoint: "http://172.20.0.10:7001"
-        health_endpoint: "http://172.20.0.10:7001/health"
-        critical: true
-      error_bus_suite:
-        endpoint: "http://172.20.0.10:7003"
-        health_endpoint: "http://172.20.0.10:7003/health"
-        critical: true
-      security_gateway:
-        endpoint: "http://172.20.0.10:7005"
-        health_endpoint: "http://172.20.0.10:7005/health"
-        critical: true
-
-  zmq_config:
-    metrics_broadcast_port: 7152
-    error_subscription_port: 7151  # Subscribe to MainPC error bus
-    health_broadcast_port: 7153
-
-  monitoring_config:
-    system_metrics_enabled: true
-    gpu_monitoring_enabled: true
-    network_monitoring_enabled: true
-    predictive_analytics_enabled: true
-    alert_threshold_critical: 0.8
-    alert_threshold_warning: 0.6
-    health_check_timeout: 5
-    max_concurrent_health_checks: 20
-
-# ===================================================================
-# STARTUP ORCHESTRATION (PC2)
-# ===================================================================
-startup_sequence:
-  pre_start_checks:
-    - check_phase1_directories
-    - verify_prometheus_availability
-    - test_mainpc_connectivity
-    - validate_zmq_ports
-    
-  phase1_services_startup:
-    - ObservabilityHub           # Order 1 - Monitoring foundation
-    - ResourceManagerSuite       # Order 2 - Resource management
-    - ErrorBusSuite             # Order 3 - Error handling
-    - MemoryHub                 # Order 4 - Memory consolidation
-    
-  essential_services_startup:
-    - TranslatorAgent           # Order 10 - Translation services
-    - RemoteConnectorAgent      # Order 11 - Remote connections
-    - AuthenticationAgent       # Order 12 - Authentication
-    - AgentTrustScorer         # Order 13 - Trust scoring
-    
-  post_start_verification:
-    - verify_observability_hub_health
-    - test_mainpc_service_monitoring
-    - validate_prometheus_metrics
-    - test_zmq_broadcasting
-    - run_predictive_analytics_test
-
-# ===================================================================
-# LOGGING CONFIGURATION (PC2)
-# ===================================================================
-logging:
-  global_level: INFO
-  
-  phase1_loggers:
-    observability_hub:
-      level: INFO
-      file: "phase1_implementation/logs/observability_hub.log"
-      rotation: "daily"
-      retention: "7 days"
-      
-  cross_system_logging:
-    mainpc_log_aggregation: true
-    log_forwarding_endpoint: "http://172.20.0.10:7000/logs"
-    batch_size: 50
-    flush_interval: 30
-
-# ===================================================================
-# HEALTH CHECK CONFIGURATION (PC2)
-# ===================================================================
+# Health check configuration (additional settings)
 health_checks:
-  global_settings:
-    interval_seconds: 30
-    timeout_seconds: 10
-    retries: 3
-    start_period_seconds: 300
-  
-  phase1_specific:
-    observability_hub:
-      endpoint: "http://localhost:7002/health"
-      critical: true
-      
-  cross_system_monitoring:
-    mainpc_core_orchestrator:
-      endpoint: "http://172.20.0.10:7000/health"
-      critical: true
-      interval_seconds: 30
-    mainpc_resource_manager:
-      endpoint: "http://172.20.0.10:7001/health"
-      critical: true
-      interval_seconds: 30
-    mainpc_error_bus:
-      endpoint: "http://172.20.0.10:7003/health"
-      critical: true
-      interval_seconds: 30
-    mainpc_security_gateway:
-      endpoint: "http://172.20.0.10:7005/health"
-      critical: true
-      interval_seconds: 30
+  start_period_seconds: 300
 
-# ===================================================================
-# PROMETHEUS CONFIGURATION
-# ===================================================================
-prometheus:
-  enabled: true
-  port: 9090
-  scrape_interval: 15s
-  evaluation_interval: 15s
-  
-  scrape_configs:
-    - job_name: 'observability-hub'
-      static_configs:
-        - targets: ['localhost:7002']
-    
-    - job_name: 'mainpc-services'
-      static_configs:
-        - targets: 
-          - '172.20.0.10:7000'  # CoreOrchestrator
-          - '172.20.0.10:7001'  # ResourceManagerSuite
-          - '172.20.0.10:7003'  # ErrorBusSuite
-          - '172.20.0.10:7005'  # SecurityGateway
-      scrape_interval: 30s
-      
-    - job_name: 'pc2-services'
-      static_configs:
-        - targets:
-          - 'localhost:5001'    # TranslatorAgent
-          - 'localhost:5002'    # RemoteConnectorAgent
-          - 'localhost:5003'    # AuthenticationAgent
-          - 'localhost:5004'    # AgentTrustScorer
+# PC2 Network Configuration
+pc2_network:
+  host: '0.0.0.0'
+  agent_ports:
+    start: 7100
+    end: 7199
+  health_check_ports:
+    start: 8100
+    end: 8199
 
-  rule_files:
-    - "phase1_implementation/config/prometheus_rules.yml"
-    
-  alerting:
-    alertmanagers:
-      - static_configs:
-          - targets:
-            - alertmanager:9093
+# DUPLICATE REMOVED - MemoryOrchestratorService already defined in pc2_services section above
+# This duplicate entry was causing port conflicts (7140 used twice) and health port confusion (8140 vs 7141)
 
-# ===================================================================
-# MIGRATION AND ROLLBACK CONFIGURATION (PC2)
-# ===================================================================
-migration:
-  backup_before_migration: true
-  backup_location: "phase1_implementation/backups"
-  
-  rollback_strategy:
-    automatic_rollback_on_failure: true
-    rollback_timeout_minutes: 10
-    health_check_failures_threshold: 3
-  
-  legacy_service_deprecation:
-    grace_period_days: 30
-    warning_notifications: true
-    forced_retirement_date: "2025-02-01"
-    
-  cross_system_coordination:
-    mainpc_coordination_endpoint: "http://172.20.0.10:7000/coordination"
-    sync_before_migration: true
-    notify_mainpc_on_changes: true
+error_bus_port: "${PORT_OFFSET}+7150"

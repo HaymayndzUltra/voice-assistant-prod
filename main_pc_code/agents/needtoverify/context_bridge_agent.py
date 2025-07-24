@@ -1,4 +1,5 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Context Bridge Agent
 Connects face recognition events to the context manager for seamless context switching.
@@ -19,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from main_pc_code.agents.context_manager import create_context_manager, add_to_context, get_context, clear_context
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

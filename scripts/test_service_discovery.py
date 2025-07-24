@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Service Discovery Integration Test
 ---------------------------------
@@ -19,6 +20,7 @@ import zmq
 import socket
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent

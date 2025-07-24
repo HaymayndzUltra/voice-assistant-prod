@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -17,7 +18,7 @@ Implements real-time noise reduction for the voice assistant system:
 - Publishes cleaned audio to downstream components
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
@@ -32,13 +33,15 @@ import noisereduce as nr
 from scipy import signal
 import psutil
 from datetime import datetime
+from common.env_helpers import get_env
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('noise_reduction_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "noise_reduction_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -66,7 +69,7 @@ class NoiseReductionAgent(BaseAgent):
         self.health_thread = None
         
         # Initialize ZMQ context
-        self.zmq_context = zmq.Context()
+        self.zmq_context = None  # Using pool
         
         # Initialize sockets
         self._init_sockets()
@@ -326,10 +329,9 @@ class NoiseReductionAgent(BaseAgent):
             self.health_thread.join(timeout=2)
             
         # Close ZMQ sockets
-        self.sub_socket.close()
-        self.pub_socket.close()
-        self.health_socket.close()
-        
+        self.sub_
+        self.pub_
+        self.health_
         logger.info("Noise reduction agent stopped")
     
     def run(self):

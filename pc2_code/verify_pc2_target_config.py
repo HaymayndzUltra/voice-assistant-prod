@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # -*- coding: utf-8 -*-
 """
 PC2 TARGET CONFIGURATION VERIFICATION TOOL
@@ -15,6 +16,7 @@ import sys
 import os
 from datetime import datetime
 from pathlib import Path
+from common.env_helpers import get_env
 
 # ANSI colors for terminal output
 class Colors:

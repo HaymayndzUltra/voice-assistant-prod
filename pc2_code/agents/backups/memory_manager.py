@@ -13,8 +13,8 @@ import os
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -24,6 +24,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level
@@ -32,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "memory_manager.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_manager.log"))),
         logging.StreamHandler()
     ]
 )
@@ -116,12 +117,12 @@ class MemoryManager(BaseAgent):
         """Initialize agent components in background thread."""
         try:
             # Initialize database
-            self.db_path = "memory_store.db"
+            self.db_path = str(PathManager.get_data_dir() / "memory_store.db")
             self._init_database()
             
             # Connect to UnifiedMemoryReasoningAgent
             self.umra_socket = self.context.socket(zmq.REQ)
-            self.umra_socket.connect("tcp://localhost:5596")
+            self.umra_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596")
             
             self.initialized = True
             logger.info("MemoryManager initialization completed")

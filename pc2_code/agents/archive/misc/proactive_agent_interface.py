@@ -1,3 +1,5 @@
+from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python
 """
 Proactive Agent Interface Module
@@ -11,6 +13,7 @@ import json
 import logging
 import time
 from typing import Dict, Any, Optional
+from common.env_helpers import get_env
 
 # Constants
 PROACTIVE_EVENT_PORT = 5595

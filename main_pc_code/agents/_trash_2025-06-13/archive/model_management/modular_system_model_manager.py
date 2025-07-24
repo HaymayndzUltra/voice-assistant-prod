@@ -18,6 +18,7 @@ project_root = Path(__file__).parent.absolute()
 sys.path.append(str(project_root))
 
 from main_pc_code.config.system_config import Config
+from common.env_helpers import get_env
 
 class ModelManagerAgent(BaseAgent):
     def __init__(self, port: int = None, **kwargs):
@@ -38,7 +39,7 @@ class ModelManagerAgent(BaseAgent):
             level=logging.DEBUG,  # Changed to DEBUG level
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(log_dir / "model_manager_agent.log"),
+                logging.FileHandler(log_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")),
                 logging.StreamHandler()
             ]
         )
@@ -50,7 +51,7 @@ class ModelManagerAgent(BaseAgent):
         self.logger.info("Starting Model Manager Agent...")
         
         # Subscribe to health messages on port 5597
-        self.subscriber.connect("tcp://localhost:5597")
+        self.subscriber.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5597")
         self.subscriber.setsockopt_string(zmq.SUBSCRIBE, "")
         
         self.logger.info("Subscribed to health messages on port 5597")
@@ -183,6 +184,9 @@ class DynamicSTTModelManager(BaseAgent):
             return self.loaded_models[model_id]
         try:
             import whisper
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
             self.logger.info(f"Loading STT model '{model_id}'...")

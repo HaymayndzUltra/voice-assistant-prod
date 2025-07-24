@@ -9,27 +9,21 @@ def get_main_pc_code():
     main_pc_code_dir = current_dir.parent
     return main_pc_code_dir
 
-# First define a basic join_path function for bootstrapping
-def join_path(*args):
-    return os.path.join(*args)
-
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
+project_root = str(PathManager.get_project_root())
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 import sys
 import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-PROJECT_ROOT = os.path.abspath(join_path("main_pc_code", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Path setup completed above
 
 from common.core.base_agent import BaseAgent
 # Tone detection for Human Awareness Agent
@@ -37,7 +31,7 @@ from common.core.base_agent import BaseAgent
 import time
 import logging
 import threading
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import yaml
 from datetime import datetime
@@ -46,11 +40,12 @@ import re
 import numpy as np
 import wave
 from typing import Dict, Any, Optional
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 import psutil
+from common.env_helpers import get_env
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -72,7 +67,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "tone_detector.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "tone_detector.log"))),
         logging.StreamHandler()
     ]
 )
@@ -83,7 +78,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler(os.path.join(
                         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "logs", "human_awareness_tone.log")), 
+                        "logs", str(PathManager.get_logs_dir() / "human_awareness_tone.log"))), 
                               logging.StreamHandler()])
 logger = logging.getLogger("HumanAwareness-Tone")
 
@@ -118,12 +113,7 @@ class ToneDetector(BaseAgent):
         self.tagalog_analyzer = None
         self.whisper_model = None
         
-        # Setup error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Start tone monitoring in background
         self.tone_thread = threading.Thread(target=self._start_tone_monitor, daemon=True)
@@ -227,9 +217,9 @@ class ToneDetector(BaseAgent):
         
         try:
             # Use the partial transcripts port from streaming system
-            context = zmq.Context()
-            socket = context.socket(zmq.SUB)
-            host = config.get("host", "localhost")
+            context = None  # Using pool
+            socket = get_sub_socket(endpoint).socket
+            host = config.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             socket.connect(f"tcp://{host}:5575")  # Partial transcripts port
             socket.setsockopt_string(zmq.SUBSCRIBE, "")
             logger.info("Connected to Whisper partial transcripts stream")
@@ -271,11 +261,11 @@ class ToneDetector(BaseAgent):
     
     def _connect_to_tagalog_analyzer(self):
         try:
-            context = zmq.Context()
-            socket = context.socket(zmq.REQ)
+            context = None  # Using pool
+            socket = get_req_socket(endpoint).socket
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            host = config.get("tagalog_analyzer_host", "localhost")
+            host = config.get("tagalog_analyzer_host", get_env("BIND_ADDRESS", "0.0.0.0"))
             port = config.get("tagalog_analyzer_port", 5707)
             socket.connect(f"tcp://{host}:{port}")  # TagalogAnalyzer service port
             logger.info("Connected to TagalogAnalyzer service")
@@ -595,7 +585,7 @@ class ToneDetector(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")

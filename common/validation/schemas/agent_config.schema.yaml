@@ -1,0 +1,135 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: "AI-Agent Startup Configuration"
+description: "JSON Schema for validating AI agent startup configurations across MainPC and PC2 systems"
+type: object
+required: [global_settings]
+
+properties:
+  global_settings:
+    type: object
+    description: "Global settings applied to all agents"
+    properties:
+      environment:
+        type: object
+        description: "Environment variables for all agents"
+        additionalProperties:
+          type: string
+      resource_limits:
+        type: object
+        description: "Resource constraints for agent execution"
+        properties:
+          cpu_percent:
+            type: number
+            minimum: 1
+            maximum: 100
+            description: "Maximum CPU usage percentage"
+          memory_mb:
+            type: integer
+            minimum: 128
+            description: "Maximum memory usage in MB"
+          max_threads:
+            type: integer
+            minimum: 1
+            description: "Maximum number of threads per agent"
+        additionalProperties: false
+      health_checks:
+        type: object
+        description: "Health check configuration"
+        properties:
+          interval_seconds:
+            type: integer
+            minimum: 5
+            description: "Health check interval in seconds"
+          timeout_seconds:
+            type: integer
+            minimum: 1
+            description: "Health check timeout in seconds"
+          retries:
+            type: integer
+            minimum: 0
+            description: "Number of health check retries"
+        additionalProperties: false
+    additionalProperties: false
+
+  # MainPC configuration structure (hierarchical/nested)
+  agent_groups:
+    type: object
+    description: "MainPC agent groups (hierarchical structure)"
+    additionalProperties:
+      type: object
+      description: "Agent group containing multiple agents"
+      additionalProperties:
+        $ref: "#/$defs/agent"
+
+  # PC2 configuration structure (flat list)
+  pc2_services:
+    type: array
+    description: "PC2 services (flat list structure)"
+    items:
+      $ref: "#/$defs/agent"
+
+# Reusable agent definition
+$defs:
+  agent:
+    type: object
+    description: "Individual agent configuration"
+    required: [script_path, port, health_check_port]
+    properties:
+      name:
+        type: string
+        description: "Agent name identifier"
+        minLength: 1
+      script_path:
+        type: string
+        description: "Relative path to agent Python script"
+        pattern: "^[^/].*\\.py$"  # Must not start with / and must end with .py
+      port:
+        type: integer
+        minimum: 1024
+        maximum: 65535
+        description: "Main service port for agent"
+      health_check_port:
+        type: integer
+        minimum: 1024
+        maximum: 65535
+        description: "Health check endpoint port"
+      required:
+        type: boolean
+        description: "Whether agent is required for system operation"
+        default: true
+      dependencies:
+        type: array
+        description: "List of agents this agent depends on"
+        items:
+          type: string
+        uniqueItems: true
+      config:
+        type: object
+        description: "Agent-specific configuration"
+        additionalProperties: true
+      host:
+        type: string
+        description: "Host address to bind to"
+        default: "localhost"
+      env_vars:
+        type: object
+        description: "Environment variables specific to this agent"
+        additionalProperties:
+          type: string
+      startup_timeout:
+        type: integer
+        minimum: 5
+        maximum: 300
+        description: "Agent startup timeout in seconds"
+        default: 30
+      restart_policy:
+        type: string
+        enum: ["always", "on-failure", "unless-stopped", "no"]
+        description: "Agent restart policy"
+        default: "on-failure"
+    additionalProperties: false
+
+# Additional validation rules
+anyOf:
+  - required: [agent_groups]  # MainPC must have agent_groups
+  - required: [pc2_services]  # PC2 must have pc2_services 

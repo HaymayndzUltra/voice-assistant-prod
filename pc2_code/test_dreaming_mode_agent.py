@@ -25,6 +25,7 @@ def test_dreaming_mode_agent():
         # Import the agent
         print("1. Importing DreamingModeAgent...")
 from pc2_code.agents.DreamingModeAgent import DreamingModeAgent
+from common.env_helpers import get_env
         print("   ✓ Import successful")
         
         # Create agent instance
@@ -45,7 +46,7 @@ from pc2_code.agents.DreamingModeAgent import DreamingModeAgent
         print("4. Testing health check...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7127")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7127")
         
         # Send health check request
         health_request = {"action": "health_check"}
@@ -65,7 +66,7 @@ from pc2_code.agents.DreamingModeAgent import DreamingModeAgent
         print("5. Testing dream status...")
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:7127")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7127")
         
         # Send dream status request
         status_request = {"action": "get_dream_status"}

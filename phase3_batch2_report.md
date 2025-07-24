@@ -45,23 +45,23 @@ For each file, the following standardization actions were implemented:
   from datetime import datetime
   from typing import Dict, Any, List, Set, Tuple
 - import argparse
-  
+
   from src.core.base_agent import BaseAgent
 - from utils.config_parser import parse_agent_args
 + from main_pc_code.utils.config_parser import parse_agent_args
-  
+
   # Parse command line arguments
 - args = parse_agent_args()
 + _agent_args = parse_agent_args()
-  
+
   # Configure logging
 ...
-  
+
   class IntentionValidatorAgent(BaseAgent):
 -     def __init__(self, port=5572, host="localhost", taskrouter_host=None, taskrouter_port=None):
 +     def __init__(self, port: int = None, name: str = None, host="localhost", taskrouter_host=None, taskrouter_port=None, **kwargs):
           """Initialize the IntentionValidatorAgent.
-          
+
           Args:
 -             port: Port to bind to (default: 5572)
 +             port: Port to bind to (default from _agent_args or 5572)
@@ -70,23 +70,23 @@ For each file, the following standardization actions were implemented:
               taskrouter_host: Task router host (default: localhost)
 ...
           }
-          
+
 -         # Get port from command line arguments if provided
 -         if hasattr(args, 'port') and args.port is not None:
 -             port = int(args.port)
--             
+-
 -         super().__init__(port=port, name="IntentionValidator")
 +         # Get port and name from _agent_args with fallbacks
 +         agent_port = getattr(_agent_args, 'port', 5572) if port is None else port
 +         agent_name = getattr(_agent_args, 'name', 'IntentionValidator') if name is None else name
 +         super().__init__(port=agent_port, name=agent_name)
-          
+
           # Get TaskRouter connection details from command line args (lowercase)
 -         self.taskrouter_host = taskrouter_host or getattr(args, 'taskrouter_host', None) or "localhost"
 -         self.taskrouter_port = taskrouter_port or getattr(args, 'taskrouter_port', None) or 5570
 +         self.taskrouter_host = taskrouter_host or getattr(_agent_args, 'taskrouter_host', None) or "localhost"
 +         self.taskrouter_port = taskrouter_port or getattr(_agent_args, 'taskrouter_port', None) or 5570
-          
+
           # Also check for uppercase variant for backward compatibility
 -         if hasattr(args, 'TaskRouter_host') and self.taskrouter_host == "localhost":
 -             self.taskrouter_host = args.TaskRouter_host
@@ -105,18 +105,18 @@ For each file, the following standardization actions were implemented:
   from typing import Dict, Any, List, Tuple
 - from utils.config_loader import parse_agent_args
 + from main_pc_code.utils.config_parser import parse_agent_args
-+ 
++
   _agent_args = parse_agent_args()
-  
+
 ...
-  
+
   # Constants
 - NLU_PORT = 5558
 + ZMQ_REQUEST_TIMEOUT = 5000  # ms
-  
+
   class NLUAgent(BaseAgent):
       """Natural Language Understanding agent that analyzes user input and extracts intents and entities."""
-      
+
 -     def __init__(self):
 -         self.port = _agent_args.get('port')
 -         super().__init__(_agent_args)
@@ -132,4 +132,4 @@ For each file, the following standardization actions were implemented:
 
 All 10 files in Batch 2 have been successfully refactored to meet the Configuration Standardization requirements (Compliance Criteria C6, C7, C8, C9). The refactoring ensures consistent configuration loading across all agents, with proper fallbacks and standardized parameter access patterns.
 
-Some linter warnings remain related to type checking, but these are not critical to the functionality of the code and can be addressed in a separate pass if needed. 
+Some linter warnings remain related to type checking, but these are not critical to the functionality of the code and can be addressed in a separate pass if needed.

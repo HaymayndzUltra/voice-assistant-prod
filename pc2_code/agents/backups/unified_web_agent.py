@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Unified Web Agent
 ----------------
@@ -64,7 +65,7 @@ from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Configure logging
-log_file_path = os.path.join('logs', 'unified_web_agent.log')
+log_file_path = os.path.join('logs', str(PathManager.get_logs_dir() / "unified_web_agent.log"))
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
 logging.basicConfig(
@@ -1109,7 +1110,7 @@ class UnifiedWebAgent(BaseAgent):
             memory_address = get_service_address("UnifiedMemoryReasoningAgent")
             if not memory_address:
                 # Fall back to configured port
-                memory_address = f"tcp://localhost:5596"
+                memory_address = ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5596"
                 
             self.memory_socket.connect(memory_address)
             logger.info(f"Connected to memory agent at {memory_address}")
@@ -1780,6 +1781,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level
@@ -1914,6 +1916,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

@@ -2,6 +2,7 @@ import os
 import yaml
 import pathlib
 from typing import Dict, Any, Optional
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 def load_network_config() -> Dict[str, Any]:
     """
@@ -19,8 +20,8 @@ def load_network_config() -> Dict[str, Any]:
         print(f"Error loading network config: {e}")
         # Return default configuration
         return {
-            "main_pc": {"ip": "192.168.100.16"},
-            "pc2": {"ip": "192.168.100.17"},
+            "main_pc": {"ip": get_service_ip("mainpc")},
+            "pc2": {"ip": get_service_ip("pc2")},
             "services": {}
         }
 
@@ -42,27 +43,29 @@ def get_env(var_name: str, default: str = None) -> str:
 
 def get_ip(machine: str) -> str:
     """
-    Get IP address for a machine from environment variables or config
+    Get IP address for a machine using standardized environment variables.
     
     Args:
-        machine: Machine name (main_pc or pc2)
+        machine: Machine name (main_pc, mainpc, or pc2)
         
     Returns:
         str: IP address of the machine
     """
-    # First check environment variable
-    env_var = f"{machine.upper()}_IP"
-    env_ip = os.environ.get(env_var)
-    if env_ip:
-        return env_ip
+    # Import here to avoid circular imports
+    from common.utils.env_standardizer import get_machine_ip
     
-    # Fall back to config
-    try:
-        return CFG[machine]["ip"]
-    except (KeyError, TypeError):
-        # Return localhost as last resort
-        print(f"Warning: Could not find IP for {machine}, using localhost")
-        return "127.0.0.1"
+    # Normalize machine name
+    machine = machine.lower()
+    if machine in ("main_pc", "mainpc"):
+        machine = "mainpc"
+    elif machine == "pc2":
+        machine = "pc2"
+    else:
+        print(f"Warning: Unknown machine {machine}, using localhost")
+        return "localhost"
+    
+    # Use standardized environment variables (Blueprint.md Step 4)
+    return get_machine_ip(machine)
 
 def addr(service: str, target: str) -> str:
     """

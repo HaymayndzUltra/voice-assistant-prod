@@ -18,6 +18,7 @@ import subprocess
 import requests
 from typing import Dict, List, Optional, Tuple, Any
 import logging
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -111,7 +112,7 @@ class ContainerTester:
             logger.error(f"Error checking connectivity from {source_container} to {target_host}:{target_port}: {e}")
             return False
     
-    def test_memory_service(self, host: str = "localhost", port: int = 7140) -> Dict:
+    def test_memory_service(self, host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 7140) -> Dict:
         """Test the Memory Orchestrator Service functionality."""
         test_key = f"test_key_{int(time.time())}"
         test_value = {"test": "data", "timestamp": time.time()}

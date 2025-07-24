@@ -15,6 +15,7 @@ import os
 import sys
 from datetime import datetime
 from typing import Dict, List, Any, Tuple
+from common.env_helpers import get_env
 
 # Sample texts of varying lengths for testing
 SAMPLE_TEXTS = {
@@ -82,7 +83,7 @@ def connect_to_translator(timeout=5000):
     socket.setsockopt(zmq.RCVTIMEO, timeout)  # 5 second timeout
     
     try:
-        socket.connect("tcp://localhost:5563")
+        socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5563")
         print(f"{Colors.GREEN}✓ Connected to translator agent on port 5563{Colors.ENDC}")
         return context, socket
     except Exception as e:

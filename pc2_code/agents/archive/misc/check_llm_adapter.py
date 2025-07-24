@@ -1,8 +1,10 @@
 import zmq
 import json
+from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 PORT = 5581
-HOST = "127.0.0.1"  # Adapter should be listening on 0.0.0.0
+HOST = get_env("BIND_ADDRESS", "0.0.0.0")  # Adapter should be listening on 0.0.0.0
 
 
 def check_adapter_status():

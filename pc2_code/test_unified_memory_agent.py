@@ -16,6 +16,7 @@ os.environ['UNIFIED_MEMORY_PORT'] = '7205'
 try:
     print("Testing UnifiedMemoryReasoningAgent import...")
 from pc2_code.agents.unified_memory_reasoning_agent import UnifiedMemoryReasoningAgent
+from common.env_helpers import get_env
     
     print("Creating UnifiedMemoryReasoningAgent instance...")
     agent = UnifiedMemoryReasoningAgent(zmq_port=7205, health_check_port=7206)
@@ -38,7 +39,7 @@ from pc2_code.agents.unified_memory_reasoning_agent import UnifiedMemoryReasonin
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
-    socket.connect(f"tcp://localhost:7206")
+    socket.connect(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7206")
     
     request = {'action': 'health_check'}
     socket.send_string(json.dumps(request))

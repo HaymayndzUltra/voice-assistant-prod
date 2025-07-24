@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from zmq.utils import z85
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -13,7 +14,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # --- CONFIGURATION ---
-SDT_HOST = "127.0.0.1"
+SDT_HOST = get_env("BIND_ADDRESS", "0.0.0.0")
 SDT_PORT = 7120
 CONNECTION_TIMEOUT_S = 30  # 30 seconds should be sufficient with our fix
 DEBUG = True

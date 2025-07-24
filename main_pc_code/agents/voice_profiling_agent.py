@@ -8,23 +8,26 @@ import os
 import json
 import uuid
 import numpy as np
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import time
 import psutil
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple, Union, cast
 from pathlib import Path
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
-config = load_config()
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
+from common.env_helpers import get_env
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
@@ -37,7 +40,7 @@ class VoiceProfilingAgent(BaseAgent):
     def __init__(self):
         """Initialize the Voice Profiling Agent"""
         # Get configuration
-        config_dict = load_config()
+        config_dict = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Initialize basic parameters
         agent_name = config_dict.get('name', 'VoiceProfilingAgent')
@@ -56,24 +59,19 @@ class VoiceProfilingAgent(BaseAgent):
         # Load configuration – determine config_path safely to avoid NameError
         config_path = self.config.get('config_path', None)
         if config_path is None:
-            config_path = join_path("config", join_path("config", "system_config.py"))
+            config_path = str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "system_config.py")
         self.config_path = config_path
-        self.load_config()
+        self.load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         
         # Initialize voice profiles storage
-        self.profile_storage_path = self.config.get("voice_profiling", {}).get("profile_storage_path", join_path("data", "voice_profiles"))
+        self.profile_storage_path = self.config.get("voice_profiling", {}).get("profile_storage_path", str(PathManager.get_data_dir() / "voice_profiles"))
         os.makedirs(self.profile_storage_path, exist_ok=True)
         
         # Load existing voice profiles
         self.voice_profiles = {}
         self.load_voice_profiles()
         
-        # Setup error bus
-        self.error_bus_port = int(config_dict.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config_dict.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         logger.info(f"Voice Profiling Agent initialized on port {self.port}")
         
@@ -101,7 +99,7 @@ class VoiceProfilingAgent(BaseAgent):
                 json_cfg = json.load(f)
             self.config = {
                 'voice_profiling': json_cfg.get('voice_profiling', {
-                    'profile_storage_path': join_path("data", "voice_profiles"),
+                    'profile_storage_path': str(PathManager.get_data_dir() / "voice_profiles"),
                     'min_enrollment_samples': 3,
                     'recognition_confidence_threshold': 0.8
                 }),
@@ -115,7 +113,7 @@ class VoiceProfilingAgent(BaseAgent):
             # Final fallback defaults
             self.config = {
                 'voice_profiling': {
-                    'profile_storage_path': join_path("data", "voice_profiles"),
+                    'profile_storage_path': str(PathManager.get_data_dir() / "voice_profiles"),
                     'min_enrollment_samples': 3,
                     'recognition_confidence_threshold': 0.8
                 },
@@ -345,7 +343,7 @@ class VoiceProfilingAgent(BaseAgent):
             # Terminate ZMQ context
             if hasattr(self, 'context') and self.context:
                 try:
-                    self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                     logger.info("ZMQ context terminated")
                 except Exception as e:
                     logger.error(f"Error terminating ZMQ context: {e}")

@@ -1,5 +1,6 @@
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common.utils.path_manager import PathManager
 import sys
 import os
 import time
@@ -14,15 +15,18 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", "..")))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the parent directory to sys.path to import the config module
-from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
+# from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
+from common.env_helpers import get_env
 
 import cv2
 import numpy as np
 import insightface
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any
@@ -48,20 +52,38 @@ from main_pc_code.agents.error_publisher import ErrorPublisher
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
-config = load_config()
+# Ensure the main_pc_code directory is in sys.path
+if str(Path(MAIN_PC_CODE_DIR)) not in sys.path:
+    sys.path.insert(0, str(Path(MAIN_PC_CODE_DIR)))
+
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Load configuration
-with open(join_path("config", "face_recognition_config.json"), "r") as f:
-    CONFIG = json.load(f)["face_recognition"]
+try:
+    with open(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "face_recognition_config.json"), "r") as f:
+        CONFIG = json.load(f)["face_recognition"]
+except FileNotFoundError:
+    # Fallback configuration if file doesn't exist
+    CONFIG = {
+        "model": {
+            "name": "buffalo_l",
+            "root": "~/.insightface",
+            "providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
+            "ctx_id": 0,
+            "quantization": {"enabled": False}
+        },
+        "emotion_model": {
+            "path": str(PathManager.get_models_dir() / "emotion_model.onnx")
+        }
+    }
+    print("Warning: face_recognition_config.json not found, using defaults")
 
-LOG_PATH = "face_recognition_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "face_recognition_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -72,7 +94,8 @@ logging.basicConfig(
 )
 
 # Define ZMQ_PORT from system configuration
-ZMQ_PORT = SYS_CONFIG.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
+ZMQ_PORT = 5560  # Fallback port since SYS_CONFIG is commented out
+# ZMQ_PORT = SYS_CONFIG.get("main_pc_settings", {}).get("zmq_ports", {}).get("face_recognition_port", 5560)
 
 @dataclass
 class EmotionState:
@@ -470,17 +493,16 @@ class FaceRecognitionAgent(BaseAgent):
             self.initialization_status["error"] = str(e)
             self.initialization_status["progress"] = 0.0
             logging.error(f"Async initialization failed: {e}")
-            try:
+            from common_utils.error_handling import SafeExecutor
+            with SafeExecutor(self.logger, recoverable=(ConnectionError, AttributeError)):
                 self.error_publisher.publish_error(error_type="async_init_failure", details=str(e))
-            except Exception:
-                pass
             traceback.print_exc()
 
     def _init_zmq(self):
         """Initialize ZMQ context and sockets."""
         try:
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REP)
+            self.context = None  # Using pool
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.RCVTIMEO, self.zmq_timeout)
             self.socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -682,7 +704,6 @@ class FaceRecognitionAgent(BaseAgent):
             self.pub_socket.close()
         if hasattr(self, 'context'):
             self.context.term()
-
     def health_check(self):
         """Perform a health check and return status."""
         try:
@@ -748,10 +769,8 @@ if __name__ == "__main__":
             # Close ZMQ sockets if they exist
             if hasattr(self, 'socket') and self.socket:
                 self.socket.close()
-            
             if hasattr(self, 'context') and self.context:
                 self.context.term()
-                
             # Close any open file handles
             # [Add specific resource cleanup here]
             

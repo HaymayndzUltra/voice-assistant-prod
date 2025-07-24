@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 PUB test script for translator_agent.py
 Uses the correct socket pattern (PUB to translator's SUB socket)
 """
@@ -7,6 +8,7 @@ import json
 import time
 import sys
 from colorama import init, Fore, Style
+from common.env_helpers import get_env
 
 # Initialize colorama for colored output
 try:
@@ -26,7 +28,7 @@ except ImportError:
 # Configuration
 TRANSLATOR_PORT = 5561  # Translator Agent SUB port
 EMR_PUB_PORT = 7701     # Enhanced Model Router PUB port (for listening to results)
-HOST = "localhost"
+HOST = get_env("BIND_ADDRESS", "0.0.0.0")
 
 def print_colored(text, color=Fore.WHITE, style=Style.NORMAL):
     """Print colored text to console"""

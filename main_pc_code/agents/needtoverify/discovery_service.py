@@ -1,4 +1,5 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Discovery Service Agent
 Provides service discovery for distributed agents across the network.
@@ -13,6 +14,10 @@ import logging
 import threading
 import zmq
 from datetime import datetime
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
@@ -22,7 +27,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("discovery_service.log", encoding="utf-8"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "discovery_service.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -40,7 +45,7 @@ class DiscoveryService(BaseAgent):
         self.running = False
         
         # Load configuration
-        self.config = self.load_config()
+        self.config = self.load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
         if not self.config:
             logger.error("Failed to load configuration. Exiting.")
             sys.exit(1)
@@ -87,7 +92,7 @@ class DiscoveryService(BaseAgent):
             return local_ip
         except Exception as e:
             logger.error(f"Failed to get local IP: {e}")
-            return "127.0.0.1"
+            return "localhost"
     
     def register_service(self, service_data):
         """Register a service with the discovery service"""
@@ -98,7 +103,7 @@ class DiscoveryService(BaseAgent):
             
             # Update or add the service
             self.services[service_name] = {
-                "ip": service_data.get("ip", "127.0.0.1"),
+                "ip": service_data.get("ip", "localhost"),
                 "port": service_data.get("port", 0),
                 "machine_id": service_data.get("machine_id", "unknown"),
                 "last_seen": datetime.now().timestamp()

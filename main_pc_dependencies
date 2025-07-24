@@ -3,9 +3,12 @@ digraph {
 	graph [rankdir=LR ratio=fill size="12,8"]
 	subgraph cluster_core_services {
 		color="#FF6B6B" fontcolor=black fontname=Arial fontsize=16 label=core_services style=filled
+		ServiceRegistry [label=ServiceRegistry fillcolor=white fontname=Arial shape=box style=filled]
 		SystemDigitalTwin [label=SystemDigitalTwin fillcolor=white fontname=Arial shape=box style=filled]
 		RequestCoordinator [label=RequestCoordinator fillcolor=white fontname=Arial shape=box style=filled]
 		UnifiedSystemAgent [label=UnifiedSystemAgent fillcolor=white fontname=Arial shape=box style=filled]
+		ObservabilityHub [label=ObservabilityHub fillcolor=white fontname=Arial shape=box style=filled]
+		ModelManagerSuite [label=ModelManagerSuite fillcolor=white fontname=Arial shape=box style=filled]
 	}
 	subgraph cluster_memory_system {
 		color="#4ECDC4" fontcolor=black fontname=Arial fontsize=16 label=memory_system style=filled
@@ -89,8 +92,11 @@ digraph {
 		VoiceProfilingAgent [label=VoiceProfilingAgent fillcolor=white fontname=Arial shape=box style=filled]
 		EmpathyAgent [label=EmpathyAgent fillcolor=white fontname=Arial shape=box style=filled]
 	}
+	SystemDigitalTwin -> ServiceRegistry [fontname=Arial]
 	RequestCoordinator -> SystemDigitalTwin [fontname=Arial]
 	UnifiedSystemAgent -> SystemDigitalTwin [fontname=Arial]
+	ObservabilityHub -> SystemDigitalTwin [fontname=Arial]
+	ModelManagerSuite -> SystemDigitalTwin [fontname=Arial]
 	MemoryClient -> SystemDigitalTwin [fontname=Arial]
 	SessionMemoryAgent -> RequestCoordinator [fontname=Arial]
 	SessionMemoryAgent -> SystemDigitalTwin [fontname=Arial]
@@ -114,6 +120,7 @@ digraph {
 	GGUFModelManager -> SystemDigitalTwin [fontname=Arial]
 	ModelManagerAgent -> GGUFModelManager [fontname=Arial]
 	ModelManagerAgent -> SystemDigitalTwin [fontname=Arial]
+	ModelManagerAgent -> VRAMOptimizerAgent [fontname=Arial]
 	VRAMOptimizerAgent -> ModelManagerAgent [fontname=Arial]
 	VRAMOptimizerAgent -> RequestCoordinator [fontname=Arial]
 	VRAMOptimizerAgent -> SystemDigitalTwin [fontname=Arial]

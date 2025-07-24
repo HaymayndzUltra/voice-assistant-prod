@@ -12,6 +12,7 @@ import socket
 import logging
 import requests
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -83,7 +84,7 @@ def main():
     for agent_name, agent_config in agents.items():
         if agent_config.get("required", False):
             required_healthy_agents += 1
-            host = "localhost"  # Since we're checking from inside the container
+            host = get_env("BIND_ADDRESS", "0.0.0.0")  # Since we're checking from inside the container
             health_check_port = agent_config.get("health_check_port")
             
             if health_check_port and check_agent_health(host, health_check_port):

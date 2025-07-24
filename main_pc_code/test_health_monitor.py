@@ -3,13 +3,16 @@ import os
 import sys
 import logging
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Test 1: Log directory creation
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
 print(f"✓ Log directory '{log_dir}' created successfully")
 
 # Test 2: Log file creation
-log_file = os.path.join(log_dir, 'health_monitor.log')
+log_file = os.path.join(log_dir, str(PathManager.get_logs_dir() / "health_monitor.log"))
 try:
     with open(log_file, 'w') as f:
         f.write('Test log entry\n')

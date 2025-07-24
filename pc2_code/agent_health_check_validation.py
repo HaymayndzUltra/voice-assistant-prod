@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Agent Health Check Validation Script
 
@@ -22,6 +23,7 @@ import os
 from typing import Dict, Any, Optional
 from pathlib import Path
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
 
 class AgentHealthValidator:
     def __init__(self):

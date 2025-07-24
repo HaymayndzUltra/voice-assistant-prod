@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 End-to-End Test for Voice Command Flow
 
@@ -27,6 +28,10 @@ if str(project_root) not in sys.path:
 
 # Import service discovery client for agent discovery
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
@@ -34,7 +39,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(project_root, 'logs', 'voice_command_flow_test.log'))
+        logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_command_flow_test.log")))
     ]
 )
 logger = logging.getLogger("VoiceCommandFlowTest")
@@ -138,7 +143,7 @@ class TestVoiceCommandFlow(unittest.TestCase):
         
         # Socket to send simulated speech recognition output
         self.speech_pub_socket = self.context.socket(zmq.PUB)
-        self.speech_pub_socket.bind(f"tcp://127.0.0.1:6599")  # Test-specific port for publishing
+        self.speech_pub_socket.bind(ff"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:6599")  # Test-specific port for publishing
         logger.info(f"Bound speech simulation socket to tcp://127.0.0.1:6599")
         
         # Socket to request task routing

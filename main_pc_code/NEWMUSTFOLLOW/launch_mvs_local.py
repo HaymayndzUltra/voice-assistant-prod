@@ -17,13 +17,16 @@ from pathlib import Path
 import logging
 import threading
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('mvs_launcher.log')
+        logging.FileHandler(str(PathManager.get_logs_dir() / "mvs_launcher.log"))
     ]
 )
 

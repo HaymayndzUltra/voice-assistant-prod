@@ -3,19 +3,20 @@ import yaml
 import os
 import time
 import json
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import threading
 import sys
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path for common_utils import
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -39,7 +40,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = str(Path(PathManager.get_project_root()) / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -47,8 +48,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -68,8 +69,8 @@ logger = logging.getLogger("TutoringAgent")
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 
 # Get port configuration
@@ -104,43 +105,14 @@ class AdvancedTutoringAgent(BaseAgent):
         )
         
         # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         # Start health check thread
         self._start_health_check()
         
         logger.info(f"AdvancedTutoringAgent initialized for topic: {self.current_topic}")
     
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom methods
     
     def _start_health_check(self):
         """Start health check thread."""
@@ -148,30 +120,6 @@ class AdvancedTutoringAgent(BaseAgent):
         self.health_thread.daemon = True
         self.health_thread.start()
         logger.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-                self.report_error("HEALTH_CHECK_ERROR", str(e))
-                time.sleep(1)  # Sleep longer on error
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -411,7 +359,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close health socket
         if hasattr(self, 'health_socket'):
             try:
-                self.health_socket.close()
+                self.health_
                 logger.info("Closed health socket")
             except Exception as e:
                 logger.error(f"Error closing health socket: {e}")
@@ -419,7 +367,7 @@ class AdvancedTutoringAgent(BaseAgent):
         # Close model socket
         if hasattr(self, 'model_socket'):
             try:
-                self.model_socket.close()
+                self.model_
                 logger.info("Closed model socket")
             except Exception as e:
                 logger.error(f"Error closing model socket: {e}")
@@ -452,6 +400,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

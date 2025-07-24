@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Meta Cognition Agent
 ------------------
 Responsible for:
@@ -8,7 +9,7 @@ Responsible for:
 - Providing insights into system behavior
 """
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import time
 import logging
@@ -26,21 +27,22 @@ import threading
 import os
 
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from main_pc_code.config.agent_ports import default_ports
 from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
+from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('meta_cognition.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "meta_cognition.log")),
         logging.StreamHandler()
     ]
 )
@@ -88,7 +90,7 @@ class MetaCognitionAgent(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
+        self.error_bus_host = get_pc2_ip()
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 
@@ -110,10 +112,10 @@ class MetaCognitionAgent(BaseAgent):
 
     def _init_components(self):
         """Initialize all components of the MetaCognitionAgent."""
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         
         # Main REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
         
@@ -165,7 +167,7 @@ class MetaCognitionAgent(BaseAgent):
         logger.info(f"Connected to ModelVotingManager at {voting_address}")
         
         # Initialize database
-        self.db_path = "meta_cognition.db"
+        self.db_path = str(PathManager.get_data_dir() / "meta_cognition.db")
         self._init_database()
         
         # Start observation threads
@@ -688,7 +690,7 @@ class MetaCognitionAgent(BaseAgent):
         # Close sockets in a try-finally block to ensure they're all closed
         try:
             if hasattr(self, 'socket'):
-                self.socket.close()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.debug("Closed main socket")
             
             if hasattr(self, 'cot_sub'):
@@ -700,18 +702,18 @@ class MetaCognitionAgent(BaseAgent):
                 logger.debug("Closed voting subscription socket")
             
             if hasattr(self, 'kb_socket'):
-                self.kb_socket.close()
+                self.kb_
                 logger.debug("Closed knowledge base socket")
             
             if hasattr(self, 'request_coordinator_socket'):
-                self.request_coordinator_socket.close()
+                self.request_coordinator_
                 logger.debug("Closed coordinator socket")
         except Exception as e:
             logger.error(f"Error during socket cleanup: {e}")
         finally:
             # Terminate ZMQ context
             if hasattr(self, 'context'):
-                self.context.term()
+        # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.debug("Terminated ZMQ context")
         
         logger.info("MetaCognitionAgent stopped successfully")
@@ -950,6 +952,12 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

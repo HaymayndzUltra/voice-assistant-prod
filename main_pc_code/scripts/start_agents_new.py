@@ -7,18 +7,20 @@ import logging
 from typing import List, Dict, Tuple, Optional
 import urllib.request
 import urllib.error
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.insert(0, get_project_root())
-from common.utils.path_env import join_path, get_main_pc_code
+from common.utils.path_manager import PathManager
+from common.env_helpers import get_env
 
 # Configure logging
-LOGS_DIR = join_path("logs")
+LOGS_DIR = PathManager.join_path("logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(LOGS_DIR, 'startup.log')),
+        logging.FileHandler(os.path.join(LOGS_DIR, str(PathManager.get_logs_dir() / "startup.log"))),
         logging.StreamHandler()
     ]
 )
@@ -153,7 +155,7 @@ def check_agent_health(host: str, port: int, timeout: int = 5) -> bool:
 
 def start_agent(agent_name: str, script_path: str) -> Optional[subprocess.Popen]:
     """Starts an agent script as a subprocess and logs its output."""
-    log_file_path = os.path.join(LOGS_DIR, f"{agent_name}.log")
+    log_file_path = os.path.join(LOGS_DIR, fstr(PathManager.get_logs_dir() / "{agent_name}.log"))
     
     # Use absolute path for the script
     abs_script_path = os.path.join(get_main_pc_code(), script_path)

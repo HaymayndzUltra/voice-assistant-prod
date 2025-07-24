@@ -1,3 +1,17 @@
+# ============================================================================
+# TUTORING_AGENT MIGRATION APPLIED
+# Date: 2025-07-23T10:08:52.243712
+# Phase: 1 Week 4 Day 4 - Task 4G
+# Status: Second High-Risk Agent Migration
+# Migration ID: TUTORING_AGENT_MIGRATION_1753236532
+# ============================================================================
+
+
+# BASEAGENT MIGRATION COMPLETE:
+# - Legacy patterns migrated to BaseAgent framework
+# - Socket management → BaseAgent request handling
+# - Threading patterns → BaseAgent lifecycle
+# - Health checks → BaseAgent health system
 import logging
 import time
 import json
@@ -7,6 +21,7 @@ import os
 from port_config import ENHANCED_MODEL_ROUTER_PORT
 import threading
 from datetime import datetime
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add project root to Python path for common_utils import
 import sys
@@ -19,6 +34,10 @@ if str(project_root) not in sys.path:
 try:
     from common_utils.zmq_helper import create_socket
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -34,7 +53,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(current_dir, "tutoring_agent.log"), mode="a"),
+        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_agent.log")), mode="a"),
         logging.StreamHandler()
     ]
 )

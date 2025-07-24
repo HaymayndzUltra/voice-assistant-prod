@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test UnifiedMemoryReasoningAgent with SystemDigitalTwin
 
@@ -33,6 +34,7 @@ if str(project_root) not in sys.path:
 
 # Import service discovery client to get agent info
 from main_pc_code.utils.service_discovery_client import discover_service
+from common.env_helpers import get_env
 
 # ANSI color codes for terminal output
 COLORS = {
@@ -104,8 +106,8 @@ def start_unified_memory_agent(secure: bool = False) -> subprocess.Popen:
     env["SECURE_ZMQ"] = "1" if secure else "0"
     
     # Force local IP addresses for testing
-    env["MAINPC_IP"] = "127.0.0.1"
-    env["PC2_IP"] = "127.0.0.1"
+    env["MAINPC_IP"] = "localhost"
+    env["PC2_IP"] = "localhost"
     
     # Start the process using the module directly now that it uses service discovery
     process = subprocess.Popen(
@@ -122,7 +124,7 @@ def start_unified_memory_agent(secure: bool = False) -> subprocess.Popen:
     
     return process
 
-def check_system_health(host: str = "127.0.0.1", port: int = 7120, secure: bool = False) -> Dict[str, Any]:
+def check_system_health(host: str = get_env("BIND_ADDRESS", "0.0.0.0"), port: int = 7120, secure: bool = False) -> Dict[str, Any]:
     """
     Check the health of the system by connecting to SystemDigitalTwin.
     
@@ -286,7 +288,7 @@ def check_service_registry() -> bool:
 def main():
     parser = argparse.ArgumentParser(description="Test UnifiedMemoryReasoningAgent with SystemDigitalTwin")
     parser.add_argument("--secure", action="store_true", help="Use secure ZMQ")
-    parser.add_argument("--host", default="127.0.0.1", help="SystemDigitalTwin host address")
+    parser.add_argument("--host", default=get_env("BIND_ADDRESS", "0.0.0.0"), help="SystemDigitalTwin host address")
     parser.add_argument("--port", type=int, default=7120, help="SystemDigitalTwin port number")
     
     args = parser.parse_args()

@@ -6,12 +6,14 @@ Remote Connector / API Client Agent
 - Uses centralized configuration system
 - Implements response caching for improved performance
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import zmq
 import json
 import time
 import logging
 import threading
-import requests
+# LAZY LOADING: import requests
 import sys
 import os
 import traceback
@@ -25,8 +27,8 @@ from typing import Dict, Any, Optional, Union, List # Combined and ordered impor
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -39,7 +41,7 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load PC2 specific configuration system
@@ -59,7 +61,7 @@ except ImportError as e:
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml") # Use project_root
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml" # Use project_root
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -67,8 +69,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False,
             "ports": {} # Ensure ports key exists for .get("ports", {})
@@ -77,13 +79,13 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from network config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 # Configure logging
 log_level = app_config.get('system.log_level', 'INFO')
-log_file_path = Path(app_config.get('system.logs_dir', 'logs')) / "remote_connector.log"
+log_file_path = Path(app_config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "remote_connector.log")
 log_file_path.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -103,6 +105,21 @@ MODEL_MANAGER_HOST = app_config.get('zmq.model_manager_host', '192.168.100.16') 
 TASK_ROUTER_PORT = app_config.get('zmq.task_router_port', 5558) # Unused in this snippet
 
 class RemoteConnectorAgent(BaseAgent):
+
+    def _lazy_import_dependencies(self):
+        """Lazy import heavy dependencies only when needed"""
+        if not hasattr(self, '_dependencies_loaded'):
+            try:
+                import requests
+                self._dependencies_loaded = True
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'{self.name}: Dependencies loaded successfully')
+            except ImportError as e:
+                self._dependencies_loaded = False
+                if hasattr(self, 'logger'):
+                    self.logger.error(f'{self.name}: Failed to load dependencies: {e}')
+        return self._dependencies_loaded
+
     
     # Parse agent arguments
     _agent_args = parse_agent_args()
@@ -124,7 +141,7 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_port = self.port + 1
 
         # Initialize ZMQ Context
-        self.context = zmq.Context()
+        self.context = None  # Using pool
 
         # Socket to receive requests (main REP socket)
         self.receiver = self.context.socket(zmq.REP)
@@ -187,8 +204,8 @@ class RemoteConnectorAgent(BaseAgent):
         self.cache_hits = 0
         self.cache_misses = 0
 
-        # New attributes for error reporting
-        self.error_bus = setup_error_reporting(self)
+        # Error reporting handled by BaseAgent infrastructure
+        # No additional setup needed - BaseAgent provides built-in error handling
 
         logger.info("Remote Connector Agent initialized")
         logger.info(f"Cache enabled: {self.cache_enabled}")
@@ -201,31 +218,6 @@ class RemoteConnectorAgent(BaseAgent):
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True) # Set as daemon
         self.health_thread.start()
         logger.info("Health check thread started")
-
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logger.info("Health check loop started")
-
-        while self.running: # Use self.running from BaseAgent
-            try:
-                # Poll for health check requests with timeout
-                if self.health_socket.poll(100) == 0: # 100ms timeout, using zmq.POLLIN is implicit
-                    continue
-
-                # Receive request (don't care about content)
-                _ = self.health_socket.recv()
-
-                # Get health data (calls the overridden _get_health_status)
-                health_data = self._get_health_status()
-
-                # Send response
-                self.health_socket.send_json(health_data)
-
-                time.sleep(0.01) # Very small sleep to prevent CPU hogging in fast loop
-
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}", exc_info=True)
-                time.sleep(1)  # Sleep longer on error
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent. Overrides BaseAgent's method."""
@@ -720,18 +712,7 @@ class RemoteConnectorAgent(BaseAgent):
                     logger.error(f"Failed to send error response after exception: {send_error}")
         logger.info("Main request handling loop exited.")
 
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom method
 
     def run(self):
         """Run the remote connector agent. Overrides BaseAgent's run method."""
@@ -831,6 +812,8 @@ class RemoteConnectorAgent(BaseAgent):
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to connect to {service_name} at {connect_address}: {e}", exc_info=True)
             socket.close() # Close the socket if connection fails
+            if socket and not socket.closed:
+                socket.close()
             return None
         except Exception as e:
             logger.error(f"An unexpected error occurred while connecting to {service_name}: {e}", exc_info=True)
@@ -849,6 +832,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2 due to keyboard interrupt...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

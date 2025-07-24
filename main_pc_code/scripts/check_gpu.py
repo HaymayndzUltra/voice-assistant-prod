@@ -68,10 +68,10 @@ if torch.cuda.is_available():
     print(f"CUDA Version: {torch.version.cuda}")
 """
     
-    with open("/tmp/check_pytorch.py", "w") as f:
+    with open(str(PathManager.get_temp_dir() / "check_pytorch.py"), "w") as f:
         f.write(code)
     
-    stdout, stderr, returncode = run_command(["python", "/tmp/check_pytorch.py"])
+    stdout, stderr, returncode = run_command(["python", str(PathManager.get_temp_dir() / "check_pytorch.py")])
     
     if returncode != 0:
         logger.error(f"Failed to check PyTorch CUDA support: {stderr}")
@@ -83,6 +83,9 @@ def check_llama_cpp_cuda() -> Tuple[bool, str]:
     """Check if llama-cpp-python is built with CUDA support."""
     code = """
 from llama_cpp import Llama
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 print("Attempting to load llama_cpp...")
 try:
     print(f"CUDA Support: {Llama.args_info()}")
@@ -93,10 +96,10 @@ except Exception as e:
     print(f"Error: {e}")
 """
     
-    with open("/tmp/check_llama_cpp.py", "w") as f:
+    with open(str(PathManager.get_temp_dir() / "check_llama_cpp.py"), "w") as f:
         f.write(code)
     
-    stdout, stderr, returncode = run_command(["python", "/tmp/check_llama_cpp.py"])
+    stdout, stderr, returncode = run_command(["python", str(PathManager.get_temp_dir() / "check_llama_cpp.py")])
     
     if returncode != 0:
         logger.error(f"Failed to check llama-cpp CUDA support: {stderr}")

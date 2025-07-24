@@ -1,5 +1,5 @@
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import time
@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add the project root to Python path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -51,21 +52,7 @@ class TutoringServiceAgent(BaseAgent):
         
         logger.info(f"Tutoring Service Agent initialized on {self.host}:{self.port}")
         
-    
-
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        try:
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to error bus: {e}")
-            self.error_bus_pub = None
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
 
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""

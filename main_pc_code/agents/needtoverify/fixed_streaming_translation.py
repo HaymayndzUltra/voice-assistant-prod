@@ -1,4 +1,4 @@
-from main_pc_code.src.core.base_agent import BaseAgent
+from common.core.base_agent import BaseAgent
 """
 Enhanced Fixed Streaming Translation Agent with Intelligent Fallback
 Acts as a customer service interface for the main translator, handling translation requests
@@ -20,6 +20,13 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from datetime import datetime, timedelta
 from collections import defaultdict
+from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
@@ -27,7 +34,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', 'fixed_translation.log'))
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))
     ]
 )
 logger = logging.getLogger("FixedStreamingTranslation")
@@ -41,7 +48,7 @@ ENABLE_CACHING = True
 ENABLE_PERFORMANCE_MONITORING = True
 
 # PC2 Translator configuration
-PC2_IP = "192.168.1.2"
+PC2_IP = get_pc2_ip()
 PC2_TRANSLATOR_PORT = 5563
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = 5632
@@ -332,7 +339,7 @@ class FixedStreamingTranslation(BaseAgent):
         
         # Health monitoring
         self.health_socket = self.context.socket(zmq.PUB)
-        self.health_socket.connect("tcp://localhost:5569")  # Unified System Agent port
+        self.health_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5569")  # Unified System Agent port
         
         # Request queue for handling multiple translation requests
         self.request_queue = []

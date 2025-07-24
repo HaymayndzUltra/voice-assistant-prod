@@ -10,13 +10,14 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from threading import Thread, Lock
 import threading
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+from common.utils.path_manager import PathManager
 # Add project root to Python path for common_utils import
 import sys
 from pathlib import Path
@@ -47,7 +48,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('performance_logger.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "performance_logger.log")),
         logging.StreamHandler()
     ]
 )
@@ -69,12 +70,12 @@ class PerformanceLoggerAgent(BaseAgent):
         self.start_time = time.time()
         self.port = port
         self.health_port = self.port + 1
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.error_bus = setup_error_reporting(self)
         # Start health check thread
         self._start_health_check()
         # Main REP socket for handling requests
-        self.socket = self.context.socket(zmq.REP)
+        self.socket = get_rep_socket(self.endpoint).socket
         # Initialize health check socket
         try:
             if USE_COMMON_UTILS:
@@ -91,7 +92,7 @@ class PerformanceLoggerAgent(BaseAgent):
         # Lock for thread-safe database access
         self.db_lock = Lock()
         # Initialize database
-        self.db_path = "performance_metrics.db"
+        self.db_path = str(PathManager.get_data_dir() / "performance_metrics.db")
         self._init_database()
         # Start cleanup thread
         self.cleanup_thread = Thread(target=self._cleanup_old_metrics)
@@ -105,29 +106,6 @@ class PerformanceLoggerAgent(BaseAgent):
         self.health_thread.daemon = True
         self.health_thread.start()
         logging.info("Health check thread started")
-    
-    def _health_check_loop(self):
-        """Background loop to handle health check requests."""
-        logging.info("Health check loop started")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket.poll(100, zmq.POLLIN):
-                    # Receive request (don't care about content)
-                    _ = self.health_socket.recv()
-                    
-                    # Get health data
-                    health_data = self._get_health_status()
-                    
-                    # Send response
-                    self.health_socket.send_json(health_data)
-                    
-                time.sleep(0.1)  # Small sleep to prevent CPU hogging
-                
-            except Exception as e:
-                logging.error(f"Error in health check loop: {e}")
-                time.sleep(1)  # Sleep longer on error
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -389,21 +367,7 @@ class PerformanceLoggerAgent(BaseAgent):
         self.running = False
         self.cleanup_thread.join()
         
-        self.socket.close()
-        self.context.term()
-
-    def report_error(self, error_type, message, severity="ERROR", context=None):
-        error_data = {
-            "error_type": error_type,
-            "message": message,
-            "severity": severity,
-            "context": context or {}
-        }
-        try:
-            msg = json.dumps(error_data).encode('utf-8')
-            self.error_bus_pub.send_multipart([b"ERROR:", msg])
-        except Exception as e:
-            print(f"Failed to publish error to Error Bus: {e}")
+        # ✅ Using BaseAgent.report_error() and cleanup handled by BaseAgent
 
 if __name__ == "__main__":
     # Standardized main execution block for PC2 agents
@@ -415,6 +379,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
@@ -425,7 +392,7 @@ if __name__ == "__main__":
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = PathManager.join_path("config", "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -433,8 +400,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -443,8 +410,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 def connect_to_main_pc_service(self, service_name: str):

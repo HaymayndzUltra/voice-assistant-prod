@@ -2375,7 +2375,7 @@ NOTE: ALWAYS PROVIDE A COPY-FRIENDLY BLOCK FORMAT FOR ONE CLICK COPY
 3.  **Create a "Run Environment" Script:**
     - **Action:** Generate a shell script named `run_mvs.sh`.
     - **Script Logic:**
-      1.  The script will `export` all the environment variables identified in the previous step (using placeholder values like `export API_KEY="YOUR_KEY_HERE"`).
+      1.  The script will `export` all the environment variables identified in the previous step (using placeholder values like `export ${SECRET_PLACEHOLDER}"YOUR_KEY_HERE"`).
       2.  It will then use a modified `mainpc_health_checker.py` (or a similar Python script) to launch **only the agents listed in `minimal_system_config.yaml`**.
       3.  It must launch them in the correct dependency order.
 

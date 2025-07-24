@@ -9,13 +9,14 @@ import sys
 import zmq
 import json
 import threading
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 
 import time# Add the project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -31,6 +32,7 @@ from pc2_code.agents.utils.config_parser import parse_agent_args
     _agent_args 
 from main_pc_code.src.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
+from common.env_helpers import get_env
 
 # Load configuration at the module level
 config = load_config()= parse_agent_args()
@@ -40,7 +42,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = join_path("logs", "unified_utils_agent.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_utils_agent.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -91,7 +93,7 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
         try:
             log_path = Path(log_dir)
             if log_path.exists():
-                for file in log_path.glob("*.log"):
+                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log")):
                     try:
                         if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
                             file.unlink()
@@ -137,8 +139,8 @@ self.main_port = port if port is not None else UTILS_AGENT_PORT
                 chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome"))
                 firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox"))
             elif sys_platform == "Linux":
-                chrome_cache_dirs.append(os.path.expanduser("~/.cache/google-chrome"))
-                firefox_cache_dirs.append(os.path.expanduser("~/.cache/mozilla/firefox"))
+                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome")))
+                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox")))
             all_cache_dirs = chrome_cache_dirs + firefox_cache_dirs + edge_cache_dirs
             for cache_dir in all_cache_dirs:
                 if os.path.exists(cache_dir):

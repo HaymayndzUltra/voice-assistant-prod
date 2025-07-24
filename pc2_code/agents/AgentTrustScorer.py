@@ -9,17 +9,18 @@ import sqlite3
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
+sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the project's pc2_code directory to the Python path
-PC2_CODE_DIR = get_main_pc_code()
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+PC2_CODE_DIR = PathManager.get_project_root()
+if str(PC2_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(PC2_CODE_DIR))
 
 # Import required modules
 from common.core.base_agent import BaseAgent
@@ -31,7 +32,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(PathManager.get_project_root()) / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -39,8 +40,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", "192.168.100.16"),
-            "pc2_ip": os.environ.get("PC2_IP", "192.168.100.17"),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -63,8 +64,8 @@ logger = logging.getLogger(__name__)
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", "192.168.100.16"))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", "192.168.100.17"))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 AGENT_TRUST_SCORER_PORT = network_config.get("ports", {}).get("agent_trust_scorer", int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)))
 ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
@@ -87,45 +88,13 @@ class AgentTrustScorer(BaseAgent):
         )
         
         # Initialize database
-        self.db_path = join_path("cache", "cache"), "agent_trust_scores.db")
+        self.db_path = PathManager.get_project_root() / "cache" / str(PathManager.get_data_dir() / "agent_trust_scores.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
-        # Setup error reporting
-        self.setup_error_reporting()
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         logger.info(f"AgentTrustScorer initialized on port {self.port}")
-    
-    def setup_error_reporting(self):
-        """Set up error reporting to the central Error Bus."""
-        try:
-            self.error_bus_host = PC2_IP
-            self.error_bus_port = ERROR_BUS_PORT
-            self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to Error Bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.error(f"Failed to set up error reporting: {e}")
-    
-    def report_error(self, error_type, message, severity="ERROR"):
-        """Report an error to the central Error Bus."""
-        try:
-            if hasattr(self, 'error_bus_pub'):
-                error_report = {
-                    "timestamp": datetime.now().isoformat(),
-                    "agent": self.name,
-                    "type": error_type,
-                    "message": message,
-                    "severity": severity
-                }
-                self.error_bus_pub.send_multipart([
-                    b"ERROR",
-                    json.dumps(error_report).encode('utf-8')
-                ])
-                logger.info(f"Reported error: {error_type} - {message}")
-        except Exception as e:
-            logger.error(f"Failed to report error: {e}")
     
     def _init_database(self):
         """Initialize SQLite database for trust scores."""
@@ -319,13 +288,7 @@ class AgentTrustScorer(BaseAgent):
             except Exception as e:
                 logger.error(f"Error closing main socket: {e}")
         
-        # Close error bus socket
-        if hasattr(self, 'error_bus_pub'):
-            try:
-                self.error_bus_pub.close()
-                logger.info("Closed error bus socket")
-            except Exception as e:
-                logger.error(f"Error closing error bus socket: {e}")
+        # ✅ BaseAgent handles error bus cleanup automatically
         
         # Close any connections to other services
         for service_name, socket in self.main_pc_connections.items():
@@ -397,6 +360,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

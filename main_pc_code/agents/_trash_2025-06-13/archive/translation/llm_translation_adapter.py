@@ -1,4 +1,5 @@
 from main_pc_code.src.core.base_agent import BaseAgent
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 LLM Translation Adapter
 Connects to LLMs for high-quality translation using the dynamic runtime system
@@ -17,8 +18,8 @@ from typing import Dict, Any, Optional
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", ".."))))
+from common.utils.path_manager import PathManager
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -30,7 +31,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "llm_translation_adapter.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_translation_adapter.log"))),
         logging.StreamHandler()
     ]
 )
@@ -118,6 +119,7 @@ class LLMTranslationAdapter(BaseAgent):
         
         # Build prompt based on source language
 from main_pc_code.agents.taglish_detector import detect_taglish
+from common.env_helpers import get_env
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[LLMTranslationAdapter] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")

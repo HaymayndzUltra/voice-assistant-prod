@@ -20,15 +20,17 @@ from typing import List, Dict, Any, Optional, Union
 
 # Add the project's main_pc_code directory to the Python path
 from common.utils.path_manager import PathManager
+from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from main_pc_code.utils import model_client
+from common.env_helpers import get_env
 
 # Load configuration
 config = load_config()
@@ -82,12 +84,7 @@ class STTService(BaseAgent):
         self.batch_count = 0
         self.single_request_count = 0
         
-        # Error bus connection
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Register with service discovery
         self._register_service()
@@ -145,16 +142,27 @@ class STTService(BaseAgent):
                 "model_type": "stt"
             }
             
+            # ✅ NEW: Use Whisper-Large-v3 model specifically
+            request_params = {
+                "action": "generate_text",
+                "model_id": "whisper-large-v3",  # Use downloaded model
+                "audio_data": audio_data.tolist() if isinstance(audio_data, np.ndarray) else audio_data,
+                "sample_rate": SAMPLE_RATE,
+                "task": "transcribe",
+                "language": language or "auto",
+                "request_id": request_id,
+                "precision": "float16",  # Best quality for RTX 4090
+                "device": "cuda",  # GPU precision setting
+                "return_timestamps": True,
+                "return_confidence": True
+            }
+
             # Add language if specified
             if language:
                 params["language"] = language
                 
-            # Send request to ModelManagerAgent via model_client
-            response = model_client.generate(
-                prompt="Transcribe audio to text",
-                quality="quality",  # Use high quality for transcription
-                **params
-            )
+            # ✅ UPDATED: Send request to ModelManagerSuite using Whisper-Large-v3
+            response = model_client.request_inference(request_params)
             
             # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
@@ -187,10 +195,39 @@ class STTService(BaseAgent):
             logger.error(f"Error in transcription: {str(e)}")
             logger.error(traceback.format_exc())
             self.report_error("TranscriptionError", f"Exception during transcription: {str(e)}")
-            return {
-                "status": "error",
-                "message": str(e)
+            return self._transcribe_fallback(audio_data, language)
+
+    def _transcribe_fallback(self, audio_data, language=None):
+        """Fallback to CPU whisper.cpp model"""
+        try:
+            fallback_params = {
+                "action": "generate_text", 
+                "model_id": "whisper-cpp-medium",  # CPU fallback
+                "audio_data": audio_data.tolist() if isinstance(audio_data, np.ndarray) else audio_data,
+                "task": "transcribe",
+                "language": language or "auto"
             }
+            
+            response = model_client.request_inference(fallback_params)
+            
+            if response and response.get("success"):
+                return {
+                    "text": response.get("text", ""),
+                    "confidence": response.get("confidence", 0.8),  # Default confidence
+                    "language": response.get("detected_language", language or "unknown"),
+                    "model_used": "whisper-cpp-medium",
+                    "fallback": True
+                }
+        except Exception as e:
+            logger.error(f"Fallback STT failed: {e}")
+            
+        return {
+            "text": "",
+            "confidence": 0.0,
+            "language": "unknown",
+            "error": "STT failed",
+            "model_used": "none"
+        }
 
     def batch_transcribe(self, audio_batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """

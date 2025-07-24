@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Simple test to check if port 5576 is listening
 """
 
 import socket
 import time
+from common.env_helpers import get_env
 
 def test_port_connection():
     print("Testing connection to port 5576...")

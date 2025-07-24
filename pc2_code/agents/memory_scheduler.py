@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Memory Scheduler Agent
 
@@ -25,8 +26,8 @@ from pathlib import Path
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+from common.utils.path_manager import PathManager
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
@@ -42,6 +43,10 @@ from common.core.base_agent import BaseAgent
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 
 # Configure logging
@@ -49,38 +54,35 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "memory_scheduler.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_scheduler.log"))),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger("MemoryScheduler")
 
 class MemoryScheduler(BaseAgent):
-    
-    # Parse agent arguments
-    _agent_args = parse_agent_args()"""
+    """
     Memory Scheduler Agent
     
     Handles scheduled memory operations to maintain the health and efficiency
     of the memory system. Works in conjunction with MemoryOrchestratorService.
     """
     
+    # Parse agent arguments
+    _agent_args = parse_agent_args()
+    
     def __init__(self, port: int = 7142, health_check_port: int = 7143, **kwargs):
         super().__init__(name="MemoryScheduler", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = os.environ.get("PC2_IP", "localhost")
+        self.memory_orchestrator_host = get_pc2_ip())
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         
-        # Error bus configuration
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         
         # ZMQ setup
         self.orchestrator_socket = None
-        self.error_bus_pub = None
         self._setup_zmq()
         
         # Schedule configuration
@@ -108,13 +110,10 @@ class MemoryScheduler(BaseAgent):
             self.orchestrator_socket.setsockopt(zmq.SNDTIMEO, 5000)
             logger.info(f"Connected to MemoryOrchestratorService at {self.memory_orchestrator_endpoint}")
             
-            # Connection to Error Bus
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
+            # ✅ Using BaseAgent's built-in error reporting
         except Exception as e:
             logger.error(f"Error setting up ZMQ connections: {e}")
-            self._report_error("zmq_setup_error", str(e))
+            self.report_error("zmq_setup_error", str(e))
     
     def _setup_schedules(self):
         """Set up scheduled tasks"""
@@ -141,7 +140,7 @@ class MemoryScheduler(BaseAgent):
                 time.sleep(60)  # Check every minute
             except Exception as e:
                 logger.error(f"Error in scheduler thread: {e}")
-                self._report_error("scheduler_error", str(e))
+                self.report_error("scheduler_error", str(e))
     
     def _send_to_orchestrator(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send a request to the MemoryOrchestratorService"""
@@ -162,20 +161,7 @@ class MemoryScheduler(BaseAgent):
             logger.error(f"Error communicating with MemoryOrchestratorService: {e}")
             return {"status": "error", "message": str(e)}
     
-    def _report_error(self, error_type: str, error_message: str):
-        """Report errors to the central error bus"""
-        try:
-            if self.error_bus_pub:
-                error_data = {
-                    "timestamp": time.time(),
-                    "agent": self.name,
-                    "error_type": error_type,
-                    "message": error_message,
-                    "severity": "ERROR"
-                }
-                self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom method
     
     def run_memory_decay(self):
         """Run memory decay process"""
@@ -216,7 +202,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory decay process completed")
         except Exception as e:
             logger.error(f"Error in memory decay process: {e}")
-            self._report_error("decay_process_error", str(e))
+            self.report_error("decay_process_error", str(e))
     
     def run_memory_consolidation(self):
         """Run memory consolidation process"""
@@ -261,7 +247,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory consolidation process completed")
         except Exception as e:
             logger.error(f"Error in memory consolidation process: {e}")
-            self._report_error("consolidation_process_error", str(e))
+            self.report_error("consolidation_process_error", str(e))
     
     def run_memory_cleanup(self):
         """Run memory cleanup process (archive or delete very old, unimportant memories)"""
@@ -305,7 +291,7 @@ class MemoryScheduler(BaseAgent):
             logger.info("Memory cleanup process completed")
         except Exception as e:
             logger.error(f"Error in memory cleanup process: {e}")
-            self._report_error("cleanup_process_error", str(e))
+            self.report_error("cleanup_process_error", str(e))
     
     def run_health_check(self):
         """Run a health check on the memory system"""
@@ -320,7 +306,7 @@ class MemoryScheduler(BaseAgent):
             
             if response.get("status") != "success":
                 logger.error(f"Memory system health check failed: {response.get('message')}")
-                self._report_error("health_check_failed", response.get('message', 'Unknown error'))
+                self.report_error("health_check_failed", response.get('message', 'Unknown error'))
                 return
             
             status = response.get("system_status", {})
@@ -339,12 +325,12 @@ class MemoryScheduler(BaseAgent):
             if issues:
                 for issue in issues:
                     logger.warning(f"Memory system issue: {issue}")
-                    self._report_error("memory_system_issue", issue)
+                    self.report_error("memory_system_issue", issue)
             
             logger.info("Memory system health check completed")
         except Exception as e:
             logger.error(f"Error in memory system health check: {e}")
-            self._report_error("health_check_error", str(e))
+            self.report_error("health_check_error", str(e))
     
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming requests"""
@@ -384,8 +370,7 @@ class MemoryScheduler(BaseAgent):
         logger.info("Cleaning up resources")
         if self.orchestrator_socket:
             self.orchestrator_socket.close()
-        if self.error_bus_pub:
-            self.error_bus_pub.close()
+        # ✅ BaseAgent handles error bus cleanup automatically
         super().cleanup()
 
 

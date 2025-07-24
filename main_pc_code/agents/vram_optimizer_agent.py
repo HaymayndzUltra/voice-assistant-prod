@@ -1,12 +1,14 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if MAIN_PC_CODE_DIR not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 VRAM Optimizer Agent
 Handles VRAM monitoring, optimization, and model management
@@ -32,13 +34,16 @@ from collections import defaultdict
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
+from common_utils.error_handling import SafeExecutor
 
 # Parse agent arguments
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -78,15 +83,7 @@ class VramOptimizerAgent(BaseAgent):
         # Advanced management
         self.memory_pool = {}
         # TODO: Fix incomplete statement
-        self.error_bus_port = 7150
 
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
 
         # Defragmentation threshold configuration
         self.defragmentation_threshold = self.config.get('vram_optimizer.defragmentation_threshold', 0.70)
@@ -140,7 +137,7 @@ class VramOptimizerAgent(BaseAgent):
         """
         try:
             # Try to find config file in standard location
-            config_path = Path(join_path("config", "startup_config.yaml"))
+            config_path = Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"
             if not config_path.exists():
                 # Try relative to parent directory
                 config_path = Path(__file__).parent.parent / "config" / "startup_config.yaml"
@@ -387,13 +384,13 @@ class VramOptimizerAgent(BaseAgent):
                         dt_port = int(parts[1])
                     else:
                         # Fallback values
-                        pc2_ip = '192.168.100.17'
+                        pc2_ip = get_pc2_ip()
                         dt_port = 7120
                     self.sdt_socket.connect(f"tcp://{pc2_ip}:{dt_port}")
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
                 except Exception as e:
                     # Fallback to local connection
-                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost")))
+                    self.sdt_socket.connect(get_zmq_connection_string(5585, "localhost"))
                     logger.info("Reconnected to local SystemDigitalTwinAgent.")
                 return {"recommendation": "proceed"}
         except Exception as e:
@@ -1230,9 +1227,12 @@ class VramOptimizerAgent(BaseAgent):
         socket.bind(bind_address)
         logger.info(f"VRAMOptimizerAgent listening on {bind_address}")
         
-        # Register with SystemDigitalTwin
+                # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",
@@ -1396,7 +1396,7 @@ class VramOptimizerAgent(BaseAgent):
         """
         # Check if we can communicate with the SystemDigitalTwin
         sdt_reachable = False
-        try:
+        def check_sdt_health():
             request = {"command": "PING"}
             self.sdt_socket.send_json(request)
             
@@ -1404,13 +1404,19 @@ class VramOptimizerAgent(BaseAgent):
             poller.register(self.sdt_socket, zmq.POLLIN)
             if poller.poll(5000):  # 5s timeout
                 response = self.sdt_socket.recv_json()
-                sdt_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            sdt_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        sdt_reachable = SafeExecutor.execute_with_fallback(
+            check_sdt_health,
+            fallback_value=False,
+            context="SDT health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Check if we can communicate with the ModelManagerAgent
         mma_reachable = False
-        try:
+        def check_mma_health():
             request = {"command": "HEALTH_CHECK"}
             self.mma_socket.send_json(request)
             
@@ -1418,35 +1424,53 @@ class VramOptimizerAgent(BaseAgent):
             poller.register(self.mma_socket, zmq.POLLIN)
             if poller.poll(5000):  # 5s timeout
                 response = self.mma_socket.recv_json()
-                mma_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            mma_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        mma_reachable = SafeExecutor.execute_with_fallback(
+            check_mma_health,
+            fallback_value=False,
+            context="MMA health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Check if we can communicate with the RequestCoordinator
         rc_reachable = False
-        try:
+        def check_rc_health():
             request = {"action": "ping"}
             self.rc_socket.send_json(request)
             poller = zmq.Poller()
             poller.register(self.rc_socket, zmq.POLLIN)
             if poller.poll(5000):
                 response = self.rc_socket.recv_json()
-                rc_reachable = response.get("status") == "success"
-        except Exception:
-            rc_reachable = False
+                return response.get("status") == "success"
+            return False
+            
+        rc_reachable = SafeExecutor.execute_with_fallback(
+            check_rc_health,
+            fallback_value=False,
+            context="RC health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
 
         # Check if we can communicate with the ModelEvaluationFramework
         mef_reachable = False
-        try:
+        def check_mef_health():
             request = {"command": "HEALTH_CHECK"}
             self.mef_socket.send_json(request)
             poller = zmq.Poller()
             poller.register(self.mef_socket, zmq.POLLIN)
             if poller.poll(5000):
                 response = self.mef_socket.recv_json()
-                mef_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            mef_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        mef_reachable = SafeExecutor.execute_with_fallback(
+            check_mef_health,
+            fallback_value=False,
+            context="MEF health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Build health status
         status = "HEALTHY" if sdt_reachable and mma_reachable and rc_reachable and mef_reachable else "UNHEALTHY"
@@ -1512,12 +1536,5 @@ if __name__ == "__main__":
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
-    except Exception as e:
-        import traceback
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
-        traceback.print_exc()
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            print(f"Cleaning up {agent.name}...")
-            agent.cleanup()
+
+# Agent initialization completed

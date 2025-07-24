@@ -1,4 +1,6 @@
 import os, sys
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 # Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
@@ -6,22 +8,23 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from common.core.base_agent import BaseAgent
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import subprocess
 import threading
 import logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
 from datetime import datetime
+import zmq
 
 # Load configuration at module level
-config = load_config()
+config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Logging setup
-LOG_PATH = "executor_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "executor_agent.log")
 # Centralized logging: Forward logs to orchestrator
 
 # ---------------------------------------------------------------------------
@@ -49,9 +52,10 @@ def log_usage_analytics(user: str, command: str, status: str):
         # Fall back to local logging if PUB socket unavailable
         logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
 
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.env_helpers import get_env
 ZMQ_LOG_PORT = 5600  # Central log collector port
-log_context = zmq.Context()
+log_context = zmq.Context()  # Initialize context instead of None
 log_socket = log_context.socket(zmq.PUB)
 log_collector_host = os.environ.get('LOG_COLLECTOR_HOST', 'localhost')
 log_socket.connect(f"tcp://{log_collector_host}:{ZMQ_LOG_PORT}")
@@ -119,7 +123,7 @@ class ExecutorAgent(BaseAgent):
         self.last_health_check = time.time()
         
         # Initialize ZMQ sockets - adding a socket for receiving commands
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.command_socket = self.context.socket(zmq.REP)
         bind_address = f"tcp://{self.bind_address}:{self.port}"
         self.command_socket.bind(bind_address)
@@ -139,15 +143,7 @@ class ExecutorAgent(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
     def authenticate_user(self, user, password=None):
         """

@@ -1,21 +1,21 @@
 """
 Code Generator Agent
 ------------------
-- Generates code based on natural langua
+- Generates code based on natural language descriptions
+- Supports multiple programming languages
+- Integrates with the AutoGen framework
+- Uses local LLMs for code generation
+"""
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
-
-ge descriptions
-- Supports multiple programming languages
-- Integrates with the AutoGen framework
-- Uses local LLMs for code generation
-"""
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import os
 import uuid
@@ -36,18 +36,21 @@ import threading
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("main_pc_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from pathlib import Path
+from common.utils.path_manager import PathManager
+
+sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.agents.gguf_model_manager import GGUFModelManager
+# from main_pc_code.agents.gguf_model_manager import GGUFModelManager  # Optional dependency
+from common.env_helpers import get_env
 
 # Parse command line arguments
-config = load_config()
+config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))
 
 # Configure logging
-log_file = Path(join_path("logs", "code_generator_agent.log"))
+log_file = PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "code_generator_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -66,7 +69,7 @@ class CodeGeneratorAgent(BaseAgent):
     """Agent for generating code from natural language prompts. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     def __init__(self):
         # Standard BaseAgent initialization at the beginning
-        self.config = _agent_args
+        self.config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))
         super().__init__(
             name=getattr(self.config, 'name', 'CodeGeneratorAgent'),
             port=getattr(self.config, 'port', 5708)
@@ -93,16 +96,8 @@ class CodeGeneratorAgent(BaseAgent):
 
     
 
-        self.error_bus_port = 7150
-
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-
-        self.error_bus_pub.connect(self.error_bus_endpoint)
-def run(self):
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
+    def run(self):
         try:
             self.socket.bind(f"tcp://{self.bind_address}:{self.port}")
             self.logger.info(f"Code Generator Agent listening on port {self.port}")

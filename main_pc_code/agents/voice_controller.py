@@ -1,4 +1,5 @@
 from common.core.base_agent import BaseAgent
+from common.utils.path_manager import PathManager
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -24,13 +25,14 @@ from main_pc_code.agents.wake_word_detector import WakeWordDetector
 from main_pc_code.agents.speech_processor import SpeechProcessor
 import psutil
 from datetime import datetime
+from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('voice_controller.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "voice_controller.log")),
         logging.StreamHandler()
     ]
 )

@@ -29,7 +29,7 @@ except ImportError:
         logging.warning(f"[Memory] Could not import send_proactive_event, using fallback. Event: {event_type}")
         return None
 
-LOG_PATH = "memory_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "memory_agent.log")
 MEMORY_PATH = "memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"
@@ -449,6 +449,9 @@ if __name__ == "__main__":
         logging.critical(f"[Memory] Unhandled exception in main thread: {e}")
         print(f"[Memory] CRITICAL: Unhandled exception in main thread: {e}")
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         traceback.print_exc()
         # Keep the process alive even on critical errors
         while True:

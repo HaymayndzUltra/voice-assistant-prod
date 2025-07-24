@@ -1,4 +1,5 @@
 # File: main_pc_code/agents/memory_orchestrator_service.py
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # (O kung saan man dapat ilagay ang bagong central orchestrator)
 #
 # Ito ang FINAL at PINAHUSAY na bersyon ng Memory Orchestrator.
@@ -22,24 +23,23 @@ from collections import defaultdict
 
 
 # Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+from common.utils.path_manager import PathManager
 # --- Path Setup ---
 # (I-adjust kung kinakailangan)
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+MAIN_PC_CODE_DIR = PathManager.get_project_root()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
-# Standard imports for PC2 agents
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
-from pc2_code.agents.utils.config_loader import Config
+from pc2_code.agents.utils.config_loader import Config, parse_agent_args
+from common.env_helpers import get_env
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -49,9 +49,11 @@ config = Config().get_config()
 # --- Logging Setup ---
 logger = logging.getLogger('MemoryOrchestratorService')
 
-# --- Constants ---
-DEFAULT_PORT = 7140 # Port para sa Orchestrator
-DB_PATH = join_path("data", "unified_memory.db")
+# --- Constants with Port Registry Integration ---
+# Port registry removed - using environment variables with startup_config.yaml defaults
+DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140))  # Port para sa Orchestrator
+    
+DB_PATH = Path(PathManager.get_project_root()) / "data" / str(PathManager.get_data_dir() / "unified_memory.db")
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
@@ -424,7 +426,7 @@ class MemoryOrchestratorService(BaseAgent):
         # --- Backend Initialization ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
             self.redis_conn.ping()
             logger.info("Successfully connected to Redis.")
         except Exception as e:
@@ -446,17 +448,7 @@ class MemoryOrchestratorService(BaseAgent):
             "medium_to_long": 0.2    # When importance drops below 0.2, promote medium -> long
         }
         
-        # --- Error Bus Configuration ---
-        self.error_bus_port = 7150
-        self.error_bus_host = os.environ.get('PC2_IP', '192.168.100.17')
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        try:
-            self.error_bus_pub = self.context.socket(zmq.PUB)
-            self.error_bus_pub.connect(self.error_bus_endpoint)
-            logger.info(f"Connected to error bus at {self.error_bus_endpoint}")
-        except Exception as e:
-            logger.warning(f"Failed to connect to error bus: {e}")
-            self.error_bus_pub = None
+        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
 
         # --- Lifecycle Management ---
         self.lifecycle_thread = threading.Thread(target=self._run_lifecycle_management, daemon=True)
@@ -548,7 +540,7 @@ class MemoryOrchestratorService(BaseAgent):
             else:
                 return {"status": "error", "message": "Failed to save memory to database."}
         except Exception as e:
-            self._report_error("add_memory_error", str(e))
+            self.report_error("add_memory_error", str(e))
             return {"status": "error", "message": f"Invalid memory format: {e}"}
 
     def get_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -648,7 +640,7 @@ class MemoryOrchestratorService(BaseAgent):
                 return {"status": "success", "results": results, "count": len(results)}
         except Exception as e:
             logger.error(f"Error searching memories: {e}")
-            self._report_error("search_error", str(e))
+            self.report_error("search_error", str(e))
             return {"status": "error", "message": f"Failed to search memories: {e}"}
             
     def semantic_search(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -710,7 +702,7 @@ class MemoryOrchestratorService(BaseAgent):
             }
         except Exception as e:
             logger.error(f"Error in batch add: {e}")
-            self._report_error("batch_add_error", str(e))
+            self.report_error("batch_add_error", str(e))
             return {"status": "error", "message": f"Batch operation failed: {e}"}
             
     def batch_get_memories(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -740,7 +732,7 @@ class MemoryOrchestratorService(BaseAgent):
             }
         except Exception as e:
             logger.error(f"Error in batch get: {e}")
-            self._report_error("batch_get_error", str(e))
+            self.report_error("batch_get_error", str(e))
             return {"status": "error", "message": f"Batch operation failed: {e}"}
             
     def update_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -816,7 +808,7 @@ class MemoryOrchestratorService(BaseAgent):
                 return {"status": "success", "message": f"Memory {memory_id} deleted successfully."}
         except Exception as e:
             logger.error(f"Error deleting memory: {e}")
-            self._report_error("delete_error", str(e))
+            self.report_error("delete_error", str(e))
             return {"status": "error", "message": f"Failed to delete memory: {e}"}
         
     def reinforce_memory(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -910,7 +902,7 @@ class MemoryOrchestratorService(BaseAgent):
 
             except Exception as e:
                 logger.error(f"Error in lifecycle management thread: {e}", exc_info=True)
-                self._report_error("lifecycle_error", str(e))
+                self.report_error("lifecycle_error", str(e))
 
     def _apply_decay_and_consolidation(self, memory: MemoryEntry) -> MemoryEntry:
         """
@@ -1021,20 +1013,7 @@ class MemoryOrchestratorService(BaseAgent):
             return f"Summary: {content[:100]}... (length: {len(content)})"
         return content
         
-    def _report_error(self, error_type: str, error_message: str):
-        """Report errors to the central error bus"""
-        try:
-            if self.error_bus_pub:
-                error_data = {
-                    "timestamp": time.time(),
-                    "agent": self.name,
-                    "error_type": error_type,
-                    "message": error_message,
-                    "severity": "ERROR"
-                }
-                self.error_bus_pub.send_string(f"ERROR:{json.dumps(error_data)}")
-        except Exception as e:
-            logger.error(f"Failed to report error to error bus: {e}")
+    # ✅ Using BaseAgent.report_error() instead of custom method
 
 if __name__ == '__main__':
     try:
@@ -1047,39 +1026,3 @@ if __name__ == '__main__':
     finally:
         if 'agent' in locals() and agent.running:
             agent.cleanup()
-
-
-
-if __name__ == "__main__":
-    agent = None
-    try:
-        agent = MemoryOrchestratorService()
-        agent.run()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down...")
-    except Exception as e:
-        logger.error(f"Error in main: {e}", exc_info=True)
-    finally:
-        if agent and hasattr(agent, 'cleanup'):
-            agent.cleanup()
-
-    def cleanup(self):
-        """Clean up resources before shutdown."""
-        logger.info(f"{self.__class__.__name__} cleaning up resources...")
-        try:
-            # Close ZMQ sockets if they exist
-            if hasattr(self, 'socket') and self.socket:
-                self.socket.close()
-            
-            if hasattr(self, 'context') and self.context:
-                self.context.term()
-                
-            # Close any open file handles
-            # [Add specific resource cleanup here]
-            
-            # Call parent class cleanup if it exists
-            super().cleanup()
-            
-            logger.info(f"{self.__class__.__name__} cleanup completed")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)

@@ -2,27 +2,21 @@
 Emotion Engine Agent
 Manages and processes emotional states and responses
 """
-
-import sys
-
+from common.utils.path_manager import PathManager
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-import os
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code')))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+
+sys.path.insert(0, str(PathManager.get_project_root()))
+# Add the project's main_pc_code directory to the Python path
+MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import os
-import zmq
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
 import threading
@@ -31,15 +25,16 @@ import psutil
 import signal
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-from main_pc_code.utils.config_loader import load_config
+from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "emotion_engine.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "emotion_engine.log"))),
         logging.StreamHandler()
     ]
 )
@@ -128,12 +123,7 @@ class EmotionEngine(BaseAgent):
         self.health_thread = threading.Thread(target=self._health_check_loop, daemon=True)
         self.health_thread.start()
 
-        # Setup error bus
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+        # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler
 
         # Initialization complete
         logger.info(f"{self.name} initialized on port {self.port} (health: {self.health_port}, pub: {self.pub_port})")
@@ -149,10 +139,10 @@ class EmotionEngine(BaseAgent):
     def setup_zmq(self):
         """Set up ZMQ sockets with proper error handling"""
         try:
-            self.context = zmq.Context()
+            self.context = None  # Using pool
             
             # Main socket
-            self.socket = self.context.socket(zmq.REP)
+            self.socket = get_rep_socket(self.endpoint).socket
             self.socket.setsockopt(zmq.LINGER, 0)
             self.socket.setsockopt(zmq.RCVTIMEO, 1000)  # 1 second timeout
             
@@ -193,31 +183,6 @@ class EmotionEngine(BaseAgent):
                     raise
                 time.sleep(1)  # Wait before retrying
         return False
-    
-    def _health_check_loop(self):
-        """Health check loop with proper error handling"""
-        logger.info("Starting health check loop")
-        
-        while self.running:
-            try:
-                # Check for health check requests with timeout
-                if self.health_socket and self.health_socket.poll(100) != 0:
-                    # Receive request (don't care about content)
-                    message = self.health_socket.recv() if self.health_socket else None
-                    logger.debug(f"Received health check request: {message}")
-                    
-                    # Send response
-                    response = self._get_health_status()
-                    if self.health_socket:
-                        self.health_socket.send_json(response)
-                        logger.debug("Sent health check response")
-            except zmq.error.Again:
-                # Timeout on receive, this is normal
-                pass
-            except Exception as e:
-                logger.error(f"Error in health check loop: {e}")
-            
-            time.sleep(0.1)
     
     def _get_health_status(self) -> Dict[str, Any]:
         """Get the current health status of the agent."""
@@ -265,15 +230,20 @@ class EmotionEngine(BaseAgent):
                     # Check for main socket messages with timeout
                     if self.socket and self.socket.poll(1000) != 0:
                         # Try to receive as JSON, fallback to decode if needed
-                        try:
+                        from common_utils.error_handling import SafeExecutor
+                        import zmq
+                        
+                        with SafeExecutor(logger, recoverable=(zmq.ZMQError, json.JSONDecodeError, UnicodeDecodeError)):
                             message = self.socket.recv_json()
-                        except Exception:
-                            message = self.socket.recv()
-                            try:
-                                message = json.loads(message.decode('utf-8'))
-                            except Exception:
-                                logger.error("Failed to decode message as JSON")
-                                message = {}
+                        
+                        if not message:  # If SafeExecutor returned None due to error
+                            with SafeExecutor(logger, recoverable=(zmq.ZMQError, json.JSONDecodeError, UnicodeDecodeError), default_return={}):
+                                raw_message = self.socket.recv()
+                                message = json.loads(raw_message.decode('utf-8'))
+                            
+                        if not message:  # Final fallback
+                            logger.error("Failed to decode message as JSON")
+                            message = {}
                         logger.info(f"Received message: {message}")
                         
                         # Process message
@@ -489,4 +459,13 @@ if __name__ == "__main__":
     
     # Create and run the agent
     agent = EmotionEngine(name=args.name, port=args.port)
-    agent.run() 
+    try:
+        agent.run()
+    except Exception as e:
+        import traceback
+        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+        traceback.print_exc()
+    finally:
+        if agent and hasattr(agent, 'cleanup'):
+            print(f"Cleaning up {agent.name}...")
+            agent.cleanup() 

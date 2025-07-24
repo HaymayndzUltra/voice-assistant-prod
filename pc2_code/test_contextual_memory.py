@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test Script for Contextual Memory Agent (Port 5596)
 This script tests all the major functionality of the updated contextual_memory_agent.py
@@ -114,7 +115,7 @@ class ContextualMemoryTester:
         # DATABASE OPERATIONS FUNCTION
         def query_database(query):
             # Connect to SQL DATABASE
-            conn = sqlite3.connect('example.db')  # SQLite DATABASE connection
+            conn = sqlite3.connect(str(PathManager.get_data_dir() / "example.db"))  # SQLite DATABASE connection
             cursor = conn.cursor()  # Database cursor
             cursor.execute(query)  # Execute SQL query on DATABASE
             results = cursor.fetchall()  # Get DATABASE results
@@ -365,6 +366,10 @@ if __name__ == "__main__":
     # Check if agent is still responsive
     try:
 from pc2_code.agents.contextual_memory_agent import send_context_request
+from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
         response = send_context_request({"action": "get_session_id", "user_id": "diagnostic"})

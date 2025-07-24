@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Simple Service Discovery Test
 
@@ -13,6 +14,7 @@ import json
 import zmq
 import logging
 from pathlib import Path
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -63,7 +65,7 @@ def main():
     socket = context.socket(zmq.REQ)
 
     # Connect to SystemDigitalTwin
-    address = "tcp://127.0.0.1:7120"
+    address = f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:7120"
     print(f"Connecting to SystemDigitalTwin at {address}...")
     socket.connect(address)
     socket.setsockopt(zmq.RCVTIMEO, 3000)  # 3 second timeout
@@ -76,7 +78,7 @@ def main():
             "payload": {
                 "name": "SimpleTestService",
                 "location": "TestLocation",
-                "ip": "127.0.0.1",
+                "ip": "localhost",
                 "port": 9999,
                 "test_id": str(time.time())
             }

@@ -1,12 +1,14 @@
 import zmq
 import json
 import time
+from common.env_helpers import get_env
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 EMR_PORT = 5598
 EMR_HOST = 'localhost'
 
-context = zmq.Context()
-socket = context.socket(zmq.REQ)
+context = None  # Using pool
+socket = get_req_socket(endpoint).socket
 socket.connect(f"tcp://{EMR_HOST}:{EMR_PORT}")
 
 prompt = {
@@ -39,5 +41,4 @@ if socket.poll(15000):
     print(json.dumps(response, indent=2))
 else:
     print("No response from EMR within 15 seconds.")
-socket.close()
 context.term() 

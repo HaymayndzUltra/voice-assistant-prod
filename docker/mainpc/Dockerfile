@@ -1,7 +1,6 @@
 FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -54,4 +53,14 @@ RUN chmod +x /app/docker/mainpc/agent_starter.py \
 RUN mkdir -p /app/logs /app/data /app/models /app/config
 
 # Default command - will be overridden by docker-compose
-ENTRYPOINT ["python", "/app/docker/mainpc/agent_starter.py"] 
+
+# Declare volumes for proper permissions
+VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
+
+USER ai
+
+ENTRYPOINT
+# Security and metadata labels
+LABEL security_level="hardened" \
+      user="non-root" \
+      work_package="WP-02"

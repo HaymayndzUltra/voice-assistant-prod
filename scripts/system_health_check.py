@@ -15,6 +15,7 @@ import logging
 import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
+from common.env_helpers import get_env
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent
@@ -59,7 +60,7 @@ def get_system_digital_twin_address(host: str = None) -> str:
             logger.warning(f"Failed to get SystemDigitalTwin address from common_utils: {e}")
     
     # Fall back to default
-    host = host or os.environ.get("MAIN_PC_IP", "localhost")
+    host = host or os.environ.get("MAIN_PC_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
     return f"tcp://{host}:{SDT_PORT}"
 
 def check_system_digital_twin_health(host: str = None, port: int = SDT_HEALTH_PORT, timeout: int = 5000) -> bool:
@@ -81,7 +82,7 @@ def check_system_digital_twin_health(host: str = None, port: int = SDT_HEALTH_PO
     
     try:
         # Connect to SystemDigitalTwin health port
-        host = host or os.environ.get("MAIN_PC_IP", "localhost")
+        host = host or os.environ.get("MAIN_PC_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
         address = f"tcp://{host}:{port}"
         logger.info(f"Connecting to SystemDigitalTwin health check at {address}")
         socket.connect(address)
@@ -196,14 +197,14 @@ def check_agent_health(agent: Dict[str, Any], timeout: int = 5000) -> Dict[str, 
         return result
         
     # Get agent host
-    host = agent.get("ip", "localhost")
+    host = agent.get("ip", get_env("BIND_ADDRESS", "0.0.0.0"))
     if host == "0.0.0.0":
         # Use location to determine host
         location = agent.get("location", "").lower()
         if location == "pc2":
-            host = os.environ.get("PC2_IP", "localhost")
+            host = os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
         else:
-            host = os.environ.get("MAIN_PC_IP", "localhost")
+            host = os.environ.get("MAIN_PC_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
     
     # Connect to agent health port
     context = zmq.Context()

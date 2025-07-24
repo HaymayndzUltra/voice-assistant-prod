@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 TTS (Text-to-Speech) Micro-service
 Purpose: Lightweight wrapper to receive text and request speech synthesis from ModelManagerAgent
 Features: Audio streaming, voice customization, multilingual support
@@ -23,15 +24,17 @@ from collections import OrderedDict
 
 # Add the project's main_pc_code directory to the Python path
 from common.utils.path_manager import PathManager
+from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+if str(MAIN_PC_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from main_pc_code.utils import model_client
+from common.env_helpers import get_env
 
 # Load configuration
 config = load_config()
@@ -96,12 +99,7 @@ class TTSService(BaseAgent):
         self.is_speaking = False
         self.stop_speaking = False
         
-        # Error bus connection
-        self.error_bus_port = int(config.get("error_bus_port", 7150))
-        self.error_bus_host = os.environ.get('PC2_IP', config.get("pc2_ip", "127.0.0.1"))
-        self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
-        self.error_bus_pub = self.context.socket(zmq.PUB)
-        self.error_bus_pub.connect(self.error_bus_endpoint)
+
         
         # Connect to interrupt handler
         self.interrupt_port = int(config.get("streaming_interrupt_handler_port", 5576))
@@ -113,7 +111,7 @@ class TTSService(BaseAgent):
             interrupt_handler = discover_service("StreamingInterruptHandler")
             if interrupt_handler and interrupt_handler.get("status") == "SUCCESS":
                 interrupt_info = interrupt_handler.get("payload", {})
-                interrupt_host = interrupt_info.get("host", "localhost")
+                interrupt_host = interrupt_info.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
                 interrupt_port = interrupt_info.get("port", self.interrupt_port)
                 interrupt_address = f"tcp://{interrupt_host}:{interrupt_port}"
         except Exception as e:
@@ -217,20 +215,33 @@ class TTSService(BaseAgent):
                 # For now, just note that we're using it
                 params["voice_sample_path"] = voice_sample
                 
-            # Send request to ModelManagerAgent via model_client
-            response = model_client.generate(
-                prompt=text,  # Use the text as the prompt
-                quality="quality",  # Use high quality for speech synthesis
-                **params
-            )
+            # ✅ UPDATED: Use XTTS-v2 model specifically
+            request_params = {
+                "action": "generate_speech",
+                "model_id": "xtts-v2",  # Use downloaded TTS model
+                "text": text,
+                "voice_settings": {
+                    "speaker": "default",
+                    "language": language or "en",
+                    "speed": speed,
+                    "pitch": 1.0,
+                    "temperature": temperature
+                },
+                "streaming": True,  # Enable streaming for real-time response
+                "enable_streaming": True,  # Streaming support
+                "sample_rate": 22050,  # XTTS-v2 default
+                "request_id": str(uuid.uuid4())
+            }
+            
+            # Send request to ModelManagerSuite using XTTS-v2
+            response = model_client.request_inference(request_params)
             
             # Calculate and log the duration
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"PERF_METRIC: [TTSService] - [SpeechSynthesis] - Duration: {duration_ms:.2f}ms")
             
-            if response.get("status") == "success":
-                result = response.get("result", {})
-                audio_data = result.get("audio_data")
+            if response and response.get("success"):
+                audio_data = response.get("audio_data", [])
                 
                 if audio_data:
                     # Convert audio data to numpy array
@@ -241,9 +252,11 @@ class TTSService(BaseAgent):
                     
                     # Stream the audio
                     self._stream_audio(audio)
-                    return {"status": "success", "message": "Audio synthesized and playing"}
+                    
+                    logger.info(f"✅ TTS Success: '{text[:30]}...' ({len(audio_data)/22050:.2f}s)")
+                    return {"status": "success", "message": "XTTS-v2 audio synthesized and playing", "model_used": "xtts-v2"}
                 else:
-                    error_message = "No audio data received from ModelManagerAgent"
+                    error_message = "No audio data received from XTTS-v2"
                     logger.error(error_message)
                     self.report_error("SynthesisError", error_message)
                     return {"status": "error", "message": error_message}

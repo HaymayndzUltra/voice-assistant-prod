@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 import sys
 from pathlib import Path
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import get_service_host, get_service_port
 
@@ -22,14 +23,14 @@ from pc2_code.config.system_config import get_service_host, get_service_port
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
+sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
+from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(join_path("logs", "dream_world_agent.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dream_world_agent.log"))),
         logging.StreamHandler()
     ]
 )
@@ -169,7 +170,7 @@ class DreamWorldAgent:
         """Initialize agent components in background thread."""
         try:
             # Initialize database
-            self.db_path = "dream_world.db"
+            self.db_path = str(PathManager.get_data_dir() / "dream_world.db")
             self._init_database()
             
             # Load scenario templates
@@ -516,6 +517,7 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level

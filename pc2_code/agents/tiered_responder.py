@@ -14,25 +14,26 @@ from pathlib import Path
 from typing import Dict, Any, Callable, List, Optional
 from datetime import datetime
 import asyncio
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(join_path("pc2_code", ".."))))
-from common.utils.path_env import get_path, join_path, get_file_path
-# Add the project's pc2_code directory to the Python path
+# ✅ MODERNIZED: Path management using standardized PathManager
 import sys
 import os
 from pathlib import Path
-PC2_CODE_DIR = get_main_pc_code()
-if PC2_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, PC2_CODE_DIR.as_posix())
+from common.utils.path_manager import PathManager
+
+# Add project root to path using PathManager
+PROJECT_ROOT = PathManager.get_project_root()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.utils.config_loader import Config
-from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
+# Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+# Now using: self.report_error() method from BaseAgent
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -124,7 +125,7 @@ class TieredResponder(BaseAgent):
     def __init__(self, port: int = 7100):
         super().__init__(name="TieredResponder", port=port)
         self.start_time = time.time()
-        self.context = zmq.Context()
+        self.context = None  # Using pool
         self.resource_manager = ResourceManager()
         self.response_queue = deque(maxlen=MAX_QUEUE_SIZE)
         
@@ -132,7 +133,7 @@ class TieredResponder(BaseAgent):
         self.config = load_config()
         
         # Set up error reporting
-        self.error_bus = setup_error_reporting(self)
+        # ✅ MODERNIZED: No setup needed - using BaseAgent's UnifiedErrorHandler
         
         # Set up components
         self._setup_sockets()
@@ -200,7 +201,7 @@ class TieredResponder(BaseAgent):
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'tiered_responder.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )
@@ -222,8 +223,8 @@ class TieredResponder(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
-                    if self.error_bus:
-                        report_error(self.error_bus, "health_monitoring_error", str(e))
+                    # ✅ MODERNIZED: Using BaseAgent's error reporting
+                    self.report_error(f"Health monitoring error: {str(e)}")
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
@@ -256,8 +257,8 @@ class TieredResponder(BaseAgent):
                         
                 except Exception as e:
                     self.logger.error(f"Error processing request: {str(e)}")
-                    if self.error_bus:
-                        report_error(self.error_bus, "request_processing_error", str(e))
+                    # ✅ MODERNIZED: Using BaseAgent's error reporting  
+                    self.report_error(f"Request processing error: {str(e)}")
                     time.sleep(1)
 
         thread = threading.Thread(target=process_requests, daemon=True)
@@ -403,8 +404,8 @@ class TieredResponder(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
-            if self.error_bus:
-                report_error(self.error_bus, "health_check_error", str(e))
+            # ✅ MODERNIZED: Using BaseAgent's error reporting
+            self.report_error(f"Health check error: {str(e)}")
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -443,19 +444,13 @@ class TieredResponder(BaseAgent):
         
         # Close all sockets
         if hasattr(self, 'pull_socket'):
-            self.pull_socket.close()
-        
+            self.pull_
         if hasattr(self, 'push_socket'):
-            self.push_socket.close()
-            
+            self.push_
         if hasattr(self, 'health_socket'):
-            self.health_socket.close()
-            
-        # Clean up error reporting
-        if hasattr(self, 'error_bus') and self.error_bus:
-            from pc2_code.agents.error_bus_template import cleanup_error_reporting
-            cleanup_error_reporting(self.error_bus)
-            
+            self.health_
+        # ✅ MODERNIZED: No error bus cleanup needed - BaseAgent handles it
+        
         # Call parent cleanup
         super().cleanup()
 
@@ -466,7 +461,7 @@ def main():
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = join_path("config", "network_config.yaml")
+    config_path = Path(__file__).parent.parent.parent / "config" / "network_config.yaml"
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -474,8 +469,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": "192.168.100.16",
-            "pc2_ip": "192.168.100.17",
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -484,8 +479,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", "192.168.100.16")
-PC2_IP = network_config.get("pc2_ip", "192.168.100.17")
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":
@@ -497,6 +492,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()

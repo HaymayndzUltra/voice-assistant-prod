@@ -7,7 +7,7 @@ def setup_logging():
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
-    log_file = log_dir / "diagnose.log"
+    log_file = log_dir / str(PathManager.get_logs_dir() / "diagnose.log")
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -41,6 +41,9 @@ def check_environment():
     
     try:
         import requests
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
         logger.info(f"Requests version: {requests.__version__}")
@@ -59,7 +62,7 @@ def check_environment():
     log_dir = Path("logs")
     if log_dir.exists():
         logger.info(f"logs directory exists at: {log_dir.absolute()}")
-        test_file = log_dir / "test_write.log"
+        test_file = log_dir / str(PathManager.get_logs_dir() / "test_write.log")
         try:
             test_file.write_text("Test write successful")
             logger.info("Successfully wrote to logs directory")

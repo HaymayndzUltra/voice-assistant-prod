@@ -10,6 +10,7 @@ import threading
 import time
 from pathlib import Path
 from collections import defaultdict
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 from main_pc_code.src.core.base_agent import BaseAgent
@@ -18,13 +19,14 @@ from main_pc_code.utils.config_loader import load_config
 # Standard imports for PC2 agents
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
+from common.env_helpers import get_env
 
 
 # Load configuration at the module level
 config = load_config()# Constants
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+${SECRET_PLACEHOLDER} 'localhost'
+${SECRET_PLACEHOLDER} 6379
+${SECRET_PLACEHOLDER} 0
 HEALTH_PORT = 5618
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_CACHE_SIZE = 1000  # Maximum number of cache entries
@@ -58,7 +60,7 @@ self.memory_threshold = 80  # percentage
         return stats['memory_percent'] <= self.memory_threshold
 
 class CacheManager:
-    def __init__(self, redis_host=REDIS_HOST, redis_port=REDIS_PORT, db=REDIS_DB):
+    def __init__(self, redis_host=${SECRET_PLACEHOLDER}
         self.cache_config = {
             'nlu_results': {
                 'ttl': timedelta(minutes=5),
@@ -107,7 +109,7 @@ class CacheManager:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'cache_manager.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
                 logging.StreamHandler()
             ]
         )
@@ -438,6 +440,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

@@ -1,0 +1,170 @@
+# Machine-Specific Configuration for Unified Agents
+# Supports MainPC, PC2, and Generic machine types
+
+machines:
+  MainPC:
+    # MainPC is the primary machine with full GPU resources
+    display_name: "Main Processing Computer"
+    gpu_available: true
+    high_performance: true
+    
+    # Resource thresholds (more conservative)
+    resource_limits:
+      cpu_threshold: 75
+      memory_threshold: 80
+      gpu_memory_threshold: 85
+      
+    # Port configuration
+    ports:
+      tiered_responder:
+        zmq_pull: 5619
+        zmq_push: 5620
+        health: 5621
+      remote_connector:
+        zmq_req: 5622
+        zmq_rep: 5623
+        health: 5624
+      tutoring_agent:
+        zmq_pull: 5625
+        zmq_push: 5626
+        health: 5627
+        
+    # Agent-specific features
+    features:
+      error_publisher: true
+      advanced_metrics: true
+      prometheus_export: true
+      face_recognition: true
+      model_management: true
+      
+    # Performance tuning
+    performance:
+      response_time_multiplier: 1.0
+      batch_size: 32
+      max_concurrent_requests: 10
+      cache_enabled: true
+
+  PC2:
+    # PC2 is the secondary machine with different capabilities
+    display_name: "Processing Computer 2"
+    gpu_available: false
+    high_performance: false
+    
+    # Resource thresholds (more aggressive)
+    resource_limits:
+      cpu_threshold: 85
+      memory_threshold: 90
+      gpu_memory_threshold: 95
+      
+    # Port configuration
+    ports:
+      tiered_responder:
+        zmq_pull: 7101
+        zmq_push: 7102
+        health: 7103
+      remote_connector:
+        zmq_req: 7104
+        zmq_rep: 7105
+        health: 7106
+      tutoring_agent:
+        zmq_pull: 7107
+        zmq_push: 7108
+        health: 7109
+        
+    # Agent-specific features
+    features:
+      error_publisher: false
+      advanced_metrics: false
+      prometheus_export: false
+      face_recognition: false
+      model_management: false
+      
+    # Performance tuning
+    performance:
+      response_time_multiplier: 1.2
+      batch_size: 16
+      max_concurrent_requests: 5
+      cache_enabled: true
+
+  Generic:
+    # Generic configuration for development/testing
+    display_name: "Generic Machine"
+    gpu_available: false
+    high_performance: false
+    
+    # Resource thresholds (balanced)
+    resource_limits:
+      cpu_threshold: 80
+      memory_threshold: 85
+      gpu_memory_threshold: 90
+      
+    # Port configuration
+    ports:
+      tiered_responder:
+        zmq_pull: 7100
+        zmq_push: 7101
+        health: 7102
+      remote_connector:
+        zmq_req: 7103
+        zmq_rep: 7104
+        health: 7105
+      tutoring_agent:
+        zmq_pull: 7106
+        zmq_push: 7107
+        health: 7108
+        
+    # Agent-specific features
+    features:
+      error_publisher: false
+      advanced_metrics: false
+      prometheus_export: false
+      face_recognition: false
+      model_management: false
+      
+    # Performance tuning
+    performance:
+      response_time_multiplier: 1.0
+      batch_size: 16
+      max_concurrent_requests: 8
+      cache_enabled: false
+
+# Auto-detection rules
+auto_detection:
+  # Environment variables to check
+  env_vars:
+    MACHINE_TYPE: ["MainPC", "PC2", "Generic"]
+    HOSTNAME: 
+      - pattern: ".*main.*"
+        machine: "MainPC"
+      - pattern: ".*pc2.*"
+        machine: "PC2"
+        
+  # File existence checks
+  file_markers:
+    - path: "/main_pc_marker"
+      machine: "MainPC"
+    - path: "/pc2_marker"
+      machine: "PC2"
+      
+  # Default fallback
+  default: "Generic"
+
+# Feature flags for gradual rollout
+feature_flags:
+  unified_agents:
+    enabled: true
+    rollout_percentage: 100
+    
+  cross_machine_communication:
+    enabled: true
+    rollout_percentage: 80
+    
+  advanced_resource_monitoring:
+    enabled: true
+    rollout_percentage: 90
+    machines: ["MainPC"]
+    
+  simplified_error_handling:
+    enabled: true
+    rollout_percentage: 100
+    machines: ["PC2", "Generic"] 

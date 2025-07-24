@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Agent Health Issue Fixer
 ========================
@@ -76,6 +77,7 @@ class AgentHealthFixer:
             # Try to import agent_ports.py
             sys.path.append(str(CONFIG_DIR.parent))
 from main_pc_code.config.agent_ports import AgentPorts
+from common.env_helpers import get_env
             
             agent_ports = AgentPorts()
             return agent_ports.get_all_ports()

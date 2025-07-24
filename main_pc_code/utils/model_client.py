@@ -1,4 +1,5 @@
 """
+from common.config_manager import get_service_ip, get_service_url, get_redis_url
 Client library for interacting with the ModelManagerAgent.
 This provides a simplified interface for generating text, transcribing audio, etc.
 """
@@ -12,6 +13,7 @@ import uuid
 from typing import Dict, Any, List, Optional, Union
 
 from common.utils.network_util import retry_with_backoff
+from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
