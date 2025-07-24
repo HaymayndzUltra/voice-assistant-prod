@@ -39,9 +39,9 @@ from common.env_helpers import get_env
 config = Config().get_config()
 
 # Constants
-${SECRET_PLACEHOLDER} 'localhost'
-${SECRET_PLACEHOLDER} 6379
-${SECRET_PLACEHOLDER} 0
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
 HEALTH_PORT = 5618
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_CACHE_SIZE = 1000  # Maximum number of cache entries
@@ -100,9 +100,9 @@ class CacheManager(BaseAgent):
         # Redis connection
         try:
             self.redis = redis.Redis(
-                host=os.environ.get('REDIS_HOST', 'localhost'),
-                port=int(os.environ.get('REDIS_PORT', 6379)),
-                password=os.environ.get('REDIS_PASSWORD', None),
+                host=REDIS_HOST,
+                port=REDIS_PORT,
+                password=REDIS_PASSWORD,
                 decode_responses=False  # Keep as bytes for compatibility
             )
             self.redis.ping()  # Test connection
