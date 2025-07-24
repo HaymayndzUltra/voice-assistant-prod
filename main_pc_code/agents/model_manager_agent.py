@@ -24,6 +24,7 @@
 # Status: 53 socket patterns processed
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common_utils.error_handling import SafeExecutor
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -3090,11 +3091,12 @@ class ModelManagerAgent(BaseAgent):
             }
         finally:
             # Clean up ZMQ socket
-            try:
-                socket.close()
-                context.term()
-            except:
-                pass
+            SafeExecutor.execute_with_fallback(
+                lambda: [socket.close(), context.term()],
+                fallback_value=None,
+                context="ZMQ socket cleanup",
+                expected_exceptions=(zmq.ZMQError, AttributeError)
+            )
     
     def handle_request(self, request):
         """
@@ -4008,113 +4010,113 @@ class ModelManagerAgent(BaseAgent):
             dict: Response message with status and model information
         """
         try:
-                    # Unified API quick path — handle `{action: "generate"}` requests here
-        if isinstance(request_data, dict):
-            action = request_data.get("action")
-            if action == "generate":
-                return self._handle_generate_action(request_data)
-            elif action == "clear_conversation":
-                return self._handle_clear_conversation_action(request_data)
+            # Unified API quick path — handle `{action: "generate"}` requests here
+            if isinstance(request_data, dict):
+                action = request_data.get("action")
+                if action == "generate":
+                    return self._handle_generate_action(request_data)
+                elif action == "clear_conversation":
+                    return self._handle_clear_conversation_action(request_data)
 
-            model_id = request_data.get("model_id")
-            request_id = request_data.get("request_id")
-            context = request_data.get("context", {})
-            
-            self.model_logger.info(f"Processing model request: {model_id} (ID: {request_id})")
-            self.model_logger.debug(f"Request context: {context}")
-            
-            if not model_id:
-                self.model_logger.error("No model_id provided in request")
-                return {
-                    "status": "ERROR_LOADING_MODEL",
-                    "request_id": request_id,
-                    "error_message": "No model_id provided",
-                    "error_code": "MISSING_MODEL_ID",
-                    "timestamp": datetime.utcnow().isoformat()
-                }
-            
-            # Get model VRAM estimate
-            model_vram_mb = self._get_stt_model_vram_estimate(model_id)
-            if not model_vram_mb:
-                self.model_logger.error(f"Could not determine VRAM requirements for model {model_id}")
-                return {
-                    "status": "ERROR_LOADING_MODEL",
-                    "request_id": request_id,
-                    "model_id": model_id,
-                    "error_message": "Could not determine VRAM requirements",
-                    "error_code": "UNKNOWN_VRAM",
-                    "timestamp": datetime.utcnow().isoformat()
-                }
-            
-            # Get quantization level
-            quantization_level = context.get('quantization_level', 
-                self.vram_management_config.get('default_quantization_level', 'none'))
-            
-            self.quant_logger.info(f"Loading model {model_id} with quantization level: {quantization_level}")
-            
-            # Check if we can accommodate the model
-            if not self._can_accommodate_model(model_vram_mb):
-                self.vram_logger.warning(f"Insufficient VRAM for model {model_id} ({model_vram_mb}MB required)")
-                # Try to make room
-                if not self._make_room_for_model(model_vram_mb):
-                    self.vram_logger.error(f"Could not make room for model {model_id}")
+                model_id = request_data.get("model_id")
+                request_id = request_data.get("request_id")
+                context = request_data.get("context", {})
+                
+                self.model_logger.info(f"Processing model request: {model_id} (ID: {request_id})")
+                self.model_logger.debug(f"Request context: {context}")
+                
+                if not model_id:
+                    self.model_logger.error("No model_id provided in request")
+                    return {
+                        "status": "ERROR_LOADING_MODEL",
+                        "request_id": request_id,
+                        "error_message": "No model_id provided",
+                        "error_code": "MISSING_MODEL_ID",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                
+                # Get model VRAM estimate
+                model_vram_mb = self._get_stt_model_vram_estimate(model_id)
+                if not model_vram_mb:
+                    self.model_logger.error(f"Could not determine VRAM requirements for model {model_id}")
                     return {
                         "status": "ERROR_LOADING_MODEL",
                         "request_id": request_id,
                         "model_id": model_id,
-                        "error_message": "Insufficient VRAM",
-                        "error_code": "INSUFFICIENT_VRAM",
+                        "error_message": "Could not determine VRAM requirements",
+                        "error_code": "UNKNOWN_VRAM",
                         "timestamp": datetime.utcnow().isoformat()
                     }
-            
-            # Get model path
-            model_path = self._get_stt_model_path(model_id)
-            if not model_path:
-                self.model_logger.error(f"Model {model_id} not found")
+                
+                # Get quantization level
+                quantization_level = context.get('quantization_level', 
+                    self.vram_management_config.get('default_quantization_level', 'none'))
+                
+                self.quant_logger.info(f"Loading model {model_id} with quantization level: {quantization_level}")
+                
+                # Check if we can accommodate the model
+                if not self._can_accommodate_model(model_vram_mb):
+                    self.vram_logger.warning(f"Insufficient VRAM for model {model_id} ({model_vram_mb}MB required)")
+                    # Try to make room
+                    if not self._make_room_for_model(model_vram_mb):
+                        self.vram_logger.error(f"Could not make room for model {model_id}")
+                        return {
+                            "status": "ERROR_LOADING_MODEL",
+                            "request_id": request_id,
+                            "model_id": model_id,
+                            "error_message": "Insufficient VRAM",
+                            "error_code": "INSUFFICIENT_VRAM",
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                
+                # Get model path
+                model_path = self._get_stt_model_path(model_id)
+                if not model_path:
+                    self.model_logger.error(f"Model {model_id} not found")
+                    return {
+                        "status": "ERROR_LOADING_MODEL",
+                        "request_id": request_id,
+                        "model_id": model_id,
+                        "error_message": "Model not found",
+                        "error_code": "MODEL_NOT_FOUND",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                
+                # Mark model as loaded
+                self._mark_model_as_loaded(model_id, model_vram_mb)
+
+                # Store model priority
+                model_priority = self.vram_management_config.get("model_priorities", {}).get(
+                    model_id,
+                    self.vram_management_config.get("default_model_priority", 5)
+                )
+                
+                self.model_logger.info(f"Model {model_id} assigned priority: {model_priority}")
+                
+                # Store model info
+                self.active_stt_models[model_id] = {
+                    "vram_mb": model_vram_mb,
+                    "loaded_at": datetime.utcnow().isoformat(),
+                    "last_used_timestamp": time.time(),
+                    "priority": model_priority,
+                    "quantization_level": quantization_level
+                }
+                
+                self.model_logger.info(f"Successfully loaded model {model_id}")
                 return {
-                    "status": "ERROR_LOADING_MODEL",
+                    "status": "MODEL_READY",
                     "request_id": request_id,
                     "model_id": model_id,
-                    "error_message": "Model not found",
-                    "error_code": "MODEL_NOT_FOUND",
+                    "access_info": {
+                        "message": "MMA approved model loading",
+                        "model_path_from_config": model_path,
+                        "vram_allocated_mb": model_vram_mb,
+                        "quantization_level": quantization_level,
+                        "priority": model_priority
+                    },
                     "timestamp": datetime.utcnow().isoformat()
                 }
-            
-            # Mark model as loaded
-            self._mark_model_as_loaded(model_id, model_vram_mb)
-
-            # Store model priority
-            model_priority = self.vram_management_config.get("model_priorities", {}).get(
-                model_id,
-                self.vram_management_config.get("default_model_priority", 5)
-            )
-            
-            self.model_logger.info(f"Model {model_id} assigned priority: {model_priority}")
-            
-            # Store model info
-            self.active_stt_models[model_id] = {
-                "vram_mb": model_vram_mb,
-                "loaded_at": datetime.utcnow().isoformat(),
-                "last_used_timestamp": time.time(),
-                "priority": model_priority,
-                "quantization_level": quantization_level
-            }
-            
-            self.model_logger.info(f"Successfully loaded model {model_id}")
-            return {
-                "status": "MODEL_READY",
-                "request_id": request_id,
-                "model_id": model_id,
-                "access_info": {
-                    "message": "MMA approved model loading",
-                    "model_path_from_config": model_path,
-                    "vram_allocated_mb": model_vram_mb,
-                    "quantization_level": quantization_level,
-                    "priority": model_priority
-                },
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
+                
         except Exception as e:
             self.model_logger.error(f"Error processing model request: {e}")
             self.model_logger.error(traceback.format_exc())

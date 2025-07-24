@@ -230,15 +230,20 @@ class EmotionEngine(BaseAgent):
                     # Check for main socket messages with timeout
                     if self.socket and self.socket.poll(1000) != 0:
                         # Try to receive as JSON, fallback to decode if needed
-                        try:
+                        from common_utils.error_handling import SafeExecutor
+                        import zmq
+                        
+                        with SafeExecutor(logger, recoverable=(zmq.ZMQError, json.JSONDecodeError, UnicodeDecodeError)):
                             message = self.socket.recv_json()
-                        except Exception:
-                            message = self.socket.recv()
-                            try:
-                                message = json.loads(message.decode('utf-8'))
-                            except Exception:
-                                logger.error("Failed to decode message as JSON")
-                                message = {}
+                        
+                        if not message:  # If SafeExecutor returned None due to error
+                            with SafeExecutor(logger, recoverable=(zmq.ZMQError, json.JSONDecodeError, UnicodeDecodeError), default_return={}):
+                                raw_message = self.socket.recv()
+                                message = json.loads(raw_message.decode('utf-8'))
+                            
+                        if not message:  # Final fallback
+                            logger.error("Failed to decode message as JSON")
+                            message = {}
                         logger.info(f"Received message: {message}")
                         
                         # Process message

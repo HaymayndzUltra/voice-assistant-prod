@@ -17,6 +17,10 @@ import threading
 from pathlib import Path
 from datetime import datetime
 
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from common_utils.error_handling import SafeExecutor
+
 # Setup logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
@@ -95,11 +99,12 @@ class ZMQBridge:
                 continue
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
-                try:
-                    # Try to send error response
-                    self.socket.send_json({"status": "error", "error": str(e)})
-                except:
-                    pass
+                SafeExecutor.execute_with_fallback(
+                    lambda: self.socket.send_json({"status": "error", "error": str(e)}),
+                    fallback_value=None,
+                    context="send ZMQ error response",
+                    expected_exceptions=(zmq.ZMQError, json.JSONEncodeError)
+                )
         
         logger.info("ZMQ Bridge stopped")
     
@@ -134,11 +139,15 @@ class ZMQBridge:
     def _status_monitor(self):
         """Monitor and log bridge status periodically"""
         while self.running:
-            try:
-                logger.debug(f"ZMQ Bridge status: Running on {self.bind_address}:{self.port}")
-                time.sleep(30)  # Status update every 30 seconds
-            except:
-                pass
+            SafeExecutor.execute_with_fallback(
+                lambda: [
+                    logger.debug(f"ZMQ Bridge status: Running on {self.bind_address}:{self.port}"),
+                    time.sleep(30)  # Status update every 30 seconds
+                ],
+                fallback_value=None,
+                context="ZMQ bridge status monitoring",
+                expected_exceptions=(Exception,)  # Any exception during status monitoring
+            )
     
     def _signal_handler(self, sig, frame):
         """Handle signals for graceful shutdown"""
@@ -206,10 +215,12 @@ if __name__ == "__main__":
             
             # If bridge was created, try to clean it up
             if 'bridge' in locals():
-                try:
-                    bridge.stop()
-                except:
-                    pass
+                SafeExecutor.execute_with_fallback(
+                    lambda: bridge.stop(),
+                    fallback_value=None,
+                    context="bridge cleanup on error",
+                    expected_exceptions=(Exception,)  # Any exception during cleanup
+                )
                     
             # Wait before retrying
             print(f"Error: {e}. Retrying in 5 seconds...")

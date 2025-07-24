@@ -40,6 +40,7 @@ from common.utils.path_manager import PathManager
 sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
+from common_utils.error_handling import SafeExecutor
 
 # Parse agent arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -1392,7 +1393,7 @@ class VramOptimizerAgent(BaseAgent):
         """
         # Check if we can communicate with the SystemDigitalTwin
         sdt_reachable = False
-        try:
+        def check_sdt_health():
             request = {"command": "PING"}
             self.sdt_socket.send_json(request)
             
@@ -1400,13 +1401,19 @@ class VramOptimizerAgent(BaseAgent):
             poller.register(self.sdt_socket, zmq.POLLIN)
             if poller.poll(5000):  # 5s timeout
                 response = self.sdt_socket.recv_json()
-                sdt_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            sdt_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        sdt_reachable = SafeExecutor.execute_with_fallback(
+            check_sdt_health,
+            fallback_value=False,
+            context="SDT health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Check if we can communicate with the ModelManagerAgent
         mma_reachable = False
-        try:
+        def check_mma_health():
             request = {"command": "HEALTH_CHECK"}
             self.mma_socket.send_json(request)
             
@@ -1414,35 +1421,53 @@ class VramOptimizerAgent(BaseAgent):
             poller.register(self.mma_socket, zmq.POLLIN)
             if poller.poll(5000):  # 5s timeout
                 response = self.mma_socket.recv_json()
-                mma_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            mma_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        mma_reachable = SafeExecutor.execute_with_fallback(
+            check_mma_health,
+            fallback_value=False,
+            context="MMA health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Check if we can communicate with the RequestCoordinator
         rc_reachable = False
-        try:
+        def check_rc_health():
             request = {"action": "ping"}
             self.rc_socket.send_json(request)
             poller = zmq.Poller()
             poller.register(self.rc_socket, zmq.POLLIN)
             if poller.poll(5000):
                 response = self.rc_socket.recv_json()
-                rc_reachable = response.get("status") == "success"
-        except Exception:
-            rc_reachable = False
+                return response.get("status") == "success"
+            return False
+            
+        rc_reachable = SafeExecutor.execute_with_fallback(
+            check_rc_health,
+            fallback_value=False,
+            context="RC health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
 
         # Check if we can communicate with the ModelEvaluationFramework
         mef_reachable = False
-        try:
+        def check_mef_health():
             request = {"command": "HEALTH_CHECK"}
             self.mef_socket.send_json(request)
             poller = zmq.Poller()
             poller.register(self.mef_socket, zmq.POLLIN)
             if poller.poll(5000):
                 response = self.mef_socket.recv_json()
-                mef_reachable = response.get("status") == "SUCCESS"
-        except Exception:
-            mef_reachable = False
+                return response.get("status") == "SUCCESS"
+            return False
+            
+        mef_reachable = SafeExecutor.execute_with_fallback(
+            check_mef_health,
+            fallback_value=False,
+            context="MEF health check",
+            expected_exceptions=(zmq.ZMQError, json.JSONDecodeError, TimeoutError)
+        )
         
         # Build health status
         status = "HEALTHY" if sdt_reachable and mma_reachable and rc_reachable and mef_reachable else "UNHEALTHY"

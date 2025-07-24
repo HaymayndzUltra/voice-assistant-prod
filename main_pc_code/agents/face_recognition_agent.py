@@ -493,10 +493,9 @@ class FaceRecognitionAgent(BaseAgent):
             self.initialization_status["error"] = str(e)
             self.initialization_status["progress"] = 0.0
             logging.error(f"Async initialization failed: {e}")
-            try:
+            from common_utils.error_handling import SafeExecutor
+            with SafeExecutor(self.logger, recoverable=(ConnectionError, AttributeError)):
                 self.error_publisher.publish_error(error_type="async_init_failure", details=str(e))
-            except Exception:
-                pass
             traceback.print_exc()
 
     def _init_zmq(self):

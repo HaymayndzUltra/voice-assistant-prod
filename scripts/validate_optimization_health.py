@@ -198,13 +198,18 @@ class OptimizationHealthValidator:
     
     def _get_agents_from_hub(self, hub_url: str) -> List[Dict]:
         """Get agent list from a specific hub"""
-        try:
+        def get_agents():
             response = requests.get(f"{hub_url}/api/v1/agents", timeout=10)
             if response.status_code == 200:
                 return response.json().get('agents', [])
-        except:
-            pass
-        return []
+            return []
+            
+        return SafeExecutor.execute_with_fallback(
+            get_agents,
+            fallback_value=[],
+            context=f"get agents from hub {hub_url}",
+            expected_exceptions=(requests.RequestException, json.JSONDecodeError, KeyError)
+        )
     
     def _validate_system_performance(self) -> bool:
         """Validate system performance metrics"""

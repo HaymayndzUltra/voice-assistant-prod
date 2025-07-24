@@ -48,6 +48,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
 from common.core.base_agent import BaseAgent, logger
+from common_utils.error_handling import SafeExecutor
 from common.config_manager import load_unified_config
 from common.env_helpers import get_env
 
@@ -113,16 +114,16 @@ class PredictiveHealthMonitor(BaseAgent):
         self.hostname = socket.gethostname()
 
     
-        try:
-
-    
+        def get_ip():
             self.ip_address = socket.gethostbyname(self.hostname)
-
-    
-        except:
-
-    
-            self.ip_address = "localhost"
+            return self.ip_address
+            
+        self.ip_address = SafeExecutor.execute_with_fallback(
+            get_ip,
+            fallback_value="localhost",
+            context="get hostname IP address",
+            expected_exceptions=(socket.gaierror, socket.herror, OSError)
+        )
 
     
         logger.info(f"Running on {self.hostname} ({self.ip_address})")
@@ -807,14 +808,15 @@ class PredictiveHealthMonitor(BaseAgent):
                 logger.error(f"Error in discovery service: {str(e)}")
                 traceback.print_exc()
                 
-                try:
-                    response = {
+                SafeExecutor.execute_with_fallback(
+                    lambda: self.discovery_socket.send_string(json.dumps({
                         "status": "error",
                         "error": f"Error in discovery service: {str(e)}"
-                    }
-                    self.discovery_socket.send_string(json.dumps(response))
-                except:
-                    pass 
+                    })),
+                    fallback_value=None,
+                    context="send discovery error response",
+                    expected_exceptions=(zmq.ZMQError, json.JSONEncodeError)
+                ) 
 
     def optimize_memory(self) -> Dict[str, Any]:
         """Optimize memory usage by identifying and managing high-memory processes.
@@ -1280,10 +1282,12 @@ class PredictiveHealthMonitor(BaseAgent):
             return False
         finally:
             # Ensure we clean up the socket resources even if an exception occurs
-            try:
-                pass  # Cleanup placeholder
-            except:
-                pass
+            SafeExecutor.execute_with_fallback(
+                lambda: None,  # Cleanup placeholder
+                fallback_value=None,
+                context="socket cleanup",
+                expected_exceptions=(Exception,)  # Generic cleanup can catch any exception
+            )
             return False  # Ensure we always return a boolean
 
     def _record_health_event(self, agent_name: str, event_type: str, details: Dict[str, Any]) -> None:

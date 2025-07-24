@@ -411,10 +411,10 @@ class SystemDigitalTwinAgent(BaseAgent):
     
     def _check_prometheus_connection(self) -> bool:
         """Check if Prometheus connection is working."""
-        try:
+        from common_utils.error_handling import SafeExecutor
+        
+        with SafeExecutor(self.logger, recoverable=(ConnectionError, TimeoutError), default_return=False):
             return self.prom.check_prometheus_connection() if self.prom else False
-        except Exception:
-            return False
 
     # ------------------------------------------------------------------
     #                      HTTP HEALTH ENDPOINT
