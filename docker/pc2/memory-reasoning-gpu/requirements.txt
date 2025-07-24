@@ -1,0 +1,21 @@
+# PC2 Memory Reasoning GPU Container Requirements
+# Agents: UnifiedMemoryReasoningAgent, MemoryOrchestratorService
+# Resources: CPU 20%, RAM 4GB, GPU 4GB
+# Size estimate: ~4GB
+
+# Include PC2 shared requirements (includes base)
+-r ../../shared/requirements.pc2.txt
+
+# Include GPU requirements for reasoning
+-r ../../shared/requirements.gpu.txt
+
+# Include NLP requirements for reasoning
+-r ../../shared/requirements.nlp.txt
+
+# Memory orchestration specific
+asyncio  # Built-in Python module
+concurrent.futures  # Built-in Python module
+
+# Advanced reasoning patterns
+itertools  # Built-in Python module
+functools  # Built-in Python module 

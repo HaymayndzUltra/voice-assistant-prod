@@ -1,0 +1,30 @@
+# MainPC Utility GPU Container Requirements  
+# Agents: CodeGenerator, SelfTrainingOrchestrator, Executor, PredictiveHealthMonitor, 
+#         FixedStreamingTranslation, TinyLlamaServiceEnhanced, LocalFineTunerAgent, NLLBAdapter
+# Resources: CPU 25%, RAM 8GB, GPU 6GB
+# Size estimate: ~4.5GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Include NLP requirements for translation
+-r ../../shared/requirements.nlp.txt
+
+# Code generation specific
+autopep8>=2.0.0
+ast  # Built-in Python module
+
+# Fine-tuning specific  
+wandb>=0.15.0
+tensorboard>=2.14.0
+
+# Translation specific
+ctranslate2>=3.17.0
+sacremoses>=0.0.53
+
+# Health monitoring
+py-cpuinfo>=9.0.0
+
+# Utility processing
+tempfile  # Built-in Python module
+subprocess  # Built-in Python module 

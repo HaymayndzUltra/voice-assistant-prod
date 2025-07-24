@@ -1,0 +1,243 @@
+# Docker Environment Overrides
+# Container-specific configuration for Docker deployments
+
+version: "3.0"
+environment: "docker"
+description: "Docker container overrides for containerized deployment"
+
+# Docker-specific environment variables
+global_settings:
+  environment:
+    # Container-specific paths
+    PROJECT_ROOT: "/app"
+    CONFIG_DIR: "/app/config"
+    LOG_DIR: "/app/logs"
+    DATA_DIR: "/app/data"
+    CACHE_DIR: "/app/cache"
+    MODELS_DIR: "/app/models"
+    
+    # Docker networking
+    SERVICE_DISCOVERY_MODE: "container_dns"
+    ENABLE_CROSS_MACHINE_DISCOVERY: "true"
+    
+    # Container runtime settings
+    PYTHONUNBUFFERED: "1"
+    PYTHONDONTWRITEBYTECODE: "1"
+    PIP_NO_CACHE_DIR: "1"
+    
+    # Health check settings for containers
+    HEALTH_CHECK_ENABLED: "true"
+    HEALTH_CHECK_ENDPOINT: "/health"
+    
+    # Container resource monitoring
+    ENABLE_CONTAINER_METRICS: "true"
+    CONTAINER_MEMORY_LIMIT_ALERT: "90"
+    CONTAINER_CPU_LIMIT_ALERT: "85"
+    
+  # Docker-optimized resource limits
+  resource_limits:
+    # More conservative for container environments
+    cpu_percent: 75
+    memory_mb: 1024  # Base container limit, overridden by compose
+    max_threads: 2   # Conservative default
+    connection_pool_size: 10
+    
+  # Container health checks
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 15  # Longer timeout for containers
+    retries: 3
+    start_period_seconds: 120  # Longer startup time for containers
+    graceful_shutdown_timeout: 30
+    
+  # Docker volume mappings (matches docker-compose.yml)
+  volumes:
+    - source: /app/logs
+      target: /app/logs
+      type: bind
+    - source: /app/models
+      target: /app/models
+      type: bind
+      read_only: true
+    - source: /app/data
+      target: /app/data
+      type: bind
+    - source: /app/config
+      target: /app/config
+      type: bind
+    - source: /app/cache
+      target: /app/cache
+      type: bind
+
+# Docker-specific networking configuration
+network_overrides:
+  # Internal container networking
+  mainpc_internal:
+    subnet: "172.20.0.0/16"
+    driver: "bridge"
+    
+  pc2_internal:
+    subnet: "172.21.0.0/16"
+    driver: "bridge"
+    
+  # Cross-machine communication
+  cross_machine:
+    external: true
+    driver: "bridge"
+
+# Container-specific port management
+port_management:
+  # Use container-internal ports (mapped by docker-compose)
+  use_host_networking: false
+  port_binding_mode: "container_internal"
+  health_check_ports:
+    mainpc_observability: 9000
+    pc2_observability: 9100
+    model_manager_health: 8211
+
+# Docker container grouping (matches our container strategy)
+container_groups:
+  mainpc_containers:
+    - core_platform
+    - model_manager_gpu
+    - memory_stack
+    - utility_gpu
+    - reasoning_gpu
+    - vision_gpu
+    - language_stack_gpu
+    - audio_emotion
+    
+  pc2_containers:
+    - vision_dream_gpu
+    - memory_reasoning_gpu
+    - tutor_suite_cpu
+    - infra_core_cpu
+
+# Agent-to-container mapping for Docker deployment
+agent_container_mapping:
+  # Core Platform Container
+  core_platform:
+    agents: ["ServiceRegistry", "SystemDigitalTwin", "RequestCoordinator", "ObservabilityHub"]
+    resources:
+      cpu_limit: "20%"
+      memory_limit: "2GB"
+      gpu_access: false
+      
+  # Model Manager GPU Container  
+  model_manager_gpu:
+    agents: ["ModelManagerSuite", "UnifiedSystemAgent"]
+    resources:
+      cpu_limit: "15%"
+      memory_limit: "4GB"
+      gpu_access: true
+      gpu_memory: "6GB"
+      
+  # Memory Stack Container
+  memory_stack:
+    agents: ["MemoryClient", "SessionMemoryAgent", "KnowledgeBase"]
+    resources:
+      cpu_limit: "15%"
+      memory_limit: "6GB"
+      gpu_access: false
+      
+  # Utility GPU Container
+  utility_gpu:
+    agents: ["CodeGenerator", "SelfTrainingOrchestrator", "Executor", "PredictiveHealthMonitor", "FixedStreamingTranslation", "TinyLlamaServiceEnhanced", "LocalFineTunerAgent", "NLLBAdapter"]
+    resources:
+      cpu_limit: "25%"
+      memory_limit: "8GB"
+      gpu_access: true
+      gpu_memory: "6GB"
+      
+  # Reasoning GPU Container
+  reasoning_gpu:
+    agents: ["ChainOfThoughtAgent", "GoTToTAgent", "CognitiveModelAgent"]
+    resources:
+      cpu_limit: "20%"
+      memory_limit: "6GB"
+      gpu_access: true
+      gpu_memory: "4GB"
+      
+  # Vision GPU Container
+  vision_gpu:
+    agents: ["FaceRecognitionAgent", "VRAMOptimizerAgent"]
+    resources:
+      cpu_limit: "10%"
+      memory_limit: "4GB"
+      gpu_access: true
+      gpu_memory: "2GB"
+      
+  # Language Stack GPU Container
+  language_stack_gpu:
+    agents: ["ModelOrchestrator", "GoalManager", "IntentionValidatorAgent", "NLUAgent", "AdvancedCommandHandler", "ChitchatAgent", "FeedbackHandler", "Responder", "TranslationService", "DynamicIdentityAgent", "EmotionSynthesisAgent"]
+    resources:
+      cpu_limit: "35%"
+      memory_limit: "8GB"
+      gpu_access: true
+      gpu_memory: "4GB"
+      
+  # Audio Emotion Container
+  audio_emotion:
+    agents: ["STTService", "TTSService", "AudioCapture", "FusedAudioPreprocessor", "StreamingInterruptHandler", "StreamingSpeechRecognition", "StreamingTTSAgent", "WakeWordDetector", "StreamingLanguageAnalyzer", "ProactiveAgent", "EmotionEngine", "MoodTrackerAgent", "HumanAwarenessAgent", "ToneDetector", "VoiceProfilingAgent", "EmpathyAgent"]
+    resources:
+      cpu_limit: "30%"
+      memory_limit: "8GB"
+      gpu_access: true
+      gpu_memory: "2GB"
+      
+  # PC2 Vision Dream GPU Container
+  vision_dream_gpu:
+    agents: ["VisionProcessingAgent", "DreamWorldAgent", "DreamingModeAgent"]
+    resources:
+      cpu_limit: "25%"
+      memory_limit: "6GB"
+      gpu_access: true
+      gpu_memory: "6GB"
+      
+  # PC2 Memory Reasoning GPU Container
+  memory_reasoning_gpu:
+    agents: ["UnifiedMemoryReasoningAgent", "MemoryOrchestratorService"]
+    resources:
+      cpu_limit: "20%"
+      memory_limit: "4GB"
+      gpu_access: true
+      gpu_memory: "4GB"
+      
+  # PC2 Tutor Suite CPU Container
+  tutor_suite_cpu:
+    agents: ["TutorAgent", "TutoringAgent", "ProactiveContextMonitor", "TieredResponder"]
+    resources:
+      cpu_limit: "20%"
+      memory_limit: "4GB"
+      gpu_access: false
+      
+  # PC2 Infrastructure Core CPU Container
+  infra_core_cpu:
+    agents: ["ContextManager", "ExperienceTracker", "CacheManager", "ResourceManager", "TaskScheduler", "AuthenticationAgent", "UnifiedUtilsAgent", "AgentTrustScorer", "FileSystemAssistantAgent", "RemoteConnectorAgent", "UnifiedWebAgent", "AdvancedRouter", "ObservabilityHub"]
+    resources:
+      cpu_limit: "35%"
+      memory_limit: "8GB"
+      gpu_access: false
+
+# Docker startup configuration
+startup_overrides:
+  # Use container startup scripts instead of direct agent execution
+  use_container_startup: true
+  startup_script_path: "/app/start.sh"
+  
+  # Container dependency ordering
+  startup_dependencies:
+    core_platform: []  # No dependencies, starts first
+    model_manager_gpu: ["core_platform"]
+    memory_stack: ["core_platform"]
+    utility_gpu: ["core_platform", "model_manager_gpu"]
+    reasoning_gpu: ["core_platform", "model_manager_gpu"]
+    vision_gpu: ["core_platform", "model_manager_gpu"]
+    language_stack_gpu: ["core_platform", "model_manager_gpu"]
+    audio_emotion: ["core_platform", "model_manager_gpu"]
+    
+  # Cross-machine startup coordination
+  cross_machine_startup:
+    mainpc_required_for_pc2: ["core_platform", "model_manager_gpu"]
+    pc2_wait_for_mainpc: true
+    startup_coordination_timeout: 300  # 5 minutes 

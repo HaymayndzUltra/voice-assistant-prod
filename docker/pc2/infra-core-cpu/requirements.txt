@@ -1,0 +1,47 @@
+# PC2 Infrastructure Core CPU Container Requirements
+# Agents: ContextManager, ExperienceTracker, CacheManager, ResourceManager, TaskScheduler,
+#         AuthenticationAgent, UnifiedUtilsAgent, AgentTrustScorer, FileSystemAssistantAgent,
+#         RemoteConnectorAgent, UnifiedWebAgent, AdvancedRouter, ObservabilityHub
+# Resources: CPU 35%, RAM 8GB, GPU 0GB
+# Size estimate: ~800MB
+
+# Include PC2 shared requirements (includes base)
+-r ../../shared/requirements.pc2.txt
+
+# Authentication & security
+cryptography>=41.0.0
+pyjwt>=2.8.0
+passlib>=1.7.4
+bcrypt>=4.0.0
+
+# Task scheduling
+apscheduler>=3.10.1
+croniter>=1.4.0
+
+# Web agent & browser automation dependencies already in PC2 shared:
+# - beautifulsoup4>=4.12.3
+# - playwright>=1.42.0
+
+# Additional web support
+selenium>=4.15.0
+lxml>=4.9.3
+
+# File system operations
+shutil  # Built-in Python module
+pathlib  # Built-in Python module
+
+# Resource monitoring
+platform  # Built-in Python module
+subprocess  # Built-in Python module
+
+# Router and networking
+urllib.parse  # Built-in Python module
+socket  # Built-in Python module
+
+# Experience tracking
+pickle  # Built-in Python module
+sqlite3  # Built-in Python module
+
+# Trust scoring
+hashlib  # Built-in Python module
+hmac  # Built-in Python module 

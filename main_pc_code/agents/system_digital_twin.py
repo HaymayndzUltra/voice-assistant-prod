@@ -116,7 +116,13 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.metrics_thread = None
         self.secure_zmq_enabled = False
         
-        super().__init__(name=self.name, port=self.port, **kwargs)
+        # Set health port before calling super() to avoid conflicts
+        try:
+            self.health_port = get_port("SystemDigitalTwin") + 1000  # Standard health port pattern
+        except Exception:
+            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
+            
+        super().__init__(name=self.name, port=self.port, health_check_port=self.health_port, **kwargs)
         
         self.config = DEFAULT_CONFIG.copy()
         self.config.update(config)
@@ -125,17 +131,9 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.redis_settings = self.config.get("redis", {"host": "localhost", "port": 6379, "db": 0})
         
         self.main_port = self.port
-        # Health port using standard pattern
-        try:
-            self.health_port = get_port("SystemDigitalTwin") + 1000  # Standard health port pattern
-        except Exception:
-            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
 
-        # Start HTTP health endpoint for environments expecting HTTP probes
-        try:
-            self._start_http_health_server()
-        except Exception as http_err:
-            logger.warning(f"Failed to start HTTP health server on port {self.health_port}: {http_err}")
+        # Note: HTTP health server is now handled by BaseAgent
+        # No need to start duplicate health server
         
         self.metrics_history = {
             "cpu_usage": [], "vram_usage_mb": [], "ram_usage_mb": [],

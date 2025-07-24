@@ -1,0 +1,19 @@
+# MainPC Reasoning GPU Container Requirements
+# Agents: ChainOfThoughtAgent, GoTToTAgent, CognitiveModelAgent  
+# Resources: CPU 20%, RAM 6GB, GPU 4GB
+# Size estimate: ~4GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Include NLP requirements for reasoning
+-r ../../shared/requirements.nlp.txt
+
+# Graph reasoning for GoT
+networkx>=3.1.0
+
+# Cognitive modeling
+sympy>=1.12.0
+
+# Pattern matching and logic
+regex>=2023.8.8 

@@ -1,0 +1,444 @@
+version: "3.9"
+
+services:
+  # =============================================================================
+  # MAINPC CONTAINERS (8 total)
+  # =============================================================================
+
+  core-platform:
+    build:
+      context: .
+      dockerfile: docker/mainpc/core-platform/Dockerfile
+    image: ai-system/mainpc-core-platform:latest
+    container_name: mainpc-core-platform
+    environment:
+      - CONTAINER_ROLE=core_platform
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CROSS_MACHINE_DISCOVERY_ENDPOINT=http://pc2-observability.cross_machine:9100
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "7200:7200"  # ServiceRegistry
+      - "7220:7220"  # SystemDigitalTwin
+      - "26002:26002"  # RequestCoordinator
+      - "9000:9000"  # ObservabilityHub
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  model-manager-gpu:
+    build:
+      context: .
+      dockerfile: docker/mainpc/model-manager-gpu/Dockerfile
+    image: ai-system/mainpc-model-manager-gpu:latest
+    container_name: mainpc-model-manager-gpu
+    environment:
+      - CONTAINER_ROLE=model_manager_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_MIG_CONFIG=""
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "7211:7211"  # ModelManagerSuite
+      - "7225:7225"  # UnifiedSystemAgent
+      - "8211:8211"  # Health check
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '2.4'  # 15% of 16 cores
+          memory: 4G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8211/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+
+  memory-stack:
+    build:
+      context: .
+      dockerfile: docker/mainpc/memory-stack/Dockerfile
+    image: ai-system/mainpc-memory-stack:latest
+    container_name: mainpc-memory-stack
+    environment:
+      - CONTAINER_ROLE=memory_stack
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "5713:5713"  # MemoryClient
+      - "5574:5574"  # SessionMemoryAgent
+      - "5715:5715"  # KnowledgeBase
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+      - memory_data:/app/memory_data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '2.4'  # 15% of 16 cores
+          memory: 6G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5713/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+
+  utility-gpu:
+    build:
+      context: .
+      dockerfile: docker/mainpc/utility-gpu/Dockerfile
+    image: ai-system/mainpc-utility-gpu:latest
+    container_name: mainpc-utility-gpu
+    environment:
+      - CONTAINER_ROLE=utility_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "5650:5650"  # CodeGenerator
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "5606:5606"  # Executor
+      - "5613:5613"  # PredictiveHealthMonitor
+      - "5584:5584"  # FixedStreamingTranslation
+      - "5615:5615"  # TinyLlamaServiceEnhanced
+      - "5642:5642"  # LocalFineTunerAgent
+      - "5581:5581"  # NLLBAdapter
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'  # 25% of 16 cores
+          memory: 8G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5650/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+      - model-manager-gpu
+
+  reasoning-gpu:
+    build:
+      context: .
+      dockerfile: docker/mainpc/reasoning-gpu/Dockerfile
+    image: ai-system/mainpc-reasoning-gpu:latest
+    container_name: mainpc-reasoning-gpu
+    environment:
+      - CONTAINER_ROLE=reasoning_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "5612:5612"  # ChainOfThoughtAgent
+      - "5646:5646"  # GoTToTAgent
+      - "5641:5641"  # CognitiveModelAgent
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '3.2'  # 20% of 16 cores
+          memory: 6G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5612/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+      - model-manager-gpu
+
+  vision-gpu:
+    build:
+      context: .
+      dockerfile: docker/mainpc/vision-gpu/Dockerfile
+    image: ai-system/mainpc-vision-gpu:latest
+    container_name: mainpc-vision-gpu
+    environment:
+      - CONTAINER_ROLE=vision_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "5610:5610"  # FaceRecognitionAgent
+      - "5572:5572"  # VRAMOptimizerAgent
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '1.6'  # 10% of 16 cores
+          memory: 4G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5610/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+      - model-manager-gpu
+
+  language-stack-gpu:
+    build:
+      context: .
+      dockerfile: docker/mainpc/language-stack-gpu/Dockerfile
+    image: ai-system/mainpc-language-stack-gpu:latest
+    container_name: mainpc-language-stack-gpu
+    environment:
+      - CONTAINER_ROLE=language_stack_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "7213:7213"  # ModelOrchestrator
+      - "7205:7205"  # GoalManager
+      - "5701:5701"  # IntentionValidatorAgent
+      - "5709:5709"  # NLUAgent
+      - "5710:5710"  # AdvancedCommandHandler
+      - "5711:5711"  # ChitchatAgent
+      - "5636:5636"  # FeedbackHandler
+      - "5637:5637"  # Responder
+      - "5595:5595"  # TranslationService
+      - "5802:5802"  # DynamicIdentityAgent
+      - "5706:5706"  # EmotionSynthesisAgent
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '5.6'  # 35% of 16 cores
+          memory: 8G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7213/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+      - model-manager-gpu
+
+  audio-emotion:
+    build:
+      context: .
+      dockerfile: docker/mainpc/audio-emotion/Dockerfile
+    image: ai-system/mainpc-audio-emotion:latest
+    container_name: mainpc-audio-emotion
+    environment:
+      - CONTAINER_ROLE=audio_emotion
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=mainpc
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+    ports:
+      - "5800:5800"  # STTService
+      - "5801:5801"  # TTSService
+      - "6550:6550"  # AudioCapture
+      - "6551:6551"  # FusedAudioPreprocessor
+      - "5576:5576"  # StreamingInterruptHandler
+      - "6553:6553"  # StreamingSpeechRecognition
+      - "5562:5562"  # StreamingTTSAgent
+      - "6552:6552"  # WakeWordDetector
+      - "5579:5579"  # StreamingLanguageAnalyzer
+      - "5624:5624"  # ProactiveAgent
+      - "5590:5590"  # EmotionEngine
+      - "5704:5704"  # MoodTrackerAgent
+      - "5705:5705"  # HumanAwarenessAgent
+      - "5625:5625"  # ToneDetector
+      - "5708:5708"  # VoiceProfilingAgent
+      - "5703:5703"  # EmpathyAgent
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_mainpc:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - mainpc_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '4.8'  # 30% of 16 cores
+          memory: 8G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5800/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    depends_on:
+      - core-platform
+      - model-manager-gpu
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  mainpc_internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  
+  cross_machine:
+    external: true
+
+# =============================================================================
+# VOLUMES  
+# =============================================================================
+volumes:
+  # Model storage (shared read-only)
+  models_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/haymayndz/AI_System_Monorepo/models
+
+  # HuggingFace cache (shared)
+  huggingface_cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/haymayndz/.cache/huggingface
+
+  # Model runtime cache (MainPC)
+  models_cache_mainpc:
+    driver: local
+
+  # Memory data persistence
+  memory_data:
+    driver: local 

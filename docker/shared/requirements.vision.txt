@@ -1,0 +1,17 @@
+# Vision-specific dependencies (~500MB)
+# Include base requirements
+-r requirements.base.txt
+
+# Computer Vision Core
+opencv-python>=4.8.1.78
+opencv-python-headless>=4.8.1.78
+Pillow>=10.0.1
+scikit-image>=0.21.0
+
+# Face Recognition & Detection
+insightface>=0.7.3
+mediapipe>=0.10.7
+
+# Image Processing & Utilities
+matplotlib>=3.8.0
+imageio>=2.31.0 

@@ -1,0 +1,236 @@
+version: "3.9"
+
+services:
+  # =============================================================================
+  # PC2 CONTAINERS (4 total)
+  # =============================================================================
+
+  vision-dream-gpu:
+    build:
+      context: .
+      dockerfile: docker/pc2/vision-dream-gpu/Dockerfile
+    image: ai-system/pc2-vision-dream-gpu:latest
+    container_name: pc2-vision-dream-gpu
+    environment:
+      - CONTAINER_ROLE=vision_dream_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=pc2
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_MIG_CONFIG=""
+      - SERVICE_DISCOVERY_MODE=container_dns
+      - CROSS_MACHINE_DISCOVERY_ENDPOINT=http://mainpc-observability.cross_machine:9000
+    ports:
+      - "7150:7150"  # VisionProcessingAgent
+      - "7104:7104"  # DreamWorldAgent  
+      - "7127:7127"  # DreamingModeAgent
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_pc2:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - pc2_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'  # 25% of 8 cores
+          memory: 6G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7150/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  memory-reasoning-gpu:
+    build:
+      context: .
+      dockerfile: docker/pc2/memory-reasoning-gpu/Dockerfile
+    image: ai-system/pc2-memory-reasoning-gpu:latest
+    container_name: pc2-memory-reasoning-gpu
+    environment:
+      - CONTAINER_ROLE=memory_reasoning_gpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=pc2
+      - CONFIG_OVERRIDE=docker
+      - CUDA_VISIBLE_DEVICES=0
+      - SERVICE_DISCOVERY_MODE=container_dns
+      - CROSS_MACHINE_DISCOVERY_ENDPOINT=http://mainpc-observability.cross_machine:9000
+    ports:
+      - "7105:7105"  # UnifiedMemoryReasoningAgent
+      - "7140:7140"  # MemoryOrchestratorService
+    volumes:
+      - models_volume:/app/models:ro
+      - huggingface_cache:/root/.cache/huggingface
+      - models_cache_pc2:/app/cache/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+      - memory_data_pc2:/app/memory_data
+    networks:
+      - pc2_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '1.6'  # 20% of 8 cores
+          memory: 4G
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+              driver: nvidia
+              device_ids: ["0"]
+              count: 1
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7105/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+  tutor-suite-cpu:
+    build:
+      context: .
+      dockerfile: docker/pc2/tutor-suite-cpu/Dockerfile
+    image: ai-system/pc2-tutor-suite-cpu:latest
+    container_name: pc2-tutor-suite-cpu
+    environment:
+      - CONTAINER_ROLE=tutor_suite_cpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=pc2
+      - CONFIG_OVERRIDE=docker
+      - SERVICE_DISCOVERY_MODE=container_dns
+      - CROSS_MACHINE_DISCOVERY_ENDPOINT=http://mainpc-observability.cross_machine:9000
+    ports:
+      - "7108:7108"  # TutorAgent
+      - "7131:7131"  # TutoringAgent
+      - "7119:7119"  # ProactiveContextMonitor
+      - "7100:7100"  # TieredResponder
+    volumes:
+      - models_volume:/app/models:ro  # Lightweight models only
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+    networks:
+      - pc2_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '1.6'  # 20% of 8 cores
+          memory: 4G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7108/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  infra-core-cpu:
+    build:
+      context: .
+      dockerfile: docker/pc2/infra-core-cpu/Dockerfile
+    image: ai-system/pc2-infra-core-cpu:latest
+    container_name: pc2-infra-core-cpu
+    environment:
+      - CONTAINER_ROLE=infra_core_cpu
+      - PORT_OFFSET=0
+      - MACHINE_TYPE=pc2
+      - CONFIG_OVERRIDE=docker
+      - SERVICE_DISCOVERY_MODE=container_dns
+      - CROSS_MACHINE_DISCOVERY_ENDPOINT=http://mainpc-observability.cross_machine:9000
+    ports:
+      - "7111:7111"  # ContextManager
+      - "7112:7112"  # ExperienceTracker
+      - "7102:7102"  # CacheManager
+      - "7113:7113"  # ResourceManager
+      - "7115:7115"  # TaskScheduler
+      - "7116:7116"  # AuthenticationAgent
+      - "7118:7118"  # UnifiedUtilsAgent
+      - "7122:7122"  # AgentTrustScorer
+      - "7123:7123"  # FileSystemAssistantAgent
+      - "7124:7124"  # RemoteConnectorAgent
+      - "7126:7126"  # UnifiedWebAgent
+      - "7129:7129"  # AdvancedRouter
+      - "9100:9100"  # ObservabilityHub
+    volumes:
+      - models_volume:/app/models:ro  # Lightweight models only
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./data:/app/data
+      - cache_data_pc2:/app/cache/data
+    networks:
+      - pc2_internal
+      - cross_machine
+    deploy:
+      resources:
+        limits:
+          cpus: '2.8'  # 35% of 8 cores  
+          memory: 8G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  pc2_internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  
+  cross_machine:
+    external: true
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  # Model storage (shared read-only)
+  models_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/haymayndz/AI_System_Monorepo/models
+
+  # HuggingFace cache (shared)
+  huggingface_cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/haymayndz/.cache/huggingface
+
+  # Model runtime cache (PC2)
+  models_cache_pc2:
+    driver: local
+
+  # Memory data persistence (PC2)
+  memory_data_pc2:
+    driver: local
+
+  # Cache data persistence (PC2) 
+  cache_data_pc2:
+    driver: local 

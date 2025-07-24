@@ -1,0 +1,27 @@
+# PC2 Tutor Suite CPU Container Requirements
+# Agents: TutorAgent, TutoringAgent, ProactiveContextMonitor, TieredResponder
+# Resources: CPU 20%, RAM 4GB, GPU 0GB
+# Size estimate: ~600MB
+
+# Include PC2 shared requirements (includes base)
+-r ../../shared/requirements.pc2.txt
+
+# Include NLP requirements for tutoring
+-r ../../shared/requirements.nlp.txt
+
+# Tutoring specific dependencies already in PC2 shared:
+# - sympy>=1.12.0 (mathematical computing)
+# - wolframalpha>=5.0.0 (advanced math solver)  
+# - pylatexenc>=2.10 (LaTeX rendering)
+
+# Additional tutoring support
+markdown>=3.5.0
+pygments>=2.16.0
+
+# Context monitoring
+heapq  # Built-in Python module
+collections  # Built-in Python module
+
+# Tiered response management
+queue  # Built-in Python module
+threading  # Built-in Python module 

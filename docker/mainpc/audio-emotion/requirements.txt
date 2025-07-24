@@ -1,0 +1,36 @@
+# MainPC Audio Emotion Container Requirements
+# Agents: STTService, TTSService, AudioCapture, FusedAudioPreprocessor, StreamingInterruptHandler,
+#         StreamingSpeechRecognition, StreamingTTSAgent, WakeWordDetector, StreamingLanguageAnalyzer,
+#         ProactiveAgent, EmotionEngine, MoodTrackerAgent, HumanAwarenessAgent, ToneDetector,
+#         VoiceProfilingAgent, EmpathyAgent
+# Resources: CPU 30%, RAM 8GB, GPU 2GB
+# Size estimate: ~4GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Include audio requirements
+-r ../../shared/requirements.audio.txt
+
+# Include NLP requirements for language analysis
+-r ../../shared/requirements.nlp.txt
+
+# Emotion analysis specific
+vaderSentiment>=3.3.2
+textstat>=0.7.3
+
+# Voice profiling and analysis
+praat-parselmouth>=0.4.3
+aubio>=0.4.9
+
+# Real-time audio processing
+queue  # Built-in Python module
+threading  # Built-in Python module
+collections  # Built-in Python module
+
+# Mood and sentiment
+numpy>=1.24.0  # Already in base requirements
+
+# Audio streaming optimization
+wave  # Built-in Python module
+tempfile  # Built-in Python module 

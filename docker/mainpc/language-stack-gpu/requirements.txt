@@ -1,0 +1,28 @@
+# MainPC Language Stack GPU Container Requirements
+# Agents: ModelOrchestrator, GoalManager, IntentionValidatorAgent, NLUAgent, 
+#         AdvancedCommandHandler, ChitchatAgent, FeedbackHandler, Responder,
+#         TranslationService, DynamicIdentityAgent, EmotionSynthesisAgent
+# Resources: CPU 35%, RAM 8GB, GPU 4GB  
+# Size estimate: ~4.5GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Include NLP requirements for language processing
+-r ../../shared/requirements.nlp.txt
+
+# Command processing
+argparse  # Built-in Python module  
+shlex  # Built-in Python module
+
+# Emotion and identity processing
+emoji>=2.8.0
+
+# Intent validation and NLU
+regex>=2023.8.8
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.0
+
+# Chat and conversation
+chatterbot>=1.0.8
+markovify>=0.9.4 

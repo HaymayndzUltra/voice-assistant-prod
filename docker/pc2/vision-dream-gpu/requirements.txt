@@ -1,0 +1,25 @@
+# PC2 Vision Dream GPU Container Requirements
+# Agents: VisionProcessingAgent, DreamWorldAgent, DreamingModeAgent
+# Resources: CPU 25%, RAM 6GB, GPU 6GB
+# Size estimate: ~4.5GB
+
+# Include PC2 shared requirements (includes base)
+-r ../../shared/requirements.pc2.txt
+
+# Include GPU requirements
+-r ../../shared/requirements.gpu.txt
+
+# Include vision requirements  
+-r ../../shared/requirements.vision.txt
+
+# Dream world simulation
+random  # Built-in Python module
+uuid  # Built-in Python module
+
+# Vision processing optimization
+threading  # Built-in Python module
+queue  # Built-in Python module
+
+# Dream state management
+pickle  # Built-in Python module
+json  # Built-in Python module 

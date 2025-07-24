@@ -1,0 +1,85 @@
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    CONTAINER_ROLE=core_platform
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd --gid 1000 aiuser && \
+    useradd --uid 1000 --gid aiuser --shell /bin/bash --create-home aiuser
+
+# Create application directory
+WORKDIR /app
+
+# Create shared directory and copy shared requirements first
+RUN mkdir -p /app/shared
+COPY docker/shared/requirements.base.txt /app/shared/requirements.base.txt
+
+# Copy requirements
+COPY docker/mainpc/core-platform/requirements.txt /app/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy ONLY the required files for 4 core agents
+# 1. Common utilities and base classes (required by all)
+COPY common/ /app/common/
+
+# 2. Config (if exists)
+COPY config/ /app/config/
+
+# 3. Main PC code structure
+RUN mkdir -p /app/main_pc_code/agents /app/main_pc_code/utils
+
+# 4. Core agent files
+COPY main_pc_code/agents/service_registry_agent.py /app/main_pc_code/agents/
+COPY main_pc_code/agents/system_digital_twin.py /app/main_pc_code/agents/
+COPY main_pc_code/agents/request_coordinator.py /app/main_pc_code/agents/
+COPY main_pc_code/agents/error_publisher.py /app/main_pc_code/agents/
+
+# 5. Utils needed by agents (selective copying)
+COPY main_pc_code/utils/ /app/main_pc_code/utils/
+
+# 6. ObservabilityHub (in different location)
+RUN mkdir -p /app/phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/
+COPY phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py \
+     /app/phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/
+
+# 7. Main PC code __init__.py files for proper imports
+RUN touch /app/main_pc_code/__init__.py /app/main_pc_code/agents/__init__.py /app/main_pc_code/utils/__init__.py
+
+# 8. Supporting files (copy selectively)
+COPY common_utils/ /app/common_utils/
+
+# Create necessary directories
+RUN mkdir -p /app/{logs,data,config,cache,utils} && \
+    chown -R aiuser:aiuser /app
+
+# Copy startup script
+COPY docker/mainpc/core-platform/start.sh /app/start.sh
+RUN chmod +x /app/start.sh && chown aiuser:aiuser /app/start.sh
+
+# Switch to non-root user  
+USER aiuser
+
+# Expose ports for the 4 agents
+EXPOSE 7200 7220 26002 9000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:9000/health || exit 1
+
+# Run startup script
+CMD ["/app/start.sh"] 

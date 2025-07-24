@@ -1,0 +1,18 @@
+# MainPC Model Manager GPU Container Requirements
+# Agents: ModelManagerSuite, UnifiedSystemAgent
+# Resources: CPU 15%, RAM 4GB, GPU 6GB
+# Size estimate: ~4GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Model management specific
+safetensors>=0.4.0
+tokenizers>=0.13.0
+
+# Memory optimization
+psutil>=5.9.0
+gc  # Built-in Python module
+
+# Model formats
+gguf>=0.1.0 

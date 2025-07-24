@@ -1,0 +1,17 @@
+# NLP-specific dependencies (~200MB)
+# Include base requirements
+-r requirements.base.txt
+
+# Natural Language Processing
+nltk>=3.8.1
+spacy>=3.7.2
+textblob>=0.17.1
+
+# Sentence & Document Processing
+sentence-transformers>=2.5.1
+
+# Translation & Multilingual
+googletrans>=4.0.0-rc1
+
+# Language Detection & Analysis
+langdetect>=1.0.9 

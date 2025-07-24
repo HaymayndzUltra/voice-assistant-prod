@@ -1,0 +1,17 @@
+# MainPC Vision GPU Container Requirements
+# Agents: FaceRecognitionAgent, VRAMOptimizerAgent
+# Resources: CPU 10%, RAM 4GB, GPU 2GB
+# Size estimate: ~4.5GB
+
+# Include GPU requirements (includes base)
+-r ../../shared/requirements.gpu.txt
+
+# Include vision requirements
+-r ../../shared/requirements.vision.txt
+
+# Additional vision processing  
+dlib>=19.24.0
+face-recognition>=1.3.0
+
+# GPU memory optimization
+memory-profiler>=0.61.0 

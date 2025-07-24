@@ -1,0 +1,21 @@
+# MainPC Core Platform Container Requirements
+# Agents: ServiceRegistry, SystemDigitalTwin, RequestCoordinator, ObservabilityHub
+# Resources: CPU 20%, RAM 2GB, GPU 0GB
+# Size estimate: ~200MB
+
+# Include base requirements
+-r shared/requirements.base.txt
+
+# Container-specific dependencies
+# Service discovery and coordination
+watchdog>=3.0.0
+python-magic>=0.4.27
+
+# System monitoring and observability  
+mss>=9.0.1
+
+# Network utilities
+netifaces>=0.11.0
+
+# Task coordination
+# heapq is built-in Python module, no need to install 

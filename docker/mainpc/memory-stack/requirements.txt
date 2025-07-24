@@ -1,0 +1,23 @@
+# MainPC Memory Stack Container Requirements
+# Agents: MemoryClient, SessionMemoryAgent, KnowledgeBase
+# Resources: CPU 15%, RAM 6GB (includes Chroma/SQLite), GPU 0GB
+# Size estimate: ~400MB
+
+# Include base requirements
+-r ../../shared/requirements.base.txt
+
+# Database specific
+alembic>=1.12.0
+asyncpg>=0.28.0
+psycopg2-binary>=2.9.9
+
+# Vector database
+chromadb>=0.4.22
+faiss-cpu>=1.7.4
+
+# Memory processing
+lmdb>=1.4.1
+
+# Session management
+pickle  # Built-in Python module
+sqlite3  # Built-in Python module 

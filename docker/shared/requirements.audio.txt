@@ -1,0 +1,26 @@
+# Audio-specific dependencies (~300MB)
+# Include base requirements
+-r requirements.base.txt
+
+# Core Audio Processing
+librosa>=0.10.1
+sounddevice>=0.4.6
+soundfile>=0.12.1
+pyaudio>=0.2.13
+
+# Speech Recognition & Processing
+speechrecognition>=3.10.0
+openai-whisper>=20231117
+noisereduce>=2.0.1
+webrtcvad>=2.0.10
+
+# Audio Manipulation & Processing
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
+
+# Wake Word Detection
+pvporcupine>=3.0.0
+
+# Text-to-Speech
+TTS>=0.22.0
+pyttsx3>=2.90 
