@@ -59,7 +59,7 @@ logging.basicConfig(
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
 # Load configuration at module level
-from common_utils.port_registry import get_port
+# Port registry removed - using startup_config.yaml as single source of truth
 
 # Constants
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
@@ -97,7 +97,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.name = kwargs.get('name', "SystemDigitalTwin")
         # Port registry integration - get port from centralized registry
         try:
-            self.port = get_port("System Digital Twin", fallback_env_var="SYSTEM_DIGITAL_TWIN_PORT")
+            self.port = int(os.getenv("SYSTEM_DIGITAL_TWIN_PORT", 7220))
         except Exception as e:
             # Fallback to config for backward compatibility
             self.port = int(config.get("port", 7220))
@@ -126,7 +126,7 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.main_port = self.port
         # Health port from registry or fallback
         try:
-            self.health_port = get_port("System Digital Twin Health", fallback_env_var="SYSTEM_DIGITAL_TWIN_HEALTH_PORT")
+            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
         except Exception:
             self.health_port = config.get("health_check_port", 8220)
 

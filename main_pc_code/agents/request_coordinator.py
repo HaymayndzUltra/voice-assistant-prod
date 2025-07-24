@@ -106,13 +106,8 @@ logging.basicConfig(
 logger = logging.getLogger('RequestCoordinator')
 
 # --- Constants with Port Registry Integration ---
-from common_utils.port_registry import get_port
-
-# Port from registry with fallback
-try:
-    DEFAULT_PORT = get_port("Request Coordinator", fallback_env_var="REQUEST_COORDINATOR_PORT")
-except Exception:
-    DEFAULT_PORT = 26002  # Fallback
+# Port registry removed - using environment variables with startup_config.yaml defaults
+DEFAULT_PORT = int(os.getenv("REQUEST_COORDINATOR_PORT", 26002))
     
 PROACTIVE_SUGGESTION_PORT = 5591
 INTERRUPT_PORT = 5576

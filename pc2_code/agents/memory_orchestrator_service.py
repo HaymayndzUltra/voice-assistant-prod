@@ -50,13 +50,8 @@ config = Config().get_config()
 logger = logging.getLogger('MemoryOrchestratorService')
 
 # --- Constants with Port Registry Integration ---
-from common_utils.port_registry import get_port
-
-# Port from registry with fallback
-try:
-    DEFAULT_PORT = get_port("Memory Orchestrator Service", fallback_env_var="MEMORY_ORCHESTRATOR_PORT")
-except Exception:
-    DEFAULT_PORT = 7140  # Port para sa Orchestrator (fallback)
+# Port registry removed - using environment variables with startup_config.yaml defaults
+DEFAULT_PORT = int(os.getenv("MEMORY_ORCHESTRATOR_PORT", 7140))  # Port para sa Orchestrator
     
 DB_PATH = Path(PathManager.get_project_root()) / "data" / "unified_memory.db"
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
