@@ -50,15 +50,25 @@ from typing import Dict, Any, Optional, Protocol, runtime_checkable
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
 from common.env_helpers import get_env
+from common_utils.port_registry import get_port
 
 # ---------------------------------------------------------------------------
-# Configuration defaults
+# Configuration defaults with port registry integration
 # ---------------------------------------------------------------------------
-DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
-DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
+# Port registry integration - get from centralized registry
+try:
+    # Note: Port registry currently maps "Learning Opportunity Detector" to 7200
+    # but ServiceRegistry should be at 7200 according to startup config
+    # Using fallback to environment variables for now
+    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7200))  # Fixed: was 7100, should be 7200
+    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8200))  # Fixed: was 8100, should be 8200
+except Exception:
+    # Fallback to original values if port registry fails
+    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
+    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
 DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
-DEFAULT_${SECRET_PLACEHOLDER}6379/0")
-DEFAULT_${SECRET_PLACEHOLDER}")
+DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
+DEFAULT_PREFIX = os.getenv("SERVICE_REGISTRY_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
 
@@ -113,12 +123,12 @@ class RedisBackend:
     Provides persistence and high-availability.
     """
     
-    def __init__(self, redis_url: str, prefix: str = DEFAULT_${SECRET_PLACEHOLDER}
+    def __init__(self, redis_url: str, prefix: str = DEFAULT_PREFIX):
         """Initialize Redis backend.
         
         Args:
-            redis_url: Redis connection URL (redis://host:port/db)
-            prefix: Key prefix for Redis keys
+            redis_url: Redis connection URL
+            prefix: Key prefix for agent data
         """
         try:
             import redis
@@ -163,7 +173,7 @@ class RedisBackend:
 class ServiceRegistryAgent(BaseAgent):
     """A service registry with configurable backend storage."""
 
-    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_${SECRET_PLACEHOLDER}
+    def __init__(self, backend: str = DEFAULT_BACKEND, redis_url: str = DEFAULT_REDIS_URL, **kwargs) -> None:
         """Initialize the service registry.
         
         Args:

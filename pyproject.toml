@@ -1,65 +1,480 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "ai_system"
-version = "0.1.0"
-description = "AI System Monorepo"
-requires-python = ">=3.8"
+name = "ai-system-monorepo"
+version = "1.0.0"
+description = "Enterprise AI System with Cross-Machine GPU Load Balancing, Security Hardening, and Intelligent Optimization"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "AI System Team", email = "team@aisystem.dev"}
+]
+maintainers = [
+    {name = "AI System Team", email = "team@aisystem.dev"}
+]
+keywords = [
+    "ai", "machine-learning", "gpu-optimization", "distributed-computing", 
+    "security", "performance", "automation", "enterprise"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+requires-python = ">=3.9"
+
+# Core dependencies
 dependencies = [
-    "pyzmq",
-    "pydantic",
-    "psutil",
-    "pyyaml",
-    "redis"
+    # Core Python enhancements
+    "asyncio-mqtt>=0.13.0",
+    "aiofiles>=23.0.0",
+    "aiohttp>=3.9.0",
+    
+    # Data processing and ML
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    
+    # Database and storage
+    "asyncpg>=0.29.0",
+    "redis>=5.0.0",
+    "sqlalchemy>=2.0.0",
+    
+    # Networking and communication
+    "zmq>=0.0.0",
+    "requests>=2.31.0",
+    "websockets>=11.0.0",
+    
+    # System monitoring and metrics
+    "psutil>=5.9.0",
+    "prometheus-client>=0.17.0",
+    
+    # Configuration and utilities
+    "pydantic>=2.0.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+    
+    # Date/time handling
+    "python-dateutil>=2.8.0",
+    "pytz>=2023.3"
 ]
 
 [project.optional-dependencies]
-ha = [
-    "redis>=4.5.0",
+# Security and encryption
+security = [
+    "cryptography>=41.0.0",
+    "PyJWT>=2.8.0",
+    "bcrypt>=4.0.0",
+    "pyotp>=2.9.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0"
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["common*", "main_pc_code*", "pc2_code*", "utils*", "src*"] 
+# Performance and optimization
+performance = [
+    "cProfile",
+    "memory-profiler>=0.61.0",
+    "py-spy>=0.3.0",
+    "line-profiler>=4.0.0",
+    "radon>=6.0.0"
+]
 
+# Development and testing
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-xdist>=3.3.0",
+    "coverage>=7.3.0",
+    "mypy>=1.5.0",
+    "black>=23.7.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "pylint>=2.17.0",
+    "pre-commit>=3.4.0"
+]
+
+# Documentation
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.2.0",
+    "mkdocstrings[python]>=0.23.0",
+    "markdown-include>=0.8.0"
+]
+
+# Code analysis and complexity
+analysis = [
+    "radon>=6.0.0",
+    "mccabe>=0.7.0",
+    "xenon>=0.9.0",
+    "lizard>=1.17.0",
+    "vulture>=2.9.0",
+    "semgrep>=1.45.0"
+]
+
+# Dependency management
+deps = [
+    "pip-tools>=7.3.0",
+    "pipdeptree>=2.13.0",
+    "safety>=2.3.0",
+    "pip-audit>=2.6.0"
+]
+
+# GPU and ML acceleration
+gpu = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "nvidia-ml-py>=12.535.0",
+    "gpustat>=1.1.0",
+    "pynvml>=11.5.0"
+]
+
+# Database drivers and tools
+database = [
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "alembic>=1.12.0",
+    "redis>=5.0.0"
+]
+
+# Network and communication
+network = [
+    "pyzmq>=25.1.0",
+    "aiozmq>=1.0.0",
+    "websockets>=11.0.0",
+    "grpcio>=1.58.0",
+    "grpcio-tools>=1.58.0"
+]
+
+# Monitoring and observability
+monitoring = [
+    "prometheus-client>=0.17.0",
+    "grafana-api>=1.0.3",
+    "elasticsearch>=8.9.0",
+    "loguru>=0.7.0"
+]
+
+# Containerization and deployment
+deploy = [
+    "docker>=6.1.0",
+    "kubernetes>=27.2.0",
+    "helm>=0.1.0",
+    "ansible>=8.4.0"
+]
+
+# All optional dependencies combined
+all = [
+    "ai-system-monorepo[security,performance,dev,docs,analysis,deps,gpu,database,network,monitoring,deploy]"
+]
+
+[project.urls]
+Homepage = "https://github.com/ai-system/monorepo"
+Documentation = "https://ai-system.github.io/monorepo"
+Repository = "https://github.com/ai-system/monorepo.git"
+Issues = "https://github.com/ai-system/monorepo/issues"
+Changelog = "https://github.com/ai-system/monorepo/blob/main/CHANGELOG.md"
+
+[project.scripts]
+ai-system = "main_pc_code.cli:main"
+gpu-monitor = "main_pc_code.gpu.monitoring_dashboard:main"
+security-scan = "main_pc_code.security.vulnerability_scanner:main"
+complexity-analyze = "main_pc_code.complexity.complexity_analyzer:main"
+performance-profile = "main_pc_code.complexity.performance_optimizer:main"
+
+[project.entry-points."ai_system.plugins"]
+gpu_optimizer = "main_pc_code.gpu.enhanced_vram_optimizer:EnhancedVRAMOptimizer"
+security_monitor = "main_pc_code.security.security_monitor:SecurityMonitor"
+complexity_analyzer = "main_pc_code.complexity.complexity_analyzer:ComplexityAnalyzer"
+
+# Hatch build configuration
+[tool.hatch.build]
+include = [
+    "main_pc_code/**/*.py",
+    "pc2_code/**/*.py", 
+    "common/**/*.py",
+    "common_utils/**/*.py",
+    "events/**/*.py",
+    "*.md",
+    "*.txt",
+    "*.yaml",
+    "*.yml",
+    "*.toml"
+]
+exclude = [
+    "**/__pycache__",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/test_*",
+    "**/tests/*",
+    "**/.git",
+    "**/.pytest_cache",
+    "**/.mypy_cache"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "main_pc_code",
+    "pc2_code", 
+    "common",
+    "common_utils",
+    "events"
+]
+
+# Development environment
+[tool.hatch.envs.default]
+dependencies = [
+    "ai-system-monorepo[dev,security,performance]"
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+    "coverage combine",
+    "coverage report",
+    "coverage html"
+]
+lint = [
+    "flake8 .",
+    "black --check .",
+    "isort --check-only .",
+    "mypy ."
+]
+format = [
+    "black .",
+    "isort ."
+]
+security = [
+    "bandit -r main_pc_code pc2_code common",
+    "safety check"
+]
+complexity = "radon cc --min B main_pc_code pc2_code"
+deps-check = [
+    "pip-audit",
+    "safety check"
+]
+
+# Testing environment
+[tool.hatch.envs.test]
+dependencies = [
+    "ai-system-monorepo[dev,all]"
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args:tests}"
+run-cov = "coverage run -m pytest {args:tests}"
+
+# Documentation environment
+[tool.hatch.envs.docs]
+dependencies = [
+    "ai-system-monorepo[docs]"
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build"
+serve = "mkdocs serve"
+deploy = "mkdocs gh-deploy"
+
+# Security environment
+[tool.hatch.envs.security]
+dependencies = [
+    "ai-system-monorepo[security,analysis]"
+]
+
+[tool.hatch.envs.security.scripts]
+scan = [
+    "bandit -r main_pc_code pc2_code common",
+    "semgrep --config=auto main_pc_code pc2_code",
+    "safety check"
+]
+audit = "pip-audit"
+
+# Performance environment
+[tool.hatch.envs.performance]
+dependencies = [
+    "ai-system-monorepo[performance,gpu]"
+]
+
+[tool.hatch.envs.performance.scripts]
+profile = "python -m main_pc_code.complexity.performance_optimizer"
+complexity = "radon cc --min C main_pc_code pc2_code"
+analyze = "python -m main_pc_code.complexity.complexity_analyzer"
+
+# Tool configurations
 [tool.black]
-line-length = 88
-target-version = ['py39', 'py310', 'py311']
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 extend-exclude = '''
-# A regex preceded by ^/ will apply only to files and directories
-# in the root of the project.
-(
-  ^/whisper\.cpp/.*$
-  | ^/logs/.*$
-  | ^/__pycache__/.*$
-  | ^/\.git/.*$
-)
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
 '''
 
 [tool.isort]
 profile = "black"
+line_length = 100
 multi_line_output = 3
-line_length = 88
-known_first_party = ["agents", "services", "utils", "config"]
-sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
-
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "logs",
-    "whisper.cpp",
-    ".pytest_cache"
-]
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+src_paths = ["main_pc_code", "pc2_code", "common", "common_utils", "events"]
 
 [tool.mypy]
 python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "transformers.*",
+    "nvidia_ml_py.*",
+    "psutil.*",
+    "zmq.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=main_pc_code",
+    "--cov=pc2_code", 
+    "--cov=common",
+    "--cov=events",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml"
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gpu: marks tests that require GPU",
+    "security: marks security-related tests",
+    "performance: marks performance tests"
+]
+
+[tool.coverage.run]
+source = ["main_pc_code", "pc2_code", "common", "events"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*"
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
+]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B601"]  # Skip assert_used and shell_injection for specific cases
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator
+]
 exclude = [
-    "whisper.cpp/",
-    "logs/",
-    "__pycache__/"
-] 
+    ".git",
+    "__pycache__",
+    "docs/source/conf.py",
+    "old",
+    "build",
+    "dist",
+    ".venv",
+    "venv"
+]
+per-file-ignores = [
+    "__init__.py:F401",  # imported but unused
+]
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114",  # missing-module-docstring
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "R0903",  # too-few-public-methods
+    "R0913",  # too-many-arguments
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.radon]
+exclude = "tests/*,venv/*,.venv/*,build/*,dist/*"
+show_complexity = true
+min = "B"
+max = "F"
+
+[tool.vulture]
+exclude = ["tests/", "venv/", ".venv/"]
+ignore_decorators = ["@app.route", "@click.command"]
+ignore_names = ["setUp", "tearDown"]
+min_confidence = 80
+sort_by_size = true 

@@ -27,8 +27,8 @@ import logging
 from pathlib import Path
 from typing import Optional, Union, Dict
 
-# Define a simple join_path function for use in this module
-def PathManager.join_path(*args):
+# Define a simple join_path function for use in this module  
+def join_path(*args):
     return os.path.join(*args)
 
 # Define get_project_root function for bootstrapping

@@ -105,8 +105,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger('RequestCoordinator')
 
-# --- Constants ---
-DEFAULT_PORT = 26002
+# --- Constants with Port Registry Integration ---
+from common_utils.port_registry import get_port
+
+# Port from registry with fallback
+try:
+    DEFAULT_PORT = get_port("Request Coordinator", fallback_env_var="REQUEST_COORDINATOR_PORT")
+except Exception:
+    DEFAULT_PORT = 26002  # Fallback
+    
 PROACTIVE_SUGGESTION_PORT = 5591
 INTERRUPT_PORT = 5576
 ZMQ_REQUEST_TIMEOUT = 5000

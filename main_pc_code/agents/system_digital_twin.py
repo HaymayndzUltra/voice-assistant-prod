@@ -59,12 +59,14 @@ logging.basicConfig(
 logger = logging.getLogger("SystemDigitalTwinAgent")
 
 # Load configuration at module level
+from common_utils.port_registry import get_port
 
 # Constants
 BIND_ADDRESS = get_env('BIND_ADDRESS', '0.0.0.0')
 ZMQ_REQUEST_TIMEOUT = 5000
-DEFAULT_PORT = 7220
-DEFAULT_HEALTH_PORT = 8220
+# Port registry integration - replaced hardcoded ports
+# DEFAULT_PORT = 7220  # Now obtained from port registry
+# DEFAULT_HEALTH_PORT = 8220  # Now obtained from port registry
 # Database & Cache Defaults
 
 DEFAULT_CONFIG = {
@@ -93,7 +95,14 @@ class SystemDigitalTwinAgent(BaseAgent):
         config = config or {}
         
         self.name = kwargs.get('name', "SystemDigitalTwin")
-        self.port = int(config.get("port", DEFAULT_PORT))
+        # Port registry integration - get port from centralized registry
+        try:
+            self.port = get_port("System Digital Twin", fallback_env_var="SYSTEM_DIGITAL_TWIN_PORT")
+        except Exception as e:
+            # Fallback to config for backward compatibility
+            self.port = int(config.get("port", 7220))
+            logger.warning(f"Port registry lookup failed ({e}), using config fallback: {self.port}")
+        
         self.bind_address = config.get("bind_address", BIND_ADDRESS)
         self.zmq_timeout = int(config.get("zmq_request_timeout", ZMQ_REQUEST_TIMEOUT))
         self.start_time = time.time()
@@ -115,7 +124,11 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.redis_settings = self.config.get("redis", {"host": "localhost", "port": 6379, "db": 0})
         
         self.main_port = self.port
-        self.health_port = config.get("health_check_port", DEFAULT_HEALTH_PORT)
+        # Health port from registry or fallback
+        try:
+            self.health_port = get_port("System Digital Twin Health", fallback_env_var="SYSTEM_DIGITAL_TWIN_HEALTH_PORT")
+        except Exception:
+            self.health_port = config.get("health_check_port", 8220)
 
         # Start HTTP health endpoint for environments expecting HTTP probes
         try:

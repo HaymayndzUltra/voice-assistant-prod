@@ -441,8 +441,8 @@
   owner: PC2
 
 - port: 7200
-  purpose: Learning Opportunity Detector / Observability Hub
-  owner: PC2
+  purpose: Service Registry (MainPC) / Learning Opportunity Detector
+  owner: MainPC
 
 - port: 7210
   purpose: Learning Orchestration Service / Model Orchestrator

@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+description: |
+  Auto-load and auto-save persistent memory every session and after major changes.
+---
+
+- On session start:
+    - Run `mcp_memory_read_graph` (para i-load ang memory sa lahat ng MCP server na naka-define).
+    - Basahin at i-load lahat ng `memory-bank/*.md` bilang context (kung meron).
+- After any significant code change, new decision, or bug fix:
+    - Run `mcp_memory_store` (isave ang summary ng pagbabago).
+    - I-append din ang summary sa tamang `memory-bank/*.md`.
+- For all Q&A:
+    - Laging unahin ang MCP memory at memory-bank para sa sagot.

@@ -1,38 +1,334 @@
+# Pre-commit configuration for AI System Monorepo
+# https://pre-commit.com/hooks.html
+
 repos:
+  # Pre-commit hooks for general file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
       - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
       - id: check-json
-      - id: check-merge-conflict
+      - id: check-xml
       - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: debug-statements
+      - id: fix-encoding-pragma
+        args: [--remove]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: requirements-txt-fixer
+      - id: sort-simple-yaml
 
+  # Python-specific hooks
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 23.11.0
     hooks:
       - id: black
-        language_version: python3
-        exclude: ^(whisper\.cpp/|logs/|__pycache__/)
+        name: Format Python code (black)
+        language_version: python3.9
+        args: [--line-length=100]
+        types: [python]
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 5.12.0
     hooks:
       - id: isort
-        args: ["--profile", "black"]
-        exclude: ^(whisper\.cpp/|logs/|__pycache__/)
+        name: Sort Python imports (isort)
+        args: [--profile=black, --line-length=100]
+        types: [python]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
-        exclude: ^(whisper\.cpp/|logs/|__pycache__/)
+        name: Lint Python code (flake8)
+        args: [--max-line-length=100, --extend-ignore=E203,W503]
+        additional_dependencies:
+          - flake8-docstrings
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+          - flake8-bandit
+        types: [python]
 
-  # Optional: Prettier for JSON, YAML, and Markdown files
+  # MyPy type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        name: Type check Python code (mypy)
+        args: [--ignore-missing-imports, --show-error-codes]
+        additional_dependencies:
+          - types-requests
+          - types-redis
+          - types-PyYAML
+          - types-python-dateutil
+        types: [python]
+
+  # Security scanning
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: Security scan Python code (bandit)
+        args: [-r, -x, "tests/,venv/,.venv/"]
+        types: [python]
+
+  # Dependency scanning
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.2
+    hooks:
+      - id: python-safety-dependencies-check
+        name: Check Python dependencies for security issues
+        files: requirements.*\.txt$
+
+  # Code complexity analysis
+  - repo: https://github.com/xenon-python/xenon
+    rev: v0.9.1
+    hooks:
+      - id: xenon
+        name: Check code complexity (xenon)
+        args: [--max-average=B, --max-modules=B, --max-absolute=B]
+        types: [python]
+
+  # Documentation and README checks
+  - repo: https://github.com/pycqa/doc8
+    rev: v1.1.1
+    hooks:
+      - id: doc8
+        name: Check documentation style
+        args: [--max-line-length=100]
+        types: [rst]
+
+  # YAML/JSON formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
     hooks:
       - id: prettier
-        types_or: [json, yaml, markdown]
-        exclude: ^(whisper\.cpp/|logs/|__pycache__/) 
+        name: Format YAML/JSON/Markdown files
+        types_or: [yaml, json, markdown]
+        args: [--tab-width=2, --prose-wrap=always]
+
+  # Shell script validation
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: Check shell scripts (shellcheck)
+        types: [shell]
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        name: Lint Dockerfiles (hadolint)
+        types: [dockerfile]
+
+  # Git commit message formatting
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.13.0
+    hooks:
+      - id: commitizen
+        name: Check commit message format
+        stages: [commit-msg]
+
+  # Python upgrade syntax
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        name: Upgrade Python syntax (pyupgrade)
+        args: [--py39-plus]
+        types: [python]
+
+  # Remove unused imports
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
+        name: Remove unused imports (autoflake)
+        args:
+          - --in-place
+          - --remove-all-unused-imports
+          - --remove-unused-variables
+          - --remove-duplicate-keys
+          - --ignore-init-module-imports
+        types: [python]
+
+  # Check for merge conflicts
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+
+  # Local hooks for custom checks
+  - repo: local
+    hooks:
+      # Check for TODO/FIXME comments
+      - id: check-todos
+        name: Check for TODO/FIXME comments
+        entry: python -c "
+import sys
+import re
+todos = []
+for filename in sys.argv[1:]:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f, 1):
+                if re.search(r'(TODO|FIXME|XXX|HACK)', line, re.IGNORECASE):
+                    todos.append(f'{filename}:{i}: {line.strip()}')
+    except UnicodeDecodeError:
+        continue
+if todos:
+    print('Found TODO/FIXME comments:')
+    for todo in todos:
+        print(todo)
+    print('\\nConsider addressing these before committing.')
+    # Don't fail, just warn
+sys.exit(0)
+        "
+        language: system
+        types: [python]
+        verbose: true
+
+      # Check for debug prints
+      - id: check-debug-prints
+        name: Check for debug print statements
+        entry: python -c "
+import sys
+import re
+debug_prints = []
+for filename in sys.argv[1:]:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f, 1):
+                if re.search(r'print\s*\(.*debug|console\.log', line, re.IGNORECASE):
+                    debug_prints.append(f'{filename}:{i}: {line.strip()}')
+    except UnicodeDecodeError:
+        continue
+if debug_prints:
+    print('Found debug print statements:')
+    for debug in debug_prints:
+        print(debug)
+    print('\\nConsider removing debug prints before committing.')
+    sys.exit(1)
+        "
+        language: system
+        types: [python]
+
+      # Check for secrets/credentials
+      - id: check-secrets
+        name: Check for potential secrets
+        entry: python -c "
+import sys
+import re
+secrets = []
+patterns = [
+    r'password\s*=\s*[\"\\'][^\"\\'>]{8,}',
+    r'api_key\s*=\s*[\"\\'][^\"\\'>]{20,}',
+    r'secret\s*=\s*[\"\\'][^\"\\'>]{16,}',
+    r'token\s*=\s*[\"\\'][^\"\\'>]{20,}',
+]
+for filename in sys.argv[1:]:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            content = f.read()
+            for pattern in patterns:
+                matches = re.finditer(pattern, content, re.IGNORECASE | re.MULTILINE)
+                for match in matches:
+                    line_num = content[:match.start()].count('\\n') + 1
+                    secrets.append(f'{filename}:{line_num}: Potential secret detected')
+    except UnicodeDecodeError:
+        continue
+if secrets:
+    print('⚠️  Potential secrets detected:')
+    for secret in secrets:
+        print(secret)
+    print('\\nPlease review and ensure no actual secrets are committed.')
+    sys.exit(1)
+        "
+        language: system
+        types: [python]
+
+      # Check import order and structure
+      - id: check-import-structure
+        name: Check import structure
+        entry: python -c "
+import sys
+import ast
+import re
+
+def check_imports(filename):
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        tree = ast.parse(content)
+        imports = []
+        
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append((node.lineno, 'import', alias.name))
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ''
+                for alias in node.names:
+                    imports.append((node.lineno, 'from', f'{module}.{alias.name}'))
+        
+        # Check for imports after code (should be at top)
+        code_started = False
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Assign)):
+                code_started = True
+            elif isinstance(node, (ast.Import, ast.ImportFrom)) and code_started:
+                return f'{filename}:{node.lineno}: Import after code definition'
+        
+        return None
+    except Exception:
+        return None
+
+issues = []
+for filename in sys.argv[1:]:
+    issue = check_imports(filename)
+    if issue:
+        issues.append(issue)
+
+if issues:
+    print('Import structure issues:')
+    for issue in issues:
+        print(issue)
+    sys.exit(1)
+        "
+        language: system
+        types: [python]
+
+# Global configuration
+default_stages: [commit]
+fail_fast: false
+default_language_version:
+  python: python3.9
+
+# CI configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: [mypy, xenon]  # Skip slow hooks in CI
+  submodules: false 

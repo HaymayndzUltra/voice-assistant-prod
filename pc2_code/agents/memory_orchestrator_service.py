@@ -49,11 +49,18 @@ config = Config().get_config()
 # --- Logging Setup ---
 logger = logging.getLogger('MemoryOrchestratorService')
 
-# --- Constants ---
-DEFAULT_PORT = 7140 # Port para sa Orchestrator
+# --- Constants with Port Registry Integration ---
+from common_utils.port_registry import get_port
+
+# Port from registry with fallback
+try:
+    DEFAULT_PORT = get_port("Memory Orchestrator Service", fallback_env_var="MEMORY_ORCHESTRATOR_PORT")
+except Exception:
+    DEFAULT_PORT = 7140  # Port para sa Orchestrator (fallback)
+    
 DB_PATH = Path(PathManager.get_project_root()) / "data" / "unified_memory.db"
-${SECRET_PLACEHOLDER} os.environ.get('REDIS_HOST', 'localhost')
-${SECRET_PLACEHOLDER} int(os.environ.get('REDIS_PORT', 6379))
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 LIFECYCLE_INTERVAL = 3600 # 1 oras para sa decay/consolidation
 
 # ===================================================================
@@ -424,7 +431,7 @@ class MemoryOrchestratorService(BaseAgent):
         # --- Backend Initialization ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            self.redis_conn = redis.Redis(host=${SECRET_PLACEHOLDER}True)
+            self.redis_conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
             self.redis_conn.ping()
             logger.info("Successfully connected to Redis.")
         except Exception as e:
