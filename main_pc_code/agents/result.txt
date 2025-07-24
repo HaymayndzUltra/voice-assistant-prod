@@ -1,0 +1,57 @@
+WARNING:Config:No configuration file found. Using empty config.
+Instantiated 0/54 agents successfully
+Failures:
+ - main_pc_code.agents.service_registry_agent: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.agents.system_digital_twin: import error: cannot import name 'Field' from 'pydantic' (unknown location)
+ - main_pc_code.agents.request_coordinator: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.agents.unified_system_agent: import error: cannot import name 'Field' from 'pydantic' (unknown location)
+ - phase1_implementation.consolidated_agents.observability_hub.backup_observability_hub.observability_hub: import error: cannot import name 'Field' from 'pydantic' (unknown location)
+ - main_pc_code.model_manager_suite: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.memory_client: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.session_memory_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.knowledge_base: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.code_generator_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.FORMAINPC.SelfTrainingOrchestrator: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.predictive_health_monitor: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.agents.fixed_streaming_translation: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.executor: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.FORMAINPC.TinyLlamaServiceEnhanced: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.FORMAINPC.LocalFineTunerAgent: import error: cannot import name 'Trainer' from 'transformers' (unknown location)
+ - main_pc_code.FORMAINPC.NLLBAdapter: import error: cannot import name 'AutoModelForSeq2SeqLM' from 'transformers' (unknown location)
+ - main_pc_code.agents.vram_optimizer_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.FORMAINPC.ChainOfThoughtAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.FORMAINPC.GOT_TOTAgent: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.FORMAINPC.CognitiveModelAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.face_recognition_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.learning_orchestration_service: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.learning_opportunity_detector: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.learning_manager: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.active_learning_monitor: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.FORMAINPC.LearningAdjusterAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.model_orchestrator: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.goal_manager: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.IntentionValidatorAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.nlu_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.advanced_command_handler: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.chitchat_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.feedback_handler: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.responder: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.translation_service: import error: type object 'PathManager' has no attribute 'join_path'
+ - main_pc_code.agents.DynamicIdentityAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.emotion_synthesis_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.services.stt_service: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.services.tts_service: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.streaming_audio_capture: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.fused_audio_preprocessor: import error: cannot import name 'show_config' from 'numpy' (unknown location)
+ - main_pc_code.agents.streaming_interrupt_handler: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.streaming_speech_recognition: import error: cannot import name 'show_config' from 'numpy' (unknown location)
+ - main_pc_code.agents.streaming_tts_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.wake_word_detector: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.streaming_language_analyzer: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.ProactiveAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.emotion_engine: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.mood_tracker_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.human_awareness_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.tone_detector: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.voice_profiling_agent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
+ - main_pc_code.agents.EmpathyAgent: import error: No module named 'nats.aio.errors'; 'nats.aio' is not a package
