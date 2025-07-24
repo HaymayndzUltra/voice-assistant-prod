@@ -109,42 +109,53 @@ if __name__ == "__main__":
         if _mod not in sys.modules:
             sys.modules[_mod] = types.ModuleType(_mod)
 
-    # Special stub for redis
-    if "redis" not in sys.modules:
-        redis_stub = types.ModuleType("redis")
-        class _Redis:
-            def __init__(self, *a, **kw): pass
-            def ping(self): return True
-            def from_url(url, *a, **kw):
-                return _Redis()
-        redis_stub.Redis = _Redis
-        redis_stub.from_url = staticmethod(_Redis.from_url)
-        sys.modules["redis"] = redis_stub
+    # pydantic BaseModel stub
+    import types
+    if "pydantic" in sys.modules:
+        pyd = sys.modules["pydantic"]
+    else:
+        pyd = types.ModuleType("pydantic")
+        sys.modules["pydantic"] = pyd
+    class _BaseModel:  # minimal placeholder
+        def __init__(self, **data):
+            for k, v in data.items():
+                setattr(self, k, v)
+        def dict(self):
+            return self.__dict__
+    pyd.BaseModel = _BaseModel
 
-    # Special stub for zmq
-    if "zmq" not in sys.modules:
-        zmq_stub = types.ModuleType("zmq")
-        zmq_stub.REQ = 0
-        zmq_stub.REP = 1
-        zmq_stub.PUB = 2
-        zmq_stub.SUB = 3
-        class _Context:
-            def socket(self, *a):
-                class _Sock:
-                    def setsockopt(self, *a, **k): pass
-                    def bind(self, *a): pass
-                    def connect(self, *a): pass
-                    def send_json(self, *a, **k): pass
-                    def recv_json(self, *a, **k): return {}
-                    def close(self): pass
-                return _Sock()
+    # nats stubs
+    if "nats" not in sys.modules:
+        nats_mod = types.ModuleType("nats")
+        aio_mod = types.ModuleType("nats.aio")
+        client_mod = types.ModuleType("nats.aio.client")
+        class _NC:
+            async def connect(self, *a, **kw): pass
+            async def publish(self, *a, **kw): pass
+            async def close(self): pass
+        client_mod.Client = _NC
+        aio_mod.client = client_mod
+        sys.modules["nats"] = nats_mod
+        sys.modules["nats.aio"] = aio_mod
+        sys.modules["nats.aio.client"] = client_mod
+
+    # Expand zmq stub attributes
+    import importlib
+    zmq_stub = sys.modules.get("zmq")
+    if zmq_stub:
+        for attr in ["PUSH", "PULL", "DEALER", "ROUTER", "Linger"]:
+            if not hasattr(zmq_stub, attr):
+                setattr(zmq_stub, attr, len(zmq_stub.__dict__))
+
+    # Patch PathManager.join_path used in some agents
+    try:
+        from common.utils.path_manager import PathManager as _PM
+        if not hasattr(_PM, "join_path"):
             @staticmethod
-            def instance(): return _Context()
-        zmq_stub.Context = _Context
-        sys.modules["zmq"] = zmq_stub
-        # minimal asyncio submodule
-        zmq_async = types.ModuleType("zmq.asyncio")
-        zmq_async.Context = _Context
-        sys.modules["zmq.asyncio"] = zmq_async
+            def join_path(*parts):
+                return str(Path(*parts))
+            _PM.join_path = join_path  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
     main()
