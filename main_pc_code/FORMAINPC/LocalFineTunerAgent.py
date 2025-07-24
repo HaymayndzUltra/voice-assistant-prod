@@ -73,7 +73,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=str(PathManager.get_logs_dir() / "local_fine_tuner.log")
+    filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "local_fine_tuner.log"))
 )
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class LocalFineTunerAgent(BaseAgent):
             "database_status": "ok"
         }
         # Database setup
-        self.db_path = str(PathManager.get_data_dir() / "local_fine_tuner.db")
+        self.db_path = str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "local_fine_tuner.db"))
         self._init_db()
         # Job management
         self.active_jobs = {}

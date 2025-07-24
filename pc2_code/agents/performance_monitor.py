@@ -120,7 +120,7 @@ class PerformanceMonitor(BaseAgent):
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'performance_monitor.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "performance_monitor.log")),
                 logging.StreamHandler()
             ]
         )
@@ -421,6 +421,9 @@ def main():
     except Exception as e:
         import traceback
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
@@ -439,8 +442,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": get_service_ip("mainpc"),
-            "pc2_ip": get_service_ip("pc2"),
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         }
@@ -449,8 +452,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = network_config.get("main_pc_ip", get_service_ip("mainpc"))
-PC2_IP = network_config.get("pc2_ip", get_service_ip("pc2"))
+MAIN_PC_IP = get_mainpc_ip())
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

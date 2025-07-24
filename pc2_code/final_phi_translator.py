@@ -23,6 +23,9 @@ from common.env_helpers import get_env
 # Secure token access - no hardcoded fallback
 try:
     from common.utils.secret_manager import SecretManager
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     AUTH_${SECRET_PLACEHOLDER} SecretManager.get_api_token("PHI_TRANSLATOR")
 except ImportError:
     # Fallback for systems without SecretManager
@@ -36,7 +39,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("phi_translator.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "phi_translator.log")),
         logging.StreamHandler()
     ]
 )

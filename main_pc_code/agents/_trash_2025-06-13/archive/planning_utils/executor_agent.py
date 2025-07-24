@@ -30,9 +30,12 @@ sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import config
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "executor_agent.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "executor_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(

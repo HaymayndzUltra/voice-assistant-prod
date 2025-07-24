@@ -20,7 +20,6 @@ from pathlib import Path
 
 # Utilities for path handling
 from common.utils.path_manager import PathManager
-from pathlib import Path
 
 import time
 import json
@@ -42,12 +41,14 @@ from main_pc_code.utils.env_loader import get_env
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_server, start_auth
 from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 from common.env_helpers import get_env
+from common.pools.redis_pool import get_redis_client_sync
+from common_utils.port_registry import get_port
 
 # Configure logging
 project_root = Path(PathManager.get_project_root())
 logs_dir = project_root / "logs"
 logs_dir.mkdir(exist_ok=True)
-log_file_path = logs_dir / "system_digital_twin.log"
+log_file_path = logs_dir / str(PathManager.get_logs_dir() / "system_digital_twin.log")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -78,7 +79,7 @@ DEFAULT_CONFIG = {
     "ram_capacity_mb": 32000,
     "network_baseline_ms": 50,
     # Phase-3 new defaults
-    "db_path": str(Path(PathManager.get_project_root()) / "data" / "unified_memory.db"),
+    "db_path": str(Path(PathManager.get_project_root()) / "data" / str(PathManager.get_data_dir() / "unified_memory.db")),
     "redis": {"host": get_service_ip("redis"), "port": 6379, "db": 0},
     "zmq_request_timeout": 5000,
 }
@@ -95,13 +96,13 @@ class SystemDigitalTwinAgent(BaseAgent):
         config = config or {}
         
         self.name = kwargs.get('name', "SystemDigitalTwin")
-        # Port registry integration - get port from centralized registry
+        # Fixed: Use port registry consistently
         try:
-            self.port = int(os.getenv("SYSTEM_DIGITAL_TWIN_PORT", 7220))
+            self.port = get_port("SystemDigitalTwin")
         except Exception as e:
-            # Fallback to config for backward compatibility
-            self.port = int(config.get("port", 7220))
-            logger.warning(f"Port registry lookup failed ({e}), using config fallback: {self.port}")
+            # Fallback only if port registry completely fails
+            self.port = int(os.getenv("SYSTEM_DIGITAL_TWIN_PORT", 7220))
+            logger.warning(f"Port registry lookup failed ({e}), using env fallback: {self.port}")
         
         self.bind_address = config.get("bind_address", BIND_ADDRESS)
         self.zmq_timeout = int(config.get("zmq_request_timeout", ZMQ_REQUEST_TIMEOUT))
@@ -120,15 +121,15 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.config = DEFAULT_CONFIG.copy()
         self.config.update(config)
         # Extract frequently-used settings after merge
-        self.db_path = self.config.get("db_path", str(Path(PathManager.get_project_root()) / "data" / "unified_memory.db"))
+        self.db_path = self.config.get("db_path", str(Path(PathManager.get_project_root()) / "data" / str(PathManager.get_data_dir() / "unified_memory.db")))
         self.redis_settings = self.config.get("redis", {"host": "localhost", "port": 6379, "db": 0})
         
         self.main_port = self.port
-        # Health port from registry or fallback
+        # Health port using standard pattern
         try:
-            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
+            self.health_port = get_port("SystemDigitalTwin") + 1000  # Standard health port pattern
         except Exception:
-            self.health_port = config.get("health_check_port", 8220)
+            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
 
         # Start HTTP health endpoint for environments expecting HTTP probes
         try:
@@ -143,13 +144,12 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         vram_capacity = self.config.get("vram_capacity_mb", 24000)
         pc2_vram_capacity = self.config.get("pc2_vram_capacity_mb", 12000)
-        # --- Redis connection (optional) ---
+        # --- Redis connection using shared pool ---
         self.redis_conn: Optional[redis.Redis] = None
         try:
-            redis_url = get_redis_url()
-            self.redis_conn = redis.from_url(redis_url, socket_connect_timeout=2)
+            self.redis_conn = get_redis_client_sync()
             self.redis_conn.ping()
-            logger.info(f"Successfully connected to Redis cache at {redis_url}")
+            logger.info("Successfully connected to Redis using shared connection pool")
         except Exception as r_err:
             logger.warning(f"Redis connection failed: {r_err}. Health checks will report degraded cache connectivity.")
             self.redis_conn = None
@@ -897,6 +897,71 @@ class SystemDigitalTwinAgent(BaseAgent):
             "agent_info": agent_info
         }
 
+    async def run_async(self) -> None:
+        """
+        Type-checked async run method using azmq.Socket for improved async operations.
+        Handles >5k req/min without thread thrashing.
+        """
+        import asyncio
+        import zmq.asyncio as azmq
+        
+        if not self.setup():
+            logger.critical("Setup failed, agent cannot start.")
+            return
+        
+        logger.info(f"Starting async {self.name} on port {self.main_port}")
+        
+        # Create async ZMQ context and socket with type checking
+        async_context = azmq.Context()
+        async_socket: azmq.Socket = async_context.socket(zmq.REP)
+        
+        try:
+            # Configure socket options for high-throughput operations
+            async_socket.setsockopt(zmq.LINGER, 0)
+            async_socket.bind(f"tcp://*:{self.main_port}")
+            
+            logger.info(f"✅ Async {self.name} listening on tcp://*:{self.main_port}")
+            
+            self.running = True
+            
+            while self.running:
+                try:
+                    # Async receive with timeout
+                    raw_message = await asyncio.wait_for(
+                        async_socket.recv(), timeout=1.0
+                    )
+                    
+                    # Process message (reuse existing logic)
+                    try:
+                        message_str = raw_message.decode('utf-8')
+                        if message_str == "ping":
+                            await async_socket.send_string("pong")
+                            continue
+                            
+                        message = json.loads(message_str)
+                        response = self.handle_request(message)
+                        await async_socket.send_json(response)
+                        
+                    except json.JSONDecodeError:
+                        error_response = {"error": "Invalid JSON format"}
+                        await async_socket.send_json(error_response)
+                    except Exception as e:
+                        error_response = {"error": f"Processing error: {str(e)}"}
+                        await async_socket.send_json(error_response)
+                        
+                except asyncio.TimeoutError:
+                    # Normal timeout, continue loop
+                    continue
+                except Exception as e:
+                    logger.error(f"Error in async main loop: {e}", exc_info=True)
+                    
+        except KeyboardInterrupt:
+            logger.info("Async shutdown signal received.")
+        finally:
+            async_socket.close()
+            async_context.term()
+            self.cleanup()
+
     def run(self):
         """Main run loop that handles incoming requests."""
         if not self.setup():
@@ -962,11 +1027,24 @@ class SystemDigitalTwinAgent(BaseAgent):
 # The official health check is handled by _get_health_status(), called via handle_request.
 
 if __name__ == "__main__":
+    import sys
+    
+    # Check if async mode is requested
+    use_async = "--async" in sys.argv or os.getenv("ASYNC_MODE", "false").lower() == "true"
+    
     agent = None
     try:
-        # Pass the globally loaded config to the agent instance
-        agent = SystemDigitalTwinAgent(config=config)
-        agent.run()
+        # Pass the default config to the agent instance
+        agent = SystemDigitalTwinAgent(config=DEFAULT_CONFIG)
+        
+        if use_async:
+            import asyncio
+            logger.info("Starting SystemDigitalTwin in ASYNC mode for high-throughput operations")
+            asyncio.run(agent.run_async())
+        else:
+            logger.info("Starting SystemDigitalTwin in SYNC mode")
+            agent.run()
+            
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:

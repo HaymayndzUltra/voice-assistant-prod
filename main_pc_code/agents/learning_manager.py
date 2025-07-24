@@ -42,7 +42,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_manager.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_manager.log")),
         logging.StreamHandler()
     ]
 )

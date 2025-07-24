@@ -4,12 +4,15 @@ import logging
 from datetime import datetime
 from common.core.base_agent import BaseAgent
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('web_ports_rollback.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "web_ports_rollback.log")),
         logging.StreamHandler()
     ]
 )

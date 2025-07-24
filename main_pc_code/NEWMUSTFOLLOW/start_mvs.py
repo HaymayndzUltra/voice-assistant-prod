@@ -33,7 +33,7 @@ from common.env_helpers import get_env
 # Set up logging
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
-log_file = f"{log_dir}/mvs_startup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+log_file = f"{log_dir}/mvs_startup_{datetime.now().strftime('%Y%m%d_%H%M%Sstr(PathManager.get_logs_dir() / ")}.log")
 
 logging.basicConfig(
     level=logging.INFO,

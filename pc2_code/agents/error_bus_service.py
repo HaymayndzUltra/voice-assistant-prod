@@ -48,7 +48,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "error_bus.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_bus.log"))),
         logging.StreamHandler()
     ]
 )
@@ -71,7 +71,7 @@ class ErrorBusService(BaseAgent):
         self.config = self._load_config()
         
         # Initialize database
-        self.db_path = self.config.get('error_management', {}).get('db_path', PathManager.join_path("data", "error_system.db"))
+        self.db_path = self.config.get('error_management', {}).get('db_path', PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db")))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
@@ -116,7 +116,7 @@ class ErrorBusService(BaseAgent):
                         "bind_address": "0.0.0.0",
                     },
                     "error_management": {
-                        "db_path": PathManager.join_path("data", "error_system.db"),
+                        "db_path": PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db")),
                         "logs_dir": "logs",
                         "scan_interval": 300,
                     }
@@ -324,7 +324,7 @@ class ErrorBusService(BaseAgent):
                 logger.warning(f"Log directory not found: {log_dir}")
                 return
                 
-            for log_file in log_dir.glob("*.log"):
+            for log_file in log_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
                 self._scan_log_file(log_file)
         except Exception as e:
             logger.error(f"Error scanning logs: {e}")

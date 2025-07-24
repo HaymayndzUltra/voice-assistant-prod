@@ -34,7 +34,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', 'fixed_translation.log'))
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))
     ]
 )
 logger = logging.getLogger("FixedStreamingTranslation")
@@ -48,7 +48,7 @@ ENABLE_CACHING = config.get("enable_caching", True)
 ENABLE_PERFORMANCE_MONITORING = config.get("enable_performance_monitoring", True)
 
 # PC2 Translator configuration
-PC2_IP = config.get("pc2_ip", get_service_ip("pc2"))
+PC2_IP = config.get("pc2_ip", get_pc2_ip())
 PC2_TRANSLATOR_PORT = config.get("pc2_translator_port", 5563)
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = config.get("pc2_performance_port", 5632)
@@ -641,6 +641,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

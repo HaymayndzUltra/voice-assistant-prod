@@ -50,7 +50,7 @@ from common.env_helpers import get_env
 config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))
 
 # Configure logging
-log_file = PathManager.get_logs_dir() / "code_generator_agent.log"
+log_file = PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "code_generator_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,

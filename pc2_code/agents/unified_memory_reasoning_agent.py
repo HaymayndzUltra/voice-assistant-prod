@@ -41,7 +41,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
     handlers=[
-        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / "unified_memory_reasoning_agent.log", encoding="utf-8"),
+        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log"), encoding="utf-8"),
         logging.StreamHandler()
     ]
 )

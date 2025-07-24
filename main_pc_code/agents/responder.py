@@ -55,7 +55,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(os.path.join(current_dir, "../logs"), exist_ok=True)
 
 # Define default log path before logging setup
-LOG_PATH = os.path.join(current_dir, "../logs/responder.log")
+LOG_PATH = os.path.join(current_dir, str(PathManager.get_logs_dir() / "../logs/responder.log"))
 
 # Import common Tagalog phrases module
 try:

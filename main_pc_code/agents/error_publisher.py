@@ -28,6 +28,9 @@ class ErrorPublisher:
     endpoint : Optional[str]
         Full ZMQ endpoint (e.g. ``tcp://host:port``).  If *None*, it is constructed
         from environment variables ``ERROR_BUS_HOST`` / ``PC2_IP`` and
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         ``ERROR_BUS_PORT`` (default ``7150``).
     context : Optional[zmq.Context]
         Existing ZMQ context.  If *None*, the global instance is used.
@@ -111,7 +114,7 @@ class ErrorPublisher:
     # ------------------------------------------------------------------
     @staticmethod
     def _build_default_endpoint() -> str:
-        host = os.environ.get("ERROR_BUS_HOST") or os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
+        host = os.environ.get("ERROR_BUS_HOST") or get_pc2_ip())
         port = int(os.environ.get("ERROR_BUS_PORT", 7150))
         return f"tcp://{host}:{port}"
 

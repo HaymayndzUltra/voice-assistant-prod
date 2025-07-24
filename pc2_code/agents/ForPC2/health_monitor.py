@@ -39,7 +39,7 @@ _agent_args = parse_agent_args()
 from pc2_code.config import system_config
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", "health_monitor.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_monitor.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(

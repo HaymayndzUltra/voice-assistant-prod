@@ -25,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "mma_gguf_connector.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "mma_gguf_connector.log"))),
         logging.StreamHandler()
     ]
 )

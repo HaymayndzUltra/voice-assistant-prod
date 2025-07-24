@@ -388,7 +388,7 @@ class VramOptimizerAgent(BaseAgent):
                         dt_port = int(parts[1])
                     else:
                         # Fallback values
-                        pc2_ip = get_service_ip('pc2')
+                        pc2_ip = get_pc2_ip()
                         dt_port = 7120
                     self.sdt_socket.connect(f"tcp://{pc2_ip}:{dt_port}")
                     logger.info(f"Reconnected to SystemDigitalTwinAgent on PC2 ({pc2_ip}:{dt_port}).")
@@ -1234,6 +1234,9 @@ class VramOptimizerAgent(BaseAgent):
                 # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

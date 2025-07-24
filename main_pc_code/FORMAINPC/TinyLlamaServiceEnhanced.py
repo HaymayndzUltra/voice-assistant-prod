@@ -28,6 +28,9 @@ import os
 import traceback
 import threading
 from pathlib import Path
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 import torch
 from typing import Dict, Optional, List, Any
 from dataclasses import dataclass
@@ -59,12 +62,12 @@ config = load_config()
 
 # ZMQ Configuration
 ZMQ_BIND_ADDRESS = "0.0.0.0"  # Listen on all interfaces
-PC2_IP = get_service_ip("pc2")  # PC2's IP address
-MAIN_PC_IP = get_service_ip("mainpc")  # Main PC's IP address
+PC2_IP = get_pc2_ip()  # PC2's IP address
+MAIN_PC_IP = get_mainpc_ip()  # Main PC's IP address
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "tinyllama_service.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "tinyllama_service.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -248,7 +251,7 @@ class TinyLlamaService(BaseAgent):
 
         
         # Model configuration
-        self.model_name = config.get("model_name", "/mnt/c/Users/haymayndz/Desktop/Voice assistant/models/gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf")
+        self.model_name = config.get("model_name", str(PathManager.get_models_dir() / "gguf/tinyllama-1.1b-chat-v1.0.Q4_0.gguf"))
         self.model = None
         self.tokenizer = None
         
@@ -508,6 +511,7 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

@@ -40,7 +40,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", "unified_error_agent.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "unified_error_agent.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(

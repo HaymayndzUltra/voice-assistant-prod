@@ -45,7 +45,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "llm_runtime.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_runtime.log"))),
         logging.StreamHandler()
     ]
 )
@@ -54,7 +54,7 @@ logger = logging.getLogger("LLMRuntime")
 # Create a file handler for telemetry logs
 os.makedirs(get_path("logs"), exist_ok=True)
 telemetry_file_handler = logging.FileHandler(
-    PathManager.join_path("logs", "telemetry.log")
+    PathManager.join_path("logs", str(PathManager.get_logs_dir() / "telemetry.log"))
 )
 telemetry_file_handler.setLevel(logging.INFO)
 telemetry_file_handler.setFormatter(

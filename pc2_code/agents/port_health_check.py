@@ -11,6 +11,9 @@ import logging
 from typing import Dict, List, Tuple
 from port_config import (
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     ENHANCED_MODEL_ROUTER_PORT,
     DREAM_WORLD_PORT,
     TRANSLATOR_PORT,
@@ -30,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('port_health.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "port_health.log")),
         logging.StreamHandler()
     ]
 )

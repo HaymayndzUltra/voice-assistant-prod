@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("system_fix.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "system_fix.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -159,7 +159,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "predictive_health_monitor.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "predictive_health_monitor.log"))),
         logging.StreamHandler()
     ]
 )

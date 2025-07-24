@@ -66,7 +66,7 @@ def normalize_text_for_cache(text: str) -> str:
 
 # EARLY LOGGING
 try:
-    with open("translator_agent_early.log", "a", encoding="utf-8") as f:
+    with open(str(PathManager.get_logs_dir() / "translator_agent_early.log"), "a", encoding="utf-8") as f:
         f.write(f"[EARLY LOG {datetime.now()}] Translator agent script started.\n")
 except Exception as e:
     pass
@@ -114,7 +114,7 @@ except ImportError as e:
     CONFIG_HEALTH_REP_PORT = 5559
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "translator_agent.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "translator_agent.log")
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
@@ -977,6 +977,9 @@ class TranslatorAgent:
 
 if __name__ == "__main__":
     import argparse
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     parser = argparse.ArgumentParser()
     parser.add_argument('--test', action='store_true', help='Run self-test')
     parser.add_argument('--server', action='store_true', help='Run as server')

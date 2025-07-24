@@ -24,7 +24,7 @@ from common_utils.error_handling import SafeExecutor
 # Setup logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
-log_file = log_dir / "zmq_bridge.log"
+log_file = log_dir / str(PathManager.get_logs_dir() / "zmq_bridge.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -211,6 +211,9 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Bridge error: {e}")
             import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
             traceback.print_exc()
             
             # If bridge was created, try to clean it up

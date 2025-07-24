@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from functools import lru_cache
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 logger = logging.getLogger("PC2Config")
 
 @lru_cache(maxsize=1)
@@ -37,7 +40,7 @@ def load_pc2_services() -> Dict[str, Any]:
             # Return default configuration
             return {
                 "enabled": False,
-                "ip": get_service_ip("pc2"),
+                "ip": get_pc2_ip(),
                 "hostname": "PC2"
             }
     except Exception as e:
@@ -71,7 +74,7 @@ def get_service_connection(service_name: str) -> Optional[str]:
             logger.warning(f"Service {service_name} is disabled")
             return None
             
-        pc2_ip = pc2_config.get("ip", get_service_ip("pc2"))
+        pc2_ip = pc2_config.get("ip", get_pc2_ip())
         port = service_config.get("port")
         
         if not port:

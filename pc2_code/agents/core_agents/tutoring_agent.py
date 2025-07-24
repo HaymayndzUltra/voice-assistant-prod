@@ -35,6 +35,9 @@ try:
     from common_utils.zmq_helper import create_socket
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -50,7 +53,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(current_dir, "tutoring_agent.log"), mode="a"),
+        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_agent.log")), mode="a"),
         logging.StreamHandler()
     ]
 )

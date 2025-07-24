@@ -70,7 +70,7 @@ except ImportError as e:
 config = Config().get_config() # This seems to be pc2_code.agents.utils.config_loader.Config
 
 # Configure logging
-log_file_path = project_root / 'logs' / 'unified_web_agent.log' # Use project_root
+log_file_path = project_root / 'logs' / str(PathManager.get_logs_dir() / "unified_web_agent.log") # Use project_root
 os.makedirs(log_file_path.parent, exist_ok=True) # Use .parent for directory
 
 logging.basicConfig(
@@ -1889,6 +1889,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2 due to keyboard interrupt...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

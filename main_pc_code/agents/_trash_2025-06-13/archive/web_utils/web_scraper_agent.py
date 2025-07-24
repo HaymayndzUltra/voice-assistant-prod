@@ -28,7 +28,7 @@ from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "web_scraper_agent.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "web_scraper_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -273,6 +273,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 """
         
         # Add wrapper code to call the scrape_data function and save the results

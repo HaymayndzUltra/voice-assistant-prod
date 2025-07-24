@@ -38,7 +38,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "standardize_agents.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "standardize_agents.log"))),
         logging.StreamHandler()
     ]
 )

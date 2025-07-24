@@ -57,7 +57,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('fused_audio_preprocessor.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "fused_audio_preprocessor.log")),
         logging.StreamHandler()
     ]
 )

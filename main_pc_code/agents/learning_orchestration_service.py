@@ -47,7 +47,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'learning_orchestration_service.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_orchestration_service.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -58,7 +58,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 DEFAULT_PORT = config.get('los_port', 7210)
 HEALTH_CHECK_PORT = config.get('los_health_port', 8212)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-TRAINING_DB_PATH = config.get('los_db_path', str(PathManager.get_data_dir() / "training_cycles.db"))
+TRAINING_DB_PATH = config.get('los_db_path', str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "training_cycles.db")))
 
 class LearningOrchestrationService(BaseAgent):
     """

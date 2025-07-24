@@ -12,6 +12,9 @@ import psutil
 from datetime import datetime
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -20,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -52,7 +55,7 @@ class LearningAgent(BaseAgent):
         self.tuner_socket.connect(f"tcp://{get_env('BIND_ADDRESS', '0.0.0.0')}:5603")  # LocalFineTunerAgent
         
         # Initialize database
-        self.db_path = "learning_agent.db"
+        self.db_path = str(PathManager.get_data_dir() / "learning_agent.db")
         self._init_database()
         
         # Start pattern analysis thread

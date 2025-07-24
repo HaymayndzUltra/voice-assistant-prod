@@ -67,7 +67,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "tone_detector.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "tone_detector.log"))),
         logging.StreamHandler()
     ]
 )
@@ -78,7 +78,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler(os.path.join(
                         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "logs", "human_awareness_tone.log")), 
+                        "logs", str(PathManager.get_logs_dir() / "human_awareness_tone.log"))), 
                               logging.StreamHandler()])
 logger = logging.getLogger("HumanAwareness-Tone")
 

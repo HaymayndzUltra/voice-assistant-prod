@@ -11,7 +11,10 @@ import threading
 import time
 import logging
 
-LOG_PATH = "learning_mode_agent.log"
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
+LOG_PATH = str(PathManager.get_logs_dir() / "learning_mode_agent.log")
 LEARNING_MODE_STORE_PATH = "learning_mode_store.json"
 ZMQ_LEARNING_MODE_PORT = 5599
 

@@ -112,7 +112,7 @@ try:
                 "quantization": {"enabled": False}
             },
             "emotion_model": {
-                "path": "models/emotion_model.onnx"
+                "path": str(PathManager.get_models_dir() / "emotion_model.onnx")
             }
         }
 except Exception:
@@ -301,7 +301,7 @@ class OptimizedFaceRecognitionAgent(BaseAgent):
             if self._emotion_model is None:
                 # Lazy load ONNX and emotion model
                 ort_lib = _lazy_import_onnx()
-                emotion_model_path = CONFIG.get("emotion_model", {}).get("path", "models/emotion_model.onnx")
+                emotion_model_path = CONFIG.get("emotion_model", {}).get("path", str(PathManager.get_models_dir() / "emotion_model.onnx"))
                 
                 if os.path.exists(emotion_model_path):
                     self._emotion_model = ort_lib.InferenceSession(emotion_model_path)

@@ -51,7 +51,7 @@ child_processes = []
 def setup_logging():
     """Sets up the main logger for the launcher."""
     os.makedirs(os.path.join(BASE_DIR, LOGS_DIR), exist_ok=True)
-    log_file = os.path.join(BASE_DIR, LOGS_DIR, "system_launcher.log")
+    log_file = os.path.join(BASE_DIR, LOGS_DIR, str(PathManager.get_logs_dir() / "system_launcher.log"))
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
@@ -130,7 +130,7 @@ def launch_agent(agent_config):
     name = agent_config['name']
     relative_script_path = agent_config['script_path']
     script_path = os.path.join(BASE_DIR, relative_script_path)
-    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_')}.log")
+    log_file_path = os.path.join(BASE_DIR, LOGS_DIR, f"{name.replace(' ', '_str(PathManager.get_logs_dir() / ")}.log"))
 
     if not os.path.exists(script_path):
         logger.error(f"Agent '{name}': Script not found at {script_path}. Skipping.")

@@ -32,6 +32,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import clustering if available
 try:
     from core_agents.command_clustering import CommandClusteringEngine
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
     CLUSTERING_AVAILABLE = True
@@ -47,7 +50,7 @@ logging.basicConfig(
         logging.FileHandler(os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "logs",
-            "command_suggestion.log"
+            str(PathManager.get_logs_dir() / "command_suggestion.log")
         )),
         logging.StreamHandler()
     ]

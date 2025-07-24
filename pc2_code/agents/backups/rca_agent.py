@@ -54,7 +54,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", "rca_agent.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "rca_agent.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 logging.basicConfig(
@@ -77,7 +77,7 @@ SELF_HEALING_PORT = 5614  # Port for Self-Healing Agent on PC2
 SCAN_INTERVAL = 60  # Scan logs every 60 seconds
 ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
 ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
-PC2_IP = get_service_ip("pc2")  # PC2 IP address
+PC2_IP = get_pc2_ip()  # PC2 IP address
 
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""
@@ -339,7 +339,7 @@ class RCA_Agent:
             return
         
         # Get all log files
-        log_files = list(self.logs_dir.glob("*.log"))
+        log_files = list(self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")))
         logger.debug(f"Found {len(log_files)} log files")
         
         # Process each log file
@@ -499,6 +499,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

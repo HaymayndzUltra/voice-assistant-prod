@@ -27,7 +27,7 @@ from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "agent_utils.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "agent_utils.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -420,7 +420,7 @@ class AgentBase(BaseAgent):
 
 def create_agent_logger(agent_name: str) -> logging.Logger:
     """Create a logger for an agent"""
-    log_file = Path(config.get('system.logs_dir', 'logs')) / f"{agent_name.lower()}.log"
+    log_file = Path(config.get('system.logs_dir', 'logs')) / fstr(PathManager.get_logs_dir() / "{agent_name.lower()}.log")
     log_file.parent.mkdir(exist_ok=True)
     
     logger = logging.getLogger(agent_name)
@@ -507,6 +507,9 @@ def get_system_info() -> Dict[str, Any]:
     # Add psutil information if available
     try:
         import psutil
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
 

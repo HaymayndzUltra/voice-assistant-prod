@@ -24,7 +24,7 @@ import zmq
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Logging setup
-LOG_PATH = "executor_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "executor_agent.log")
 # Centralized logging: Forward logs to orchestrator
 
 # ---------------------------------------------------------------------------

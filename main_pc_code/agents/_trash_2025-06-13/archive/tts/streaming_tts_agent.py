@@ -34,7 +34,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).resolve().parent.parent.parent, 'modular_system', 'logs', 'ultimate_tts_agent.py.log'))
+        logging.FileHandler(os.path.join(Path(__file__).resolve().parent.parent.parent, 'modular_system', 'logs', str(PathManager.get_logs_dir() / "ultimate_tts_agent.py.log")))
     ]
 )
 logger = logging.getLogger("UltimateTTSAgent")
@@ -255,6 +255,9 @@ class UltimateTTSAgent(BaseAgent):
             
             # Read audio file
             import soundfile as sf
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

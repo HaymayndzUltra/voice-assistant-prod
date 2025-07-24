@@ -15,10 +15,13 @@ import uuid
 import traceback
 from pathlib import Path
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
-log_file = log_dir / "fallback_translator.log"
+log_file = log_dir / str(PathManager.get_logs_dir() / "fallback_translator.log")
 
 logging.basicConfig(
     level=logging.INFO,

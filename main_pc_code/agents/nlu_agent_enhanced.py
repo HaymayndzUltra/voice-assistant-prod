@@ -52,7 +52,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(str(PathManager.get_logs_dir() / "nlu_agent.log"))
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "nlu_agent.log")))
     ]
 )
 logger = logging.getLogger("NLUAgent")

@@ -40,8 +40,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")),
-            "pc2_ip": os.environ.get("PC2_IP", get_service_ip("pc2")),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -64,8 +64,8 @@ logger = logging.getLogger(__name__)
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", get_service_ip("pc2")))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 AGENT_TRUST_SCORER_PORT = network_config.get("ports", {}).get("agent_trust_scorer", int(os.environ.get("AGENT_TRUST_SCORER_PORT", 5626)))
 ERROR_BUS_PORT = network_config.get("ports", {}).get("error_bus", int(os.environ.get("ERROR_BUS_PORT", 7150)))
@@ -88,7 +88,7 @@ class AgentTrustScorer(BaseAgent):
         )
         
         # Initialize database
-        self.db_path = PathManager.get_project_root() / "cache" / "agent_trust_scores.db"
+        self.db_path = PathManager.get_project_root() / "cache" / str(PathManager.get_data_dir() / "agent_trust_scores.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         
@@ -360,6 +360,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

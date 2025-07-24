@@ -27,7 +27,7 @@ from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "progressive_code_generator.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "progressive_code_generator.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -779,6 +779,9 @@ Please fix all errors in the code. Only provide the fully corrected code, no exp
 
 if __name__ == "__main__":
     import argparse
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

@@ -35,7 +35,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('mood_tracker.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "mood_tracker.log")),
         logging.StreamHandler()
     ]
 )

@@ -41,7 +41,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", "llm_task_agent.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "llm_task_agent.log")))
     ]
 )
 logger = logging.getLogger('LLMTaskAgent')

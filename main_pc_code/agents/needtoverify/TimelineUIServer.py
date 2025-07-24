@@ -9,6 +9,9 @@ import pandas as pd
 import plotly.express as px
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -17,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('timeline_ui.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "timeline_ui.log")),
         logging.StreamHandler()
     ]
 )

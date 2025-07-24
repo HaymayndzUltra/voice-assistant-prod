@@ -40,7 +40,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", "system_digital_twin_launcher.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_digital_twin_launcher.log")))
     ]
 )
 logger = logging.getLogger("SystemDigitalTwinLauncher")

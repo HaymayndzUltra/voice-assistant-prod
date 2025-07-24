@@ -41,7 +41,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(current_dir, "tutoring_service_agent.log"), mode="a"),
+        logging.FileHandler(os.path.join(current_dir, str(PathManager.get_logs_dir() / "tutoring_service_agent.log")), mode="a"),
         logging.StreamHandler()
     ]
 )
@@ -252,6 +252,9 @@ if __name__ == "__main__":
         logger.critical(f"Could not start TutoringServiceAgent due to ZMQ error: {e}")
         # Exit or handle as appropriate for your application startup
         import sys
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         sys.exit(1) # Indicate an error on exit
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received. Shutting down...")

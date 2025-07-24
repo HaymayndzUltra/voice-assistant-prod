@@ -14,6 +14,12 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Get the root directory
 ROOT_DIR = Path(__file__).parent.parent
 LOGS_DIR = ROOT_DIR / "logs"
@@ -160,7 +166,7 @@ config = Config()
 
 def get_config_for_machine() -> Dict[str, Any]:
     """Get machine-specific configuration based on MACHINE_ROLE environment variable"""
-    machine_role = os.environ.get("MACHINE_ROLE", "MAIN_PC").upper()
+    machine_role = get_current_machine().upper()
     config_instance = Config()
     full_config = config_instance.get_all()
 
@@ -198,7 +204,7 @@ def get_config_for_machine() -> Dict[str, Any]:
 
 def setup_logging() -> None:
     """Setup logging configuration"""
-    log_file = LOGS_DIR / "system.log"
+    log_file = LOGS_DIR / str(PathManager.get_logs_dir() / "system.log")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

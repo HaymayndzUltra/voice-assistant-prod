@@ -12,12 +12,15 @@ import logging
 import signal
 from pathlib import Path
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("system_startup.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "system_startup.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

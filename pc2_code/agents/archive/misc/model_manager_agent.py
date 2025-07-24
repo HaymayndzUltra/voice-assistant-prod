@@ -41,7 +41,7 @@ from common.env_helpers import get_env
     log_level = config.get('system.log_level', 'INFO')
     logs_dir = Path(config.get('system.logs_dir', 'logs'))
     logs_dir.mkdir(exist_ok=True)
-    log_file = logs_dir / "model_manager.log"
+    log_file = logs_dir / str(PathManager.get_logs_dir() / "model_manager.log")
     
     # Add file handler to logger
     file_handler = logging.FileHandler(log_file)
@@ -445,5 +445,8 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         logger.error(traceback.format_exc())
         sys.exit(1)

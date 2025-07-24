@@ -60,8 +60,8 @@ def load_network_config():
         logger.error(f"Error loading network config: {e}")
         # Default fallback values
         return {
-            "main_pc_ip": os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")),
-            "pc2_ip": os.environ.get("PC2_IP", get_service_ip("pc2")),
+            "main_pc_ip": get_mainpc_ip()),
+            "pc2_ip": get_pc2_ip()),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -75,8 +75,8 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get configuration values
-MAIN_PC_IP = network_config.get("main_pc_ip", os.environ.get("MAIN_PC_IP", get_service_ip("mainpc")))
-PC2_IP = network_config.get("pc2_ip", os.environ.get("PC2_IP", get_service_ip("pc2")))
+MAIN_PC_IP = get_mainpc_ip()))
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 UTILS_AGENT_PORT = network_config.get("ports", {}).get("utils_agent", int(os.environ.get("UTILS_AGENT_PORT", 7118)))
 UTILS_AGENT_HEALTH_PORT = network_config.get("ports", {}).get("utils_health", int(os.environ.get("UTILS_AGENT_HEALTH_PORT", 8118)))
@@ -160,7 +160,7 @@ class UnifiedUtilsAgent(BaseAgent):
         try:
             log_path = Path(log_dir)
             if log_path.exists():
-                for file in log_path.glob("*.log"):
+                for file in log_path.glob(str(PathManager.get_logs_dir() / "*.log")):
                     try:
                         if (datetime.now() - datetime.fromtimestamp(file.stat().st_mtime)).days > days_old:
                             file.unlink()
@@ -208,8 +208,8 @@ class UnifiedUtilsAgent(BaseAgent):
                 chrome_cache_dirs.append(os.path.expanduser("~/Library/Caches/Google/Chrome"))
                 firefox_cache_dirs.append(os.path.expanduser("~/Library/Caches/Firefox"))
             elif sys_platform == "Linux":
-                chrome_cache_dirs.append(os.path.expanduser("~/.cache/google-chrome"))
-                firefox_cache_dirs.append(os.path.expanduser("~/.cache/mozilla/firefox"))
+                chrome_cache_dirs.append(str(PathManager.get_cache_dir() / "google-chrome")))
+                firefox_cache_dirs.append(str(PathManager.get_cache_dir() / "mozilla/firefox")))
             all_cache_dirs = chrome_cache_dirs + firefox_cache_dirs + edge_cache_dirs
             for cache_dir in all_cache_dirs:
                 if os.path.exists(cache_dir):
@@ -417,6 +417,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

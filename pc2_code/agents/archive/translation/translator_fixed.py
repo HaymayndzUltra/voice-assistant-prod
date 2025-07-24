@@ -28,7 +28,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 LOG_LEVEL = 'INFO'
 LOGS_DIR = Path('logs')
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "translator_fixed.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "translator_fixed.log")
 
 # Enhanced logging format with more details
 logging.basicConfig(
@@ -64,6 +64,9 @@ def process_memory_usage() -> float:
     """Get current process memory usage in MB"""
     try:
         import psutil
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
         process = psutil.Process(os.getpid())

@@ -22,13 +22,19 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', 'fixed_translation.log'))
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'logs', str(PathManager.get_logs_dir() / "fixed_translation.log")))
     ]
 )
 logger = logging.getLogger("FixedStreamingTranslation")
@@ -42,7 +48,7 @@ ENABLE_CACHING = True
 ENABLE_PERFORMANCE_MONITORING = True
 
 # PC2 Translator configuration
-PC2_IP = get_service_ip("pc2")
+PC2_IP = get_pc2_ip()
 PC2_TRANSLATOR_PORT = 5563
 PC2_TRANSLATOR_ADDRESS = f"tcp://{PC2_IP}:{PC2_TRANSLATOR_PORT}"
 PC2_PERFORMANCE_PORT = 5632

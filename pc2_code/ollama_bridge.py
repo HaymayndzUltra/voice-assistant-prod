@@ -15,12 +15,15 @@ import os
 import sys
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("ollama_bridge.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "ollama_bridge.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

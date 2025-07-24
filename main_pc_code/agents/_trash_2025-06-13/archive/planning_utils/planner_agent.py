@@ -25,7 +25,7 @@ from common.env_helpers import get_env
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "planner_agent.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "planner_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -240,6 +240,9 @@ Analyze this task and identify its requirements and complexity. Return your anal
             
             # Extract JSON from response
             import re
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

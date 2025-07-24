@@ -59,7 +59,7 @@ except ImportError:
     CONFIG_IDLE_TIMEOUT = 300
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "tinyllama_service.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "tinyllama_service.log")
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
@@ -131,6 +131,9 @@ class TinyLlamaService:
             logger.info(f"Starting model load for {self.model_name} on target device: {self.device}")
             
             from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
             
             # Load tokenizer with logging
             logger.info(f"Loading tokenizer for {self.model_name}...")

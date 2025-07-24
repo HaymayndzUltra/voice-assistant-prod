@@ -41,6 +41,9 @@ from pc2_code.agents.error_bus_template import setup_error_reporting, report_err
 from pc2_code.agents.utils.config_loader import Config
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 # Load configuration at the module level
 config = Config().get_config()
 
@@ -51,7 +54,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "system_health_manager.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "system_health_manager.log"))),
         logging.StreamHandler()
     ]
 )
@@ -73,17 +76,17 @@ class SystemHealthManager(BaseAgent):
         super().__init__(name="SystemHealthManager", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
+        self.memory_orchestrator_host = get_pc2_ip())
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         
-        self.memory_scheduler_host = os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0"))
+        self.memory_scheduler_host = get_pc2_ip())
         self.memory_scheduler_port = 7142
         self.memory_scheduler_endpoint = f"tcp://{self.memory_scheduler_host}:{self.memory_scheduler_port}"
         
         # Error bus configuration
         self.error_bus_port = 7150
-        self.error_bus_host = get_service_ip("pc2")
+        self.error_bus_host = get_pc2_ip()
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         
         # ZMQ setup

@@ -15,12 +15,15 @@ import logging
 from pathlib import Path
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join('logs', 'code_command_handler.log')),
+        logging.FileHandler(os.path.join('logs', str(PathManager.get_logs_dir() / "code_command_handler.log"))),
         logging.StreamHandler()
     ]
 )

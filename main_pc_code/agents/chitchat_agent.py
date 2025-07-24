@@ -40,7 +40,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('chitchat_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "chitchat_agent.log")),
         logging.StreamHandler()
     ]
 )
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 # ZMQ Configuration
 ZMQ_CHITCHAT_PORT = 5573  # Port for receiving chitchat requests
 ZMQ_HEALTH_PORT = 6582  # Health status
-PC2_IP = get_service_ip("pc2")  # PC2 IP address
+PC2_IP = get_pc2_ip()  # PC2 IP address
 PC2_LLM_PORT = 5557  # Remote LLM on PC2
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
@@ -471,6 +471,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

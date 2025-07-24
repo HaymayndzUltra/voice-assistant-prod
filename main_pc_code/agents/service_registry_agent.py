@@ -44,6 +44,8 @@ dumps = _dumps
 loads = _loads
 import logging
 import os
+import time
+import threading
 from datetime import datetime
 from typing import Dict, Any, Optional, Protocol, runtime_checkable
 
@@ -51,26 +53,49 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
 from common.env_helpers import get_env
 from common_utils.port_registry import get_port
+from common.pools.redis_pool import get_redis_client_sync
 
 # ---------------------------------------------------------------------------
 # Configuration defaults with port registry integration
 # ---------------------------------------------------------------------------
-# Port registry integration - get from centralized registry
+# Fixed: Use port registry consistently instead of env fallbacks
 try:
-    # Note: Port registry currently maps "Learning Opportunity Detector" to 7200
-    # but ServiceRegistry should be at 7200 according to startup config
-    # Using fallback to environment variables for now
-    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7200))  # Fixed: was 7100, should be 7200
-    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8200))  # Fixed: was 8100, should be 8200
+    DEFAULT_PORT = get_port("ServiceRegistry")
+    DEFAULT_HEALTH_PORT = get_port("ServiceRegistry") + 1000  # Standard health port pattern
 except Exception:
-    # Fallback to original values if port registry fails
-    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7100))
-    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8100))
+    # Fallback only if port registry completely fails
+    DEFAULT_PORT = int(os.getenv("SERVICE_REGISTRY_PORT", 7200))
+    DEFAULT_HEALTH_PORT = int(os.getenv("SERVICE_REGISTRY_HEALTH_PORT", 8200))
+    
 DEFAULT_BACKEND = os.getenv("SERVICE_REGISTRY_BACKEND", "memory")
 DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
 DEFAULT_PREFIX = os.getenv("SERVICE_REGISTRY_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
+
+def _start_http_health_server(port: int):
+    """Start a minimal HTTP /health endpoint so k8s/docker can probe."""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class _H(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            if self.path in ("/", "/health", "/healthz"):
+                payload = dumps({"status": "healthy", "timestamp": time.time()})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def log_message(self, *_args):  # silence
+            return
+
+    server = HTTPServer(("0.0.0.0", port), _H)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logger.info("HTTP health endpoint available at http://0.0.0.0:%s/health", port)
 
 
 @runtime_checkable
@@ -120,25 +145,20 @@ class MemoryBackend:
 class RedisBackend:
     """Redis-backed storage for the service registry.
     
-    Provides persistence and high-availability.
+    Provides persistence and high-availability using shared connection pool.
     """
     
-    def __init__(self, redis_url: str, prefix: str = DEFAULT_PREFIX):
+    def __init__(self, redis_url: str = None, prefix: str = DEFAULT_PREFIX):
         """Initialize Redis backend.
         
         Args:
-            redis_url: Redis connection URL
+            redis_url: Redis connection URL (unused, kept for compatibility)
             prefix: Key prefix for agent data
         """
-        try:
-            import redis
-        except ImportError:
-            logger.error("Redis package not installed. Install with: pip install redis")
-            raise
-        
         self.prefix = prefix
-        self.redis = redis.from_url(redis_url)
-        logger.info("Connected to Redis at %s", redis_url)
+        # Use shared Redis pool instead of creating new connection
+        self.redis = get_redis_client_sync()
+        logger.info("Connected to Redis using shared connection pool")
     
     def _key(self, agent_id: str) -> str:
         """Get the Redis key for an agent."""
@@ -167,7 +187,8 @@ class RedisBackend:
     
     def close(self) -> None:
         """Close Redis connection."""
-        self.redis.close()
+        # Connection is managed by shared pool, no need to close individual connection
+        pass
 
 
 class ServiceRegistryAgent(BaseAgent):
@@ -194,6 +215,10 @@ class ServiceRegistryAgent(BaseAgent):
         health = int(kwargs.pop("health_check_port", DEFAULT_HEALTH_PORT))
 
         super().__init__(name="ServiceRegistry", port=port, health_check_port=health, **kwargs)
+        
+        # Start HTTP health endpoint for container/k8s health checks
+        self.health_port = health
+        _start_http_health_server(self.health_port)
 
     # ---------------------------------------------------------------------
     # Request handling

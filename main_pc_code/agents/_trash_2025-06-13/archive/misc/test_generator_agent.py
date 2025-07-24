@@ -17,7 +17,10 @@ import subprocess
 from datetime import datetime
 from common.env_helpers import get_env
 
-LOG_PATH = "test_generator_agent.log"
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
+LOG_PATH = str(PathManager.get_logs_dir() / "test_generator_agent.log")
 ZMQ_TEST_GENERATOR_PORT = 5613  # New agent port
 
 logging.basicConfig(

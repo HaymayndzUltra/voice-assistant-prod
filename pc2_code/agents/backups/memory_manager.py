@@ -33,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "memory_manager.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "memory_manager.log"))),
         logging.StreamHandler()
     ]
 )
@@ -117,7 +117,7 @@ class MemoryManager(BaseAgent):
         """Initialize agent components in background thread."""
         try:
             # Initialize database
-            self.db_path = "memory_store.db"
+            self.db_path = str(PathManager.get_data_dir() / "memory_store.db")
             self._init_database()
             
             # Connect to UnifiedMemoryReasoningAgent

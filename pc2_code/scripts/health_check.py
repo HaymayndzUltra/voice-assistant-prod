@@ -30,7 +30,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", "health_check.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_check.log")))
     ]
 )
 logger = logging.getLogger("health_check")

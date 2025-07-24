@@ -19,6 +19,8 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
+# Import standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env as get_std_env
 sys.path.insert(0, get_project_root())
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = get_project_root()
@@ -166,44 +168,27 @@ def get_current_machine() -> str:
 
 def get_machine_ip(machine: Optional[str] = None) -> str:
     """
-    Get the IP address for the specified machine.
+    Get the IP address for the specified machine using standardized environment variables.
     
     Args:
         machine: Machine name ('MAINPC', 'PC2'), or None for current machine
     
     Returns:
-        IP address as string, or '127.0.0.1' if not found
+        IP address as string
     """
     if machine is None:
         machine = get_current_machine()
     
     machine = machine.lower()
     
-    # Check environment variables first
+    # Use standardized environment variables (Blueprint.md Step 4)
     if machine == "mainpc":
-        env_ip = os.environ.get("MAINPC_IP")
-        if env_ip:
-            return env_ip
+        return get_mainpc_ip()
     elif machine == "pc2":
-        env_ip = os.environ.get("PC2_IP")
-        if env_ip:
-            return env_ip
-    
-    # Then check configuration
-    config = load_network_config()
-    if "machines" in config and machine in config["machines"]:
-        machine_config = config["machines"][machine]
-        if "ip" in machine_config:
-            return machine_config["ip"]
-    
-    # Default to loopback for development
-    env_type = os.environ.get("ENV_TYPE", "development")
-    if env_type == "development":
-        logger.debug(f"Using loopback IP for {machine} in development mode")
+        return get_pc2_ip()
+    else:
+        logger.warning(f"Unknown machine: {machine}, using localhost")
         return "localhost"
-    
-    logger.warning(f"Could not find IP for machine {machine}, using loopback")
-    return "localhost"
 
 def is_local_mode() -> bool:
     """

@@ -30,7 +30,7 @@ config = load_config()(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "health_monitor.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "health_monitor.log"))),
         logging.StreamHandler()
     ]
 )

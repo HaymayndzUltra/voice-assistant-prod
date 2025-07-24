@@ -65,7 +65,7 @@ from main_pc_code.utils.env_loader import get_env
 from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 
 # Configure logging
-log_file_path = os.path.join('logs', 'unified_web_agent.log')
+log_file_path = os.path.join('logs', str(PathManager.get_logs_dir() / "unified_web_agent.log"))
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
 logging.basicConfig(
@@ -1916,6 +1916,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

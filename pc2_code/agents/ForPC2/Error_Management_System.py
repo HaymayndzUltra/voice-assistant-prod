@@ -46,7 +46,7 @@ logger = logging.getLogger('ErrorManagementSystem')
 # --- Constants ---
 DEFAULT_PORT = 7125 # Main port for receiving commands
 ERROR_BUS_PORT = 7150 # Port for the ZMQ PUB/SUB Error Bus
-DB_PATH = PathManager.join_path("data", "error_system.db")
+DB_PATH = PathManager.join_path("data", str(PathManager.get_data_dir() / "error_system.db"))
 LOGS_DIR = "logs"
 HEARTBEAT_INTERVAL = 15
 HEARTBEAT_TIMEOUT = 45
@@ -85,7 +85,7 @@ class ErrorCollectorModule:
                 if not self.logs_dir.exists():
                     time.sleep(LOG_SCAN_INTERVAL)
                     continue
-                for log_file in self.logs_dir.glob("*.log"):
+                for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
                     self._process_log_file(log_file)
             except Exception as e:
                 logger.error(f"Error in log scanning loop: {e}")
@@ -314,6 +314,9 @@ class RecoveryManagerModule:
             import psutil
 from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from common.env_helpers import get_env
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     cmdline = proc.info['cmdline']
@@ -350,7 +353,7 @@ from common.env_helpers import get_env
             socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
             
             # Get SystemDigitalTwin address from environment or use default
-            sdt_host = get_service_ip("mainpc")
+            sdt_host = get_mainpc_ip()
             sdt_port = int(os.environ.get('SYSTEM_DIGITAL_TWIN_PORT', 7120))
             socket.connect(f"tcp://{sdt_host}:{sdt_port}")
             

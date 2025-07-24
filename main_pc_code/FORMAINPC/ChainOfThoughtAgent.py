@@ -41,7 +41,7 @@ config = load_config()
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
 logs_dir.mkdir(exist_ok=True)
-LOG_PATH = logs_dir / "chain_of_thought_agent.log"
+LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = config.get("chain_of_thought_port", 5612)
 REMOTE_CONNECTOR_PORT = config.get("remote_connector_port", 5557)
 

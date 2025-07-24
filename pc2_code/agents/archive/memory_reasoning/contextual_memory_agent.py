@@ -22,7 +22,7 @@ import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", ".."))))
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
-LOG_PATH = PathManager.join_path("logs", "contextual_memory_agent.log")
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "contextual_memory_agent.log"))
 CONTEXT_STORE_PATH = "contextual_memory_store.json"
 ZMQ_CONTEXTUAL_MEMORY_PORT = 5596  # Updated to match expected port
 MODEL_MANAGER_HOST = "192.168.1.27"  # Main PC's IP address

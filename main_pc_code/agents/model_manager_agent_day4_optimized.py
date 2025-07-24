@@ -119,11 +119,11 @@ test_config_path = os.environ.get("MMA_CONFIG_PATH")
 if test_config_path:
     # Dedicated log file for test run
     test_log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    test_log_filename = f'logs/mma_test_{test_log_timestamp}.log'
+    test_log_filename = fstr(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "mma_test_{test_log_timestamp}.log"))
     log_file_path = test_log_filename
 else:
     # Default log file with rotation
-    log_file_path = 'logs/mma_PATCH_VERIFY_TEST.log'
+    log_file_path = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "mma_PATCH_VERIFY_TEST.log"))
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
@@ -221,7 +221,7 @@ class ModelManagerAgent(BaseAgent):
 
         self.error_bus_port = 7150
 
-        self.error_bus_host = get_service_ip("pc2")
+        self.error_bus_host = get_pc2_ip()
 
         self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
 
@@ -4406,7 +4406,7 @@ class ModelManagerAgent(BaseAgent):
         """Set up logging for the Model Manager Agent."""
         logs_dir = Path('logs')
         logs_dir.mkdir(exist_ok=True)
-        log_file = logs_dir / 'model_manager_agent.log'
+        log_file = logs_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")
         log_level = os.environ.get('MMA_LOG_LEVEL', 'DEBUG')
         log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
@@ -4444,7 +4444,7 @@ class ModelManagerAgent(BaseAgent):
                 self.pc2_services = load_pc2_services()
                 
                 if self.pc2_services.get('enabled', False):
-                    pc2_ip = self.pc2_services.get('ip', get_service_ip('pc2'))
+                    pc2_ip = self.pc2_services.get('ip', get_pc2_ip())
                     self.logger.info(f"PC2 services enabled, connecting to {pc2_ip}")
                     
                     # Get available services
@@ -4499,7 +4499,7 @@ class ModelManagerAgent(BaseAgent):
                 self.logger.warning("PC2 services not enabled in pc2_services.yaml configuration")
                 return service_status
                 
-            pc2_ip = pc2_config.get('ip', get_service_ip('pc2'))
+            pc2_ip = pc2_config.get('ip', get_pc2_ip())
             
             # Create temporary socket for health checks
             health_socket = self.context.socket(zmq.REQ)
@@ -4792,6 +4792,12 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
         from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

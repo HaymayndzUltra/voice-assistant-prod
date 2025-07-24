@@ -19,12 +19,15 @@ from pathlib import Path
 from datetime import datetime
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("translator_service.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "translator_service.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

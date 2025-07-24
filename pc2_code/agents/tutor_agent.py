@@ -65,7 +65,7 @@ except Exception as e:
         TUTOR_CONFIG = {}
 
 # Setup logging
-LOG_PATH = "tutor_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "tutor_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

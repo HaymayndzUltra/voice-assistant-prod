@@ -30,13 +30,16 @@ if str(project_root) not in sys.path:
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(project_root, 'logs', 'voice_command_flow_test.log'))
+        logging.FileHandler(os.path.join(project_root, 'logs', str(PathManager.get_logs_dir() / "voice_command_flow_test.log")))
     ]
 )
 logger = logging.getLogger("VoiceCommandFlowTest")

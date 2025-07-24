@@ -43,7 +43,7 @@ class ErrorHandler(BaseAgent):
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename=PathManager.join_path("logs", "error_handler.log")
+            filename=PathManager.join_path("logs", str(PathManager.get_logs_dir() / "error_handler.log"))
         )
         
     def load_config(self, config_path: str) -> Dict:

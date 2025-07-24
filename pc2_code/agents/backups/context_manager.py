@@ -32,7 +32,7 @@ config = load_config()(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "context_manager.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "context_manager.log"))),
         logging.StreamHandler()
     ]
 )

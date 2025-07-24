@@ -255,7 +255,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'model_manager_suite.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "model_manager_suite.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -462,7 +462,7 @@ class ModelManagerSuite(BaseAgent):
         # Add downloaded models to metadata and tracking
         self.model_metadata.update({
             "phi-3-mini-gguf": {
-                "model_path": "models/gguf/phi-3-mini-4k-instruct-q4_K_M.gguf",
+                "model_path": str(PathManager.get_models_dir() / "gguf/phi-3-mini-4k-instruct-q4_K_M.gguf"),
                 "type": "gguf",
                 "quantization": "q4_K_M", 
                 "estimated_vram_mb": 2250,  # 2.2GB downloaded file
@@ -476,7 +476,7 @@ class ModelManagerSuite(BaseAgent):
                 "context_length": 4096
             },
             "mistral-7b-gguf": {
-                "model_path": "models/gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf", 
+                "model_path": str(PathManager.get_models_dir() / "gguf/mistral-7b-instruct-v0.2-q4_K_M.gguf"), 
                 "type": "gguf",
                 "quantization": "q4_K_M",
                 "estimated_vram_mb": 4200,  # 4.1GB downloaded file  
@@ -533,7 +533,7 @@ class ModelManagerSuite(BaseAgent):
     
     def _init_evaluation_framework(self):
         """Initialize model evaluation framework"""
-        self.db_path = self.config.get('mef_db_path', str(PathManager.get_data_dir() / "model_evaluation.db"))
+        self.db_path = self.config.get('mef_db_path', str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "model_evaluation.db")))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
         

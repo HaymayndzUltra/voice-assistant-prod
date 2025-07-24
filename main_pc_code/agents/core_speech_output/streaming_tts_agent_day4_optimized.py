@@ -42,7 +42,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", "ultimate_tts_agent.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "ultimate_tts_agent.log")))
     ]
 )
 logger = logging.getLogger("UltimateTTSAgent")

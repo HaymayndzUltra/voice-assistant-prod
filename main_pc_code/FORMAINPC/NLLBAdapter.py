@@ -170,7 +170,7 @@ if 'NLLB_IDLE_TIMEOUT' in os.environ:
     CONFIG_IDLE_TIMEOUT = int(os.environ['NLLB_IDLE_TIMEOUT'])
 
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-log_file_path = LOGS_DIR / "nllb_translation_adapter.log"
+log_file_path = LOGS_DIR / str(PathManager.get_logs_dir() / "nllb_translation_adapter.log")
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),

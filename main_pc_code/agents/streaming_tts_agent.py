@@ -56,7 +56,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 # Configure logging
 log_dir = PathManager.get_logs_dir()
 os.makedirs(log_dir, exist_ok=True)
-log_file = log_dir / 'streaming_tts_agent.log'
+log_file = log_dir / str(PathManager.get_logs_dir() / "streaming_tts_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

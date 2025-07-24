@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("m2m_adapter.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "m2m_adapter.log")),
         logging.StreamHandler()
     ]
 )
@@ -233,6 +233,9 @@ class M2MTranslationAdapter:
         """Apply post-processing to improve English translation quality"""
         # Fix common translation artifacts
         import re
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         
         # Capitalize first letter of sentence
         if text and len(text) > 0:

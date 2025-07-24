@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("nllb_test_results.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "nllb_test_results.log")),
         logging.StreamHandler()
     ]
 )
@@ -415,6 +415,9 @@ class TranslationTester:
 def main():
     """Main function to run the test suite"""
     import argparse
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     parser = argparse.ArgumentParser(description="Test NLLB Translation Adapter")
     parser.add_argument("--server", default=DEFAULT_SERVER, help="Server hostname/IP")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Server port")

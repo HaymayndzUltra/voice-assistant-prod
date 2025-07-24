@@ -76,7 +76,7 @@ except ImportError:
 ZMQ_PUB_PORT = 5556  # Temporarily using 5556 to avoid port conflict
 print(f"[DEBUG] ZMQ_PUB_PORT: {ZMQ_PUB_PORT}")
 
-LOG_PATH = os.path.join(LOG_DIR, "listener_agent_debug.log")
+LOG_PATH = os.path.join(LOG_DIR, str(PathManager.get_logs_dir() / "listener_agent_debug.log"))
 print(f"[DEBUG] LOG_PATH: {LOG_PATH}")
 
 # Print all input devices for manual selection

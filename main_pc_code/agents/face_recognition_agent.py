@@ -78,12 +78,12 @@ except FileNotFoundError:
             "quantization": {"enabled": False}
         },
         "emotion_model": {
-            "path": "models/emotion_model.onnx"
+            "path": str(PathManager.get_models_dir() / "emotion_model.onnx")
         }
     }
     print("Warning: face_recognition_config.json not found, using defaults")
 
-LOG_PATH = "face_recognition_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "face_recognition_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

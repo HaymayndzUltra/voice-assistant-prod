@@ -57,7 +57,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'learning_opportunity_detector.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_opportunity_detector.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -68,7 +68,7 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 DEFAULT_PORT = config.get('lod_port', 7200)
 HEALTH_CHECK_PORT = config.get('lod_health_port', 7201)
 ZMQ_REQUEST_TIMEOUT = config.get('zmq_request_timeout', 5000)
-OPPORTUNITY_DB_PATH = config.get('lod_db_path', str(PathManager.get_data_dir() / "learning_opportunities.db"))
+OPPORTUNITY_DB_PATH = config.get('lod_db_path', str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "learning_opportunities.db")))
 INTERACTION_BUFFER_SIZE = config.get('lod_buffer_size', 1000)
 SCORING_THRESHOLD = config.get('lod_scoring_threshold', 0.7)
 

@@ -153,6 +153,9 @@ def check_health(agent, timeout=HEALTH_CHECK_TIMEOUT):
     # First check if agent reported ready via Redis
     try:
         import redis
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         r = redis.Redis(host=os.getenv('${SECRET_PLACEHOLDER}0)
         ready_key = f"agent:ready:{agent_name}"
         if r.get(ready_key) == b'1':
@@ -212,7 +215,7 @@ def start_agent(agent):
     if not LOGS_DIR.exists():
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         
-    log_file = LOGS_DIR / f"{agent_name}.log"
+    log_file = LOGS_DIR / fstr(PathManager.get_logs_dir() / "{agent_name}.log")
     env = os.environ.copy()
     # Add agent-specific env vars if any
     if 'env_vars' in agent:

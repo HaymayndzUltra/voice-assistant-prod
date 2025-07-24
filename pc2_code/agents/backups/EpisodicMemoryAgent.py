@@ -40,7 +40,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "episodic_memory_agent.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "episodic_memory_agent.log"))),
         logging.StreamHandler()
     ]
 )
@@ -124,7 +124,7 @@ class EpisodicMemoryAgent(BaseAgent):
         """Initialize agent components in background thread."""
         try:
             # Initialize database
-            self.db_path = "episodic_memory.db"
+            self.db_path = str(PathManager.get_data_dir() / "episodic_memory.db")
             self._init_database()
             
             # Initialize TF-IDF vectorizer for text similarity (if available)

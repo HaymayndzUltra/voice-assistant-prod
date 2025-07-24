@@ -12,6 +12,9 @@ import asyncio
 from pathlib import Path
 import json
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Constants
 PUSH_PORT = 5615  # For fire-and-forget tasks
 PULL_PORT = 5616  # For async task processing
@@ -128,7 +131,7 @@ class AsyncProcessor:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'async_processor.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "async_processor.log")),
                 logging.StreamHandler()
             ]
         )

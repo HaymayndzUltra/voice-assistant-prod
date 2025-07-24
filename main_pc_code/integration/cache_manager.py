@@ -13,6 +13,9 @@ from collections import defaultdict
 from common.env_helpers import get_env
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Constants
 ${SECRET_PLACEHOLDER} 'localhost'
 ${SECRET_PLACEHOLDER} 6379
@@ -92,7 +95,7 @@ class CacheManager:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'cache_manager.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "cache_manager.log")),
                 logging.StreamHandler()
             ]
         )

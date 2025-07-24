@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('agent_validation.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "agent_validation.log")),
         logging.StreamHandler()
     ]
 )
@@ -99,6 +99,9 @@ class AgentValidator:
         """
         try:
             import psutil
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
             process = psutil.Process(pid)

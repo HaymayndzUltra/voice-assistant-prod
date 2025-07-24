@@ -25,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('health_check_fixes.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "health_check_fixes.log")),
         logging.StreamHandler()
     ]
 )

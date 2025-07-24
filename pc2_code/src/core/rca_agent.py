@@ -49,6 +49,9 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
     except ImportError as e:
         print(f"Import error: {e}")
     USE_COMMON_UTILS = True
@@ -64,7 +67,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(PathManager.join_path("logs", "rca_agent.log"))
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "rca_agent.log")))
     ]
 )
 logger = logging.getLogger("RCA_Agent")
@@ -75,7 +78,7 @@ SELF_HEALING_PORT = 5614  # Port for Self-Healing Agent on PC2
 SCAN_INTERVAL = 60  # Scan logs every 60 seconds
 ERROR_WINDOW = 600  # Track errors in a 10-minute window (600 seconds)
 ERROR_THRESHOLD = 5  # Number of errors to trigger recommendation
-PC2_IP = get_service_ip("pc2")  # PC2 IP address
+PC2_IP = get_pc2_ip()  # PC2 IP address
 
 class ErrorPattern:
     """Class to represent an error pattern with its regex and metadata"""
@@ -311,7 +314,7 @@ class RCA_Agent:
             return
         
         # Get all log files
-        log_files = list(self.logs_dir.glob("*.log"))
+        log_files = list(self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")))
         logger.debug(f"Found {len(log_files)} log files")
         
         # Process each log file

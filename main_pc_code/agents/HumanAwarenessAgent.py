@@ -43,7 +43,7 @@ from common.env_helpers import get_env
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Setup logging
-LOG_PATH = str(PathManager.get_logs_dir() / "human_awareness_agent.log")
+LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "human_awareness_agent.log"))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

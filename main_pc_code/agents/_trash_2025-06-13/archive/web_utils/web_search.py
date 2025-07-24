@@ -4,7 +4,7 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # import json
 import logging
 
-LOG_PATH = "web_search_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "web_search_agent.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -64,6 +64,9 @@ ZMQ_WEBSEARCH_PORT = 5592
 
 if __name__ == "__main__":
     import sys
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests

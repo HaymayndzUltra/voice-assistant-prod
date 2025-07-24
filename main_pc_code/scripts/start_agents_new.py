@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(LOGS_DIR, 'startup.log')),
+        logging.FileHandler(os.path.join(LOGS_DIR, str(PathManager.get_logs_dir() / "startup.log"))),
         logging.StreamHandler()
     ]
 )
@@ -155,7 +155,7 @@ def check_agent_health(host: str, port: int, timeout: int = 5) -> bool:
 
 def start_agent(agent_name: str, script_path: str) -> Optional[subprocess.Popen]:
     """Starts an agent script as a subprocess and logs its output."""
-    log_file_path = os.path.join(LOGS_DIR, f"{agent_name}.log")
+    log_file_path = os.path.join(LOGS_DIR, fstr(PathManager.get_logs_dir() / "{agent_name}.log"))
     
     # Use absolute path for the script
     abs_script_path = os.path.join(get_main_pc_code(), script_path)

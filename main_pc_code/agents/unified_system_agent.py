@@ -45,7 +45,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('unified_system_agent.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "unified_system_agent.log")),
         logging.StreamHandler()
     ]
 )

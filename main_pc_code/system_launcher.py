@@ -214,7 +214,7 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
             print(f"[ERROR] Failed to check health implementation for {agent_cfg['name']}: {e}")
             return None
     
-    log_file = logs_dir / f"{agent_cfg['name']}.log"
+    log_file = logs_dir / f"{agent_cfg['namestr(PathManager.get_logs_dir() / "]}.log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_file, "a", buffering=1)  # line-buffered
 
@@ -257,7 +257,7 @@ def print_failed_agent_logs(failed_agents: List[str], logs_dir: Path):
     """Prints the last 20 lines of the log file for each failed agent."""
     print("\n--- FAILED AGENT LOGS ---", file=sys.stderr)
     for name in failed_agents:
-        log_file = logs_dir / f"{name}.log"
+        log_file = logs_dir / fstr(PathManager.get_logs_dir() / "{name}.log")
         print(f"--- Log for {name} ({log_file}) ---", file=sys.stderr)
         if log_file.exists() and log_file.stat().st_size > 0:
             try:

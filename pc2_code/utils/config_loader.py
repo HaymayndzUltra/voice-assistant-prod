@@ -11,6 +11,9 @@ import logging
 from typing import Dict, Any, Optional
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 logger = logging.getLogger(__name__)
 
 def parse_agent_args(default_host='localhost'):
@@ -52,8 +55,8 @@ def load_config(config_path=None):
         logger.error(f"Error loading config from {config_path}: {e}")
         # Return default fallback values
         return {
-            "main_pc_ip": get_service_ip("mainpc"),
-            "pc2_ip": get_service_ip("pc2"),
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         } 

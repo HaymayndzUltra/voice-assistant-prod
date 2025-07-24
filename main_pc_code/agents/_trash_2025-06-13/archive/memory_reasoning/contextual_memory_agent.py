@@ -15,6 +15,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
 from main_pc_code.agents.proactive_agent_interface import send_proactive_event
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 except ImportError:
     def send_proactive_event(event_type, data):
         logging.warning(f"[ContextualMemory] Could not import send_proactive_event, using fallback. Event: {event_type}")
@@ -23,7 +26,7 @@ except ImportError:
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
         return None
 
-LOG_PATH = "contextual_memory_agent.log"
+LOG_PATH = str(PathManager.get_logs_dir() / "contextual_memory_agent.log")
 MEMORY_STORE_PATH = "contextual_memory_store.json"
 USER_PROFILE_PATH = "user_profile.json"
 DEFAULT_USER_ID = "default_user"

@@ -13,6 +13,9 @@ from main_pc_code.model_manager_suite import get_instance as get_model_manager_i
 from main_pc_code.utils import model_client
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Test port for the ModelManagerAgent
 TEST_PORT = 5589
 
@@ -25,7 +28,7 @@ def model_manager_agent():
     for each test function and cleans up after the test is complete.
     """
     # Create a temporary test directory
-    test_dir = Path("/tmp/model_manager_test")
+    test_dir = Path(str(PathManager.get_temp_dir() / "model_manager_test"))
     test_dir.mkdir(exist_ok=True)
     
     # Create logs directory for the agent

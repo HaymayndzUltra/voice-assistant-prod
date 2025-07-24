@@ -45,7 +45,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(logs_dir / "session_memory_agent.log")),
+        logging.FileHandler(str(logs_dir / str(PathManager.get_logs_dir() / "session_memory_agent.log"))),
         logging.StreamHandler()
     ]
 )

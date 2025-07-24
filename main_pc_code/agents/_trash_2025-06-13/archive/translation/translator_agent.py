@@ -19,7 +19,7 @@ from typing import Dict, List, Any, Optional
 
 # EARLY LOGGING
 try:
-    with open("translator_agent_early.log", "a", encoding="utf-8") as f:
+    with open(str(PathManager.get_logs_dir() / "translator_agent_early.log"), "a", encoding="utf-8") as f:
         f.write("[EARLY LOG] Translator agent script started.\n")
 except Exception as e:
     pass
@@ -30,7 +30,7 @@ from main_pc_code.config.system_config import config
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "translator_agent.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "translator_agent.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -399,6 +399,9 @@ from main_pc_code.agents.taglish_detector import detect_taglish
 import psutil
 from datetime import datetime
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         is_taglish, fil_ratio, eng_ratio = detect_taglish(text)
         if is_taglish:
             logger.info(f"[TranslatorAgent] Taglish detected: Filipino={fil_ratio:.2f}, English={eng_ratio:.2f}")
@@ -768,7 +771,7 @@ English translation:"""
 if __name__ == "__main__":
     # Use a global try-except to catch any errors during startup
     try:
-        with open("translator_agent_early.log", "a", encoding="utf-8") as f:
+        with open(str(PathManager.get_logs_dir() / "translator_agent_early.log"), "a", encoding="utf-8") as f:
             f.write(f"[EARLY LOG] Translator agent script started.\n")
         
         # Create the agent
@@ -794,7 +797,7 @@ if __name__ == "__main__":
                 time.sleep(5)  # Longer delay on errors
     except Exception as e:
         # Only catch startup exceptions here
-        with open("translator_agent_early.log", "a", encoding="utf-8") as f:
+        with open(str(PathManager.get_logs_dir() / "translator_agent_early.log"), "a", encoding="utf-8") as f:
             f.write(f"[EARLY EXCEPTION] {str(e)}\n")
         logger.error(f"[EARLY EXCEPTION] {str(e)}")
         traceback.print_exc()

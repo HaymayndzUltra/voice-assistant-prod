@@ -15,6 +15,9 @@ from pathlib import Path
 import argparse
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 logger = logging.getLogger(__name__)
 
 class Config:
@@ -194,8 +197,8 @@ def load_network_config():
         if not os.path.exists(config_path):
             logger.warning(f"Network configuration file not found at {config_path}, using defaults")
             return {
-                "main_pc_ip": get_service_ip("mainpc"),
-                "pc2_ip": get_service_ip("pc2"),
+                "main_pc_ip": get_mainpc_ip(),
+                "pc2_ip": get_pc2_ip(),
                 "bind_address": "0.0.0.0",
                 "secure_zmq": False
             }
@@ -206,8 +209,8 @@ def load_network_config():
         logger.error(f"Error loading network config from {config_path}: {e}")
         # Return default fallback values
         return {
-            "main_pc_ip": get_service_ip("mainpc"),
-            "pc2_ip": get_service_ip("pc2"),
+            "main_pc_ip": get_mainpc_ip(),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": "0.0.0.0",
             "secure_zmq": False
         } 

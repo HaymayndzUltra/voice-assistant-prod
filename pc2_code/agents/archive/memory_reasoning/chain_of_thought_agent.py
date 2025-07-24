@@ -22,10 +22,13 @@ sys.path.append(str(Path(__file__).parent.parent))
 from pc2_code.config.system_config import config
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Configure log directory
 logs_dir = Path(config.get('system.logs_dir', 'logs'))
 logs_dir.mkdir(exist_ok=True)
-LOG_PATH = logs_dir / "chain_of_thought_agent.log"
+LOG_PATH = logs_dir / str(PathManager.get_logs_dir() / "chain_of_thought_agent.log")
 ZMQ_CHAIN_OF_THOUGHT_PORT = 5612  # Chain of Thought port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector Agent port for model inference
 

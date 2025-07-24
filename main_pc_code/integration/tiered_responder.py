@@ -13,6 +13,9 @@ import os
 import sys
 from pathlib import Path
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # Constants
 ZMQ_PULL_PORT = 5619
 ZMQ_PUSH_PORT = 5620
@@ -144,7 +147,7 @@ class TieredResponder:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'tiered_responder.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )

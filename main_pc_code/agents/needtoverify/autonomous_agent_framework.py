@@ -48,7 +48,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.pc2_connections import get_connection_string
 
 # Setup logging
-LOG_PATH = PathManager.join_path("logs", "autonomous_agent_framework.log")
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "autonomous_agent_framework.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(

@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('agent_trust_scorer.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "agent_trust_scorer.log")),
         logging.StreamHandler()
     ]
 )
@@ -39,7 +39,7 @@ class AgentTrustScorer(BaseAgent):
         self.socket.bind(f"tcp://*:{port}")
         
         # Initialize database
-        self.db_path = "agent_trust_scores.db"
+        self.db_path = str(PathManager.get_data_dir() / "agent_trust_scores.db")
         self._init_database()
         
         logger.info(f"AgentTrustScorer initialized on port {port}")
@@ -275,6 +275,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

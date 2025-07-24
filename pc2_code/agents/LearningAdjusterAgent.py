@@ -31,6 +31,9 @@ if str(project_root) not in sys.path:
 # Import common utilities if available
 try:
     from common_utils.zmq_helper import create_socket
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     USE_COMMON_UTILS = True
 except ImportError as e:
     print(f"Import error: {e}")
@@ -41,7 +44,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('learning_adjuster.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "learning_adjuster.log")),
         logging.StreamHandler()
     ]
 )

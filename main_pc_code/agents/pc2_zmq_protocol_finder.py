@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
 from common.utils.path_manager import PathManager
 # Configure logging
 log_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = fPathManager.join_path("logs", "pc2_zmq_protocol_finder_{log_timestamp}.log")
+log_file = fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "pc2_zmq_protocol_finder_{log_timestamp}.log"))
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",

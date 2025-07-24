@@ -29,7 +29,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('mvs_launcher.log')
+        logging.FileHandler(str(PathManager.get_logs_dir() / "mvs_launcher.log"))
     ]
 )
 

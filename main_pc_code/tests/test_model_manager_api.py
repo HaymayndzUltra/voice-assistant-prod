@@ -9,13 +9,16 @@ import yaml
 from main_pc_code.model_manager_suite import get_instance as get_model_manager_instance
 from common.env_helpers import get_env
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 @pytest.fixture(scope="module")
 def mma_service():
     """
     Spins up the ModelManagerAgent in a separate thread for testing.
     """
     # Create a dummy config for the test
-    config_path = "/tmp/test_llm_config.yaml"
+    config_path = str(PathManager.get_temp_dir() / "test_llm_config.yaml")
     with open(config_path, "w") as f:
         yaml.dump({
             'load_policy': {

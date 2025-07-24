@@ -30,7 +30,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(PathManager.join_path("logs", "dream_world_agent.log")),
+        logging.FileHandler(PathManager.join_path("logs", str(PathManager.get_logs_dir() / "dream_world_agent.log"))),
         logging.StreamHandler()
     ]
 )
@@ -170,7 +170,7 @@ class DreamWorldAgent:
         """Initialize agent components in background thread."""
         try:
             # Initialize database
-            self.db_path = "dream_world.db"
+            self.db_path = str(PathManager.get_data_dir() / "dream_world.db")
             self._init_database()
             
             # Load scenario templates

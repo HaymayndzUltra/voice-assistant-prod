@@ -46,7 +46,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(log_dir, 'unified_memory_reasoning_agent.log'))
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "unified_memory_reasoning_agent.log")))
     ]
 )
 logger = logging.getLogger(__name__)
@@ -1174,6 +1174,9 @@ from main_pc_code.utils.config_loader import load_config
 from pc2_code.utils.config_loader import load_config, parse_agent_args
 from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 from common.env_helpers import get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
 
 
 # Load configuration at the module level

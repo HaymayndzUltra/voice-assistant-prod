@@ -46,7 +46,7 @@ import sys
 import os
 
 # Setup logging
-LOG_PATH = str(PathManager.get_logs_dir() / "got_tot_agent.log")
+LOG_PATH = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "got_tot_agent.log"))
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -87,7 +87,7 @@ class Node:
 
         # --- Removed invalid error_bus wiring lines that belonged to Agent ---
         # self.error_bus_port = 7150
-        # self.error_bus_host = get_service_ip("pc2")
+        # self.error_bus_host = get_pc2_ip()
         # self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         # self.error_bus_pub = self.context.socket(zmq.PUB)
         # self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -395,6 +395,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

@@ -18,7 +18,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'modular_system', 'logs', 'simple_tts.log'))
+        logging.FileHandler(os.path.join(Path(__file__).parent.parent, 'modular_system', 'logs', str(PathManager.get_logs_dir() / "simple_tts.log")))
     ]
 )
 logger = logging.getLogger("SimpleTTS_Agent")
@@ -55,6 +55,9 @@ class SimpleTTSAgent(BaseAgent):
         """Initialize Windows TTS"""
         try:
             import win32com.client
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
 

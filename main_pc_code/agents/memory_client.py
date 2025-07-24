@@ -18,6 +18,9 @@ from common.utils.path_manager import PathManager
 
 from common.config_manager import load_unified_config
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 # Load configuration at the module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -26,7 +29,7 @@ logger = logging.getLogger("MemoryClient")
 
 def get_service_address(service_name: str) -> str:
     # Use environment variable if available, otherwise use PC2 default IP with correct port
-    pc2_ip = os.environ.get("PC2_IP", get_service_ip("pc2"))
+    pc2_ip = get_pc2_ip())
     memory_orchestrator_port = 7140  # Updated to correct port from PC2 config
     return os.environ.get("MEMORY_ORCHESTRATOR_ADDR", f"tcp://{pc2_ip}:{memory_orchestrator_port}")
 

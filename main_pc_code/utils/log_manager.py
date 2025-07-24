@@ -230,7 +230,7 @@ class LogManager:
             
         # Add file handler if configured
         if self._config.get("log_to_file", True):
-            file_path = self._logs_dir / "system.log"
+            file_path = self._logs_dir / str(PathManager.get_logs_dir() / "system.log")
             file_handler = logging.handlers.RotatingFileHandler(
                 str(file_path),
                 maxBytes=MAX_LOG_SIZE,
@@ -264,7 +264,7 @@ class LogManager:
                     
             # Add component-specific file handler if configured
             if self._config.get("log_to_file", True):
-                file_path = self._logs_dir / f"{component}.log"
+                file_path = self._logs_dir / fstr(PathManager.get_logs_dir() / "{component}.log")
                 
                 # Check if this logger already has a file handler for this path
                 has_handler = False
@@ -432,6 +432,9 @@ class LogManager:
         try:
             # CPU usage
             import psutil
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
             
             # CPU metrics
             metrics["cpu_percent"] = psutil.cpu_percent(interval=0.1)

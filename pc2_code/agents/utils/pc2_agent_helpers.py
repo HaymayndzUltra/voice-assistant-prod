@@ -48,7 +48,7 @@ def setup_pc2_logging(agent_name: str, log_level=logging.INFO):
     # Create logs directory if it doesn't exist
     log_dir = get_path("logs")
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"{agent_name.lower()}.log")
+    log_file = os.path.join(log_dir, fstr(PathManager.get_logs_dir() / "{agent_name.lower()}.log"))
     
     # Configure logging
     logging.basicConfig(

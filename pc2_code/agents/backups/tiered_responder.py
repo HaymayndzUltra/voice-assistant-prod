@@ -160,7 +160,7 @@ class TieredResponder:
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(LOG_DIR / 'tiered_responder.log'),
+                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log")),
                 logging.StreamHandler()
             ]
         )
@@ -452,6 +452,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

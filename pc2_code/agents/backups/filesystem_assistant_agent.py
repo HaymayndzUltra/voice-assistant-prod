@@ -44,7 +44,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 # Setup logging with better organization
 LOG_DIR = Path(os.path.dirname(__file__)).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
-LOG_PATH = LOG_DIR / "filesystem_assistant_agent.log"
+LOG_PATH = LOG_DIR / str(PathManager.get_logs_dir() / "filesystem_assistant_agent.log")
 
 # Updated port as requested
 ZMQ_FILESYSTEM_AGENT_PORT = 5606  # Using REP socket on port 5606 as specified
@@ -412,6 +412,9 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

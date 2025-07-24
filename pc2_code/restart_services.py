@@ -98,7 +98,7 @@ class ServiceManager:
             self.archive_dir.mkdir(parents=True, exist_ok=True)
             
             # Move all log files
-            for log_file in self.logs_dir.glob("*.log"):
+            for log_file in self.logs_dir.glob(str(PathManager.get_logs_dir() / "*.log")):
                 try:
                     shutil.move(str(log_file), str(self.archive_dir / log_file.name))
                 except Exception as e:
@@ -132,7 +132,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]], 
-                               stdout=open(fPathManager.join_path("logs", "{service_name}.log"), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)  # Give service time to initialize
@@ -150,7 +150,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(fPathManager.join_path("logs", "{service_name}.log"), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)
@@ -167,7 +167,7 @@ class ServiceManager:
             service_info = self.services[service_name]
             try:
                 subprocess.Popen([sys.executable, service_info["script"]],
-                               stdout=open(fPathManager.join_path("logs", "{service_name}.log"), "a"),
+                               stdout=open(fPathManager.join_path("logs", str(PathManager.get_logs_dir() / "{service_name}.log")), "a"),
                                stderr=subprocess.STDOUT)
                 logger.info(f"Started {service_name}")
                 time.sleep(1)

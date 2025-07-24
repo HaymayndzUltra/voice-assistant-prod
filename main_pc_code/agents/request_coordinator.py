@@ -99,7 +99,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, 'request_coordinator.log')),
+        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "request_coordinator.log"))),
         logging.StreamHandler(sys.stdout)
     ]
 )

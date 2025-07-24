@@ -40,7 +40,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=str(PathManager.get_logs_dir() / "self_training.log")
+    filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "self_training.log"))
 )
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class SelfTrainingOrchestrator(BaseAgent):
         self.start_time = time.time()
         
         # Database setup
-        self.db_path = str(PathManager.get_data_dir() / "self_training.db")
+        self.db_path = str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "self_training.db"))
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         
         # Training cycle management

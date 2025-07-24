@@ -674,7 +674,7 @@ if __name__ == "__main__":
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler(str(PathManager.get_logs_dir() / "goal_manager.log")),
+            logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "goal_manager.log"))),
             logging.StreamHandler()
         ]
     )

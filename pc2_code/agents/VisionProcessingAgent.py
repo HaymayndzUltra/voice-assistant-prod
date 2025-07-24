@@ -45,7 +45,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / "vision_processing_agent.log")
+        logging.FileHandler(Path(PathManager.get_project_root()) / "logs" / str(PathManager.get_logs_dir() / "vision_processing_agent.log"))
     ]
 )
 logger = logging.getLogger("VisionProcessingAgent")

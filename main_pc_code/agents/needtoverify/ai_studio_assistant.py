@@ -39,7 +39,7 @@ from main_pc_code.config.pc2_connections import get_connection_string
 from common.env_helpers import get_env
 
 # Setup logging
-LOG_PATH = PathManager.join_path("logs", "ai_studio_assistant.log")
+LOG_PATH = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "ai_studio_assistant.log"))
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 logging.basicConfig(

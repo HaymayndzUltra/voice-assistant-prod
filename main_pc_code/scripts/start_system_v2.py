@@ -275,7 +275,7 @@ class ProcessManager:
         if not LOGS_DIR.exists():
             LOGS_DIR.mkdir(parents=True, exist_ok=True)
         
-        log_file = LOGS_DIR / f"{agent_name}.log"
+        log_file = LOGS_DIR / fstr(PathManager.get_logs_dir() / "{agent_name}.log")
         
         # Setup environment
         env = os.environ.copy()

@@ -22,6 +22,9 @@ from common.utils.path_manager import PathManager
 from main_pc_code.agents.memory_client import MemoryClient
 from common.env_helpers import get_env
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 # -----------------------------------------------------------------------------
 # Configuration & Logging
 # -----------------------------------------------------------------------------
@@ -37,7 +40,7 @@ DEFAULT_PORT = int(os.environ.get("KNOWLEDGE_BASE_PORT", config.get("knowledge_b
 DEFAULT_HEALTH_PORT = int(os.environ.get("KNOWLEDGE_BASE_HEALTH_PORT", config.get("knowledge_base", {}).get("health_port", 6715)))
 
 # Error Bus settings (Rule 8)
-ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", os.environ.get("PC2_IP", get_env("BIND_ADDRESS", "0.0.0.0")))
+ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", get_pc2_ip()))
 ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 ERROR_BUS_ENDPOINT = f"tcp://{ERROR_BUS_HOST}:{ERROR_BUS_PORT}"
 

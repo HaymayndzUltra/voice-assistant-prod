@@ -62,7 +62,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename=str(PathManager.get_logs_dir() / "learning_adjuster.log")
+    filename=str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "learning_adjuster.log"))
 )
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class LearningAdjusterAgent(BaseAgent):
         }
         
         # Database setup
-        self.db_path = str(PathManager.get_data_dir() / "learning_adjuster.db")
+        self.db_path = str(PathManager.get_data_dir() / str(PathManager.get_data_dir() / "learning_adjuster.db"))
         self._init_db()
         
         # Parameter tracking

@@ -17,6 +17,9 @@ try:
     except ImportError as e:
         print(f"Import error: {e}")
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     HAS_TORCH = True
     TORCH_ERROR = None
 except ImportError as e:
@@ -41,7 +44,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("llm_translation_adapter.log"),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "llm_translation_adapter.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )

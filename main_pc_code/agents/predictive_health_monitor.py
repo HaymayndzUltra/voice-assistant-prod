@@ -78,7 +78,7 @@ except FileNotFoundError:
         },
         "prediction": {
             "enabled": True,
-            "model_path": "models/health_prediction.pkl",
+            "model_path": str(PathManager.get_models_dir() / "health_prediction.pkl"),
             "prediction_interval": 60
         },
         "recovery": {

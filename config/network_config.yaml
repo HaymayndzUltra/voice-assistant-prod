@@ -1,99 +1,138 @@
 # Network Configuration for AI System
+# Updated for hostname-based service discovery (Blueprint.md Step 6)
 # This file defines the network topology and connection parameters
 
-# Environment-aware configuration
 environment:
-  # The environment will be loaded from ENV_TYPE
   development:
     use_local_mode: true
-    mainpc_ip: '127.0.0.1'
-    pc2_ip: '127.0.0.1'
-    bind_address: '0.0.0.0'
+    mainpc_ip: 127.0.0.1
+    pc2_ip: 127.0.0.1
+    bind_address: 0.0.0.0
     service_discovery_timeout: 5000
     secure_zmq: false
     metrics_enabled: false
-
+    hostname_discovery: true
+    mainpc_hostname: 127.0.0.1
+    pc2_hostname: 127.0.0.1
+    use_service_names: false
   production:
     use_local_mode: false
-    mainpc_ip: '${MAINPC_IP}'
-    pc2_ip: '${PC2_IP}'
-    bind_address: '0.0.0.0'
+    mainpc_ip: ${MAINPC_IP}
+    pc2_ip: ${PC2_IP}
+    bind_address: 0.0.0.0
     service_discovery_timeout: 10000
     secure_zmq: true
     metrics_enabled: true
-
-# Machine definitions
+    hostname_discovery: true
+    mainpc_hostname: ${MAINPC_IP}
+    pc2_hostname: ${PC2_IP}
+    use_service_names: false
+  docker:
+    use_local_mode: false
+    hostname_discovery: true
+    mainpc_ip: mainpc-service
+    pc2_ip: pc2-service
+    mainpc_hostname: mainpc-service
+    pc2_hostname: pc2-service
+    use_service_names: true
+    bind_address: 0.0.0.0
+    service_discovery_timeout: 10000
+    secure_zmq: false
+    metrics_enabled: true
+  kubernetes:
+    use_local_mode: false
+    hostname_discovery: true
+    mainpc_ip: mainpc-service.ai-system.svc.cluster.local
+    pc2_ip: pc2-service.ai-system.svc.cluster.local
+    mainpc_hostname: mainpc-service.ai-system.svc.cluster.local
+    pc2_hostname: pc2-service.ai-system.svc.cluster.local
+    use_service_names: true
+    bind_address: 0.0.0.0
+    service_discovery_timeout: 10000
+    secure_zmq: true
+    metrics_enabled: true
 machines:
   mainpc:
-    ip: '127.0.0.1'
-    description: 'Main PC running core agents'
-    hostname: 'mainpc'
-    roles: ['coordinator', 'memory', 'models']
-
+    ip: 127.0.0.1
+    description: Main PC running core agents
+    hostname: mainpc
+    roles:
+    - coordinator
+    - memory
+    - models
+    docker_service_name: mainpc-service
+    k8s_service_name: mainpc-service
   pc2:
-    ip: '127.0.0.1'
-    description: 'Secondary PC running auxiliary agents'
-    hostname: 'pc2'
-    roles: ['vision', 'audio']
-
-# Default values if environment variables are not set
+    ip: 127.0.0.1
+    description: Secondary PC running auxiliary agents
+    hostname: pc2
+    roles:
+    - vision
+    - audio
+    docker_service_name: pc2-service
+    k8s_service_name: pc2-service
 defaults:
-  mainpc_ip: '127.0.0.1'
-  pc2_ip: '127.0.0.1'
-  bind_address: '0.0.0.0'
+  mainpc_ip: 127.0.0.1
+  pc2_ip: 127.0.0.1
+  bind_address: 0.0.0.0
   service_discovery_timeout: 5000
   service_discovery_retries: 3
   secure_zmq: false
   metrics_enabled: false
-
-# Default binding settings
-service_discovery_port: 5990 # Port for the service discovery mechanism
-
-# Security settings
-zmq_key_directory: 'certificates' # Directory containing ZMQ curve certificates
-
-# Network architecture parameters
-connection_timeout: 5000 # Default connection timeout in milliseconds
-heartbeat_interval: 30 # Heartbeat interval in seconds
-max_retries: 3 # Maximum connection retry attempts
-
-# System-wide service ports
+service_discovery_port: 5990
+zmq_key_directory: certificates
+connection_timeout: 5000
+heartbeat_interval: 30
+max_retries: 3
 ports:
   system_digital_twin: 7120
   health_check: 8100
-  unified_memory_reasoning: 7230 # Example port for UnifiedMemoryReasoningAgent
-
-  # Core services
+  unified_memory_reasoning: 7230
   coordinator: 26002
   task_router: 5571
   tts_connector: 5562
   health_monitor: 5584
   model_manager: 5570
-
-  # Vision system
   vision_capture: 5587
   vision_processing: 5588
-
-  # Translation services
   nllb_adapter: 5581
   phi_translation: 11434
   consolidated_translator: 5563
-
-  # Memory system
   memory_orchestrator: 5575
   contextual_memory: 5576
-
-  # Web/external interfaces
   remote_connector: 5557
   web_assistant: 5589
-
-  # PC2 services
   pc2_agent: 5560
   unified_web_agent: 7550
-
-  # New ports for the new system
   chain_of_thought: 5612
   got_tot: 7000
   self_training_orchestrator: 5644
   emotion_engine: 5590
   audio_capture: 6575
+hostname_discovery:
+  enabled: true
+  docker_service_names:
+    mainpc: mainpc-service
+    pc2: pc2-service
+  kubernetes_namespace: ai-system
+  kubernetes_cluster_domain: cluster.local
+  fallback_to_ip: true
+service_discovery:
+  resolution_order:
+  - hostname
+  - docker_service
+  - kubernetes_service
+  - ip_fallback
+service_naming:
+  docker:
+    pattern: '{machine}-{service}'
+    examples:
+      SystemDigitalTwin: mainpc-systemdigitaltwin
+      ServiceRegistry: mainpc-serviceregistry
+      Translator: pc2-translator
+  kubernetes:
+    pattern: '{service}.{namespace}.svc.{cluster_domain}'
+    examples:
+      SystemDigitalTwin: mainpc-systemdigitaltwin.ai-system.svc.cluster.local
+      ServiceRegistry: mainpc-serviceregistry.ai-system.svc.cluster.local
+      Translator: pc2-translator.ai-system.svc.cluster.local

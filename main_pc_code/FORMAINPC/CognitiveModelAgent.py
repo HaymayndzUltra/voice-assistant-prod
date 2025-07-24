@@ -19,8 +19,8 @@ config = load_config()
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Network Configuration
-PC2_IP = get_service_ip("pc2")  # PC2's IP address
-MAIN_PC_IP = get_service_ip("mainpc")  # Main PC's IP address
+PC2_IP = get_pc2_ip()  # PC2's IP address
+MAIN_PC_IP = get_mainpc_ip()  # Main PC's IP address
 COGNITIVE_MODEL_PORT = 5600  # Cognitive Model port
 REMOTE_CONNECTOR_PORT = 5557  # Remote Connector port on PC2
 
@@ -29,7 +29,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('cognitive_model.log'),
+        logging.FileHandler(str(PathManager.get_logs_dir() / "cognitive_model.log")),
         logging.StreamHandler()
     ]
 )
@@ -86,7 +86,7 @@ class CognitiveModelAgent(BaseAgent):
 
         # --- Removed invalid error_bus wiring lines that belonged to Agent ---
         # self.error_bus_port = 7150
-        # self.error_bus_host = get_service_ip("pc2")
+        # self.error_bus_host = get_pc2_ip()
         # self.error_bus_endpoint = f"tcp://{self.error_bus_host}:{self.error_bus_port}"
         # self.error_bus_pub = self.context.socket(zmq.PUB)
         # self.error_bus_pub.connect(self.error_bus_endpoint)
@@ -369,6 +369,12 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

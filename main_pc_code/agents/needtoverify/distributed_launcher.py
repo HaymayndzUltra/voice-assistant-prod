@@ -24,12 +24,15 @@ from typing import Dict, List, Any, Optional
 sys.path.append(str(Path(__file__).parent.parent))
 from main_pc_code.config.system_config import config
 
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
+
 # ZMQ timeout settings
 ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Configure logging
 log_level = config.get('system.log_level', 'INFO')
-log_file = Path(config.get('system.logs_dir', 'logs')) / "distributed_launcher.log"
+log_file = Path(config.get('system.logs_dir', 'logs')) / str(PathManager.get_logs_dir() / "distributed_launcher.log")
 log_file.parent.mkdir(exist_ok=True)
 
 logging.basicConfig(
@@ -150,7 +153,7 @@ class DistributedLauncher(BaseAgent):
             # Create log file
             log_dir = Path(config.get('system.logs_dir', 'logs'))
             log_dir.mkdir(exist_ok=True)
-            log_file = log_dir / f"{agent_name}.log"
+            log_file = log_dir / fstr(PathManager.get_logs_dir() / "{agent_name}.log")
             
             # Start process with log redirection
             with open(log_file, "a") as log:

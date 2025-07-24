@@ -9,11 +9,14 @@ import time
 import sys
 from pathlib import Path
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 # Add the parent directory to sys.path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Network Configuration
-MAIN_PC_IP = get_service_ip("mainpc")  # Main PC IP
+MAIN_PC_IP = get_mainpc_ip()  # Main PC IP
 TASK_ROUTER_PORT = 8570        # Task Router port
 
 def test_task_router_health():

@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "emotion_engine.log")),
+        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "emotion_engine.log"))),
         logging.StreamHandler()
     ]
 )

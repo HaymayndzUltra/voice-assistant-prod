@@ -39,7 +39,7 @@ class ModelManagerAgent(BaseAgent):
             level=logging.DEBUG,  # Changed to DEBUG level
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(log_dir / "model_manager_agent.log"),
+                logging.FileHandler(log_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")),
                 logging.StreamHandler()
             ]
         )
@@ -184,6 +184,9 @@ class DynamicSTTModelManager(BaseAgent):
             return self.loaded_models[model_id]
         try:
             import whisper
+
+# Containerization-friendly paths (Blueprint.md Step 5)
+from common.utils.path_manager import PathManager
     except ImportError as e:
         print(f"Import error: {e}")
             self.logger.info(f"Loading STT model '{model_id}'...")

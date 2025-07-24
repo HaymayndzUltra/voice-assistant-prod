@@ -58,7 +58,7 @@ except ImportError:
     _agent_args = DummyArgs()
 
 # Configure logging
-log_file_path = PathManager.join_path("logs", "alert_manager_agent.log")
+log_file_path = PathManager.join_path("logs", str(PathManager.get_logs_dir() / "alert_manager_agent.log"))
 log_directory = os.path.dirname(log_file_path)
 os.makedirs(log_directory, exist_ok=True)
 
@@ -154,7 +154,7 @@ class AlertManagerAgent:
             self.alert_rules: Dict[str, Dict[str, Any]] = {}
             
             # Database setup
-            self.db_path = Path(PathManager.join_path("data", "alerts.db"))
+            self.db_path = Path(PathManager.join_path("data", str(PathManager.get_data_dir() / "alerts.db")))
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             self.conn = sqlite3.connect(str(self.db_path))
             self._create_tables()
