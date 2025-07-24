@@ -43,6 +43,7 @@ except ImportError:  # pragma: no cover – orjson is optional
 dumps = _dumps
 loads = _loads
 import logging
+import threading, time
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional, Protocol, runtime_checkable
@@ -71,6 +72,29 @@ DEFAULT_REDIS_URL = os.getenv("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6
 DEFAULT_PREFIX = os.getenv("SERVICE_REGISTRY_PREFIX", "service_registry:")
 
 logger = logging.getLogger("ServiceRegistryAgent")
+def _start_http_health_server(port: int):
+    """Start a minimal HTTP /health endpoint so k8s/docker can probe."""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class _H(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            if self.path in ("/", "/health", "/healthz"):
+                payload = dumps({"status": "healthy", "timestamp": time.time()})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def log_message(self, *_args):  # silence
+            return
+
+    server = HTTPServer(("0.0.0.0", port), _H)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    logger.info("HTTP health endpoint available at http://0.0.0.0:%s/health", port)
 
 
 @runtime_checkable
@@ -194,6 +218,12 @@ class ServiceRegistryAgent(BaseAgent):
         health = int(kwargs.pop("health_check_port", DEFAULT_HEALTH_PORT))
 
         super().__init__(name="ServiceRegistry", port=port, health_check_port=health, **kwargs)
+
+        # Expose HTTP health after BaseAgent sets self.health_port
+        try:
+            _start_http_health_server(self.health_port)
+        except Exception as _http_err:
+            logger.warning("Failed to start HTTP health server: %s", _http_err)
 
     # ---------------------------------------------------------------------
     # Request handling
