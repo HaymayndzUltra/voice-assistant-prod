@@ -19,10 +19,19 @@ Constraints honoured:
 # Import path manager for containerization-friendly paths
 import sys
 import os
-# NOTE: Path utilities are provided by common.utils.path_manager. We add the project
-# root (resolved via PathManager) to PYTHONPATH *after* importing PathManager to
-# avoid the previous NameError that occurred when `get_project_root()` was
-# referenced before definition (see issue #startup-001).
+
+# --- Bootstrap PYTHONPATH with project root so that `common.*` imports resolve
+# even before PathManager is available.  We compute it as two directories up
+# from this file (main_pc_code/<this_file>).  This fixes ModuleNotFoundError for
+# `common.utils.path_manager` when the script is executed directly.  (issue
+# #startup-002)
+
+from pathlib import Path as _PathBootstrap
+_project_root_bootstrap = _PathBootstrap(__file__).resolve().parent.parent
+if str(_project_root_bootstrap) not in sys.path:
+    sys.path.insert(0, str(_project_root_bootstrap))
+
+# After bootstrap, it is safe to import PathManager for richer path handling.
 from common.utils.path_manager import PathManager
 
 # Ensure the project root is at the front of sys.path for subsequent dynamic
@@ -35,6 +44,14 @@ from typing import Any, Dict, List, Tuple
 from graphlib import TopologicalSorter, CycleError
 import argparse
 
+# Unified configuration loader (v3)
+try:
+    from common.utils.unified_config_loader import get_config as get_unified_config
+    USE_UNIFIED_CONFIG = True
+except ImportError:
+    USE_UNIFIED_CONFIG = False
+
+# Fallback YAML for explicit file load
 import yaml  # PyYAML
 import subprocess
 import time
@@ -85,19 +102,95 @@ def consolidate_agent_entries(config: Dict[str, Any], base_dir: Path) -> List[Di
     """
     consolidated: List[Dict[str, Any]] = []
 
-    for section_name, section_value in config.items():
-        if not isinstance(section_value, list):
-            # Skip non-list sections (e.g. `environment`, `resource_limits`, etc.).
-            continue
+    def _process_section(value):
+        """Internal helper to extract agent dicts in a list."""
+        # Accept either a list of agent dicts **or** a dict keyed by agent name
+        if isinstance(value, list):
+            iterable = value
+        elif isinstance(value, dict):
+            iterable = [v | {"name": k} for k, v in value.items()]
+        else:
+            return
 
-        for entry in section_value:
+        for entry in iterable:
             if isinstance(entry, dict) and "script_path" in entry:
+                # Inject name if not present (for list form)
+                if "name" not in entry:
+                    entry["name"] = entry.get("agent_name") or entry.get("id") or "unknown"
                 relative_path = Path(entry["script_path"])
-                absolute_path = (base_dir / relative_path).resolve()
+                project_root = PathManager.get_project_root()
+                absolute_path = (project_root / relative_path).resolve()
                 entry["absolute_script_path"] = str(absolute_path)
                 consolidated.append(entry)
 
+    # v3 format places agents under `agent_groups`
+    if "agent_groups" in config and isinstance(config["agent_groups"], dict):
+        for _group_name, group_list in config["agent_groups"].items():
+            _process_section(group_list)
+
+    # Legacy sections may still be top-level lists
+    for section_name, section_value in config.items():
+        _process_section(section_value)
+
     return consolidated
+
+
+# ---------------------------------------------------------------------------
+# Port validation helpers
+# ---------------------------------------------------------------------------
+
+
+def _expand_port_value(value: Any) -> int:
+    """Expand expressions like '${PORT_OFFSET}+7200' into final int using env."""
+    if isinstance(value, int):
+        return value
+    if not isinstance(value, str):
+        raise ValueError(f"Unsupported port value type: {type(value)}")
+
+    # Replace ${VAR} with its env value or 0 if missing
+    import re, os
+
+    def _replace(match):
+        var = match.group(1)
+        return os.environ.get(var, "0")
+
+    expr = re.sub(r"\${([^}]+)}", _replace, value)
+    # Support "+" arithmetic (simple VAR+1234)
+    if "+" in expr:
+        parts = expr.split("+")
+        try:
+            base = int(parts[0]) if parts[0].strip() else 0
+            offset = int(parts[1])
+            return base + offset
+        except ValueError:
+            pass  # fallthrough
+    try:
+        return int(expr)
+    except ValueError:
+        raise ValueError(f"Unable to parse port value: {value}")
+
+
+def validate_unique_ports(agents: List[Dict[str, Any]]):
+    """Raise RuntimeError if any port or health port duplicates are found."""
+    port_map: Dict[int, str] = {}
+    duplicates: List[Tuple[int, str, str]] = []
+
+    for agent in agents:
+        for key in ("port", "health_check_port"):
+            if key in agent:
+                try:
+                    p = _expand_port_value(agent[key])
+                except ValueError as e:
+                    print(f"[WARNING] {e} in agent {agent.get('name')}")
+                    continue
+                if p in port_map:
+                    duplicates.append((p, port_map[p], agent.get("name")))
+                else:
+                    port_map[p] = agent.get("name")
+
+    if duplicates:
+        msgs = [f"Port {p} duplicated by {a1} and {a2}" for p, a1, a2 in duplicates]
+        raise RuntimeError("Duplicate port assignments detected:\n" + "\n".join(msgs))
 
 
 # ---------------------------------------------------------------------------
@@ -221,7 +314,8 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
             print(f"[ERROR] Failed to check health implementation for {agent_cfg['name']}: {e}")
             return None
     
-    log_file = logs_dir / f"{agent_cfg['namestr(PathManager.get_logs_dir() / "]}.log")
+    # Route agent stdout/stderr to individual log files under logs_dir
+    log_file = logs_dir / f"{agent_cfg.get('name', 'unknown_agent')}.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
     log_fh = open(log_file, "a", buffering=1)  # line-buffered
 
@@ -264,7 +358,7 @@ def print_failed_agent_logs(failed_agents: List[str], logs_dir: Path):
     """Prints the last 20 lines of the log file for each failed agent."""
     print("\n--- FAILED AGENT LOGS ---", file=sys.stderr)
     for name in failed_agents:
-        log_file = logs_dir / fstr(PathManager.get_logs_dir() / "{name}.log")
+        log_file = logs_dir / f"{name}.log"
         print(f"--- Log for {name} ({log_file}) ---", file=sys.stderr)
         if log_file.exists() and log_file.stat().st_size > 0:
             try:
@@ -341,10 +435,22 @@ def main() -> None:
     project_root = base_dir.parent
 
     # Load configuration
-    config = load_config(config_path)
+    if args.config:
+        config = load_config(config_path)
+    elif USE_UNIFIED_CONFIG:
+        config = get_unified_config().get_config()
+    else:
+        config = load_config(config_path)
 
     # Extract and consolidate agent entries from all sections
     agents = consolidate_agent_entries(config, base_dir)
+
+    # Validate unique ports early to fail fast
+    try:
+        validate_unique_ports(agents)
+    except RuntimeError as e:
+        print(f"\nPORT VALIDATION ERROR:\n{e}", file=sys.stderr)
+        sys.exit(1)
 
     # Print summary information
     print(f"Found {len(agents)} agent entries in configuration.")
