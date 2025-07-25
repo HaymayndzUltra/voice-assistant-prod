@@ -55,3 +55,25 @@
 - Auto-load: Script for session initialization
 
 ---
+
+## [2025-01-16] v3 Deployment Polish
+
+### Added
+- `README.md` summarising new v3-compatible memory architecture.
+- Placeholder overrides in `config/overrides/` for machine-specific tuning.
+- `requirements.base.txt` shared dependency layer and two-tier install pattern adopted by every Dockerfile.
+- `docker/shared/docker-compose.gpu-override.yml` for modern GPU reservations.
+- `.github/workflows/quick-smoke.yml` for fast config sanity checks.
+
+### Changed
+- All Dockerfiles now install `requirements.base.txt` first to maximise cache hits.
+- Legacy memory YAML fragments removed; v3 loader is authoritative.
+- `UnifiedConfigLoader` now emits `DeprecationWarning` when falling back to legacy configs.
+
+### Removed / Archived
+- Deprecated per-machine memory config fragments archived under `memory-bank/archive/`.
+
+### Notes
+This marks the completion of the v3 configuration migration for the memory
+sub-system, aligning all agents with the unified loader and modern container
+layouts.
