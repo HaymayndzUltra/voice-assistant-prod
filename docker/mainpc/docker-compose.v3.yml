@@ -1,0 +1,71 @@
+version: '3.9'
+
+# ---------------------------------------------------------------------------
+# MainPC – RTX 4090 stack (v3)
+# ---------------------------------------------------------------------------
+
+services:
+  # ------------------------------------------------ Infrastructure
+  redis:
+    image: redis:7-alpine
+    container_name: mainpc-redis
+    networks: [ai_system_net]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: mainpc-nats
+    command: ["-js"]
+    networks: [ai_system_net]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "nats://localhost:4222"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ------------------------------------------------ Core Platform (CPU)
+  core-platform:
+    build:
+      context: ../../
+      dockerfile: docker/mainpc/Dockerfile.agent-group
+      args:
+        GROUP_NAME: core_services
+    container_name: mainpc-core-platform
+    networks: [ai_system_net]
+    env_file: ../shared/base.env
+    environment:
+      - CONTAINER_ROLE=core_platform
+      - MACHINE_TYPE=mainpc
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "7200:7200"  # ServiceRegistry
+      - "8220:8220"  # SystemDigitalTwin health
+      - "9000:9000"  # ObservabilityHub API
+
+  # ------------------------------------------------ Additional groups (place-holders)
+  # The remaining seven groups are declared but disabled by default.  Enable
+  # gradually during rollout to avoid GPU starvation.
+  # model-manager-gpu: { profiles: ["disabled"] }
+  # memory-stack:      { profiles: ["disabled"] }
+  # utility-gpu:       { profiles: ["disabled"] }
+  # reasoning-gpu:     { profiles: ["disabled"] }
+  # vision-gpu:        { profiles: ["disabled"] }
+  # language-stack-gpu:{ profiles: ["disabled"] }
+  # audio-emotion:     { profiles: ["disabled"] }
+
+volumes:
+  redis_data:
+
+networks:
+  ai_system_net:
+    driver: bridge

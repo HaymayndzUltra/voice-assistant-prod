@@ -67,7 +67,9 @@ class NATSErrorBus:
                  nats_servers: List[str] = None,
                  agent_name: str = "unknown",
                  max_reconnect_attempts: int = 10):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        # Always fetch default servers from environment helper unless explicitly provided
+        from common.env_defaults import get_nats_servers
+        self.nats_servers = nats_servers or get_nats_servers()
         self.agent_name = agent_name
         self.max_reconnect_attempts = max_reconnect_attempts
         

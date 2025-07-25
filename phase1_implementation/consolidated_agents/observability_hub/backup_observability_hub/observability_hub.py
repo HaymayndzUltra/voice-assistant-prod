@@ -718,7 +718,7 @@ class CrossMachineSync:
     def __init__(self, config: ObservabilityConfig):
         self.config = config
         self.sync_enabled = config.cross_machine_sync
-        self.mainpc_endpoint = config.mainpc_hub_endpoint
+        self.mainpc_endpoint = os.getenv("MAINPC_OBSERVABILITY_ENDPOINT", config.mainpc_hub_endpoint)
         self.sync_interval = 30  # seconds
         self.sync_thread = None
         self.running = False
@@ -855,11 +855,12 @@ class ObservabilityHub(BaseAgent):
         if hasattr(self, 'health_checker'):
             self.standardized_health = self.health_checker
         else:
+            from common.env_defaults import get_redis_host, get_redis_port
             self.standardized_health = StandardizedHealthChecker(
                 agent_name=self.name,
                 port=self.port,
-                redis_host='localhost',
-                redis_port=6379
+                redis_host=get_redis_host(),
+                redis_port=get_redis_port()
             )
         
         # Background threads
@@ -894,8 +895,12 @@ class ObservabilityHub(BaseAgent):
     def _load_configuration(self) -> ObservabilityConfig:
         """Load configuration from startup config files"""
         try:
-            # Detect environment based on which config file exists and script execution context
-            environment = self._detect_environment()
+            # Detect environment based first on explicit env var, fallback to path detection
+            env_machine_type = os.getenv("MACHINE_TYPE") or os.getenv("PC2_MODE")
+            if env_machine_type and env_machine_type.lower() in {"pc2", "mainpc"}:
+                environment = "pc2" if env_machine_type.lower() == "pc2" or env_machine_type.lower() == "true" else "mainpc"
+            else:
+                environment = self._detect_environment()
             
             # Load appropriate config file
             if environment == "pc2":
