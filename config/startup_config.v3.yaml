@@ -1,6 +1,7 @@
-# AI System Consolidated Configuration v3
-# Single Source of Truth for All Machines
-# Machine-specific overrides in config/overrides/{machine_name}.yaml
+# AI System Unified Configuration v3.0
+# Single Source of Truth for All Machines and Environments
+# Created: 2025-01-16
+# Description: Consolidated configuration for MainPC (RTX 4090) and PC2 (RTX 3060) with Docker support
 
 version: "3.0"
 created: "2025-01-16"
@@ -261,23 +262,14 @@ agent_groups:
 # Machine profiles defining which agent groups run where
 machine_profiles:
   mainpc:
-    enabled_groups:
-      - core_services
-      - memory_system
-      - gpu_infrastructure  
-      - reasoning_services
-      - utility_services
-      - learning_services
+    enabled_groups: [core_services, memory_system, gpu_infrastructure, reasoning_services, utility_services, learning_services]
     hardware:
       gpu: RTX_4090
       memory_gb: 32
       cpu_cores: 16
       
   pc2:
-    enabled_groups:
-      - core_services     # ServiceRegistry only
-      - memory_system     # MemoryOrchestratorService only  
-      - pc2_services      # All PC2 specific services
+    enabled_groups: [core_services, memory_system, pc2_services]
     hardware:
       gpu: RTX_3060
       memory_gb: 16

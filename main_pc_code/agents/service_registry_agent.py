@@ -216,9 +216,8 @@ class ServiceRegistryAgent(BaseAgent):
 
         super().__init__(name="ServiceRegistry", port=port, health_check_port=health, **kwargs)
         
-        # Start HTTP health endpoint for container/k8s health checks
-        self.health_port = health
-        _start_http_health_server(self.health_port)
+        # Note: HTTP health server is now handled by BaseAgent
+        # No need to start duplicate health server
 
     # ---------------------------------------------------------------------
     # Request handling
@@ -321,11 +320,25 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
+    # Extract redis_host and redis_port from redis_url for BaseAgent health checker
+    import urllib.parse
+    redis_kwargs = {}
+    if args.redis_url and args.redis_url != "redis://localhost:6379/0":
+        try:
+            parsed = urllib.parse.urlparse(args.redis_url)
+            redis_kwargs['redis_host'] = parsed.hostname
+            redis_kwargs['redis_port'] = parsed.port or 6379
+        except Exception:
+            # Fallback to environment variables
+            redis_kwargs['redis_host'] = os.getenv('REDIS_HOST', 'localhost')
+            redis_kwargs['redis_port'] = int(os.getenv('REDIS_PORT', '6379'))
+    
     agent = ServiceRegistryAgent(
         backend=args.backend,
         redis_url=args.redis_url,
         port=args.port,
-        health_check_port=args.health_check_port
+        health_check_port=args.health_check_port,
+        **redis_kwargs
     )
     
     try:
