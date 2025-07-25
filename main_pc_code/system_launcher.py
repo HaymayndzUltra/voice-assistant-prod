@@ -19,10 +19,17 @@ Constraints honoured:
 # Import path manager for containerization-friendly paths
 import sys
 import os
-sys.path.insert(0, get_project_root())
+# NOTE: Path utilities are provided by common.utils.path_manager. We add the project
+# root (resolved via PathManager) to PYTHONPATH *after* importing PathManager to
+# avoid the previous NameError that occurred when `get_project_root()` was
+# referenced before definition (see issue #startup-001).
 from common.utils.path_manager import PathManager
-import sys
-import os
+
+# Ensure the project root is at the front of sys.path for subsequent dynamic
+# imports.  This replaces the previous invalid `get_project_root()` call.
+project_root_path = str(PathManager.get_project_root())
+if project_root_path not in sys.path:
+    sys.path.insert(0, project_root_path)
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from graphlib import TopologicalSorter, CycleError
