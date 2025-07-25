@@ -46,7 +46,7 @@ import argparse
 
 # Unified configuration loader (v3)
 try:
-    from common.utils.unified_config_loader import get_config as get_unified_config
+    from common.utils.unified_config_loader import get_config
     USE_UNIFIED_CONFIG = True
 except ImportError:
     USE_UNIFIED_CONFIG = False
@@ -108,7 +108,16 @@ def consolidate_agent_entries(config: Dict[str, Any], base_dir: Path) -> List[Di
         if isinstance(value, list):
             iterable = value
         elif isinstance(value, dict):
-            iterable = [v | {"name": k} for k, v in value.items()]
+            # Only process entries that look like agent configs (have script_path or are dicts)
+            iterable = []
+            for k, v in value.items():
+                if isinstance(v, dict):
+                    # This looks like an agent config
+                    iterable.append(v | {"name": k})
+                elif isinstance(v, str) and "script_path" in str(v):
+                    # This might be a simple script_path string
+                    iterable.append({"name": k, "script_path": v})
+                # Skip non-agent entries (ints, strings, etc.)
         else:
             return
 
@@ -438,7 +447,7 @@ def main() -> None:
     if args.config:
         config = load_config(config_path)
     elif USE_UNIFIED_CONFIG:
-        config = get_unified_config().get_config()
+        config = get_config()
     else:
         config = load_config(config_path)
 
