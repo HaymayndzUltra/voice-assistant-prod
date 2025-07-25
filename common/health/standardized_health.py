@@ -40,11 +40,16 @@ class StandardizedHealthChecker:
     Universal health checker that all agents should inherit from
     """
     
-    def __init__(self, agent_name: str, port: int, redis_host: str = "localhost", redis_port: int = 6379):
+    def __init__(self, agent_name: str, port: int, redis_host: str = None, redis_port: int | None = None):
         self.agent_name = agent_name
         self.port = port
-        self.redis_host = redis_host
-        self.redis_port = redis_port
+        if redis_host is None or redis_port is None:
+            from common.env_defaults import get_redis_host, get_redis_port
+            self.redis_host = redis_host or get_redis_host()
+            self.redis_port = redis_port if redis_port is not None else get_redis_port()
+        else:
+            self.redis_host = redis_host
+            self.redis_port = redis_port
         self.redis_client = None
         self.health_data = {}
         

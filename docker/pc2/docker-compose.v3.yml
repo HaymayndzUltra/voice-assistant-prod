@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: pc2-redis
+    networks: [ai_system_net]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: pc2-nats
+    command: ["-js"]
+    networks: [ai_system_net]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "nats://localhost:4222"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  infra-core-cpu:
+    build:
+      context: ../../
+      dockerfile: docker/pc2/Dockerfile.agent-group
+      args:
+        GROUP_NAME: pc2_services
+    container_name: pc2-infra-core
+    networks: [ai_system_net]
+    env_file: ../shared/base.env
+    environment:
+      - CONTAINER_ROLE=infra_core_cpu
+      - MACHINE_TYPE=pc2
+      - MAINPC_OBSERVABILITY_ENDPOINT=http://mainpc-core-platform:9000
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "9100:9100"  # PC2 ObservabilityHub
+
+volumes:
+  redis_data:
+
+networks:
+  ai_system_net:
+    driver: bridge
