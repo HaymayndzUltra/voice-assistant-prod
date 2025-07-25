@@ -371,7 +371,6 @@ agent_groups:
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
-      - StreamingInterruptHandler
   audio_interface:
     AudioCapture:
       script_path: main_pc_code/agents/streaming_audio_capture.py
