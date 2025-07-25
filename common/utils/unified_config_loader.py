@@ -186,8 +186,13 @@ class UnifiedConfigLoader:
             PathManager.get_project_root() / "config" / "startup_config.yaml"
         ]
         
+        import warnings
         for path in legacy_paths:
             if path.exists():
+                warnings.warn(
+                    f"[DEPRECATION] Loading legacy config {path.name}; please migrate to startup_config.v3.yaml. This fallback will be removed in a future release.",
+                    DeprecationWarning,
+                )
                 try:
                     with open(path, 'r') as f:
                         config = yaml.safe_load(f)
