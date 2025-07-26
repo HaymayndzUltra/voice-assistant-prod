@@ -34,9 +34,15 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python && \
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
+COPY requirements.base.txt /app/requirements.base.txt
 COPY main_pc_code/requirements.txt /app/requirements.txt
+
+# 1. install common libs (cached across multiple images)
 RUN pip install --no-cache-dir -U pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements.base.txt
+
+# 2. install main-pc specific extras (smaller delta)
+RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
 
 # Install llama-cpp-python with CUDA support specifically for RTX 4090

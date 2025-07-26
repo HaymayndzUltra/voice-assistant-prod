@@ -179,6 +179,12 @@ services:
       - ai_system_network
     restart: unless-stopped
 
+  utility-services-group:
+    build: { context: ../../, dockerfile: docker/pc2/Dockerfile.agent-group, args: { GROUP_NAME: utility_services } }
+    container_name: pc2-utility-services
+    depends_on: [memory-services-group]
+  # Add for language_processing if offloaded
+
 # ============================================================================
 # NETWORKS & VOLUMES
 # ============================================================================

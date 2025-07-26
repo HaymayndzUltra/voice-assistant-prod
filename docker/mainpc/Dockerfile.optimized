@@ -29,8 +29,8 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python && \
 RUN pip install --no-cache-dir -U pip setuptools wheel
 
 # Copy requirements and install dependencies
-COPY requirements/base.txt /tmp/base.txt
-COPY requirements/gpu.txt /tmp/gpu.txt
+COPY requirements.base.txt /tmp/base.txt
+COPY requirements.gpu.txt /tmp/gpu.txt
 COPY main_pc_code/requirements.txt /tmp/mainpc_requirements.txt
 
 # Install base dependencies

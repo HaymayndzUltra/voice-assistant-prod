@@ -1,283 +1,562 @@
 # AI System Unified Configuration v3.0
 # Single Source of Truth for All Machines and Environments
 # Created: 2025-01-16
-# Description: Consolidated configuration for MainPC (RTX 4090) and PC2 (RTX 3060) with Docker support
+# Description: Complete configuration for 77 agents across MainPC (RTX 4090) and PC2 (RTX 3060)
 
-version: "3.0"
-created: "2025-01-16"
-description: "Unified startup configuration for MainPC and PC2 with machine-specific overrides"
+version: 3.0
 
-# Global settings shared across all machines
+# Global environment settings
 global_settings:
   environment:
-    PYTHONPATH: "${PWD}:${PWD}/.."
+    PYTHONPATH: /app
     LOG_LEVEL: INFO
     DEBUG_MODE: 'false'
     ENABLE_METRICS: 'true'
     ENABLE_TRACING: 'true'
-    ENABLE_DATA_OPTIMIZER: 'true'
-    DATA_OPTIMIZER_METHOD: compressed_msgpack
-    
-  # Default resource limits (can be overridden per machine)
+    PORT_OFFSET: '${PORT_OFFSET:-0}'
   resource_limits:
     cpu_percent: 80
     memory_mb: 2048
     max_threads: 4
-    
-  # Health check settings
   health_checks:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
-    start_period_seconds: 300
-    
-  # Networking defaults
-  network:
-    name: ai_system_network
-    driver: bridge
-    
-  # Volume mappings (relative to project root)
-  volumes:
-    - source: ./logs
-      target: /app/logs
-    - source: ./models
-      target: /app/models
-    - source: ./data
-      target: /app/data
-    - source: ./config
-      target: /app/config
-    - source: ./cache
-      target: /app/cache
 
-# Agent definitions organized by functional groups
+# Machine profiles define which agent groups run on each machine
+machine_profiles:
+  mainpc:
+    enabled_groups:
+      - core_services
+      - memory_system  # Added for KnowledgeBase dependency
+      - gpu_infrastructure  
+      - reasoning_services
+      - vision_processing
+      - learning_knowledge
+      - language_processing
+      - speech_services
+      - audio_interface
+      - emotion_system
+      - utility_services
+  pc2:
+    enabled_groups:
+      - core_services
+      - memory_system
+      - pc2_services
+      - utility_services
+
+# Agent groups organized by functional purpose
 agent_groups:
-  # Core infrastructure services (required on all machines)
+  # CORE SERVICES - Essential infrastructure (Both machines)
   core_services:
     ServiceRegistry:
       script_path: main_pc_code/agents/service_registry_agent.py
-      port: 7100
-      health_check_port: 8100
+      port: "${PORT_OFFSET}+7200"
+      health_check_port: "${PORT_OFFSET}+8200"
       required: true
       dependencies: []
       config:
-        backend: memory  # Options: memory, redis
+        backend: memory
         redis:
           url: redis://localhost:6379/0
           prefix: "service_registry:"
-          
+
     SystemDigitalTwin:
       script_path: main_pc_code/agents/system_digital_twin.py
-      port: 7120
-      health_check_port: 8120
+      port: "${PORT_OFFSET}+7220"
+      health_check_port: "${PORT_OFFSET}+8220"
       required: true
       dependencies: [ServiceRegistry]
       config:
         db_path: data/unified_memory.db
         redis:
           host: localhost
-          port: 6379
+          port: "${PORT_OFFSET}+6379"
           db: 0
-        zmq_request_timeout: 5000
-        
+
     RequestCoordinator:
       script_path: main_pc_code/agents/request_coordinator.py
       port: 26002
-      health_check_port: 27002
+      health_check_port: 8002
       required: true
       dependencies: [SystemDigitalTwin]
-      
+      config:
+        max_concurrent_requests: 100
+
     UnifiedSystemAgent:
       script_path: main_pc_code/agents/unified_system_agent.py
-      port: 7125
-      health_check_port: 8125
-      required: true
-      dependencies: [SystemDigitalTwin]
+      port: "${PORT_OFFSET}+7225"
+      health_check_port: "${PORT_OFFSET}+8225"
+      dependencies: [RequestCoordinator]
 
-  # Memory and knowledge management
+    ModelManagerSuite:
+      script_path: main_pc_code/model_manager_suite.py
+      port: "${PORT_OFFSET}+7211"
+      health_check_port: "${PORT_OFFSET}+8211"
+      dependencies: [UnifiedSystemAgent]
+
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: "${PORT_OFFSET}+9000"
+      health_check_port: "${PORT_OFFSET}+9100"
+      dependencies: [ServiceRegistry]
+
+  # MEMORY SYSTEM - Memory and knowledge management (Primarily PC2)
   memory_system:
-    MemoryClient:
-      script_path: main_pc_code/agents/memory_client.py
-      port: 26008
-      health_check_port: 27008
-      required: true
-      dependencies: [SystemDigitalTwin]
-      
-    SessionMemoryAgent:
-      script_path: main_pc_code/agents/session_memory_agent.py
-      port: 26009
-      health_check_port: 27009
-      required: true
-      dependencies: [MemoryClient]
-      
-    KnowledgeBase:
-      script_path: main_pc_code/agents/knowledge_base.py
-      port: 26010
-      health_check_port: 27010
-      required: true
-      dependencies: [MemoryClient]
-      
     MemoryOrchestratorService:
       script_path: pc2_code/agents/memory_orchestrator_service.py
       port: 7140
       health_check_port: 8140
-      required: true
-      dependencies: []
-      
-  # GPU and model management (MainPC primary)
+      dependencies: [ServiceRegistry]
+
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 8713
+      dependencies: [MemoryOrchestratorService]
+
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 8574
+      dependencies: [MemoryClient]
+
+    KnowledgeBase:
+      script_path: main_pc_code/agents/knowledge_base.py
+      port: 5715
+      health_check_port: 8715
+      dependencies: [SessionMemoryAgent]
+
+    CacheManager:
+      script_path: pc2_code/agents/cache_manager.py
+      port: 7102
+      health_check_port: 8102
+      dependencies: [MemoryOrchestratorService]
+
+    UnifiedMemoryReasoningAgent:
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py
+      port: 7105
+      health_check_port: 8105
+      dependencies: [CacheManager]
+
+    ContextManager:
+      script_path: pc2_code/agents/context_manager.py
+      port: 7111
+      health_check_port: 8111
+      dependencies: [UnifiedMemoryReasoningAgent]
+
+    ExperienceTracker:
+      script_path: pc2_code/agents/experience_tracker.py
+      port: 7112
+      health_check_port: 8112
+      dependencies: [ContextManager]
+
+  # GPU INFRASTRUCTURE - High-performance AI processing (MainPC only)
   gpu_infrastructure:
-    GGUFModelManager:
-      script_path: main_pc_code/agents/gguf_model_manager.py
-      port: 26013
-      health_check_port: 27013
-      required: true
-      dependencies: [SystemDigitalTwin]
-      
-    ModelManagerAgent:
-      script_path: main_pc_code/agents/model_manager_agent.py
-      port: 5568
-      health_check_port: 6568
-      required: true
-      dependencies: [GGUFModelManager]
-      
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
-      port: 26014
-      health_check_port: 27014
-      required: true
-      dependencies: [ModelManagerAgent]
-      
-    PredictiveLoader:
-      script_path: main_pc_code/agents/predictive_loader.py
-      port: 26015
-      health_check_port: 27015
-      required: true
+      port: 5603
+      health_check_port: 8603
+      dependencies: [ModelManagerSuite]
+
+    ModelManagerAgent:
+      script_path: main_pc_code/agents/model_manager_agent.py
+      port: 5585
+      health_check_port: 8585
       dependencies: [VRAMOptimizerAgent]
 
-  # AI reasoning and processing
+    CUDAAgent:
+      script_path: main_pc_code/agents/cuda_agent.py
+      port: 5623
+      health_check_port: 8623
+      dependencies: [ModelManagerAgent]
+
+    HuggingFaceServiceAgent:
+      script_path: main_pc_code/agents/huggingface_service_agent.py
+      port: 5664
+      health_check_port: 8664
+      dependencies: [CUDAAgent]
+
+  # REASONING SERVICES - AI reasoning and decision making (MainPC)
   reasoning_services:
     ChainOfThoughtAgent:
-      script_path: main_pc_code/agents/FORMAINPC/ChainOfThoughtAgent.py
-      port: 26016
-      health_check_port: 27016
-      required: true
-      dependencies: [ModelManagerAgent]
-      
-    GoTToTAgent:
-      script_path: main_pc_code/agents/FORMAINPC/GOT_TOTAgent.py
-      port: 26017
-      health_check_port: 27017
-      required: true
-      dependencies: [ModelManagerAgent]
-      
+      script_path: main_pc_code/agents/chain_of_thought_agent.py
+      port: 5712
+      health_check_port: 8712
+      dependencies: [HuggingFaceServiceAgent, KnowledgeBase]
+
     CognitiveModelAgent:
-      script_path: main_pc_code/agents/FORMAINPC/CognitiveModelAgent.py
-      port: 26018
-      health_check_port: 27018
-      required: true
+      script_path: main_pc_code/agents/cognitive_model_agent.py
+      port: 5698
+      health_check_port: 8698
+      dependencies: [ChainOfThoughtAgent]
+
+    LearningAgent:
+      script_path: main_pc_code/agents/learning_agent.py
+      port: 5607
+      health_check_port: 8607
+      dependencies: [CognitiveModelAgent]
+
+    ReasoningChainAgent:
+      script_path: main_pc_code/agents/reasoning_chain_agent.py
+      port: 5639
+      health_check_port: 8639
+      dependencies: [LearningAgent]
+
+    ThoughtAgent:
+      script_path: main_pc_code/agents/thought_agent.py
+      port: 5675
+      health_check_port: 8675
+      dependencies: [ReasoningChainAgent]
+
+    AssociationRetrievalAgent:
+      script_path: main_pc_code/agents/association_retrieval_agent.py
+      port: 5578
+      health_check_port: 8578
+      dependencies: [ThoughtAgent]
+
+    AssociativeReasoningAgent:
+      script_path: main_pc_code/agents/associative_reasoning_agent.py
+      port: 5579
+      health_check_port: 8579
+      dependencies: [AssociationRetrievalAgent]
+
+    MetaCognitionAgent:
+      script_path: main_pc_code/agents/meta_cognition_agent.py
+      port: 5618
+      health_check_port: 8618
+      dependencies: [AssociativeReasoningAgent]
+
+    ProbabilisticReasoningAgent:
+      script_path: main_pc_code/agents/probabilistic_reasoning_agent.py
+      port: 5633
+      health_check_port: 8633
+      dependencies: [MetaCognitionAgent]
+
+    LocalMemoryAgent:
+      script_path: main_pc_code/agents/local_memory_agent.py
+      port: 5609
+      health_check_port: 8609
+      dependencies: [ProbabilisticReasoningAgent]
+
+  # VISION PROCESSING - Visual AI capabilities (MainPC)
+  vision_processing:
+    VisionAgent:
+      script_path: main_pc_code/agents/vision_agent.py
+      port: 5689
+      health_check_port: 8689
       dependencies: [ModelManagerAgent]
 
-  # Utility and support services
+    VisionProcessingAgent:
+      script_path: pc2_code/agents/vision_processing_agent.py
+      port: 7150
+      health_check_port: 8150
+      dependencies: [VisionAgent]
+
+  # LEARNING KNOWLEDGE - Knowledge acquisition and learning (MainPC)
+  learning_knowledge:
+    ContinualLearningAgent:
+      script_path: main_pc_code/agents/continual_learning_agent.py
+      port: 5600
+      health_check_port: 8600
+      dependencies: [VisionProcessingAgent]
+
+    PersonalityTraitsAgent:
+      script_path: main_pc_code/agents/personality_traits_agent.py
+      port: 5629
+      health_check_port: 8629
+      dependencies: [ContinualLearningAgent]
+
+    PersonalityFrameworkAgent:
+      script_path: main_pc_code/agents/personality_framework_agent.py
+      port: 5628
+      health_check_port: 8628
+      dependencies: [PersonalityTraitsAgent]
+
+    LearningCoordinatorAgent:
+      script_path: main_pc_code/agents/learning_coordinator_agent.py
+      port: 5608
+      health_check_port: 8608
+      dependencies: [PersonalityFrameworkAgent]
+
+    KnowledgeIntegrationAgent:
+      script_path: main_pc_code/agents/knowledge_integration_agent.py
+      port: 5605
+      health_check_port: 8605
+      dependencies: [LearningCoordinatorAgent]
+
+  # LANGUAGE PROCESSING - NLP and communication (Both machines)
+  language_processing:
+    ModelOrchestrator:
+      script_path: main_pc_code/agents/model_orchestrator.py
+      port: "${PORT_OFFSET}+7213"
+      health_check_port: "${PORT_OFFSET}+8213"
+      dependencies: [ModelManagerSuite]
+
+    GoalManager:
+      script_path: main_pc_code/agents/goal_manager.py
+      port: "${PORT_OFFSET}+7205"
+      health_check_port: "${PORT_OFFSET}+8205"
+      dependencies: [ModelOrchestrator]
+
+    IntentionValidatorAgent:
+      script_path: main_pc_code/agents/intention_validator_agent.py
+      port: 5701
+      health_check_port: 8701
+      dependencies: [GoalManager]
+
+    NLUAgent:
+      script_path: main_pc_code/agents/nlu_agent.py
+      port: 5709
+      health_check_port: 8709
+      dependencies: [IntentionValidatorAgent]
+
+    AdvancedCommandHandler:
+      script_path: main_pc_code/agents/advanced_command_handler.py
+      port: 5710
+      health_check_port: 8710
+      dependencies: [NLUAgent]
+
+    ChitchatAgent:
+      script_path: main_pc_code/agents/chitchat_agent.py
+      port: 5711
+      health_check_port: 8711
+      dependencies: [AdvancedCommandHandler]
+
+    FeedbackHandler:
+      script_path: main_pc_code/agents/feedback_handler.py
+      port: 5636
+      health_check_port: 8636
+      dependencies: [ChitchatAgent]
+
+    Responder:
+      script_path: main_pc_code/agents/responder.py
+      port: 5637
+      health_check_port: 8637
+      dependencies: [FeedbackHandler]
+
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: 5595
+      health_check_port: 8595
+      dependencies: [Responder]
+
+    DynamicIdentityAgent:
+      script_path: main_pc_code/agents/dynamic_identity_agent.py
+      port: 5802
+      health_check_port: 8802
+      dependencies: [TranslationService]
+
+    EmotionSynthesisAgent:
+      script_path: main_pc_code/agents/emotion_synthesis_agent.py
+      port: 5706
+      health_check_port: 8706
+      dependencies: [DynamicIdentityAgent]
+
+  # SPEECH SERVICES - Voice and audio processing (MainPC)
+  speech_services:
+    SpeechToTextAgent:
+      script_path: main_pc_code/agents/speech_to_text_agent.py
+      port: 5671
+      health_check_port: 8671
+      dependencies: [EmotionSynthesisAgent]
+
+    TextToSpeechAgent:
+      script_path: main_pc_code/agents/text_to_speech_agent.py
+      port: 5677
+      health_check_port: 8677
+      dependencies: [SpeechToTextAgent]
+
+    VoiceProcessingAgent:
+      script_path: main_pc_code/agents/voice_processing_agent.py
+      port: 5690
+      health_check_port: 8690
+      dependencies: [TextToSpeechAgent]
+
+  # AUDIO INTERFACE - Audio system integration (MainPC)
+  audio_interface:
+    AudioAgent:
+      script_path: main_pc_code/agents/audio_agent.py
+      port: 5580
+      health_check_port: 8580
+      dependencies: [VoiceProcessingAgent]
+
+    MicrophoneAgent:
+      script_path: main_pc_code/agents/microphone_agent.py
+      port: 5620
+      health_check_port: 8620
+      dependencies: [AudioAgent]
+
+    SpeakerAgent:
+      script_path: main_pc_code/agents/speaker_agent.py
+      port: 5672
+      health_check_port: 8672
+      dependencies: [MicrophoneAgent]
+
+  # EMOTION SYSTEM - Emotional intelligence (MainPC)
+  emotion_system:
+    EmotionAgent:
+      script_path: main_pc_code/agents/emotion_agent.py
+      port: 5604
+      health_check_port: 8604
+      dependencies: [SpeakerAgent]
+
+    EmotionalIntelligenceAgent:
+      script_path: main_pc_code/agents/emotional_intelligence_agent.py
+      port: 5705
+      health_check_port: 8705
+      dependencies: [EmotionAgent]
+
+  # UTILITY SERVICES - Utility and helper services (Both machines)
   utility_services:
     CodeGenerator:
-      script_path: main_pc_code/agents/code_generator.py
-      port: 5604
-      health_check_port: 6604
-      required: false
-      dependencies: [ModelManagerAgent]
-      
-    Executor:
-      script_path: main_pc_code/agents/executor.py
-      port: 5603
-      health_check_port: 6603
-      required: false
-      dependencies: [SystemDigitalTwin]
-      
+      script_path: main_pc_code/agents/code_generator_agent.py
+      port: 5650
+      health_check_port: 8650
+      dependencies: [SentimentAnalysisAgent]
+
+    SentimentAnalysisAgent:
+      script_path: main_pc_code/agents/sentiment_analysis_agent.py
+      port: 5665
+      health_check_port: 8665
+      dependencies: []
+
+    SelfTrainingOrchestrator:
+      script_path: main_pc_code/agents/self_training_orchestrator.py
+      port: 5660
+      health_check_port: 8660
+      dependencies: [CodeGenerator]
+
     PredictiveHealthMonitor:
       script_path: main_pc_code/agents/predictive_health_monitor.py
-      port: 26019
-      health_check_port: 27019
-      required: true
-      dependencies: [SystemDigitalTwin]
-      
+      port: 5613
+      health_check_port: 8613
+      dependencies: [SelfTrainingOrchestrator]
+
     FixedStreamingTranslation:
       script_path: main_pc_code/agents/fixed_streaming_translation.py
+      port: 5584
+      health_check_port: 8584
+      dependencies: [PredictiveHealthMonitor]
+
+    Executor:
+      script_path: main_pc_code/agents/executor.py
+      port: 5606
+      health_check_port: 8606
+      dependencies: [FixedStreamingTranslation]
+
+    TinyLlamaServiceEnhanced:
+      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+      port: 5615
+      health_check_port: 8615
+      dependencies: [Executor]
+
+    LocalFineTunerAgent:
+      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+      port: 5642
+      health_check_port: 8642
+      dependencies: [TinyLlamaServiceEnhanced]
+
+    NLLBAdapter:
+      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
       port: 5581
-      health_check_port: 6581
-      required: false
-      dependencies: [ModelManagerAgent]
+      health_check_port: 8581
+      dependencies: [LocalFineTunerAgent]
 
-  # Learning and adaptation
-  learning_services:
-    ModelEvaluationFramework:
-      script_path: main_pc_code/agents/model_evaluation_framework.py
-      port: 26020
-      health_check_port: 27020
-      required: false
-      dependencies: [ModelManagerAgent]
-      
-    LearningOrchestrationService:
-      script_path: main_pc_code/agents/learning_orchestration_service.py
-      port: 26021
-      health_check_port: 27021
-      required: false
-      dependencies: [ModelEvaluationFramework]
-      
-    LearningOpportunityDetector:
-      script_path: main_pc_code/agents/learning_opportunity_detector.py
-      port: 26022
-      health_check_port: 27022
-      required: false
-      dependencies: [LearningOrchestrationService]
-
-  # PC2 specific services
+  # PC2 SERVICES - PC2-specific services
   pc2_services:
     TieredResponder:
       script_path: pc2_code/agents/tiered_responder.py
       port: 7100
       health_check_port: 8100
-      required: true
-      dependencies: [ResourceManager]
-      
+      dependencies: [MemoryOrchestratorService]
+
     AsyncProcessor:
       script_path: pc2_code/agents/async_processor.py
       port: 7101
       health_check_port: 8101
-      required: true
-      dependencies: [ResourceManager]
-      
-    CacheManager:
-      script_path: pc2_code/agents/cache_manager.py
-      port: 7102
-      health_check_port: 8102
-      required: true
-      dependencies: [ResourceManager]
-      
+      dependencies: [TieredResponder]
+
     ResourceManager:
       script_path: pc2_code/agents/resource_manager.py
-      port: 7103
-      health_check_port: 8103
-      required: true
-      dependencies: []
+      port: 7113
+      health_check_port: 8113
+      dependencies: [AsyncProcessor]
 
-# Machine profiles defining which agent groups run where
-machine_profiles:
-  mainpc:
-    enabled_groups: [core_services, memory_system, gpu_infrastructure, reasoning_services, utility_services, learning_services]
-    hardware:
-      gpu: RTX_4090
-      memory_gb: 32
-      cpu_cores: 16
-      
-  pc2:
-    enabled_groups: [core_services, memory_system, pc2_services]
-    hardware:
-      gpu: RTX_3060
-      memory_gb: 16
-      cpu_cores: 8
+    TaskScheduler:
+      script_path: pc2_code/agents/task_scheduler.py
+      port: 7115
+      health_check_port: 8115
+      dependencies: [ResourceManager]
 
-# Override mechanism - these files will be merged with this config
-overrides:
-  mainpc: config/overrides/mainpc.yaml
-  pc2: config/overrides/pc2.yaml
-  docker: config/overrides/docker.yaml
-  production: config/overrides/production.yaml 
+    AdvancedRouter:
+      script_path: pc2_code/agents/advanced_router.py
+      port: 7129
+      health_check_port: 8129
+      dependencies: [TaskScheduler]
+
+    AuthenticationAgent:
+      script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py
+      port: 7116
+      health_check_port: 8116
+      dependencies: [AdvancedRouter]
+
+    UnifiedUtilsAgent:
+      script_path: pc2_code/agents/ForPC2/unified_utils_agent.py
+      port: 7118
+      health_check_port: 8118
+      dependencies: [AuthenticationAgent]
+
+    ProactiveContextMonitor:
+      script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py
+      port: 7119
+      health_check_port: 8119
+      dependencies: [UnifiedUtilsAgent]
+
+    AgentTrustScorer:
+      script_path: pc2_code/agents/AgentTrustScorer.py
+      port: 7122
+      health_check_port: 8122
+      dependencies: [ProactiveContextMonitor]
+
+    DreamWorldAgent:
+      script_path: pc2_code/agents/DreamWorldAgent.py
+      port: 7104
+      health_check_port: 8104
+      dependencies: [AgentTrustScorer]
+
+    DreamingModeAgent:
+      script_path: pc2_code/agents/DreamingModeAgent.py
+      port: 7127
+      health_check_port: 8127
+      dependencies: [DreamWorldAgent]
+
+    TutorAgent:
+      script_path: pc2_code/agents/tutor_agent.py
+      port: 7108
+      health_check_port: 8108
+      dependencies: [DreamingModeAgent]
+
+    TutoringAgent:
+      script_path: pc2_code/agents/tutoring_agent.py
+      port: 7131
+      health_check_port: 8131
+      dependencies: [TutorAgent]
+
+    FileSystemAssistantAgent:
+      script_path: pc2_code/agents/filesystem_assistant_agent.py
+      port: 7123
+      health_check_port: 8123
+      dependencies: [TutoringAgent]
+
+    RemoteConnectorAgent:
+      script_path: pc2_code/agents/remote_connector_agent.py
+      port: 7124
+      health_check_port: 8124
+      dependencies: [FileSystemAssistantAgent]
+
+    UnifiedWebAgent:
+      script_path: pc2_code/agents/unified_web_agent.py
+      port: 7126
+      health_check_port: 8126
+      dependencies: [RemoteConnectorAgent] 

@@ -278,7 +278,9 @@ pc2_services:
         scope: "pc2_agents",
         prometheus_port: "${PORT_OFFSET}+9100",
         cross_machine_sync: true,
-        mainpc_hub_endpoint: "http://192.168.100.16:9000",
+        # Endpoint for the MainPC ObservabilityHub.  Uses environment variable
+        # MAINPC_OBS_HUB so deployments can override without editing this file.
+        mainpc_hub_endpoint: "${MAINPC_OBS_HUB}",
         parallel_health_checks: true,
         prediction_enabled: true
       }

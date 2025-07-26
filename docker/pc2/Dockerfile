@@ -18,11 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN ln -sf /usr/bin/python3 /usr/bin/python && \
     ln -sf /usr/bin/pip3 /usr/bin/pip
 
-# Install Python dependencies
+COPY requirements.base.txt /app/requirements.base.txt
 COPY docker/pc2/requirements.pc2.txt /app/requirements.txt
 
 # Install Python dependencies but optimize for size
 RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cu121 && \
     pip install --no-cache-dir transformers[sentencepiece] sacremoses ctranslate2 && \
@@ -101,3 +102,6 @@ CMD ["bash", "-c", "/app/memory_monitor.sh"]
 LABEL security_level="hardened" \
       user="non-root" \
       work_package="WP-02"
+
+# Add group filtering
+ENV ENABLED_GROUPS="core_services,memory_system,pc2_services,utility_services,language_processing"

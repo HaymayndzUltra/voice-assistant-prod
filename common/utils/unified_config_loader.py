@@ -94,6 +94,17 @@ class UnifiedConfigLoader:
         elif machine in ["pc2"]:
             return "pc2"
         
+        # Additional checks: GPU detection or system info
+        try:
+            import subprocess
+            gpu_info = subprocess.check_output(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]).decode().strip()
+            if "RTX 4090" in gpu_info:
+                return "mainpc"
+            elif "RTX 3060" in gpu_info:
+                return "pc2"
+        except:
+            pass
+        
         # Fallback detection based on hostname or other indicators
         hostname = os.environ.get("HOSTNAME", "").lower()
         if "mainpc" in hostname or "main" in hostname:
@@ -101,8 +112,8 @@ class UnifiedConfigLoader:
         elif "pc2" in hostname:
             return "pc2"
         
-        # Default fallback
-        logger.warning("Could not auto-detect machine type, defaulting to 'mainpc'")
+        # Default fallback with guidance
+        logger.warning("Could not auto-detect machine type. Please set MACHINE_TYPE environment variable to 'mainpc' or 'pc2'. Defaulting to 'mainpc'")
         return "mainpc"
     
     def _load_configuration(self):
@@ -125,7 +136,15 @@ class UnifiedConfigLoader:
             logger.error(f"Error loading base config: {e}")
             return self._load_legacy_fallback()
         
-        # 2. Apply machine-specific overrides
+        # 2. Process includes if present
+        if "include" in base_config:
+            included_configs = self._process_includes(base_config["include"])
+            for included_config in included_configs:
+                base_config = self._deep_merge(base_config, included_config)
+            overrides_applied.append("includes")
+            logger.debug(f"Processed {len(base_config['include'])} included configs")
+        
+        # 3. Apply machine-specific overrides
         machine_override_path = self._overrides_dir / f"{self._machine}.yaml"
         if machine_override_path.exists():
             try:
@@ -139,7 +158,7 @@ class UnifiedConfigLoader:
             except Exception as e:
                 logger.warning(f"Error loading machine overrides: {e}")
         
-        # 3. Apply environment-specific overrides (docker, production, etc.)
+        # 4. Apply environment-specific overrides (docker, production, etc.)
         env_override = os.environ.get("CONFIG_OVERRIDE", "").lower()
         if env_override:
             env_override_path = self._overrides_dir / f"{env_override}.yaml"
@@ -155,12 +174,12 @@ class UnifiedConfigLoader:
                 except Exception as e:
                     logger.warning(f"Error loading environment overrides: {e}")
         
-        # 4. Apply environment variable substitutions
+        # 5. Apply environment variable substitutions
         base_config = self._substitute_environment_variables(base_config)
         if any("${" in str(v) for v in self._flatten_dict(base_config).values()):
             overrides_applied.append("env_vars")
         
-        # 5. Filter agents based on machine profile
+        # 6. Filter agents based on machine profile
         base_config = self._filter_agents_for_machine(base_config)
         
         # Cache the final configuration
@@ -186,8 +205,13 @@ class UnifiedConfigLoader:
             PathManager.get_project_root() / "config" / "startup_config.yaml"
         ]
         
+        import warnings
         for path in legacy_paths:
             if path.exists():
+                warnings.warn(
+                    f"[DEPRECATION] Loading legacy config {path.name}; please migrate to startup_config.v3.yaml. This fallback will be removed in a future release.",
+                    DeprecationWarning,
+                )
                 try:
                     with open(path, 'r') as f:
                         config = yaml.safe_load(f)
@@ -215,6 +239,32 @@ class UnifiedConfigLoader:
             overrides_applied=["minimal_fallback"]
         )
         logger.warning("Created minimal fallback configuration")
+    
+    def _process_includes(self, include_paths: List[str]) -> List[Dict[str, Any]]:
+        """Process include directives and load the referenced configuration files."""
+        included_configs = []
+        project_root = PathManager.get_project_root()
+        
+        for include_path in include_paths:
+            # Resolve relative paths from project root
+            if not include_path.startswith('/'):
+                full_path = project_root / include_path
+            else:
+                full_path = Path(include_path)
+            
+            if not full_path.exists():
+                logger.warning(f"Included config file not found: {full_path}")
+                continue
+            
+            try:
+                with open(full_path, 'r') as f:
+                    included_config = yaml.safe_load(f)
+                included_configs.append(included_config)
+                logger.debug(f"Loaded included config: {full_path}")
+            except Exception as e:
+                logger.error(f"Error loading included config {full_path}: {e}")
+        
+        return included_configs
     
     def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """Deep merge two dictionaries, with override taking precedence."""

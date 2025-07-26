@@ -1,0 +1,60 @@
+# Docker Environment Override
+# Container-specific configurations for both MainPC and PC2
+
+# Docker environment detection
+environment:
+  DOCKER_CONTAINER: true
+  DOCKER_NETWORK: ai_system_network
+  CONTAINER_MODE: true
+
+# Container resource adjustments
+resource_limits:
+  # Reduce memory usage in containers
+  memory_mb: 3072  # Reduced from host defaults
+  cpu_percent: 60  # More conservative in containers
+  
+# Container networking
+network:
+  bind_host: "0.0.0.0"
+  redis_url: "redis://redis:6379/0"
+  service_discovery_mode: "container"
+  
+# Container-specific paths
+paths:
+  data_dir: "/app/data"
+  logs_dir: "/app/logs"
+  cache_dir: "/app/cache"
+  models_dir: "/app/models"
+  config_dir: "/app/config"
+
+# Container health checks
+health_checks:
+  interval: 30
+  timeout: 10
+  retries: 3
+  startup_grace_period: 60
+
+# Container-optimized logging
+logging:
+  level: INFO
+  format: "container"
+  output: "stdout"
+  file_logging: false  # Use container logs
+
+# Container service discovery
+service_discovery:
+  mode: "dns"
+  namespace: "ai_system_network"
+  redis_discovery: true
+  
+# Container security
+security:
+  run_as_user: "ai"
+  read_only_root: false
+  no_new_privileges: true
+  
+# Container startup optimization
+startup:
+  lazy_loading: true
+  staged_startup: true
+  dependency_check_timeout: 120

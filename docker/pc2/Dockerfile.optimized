@@ -27,7 +27,7 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python && \
 RUN pip install --no-cache-dir -U pip setuptools wheel
 
 # Copy requirements and install dependencies
-COPY requirements/base.txt /tmp/base.txt
+COPY requirements.base.txt /tmp/base.txt
 COPY docker/pc2/requirements.pc2.txt /tmp/pc2_requirements.txt
 
 # Install base dependencies

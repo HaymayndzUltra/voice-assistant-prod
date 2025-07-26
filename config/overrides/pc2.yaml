@@ -1,161 +1,93 @@
-# PC2 Machine-Specific Overrides  
-# Utility and memory-focused configuration for RTX 3060 system
+# PC2 Configuration Override  
+# RTX 3060 - 12GB VRAM - Memory & Utility Services
+# Machine Type: PC2 / pc2
 
-version: "3.0"
-machine: "pc2"
-description: "PC2 overrides for RTX 3060 utility system"
+# Environment detection
+environment:
+  MACHINE_TYPE: pc2
+  MACHINE_ROLE: PC2
+  GPU_TIER: mid_range
+  DOCKER_CONTAINER: "${DOCKER_CONTAINER:-false}"
 
-# PC2-specific environment variables
-global_settings:
-  environment:
-    MACHINE_ROLE: PC2
-    CUDA_VISIBLE_DEVICES: "0"
-    TORCH_CUDA_ARCH_LIST: "8.6"  # RTX 3060 architecture
-    GPU_MEMORY_FRACTION: "0.8"
-    VRAM_LIMIT_MB: "10000"  # RTX 3060 has 12GB, leave headroom
-    MODEL_CACHE_DIR: "/app/models"
-    HUGGINGFACE_CACHE: "/app/cache/huggingface"
-    
-  # Moderate resource limits for PC2
-  resource_limits:
-    cpu_percent: 75
-    memory_mb: 4096
-    max_threads: 8
-    gpu_memory_mb: 10000
-    
-  # PC2 network settings
-  network:
-    subnet: "172.21.0.0/16"
-    gateway: "172.21.0.1"
+# Resource limits optimized for RTX 3060
+resource_limits:
+  vram_gb: 12
+  memory_mb: 4096
+  cpu_percent: 70
+  max_concurrent_agents: 23
 
-# Override specific agent configurations for PC2
-agent_overrides:
-  # Memory orchestration services
-  memory_system:
-    MemoryOrchestratorService:
-      config:
-        max_cache_size: 2048
-        cleanup_interval: 300
-        compression_enabled: true
-        
-  # PC2-specific services optimized for utility work
-  pc2_services:
-    TieredResponder:
-      config:
-        response_cache_size: 1000
-        tier_timeout_ms: 2000
-        fallback_enabled: true
-        
-    AsyncProcessor:
-      config:
-        max_concurrent: 4
-        queue_size: 100
-        processing_timeout: 30
-        
-    CacheManager:
-      config:
-        cache_size_mb: 512
-        eviction_policy: "lru"
-        ttl_seconds: 3600
-        
-    ResourceManager:
-      config:
-        memory_threshold: 0.8
-        cpu_threshold: 0.85
-        cleanup_interval: 180
-        
-  # Core services run minimal configurations on PC2
+# GPU settings for RTX 3060
+gpu_settings:
+  layers: 30
+  cuda_version: "8.6"
+  optimization_level: medium
+  tensor_parallel_size: 1
+  gpu_memory_fraction: 0.8
+  enable_mixed_precision: true
+
+# Agent group configurations for PC2
+agent_groups:
   core_services:
-    ServiceRegistry:
-      config:
-        backend: memory  # Lightweight on PC2
-        sync_with_mainpc: true
-        
-# PC2 runs specific agent groups
-enabled_agent_groups:
-  - core_services  # Minimal - ServiceRegistry only
-  - memory_system  # MemoryOrchestratorService only
-  - pc2_services   # All PC2-specific services
-
-# PC2-specific disabled agents (MainPC handles these)
-disabled_agents:
-  # Disable MainPC memory components on PC2
-  - MemoryClient
-  - SessionMemoryAgent  
-  - KnowledgeBase
-  # Disable all GPU infrastructure
-  - GGUFModelManager
-  - ModelManagerAgent
-  - VRAMOptimizerAgent
-  - PredictiveLoader
-  # Disable reasoning services (GPU intensive)
-  - ChainOfThoughtAgent
-  - GoTToTAgent
-  - CognitiveModelAgent
-  # Disable most utility services (MainPC handles)
-  - CodeGenerator
-  - Executor
-  - PredictiveHealthMonitor
-  - FixedStreamingTranslation
-  # Disable learning services (GPU intensive)
-  - ModelEvaluationFramework
-  - LearningOrchestrationService
-  - LearningOpportunityDetector
-
-# Hardware-specific tuning for PC2
-hardware_config:
-  gpu:
-    type: RTX_3060
-    memory_gb: 12
-    compute_capability: "8.6"
-    max_batch_size: 256
+    resource_multiplier: 0.8
+    priority: medium
     
-  cpu:
-    cores: 8
-    threads: 16
-    base_frequency: 3.4
-    boost_frequency: 4.6
+  memory_system:
+    resource_multiplier: 1.5
+    priority: critical
     
-  memory:
-    total_gb: 16
-    available_for_ai: 12
-    swap_gb: 8
+  pc2_services:
+    resource_multiplier: 1.0
+    priority: high
     
-  storage:
-    models_path: "/app/models"
-    cache_path: "/app/cache"
-    logs_path: "/app/logs"
-    temp_path: "/tmp/ai_system"
+  utility_services:
+    resource_multiplier: 0.7
+    priority: medium
 
-# Docker-specific settings for PC2
-docker:
-  compose_file: "docker-compose.pc2.yml"
-  base_image: "nvidia/cuda:12.1-runtime-ubuntu22.04"  # Runtime only, not devel
-  runtime: "nvidia"
+# Machine-specific agent configurations
+agents:
+  MemoryOrchestratorService:
+    config:
+      memory_pool_size_gb: 8
+      cache_retention_hours: 24
+      sync_frequency: 30
+      
+  CacheManager:
+    config:
+      max_cache_size_gb: 4
+      eviction_policy: "lru"
+      
+  TieredResponder:
+    config:
+      response_tiers: 3
+      load_balancing: true
+
+# Network configuration for PC2
+network:
+  interface: "192.168.1.0/24"
+  port_range: "7000-8999"
+  mainpc_endpoint: "${MAINPC_ENDPOINT:-http://mainpc:9000}"
   
-  gpu_support:
-    enabled: true
-    driver: "nvidia"
-    capabilities: ["gpu", "utility"]  # No compute for PC2
-    
-  resource_reservations:
-    memory: "2048m"
-    cpus: "4.0"
-    gpu_memory: "8192m"
-
-# Port mappings specific to PC2 (avoid conflicts with MainPC)
-port_mappings:
-  base_offset: 1000
-  pc2_services_offset: 7000
-  
-# Cross-machine communication settings
+# Cross-machine communication
 cross_machine:
-  mainpc_ip: "192.168.1.100"  # Default, can be overridden
-  communication_port: 9999
-  heartbeat_interval: 30
+  mainpc_host: "${MAINPC_IP:-mainpc}"
+  sync_interval: 30
+  primary_role: false
+  memory_orchestrator_primary: true
+
+# Logging configuration
+logging:
+  level: INFO
+  max_file_size: "50MB"
+  backup_count: 5
   
-  # Services PC2 depends on from MainPC
-  mainpc_dependencies:
-    - SystemDigitalTwin
-    - ModelManagerAgent
-    - RequestCoordinator 
+# Health check settings  
+health_checks:
+  interval: 45
+  timeout: 15
+  enabled: true
+
+# Memory optimization for smaller VRAM
+memory_optimization:
+  enable_offloading: true
+  swap_threshold: 0.75
+  gradient_checkpointing: true
