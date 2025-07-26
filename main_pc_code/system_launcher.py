@@ -445,7 +445,14 @@ def main() -> None:
 
     # Load configuration
     if args.config:
-        config = load_config(config_path)
+        config_path = Path(args.config)
+        # Check if this is a v3 config file, use unified loader for proper machine filtering
+        if config_path.name.endswith('v3.yaml') or 'v3' in config_path.name:
+            print(f"Loading v3 config with machine filtering: {config_path}")
+            config = get_config()
+        else:
+            print(f"Loading legacy config directly: {config_path}")
+            config = load_config(config_path)
     elif USE_UNIFIED_CONFIG:
         config = get_config()
     else:

@@ -94,6 +94,17 @@ class UnifiedConfigLoader:
         elif machine in ["pc2"]:
             return "pc2"
         
+        # Additional checks: GPU detection or system info
+        try:
+            import subprocess
+            gpu_info = subprocess.check_output(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]).decode().strip()
+            if "RTX 4090" in gpu_info:
+                return "mainpc"
+            elif "RTX 3060" in gpu_info:
+                return "pc2"
+        except:
+            pass
+        
         # Fallback detection based on hostname or other indicators
         hostname = os.environ.get("HOSTNAME", "").lower()
         if "mainpc" in hostname or "main" in hostname:
@@ -101,8 +112,8 @@ class UnifiedConfigLoader:
         elif "pc2" in hostname:
             return "pc2"
         
-        # Default fallback
-        logger.warning("Could not auto-detect machine type, defaulting to 'mainpc'")
+        # Default fallback with guidance
+        logger.warning("Could not auto-detect machine type. Please set MACHINE_TYPE environment variable to 'mainpc' or 'pc2'. Defaulting to 'mainpc'")
         return "mainpc"
     
     def _load_configuration(self):

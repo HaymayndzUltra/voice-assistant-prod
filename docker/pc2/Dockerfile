@@ -102,3 +102,6 @@ CMD ["bash", "-c", "/app/memory_monitor.sh"]
 LABEL security_level="hardened" \
       user="non-root" \
       work_package="WP-02"
+
+# Add group filtering
+ENV ENABLED_GROUPS="core_services,memory_system,pc2_services,utility_services,language_processing"

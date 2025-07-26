@@ -1,1 +1,93 @@
-{}
+# PC2 Configuration Override  
+# RTX 3060 - 12GB VRAM - Memory & Utility Services
+# Machine Type: PC2 / pc2
+
+# Environment detection
+environment:
+  MACHINE_TYPE: pc2
+  MACHINE_ROLE: PC2
+  GPU_TIER: mid_range
+  DOCKER_CONTAINER: "${DOCKER_CONTAINER:-false}"
+
+# Resource limits optimized for RTX 3060
+resource_limits:
+  vram_gb: 12
+  memory_mb: 4096
+  cpu_percent: 70
+  max_concurrent_agents: 23
+
+# GPU settings for RTX 3060
+gpu_settings:
+  layers: 30
+  cuda_version: "8.6"
+  optimization_level: medium
+  tensor_parallel_size: 1
+  gpu_memory_fraction: 0.8
+  enable_mixed_precision: true
+
+# Agent group configurations for PC2
+agent_groups:
+  core_services:
+    resource_multiplier: 0.8
+    priority: medium
+    
+  memory_system:
+    resource_multiplier: 1.5
+    priority: critical
+    
+  pc2_services:
+    resource_multiplier: 1.0
+    priority: high
+    
+  utility_services:
+    resource_multiplier: 0.7
+    priority: medium
+
+# Machine-specific agent configurations
+agents:
+  MemoryOrchestratorService:
+    config:
+      memory_pool_size_gb: 8
+      cache_retention_hours: 24
+      sync_frequency: 30
+      
+  CacheManager:
+    config:
+      max_cache_size_gb: 4
+      eviction_policy: "lru"
+      
+  TieredResponder:
+    config:
+      response_tiers: 3
+      load_balancing: true
+
+# Network configuration for PC2
+network:
+  interface: "192.168.1.0/24"
+  port_range: "7000-8999"
+  mainpc_endpoint: "${MAINPC_ENDPOINT:-http://mainpc:9000}"
+  
+# Cross-machine communication
+cross_machine:
+  mainpc_host: "${MAINPC_IP:-mainpc}"
+  sync_interval: 30
+  primary_role: false
+  memory_orchestrator_primary: true
+
+# Logging configuration
+logging:
+  level: INFO
+  max_file_size: "50MB"
+  backup_count: 5
+  
+# Health check settings  
+health_checks:
+  interval: 45
+  timeout: 15
+  enabled: true
+
+# Memory optimization for smaller VRAM
+memory_optimization:
+  enable_offloading: true
+  swap_threshold: 0.75
+  gradient_checkpointing: true

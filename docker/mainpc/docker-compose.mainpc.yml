@@ -256,6 +256,13 @@ services:
               count: 1
               capabilities: [gpu]
 
+  learning-knowledge-group:
+    build: { context: ../../, dockerfile: docker/mainpc/Dockerfile.agent-group, args: { GROUP_NAME: learning_knowledge } }
+    container_name: mainpc-learning-knowledge
+    depends_on: [core-services-group, memory-system-group]
+    deploy: { resources: { reservations: { devices: [{driver: nvidia, count: 1, capabilities: [gpu]}] } } }
+  # Add similar for speech_services, audio_interface, emotion_system, etc.
+
 # ============================================================================
 # VOLUMES AND NETWORKS
 # ============================================================================
