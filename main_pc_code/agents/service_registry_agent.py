@@ -52,7 +52,7 @@ from typing import Dict, Any, Optional, Protocol, runtime_checkable
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import AgentRegistration
 from common.env_helpers import get_env
-from common_utils.port_registry import get_port
+# from common_utils.port_registry import get_port
 from common.pools.redis_pool import get_redis_client_sync
 
 # ---------------------------------------------------------------------------

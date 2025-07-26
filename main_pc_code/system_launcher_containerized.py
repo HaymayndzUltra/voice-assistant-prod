@@ -267,7 +267,7 @@ def wait_for_batch_healthy(batch_agents: List[Dict[str, Any]], timeout_seconds: 
             host = agent.get("host", get_env("BIND_ADDRESS", "0.0.0.0"))
             if host == "0.0.0.0" and USE_COMMON_UTILS:
                 host = get_ip("main_pc")
-            port = int(agent.get("port"))
+            port = _expand_port_value(agent.get("port"))
             if check_port_is_open(host, port):
                 healthy.add(name)
                 remaining.pop(name, None)
@@ -353,7 +353,8 @@ def launch_agent(agent_cfg: Dict[str, Any], base_dir: Path, project_root: Path, 
 
     cmd = [sys.executable, script_path]
     if "port" in agent_cfg:
-        cmd.extend(["--port", str(agent_cfg["port"])])
+        expanded_port = _expand_port_value(agent_cfg["port"])
+        cmd.extend(["--port", str(expanded_port)])
 
     # Add dynamic parameters from the 'params' dictionary
     if "params" in agent_cfg and isinstance(agent_cfg["params"], dict):

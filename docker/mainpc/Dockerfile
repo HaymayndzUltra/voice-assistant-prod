@@ -1,7 +1,7 @@
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
 # Set environment variables
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -45,8 +45,11 @@ RUN pip install --no-cache-dir -U pip setuptools wheel && \
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
 
-# Install llama-cpp-python with CUDA support specifically for RTX 4090
-RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=89" pip install --no-cache-dir llama-cpp-python==0.2.23
+# Install llama-cpp-python with CUDA support for RTX 4090 (architecture 86)
+RUN CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=86" pip install --no-cache-dir llama-cpp-python==0.2.23
+
+# Install missing dependencies for error_bus (system-wide installation)
+RUN pip install --no-cache-dir nats-py asyncio-nats-client aiofiles
 
 # Copy application code
 COPY . /app/
@@ -58,14 +61,18 @@ RUN chmod +x /app/docker/mainpc/agent_starter.py \
 # Create necessary directories if they don't exist
 RUN mkdir -p /app/logs /app/data /app/models /app/config
 
+# Create non-root user for security
+RUN groupadd -r ai && useradd -r -g ai -m -s /bin/bash ai && \
+    chown -R ai:ai /app && \
+    chmod -R 755 /app
+
 # Default command - will be overridden by docker-compose
 
-# Declare volumes for proper permissions
+# Declare volumes for proper permissions  
 VOLUME ["/app/logs", "/app/data", "/app/models", "/app/cache"]
 
 USER ai
 
-ENTRYPOINT
 # Security and metadata labels
 LABEL security_level="hardened" \
       user="non-root" \
