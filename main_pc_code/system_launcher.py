@@ -95,51 +95,60 @@ def load_config(config_path: Path) -> Dict[str, Any]:
 
 
 def consolidate_agent_entries(config: Dict[str, Any], base_dir: Path) -> List[Dict[str, Any]]:
-    """Extract all agent dictionaries that contain a `script_path` key.
+    """Extract all agent dictionaries that contain a `script_path` key and enrich
+    them with additional metadata (absolute path + originating *group*).
 
-    For each agent found, add/overwrite the key `absolute_script_path` with the
-    resolved absolute path.
+    This helper is container-aware: it stores the YAML *agent group* name in the
+    resulting dict so that the launcher can filter agents per container via the
+    new `--groups` CLI flag.
     """
     consolidated: List[Dict[str, Any]] = []
 
-    def _process_section(value):
-        """Internal helper to extract agent dicts in a list."""
+    def _process_section(value, group_name: str | None = None):
         # Accept either a list of agent dicts **or** a dict keyed by agent name
         if isinstance(value, list):
             iterable = value
         elif isinstance(value, dict):
-            # Only process entries that look like agent configs (have script_path or are dicts)
             iterable = []
             for k, v in value.items():
                 if isinstance(v, dict):
-                    # This looks like an agent config
                     iterable.append(v | {"name": k})
                 elif isinstance(v, str) and "script_path" in str(v):
-                    # This might be a simple script_path string
                     iterable.append({"name": k, "script_path": v})
-                # Skip non-agent entries (ints, strings, etc.)
         else:
             return
 
         for entry in iterable:
-            if isinstance(entry, dict) and "script_path" in entry:
-                # Inject name if not present (for list form)
-                if "name" not in entry:
-                    entry["name"] = entry.get("agent_name") or entry.get("id") or "unknown"
-                relative_path = Path(entry["script_path"])
-                project_root = PathManager.get_project_root()
-                absolute_path = (project_root / relative_path).resolve()
-                entry["absolute_script_path"] = str(absolute_path)
-                consolidated.append(entry)
+            if not (isinstance(entry, dict) and "script_path" in entry):
+                continue
 
-    # v3 format places agents under `agent_groups`
+            if "name" not in entry:
+                entry["name"] = entry.get("agent_name") or entry.get("id") or "unknown"
+
+            # Record originating YAML group for later filtering
+            if group_name:
+                entry["group"] = group_name
+
+            relative_path = Path(entry["script_path"])
+            project_root = PathManager.get_project_root()
+            entry["absolute_script_path"] = str((project_root / relative_path).resolve())
+
+            consolidated.append(entry)
+
+    # v3 config (MainPC) – agents nested under `agent_groups`
     if "agent_groups" in config and isinstance(config["agent_groups"], dict):
         for _group_name, group_list in config["agent_groups"].items():
-            _process_section(group_list)
+            _process_section(group_list, _group_name)
 
-    # Legacy sections may still be top-level lists
+    # PC2 config keeps a flat list under `pc2_services`
+    if "pc2_services" in config and isinstance(config["pc2_services"], list):
+        _process_section(config["pc2_services"], "pc2_services")
+
+    # Legacy fall-back – iterate other top-level sections
     for section_name, section_value in config.items():
-        _process_section(section_value)
+        if section_name in ("agent_groups", "pc2_services"):
+            continue
+        _process_section(section_value, section_name)
 
     return consolidated
 
@@ -436,6 +445,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Launch and monitor agents from configuration")
     parser.add_argument("--dry-run", action="store_true", help="Check agents without launching them")
     parser.add_argument("--config", type=str, default=None, help="Path to configuration file")
+    parser.add_argument("--groups", type=str, default=None,
+                        help="Comma-separated list of YAML agent-group names to launch (e.g. core_services,gpu_infrastructure)")
+    parser.add_argument("--agent-names", type=str, default=None,
+                        help="Comma-separated list of explicit agent names to launch (overrides --groups)")
     args = parser.parse_args()
     
     # Determine the base directory (where this script is located)
@@ -458,8 +471,21 @@ def main() -> None:
     else:
         config = load_config(config_path)
 
-    # Extract and consolidate agent entries from all sections
+    # Extract and consolidate agent entries
     agents = consolidate_agent_entries(config, base_dir)
+
+    # Optional filtering by container group or agent names
+    if args.groups:
+        wanted_groups = {g.strip() for g in args.groups.split(',') if g.strip()}
+        agents = [a for a in agents if a.get("group") in wanted_groups]
+
+    if args.agent_names:
+        wanted_names = {n.strip() for n in args.agent_names.split(',') if n.strip()}
+        agents = [a for a in agents if a.get("name") in wanted_names]
+
+    if not agents:
+        print("[ERROR] No agents match the provided --groups/--agent-names filter", file=sys.stderr)
+        sys.exit(1)
 
     # Validate unique ports early to fail fast
     try:
@@ -469,7 +495,7 @@ def main() -> None:
         sys.exit(1)
 
     # Print summary information
-    print(f"Found {len(agents)} agent entries in configuration.")
+    print(f"Launching {len(agents)} agent entries after filtering.")
     for i, agent in enumerate(agents, 1):
         print(f"{i:2d}. {agent.get('name', 'Unknown'):<30} {agent.get('script_path', 'No script path')}")
 
@@ -516,6 +542,13 @@ def main() -> None:
         return
 
     # Set up signal handlers for graceful shutdown
+    # Container-specific logs directory – e.g. logs/core_services
+    logs_dir_suffix = "all_agents"
+    if args.groups:
+        logs_dir_suffix = "_".join(sorted(wanted_groups))
+    elif args.agent_names:
+        logs_dir_suffix = "custom_selection"
+
     processes: Dict[str, subprocess.Popen] = {}
 
     def signal_handler(sig, frame):
