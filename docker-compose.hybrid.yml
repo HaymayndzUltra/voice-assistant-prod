@@ -2,12 +2,11 @@ version: "3.9"
 
 services:
   remote-api-adapter:
-    image: ghcr.io/myorg/remote-api-adapter:${GIT_SHA}
-    build:
-      context: ./remote_api_adapter
+    image: ghcr.io/haymayndzultra/remote-api-adapter:${GIT_SHA}
+    # (remove build: ... if you deploy from prebuilt image)
     secrets:
       - openai_api_key
-      - bedrock_key
+      # - bedrock_key   # Optional, kung OpenAI lang gamit mo, pwede tanggalin ito
     healthcheck:
       test: ["CMD", "python", "-m", "remote_api_adapter.adapter", "health_check"]
       interval: 30s
@@ -15,7 +14,7 @@ services:
       retries: 3
 
   tiny-llama:
-    image: ghcr.io/myorg/tiny-llama:${GIT_SHA}
+    image: ghcr.io/haymayndzultra/tiny-llama:${GIT_SHA}
     runtime: nvidia
     environment:
       - MODEL_PATH=/mnt/models/tiny-llama
@@ -48,7 +47,7 @@ services:
       - "7101:9091"
 
   observability-hub-standby:
-    image: ghcr.io/myorg/observability-hub:${GIT_SHA}
+    image: ghcr.io/haymayndzultra/observability-hub:${GIT_SHA}
     deploy:
       replicas: 0
     ports:
@@ -65,5 +64,5 @@ volumes:
 secrets:
   openai_api_key:
     file: ./secrets/openai_api_key
-  bedrock_key:
-    file: ./secrets/bedrock_key
+  # bedrock_key:
+  #   file: ./secrets/bedrock_key
