@@ -1,0 +1,259 @@
+# Minimal Viable System (MVS) Configuration
+# Optimized for essential functionality with 13 core agents
+
+global_settings:
+  environment:
+    PYTHONPATH: '${PYTHONPATH}:/app'
+    LOG_LEVEL: 'INFO'
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_HYBRID_ROUTING: 'true'
+    ENABLE_RESOURCE_POOLING: 'true'
+  resource_limits:
+    cpu_percent: 60
+    memory_mb: 2048
+    dynamic_threads: true
+    vram_budget_percentage: 70
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    parallel_checks: true
+  hybrid_routing:
+    heavy_task_patterns:
+      - 'complex_reasoning'
+      - 'code_generation'
+      - 'multi_step_planning'
+      - 'large_context_analysis'
+    light_task_patterns:
+      - 'simple_qa'
+      - 'command_parsing'
+      - 'basic_translation'
+      - 'entity_extraction'
+    routing_thresholds:
+      token_count: 500
+      complexity_score: 0.7
+      latency_requirement_ms: 1000
+
+# Core MVS Services - 13 Essential Agents
+mvs_services:
+  # Layer 0: Foundation (1 agent)
+  ServiceRegistry:
+    script_path: main_pc_code/agents/service_registry_agent.py
+    port: 7200
+    health_check_port: 8200
+    required: true
+    dependencies: []
+    startup_order: 0
+    config:
+      backend: memory
+      enable_discovery: true
+      heartbeat_interval: 15
+
+  # Layer 1: Core Infrastructure (2 agents)
+  SystemDigitalTwin:
+    script_path: main_pc_code/agents/system_digital_twin.py
+    port: 7220
+    health_check_port: 8220
+    required: true
+    dependencies: [ServiceRegistry]
+    startup_order: 1
+    config:
+      state_persistence: true
+      checkpoint_interval: 300
+      enable_metrics: true
+
+  ObservabilityHub:
+    script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+    port: 9000
+    health_check_port: 9001
+    required: true
+    dependencies: [SystemDigitalTwin]
+    startup_order: 1
+    config:
+      prometheus_enabled: true
+      grafana_dashboards: true
+      alert_rules: production
+      retention_days: 7
+
+  # Layer 2: Request Processing (2 agents)
+  RequestCoordinator:
+    script_path: main_pc_code/agents/request_coordinator.py
+    port: 26002
+    health_check_port: 27002
+    required: true
+    dependencies: [SystemDigitalTwin]
+    startup_order: 2
+    config:
+      request_timeout: 30
+      max_concurrent_requests: 100
+      enable_request_batching: true
+
+  AsyncProcessor:
+    script_path: pc2_code/agents/async_processor.py
+    host: 0.0.0.0
+    port: 7101
+    health_check_port: 8101
+    required: true
+    dependencies: [ResourceManager]
+    startup_order: 3
+    config:
+      worker_threads: 4
+      queue_size: 1000
+      batch_processing: true
+
+  # Layer 3: Resource Management (2 agents)
+  ModelManagerSuite:
+    script_path: main_pc_code/model_manager_suite.py
+    port: 7211
+    health_check_port: 8211
+    required: true
+    dependencies: [SystemDigitalTwin]
+    startup_order: 2
+    config:
+      models_dir: models
+      vram_budget_percentage: 70
+      idle_timeout: 300
+      resource_pooling: true
+      preload_models:
+        - base_stt
+        - base_tts
+      model_loading_strategy: lazy
+
+  ResourceManager:
+    script_path: pc2_code/agents/resource_manager.py
+    host: 0.0.0.0
+    port: 7113
+    health_check_port: 8113
+    required: true
+    dependencies: [ObservabilityHub]
+    startup_order: 2
+    config:
+      cpu_allocation_strategy: dynamic
+      memory_allocation_strategy: adaptive
+      resource_monitoring_interval: 10
+
+  # Layer 4: Memory System (3 agents)
+  MemoryClient:
+    script_path: main_pc_code/agents/memory_client.py
+    port: 5713
+    health_check_port: 6713
+    required: true
+    dependencies: [SystemDigitalTwin]
+    startup_order: 3
+    config:
+      connection_pool_size: 10
+      request_timeout: 5
+      enable_caching: true
+
+  MemoryOrchestratorService:
+    script_path: pc2_code/agents/memory_orchestrator_service.py
+    host: 0.0.0.0
+    port: 7140
+    health_check_port: 8140
+    required: true
+    dependencies: []
+    startup_order: 2
+    config:
+      storage_backend: sqlite
+      db_path: data/unified_memory.db
+      cache_size_mb: 512
+      enable_compression: true
+
+  CacheManager:
+    script_path: pc2_code/agents/cache_manager.py
+    host: 0.0.0.0
+    port: 7102
+    health_check_port: 8102
+    required: true
+    dependencies: [MemoryOrchestratorService]
+    startup_order: 3
+    config:
+      cache_strategy: lru
+      max_cache_size_mb: 1024
+      ttl_seconds: 3600
+      enable_distributed_cache: false
+
+  # Layer 5: I/O Services (2 agents)
+  STTService:
+    script_path: main_pc_code/services/stt_service.py
+    port: 5800
+    health_check_port: 6800
+    required: true
+    dependencies: [ModelManagerSuite]
+    startup_order: 4
+    config:
+      model_name: whisper-base
+      language: auto
+      enable_streaming: true
+      chunk_size_ms: 1000
+
+  TTSService:
+    script_path: main_pc_code/services/tts_service.py
+    port: 5801
+    health_check_port: 6801
+    required: true
+    dependencies: [ModelManagerSuite]
+    startup_order: 4
+    config:
+      model_name: piper-tts
+      voice: en_US-lessac-medium
+      enable_streaming: true
+      audio_format: wav
+
+# Startup Configuration
+startup_config:
+  parallel_startup: true
+  startup_timeout_seconds: 300
+  health_check_interval: 10
+  max_startup_retries: 3
+  startup_sequence:
+    - phase: 0
+      agents: [ServiceRegistry]
+      wait_for_healthy: true
+    - phase: 1
+      agents: [SystemDigitalTwin, ObservabilityHub, MemoryOrchestratorService]
+      wait_for_healthy: true
+    - phase: 2
+      agents: [RequestCoordinator, ModelManagerSuite, ResourceManager]
+      wait_for_healthy: true
+    - phase: 3
+      agents: [MemoryClient, AsyncProcessor, CacheManager]
+      wait_for_healthy: true
+    - phase: 4
+      agents: [STTService, TTSService]
+      wait_for_healthy: true
+
+# Network Configuration
+network_config:
+  internal_network: 172.16.0.0/24
+  external_interface: 0.0.0.0
+  enable_tls: false
+  connection_timeout: 5000
+  keepalive_interval: 30
+
+# Monitoring and Alerting
+monitoring:
+  metrics_port: 9090
+  enable_distributed_tracing: true
+  log_aggregation: true
+  alert_channels:
+    - type: webhook
+      url: ${ALERT_WEBHOOK_URL}
+      severity: critical
+
+# Circuit Breaker Configuration
+circuit_breaker:
+  failure_threshold: 5
+  success_threshold: 3
+  timeout_seconds: 30
+  half_open_max_calls: 3
+
+# Feature Flags for Gradual Rollout
+feature_flags:
+  use_mvs_routing: 1.0  # 100% after testing
+  use_unified_memory: 1.0
+  use_resource_pooling: 1.0
+  enable_request_batching: 1.0
+  enable_hybrid_llm_routing: 1.0
