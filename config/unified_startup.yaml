@@ -1,0 +1,268 @@
+# UNIFIED-SYSTEM STARTUP CONFIGURATION
+# Phase 1 - Foundation Consolidation
+# Contains only essential (■) agents from both MainPC and PC2 systems
+
+global_settings:
+  environment:
+    PYTHONPATH: '${PYTHONPATH}:/workspace:/workspace/main_pc_code:/workspace/pc2_code'
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+    UNIFIED_HOST: localhost
+    OBS_HUB_ENDPOINT: 'http://localhost:9000'
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 4096  # Higher limit from PC2
+    max_threads: 8    # Higher limit from PC2
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+
+# Essential agents organized by logical groups
+agent_groups:
+  # Core Infrastructure (Top Priority - No Dependencies)
+  monitoring:
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9001
+      required: true
+      dependencies: []
+      config:
+        prometheus_enabled: true
+        parallel_health_checks: true
+        prediction_enabled: true
+        scope: unified_system
+        cross_machine_sync: false  # Single unified instance
+
+  # Core Services (Essential Infrastructure)
+  core_services:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7200
+      health_check_port: 8200
+      required: true
+      dependencies: 
+        - ObservabilityHub
+      config:
+        backend: memory
+        
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7220
+      health_check_port: 8220
+      required: true
+      dependencies:
+        - ServiceRegistry
+        - ObservabilityHub
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
+        
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 7201
+      health_check_port: 8201
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    ModelManagerSuite:
+      script_path: main_pc_code/model_manager_suite.py
+      port: 7211
+      health_check_port: 8211
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+      config:
+        models_dir: models
+        vram_budget_percentage: 80
+        idle_timeout: 300
+
+  # Memory System (Essential)
+  memory_system:
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 6713
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    MemoryOrchestratorService:
+      script_path: pc2_code/agents/memory_orchestrator_service.py
+      port: 7140
+      health_check_port: 8140
+      required: true
+      dependencies:
+        - MemoryClient
+        - ObservabilityHub
+        
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: true
+      dependencies:
+        - RequestCoordinator
+        - SystemDigitalTwin
+        - MemoryClient
+        - ObservabilityHub
+
+  # GPU Infrastructure (Essential)
+  gpu_infrastructure:
+    VRAMOptimizerAgent:
+      script_path: main_pc_code/agents/vram_optimizer_agent.py
+      port: 5572
+      health_check_port: 6572
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - RequestCoordinator
+        - SystemDigitalTwin
+        - ObservabilityHub
+
+  # Essential Processing Services
+  processing_services:
+    ResourceManager:
+      script_path: pc2_code/agents/resource_manager.py
+      port: 7113
+      health_check_port: 8113
+      required: true
+      dependencies:
+        - ObservabilityHub
+        
+    AsyncProcessor:
+      script_path: pc2_code/agents/async_processor.py
+      port: 7101
+      health_check_port: 8101
+      required: true
+      dependencies:
+        - ResourceManager
+        - ObservabilityHub
+        
+    CacheManager:
+      script_path: pc2_code/agents/cache_manager.py
+      port: 7102
+      health_check_port: 8102
+      required: true
+      dependencies:
+        - MemoryOrchestratorService
+        - ObservabilityHub
+
+  # Essential Language Processing
+  language_processing:
+    NLUAgent:
+      script_path: main_pc_code/agents/nlu_agent.py
+      port: 5709
+      health_check_port: 6709
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ModelManagerSuite
+        - ObservabilityHub
+        
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: 5595
+      health_check_port: 6595
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ModelManagerSuite
+        - ObservabilityHub
+
+  # Essential Speech Services
+  speech_services:
+    STTService:
+      script_path: main_pc_code/services/stt_service.py
+      port: 5800
+      health_check_port: 6800
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    TTSService:
+      script_path: main_pc_code/services/tts_service.py
+      port: 5801
+      health_check_port: 6801
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - SystemDigitalTwin
+        - ObservabilityHub
+
+  # Essential Context Management
+  context_management:
+    ContextManager:
+      script_path: pc2_code/agents/context_manager.py
+      port: 7111
+      health_check_port: 8111
+      required: true
+      dependencies:
+        - MemoryOrchestratorService
+        - ObservabilityHub
+
+  # Essential Reasoning
+  reasoning_services:
+    ChainOfThoughtAgent:
+      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+      port: 5612
+      health_check_port: 6612
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    UnifiedMemoryReasoningAgent:
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py
+      port: 7105
+      health_check_port: 8105
+      required: true
+      dependencies:
+        - MemoryOrchestratorService
+        - ObservabilityHub
+
+  # Essential Routing
+  routing_services:
+    AdvancedRouter:
+      script_path: pc2_code/agents/advanced_router.py
+      port: 7129
+      health_check_port: 8129
+      required: true
+      dependencies:
+        - AsyncProcessor
+        - ObservabilityHub
+
+# Port allocation strategy
+port_allocation:
+  # MainPC agents: 5500-5999 (agent ports), 6500-6999 (health check ports)
+  # PC2 agents: 7100-7199 (agent ports), 8100-8199 (health check ports)
+  # Unified services: 7200-7299 (agent ports), 8200-8299 (health check ports)
+  # Monitoring: 9000-9099 (all ports)
+
+# Error handling
+error_handling:
+  error_bus_port: 7150
+  max_retries: 3
+  retry_delay_seconds: 5
+
+# Total essential agents: 23
+# MainPC essential: 14
+# PC2 essential: 8
+# Shared (ObservabilityHub): 1
