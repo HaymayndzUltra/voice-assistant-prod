@@ -1,0 +1,100 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Data and state
+data/
+state/
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.cache
+tmp/
+temp/
+
+# Security
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+
+# Model files
+models/
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+
+# Monitoring
+prometheus_data/
+grafana_data/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Artifacts
+artifacts/*.txt
+artifacts/*.json
+artifacts/*.log
+
+# Session files
+*.pid
+*.lock
+
+# Backup files
+backup/
+*.backup
+*.old

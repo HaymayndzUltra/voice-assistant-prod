@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  unified-system:
+    build: .
+    image: unified-system:latest
+    container_name: unified-system
+    environment:
+      - PROFILE=${PROFILE:-core}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CLOUD_LLM_ENDPOINT=${CLOUD_LLM_ENDPOINT}
+      - CLOUD_LLM_API_KEY=${CLOUD_LLM_API_KEY}
+    ports:
+      - "7200-7299:7200-7299"  # Agent ports
+      - "8200-8299:8200-8299"  # Health check ports
+      - "9000-9099:9000-9099"  # Monitoring ports
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY_LIMIT:-4G}
+          cpus: '${CPU_LIMIT:-2.0}'
+        reservations:
+          memory: ${MEMORY_RESERVATION:-2G}
+          cpus: '${CPU_RESERVATION:-1.0}'
+    networks:
+      - unified-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: unified-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    networks:
+      - unified-network
+    depends_on:
+      - unified-system
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: unified-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - unified-network
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  unified-network:
+    driver: bridge
