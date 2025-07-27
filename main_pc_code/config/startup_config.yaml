@@ -7,6 +7,8 @@ global_settings:
     ENABLE_TRACING: 'true'
     ENABLE_DATA_OPTIMIZER: 'true'
     DATA_OPTIMIZER_METHOD: compressed_msgpack
+    ENABLE_HYBRID_INFERENCE: 'true'
+    HYBRID_QUALITY_THRESHOLD: '0.85'
   resource_limits:
     cpu_percent: 80
     memory_mb: 2048
@@ -15,6 +17,40 @@ global_settings:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
+  performance_tuning:
+    dynamic_batch_tuning: true
+    tuning_source: ObservabilityHub
+
+hybrid_inference_policy:
+  strategy: local_first
+  quality_check:
+    method: score_threshold
+    threshold: 0.85
+    evaluation_model: gpt-3.5-turbo  # Model used for internal evaluation of local outputs
+  local_backend:
+    engine: llama_cpp
+    gpu_device: RTX_4090
+    models:
+      text_generation:
+        - name: phi-2
+          path: models/phi-2.Q4_0.gguf
+        - name: phi-3-mini-128k-instruct
+          path: models/phi-3-mini-128k-instruct.gguf
+      speech_to_text:
+        - name: whisper-large-v3
+          path: models/whisper-large-v3
+      text_to_speech:
+        - name: xtts-v2
+          path: models/xtts-v2
+  cloud_backends:
+    - provider: openai
+      model: gpt-4o
+      api_key_env: OPENAI_API_KEY
+    - provider: anthropic
+      model: claude-3-opus
+      api_key_env: ANTHROPIC_API_KEY
+  log_fallbacks: true
+  fallback_log_path: logs/cloud_fallbacks.log
 agent_groups:
   core_services:
     ServiceRegistry:
@@ -70,6 +106,7 @@ agent_groups:
         prometheus_enabled: true
         parallel_health_checks: true
         prediction_enabled: true
+        dynamic_batch_tuning: true
     ModelManagerSuite:
       script_path: main_pc_code/model_manager_suite.py
       port: "${PORT_OFFSET}+7211"
@@ -81,6 +118,7 @@ agent_groups:
         models_dir: models
         vram_budget_percentage: 80
         idle_timeout: 300
+        hybrid_inference_policy_ref: global  # Enables the hybrid local-first, cloud-backed routing
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
@@ -129,14 +167,6 @@ agent_groups:
       health_check_port: "${PORT_OFFSET}+6613"
       required: true
       dependencies:
-      - SystemDigitalTwin
-    FixedStreamingTranslation:
-      script_path: main_pc_code/agents/fixed_streaming_translation.py
-      port: "${PORT_OFFSET}+5584"
-      health_check_port: "${PORT_OFFSET}+6584"
-      required: true
-      dependencies:
-      - ModelManagerSuite
       - SystemDigitalTwin
     Executor:
       script_path: main_pc_code/agents/executor.py
@@ -330,13 +360,6 @@ agent_groups:
       - StreamingTTSAgent
       - SystemDigitalTwin
       - TTSService
-    TranslationService:
-      script_path: main_pc_code/agents/translation_service.py
-      port: "${PORT_OFFSET}+5595"
-      health_check_port: "${PORT_OFFSET}+6595"
-      required: true
-      dependencies:
-      - SystemDigitalTwin
     DynamicIdentityAgent:
       script_path: main_pc_code/agents/DynamicIdentityAgent.py
       port: "${PORT_OFFSET}+5802"
@@ -490,4 +513,28 @@ agent_groups:
       dependencies:
       - EmotionEngine
       - StreamingTTSAgent
+      - SystemDigitalTwin
+
+  translation_services:
+    TranslationService:
+      script_path: main_pc_code/agents/translation_service.py
+      port: "${PORT_OFFSET}+5595"
+      health_check_port: "${PORT_OFFSET}+6595"
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+    FixedStreamingTranslation:
+      script_path: main_pc_code/agents/fixed_streaming_translation.py
+      port: "${PORT_OFFSET}+5584"
+      health_check_port: "${PORT_OFFSET}+6584"
+      required: true
+      dependencies:
+      - ModelManagerSuite
+      - SystemDigitalTwin
+    NLLBAdapter:
+      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+      port: "${PORT_OFFSET}+5581"
+      health_check_port: "${PORT_OFFSET}+6581"
+      required: true
+      dependencies:
       - SystemDigitalTwin
