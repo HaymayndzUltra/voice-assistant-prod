@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [ hybrid-llm-phase1 ]
   pull_request:
-    branches: [ main ]
+    branches: [ hybrid-llm-phase1 ]
 
 jobs:
   build-test:
