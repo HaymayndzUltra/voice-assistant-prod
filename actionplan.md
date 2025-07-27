@@ -16,7 +16,8 @@ ServiceRegistry	Orchestrator	Light (Local 4090)	tiny payload, mostly metadata
 SystemDigitalTwin	State graph builder	Light (Local)	pointer-chasing, <0.5 k tokens
 RequestCoordinator	Router	Light (Local)	control-plane logic
 UnifiedSystemAgent	Macro dispatcher	Light (Local)	orchestration only
-ObservabilityHub	Telemetry	Light (Local)	I/O bound
+ObservabilityHub	Telemetry	Singleton (MainPC)	authoritative hub; duplicates removed
+MetricsForwarder (PC2)	Metrics push	Light (PC2)	forwards Prometheus remote-write → ObservabilityHub
 ModelManagerSuite	Model lifecycle	Light (Local) → now governs both local & API	extend with API registry
 MemoryClient	Vector read	Light (Local)	…
 SessionMemoryAgent	Session cache	Light (Local)	…
@@ -57,14 +58,16 @@ EmotionEngine / MoodTrackerAgent / HumanAwarenessAgent / ToneDetector / VoicePro
 PC2-only agents: mostly orchestration; remain Light, but can be migrated if MainPC fails.
 Redundant/Consolidated
 ObservabilityHub appears in both lists → keep single instance on MainPC.
+ObservabilityHub is now a **singleton on MainPC**; **MetricsForwarder** replaces any secondary hubs on PC2. A standby `observability-hub-standby` container (replicas 0) can be enabled via feature flag if MainPC hub goes down.
 DreamWorldAgent & DreamingModeAgent (PC2) duplicate long-context reasoning → replaced by Remote GPT; remove.
 Phase 2 – Design & Allocation
 2.1 Target Placement
 Tier	Location	Agents
 Remote API	OpenAI / Bedrock	CodeGenerator, SelfTrainingOrchestrator, ChainOfThoughtAgent, GoTToTAgent, CognitiveModelAgent, LearningOrchestrationService, LearningAdjusterAgent, ModelOrchestrator, GoalManager, NLUAgent, ChitchatAgent, TranslationService, ProactiveAgent, NLLBAdapter
 Local GPU (MainPC, RTX-4090)	TinyLlamaServiceEnhanced, LocalFineTunerAgent, FaceRecognitionAgent, STTService, TTSService, VRAMOptimizerAgent	
-Local CPU (MainPC)	all Light agents from Phase 1	
-Fallback GPU/CPU (PC2)	same Light set + TinyLlamaServiceEnhanced (quantised)
+Local CPU (MainPC)	all Light agents from Phase 1 **+ ObservabilityHub (singleton)**
+Fallback GPU/CPU (PC2)	same Light set (**minus ObservabilityHub**)
+			+ MetricsForwarder + TinyLlamaServiceEnhanced (quantised)
 Fail-over uses docker-compose.pc2.individual.yml with ports 7100–7199 (CPU) & 8100–8199 (GPU).
 ### 2.2 Dependency Graph (simplified)
 
@@ -77,6 +80,7 @@ User
       ├─► MemoryClient ──► VectorDB
       ├─► SystemDigitalTwin
       └─► ObservabilityHub (logs)
+     └─► MetricsForwarder (PC2) ──► ObservabilityHub
 
 New component: RemoteApiAdapter (language + vision endpoints) registered inside ModelManagerSuite.
 ### 2.3 Interface Shims 1. RemoteApiAdapter implements generate(), embed(), translate(); swaps via feature flag. 2. TinyLlamaServiceEnhanced now adheres to the same interface (AgentLLMBase) so callers stay unchanged.
@@ -87,9 +91,9 @@ services:
 
   remote-api-adapter:
     image: ghcr.io/myorg/remote-api-adapter:${GIT_SHA}
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      BEDROCK_KEY:    ${BEDROCK_KEY}
+    secrets:
+      - openai_api_key
+      - bedrock_key
     deploy:
       resources:
         limits:
@@ -111,6 +115,26 @@ services:
         limits:
           memory: 8G
 
+  metrics-forwarder:
+    image: prom/remote-write:latest
+    environment:
+      HUB_ENDPOINT: http://observability-hub:9090
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 256M
+
+  observability-hub-standby:
+    image: ghcr.io/myorg/observability-hub:${GIT_SHA}
+    deploy:
+      replicas: 0  # disabled by default; toggle via FEATURE_ENABLE_STANDBY_HUB
+
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key
+  bedrock_key:
+    file: ./secrets/bedrock_key
 
 (docker-compose.pc2.individual.yml will mount same images but on port 8101, low-GPU mem flag --load-in-4bit) ---
 ## Phase 3 – Implementation Blueprint
@@ -205,3 +229,47 @@ jobs:
 ## ✅ Outcome & Next Steps
 1. All Heavy-token reasoning & translation workloads shift to scalable, cost-metered Remote LLMs. 2. Local RTX-4090 handles inference/training that benefits from on-prem GPU. 3. No existing Docker files touched; new blueprint cleanly co-exists. 4. Implementation can be merged behind a feature flag, rolled out per-agent.
 Hand-off to DevOps for image publishing; QA can begin running the health matrix today.
+
+### 2.6 RemoteApiAdapter Integration Notes (NEW)
+```
+from remote_api_adapter.adapter import RemoteApiAdapter
+adapter = RemoteApiAdapter()
+```
+Minimal patches:
+* translation_service/translator.py
+```
+- result = local_model.translate(text, tgt)
++ result = adapter.translate(text, tgt)
+```
+* nlu_agent/core.py
+```
+- intent = local_nlu.parse(utterance)
++ intent = adapter.generate(prompt_for_intent, model="gpt-3.5-turbo")
+```
+(Similar one-liners for: LearningOrchestrationService, ProactiveAgent, ModelOrchestrator, etc.)
+
+### 2.5 Secure Secrets Handling (NEW)
+```bash
+# .env.example
+# Place these locally, DO NOT commit real keys
+OPENAI_API_KEY="sk-..."
+BEDROCK_KEY="AKIA..."
+```
+In GitHub Actions set:
+- `OPENAI_API_KEY` → `org-openai-api-key`
+- `BEDROCK_KEY`    → `org-bedrock-key`
+
+Compose now mounts them via Docker `secrets:` (see above).
+
+### 3.4 Verification Steps (append)
+- Prometheus rule (alertmanager):
+```yaml
+- alert: ObservabilityHubDown
+  expr: up{job="observability-hub"} == 0
+  for: 60s
+  labels:
+    severity: critical
+  annotations:
+    action: "kubectl scale deploy/observability-hub-standby --replicas=1"
+```
+- Health-check chain: MetricsForwarder ⇢ fails to ship → triggers `ObservabilityHubDown` → standby hub auto-scaled.
