@@ -17,6 +17,9 @@ global_settings:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
+  performance_tuning:
+    dynamic_batch_tuning: true
+    tuning_source: ObservabilityHub
 
 hybrid_inference_policy:
   strategy: local_first
@@ -103,6 +106,7 @@ agent_groups:
         prometheus_enabled: true
         parallel_health_checks: true
         prediction_enabled: true
+        dynamic_batch_tuning: true
     ModelManagerSuite:
       script_path: main_pc_code/model_manager_suite.py
       port: "${PORT_OFFSET}+7211"

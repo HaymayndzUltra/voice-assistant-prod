@@ -140,6 +140,7 @@ services:
       - "5701:5701"   # IntentionValidatorAgent
     volumes:
       - ./logs:/app/logs
+      - ./data:/app/data:ro
     restart: unless-stopped
     deploy:
       resources:
@@ -186,6 +187,7 @@ services:
       - "5576:5576"   # StreamingInterruptHandler
     volumes:
       - ./logs:/app/logs
+      - ./data:/app/data:ro
     restart: unless-stopped
     deploy:
       resources:
@@ -314,6 +316,7 @@ services:
     volumes:
       - ./models:/app/models:ro
       - ./logs:/app/logs
+      - ./data:/app/data:ro
     restart: unless-stopped
     deploy:
       resources:
