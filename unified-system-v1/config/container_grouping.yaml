@@ -1,0 +1,206 @@
+# PC2 Container Grouping Configuration
+# This file defines how PC2 agents should be grouped into containers
+
+container_groups:
+  # Core infrastructure services
+  core_infrastructure:
+    description: "Core infrastructure and error management services"
+    agents:
+      - name: ErrorBus
+        script_path: pc2_code/agents/error_bus_service.py
+        port: 7150
+        required: true
+        priority: critical
+      - name: MemoryOrchestratorService
+        script_path: pc2_code/agents/memory_orchestrator_service.py
+        port: 7140
+        required: true
+        priority: critical
+      - name: SystemHealthManager
+        script_path: pc2_code/agents/ForPC2/system_health_manager.py
+        port: 7121
+        required: true
+        priority: high
+      - name: AdvancedRouter
+        script_path: pc2_code/agents/advanced_router.py
+        port: 7129
+        required: true
+        priority: high
+
+  # Translation services
+  translation_services:
+    description: "Translation models and services"
+    agents:
+      - name: NLLBTranslator
+        script_path: pc2_code/translation_components/nllb_translator.py
+        port: 5581
+        required: true
+        priority: high
+      - name: BergamotTranslator
+        script_path: pc2_code/translation_components/bergamot_translator.py
+        port: 5582
+        required: false
+        priority: medium
+
+  # Memory management and storage
+  memory_storage:
+    description: "Memory storage, retrieval, and management services"
+    agents:
+      - name: CacheManager
+        script_path: pc2_code/agents/cache_manager.py
+        port: 7102
+        required: true
+        priority: high
+      - name: ContextManager
+        script_path: pc2_code/agents/context_manager.py
+        port: 7111
+        required: true
+        priority: medium
+      - name: ExperienceTracker
+        script_path: pc2_code/agents/experience_tracker.py
+        port: 7112
+        required: true
+        priority: medium
+
+  # Authentication and security
+  security_services:
+    description: "Authentication, security, and access control services"
+    agents:
+      - name: AuthenticationAgent
+        script_path: pc2_code/agents/ForPC2/AuthenticationAgent.py
+        port: 7116
+        required: true
+        priority: high
+      - name: UnifiedUtilsAgent
+        script_path: pc2_code/agents/ForPC2/unified_utils_agent.py
+        port: 7118
+        required: true
+        priority: medium
+      - name: AgentTrustScorer
+        script_path: pc2_code/agents/AgentTrustScorer.py
+        port: 7122
+        required: true
+        priority: medium
+
+  # Resource and performance management
+  resource_management:
+    description: "Resource management and performance monitoring services"
+    agents:
+      - name: ResourceManager
+        script_path: pc2_code/agents/resource_manager.py
+        port: 7113
+        required: true
+        priority: high
+      - name: HealthMonitor
+        script_path: pc2_code/agents/health_monitor.py
+        port: 7114
+        required: true
+        priority: high
+      - name: PerformanceMonitor
+        script_path: pc2_code/agents/performance_monitor.py
+        port: 7103
+        required: true
+        priority: medium
+      - name: PerformanceLoggerAgent
+        script_path: pc2_code/agents/PerformanceLoggerAgent.py
+        port: 7128
+        required: true
+        priority: medium
+
+  # Task processing
+  task_processing:
+    description: "Task processing, scheduling, and async operations"
+    agents:
+      - name: AsyncProcessor
+        script_path: pc2_code/agents/async_processor.py
+        port: 7101
+        required: true
+        priority: high
+      - name: TaskScheduler
+        script_path: pc2_code/agents/task_scheduler.py
+        port: 7115
+        required: true
+        priority: high
+      - name: TieredResponder
+        script_path: pc2_code/agents/tiered_responder.py
+        port: 7100
+        required: true
+        priority: medium
+
+  # Web and file operations
+  web_services:
+    description: "Web interaction and file system services"
+    agents:
+      - name: UnifiedWebAgent
+        script_path: pc2_code/agents/unified_web_agent.py
+        port: 7126
+        required: true
+        priority: medium
+      - name: FileSystemAssistantAgent
+        script_path: pc2_code/agents/filesystem_assistant_agent.py
+        port: 7123
+        required: true
+        priority: medium
+      - name: RemoteConnectorAgent
+        script_path: pc2_code/agents/remote_connector_agent.py
+        port: 7124
+        required: true
+        priority: medium
+
+  # Reasoning and tutoring
+  reasoning_services:
+    description: "AI reasoning and tutoring services"
+    agents:
+      - name: UnifiedMemoryReasoningAgent
+        script_path: pc2_code/agents/UnifiedMemoryReasoningAgent.py
+        port: 7105
+        required: true
+        priority: medium
+      - name: TutoringServiceAgent
+        script_path: pc2_code/agents/tutoring_service_agent.py
+        port: 7130
+        required: true
+        priority: low
+      - name: TutorAgent
+        script_path: pc2_code/agents/tutor_agent.py
+        port: 7108
+        required: false
+        priority: low
+
+  # Dream mode
+  dream_services:
+    description: "Dream mode and context generation services"
+    agents:
+      - name: DreamWorldAgent
+        script_path: pc2_code/agents/DreamWorldAgent.py
+        port: 7104
+        required: false
+        priority: low
+      - name: DreamingModeAgent
+        script_path: pc2_code/agents/DreamingModeAgent.py
+        port: 7127
+        required: false
+        priority: low
+      - name: ProactiveContextMonitor
+        script_path: pc2_code/agents/ForPC2/proactive_context_monitor.py
+        port: 7119
+        required: false
+        priority: low
+
+# Container prioritization for deployment
+deployment_order:
+  - core_infrastructure
+  - security_services
+  - resource_management
+  - memory_storage
+  - translation_services
+  - task_processing
+  - web_services
+  - reasoning_services
+  - dream_services
+
+# Minimal deployment configuration (only essential services)
+minimal_deployment:
+  - core_infrastructure
+  - translation_services
+  - security_services 

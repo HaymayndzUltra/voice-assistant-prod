@@ -1,0 +1,44 @@
+P# PC2 SOURCE OF TRUTH (SOT) - UPDATED AS OF 2025-06-06 21:42:10
+# This file reflects the FINAL, CLEAN, PRODUCTION-READY state of the PC2 deployment.
+# All legacy, duplicate, and test agents have been archived. Only unified, active agents remain.
+
+## MAIN ACTIVE AGENTS (in /agents):
+- unified_web_agent.py
+- remote_connector_agent.py
+- consolidated_translator.py
+- tinyllama_service_enhanced.py
+- self_healing_agent.py
+- advanced_router.py
+- filesystem_assistant_agent.py
+- digital_twin_agent.py
+- agent_utils.py
+- check_gpu.py
+- check_pytorch_cuda.py
+- simple_gpu_check.py
+
+## CONFIGURATION & DOCS:
+- README_WEB_AGENT.md
+- README_MEMORY_MIGRATION.md
+- model_config.yaml
+- system_config.py (all legacy agents disabled, only unified agents enabled)
+
+## LAUNCHERS:
+- start_unified_web_agent.bat
+- start_unified_memory_reasoning_agent.bat
+
+## ARCHIVE FOLDERS:
+- archive/memory_reasoning/ (all legacy/partial/unused memory/context/reasoning agents)
+- archive/web/ (all legacy web agents and scrapers)
+- archive/translation/ (all legacy translation agents and adapters)
+- archive/misc/ (old test scripts, .bak files, logs, temp files, unused configs)
+
+## SYSTEM STATUS:
+- All memory, context, and reasoning logic is now on PC2 (none left on MAIN)
+- All batch/config/launcher scripts reference only active, unified agents
+- system_config.py and orb configs are up-to-date and reference only production agents
+
+## MIGRATION COMPLETE:
+- This SOT is ready for transfer and deployment to PC2.
+- No legacy logic will run by accident. All health checks, ports, and configs are clean.
+
+# END OF SOT

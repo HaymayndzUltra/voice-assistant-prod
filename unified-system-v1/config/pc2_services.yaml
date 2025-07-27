@@ -1,0 +1,62 @@
+# PC2 Services Configuration
+# This file defines the connection details for PC2 services
+
+# Enable PC2 services integration
+enabled: true
+
+# PC2 connection details
+ip: "${PC2_IP:-192.168.100.17}"  # IP address of PC2 machine
+hostname: "PC2"       # Hostname for logging/display
+
+# PC2 services
+SystemDigitalTwin:
+  enabled: true
+  port: 7120
+  priority: high
+  description: "System Digital Twin for resource management and simulation"
+
+# Memory services
+UnifiedMemoryReasoningAgent:
+  enabled: true
+  port: 7105
+  priority: medium
+  description: "Unified Memory and Reasoning Service"
+
+EpisodicMemoryAgent:
+  enabled: true
+  port: 7106
+  priority: medium
+  description: "Episodic Memory Service"
+
+# Integration services
+AsyncProcessor:
+  enabled: true
+  port: 7101
+  priority: low
+  description: "Asynchronous task processing"
+
+CacheManager:
+  enabled: true
+  port: 7102
+  priority: low
+  description: "Distributed cache management"
+
+# Security services
+AuthenticationAgent:
+  enabled: true
+  port: 7116
+  priority: high
+  description: "Authentication and security service"
+
+# Additional services
+UnifiedWebAgent:
+  enabled: true
+  port: 7126
+  priority: medium
+  description: "Unified Web Agent for web interactions"
+
+HealthMonitor:
+  enabled: true
+  port: 7114
+  priority: high
+  description: "Health monitoring service" 

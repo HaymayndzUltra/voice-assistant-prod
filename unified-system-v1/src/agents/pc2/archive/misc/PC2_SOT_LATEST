@@ -1,0 +1,132 @@
+{
+    "timestamp": "2024-06-06T00:20:00Z",
+    "pc2_info": {
+        "ip_addresses": [
+            "192.168.1.2",
+            "10.5.0.2",
+            "172.16.0.2",
+            "192.168.137.1"
+        ],
+        "primary_ip": "192.168.1.2"
+    },
+    "running_services": {
+        "enhanced_model_router": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5598,
+            "script_path": "agents/enhanced_model_router.py"
+        },
+        "remote_connector_agent": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5557,
+            "script_path": "agents/remote_connector_agent.py"
+        },
+        "contextual_memory_agent": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5596,
+            "script_path": "agents/contextual_memory_agent.py"
+        },
+        "digital_twin_agent": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5597,
+            "script_path": "agents/digital_twin_agent.py"
+        },
+        "error_pattern_memory": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5611,
+            "script_path": "agents/error_pattern_memory.py"
+        },
+        "nllb_translation_adapter": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5581,
+            "script_path": "agents/nllb_translation_adapter.py"
+        },
+        "consolidated_translator": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5563,
+            "script_path": "agents/consolidated_translator.py",
+            "features": [
+                "multi-engine pipeline (NLLB, TinyLlama, Phi, Google)",
+                "advanced cache and session management",
+                "dictionary and command phrase matching",
+                "word-by-word fallback logic",
+                "Taglish detection and handling",
+                "auto-fallback chaining",
+                "error and health monitoring",
+                "robustness improvements (2024-06-06)"
+            ],
+            "last_test_results": {
+                "basic_tagalog_greeting": "Kumusta ka? -> Kumusta ka? (nllb)",
+                "english_to_tagalog": "I need to check the status of my application. -> Kailangan kong suriin ang katayuan ng aking aplikasyon. (nllb)",
+                "taglish_mixed": "Maganda ang weather today, perfect for a walk. -> Maganda ang weather today, perfect for a walk. (nllb)",
+                "tagalog_food_terms": "Gusto ko magluto ng adobo at sinigang. -> I'd like to have a drink at Sinigang. (nllb)"
+            }
+        },
+        "tinyllama_service": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5615,
+            "script_path": "agents/tinyllama_service_enhanced.py"
+        },
+        "chain_of_thought_agent": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5612,
+            "script_path": "agents/chain_of_thought_agent.py"
+        },
+        "context_summarizer": {
+            "status": "running",
+            "health": "healthy",
+            "port": 5610,
+            "script_path": "agents/context_summarizer.py"
+        }
+    },
+    "unhealthy_services": {
+        "fallback_translator": {
+            "status": "not_running",
+            "health": "unhealthy",
+            "port": 5564,
+            "script_path": "agents/fallback_translator.py",
+            "error": "No response (Resource temporarily unavailable)"
+        },
+        "memory_agent": {
+            "status": "not_running",
+            "health": "unhealthy",
+            "port": 5590,
+            "script_path": "agents/memory_agent.py",
+            "error": "No response (Resource temporarily unavailable)"
+        }
+    },
+    "issues": [
+        {
+            "type": "missing_service",
+            "severity": "low",
+            "description": "Auxiliary services are not running",
+            "affected_services": [
+                "fallback_translator",
+                "memory_agent"
+            ],
+            "status": "investigating"
+        }
+    ],
+    "port_usage": {
+        "5598": "Enhanced Model Router",
+        "5557": "Remote Connector Agent",
+        "5596": "Contextual Memory Agent",
+        "5597": "Digital Twin Agent",
+        "5611": "Error Pattern Memory",
+        "5581": "NLLB Translation Adapter",
+        "5563": "Consolidated Translator",
+        "5615": "TinyLlama Service",
+        "5612": "Chain of Thought Agent",
+        "5610": "Context Summarizer",
+        "5564": "Fallback Translator (expected)",
+        "5590": "Memory Agent (expected)"
+    }
+} 

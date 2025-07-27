@@ -1,0 +1,17 @@
+name: User
+voice_id: default
+language: en-US
+tts_speed: 1.0
+auto_start: false
+startup_greeting: true
+shutdown_farewell: true
+wake_word: assistant
+wake_word_sensitivity: 0.5
+hotkeys:
+  toggle_listening: ctrl+shift+l
+  stop_speaking: escape
+  repeat_last: ctrl+r
+chat_history:
+  save_history: true
+  max_entries: 100
+  enable_search: true

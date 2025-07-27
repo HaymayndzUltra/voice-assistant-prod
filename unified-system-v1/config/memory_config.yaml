@@ -1,0 +1,94 @@
+# Memory System Configuration
+# This file contains settings for the distributed memory system
+
+# Memory Tiers Configuration
+memory_tiers:
+  short:
+    decay_rate: 0.1  # 10% decay per day
+    max_age_days: 7  # Auto-promote after 7 days
+    importance_threshold: 0.4  # Promote when importance falls below this
+    
+  medium:
+    decay_rate: 0.05  # 5% decay per day
+    max_age_days: 30  # Auto-promote after 30 days
+    importance_threshold: 0.2  # Promote when importance falls below this
+    
+  long:
+    decay_rate: 0.01  # 1% decay per day
+    archive_threshold: 0.1  # Archive when importance falls below this
+    archive_age_days: 90  # Consider archiving after 90 days
+
+# Memory Types Configuration
+memory_types:
+  interaction:
+    default_tier: short
+    default_importance: 0.7
+    reinforcement_factor: 1.2
+    
+  knowledge_fact:
+    default_tier: medium
+    default_importance: 0.8
+    reinforcement_factor: 1.1
+    
+  episode:
+    default_tier: medium
+    default_importance: 0.6
+    reinforcement_factor: 1.3
+    
+  consolidated:
+    default_tier: medium
+    default_importance: 0.7
+    reinforcement_factor: 1.1
+
+# Cache Configuration
+cache:
+  default:
+    ttl: 1800  # 30 minutes
+    max_size: 1000
+    
+  nlu_results:
+    ttl: 600  # 10 minutes
+    max_size: 1000
+    
+  model_outputs:
+    ttl: 3600  # 1 hour
+    max_size: 500
+    
+  semantic_search:
+    ttl: 300  # 5 minutes
+    max_size: 200
+
+# Scheduler Configuration
+scheduler:
+  decay_interval_hours: 24
+  consolidation_interval_hours: 12
+  cleanup_interval_days: 7
+  health_check_time: "03:00"  # 3 AM daily
+
+# Consolidation Settings
+consolidation:
+  min_related_memories: 3
+  min_age_hours: 24
+  similarity_threshold: 0.7
+  max_group_size: 10
+
+# Cleanup Settings
+cleanup:
+  min_age_days: 90
+  max_importance: 0.1
+  archive_enabled: true
+  delete_enabled: false
+
+# Database Settings
+database:
+  path: "data/unified_memory.db"
+  backup_interval_days: 7
+  max_connections: 10
+  timeout_seconds: 10
+
+# Redis Settings
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  enabled: true 
