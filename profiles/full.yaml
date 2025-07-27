@@ -1,0 +1,69 @@
+# UNIFIED-SYSTEM PROFILE: FULL
+# Complete system with all 77 agents available
+# Total agents: 77 (24 essential + 53 optional)
+
+profile:
+  name: full
+  description: "Full system - all capabilities enabled"
+  
+# Agent selection rules
+agent_selection:
+  # Include all agent groups
+  include_groups:
+    - infrastructure_registry
+    - coordination_resource
+    - memory_foundation
+    - speech_io
+    - pc2_core
+    - reasoning_services
+    - learning_services
+    - vision_services
+    - emotion_services
+    - language_services
+    - utility_services
+    - audio_services
+    - core_services_optional
+    - dream_services
+    - tutoring_services
+    - web_file_services
+    - auth_security_services
+    - pc2_utility_services
+    - pc2_infrastructure
+    
+  # All optional agents available
+  optional_agents: all
+  
+  # Auto-load frequently used agents
+  autoload_on_startup:
+    - EmotionEngine
+    - NLUAgent
+    - ChainOfThoughtAgent
+    - LearningManager
+    
+# Resource limits for full profile
+resource_overrides:
+  global_settings:
+    resource_limits:
+      cpu_percent: 90
+      memory_mb: 8192
+      max_threads: 16
+      
+  # High-demand agents
+  agent_overrides:
+    ModelManagerSuite:
+      vram_budget_percentage: 90
+    VRAMOptimizerAgent:
+      aggressive_cleanup: true
+      
+# Startup parameters
+startup:
+  timeout_seconds: 180
+  health_check_retries: 15
+  parallel_starts: 8
+  
+# Advanced features for full profile
+features:
+  enable_dream_mode: true
+  enable_proactive_agents: true
+  enable_web_access: true
+  enable_code_execution: true
