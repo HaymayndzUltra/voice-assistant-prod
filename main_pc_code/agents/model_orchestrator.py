@@ -39,6 +39,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
 from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker # Pansamantalang import
+from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 # --- Logging Setup ---
 logger = logging.getLogger('ModelOrchestrator')
@@ -77,6 +78,8 @@ class ModelOrchestrator(BaseAgent):
 
         # --- State Management ---
         self.language_configs = self._get_language_configs()
+        # Hybrid LLM adapter
+        self.remote_api = RemoteApiAdapter()
         self.temp_dir = Path(tempfile.gettempdir()) / "model_orchestrator_sandbox"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
         

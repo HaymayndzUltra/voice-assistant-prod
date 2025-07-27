@@ -1,0 +1,11 @@
+groups:
+  - name: observability-hub.rules
+    rules:
+      - alert: ObservabilityHubDown
+        expr: up{job="observability-hub"} == 0
+        for: 60s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Observability Hub instance is down"
+          action: "kubectl scale deploy/observability-hub-standby --replicas=1"

@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  remote-api-adapter:
+    image: ghcr.io/myorg/remote-api-adapter:${GIT_SHA}
+    build:
+      context: ./remote_api_adapter
+    secrets:
+      - openai_api_key
+      - bedrock_key
+    healthcheck:
+      test: ["CMD", "python", "-m", "remote_api_adapter.adapter", "health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  tiny-llama:
+    image: ghcr.io/myorg/tiny-llama:${GIT_SHA}
+    runtime: nvidia
+    environment:
+      - MODEL_PATH=/mnt/models/tiny-llama
+    volumes:
+      - model-cache:/mnt/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+        limits:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  metrics-forwarder:
+    image: prom/remote-write:latest
+    environment:
+      - HUB_ENDPOINT=http://observability-hub:9090/api/v1/write
+    command: ["/bin/sh", "-c", "remote_write --remote-url=$HUB_ENDPOINT"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 256M
+    ports:
+      - "7101:9091"
+
+  observability-hub-standby:
+    image: ghcr.io/myorg/observability-hub:${GIT_SHA}
+    deploy:
+      replicas: 0
+    ports:
+      - "7102:9090"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  model-cache:
+
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key
+  bedrock_key:
+    file: ./secrets/bedrock_key

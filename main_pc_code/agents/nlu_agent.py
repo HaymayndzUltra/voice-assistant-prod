@@ -27,6 +27,7 @@ import threading
 import traceback
 from typing import Dict, Any, List, Tuple
 from common.config_manager import load_unified_config
+from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 
 # Import path manager for containerization-friendly paths
@@ -65,6 +66,8 @@ class NLUAgent(BaseAgent):
         
         # Initialize basic state
         self.running = True
+        # Hybrid LLM adapter
+        self.remote_api = RemoteApiAdapter()
         
         # Define intent patterns
         self.intent_patterns = [
