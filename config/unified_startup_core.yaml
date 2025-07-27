@@ -1,0 +1,223 @@
+global_settings:
+  environment:
+    PYTHONPATH: ${PYTHONPATH}:/workspace:/workspace/main_pc_code:/workspace/pc2_code
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+    UNIFIED_HOST: localhost
+    OBS_HUB_ENDPOINT: http://localhost:9000
+  resource_limits:
+    cpu_percent: 50
+    memory_mb: 2048
+    max_threads: 4
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 5
+    start_period_seconds: 60
+agent_groups:
+  infrastructure_registry:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7200
+      health_check_port: 8200
+      required: true
+      dependencies: []
+      config:
+        backend: memory
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9001
+      required: true
+      dependencies:
+      - ServiceRegistry
+      config:
+        prometheus_enabled: true
+        parallel_health_checks: true
+        prediction_enabled: true
+        scope: unified_system
+        cross_machine_sync: false
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7220
+      health_check_port: 8220
+      required: true
+      dependencies:
+      - ServiceRegistry
+      - ObservabilityHub
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
+  coordination_resource:
+    ModelManagerSuite:
+      script_path: main_pc_code/model_manager_suite.py
+      port: 7211
+      health_check_port: 8211
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - ObservabilityHub
+      config:
+        models_dir: models
+        vram_budget_percentage: 80
+        idle_timeout: 300
+        hybrid_routing_enabled: true
+    VRAMOptimizerAgent:
+      script_path: main_pc_code/agents/vram_optimizer_agent.py
+      port: 5572
+      health_check_port: 6572
+      required: true
+      dependencies:
+      - ModelManagerSuite
+      - ObservabilityHub
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 7201
+      health_check_port: 8201
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - VRAMOptimizerAgent
+      - ObservabilityHub
+    LazyLoader:
+      script_path: scripts/lazy_loader_service.py
+      port: 7202
+      health_check_port: 8202
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - ServiceRegistry
+      - ObservabilityHub
+      config:
+        startup_timeout: 30
+        health_check_retries: 10
+  memory_foundation:
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 6713
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - ObservabilityHub
+    KnowledgeBase:
+      script_path: main_pc_code/agents/knowledge_base.py
+      port: 5715
+      health_check_port: 6715
+      required: true
+      dependencies:
+      - MemoryClient
+      - ObservabilityHub
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - SystemDigitalTwin
+      - MemoryClient
+      - ObservabilityHub
+  speech_io:
+    AudioCapture:
+      script_path: main_pc_code/agents/streaming_audio_capture.py
+      port: 6550
+      health_check_port: 7550
+      required: true
+      dependencies:
+      - SystemDigitalTwin
+      - ObservabilityHub
+    FusedAudioPreprocessor:
+      script_path: main_pc_code/agents/fused_audio_preprocessor.py
+      port: 6551
+      health_check_port: 7551
+      required: true
+      dependencies:
+      - AudioCapture
+      - ObservabilityHub
+    STTService:
+      script_path: main_pc_code/services/stt_service.py
+      port: 5800
+      health_check_port: 6800
+      required: true
+      dependencies:
+      - ModelManagerSuite
+      - SystemDigitalTwin
+      - ObservabilityHub
+    StreamingSpeechRecognition:
+      script_path: main_pc_code/agents/streaming_speech_recognition.py
+      port: 6553
+      health_check_port: 7553
+      required: true
+      dependencies:
+      - FusedAudioPreprocessor
+      - RequestCoordinator
+      - STTService
+      - ObservabilityHub
+    TTSService:
+      script_path: main_pc_code/services/tts_service.py
+      port: 5801
+      health_check_port: 6801
+      required: true
+      dependencies:
+      - ModelManagerSuite
+      - SystemDigitalTwin
+      - ObservabilityHub
+    StreamingTTSAgent:
+      script_path: main_pc_code/agents/streaming_tts_agent.py
+      port: 5562
+      health_check_port: 6562
+      required: true
+      dependencies:
+      - RequestCoordinator
+      - TTSService
+      - SystemDigitalTwin
+      - ObservabilityHub
+port_allocation: null
+error_handling:
+  error_bus_port: 7150
+  max_retries: 3
+  retry_delay_seconds: 5
+hybrid_llm_routing:
+  complexity_threshold: 0.7
+  cloud_llm_endpoint: ${CLOUD_LLM_ENDPOINT}
+  local_llm_preference: lightweight_tasks
+  failover_strategy:
+    cloud_unreachable: fallback_to_local
+    vram_exhausted: degrade_to_tinyllama
+  metrics_feedback: true
+  task_routing_rules:
+  - pattern: code_generation
+    complexity: 0.9
+    preferred_backend: cloud
+  - pattern: large_context_reasoning
+    complexity: 0.95
+    preferred_backend: cloud
+  - pattern: training|fine_tuning
+    complexity: 1.0
+    preferred_backend: cloud
+  - pattern: simple_chat|greeting
+    complexity: 0.2
+    preferred_backend: local
+  - pattern: command_parsing
+    complexity: 0.3
+    preferred_backend: local
+  - pattern: emotion_detection
+    complexity: 0.4
+    preferred_backend: local
+lazy_loader:
+  scan_interval_seconds: 5
+  startup_timeout_seconds: 30
+  health_check_retries: 10
+  preload_dependencies: true
+  cache_loaded_agents: true
+launcher_settings:
+  parallel_starts: 3
