@@ -9,11 +9,24 @@ import re
 import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
+# stdlib
 from pathlib import Path
 from dataclasses import dataclass, asdict
+import asyncio
+
+# internal modules
+from memory_system.services.telemetry import span
+from memory_system.services.memory_provider import get_provider, MemoryProvider
 
 # Import our existing memory system
-from todo_manager import new_task, add_todo, list_open_tasks, set_task_status, hard_delete_task
+from todo_manager import (
+    new_task,
+    add_todo,
+    list_open_tasks,
+    set_task_status,
+    hard_delete_task,
+    mark_done,  # Needed for subtask completion tracking
+)
 from task_interruption_manager import auto_task_handler, get_interruption_status
 from task_state_manager import save_task_state, load_task_state
 
@@ -354,12 +367,18 @@ class IntelligentTaskChunker:
 
 
 class AdaptiveMemoryManagement:
-    """Adaptive memory management for our workflow"""
-    
-    def __init__(self):
+    """Adaptive memory management using pluggable MemoryProvider."""
+
+    def __init__(self, provider_kind: str | None = None):
+        # Determine provider kind (env overrides)
+        self.provider_kind = provider_kind or os.getenv("MEMORY_PROVIDER", "fs")
+        self.provider: MemoryProvider = get_provider(self.provider_kind)
+
+        # File-system specific path for legacy code
         self.memory_bank_path = Path("memory-bank")
-        self.cache = {}
-        self.access_patterns = {}
+
+        self.cache: dict[str, str] = {}
+        self.access_patterns: dict[str, int] = {}
     
     def get_relevant_memories(self, task_description: str, subtask_description: str = None) -> List[str]:
         """Get relevant memories for current task/subtask"""
@@ -367,21 +386,19 @@ class AdaptiveMemoryManagement:
         # Determine what memories are relevant
         relevant_memories = []
         
-        # Check for workflow-specific patterns
-        if "docker" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("docker"))
-        
-        if "task" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("task"))
-        
-        if "memory" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("memory"))
-        
-        if "automation" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("automation"))
-        
-        if "background" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("background"))
+        # Check for workflow-specific patterns using provider search
+        keywords = [
+            "docker",
+            "task",
+            "memory",
+            "automation",
+            "background",
+        ]
+
+        task_lower = task_description.lower()
+        for kw in keywords:
+            if kw in task_lower:
+                relevant_memories.extend(self._find_memories_by_keyword(kw))
         
         # Add current session memory
         session_memory = self.memory_bank_path / "current-session.md"
@@ -397,30 +414,22 @@ class AdaptiveMemoryManagement:
         return unique_memories[:5]
     
     def _find_memories_by_keyword(self, keyword: str) -> List[str]:
-        """Find memories containing keyword"""
-        memories = []
-        
-        if self.memory_bank_path.exists():
-            for memory_file in self.memory_bank_path.glob("*.md"):
-                try:
-                    content = memory_file.read_text(encoding='utf-8')
-                    if keyword.lower() in content.lower():
-                        memories.append(str(memory_file))
-                except Exception:
-                    continue
-        
-        return memories
+        """Delegate to configured MemoryProvider."""
+        try:
+            return self.provider.search(keyword, limit=10)
+        except Exception:  # noqa: BLE001
+            return []
     
     def _get_recently_accessed_memories(self) -> List[str]:
         """Get recently accessed memories"""
-        # Simple implementation - return current session and a few key files
-        key_memories = [
-            "memory-bank/current-session.md",
-            "memory-bank/task-continuity-system.md",
-            "memory-bank/background-agent-escalation-guide.md"
-        ]
-        
-        return [memory for memory in key_memories if Path(memory).exists()]
+        if self.provider_kind == "fs":
+            key_memories = [
+                "memory-bank/current-session.md",
+                "memory-bank/task-continuity-system.md",
+                "memory-bank/background-agent-escalation-guide.md",
+            ]
+            return [m for m in key_memories if Path(m).exists()]
+        return []
     
     def preload_memories(self, memories: List[str]) -> None:
         """Preload memories into cache"""
@@ -438,6 +447,10 @@ class AdaptiveMemoryManagement:
         self.cache.clear()
         print("🧹 Memory cache cleared")
 
+
+# ---------------------------------------------------------------------------
+# Smart Task Execution Manager (sync & async)
+# ---------------------------------------------------------------------------
 
 class SmartTaskExecutionManager:
     """Smart task execution manager for our workflow"""
@@ -468,6 +481,16 @@ class SmartTaskExecutionManager:
             return self._execute_simple_task(chunked_task)
         else:
             return self._execute_complex_task(chunked_task)
+
+    # --------------------------- ASYNC VARIANT ---------------------------
+
+    async def execute_task_async(self, task_description: str) -> Dict[str, Any]:  # noqa: D401
+        """`async` wrapper around execute_task for native async workflows."""
+        loop = asyncio.get_running_loop()
+        # Run the blocking logic in the default executor per core – we removed the
+        # dedicated ThreadPool in AsyncTaskEngine, but still offload heavy work so
+        # the event-loop stays responsive.
+        return await loop.run_in_executor(None, self.execute_task, task_description)
     
     def _execute_simple_task(self, chunked_task: ChunkedTask) -> Dict[str, Any]:
         """Execute simple task directly"""
@@ -576,8 +599,16 @@ def get_relevant_memories(task_description: str) -> List[str]:
 
 
 def execute_task_intelligently(task_description: str) -> Dict[str, Any]:
-    """Execute task with full intelligence"""
-    return execution_manager.execute_task(task_description)
+    """Execute task with full intelligence, with telemetry span tracking."""
+    with span("execute_task", description=task_description[:80]):
+        return execution_manager.execute_task(task_description)
+
+
+# Async variant for native coroutine usage
+async def execute_task_intelligently_async(task_description: str) -> Dict[str, Any]:  # noqa: D401
+    """Async version mirrored to allow awaitable intelligent execution."""
+    with span("execute_task", description=task_description[:80]):
+        return await execution_manager.execute_task_async(task_description)
 
 
 if __name__ == "__main__":
