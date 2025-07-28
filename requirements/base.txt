@@ -14,7 +14,7 @@ pandas>=2.0.0
 lz4>=4.0.0
 
 # Network & Communication
-pyzmq>=25.0.0
+pyzmq==25.1.2
 redis>=4.5.0
 requests>=2.31.0
 websockets>=11.0.0
