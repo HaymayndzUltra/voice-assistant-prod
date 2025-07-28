@@ -18,12 +18,24 @@ def main(argv: list[str] | None = None) -> None:  # noqa: D401
     # Existing Task Command Center launcher
     subparsers.add_parser("tcc", help="Launch Task Command Center UI")
 
+    # Async Task Engine runner
+    run_parser = subparsers.add_parser("run", help="Execute one or more tasks concurrently")
+    run_parser.add_argument("tasks", nargs="+", help="One or more task descriptions to execute intelligently")
+    run_parser.add_argument("--workers", "-w", type=int, default=5, help="Maximum concurrent workers (default: 5)")
+
     args = parser.parse_args(argv)
 
     if args.command == "tcc":
         from task_command_center import main as tcc_main
 
         tcc_main()
+    elif args.command == "run":
+        from memory_system.services.async_task_engine import run_tasks_concurrently
+
+        results = run_tasks_concurrently(args.tasks, max_workers=args.workers)
+        import json as _json
+
+        print("\n📊 Execution Summary:\n" + _json.dumps(results, indent=2))
     else:
         parser.print_help()
 
