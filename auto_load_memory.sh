@@ -32,6 +32,10 @@ else
     echo "  ⚠️  MemoryOrchestratorService: Not detected"
 fi
 
+# NEW ➜ Show last Cursor session state (if available)
+echo "📝 Last Cursor Session State:"
+python3 cursor_session_manager.py --show 2>/dev/null || echo "  ℹ️  Unable to retrieve session state"
+
 echo "🚀 Memory loading complete!"
 echo ""
 echo "💡 To get started:"
