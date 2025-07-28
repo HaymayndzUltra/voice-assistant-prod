@@ -14,6 +14,7 @@ from task_interruption_manager import auto_task_handler, get_interruption_status
 from todo_manager import list_open_tasks, add_todo, mark_done, delete_todo, show_task_details, new_task, hard_delete_task
 # 🚀 Intelligent workflow integration
 from workflow_memory_intelligence import execute_task_intelligently
+from memory_system.utils.cursor_memory import store_summary
 
 class TaskCommandCenter:
     """Interactive command and control center for task management"""
@@ -68,6 +69,8 @@ class TaskCommandCenter:
         print("8. 📖 Show Task Details")
         print("9. 🗑️  Delete Task")
         print("10. 🧠 Intelligent Task Execution")
+        print("11. 🧹 Purge Completed/Temp Tasks")
+        print("12. 🛠 Toggle Memory Provider")
         print("0. ❌ Exit")
         print()
     
@@ -404,7 +407,7 @@ class TaskCommandCenter:
             self.show_current_status()
             self.show_main_menu()
             
-            choice = self.get_user_choice(10)
+            choice = self.get_user_choice(12)
             
             if choice == 0:
                 print("👋 Goodbye!")
@@ -429,6 +432,10 @@ class TaskCommandCenter:
                 self.delete_task()
             elif choice == 10:
                 self.intelligent_task_execution()
+            elif choice == 11:
+                self.purge_completed_tasks()
+            elif choice == 12:
+                self.toggle_memory_provider()
 
     # ------------------------------------------------------------------
     # 🧠 Intelligent Task Execution Integration
@@ -476,8 +483,38 @@ class TaskCommandCenter:
         else:
             print("\n✅ Intelligent Execution Result:")
             print(json.dumps(result_holder["result"], indent=2))
+            store_summary(f"Intelligent task executed: {task_description}")
 
         input("\nPress Enter to continue...")
+
+    # ------------------------------------------------------------------
+    # 🧹 Purge completed tasks
+    # ------------------------------------------------------------------
+    def purge_completed_tasks(self):
+        from todo_manager import list_open_tasks, hard_delete_task, set_task_status
+
+        self.clear_screen(); self.show_header()
+        tasks = list_open_tasks()
+        purge_ids = [t["id"] for t in tasks if t["status"] == "completed" or t["description"].startswith("Temporary interruption")]
+        if not purge_ids:
+            print("ℹ️  Nothing to purge.")
+        else:
+            print(f"Found {len(purge_ids)} completed/temp task(s). Deleting…")
+            for tid in purge_ids:
+                hard_delete_task(tid)
+        store_summary(f"Purged {len(purge_ids)} completed/temp tasks")
+        input("\nPress Enter to continue…")
+
+    # ------------------------------------------------------------------
+    # 🛠 Toggle memory provider
+    # ------------------------------------------------------------------
+    def toggle_memory_provider(self):
+        current = os.getenv("MEMORY_PROVIDER", "fs")
+        next_provider = "sqlite" if current == "fs" else ("chroma" if current == "sqlite" else "fs")
+        os.environ["MEMORY_PROVIDER"] = next_provider
+        store_summary(f"Switched MEMORY_PROVIDER to {next_provider}")
+        print(f"✅ Memory provider switched to {next_provider}. This will affect subsequent intelligent executions.")
+        input("\nPress Enter to continue…")
 
 
 def main():
