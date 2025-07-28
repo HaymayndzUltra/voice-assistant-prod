@@ -137,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument("--task", dest="current_task", help="current task description")
     parser.add_argument("--progress", dest="progress", type=float, help="progress 0-1 range")
     parser.add_argument("--show", action="store_true", help="print the current state then exit")
+    parser.add_argument("--summary", action="store_true", help="print short human summary then exit")
 
     args = parser.parse_args()
 
@@ -149,5 +150,15 @@ if __name__ == "__main__":
         )
         # Give the autosave thread a brief moment to write to disk.
         time.sleep(0.1)
-    if args.show or not any(vars(args).values()):
+    if args.summary:
+        state = session_manager.get_state().get("cursor_session", {})
+        if state:
+            print("📝 Cursor Session Summary:")
+            print(f"   • File      : {state.get('current_file', '—')}")
+            print(f"   • Line      : {state.get('cursor_line', '—')}")
+            print(f"   • Task      : {state.get('current_task', '—')}")
+            print(f"   • Progress  : {state.get('progress', '—')}")
+        else:
+            print("ℹ️  No session data recorded yet.")
+    elif args.show or not any(vars(args).values()):
         pprint.pprint(session_manager.get_state())

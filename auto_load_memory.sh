@@ -34,7 +34,8 @@ fi
 
 # NEW ➜ Show last Cursor session state (if available)
 echo "📝 Last Cursor Session State:"
-python3 cursor_session_manager.py --show 2>/dev/null || echo "  ℹ️  Unable to retrieve session state"
+# shellcheck disable=SC2016
+python3 cursor_session_manager.py --summary 2>/dev/null || echo "  ℹ️  No session summary available"
 
 echo "🚀 Memory loading complete!"
 echo ""
