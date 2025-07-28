@@ -17,6 +17,44 @@ global_settings:
     interval_seconds: 30
     timeout_seconds: 10
     retries: 3
+  performance_tuning:
+    dynamic_batch_tuning: true
+    tuning_source: ObservabilityHub
+    batch_optimization: true
+    memory_optimization: true
+    gpu_memory_fraction: 0.9
+
+hybrid_inference_policy:
+  strategy: local_first
+  quality_check:
+    method: score_threshold
+    threshold: 0.85
+    evaluation_model: gpt-3.5-turbo
+  local_backend:
+    engine: llama_cpp
+    gpu_device: RTX_4090
+    models:
+      text_generation:
+        - name: phi-2
+          path: models/phi-2.Q4_0.gguf
+        - name: phi-3-mini-128k-instruct
+          path: models/phi-3-mini-128k-instruct.gguf
+      speech_to_text:
+        - name: whisper-large-v3
+          path: models/whisper-large-v3
+      text_to_speech:
+        - name: xtts-v2
+          path: models/xtts-v2
+  cloud_backends:
+    - provider: openai
+      model: gpt-4o
+      api_key_env: OPENAI_API_KEY
+    - provider: anthropic
+      model: claude-3-opus
+      api_key_env: ANTHROPIC_API_KEY
+  log_fallbacks: true
+  fallback_log_path: logs/cloud_fallbacks.log
+
 agent_groups:
   foundation_services: &foundation
     ServiceRegistry:
