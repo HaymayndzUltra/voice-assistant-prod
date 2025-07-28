@@ -29,6 +29,10 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
     run_parser.add_argument("tasks", nargs="+", help="One or more task descriptions to execute intelligently")
     run_parser.add_argument("--workers", "-w", type=int, default=5, help="Maximum concurrent workers (default: 5)")
 
+    # Memory migration helper
+    migrate_parser = subparsers.add_parser("migrate", help="Migrate markdown memories into SQLite DB")
+    migrate_parser.add_argument("--to", choices=["sqlite"], required=True, help="Target provider kind")
+
     args = parser.parse_args(argv)
 
     if args.command == "tcc":
@@ -42,6 +46,10 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
         import json as _json
 
         print("\n📊 Execution Summary:\n" + _json.dumps(results, indent=2))
+    elif args.command == "migrate":
+        from memory_system.scripts.migrate_memories import main as migrate_main
+
+        migrate_main(["--to", args.to])
     else:
         parser.print_help()
 

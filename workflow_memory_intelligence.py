@@ -9,12 +9,14 @@ import re
 import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
+# stdlib
 from pathlib import Path
 from dataclasses import dataclass, asdict
-
-# Async support and telemetry
 import asyncio
+
+# internal modules
 from memory_system.services.telemetry import span
+from memory_system.services.memory_provider import get_provider, MemoryProvider
 
 # Import our existing memory system
 from todo_manager import (
@@ -365,12 +367,18 @@ class IntelligentTaskChunker:
 
 
 class AdaptiveMemoryManagement:
-    """Adaptive memory management for our workflow"""
-    
-    def __init__(self):
+    """Adaptive memory management using pluggable MemoryProvider."""
+
+    def __init__(self, provider_kind: str | None = None):
+        # Determine provider kind (env overrides)
+        self.provider_kind = provider_kind or os.getenv("MEMORY_PROVIDER", "fs")
+        self.provider: MemoryProvider = get_provider(self.provider_kind)
+
+        # File-system specific path for legacy code
         self.memory_bank_path = Path("memory-bank")
-        self.cache = {}
-        self.access_patterns = {}
+
+        self.cache: dict[str, str] = {}
+        self.access_patterns: dict[str, int] = {}
     
     def get_relevant_memories(self, task_description: str, subtask_description: str = None) -> List[str]:
         """Get relevant memories for current task/subtask"""
@@ -378,21 +386,19 @@ class AdaptiveMemoryManagement:
         # Determine what memories are relevant
         relevant_memories = []
         
-        # Check for workflow-specific patterns
-        if "docker" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("docker"))
-        
-        if "task" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("task"))
-        
-        if "memory" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("memory"))
-        
-        if "automation" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("automation"))
-        
-        if "background" in task_description.lower():
-            relevant_memories.extend(self._find_memories_by_keyword("background"))
+        # Check for workflow-specific patterns using provider search
+        keywords = [
+            "docker",
+            "task",
+            "memory",
+            "automation",
+            "background",
+        ]
+
+        task_lower = task_description.lower()
+        for kw in keywords:
+            if kw in task_lower:
+                relevant_memories.extend(self._find_memories_by_keyword(kw))
         
         # Add current session memory
         session_memory = self.memory_bank_path / "current-session.md"
@@ -408,30 +414,22 @@ class AdaptiveMemoryManagement:
         return unique_memories[:5]
     
     def _find_memories_by_keyword(self, keyword: str) -> List[str]:
-        """Find memories containing keyword"""
-        memories = []
-        
-        if self.memory_bank_path.exists():
-            for memory_file in self.memory_bank_path.glob("*.md"):
-                try:
-                    content = memory_file.read_text(encoding='utf-8')
-                    if keyword.lower() in content.lower():
-                        memories.append(str(memory_file))
-                except Exception:
-                    continue
-        
-        return memories
+        """Delegate to configured MemoryProvider."""
+        try:
+            return self.provider.search(keyword, limit=10)
+        except Exception:  # noqa: BLE001
+            return []
     
     def _get_recently_accessed_memories(self) -> List[str]:
         """Get recently accessed memories"""
-        # Simple implementation - return current session and a few key files
-        key_memories = [
-            "memory-bank/current-session.md",
-            "memory-bank/task-continuity-system.md",
-            "memory-bank/background-agent-escalation-guide.md"
-        ]
-        
-        return [memory for memory in key_memories if Path(memory).exists()]
+        if self.provider_kind == "fs":
+            key_memories = [
+                "memory-bank/current-session.md",
+                "memory-bank/task-continuity-system.md",
+                "memory-bank/background-agent-escalation-guide.md",
+            ]
+            return [m for m in key_memories if Path(m).exists()]
+        return []
     
     def preload_memories(self, memories: List[str]) -> None:
         """Preload memories into cache"""
