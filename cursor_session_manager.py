@@ -102,6 +102,17 @@ class CursorSessionManager:
                 with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump(self._state, f, indent=2, ensure_ascii=False)
                 os.replace(tmp_path, self.state_file)
+
+                # ALSO refresh human-readable markdown snapshot so Cursor
+                # background agent always has up-to-date context without
+                # manual --dump calls.
+                try:
+                    from cursor_memory_bridge import dump_markdown  # local import to avoid circular
+
+                    dump_markdown()
+                except Exception:
+                    # Silently ignore to avoid recursion / startup import issues
+                    pass
             except OSError:
                 # Best effort – swallow errors so we never crash the main app.
                 pass

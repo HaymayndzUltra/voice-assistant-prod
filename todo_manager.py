@@ -30,6 +30,14 @@ def _load() -> Dict[str, Any]:
 def _save(data: Dict[str, Any]) -> None:
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False))
 
+    # Update Markdown session dump for visibility.
+    try:
+        from cursor_memory_bridge import dump_markdown  # type: ignore
+
+        dump_markdown()
+    except Exception:
+        pass
+
 
 def _timestamp() -> str:
     return datetime.utcnow().isoformat()
