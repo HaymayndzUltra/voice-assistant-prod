@@ -16,7 +16,14 @@ from dataclasses import dataclass, asdict
 from memory_system.services.telemetry import span
 
 # Import our existing memory system
-from todo_manager import new_task, add_todo, list_open_tasks, set_task_status, hard_delete_task
+from todo_manager import (
+    new_task,
+    add_todo,
+    list_open_tasks,
+    set_task_status,
+    hard_delete_task,
+    mark_done,  # Needed for subtask completion tracking
+)
 from task_interruption_manager import auto_task_handler, get_interruption_status
 from task_state_manager import save_task_state, load_task_state
 
