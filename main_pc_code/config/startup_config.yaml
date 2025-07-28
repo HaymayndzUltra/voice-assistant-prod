@@ -194,8 +194,8 @@ agent_groups:
       - SystemDigitalTwin
     NLLBAdapter:
       script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
-      port: "${PORT_OFFSET}+5581"
-      health_check_port: "${PORT_OFFSET}+6581"
+      port: "${PORT_OFFSET}+5582"
+      health_check_port: "${PORT_OFFSET}+6582"
       required: true
       dependencies:
       - SystemDigitalTwin
