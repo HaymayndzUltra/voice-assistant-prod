@@ -3,38 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ai-system-monorepo"
-version = "1.0.0"
-description = "Enterprise AI System with Cross-Machine GPU Load Balancing, Security Hardening, and Intelligent Optimization"
-readme = "README.md"
-license = {file = "LICENSE"}
-authors = [
-    {name = "AI System Team", email = "team@aisystem.dev"}
-]
-maintainers = [
-    {name = "AI System Team", email = "team@aisystem.dev"}
-]
-keywords = [
-    "ai", "machine-learning", "gpu-optimization", "distributed-computing", 
-    "security", "performance", "automation", "enterprise"
-]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: System :: Distributed Computing",
-    "Topic :: Security",
-    "Topic :: Software Development :: Libraries :: Python Modules"
-]
-requires-python = ">=3.9"
+name = "memory_system"
+version = "0.0.0-dev"
+description = "Memory System package skeleton"
+requires-python = ">=3.8"
+authors = [{ name = "Memory System Team" }]
+
+[project.scripts]
+memoryctl = "memory_system.cli:main"
 
 # Core dependencies
 dependencies = [
