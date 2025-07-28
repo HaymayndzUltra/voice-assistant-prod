@@ -1604,6 +1604,9 @@ class TranslationService(BaseAgent):
         
         self.logger.info("Translation Service initialized")
         
+        # Hybrid LLM: route heavy translations to remote provider
+        self.remote_api = RemoteApiAdapter()
+        
     def _init_circuit_breakers(self):
         """
         Initialize circuit breakers for all connected services

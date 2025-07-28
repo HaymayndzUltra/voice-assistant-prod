@@ -20,6 +20,7 @@ from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 from common.utils.data_models import ErrorSeverity
 from common.config_manager import get_service_ip, get_service_url
+from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 class ProactivityLevel(Enum):
     """Levels of proactive engagement"""
@@ -67,6 +68,8 @@ class ProactiveAgent(BaseAgent):
         
         # Suggestion storage and management
         self.active_suggestions: Dict[str, ProactiveSuggestion] = {}
+        # Hybrid LLM adapter
+        self.remote_api = RemoteApiAdapter()
         self.suggestion_history: List[ProactiveSuggestion] = []
         self.user_preferences = {
             'preferred_suggestion_types': [

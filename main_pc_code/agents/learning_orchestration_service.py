@@ -39,6 +39,7 @@ from common.utils.data_models import ErrorSeverity
 from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.utils.learning_models import TrainingCycle
+from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 # --- Logging Setup ---
 log_dir = 'logs'
@@ -72,6 +73,8 @@ class LearningOrchestrationService(BaseAgent):
         self.config = config
         self.start_time = time.time()
         self.running = True
+        # Hybrid LLM adapter
+        self.remote_api = RemoteApiAdapter()
         self.training_cycles = {}
         self.active_jobs = {}
         self.metrics = {
