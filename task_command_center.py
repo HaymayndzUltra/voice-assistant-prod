@@ -6,6 +6,9 @@ Task Command & Control Center - Interactive menu system for task management
 import sys
 import os
 import json
+import threading
+import itertools
+import time
 from typing import List, Dict, Any
 from task_interruption_manager import auto_task_handler, get_interruption_status, resume_all_interrupted_tasks
 from todo_manager import list_open_tasks, add_todo, mark_done, delete_todo, show_task_details, new_task, hard_delete_task
@@ -448,14 +451,31 @@ class TaskCommandCenter:
 
         # Execute task using intelligent workflow system
         print("\n🚀 Processing task with intelligent executor...\n")
+        result_holder = {}
+
+        def _worker():
+            try:
+                result_holder["result"] = execute_task_intelligently(task_description)
+            except Exception as exc:
+                result_holder["error"] = exc
+
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+
+        spinner = itertools.cycle(["|", "/", "-", "\\"])
         try:
-            result = execute_task_intelligently(task_description)
-            # Pretty-print the JSON result for the user
+            while t.is_alive():
+                print(next(spinner), end="\r", flush=True)
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("\n❌ Execution cancelled by user.")
+            return
+
+        if "error" in result_holder:
+            print(f"❌ An error occurred during intelligent execution: {result_holder['error']}")
+        else:
             print("\n✅ Intelligent Execution Result:")
-            print(json.dumps(result, indent=2))
-        except Exception as e:
-            # Catch any unexpected errors to ensure command center stability
-            print(f"❌ An error occurred during intelligent execution: {e}")
+            print(json.dumps(result_holder["result"], indent=2))
 
         input("\nPress Enter to continue...")
 
