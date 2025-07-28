@@ -9,8 +9,7 @@
 ## 🚀 **SIMPLIFIED BACKGROUND AGENT PROMPT**
 
 ```
-/agent
-BUILD SIMPLE SESSION CONTINUITY SYSTEM FOR CURSOR:
+
 
 ## OBJECTIVE:
 Create simple system na maalala ang current task, progress, at context across cursor sessions.
