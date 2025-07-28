@@ -49,7 +49,12 @@ def _timestamp() -> str:
 
 def new_task(description: str) -> str:
     data = _load()
-    task_id = f"{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}_{description.replace(' ', '_')[:30]}"
+    # Create a more descriptive task ID that's not truncated
+    timestamp = datetime.utcnow().strftime('%Y%m%dT%H%M%S')
+    # Use first 50 characters of description for better readability
+    desc_part = description.replace(' ', '_')[:50]
+    task_id = f"{timestamp}_{desc_part}"
+    
     data["tasks"].append(
         {
             "id": task_id,
@@ -61,6 +66,8 @@ def new_task(description: str) -> str:
         }
     )
     _save(data)
+    print(f"✅ Created task: {task_id}")
+    print(f"   Description: {description}")
     return task_id
 
 
@@ -308,13 +315,17 @@ def show_task_details(task_id: str) -> None:
 # ------------------------------------------------------------------
 
 def _print_task(task: Dict[str, Any]) -> None:
-    print(f"🗒️  {task['id']} — {task['description']} (status: {task['status']})")
+    print(f"🗒️  {task['id']}")
+    print(f"   Description: {task['description']}")
+    print(f"   Status: {task['status']}")
     if task["todos"]:
+        print(f"   TODO Items ({len(task['todos'])}):")
         for i, todo in enumerate(task["todos"]):
             mark = "✔" if todo["done"] else "✗"
-            print(f"    [{mark}] {i}. {todo['text']}")
+            print(f"     [{mark}] {i}. {todo['text']}")
     else:
-        print(f"    📝 No TODO items (use 'add' command to add TODO items)")
+        print(f"   📝 No TODO items (use 'add' command to add TODO items)")
+    print()  # Add spacing for better readability
 
 
 def main(argv: Optional[List[str]] = None) -> None:
@@ -351,8 +362,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     args = parser.parse_args(argv)
 
     if args.cmd == "new":
-        tid = new_task(args.description)
-        print(f"✅ Created task {tid}")
+        new_task(args.description)
     elif args.cmd == "add":
         add_todo(args.task_id, args.text)
     elif args.cmd == "done":
