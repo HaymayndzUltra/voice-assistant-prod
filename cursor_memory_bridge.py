@@ -42,6 +42,19 @@ def _state_to_markdown(state: Dict[str, Any]) -> str:
         for item in state["task_history"][-10:]:
             lines.append(f"| {item.get('completed', '—')} | {item.get('task', '—')} |")
         lines.append("")
+
+    # Todo open tasks section
+    try:
+        from todo_manager import list_open_tasks  # type: ignore
+
+        open_tasks = list_open_tasks()
+        if open_tasks:
+            lines.append("## 🕒 Open Tasks (Todo Manager)")
+            for task in open_tasks:
+                lines.append(f"- **{task['description']}** ({len([t for t in task['todos'] if not t['done']])} todos left)")
+            lines.append("")
+    except Exception:
+        pass
     return "\n".join(lines)
 
 
