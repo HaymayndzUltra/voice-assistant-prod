@@ -33,6 +33,9 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
     migrate_parser = subparsers.add_parser("migrate", help="Migrate markdown memories into SQLite DB")
     migrate_parser.add_argument("--to", choices=["sqlite"], required=True, help="Target provider kind")
 
+    # Monitoring dashboard (placeholder)
+    subparsers.add_parser("monitor", help="Launch real-time monitoring dashboard (TUI)")
+
     args = parser.parse_args(argv)
 
     if args.command == "tcc":
@@ -50,6 +53,10 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
         from memory_system.scripts.migrate_memories import main as migrate_main
 
         migrate_main(["--to", args.to])
+    elif args.command == "monitor":
+        from memory_system.monitor import run_dashboard
+
+        run_dashboard()
     else:
         parser.print_help()
 

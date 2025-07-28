@@ -122,6 +122,17 @@ gpu = [
     "pynvml>=11.5.0"
 ]
 
+# Vector-store & TUI
+vector = [
+    "chromadb>=0.4.24",
+    "sentence-transformers>=2.2.2",
+    "qdrant-client>=1.6.0",
+]
+
+tui = [
+    "rich>=13.7.0",
+]
+
 # Database drivers and tools
 database = [
     "asyncpg>=0.29.0",

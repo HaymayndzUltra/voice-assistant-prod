@@ -108,6 +108,55 @@ class SQLiteMemoryProvider:
 
 
 # ---------------------------------------------------------------------------
+# Chroma Provider (stub for vector-store integration)
+# ---------------------------------------------------------------------------
+
+
+class ChromaMemoryProvider:
+    """ChromaDB-backed provider with sentence-transformers embeddings.
+
+    Falls back to in-memory search if dependencies are missing.
+    """
+
+    def __init__(self, persist_dir: str | Path = "memory-bank/chroma_db"):
+        try:
+            import chromadb  # type: ignore
+            from sentence_transformers import SentenceTransformer  # type: ignore
+
+            self._chroma = chromadb.PersistentClient(path=str(persist_dir))
+            self._collection = self._chroma.get_or_create_collection("memories")
+            self._model = SentenceTransformer("all-MiniLM-L6-v2")
+            self._fallback = None
+        except ImportError:
+            # Dependencies missing – use simple in-memory fallback
+            self._fallback: list[tuple[str, str]] = []
+
+    # ----------------------------- helpers -----------------------------
+    def _embed(self, texts: List[str]):
+        if hasattr(self, "_model"):
+            return self._model.encode(texts).tolist()
+        return []
+
+    # ----------------------------- public API --------------------------
+    def search(self, keyword: str, limit: int = 10) -> List[str]:
+        if self._fallback is not None:
+            return [title for title, content in self._fallback if keyword.lower() in content.lower()][:limit]
+
+        # Semantic search via embeddings
+        query_vec = self._embed([keyword])[0]
+        results = self._collection.query(query_embeddings=[query_vec], n_results=limit)
+        return [doc for doc in results.get("documents", [[]])[0]]
+
+    def add(self, title: str, content: str) -> None:
+        if self._fallback is not None:
+            self._fallback.append((title, content))
+            return
+
+        emb = self._embed([content])[0]
+        self._collection.add(ids=[title], documents=[content], embeddings=[emb])
+
+
+# ---------------------------------------------------------------------------
 # Factory helper
 # ---------------------------------------------------------------------------
 
@@ -117,5 +166,7 @@ def get_provider(kind: str = "fs") -> MemoryProvider:  # noqa: D401
         return FileSystemMemoryProvider()
     elif kind == "sqlite":
         return SQLiteMemoryProvider()
+    elif kind == "chroma":
+        return ChromaMemoryProvider()
     else:
         raise ValueError(f"Unknown memory provider kind: {kind}")

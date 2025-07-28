@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass, asdict
 import asyncio
+from functools import lru_cache
 
 # internal modules
 from memory_system.services.telemetry import span
@@ -94,6 +95,7 @@ class TaskComplexityAnalyzer:
             'automation_level': 25,  # Points for automation tasks
         }
     
+    @lru_cache(maxsize=256)
     def analyze_complexity(self, task_description: str) -> TaskComplexity:
         """Analyze task complexity for our workflow"""
         
