@@ -108,6 +108,26 @@ class SQLiteMemoryProvider:
 
 
 # ---------------------------------------------------------------------------
+# Chroma Provider (stub for vector-store integration)
+# ---------------------------------------------------------------------------
+
+
+class ChromaMemoryProvider:
+    """Placeholder ChromaDB provider – stores embeddings in-memory (stub)."""
+
+    def __init__(self):
+        self._store: list[tuple[str, str]] = []  # (title, content)
+
+    def search(self, keyword: str, limit: int = 10) -> List[str]:
+        # Fallback simple search pending embedding integration
+        return [title for title, content in self._store if keyword.lower() in content.lower()][:limit]
+
+    def add(self, title: str, content: str) -> None:
+        self._store.append((title, content))
+        # TODO: generate & store embeddings when vector backend is ready
+
+
+# ---------------------------------------------------------------------------
 # Factory helper
 # ---------------------------------------------------------------------------
 
@@ -117,5 +137,7 @@ def get_provider(kind: str = "fs") -> MemoryProvider:  # noqa: D401
         return FileSystemMemoryProvider()
     elif kind == "sqlite":
         return SQLiteMemoryProvider()
+    elif kind == "chroma":
+        return ChromaMemoryProvider()
     else:
         raise ValueError(f"Unknown memory provider kind: {kind}")
