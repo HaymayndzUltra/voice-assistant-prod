@@ -31,30 +31,6 @@ fi
 echo "📝 Last Cursor Session State:"
 python3 cursor_session_manager.py --summary 2>/dev/null || echo "  ℹ️  No session summary available"
 
-# Check conversation context
-echo "💬 Conversation Context:"
-python3 conversation_context_manager.py --summary 2>/dev/null || echo "  ℹ️  No conversation context available"
-
-# Validate memory integrity
-echo "🔍 Memory Integrity Check:"
-python3 - <<'PY' 2>/dev/null
-import json, os
-from cursor_session_manager import session_manager
-from conversation_context_manager import conversation_manager
-
-# Check cursor state integrity
-cursor_valid = session_manager.validate_integrity()
-print(f"  {'✅' if cursor_valid else '❌'} Cursor State: {'Valid' if cursor_valid else 'Invalid'}")
-
-# Check conversation context integrity
-conv_valid = conversation_manager.validate_integrity()
-print(f"  {'✅' if conv_valid else '❌'} Conversation Context: {'Valid' if conv_valid else 'Invalid'}")
-
-# Check backup files
-backup_files = [f for f in os.listdir('.') if f.endswith('.backup')]
-print(f"  📦 Backup Files: {len(backup_files)} found")
-PY
-
 # Show count of open tasks (todo_manager)
 echo "📋 Open Tasks:"
 python3 - <<'PY' 2>/dev/null

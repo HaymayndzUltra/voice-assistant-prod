@@ -18,9 +18,8 @@ class CursorSessionManager:
 
     DEFAULT_STATE_FILE = os.path.join(os.getcwd(), "cursor_state.json")
 
-    def __init__(self, state_file: str | None = None, autosave_interval: int = 5):
+    def __init__(self, state_file: str | None = None, autosave_interval: int = 30):
         self.state_file = state_file or self.DEFAULT_STATE_FILE
-        self.backup_file = f"{self.state_file}.backup"
         self._state: Dict[str, Any] = {}
         self._lock = threading.Lock()
         self.autosave_interval = autosave_interval
@@ -62,24 +61,6 @@ class CursorSessionManager:
         """Return a *copy* of the current session state."""
         with self._lock:
             return json.loads(json.dumps(self._state))  # deep-ish copy
-    
-    def validate_integrity(self) -> bool:
-        """Validate session state integrity."""
-        try:
-            # Check if state file exists and is valid JSON
-            if not os.path.exists(self.state_file):
-                return False
-            
-            with open(self.state_file, "r", encoding="utf-8") as f:
-                json.load(f)
-            
-            return True
-        except (json.JSONDecodeError, OSError):
-            return False
-    
-    def force_save(self) -> None:
-        """Force immediate save (for critical operations)."""
-        self._save_state_to_disk()
 
     def resume_state(self) -> Dict[str, Any]:
         """Return the last persisted state (on disk). Useful at program boot."""
@@ -104,41 +85,18 @@ class CursorSessionManager:
         self._autosave_thread.start()
 
     def _load_state_from_disk(self) -> None:
-        # Try main file first
         if os.path.isfile(self.state_file):
             try:
                 with open(self.state_file, "r", encoding="utf-8") as f:
                     self._state = json.load(f)
-                return
             except (json.JSONDecodeError, OSError):
-                pass
-        
-        # Try backup file if main file failed
-        if os.path.isfile(self.backup_file):
-            try:
-                with open(self.backup_file, "r", encoding="utf-8") as f:
-                    self._state = json.load(f)
-                    # Restore main file from backup
-                    self._save_state_to_disk()
-                    return
-            except (json.JSONDecodeError, OSError):
-                pass
-        
-        # Start fresh if both files failed
-        self._state = {}
+                # Corrupted or inaccessible state file – start fresh.
+                self._state = {}
+        else:
+            self._state = {}
 
     def _save_state_to_disk(self) -> None:
         with self._lock:
-            # Create backup first
-            if os.path.exists(self.state_file):
-                try:
-                    with open(self.state_file, "r", encoding="utf-8") as src:
-                        with open(self.backup_file, "w", encoding="utf-8") as dst:
-                            dst.write(src.read())
-                except OSError:
-                    pass
-            
-            # Save new state
             tmp_path = f"{self.state_file}.tmp"
             try:
                 with open(tmp_path, "w", encoding="utf-8") as f:
@@ -156,12 +114,8 @@ class CursorSessionManager:
                     # Silently ignore to avoid recursion / startup import issues
                     pass
             except OSError:
-                # If main save fails, try backup
-                try:
-                    with open(self.backup_file, "w", encoding="utf-8") as f:
-                        json.dump(self._state, f, indent=2, ensure_ascii=False)
-                except OSError:
-                    pass
+                # Best effort – swallow errors so we never crash the main app.
+                pass
 
     # ------------------------------------------------------------------
     # Lifecycle ---------------------------------------------------------
