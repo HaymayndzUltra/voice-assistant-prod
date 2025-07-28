@@ -77,6 +77,8 @@ COMMAND_ALIASES = {
     "ipagpatuloy muna": "resume",
     "kung saan ako natigil": "where_left_off",
     "tumingin ka sa memory hub folder": "analyze_memory",
+    "anong memory mo ngayon": "memory_summary",
+    "anong susunod na gagawin": "next_action",
 }
 
 
@@ -100,6 +102,10 @@ def handle_command(command: str) -> str:
         return _cmd_where_left_off()
     if action == "analyze_memory":
         return _cmd_analyze_memory()
+    if action == "memory_summary":
+        return _cmd_memory_summary()
+    if action == "next_action":
+        return _cmd_next_action()
     return "🤔 Pasensya, hindi ko naintindihan ang utos mo. (Unknown command)"
 
 
@@ -146,6 +152,46 @@ def _cmd_analyze_memory() -> str:
     files = [f for f in os.listdir(MEMORY_FOLDER) if f.endswith(".md")]
     bullet = "\n".join(f"  – {name}" for name in files)
     return f"🗂️  The memory hub contains {len(files)} markdown files:\n{bullet}"
+
+# ---------------- Extra summaries -----------------
+
+
+def _build_summary_lines() -> list[str]:
+    state = session_manager.get_state()
+    cursor = state.get("cursor_session", {})
+
+    from todo_manager import list_open_tasks  # type: ignore
+
+    open_tasks = list_open_tasks()
+
+    lines: list[str] = []
+    lines.append("🧠 MEMORY SUMMARY:")
+    lines.append("• Current task      : " + cursor.get("current_task", "—"))
+    lines.append("• Current file/line : " + f"{cursor.get('current_file', '—')} : {cursor.get('cursor_line', '—')}")
+    lines.append("• Progress          : " + str(cursor.get("progress", "—")))
+    lines.append("• Open tasks (#)    : " + str(len(open_tasks)))
+    return lines
+
+
+def _cmd_memory_summary() -> str:
+    return "\n".join(_build_summary_lines())
+
+
+def _cmd_next_action() -> str:
+    # heuristic: return first open todo text else prompt user.
+    from todo_manager import list_open_tasks  # type: ignore
+
+    open_tasks = list_open_tasks()
+    if not open_tasks:
+        return "📭 No open tasks. You are free to start a new task."
+
+    # pick the first task's first undone todo
+    for task in open_tasks:
+        for todo in task["todos"]:
+            if not todo["done"]:
+                return f"🔜 Susunod na gagawin: {todo['text']} (part of '{task['description']}')"
+
+    return "ℹ️  All todos done, but tasks still marked open. Review them."
 
 
 # ------------------------------------------------------------------
