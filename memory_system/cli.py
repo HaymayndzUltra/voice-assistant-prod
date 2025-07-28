@@ -54,7 +54,9 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
 
         migrate_main(["--to", args.to])
     elif args.command == "monitor":
-        print("📈 Monitoring dashboard coming soon – stay tuned! (Phase 5)")
+        from memory_system.monitor import run_dashboard
+
+        run_dashboard()
     else:
         parser.print_help()
 

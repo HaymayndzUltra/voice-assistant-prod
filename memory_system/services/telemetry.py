@@ -12,10 +12,23 @@ from __future__ import annotations
 import json
 import sys
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Callable, List
 from contextlib import contextmanager
 
-__all__ = ["emit", "span"]
+_subscribers: List[Callable[[Dict[str, Any]], None]] = []
+
+__all__ = ["emit", "span", "register_subscriber", "unregister_subscriber"]
+
+
+def register_subscriber(cb: Callable[[Dict[str, Any]], None]) -> None:  # noqa: D401
+    """Register a callback that will receive every telemetry payload dict."""
+    _subscribers.append(cb)
+
+
+def unregister_subscriber(cb: Callable[[Dict[str, Any]], None]) -> None:  # noqa: D401
+    if cb in _subscribers:
+        _subscribers.remove(cb)
+
 
 def _now() -> float:  # Epoch seconds
     return time.time()
@@ -35,6 +48,13 @@ def emit(event: str, *, stream=None, **fields: Any) -> None:  # noqa: D401
         payload.update(fields)
     (stream or _default_stream()).write(json.dumps(payload) + "\n")
     (stream or _default_stream()).flush()
+
+    # fan-out to subscribers
+    for cb in list(_subscribers):
+        try:
+            cb(payload)
+        except Exception:
+            continue
 
 
 # ---------------------------------------------------------------------------

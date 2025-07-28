@@ -113,18 +113,47 @@ class SQLiteMemoryProvider:
 
 
 class ChromaMemoryProvider:
-    """Placeholder ChromaDB provider – stores embeddings in-memory (stub)."""
+    """ChromaDB-backed provider with sentence-transformers embeddings.
 
-    def __init__(self):
-        self._store: list[tuple[str, str]] = []  # (title, content)
+    Falls back to in-memory search if dependencies are missing.
+    """
 
+    def __init__(self, persist_dir: str | Path = "memory-bank/chroma_db"):
+        try:
+            import chromadb  # type: ignore
+            from sentence_transformers import SentenceTransformer  # type: ignore
+
+            self._chroma = chromadb.PersistentClient(path=str(persist_dir))
+            self._collection = self._chroma.get_or_create_collection("memories")
+            self._model = SentenceTransformer("all-MiniLM-L6-v2")
+            self._fallback = None
+        except ImportError:
+            # Dependencies missing – use simple in-memory fallback
+            self._fallback: list[tuple[str, str]] = []
+
+    # ----------------------------- helpers -----------------------------
+    def _embed(self, texts: List[str]):
+        if hasattr(self, "_model"):
+            return self._model.encode(texts).tolist()
+        return []
+
+    # ----------------------------- public API --------------------------
     def search(self, keyword: str, limit: int = 10) -> List[str]:
-        # Fallback simple search pending embedding integration
-        return [title for title, content in self._store if keyword.lower() in content.lower()][:limit]
+        if self._fallback is not None:
+            return [title for title, content in self._fallback if keyword.lower() in content.lower()][:limit]
+
+        # Semantic search via embeddings
+        query_vec = self._embed([keyword])[0]
+        results = self._collection.query(query_embeddings=[query_vec], n_results=limit)
+        return [doc for doc in results.get("documents", [[]])[0]]
 
     def add(self, title: str, content: str) -> None:
-        self._store.append((title, content))
-        # TODO: generate & store embeddings when vector backend is ready
+        if self._fallback is not None:
+            self._fallback.append((title, content))
+            return
+
+        emb = self._embed([content])[0]
+        self._collection.add(ids=[title], documents=[content], embeddings=[emb])
 
 
 # ---------------------------------------------------------------------------
