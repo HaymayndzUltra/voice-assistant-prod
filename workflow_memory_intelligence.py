@@ -12,6 +12,9 @@ from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass, asdict
 
+# Added import for telemetry span
+from memory_system.services.telemetry import span
+
 # Import our existing memory system
 from todo_manager import new_task, add_todo, list_open_tasks, set_task_status, hard_delete_task
 from task_interruption_manager import auto_task_handler, get_interruption_status
@@ -576,8 +579,9 @@ def get_relevant_memories(task_description: str) -> List[str]:
 
 
 def execute_task_intelligently(task_description: str) -> Dict[str, Any]:
-    """Execute task with full intelligence"""
-    return execution_manager.execute_task(task_description)
+    """Execute task with full intelligence, with telemetry span tracking."""
+    with span("execute_task", description=task_description[:80]):
+        return execution_manager.execute_task(task_description)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Dict
 
-from memory_system.services.telemetry import emit
+from memory_system.services.telemetry import span
 from workflow_memory_intelligence import execute_task_intelligently
 
 __all__ = ["AsyncTaskEngine"]
@@ -24,9 +24,10 @@ class AsyncTaskEngine:
     async def _run_one(self, task_description: str) -> Dict[str, Any]:
         """Run a single task in the executor and capture telemetry."""
         loop = asyncio.get_running_loop()
-        emit("task_start", description=task_description[:80])
-        result = await loop.run_in_executor(self._executor, execute_task_intelligently, task_description)
-        emit("task_end", description=task_description[:80], status=result.get("status"))
+        with span("task", description=task_description[:80]):
+            result = await loop.run_in_executor(
+                self._executor, execute_task_intelligently, task_description
+            )
         return result
 
     async def execute_many(self, task_descriptions: List[str]) -> List[Dict[str, Any]]:

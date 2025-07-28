@@ -5,9 +5,10 @@ Task Command Center and serve as a placeholder for future subcommands.
 """
 import argparse
 import sys
+from typing import List, Optional
 
 
-def main(argv: list[str] | None = None) -> None:  # noqa: D401
+def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
     """Entry point for the `memoryctl` command."""
     parser = argparse.ArgumentParser(
         prog="memoryctl",
