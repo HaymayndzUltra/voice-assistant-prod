@@ -7,9 +7,14 @@ import argparse
 import sys
 from typing import List, Optional
 
+from memory_system import logger as _ms_logger
+
 
 def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
     """Entry point for the `memoryctl` command."""
+    # Ensure JSON logging configured
+    _ms_logger.setup()
+
     parser = argparse.ArgumentParser(
         prog="memoryctl",
         description="Unified Memory System CLI (skeleton)",

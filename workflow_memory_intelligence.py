@@ -12,7 +12,8 @@ from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 from dataclasses import dataclass, asdict
 
-# Added import for telemetry span
+# Async support and telemetry
+import asyncio
 from memory_system.services.telemetry import span
 
 # Import our existing memory system
@@ -449,6 +450,10 @@ class AdaptiveMemoryManagement:
         print("🧹 Memory cache cleared")
 
 
+# ---------------------------------------------------------------------------
+# Smart Task Execution Manager (sync & async)
+# ---------------------------------------------------------------------------
+
 class SmartTaskExecutionManager:
     """Smart task execution manager for our workflow"""
     
@@ -478,6 +483,16 @@ class SmartTaskExecutionManager:
             return self._execute_simple_task(chunked_task)
         else:
             return self._execute_complex_task(chunked_task)
+
+    # --------------------------- ASYNC VARIANT ---------------------------
+
+    async def execute_task_async(self, task_description: str) -> Dict[str, Any]:  # noqa: D401
+        """`async` wrapper around execute_task for native async workflows."""
+        loop = asyncio.get_running_loop()
+        # Run the blocking logic in the default executor per core – we removed the
+        # dedicated ThreadPool in AsyncTaskEngine, but still offload heavy work so
+        # the event-loop stays responsive.
+        return await loop.run_in_executor(None, self.execute_task, task_description)
     
     def _execute_simple_task(self, chunked_task: ChunkedTask) -> Dict[str, Any]:
         """Execute simple task directly"""
@@ -589,6 +604,13 @@ def execute_task_intelligently(task_description: str) -> Dict[str, Any]:
     """Execute task with full intelligence, with telemetry span tracking."""
     with span("execute_task", description=task_description[:80]):
         return execution_manager.execute_task(task_description)
+
+
+# Async variant for native coroutine usage
+async def execute_task_intelligently_async(task_description: str) -> Dict[str, Any]:  # noqa: D401
+    """Async version mirrored to allow awaitable intelligent execution."""
+    with span("execute_task", description=task_description[:80]):
+        return await execution_manager.execute_task_async(task_description)
 
 
 if __name__ == "__main__":
