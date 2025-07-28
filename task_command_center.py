@@ -5,9 +5,12 @@ Task Command & Control Center - Interactive menu system for task management
 
 import sys
 import os
+import json
 from typing import List, Dict, Any
 from task_interruption_manager import auto_task_handler, get_interruption_status, resume_all_interrupted_tasks
 from todo_manager import list_open_tasks, add_todo, mark_done, delete_todo, show_task_details, new_task, hard_delete_task
+# 🚀 Intelligent workflow integration
+from workflow_memory_intelligence import execute_task_intelligently
 
 class TaskCommandCenter:
     """Interactive command and control center for task management"""
@@ -61,6 +64,7 @@ class TaskCommandCenter:
         print("7. 🗑️  Delete TODO")
         print("8. 📖 Show Task Details")
         print("9. 🗑️  Delete Task")
+        print("10. 🧠 Intelligent Task Execution")
         print("0. ❌ Exit")
         print()
     
@@ -397,7 +401,10 @@ class TaskCommandCenter:
             self.show_current_status()
             self.show_main_menu()
             
-            choice = self.get_user_choice(9)
+            # The menu now contains 10 actionable items (1-10). Ensure the
+            # input validator is aware of that so selecting option 10 is
+            # accepted and routed correctly.
+            choice = self.get_user_choice(10)
             
             if choice == 0:
                 print("👋 Goodbye!")
@@ -420,6 +427,40 @@ class TaskCommandCenter:
                 self.show_task_details()
             elif choice == 9:
                 self.delete_task()
+            elif choice == 10:
+                self.intelligent_task_execution()
+
+    # ------------------------------------------------------------------
+    # 🧠 Intelligent Task Execution Integration
+    # ------------------------------------------------------------------
+    def intelligent_task_execution(self):
+        """Execute a task using intelligent workflow integration"""
+        self.clear_screen()
+        self.show_header()
+
+        print("🧠 INTELLIGENT TASK EXECUTION:")
+        print("=" * 35)
+        print("Enter your task description (will be analyzed and executed intelligently):")
+
+        task_description = input("> ").strip()
+
+        if not task_description:
+            print("❌ Task description cannot be empty")
+            input("\nPress Enter to continue...")
+            return
+
+        # Execute task using intelligent workflow system
+        print("\n🚀 Processing task with intelligent executor...\n")
+        try:
+            result = execute_task_intelligently(task_description)
+            # Pretty-print the JSON result for the user
+            print("\n✅ Intelligent Execution Result:")
+            print(json.dumps(result, indent=2))
+        except Exception as e:
+            # Catch any unexpected errors to ensure command center stability
+            print(f"❌ An error occurred during intelligent execution: {e}")
+
+        input("\nPress Enter to continue...")
 
 
 def main():

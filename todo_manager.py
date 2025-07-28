@@ -17,14 +17,63 @@ from typing import Dict, Any, List, Optional
 
 DATA_FILE = Path(os.getcwd()) / "todo-tasks.json"
 
+# ------------------------------------------------------------------
+# Configuration -----------------------------------------------------
+# ------------------------------------------------------------------
+# How many days a *completed* task should be retained before it is
+# automatically purged from the JSON storage.  This can be overridden
+# at runtime via the TODO_CLEANUP_DAYS environment variable so teams
+# can easily adjust retention without touching code.
+DEFAULT_CLEANUP_DAYS = int(os.getenv("TODO_CLEANUP_DAYS", "7"))
+
 
 def _load() -> Dict[str, Any]:
     if DATA_FILE.exists():
         try:
-            return json.loads(DATA_FILE.read_text("utf-8"))
+            data = json.loads(DATA_FILE.read_text("utf-8"))
+            # Opportunistically clean up outdated tasks on every load so the
+            # JSON never grows unbounded even if explicit cleanup commands
+            # are forgotten.
+            if _cleanup_outdated_tasks(data):
+                # Persist the pruned dataset immediately so the rest of the
+                # call-sites operate on a consistent view.
+                _save(data)
+            return data
         except json.JSONDecodeError:
             pass
     return {"tasks": []}
+
+
+# ------------------------------------------------------------------
+# House-keeping helpers --------------------------------------------
+# ------------------------------------------------------------------
+
+
+def _cleanup_outdated_tasks(data: Dict[str, Any]) -> bool:
+    """Auto-purge completed tasks older than *DEFAULT_CLEANUP_DAYS*.
+
+    Returns True if the dataset was modified (i.e. tasks removed).
+    """
+
+    now = datetime.utcnow()
+
+    def _is_stale(task: Dict[str, Any]) -> bool:
+        if task.get("status") != "completed":
+            return False
+
+        try:
+            # Prefer the last *updated* timestamp so we keep recently reopened
+            # tasks even if originally created long ago.
+            last = datetime.fromisoformat(task.get("updated", task.get("created")))
+            return (now - last).days >= DEFAULT_CLEANUP_DAYS
+        except Exception:
+            # If parsing fails for whatever reason, be conservative and keep
+            # the task – we don't want to delete user data accidentally.
+            return False
+
+    before = len(data.get("tasks", []))
+    data["tasks"] = [t for t in data.get("tasks", []) if not _is_stale(t)]
+    return len(data["tasks"]) < before
 
 
 def _save(data: Dict[str, Any]) -> None:
@@ -106,6 +155,15 @@ def mark_done(task_id: str, index: int) -> None:
         
         task["todos"][index]["done"] = True
         task["updated"] = _timestamp()
+
+        # ------------------------------------------------------------------
+        # Auto-completion logic: if *all* TODO items are now done we will mark
+        # the parent task as completed so downstream tooling (e.g. UI lists,
+        # cleanup) can react accordingly without relying on manual commands.
+        # ------------------------------------------------------------------
+        if all(t["done"] for t in task["todos"]):
+            task["status"] = "completed"
+
         _save(data)
         print(f"✅ Marked TODO {index} as done: {task['todos'][index]['text']}")
     except (IndexError, ValueError) as e:
@@ -166,7 +224,17 @@ def delete_todo(task_id: str, index: int) -> None:
 
 def list_open_tasks() -> List[Dict[str, Any]]:
     data = _load()
-    return [t for t in data["tasks"] if t.get("status") != "completed"]
+
+    # Return newest tasks first so fresh items always grab the user's
+    # attention at the top of interactive menus.
+    open_tasks = [t for t in data["tasks"] if t.get("status") != "completed"]
+    try:
+        open_tasks.sort(key=lambda t: t.get("created", ""), reverse=True)
+    except Exception:
+        # Fallback – if timestamps are malformed we still return unsorted list.
+        pass
+
+    return open_tasks
 
 
 def set_task_status(task_id: str, status: str) -> None:
