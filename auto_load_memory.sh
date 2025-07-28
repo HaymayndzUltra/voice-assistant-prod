@@ -3,13 +3,9 @@ echo "🧠 Auto-loading memory context for new session..."
 
 # Load memory-bank files
 echo "📖 Loading memory-bank files:"
-for file in memory-bank/*.md; do
-    if [ -f "$file" ] && [ -s "$file" ]; then
-        echo "  ✅ $(basename $file) ($(wc -l < "$file") lines)"
-    else
-        echo "  ⚠️  $(basename $file) (empty)"
-    fi
-done
+# Count markdown docs instead of listing each one
+count=$(ls memory-bank/*.md 2>/dev/null | wc -l | tr -d ' ')
+echo "  ✅ $count markdown documents loaded"
 
 # Check MCP services
 echo "🔗 Checking MCP services:"
