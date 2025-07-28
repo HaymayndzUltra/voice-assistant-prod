@@ -1,5 +1,5 @@
 # Core Dependencies
-pyzmq==25.1.2
+pyzmq==27.0.0
 numpy==1.26.4
 pandas==2.2.1
 networkx==3.2.1

@@ -1,0 +1,59 @@
+# UNIFIED-SYSTEM PROFILE: LEARNING
+# Core system + learning and self-improvement capabilities
+# Total agents: ~30 (essential + learning optional)
+
+profile:
+  name: learning
+  description: "Core system with learning and adaptation capabilities"
+  
+# Agent selection rules
+agent_selection:
+  # Include all core essential agents
+  include_groups:
+    - infrastructure_registry
+    - coordination_resource
+    - memory_foundation
+    - speech_io
+    - pc2_core  # PC2 has advanced memory/reasoning
+    
+  # Enable learning optional agents
+  optional_agents:
+    include:
+      # Learning cluster
+      - LearningOrchestrationService
+      - LearningOpportunityDetector
+      - LearningManager
+      - ActiveLearningMonitor
+      - LearningAdjusterAgent
+      - SelfTrainingOrchestrator
+      - LocalFineTunerAgent
+      # Reasoning support
+      - ChainOfThoughtAgent
+      - GoTToTAgent
+      - CognitiveModelAgent
+      
+  # Auto-load core learning agents
+  autoload_on_startup:
+    - LearningOrchestrationService
+    - LearningManager
+    
+# Resource limits for learning profile
+resource_overrides:
+  global_settings:
+    resource_limits:
+      cpu_percent: 80
+      memory_mb: 6144
+      max_threads: 8
+      
+  # Learning agents need compute resources
+  agent_overrides:
+    SelfTrainingOrchestrator:
+      memory_mb: 2048
+    LocalFineTunerAgent:
+      vram_mb: 2048
+      
+# Startup parameters
+startup:
+  timeout_seconds: 120
+  health_check_retries: 10
+  parallel_starts: 5

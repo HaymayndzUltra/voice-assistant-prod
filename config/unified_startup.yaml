@@ -1,0 +1,330 @@
+# UNIFIED-SYSTEM STARTUP CONFIGURATION
+# Phase 1 - Foundation Consolidation
+# Legend: ■ = essential/core, □ = optional/on-demand, ⊗ = removed/deprecated
+
+global_settings:
+  environment:
+    PYTHONPATH: '${PYTHONPATH}:/workspace:/workspace/main_pc_code:/workspace/pc2_code'
+    LOG_LEVEL: INFO
+    DEBUG_MODE: 'false'
+    ENABLE_METRICS: 'true'
+    ENABLE_TRACING: 'true'
+    ENABLE_DATA_OPTIMIZER: 'true'
+    DATA_OPTIMIZER_METHOD: compressed_msgpack
+    UNIFIED_HOST: localhost
+    OBS_HUB_ENDPOINT: 'http://localhost:9000'
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 4096  # Higher limit from PC2
+    max_threads: 8    # Higher limit from PC2
+  health_checks:
+    interval_seconds: 30
+    timeout_seconds: 10
+    retries: 3
+    start_period_seconds: 300
+
+# Essential agents organized by startup sequence groups
+agent_groups:
+  # STAGE 1: Infrastructure & Registry
+  infrastructure_registry:
+    ServiceRegistry:
+      script_path: main_pc_code/agents/service_registry_agent.py
+      port: 7200
+      health_check_port: 8200
+      required: true
+      dependencies: []
+      config:
+        backend: memory
+        
+    ObservabilityHub:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9000
+      health_check_port: 9001
+      required: true
+      dependencies: 
+        - ServiceRegistry
+      config:
+        prometheus_enabled: true
+        parallel_health_checks: true
+        prediction_enabled: true
+        scope: unified_system
+        cross_machine_sync: false
+        
+    SystemDigitalTwin:
+      script_path: main_pc_code/agents/system_digital_twin.py
+      port: 7220
+      health_check_port: 8220
+      required: true
+      dependencies:
+        - ServiceRegistry
+        - ObservabilityHub
+      config:
+        db_path: data/unified_memory.db
+        redis:
+          host: localhost
+          port: 6379
+          db: 0
+        zmq_request_timeout: 5000
+
+  # STAGE 2: Coordination / Resource Control
+  coordination_resource:
+    ModelManagerSuite:
+      script_path: main_pc_code/model_manager_suite.py
+      port: 7211
+      health_check_port: 8211
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+      config:
+        models_dir: models
+        vram_budget_percentage: 80
+        idle_timeout: 300
+        
+    VRAMOptimizerAgent:
+      script_path: main_pc_code/agents/vram_optimizer_agent.py
+      port: 5572
+      health_check_port: 6572
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - ObservabilityHub
+        
+    RequestCoordinator:
+      script_path: main_pc_code/agents/request_coordinator.py
+      port: 7201
+      health_check_port: 8201
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - VRAMOptimizerAgent
+        - ObservabilityHub
+
+  # STAGE 3: Memory Foundation
+  memory_foundation:
+    MemoryClient:
+      script_path: main_pc_code/agents/memory_client.py
+      port: 5713
+      health_check_port: 6713
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    KnowledgeBase:
+      script_path: main_pc_code/agents/knowledge_base.py
+      port: 5715
+      health_check_port: 6715
+      required: true
+      dependencies:
+        - MemoryClient
+        - ObservabilityHub
+        
+    SessionMemoryAgent:
+      script_path: main_pc_code/agents/session_memory_agent.py
+      port: 5574
+      health_check_port: 6574
+      required: true
+      dependencies:
+        - RequestCoordinator
+        - SystemDigitalTwin
+        - MemoryClient
+        - ObservabilityHub
+
+  # STAGE 4: Speech I/O Loop
+  speech_io:
+    AudioCapture:
+      script_path: main_pc_code/agents/streaming_audio_capture.py
+      port: 6550
+      health_check_port: 7550
+      required: true
+      dependencies:
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    FusedAudioPreprocessor:
+      script_path: main_pc_code/agents/fused_audio_preprocessor.py
+      port: 6551
+      health_check_port: 7551
+      required: true
+      dependencies:
+        - AudioCapture
+        - ObservabilityHub
+        
+    STTService:
+      script_path: main_pc_code/services/stt_service.py
+      port: 5800
+      health_check_port: 6800
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    StreamingSpeechRecognition:
+      script_path: main_pc_code/agents/streaming_speech_recognition.py
+      port: 6553
+      health_check_port: 7553
+      required: true
+      dependencies:
+        - FusedAudioPreprocessor
+        - RequestCoordinator
+        - STTService
+        - ObservabilityHub
+        
+    TTSService:
+      script_path: main_pc_code/services/tts_service.py
+      port: 5801
+      health_check_port: 6801
+      required: true
+      dependencies:
+        - ModelManagerSuite
+        - SystemDigitalTwin
+        - ObservabilityHub
+        
+    StreamingTTSAgent:
+      script_path: main_pc_code/agents/streaming_tts_agent.py
+      port: 5562
+      health_check_port: 6562
+      required: true
+      dependencies:
+        - RequestCoordinator
+        - TTSService
+        - SystemDigitalTwin
+        - ObservabilityHub
+
+  # STAGE 5: PC2 Core Services
+  pc2_core:
+    ObservabilityHub_PC2:
+      script_path: phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py
+      port: 9100
+      health_check_port: 9110
+      required: true
+      dependencies: []
+      config:
+        scope: "pc2_agents"
+        prometheus_port: 9100
+        cross_machine_sync: true
+        mainpc_hub_endpoint: "http://localhost:9000"
+        parallel_health_checks: true
+        prediction_enabled: true
+        
+    MemoryOrchestratorService:
+      script_path: pc2_code/agents/memory_orchestrator_service.py
+      port: 7140
+      health_check_port: 8140
+      required: true
+      dependencies:
+        - ObservabilityHub_PC2
+        
+    ResourceManager:
+      script_path: pc2_code/agents/resource_manager.py
+      port: 7113
+      health_check_port: 8113
+      required: true
+      dependencies:
+        - ObservabilityHub_PC2
+        
+    AsyncProcessor:
+      script_path: pc2_code/agents/async_processor.py
+      port: 7101
+      health_check_port: 8101
+      required: true
+      dependencies:
+        - ResourceManager
+        - ObservabilityHub_PC2
+        
+    ContextManager:
+      script_path: pc2_code/agents/context_manager.py
+      port: 7111
+      health_check_port: 8111
+      required: true
+      dependencies:
+        - MemoryOrchestratorService
+        - ObservabilityHub_PC2
+        
+    UnifiedMemoryReasoningAgent:
+      script_path: pc2_code/agents/unified_memory_reasoning_agent.py
+      port: 7105
+      health_check_port: 8105
+      required: true
+      dependencies:
+        - MemoryOrchestratorService
+        - ObservabilityHub_PC2
+        
+    TaskScheduler:
+      script_path: pc2_code/agents/task_scheduler.py
+      port: 7115
+      health_check_port: 8115
+      required: true
+      dependencies:
+        - AsyncProcessor
+        - ObservabilityHub_PC2
+        
+    TieredResponder:
+      script_path: pc2_code/agents/tiered_responder.py
+      port: 7100
+      health_check_port: 8100
+      required: true
+      dependencies:
+        - ResourceManager
+        - TaskScheduler
+        - ObservabilityHub_PC2
+
+# Port allocation strategy
+port_allocation:
+  # MainPC agents: 5500-5999 (agent ports), 6500-6999 (health check ports)
+  # PC2 agents: 7100-7199 (agent ports), 8100-8199 (health check ports)
+  # Unified services: 7200-7299 (agent ports), 8200-8299 (health check ports)
+  # Monitoring: 9000-9099 (all ports)
+
+# Error handling
+error_handling:
+  error_bus_port: 7150
+  max_retries: 3
+  retry_delay_seconds: 5
+
+# Hybrid LLM Routing Configuration
+hybrid_llm_routing:
+  complexity_threshold: 0.7
+  cloud_llm_endpoint: "${CLOUD_LLM_ENDPOINT}"
+  local_llm_preference: "lightweight_tasks"
+  failover_strategy:
+    cloud_unreachable: "fallback_to_local"
+    vram_exhausted: "degrade_to_tinyllama"
+  metrics_feedback: true
+
+# Summary
+# Total essential agents: 23
+# MainPC essential: 15 (3 infrastructure + 3 coordination + 3 memory + 6 speech)
+# PC2 essential: 8 (including separate ObservabilityHub)
+
+# OPTIONAL AGENTS (□) - To be loaded on-demand in Phase 2:
+# MainPC Optional Clusters:
+# - Reasoning: ChainOfThoughtAgent, GoTToTAgent, CognitiveModelAgent
+# - Learning: LearningOrchestrationService, LearningOpportunityDetector, LearningManager, 
+#            ActiveLearningMonitor, LearningAdjusterAgent, SelfTrainingOrchestrator, LocalFineTunerAgent
+# - Vision: FaceRecognitionAgent, VisionProcessingAgent
+# - Emotion: EmotionEngine, MoodTrackerAgent, HumanAwarenessAgent, ToneDetector, 
+#           VoiceProfilingAgent, EmpathyAgent, EmotionSynthesisAgent
+# - Language: NLUAgent, AdvancedCommandHandler, ChitchatAgent, FeedbackHandler, 
+#            Responder, TranslationService, DynamicIdentityAgent
+# - Utility: CodeGenerator, Executor, FixedStreamingTranslation, TinyLlamaServiceEnhanced, 
+#           NLLBAdapter, PredictiveHealthMonitor
+# - Audio: StreamingInterruptHandler, WakeWordDetector, StreamingLanguageAnalyzer, ProactiveAgent
+# - Core: UnifiedSystemAgent, ModelOrchestrator, GoalManager, IntentionValidatorAgent
+
+# PC2 Optional Clusters:
+# - Dream: DreamWorldAgent, DreamingModeAgent
+# - Vision: VisionProcessingAgent (if PC2 camera required)
+# - Tutoring: TutorAgent, TutoringAgent
+# - Web/Files: UnifiedWebAgent, FileSystemAssistantAgent
+# - Auth/Security: AuthenticationAgent, AgentTrustScorer
+# - Utils: UnifiedUtilsAgent, ProactiveContextMonitor
+# - Infrastructure: CacheManager, RemoteConnectorAgent, AdvancedRouter
+
+# DEPRECATED/REMOVED (⊗):
+# - PerformanceMonitor (replaced by ObservabilityHub)
+# - HealthMonitor (replaced by ObservabilityHub)
+# - SystemHealthManager (replaced by ObservabilityHub)
+# - PerformanceLoggerAgent (replaced by ObservabilityHub)

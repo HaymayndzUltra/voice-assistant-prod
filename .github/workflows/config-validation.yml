@@ -2,7 +2,7 @@ name: Configuration Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ hybrid-llm-phase1 ]
     paths:
       - '**/*config*.yaml'
       - '**/*config*.yml'
@@ -11,6 +11,7 @@ on:
       - 'scripts/port_linter.py'
       - 'common/utils/path_manager.py'
   pull_request:
+    branches: [ hybrid-llm-phase1 ]
     branches: [ main, develop ]
     paths:
       - '**/*config*.yaml'

@@ -2,9 +2,9 @@ name: Guardrails
 
 on:
   pull_request:
-    branches: ["main", "refactor/**"]
+    branches: ["hybrid-llm-phase1", "refactor/**"]
   push:
-    branches: ["main"]
+    branches: ["hybrid-llm-phase1", "main"]
 
 jobs:
   guardrails:

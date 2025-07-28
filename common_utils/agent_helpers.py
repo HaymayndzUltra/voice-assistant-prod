@@ -1,128 +1,145 @@
+"""common_utils.agent_helpers
+Shared utilities for all agents:
+ - retry decorator with exponential back-off
+ - std_health_response helper (consistent schema)
+ - register_cleanup for graceful shutdown
+ - lazy_import convenience (defers heavy import until first attribute access)
 """
-Shared utility functions for all agents to reduce code duplication and improve performance.
-"""
+from __future__ import annotations
 
-import functools
-import time
-import sys
-import importlib
-import types
 import atexit
+import functools
+import importlib
 import logging
-from typing import Any, Callable, Dict, List, Optional
+import sys
+import time
+from types import ModuleType
+from typing import Any, Callable, Iterable, List, Optional
 
-logger = logging.getLogger(__name__)
+__all__ = [
+    "retry",
+    "std_health_response",
+    "register_cleanup",
+    "lazy_import",
+]
 
-def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0):
-    """
-    Retry decorator with exponential backoff.
-    
+# ----------------------------------------------------------------------------
+# Retry decorator
+# ----------------------------------------------------------------------------
+
+def retry(
+    exceptions: tuple[type[Exception], ...] | type[Exception] = Exception,
+    tries: int = 3,
+    delay: float = 1.0,
+    backoff: float = 2.0,
+    logger: Optional[logging.Logger] = None,
+):
+    """Retry calling the decorated function using an exponential backoff.
+
+    Source-agnostic helper pulled out from several agents.
+
     Args:
-        max_attempts: Maximum number of retry attempts
-        delay: Initial delay between retries in seconds
-        backoff: Backoff multiplier for delay
+        exceptions: exception(s) that trigger a retry.
+        tries: total number of attempts.
+        delay: initial delay between attempts in seconds.
+        backoff: multiplier applied to delay after each failure.
+        logger: optional logger to write exceptions to; if None, root logger.
     """
-    def decorator(func: Callable) -> Callable:
+
+    def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            current_delay = delay
-            last_exception = None
-            
-            for attempt in range(max_attempts):
+            _tries, _delay = tries, delay
+            while _tries > 1:
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
-                    if attempt < max_attempts - 1:
-                        logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}. Retrying in {current_delay}s...")
-                        time.sleep(current_delay)
-                        current_delay *= backoff
-                    else:
-                        logger.error(f"All {max_attempts} attempts failed for {func.__name__}")
-            
-            raise last_exception
+                except exceptions as exc:
+                    (_logger := logger or logging.getLogger(func.__module__)).warning(
+                        "%s failed with %s. Retrying in %.1fs (%d tries left)",
+                        func.__name__, exc, _delay, _tries - 1,
+                    )
+                    time.sleep(_delay)
+                    _tries -= 1
+                    _delay *= backoff
+            # Final attempt – let exceptions propagate
+            return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
-def lazy_import(module_name: str):
-    """
-    Lazy import a module to improve startup time.
-    
-    Args:
-        module_name: Name of module to lazily import
-    """
-    class LazyModule(types.ModuleType):
-        def __getattr__(self, item):
-            try:
-                module = importlib.import_module(module_name)
-                # Replace the lazy module with the real one
-                sys.modules[module_name] = module
-                return getattr(module, item)
-            except ImportError as e:
-                logger.warning(f"Failed to lazy import {module_name}: {e}")
-                raise
-    
-    # Only replace if not already imported
-    if module_name not in sys.modules:
-        sys.modules[module_name] = LazyModule(module_name)
 
-def std_health_response(status: str = "healthy", details: Optional[Dict] = None) -> Dict[str, Any]:
-    """
-    Generate standardized health check response.
-    
-    Args:
-        status: Health status ('healthy', 'unhealthy', 'degraded')
-        details: Optional additional details
-    
-    Returns:
-        Standardized health response dict
-    """
-    response = {
-        "status": status,
-        "timestamp": time.time(),
-        "details": details or {}
+# ----------------------------------------------------------------------------
+# Standard health-check response
+# ----------------------------------------------------------------------------
+_START_TS = time.time()
+
+
+def std_health_response(additional: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    """Return a consistent health-check payload used across agents."""
+    data = {
+        "status": "ok",
+        "uptime": round(time.time() - _START_TS, 2),
     }
-    return response
+    if additional:
+        data.update(additional)
+    return data
 
-# Global cleanup registry
-_cleanup_functions: List[Callable] = []
 
-def register_cleanup(cleanup_func: Callable):
-    """
-    Register a cleanup function to be called on exit.
-    
-    Args:
-        cleanup_func: Function to call during cleanup
-    """
-    _cleanup_functions.append(cleanup_func)
+# ----------------------------------------------------------------------------
+# Cleanup handling
+# ----------------------------------------------------------------------------
 
-def run_cleanup():
+_cleanup_funcs: List[Callable[[], Any]] = []
+
+
+def register_cleanup(func: Callable[[], Any]) -> None:
+    """Register a callable to be executed at interpreter exit."""
+    _cleanup_funcs.append(func)
+
+
+@atexit.register  # noqa: D401 – Simple phrase is fine here
+def _run_cleanups() -> None:
     """Execute all registered cleanup functions."""
-    for cleanup_func in _cleanup_functions:
+    for func in _cleanup_funcs:
         try:
-            cleanup_func()
+            func()
         except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+            logging.getLogger(__name__).error("Cleanup function %s failed: %s", func, e)
 
-# Register global cleanup handler
-atexit.register(run_cleanup)
 
-def setup_lazy_imports():
-    """Setup lazy imports for heavy modules to improve startup time."""
-    heavy_modules = [
-        'torch',
-        'TTS', 
-        'sounddevice',
-        'numpy',
-        'transformers',
-        'sklearn',
-        'matplotlib',
-        'cv2'
-    ]
-    
-    for module in heavy_modules:
-        try:
-            lazy_import(module)
-            logger.debug(f"Set up lazy import for {module}")
-        except Exception as e:
-            logger.debug(f"Could not set up lazy import for {module}: {e}")
+# ----------------------------------------------------------------------------
+# Lazy import utilities
+# ----------------------------------------------------------------------------
+
+class _LazyModule(ModuleType):
+    """Module proxy that loads the real module on first attribute access."""
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.__dict__["__lazy_name__"] = name
+        self.__dict__["__loaded__"] = False
+
+    def _load(self):
+        if self.__dict__["__loaded__"]:
+            return sys.modules[self.__dict__["__lazy_name__"]]
+        real_module = importlib.import_module(self.__dict__["__lazy_name__"])
+        sys.modules[self.__dict__["__lazy_name__"]] = real_module
+        self.__dict__["__loaded__"] = True
+        self.__dict__.update(real_module.__dict__)
+        return real_module
+
+    def __getattr__(self, item):
+        module = self._load()
+        return getattr(module, item)
+
+
+def lazy_import(module_name: str) -> ModuleType:
+    """Return a lazy proxy for *module_name* and register it in *sys.modules*.
+    If the module is already imported, it is returned as-is.
+    """
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    proxy = _LazyModule(module_name)
+    sys.modules[module_name] = proxy
+    return proxy
