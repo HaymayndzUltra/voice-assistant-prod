@@ -12,3 +12,14 @@ description: |
     - I-append din ang summary sa tamang `memory-bank/*.md`.
 - For all Q&A:
     - Laging unahin ang MCP memory at memory-bank para sa sagot.
+
+# === Cursor Session Continuity Add-on ===
+- After any file save, code edit, or test run:
+    - Prefer latest context from:
+        • cursor_state.json
+        • task-state.json
+        • todo-tasks.json
+        • memory-bank/current-session.md
+    - Use these to answer questions like "anong memory mo ngayon" or "anong susunod na gagawin".
+- On disconnect / reconnect events:
+    - Look at cursor_state.json to resume cursor position.
