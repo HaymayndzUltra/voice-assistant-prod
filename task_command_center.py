@@ -401,6 +401,9 @@ class TaskCommandCenter:
             self.show_current_status()
             self.show_main_menu()
             
+            # The menu now contains 10 actionable items (1-10). Ensure the
+            # input validator is aware of that so selecting option 10 is
+            # accepted and routed correctly.
             choice = self.get_user_choice(10)
             
             if choice == 0:
