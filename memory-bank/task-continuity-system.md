@@ -1,215 +1,384 @@
-# Task Continuity System - Implementation Complete
+version: "3.9"
+name: mainpc_sot
 
-**Date**: July 27, 2025  
-**Status**: ✅ **PRODUCTION READY**  
-**Impact**: Automated task continuity across AI sessions
+# -----------------------------------------------------------------------------
+# GLOBALS / VOLUMES / NETWORKS
+# -----------------------------------------------------------------------------
 
-## 🎯 System Overview
+volumes:
+  redis_data:
+  data:
+  models:
+  logs:
 
-The Task Continuity System eliminates task repetition and provides session-to-session memory by automatically tracking completed work, pending tasks, and system state.
+networks:
+  backplane:
+    driver: bridge
 
-## ✅ Completed Components
+services:
+  # ---------------------------------------------------------------------------
+  # 1. INFRASTRUCTURE – Redis (shared in-memory registry)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: mainpc-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    networks: [backplane]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-### **1. TaskStateManager (`task_state_manager.py`)**
-- **Purpose**: Central task state management across sessions
-- **Features**: 
-  - Atomic file operations with backup protection
-  - File locking for concurrent access safety
-  - Completed task tracking with impact metrics
-  - Pending task management with explanations
-  - Tool availability validation
-  - System architecture awareness (77 agents, dual-machine)
+  # ---------------------------------------------------------------------------
+  # 2. FOUNDATION_SERVICES – Core orchestration & monitoring (4 agents)
+  # ---------------------------------------------------------------------------
+  foundation_services:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/foundation_services:latest
+    container_name: mainpc-foundation-services
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups foundation_services
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+      PORT_OFFSET: 0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [backplane]
+    ports:
+      - "7200:7200"   # ServiceRegistry
+      - "7220:7220"   # SystemDigitalTwin
+      - "26002:26002" # RequestCoordinator
+      - "7211:7211"   # ModelManagerSuite
+      - "5572:5572"   # VRAMOptimizerAgent
+      - "7201:7201"   # UnifiedSystemAgent
+      - "9000:9000"   # ObservabilityHub
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
-### **2. Enhanced Session Startup (`auto_load_memory.sh`)**
-- **Purpose**: Comprehensive session initialization
-- **Features**:
-  - Task state loading with pending explanations
-  - Memory bank context integration
-  - Interrupted session detection
-  - System health checking
-  - Tool availability verification
+  # ---------------------------------------------------------------------------
+  # 3. MODEL_MANAGEMENT – Heavy GPU services (currently empty)
+  # ---------------------------------------------------------------------------
+  # model_management service removed - no agents in gpu_infrastructure group
+  # GPU resources are handled by foundation_services (ModelManagerSuite, VRAMOptimizerAgent)
 
-### **3. Persistent State Files**
-- **`task-state.json`**: Completed/pending tasks, tools, architecture context
-- **`task-state.json.backup`**: Automatic backup for corruption protection
-- **Session logs**: Detailed loading logs for troubleshooting
+  # ---------------------------------------------------------------------------
+  # 4. LANGUAGE_PIPELINE – Core NLP stack (language_processing group)
+  # ---------------------------------------------------------------------------
+  language_pipeline:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/language_pipeline:latest
+    container_name: mainpc-language-pipeline
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups language_processing
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5709:5709"  # NLUAgent
+      - "5710:5710"  # AdvancedCommandHandler
+      - "5711:5711"  # ChitchatAgent
+      - "5637:5637"  # Responder
+      - "5701:5701"  # IntentionValidatorAgent
+    volumes:
+      - data:/app/data:ro
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5709/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-## 🎯 Key Features Delivered
+  # ---------------------------------------------------------------------------
+  # 5. TRANSLATION_SERVICES – Dedicated translation agents
+  # ---------------------------------------------------------------------------
+  translation_services:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/translation_services:latest
+    container_name: mainpc-translation-services
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups translation_services
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5595:5595"  # TranslationService
+      - "5584:5584"  # FixedStreamingTranslation
+      - "5581:5581"  # NLLBAdapter
+    volumes:
+      - data:/app/data:ro
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5595/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-### **Task State Tracking**
-```json
-{
-  "completed_tasks": [
-    {
-      "id": "docker_wsl_space_optimization_20250726",
-      "title": "Docker WSL Space Management",
-      "impact": "123GB total space saved",
-      "tools_created": ["docker-cleanup-script.sh", "wsl-shrink-script.ps1"],
-      "status": "completed"
-    }
-  ],
-  "pending_tasks": [
-    {
-      "id": "wsl_vhdx_compaction",
-      "title": "WSL VHDX Manual Compaction", 
-      "explanation": "Run wsl-shrink-script.ps1 from Windows PowerShell..."
-    }
-  ]
-}
-```
+  # ---------------------------------------------------------------------------
+  # 6. AUDIO_SPEECH – Full streaming audio pipeline (speech_services + audio_interface)
+  # ---------------------------------------------------------------------------
+  audio_speech:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/audio_speech:latest
+    container_name: mainpc-audio-speech
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups speech_services,audio_interface
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5800:5800"  # STTService
+      - "5801:5801"  # TTSService
+      - "6553:6553"  # StreamingSpeechRecognition
+      - "5562:5562"  # StreamingTTSAgent
+      - "5579:5579"  # StreamingLanguageAnalyzer
+      - "6552:6552"  # WakeWordDetector
+      - "6550:6550"  # AudioCapture
+      - "6551:6551"  # FusedAudioPreprocessor
+      - "5576:5576"  # StreamingInterruptHandler
+    volumes:
+      - data:/app/data:ro
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5800/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-### **Session Startup Display**
-```
-🚀 AI SYSTEM SESSION STARTUP
-🏗️ SYSTEM ARCHITECTURE: 77 agents (54 MainPC + 23 PC2)
-✅ RECENT COMPLETIONS: Docker WSL Space Management (123GB saved)
-⏳ PENDING TASKS: WSL VHDX Manual Compaction (with explanation)
-🔧 AVAILABLE TOOLS: 4 tools ready for use
-```
+  # ---------------------------------------------------------------------------
+  # 7. VISION_PROCESSING – Face/vision agents
+  # ---------------------------------------------------------------------------
+  vision_processing:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/vision_processing:latest
+    container_name: mainpc-vision-processing
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups vision_processing
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5610:5610"  # FaceRecognitionAgent
+    volumes:
+      - data:/app/data:ro
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5610/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-### **System Architecture Awareness**
-- **Dual-machine recognition**: MainPC (54 agents) + PC2 (23 agents)  
-- **SOT file tracking**: Monitors config file changes
-- **Tool persistence**: Maintains created tool availability
+  # ---------------------------------------------------------------------------
+  # 8. MEMORY_SYSTEM – Memory-related agents
+  # ---------------------------------------------------------------------------
+  memory_system:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/memory_system:latest
+    container_name: mainpc-memory-system
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups memory_system
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5713:5713"  # MemoryClient
+      - "5574:5574"  # SessionMemoryAgent
+      - "5715:5715"  # KnowledgeBase
+    volumes:
+      - data:/app/data
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5713/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-## 🛡️ Safety Features
+  # ---------------------------------------------------------------------------
+  # 9. EMOTION_SYSTEM – Emotion-related agents
+  # ---------------------------------------------------------------------------
+  emotion_system:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/emotion_system:latest
+    container_name: mainpc-emotion-system
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups emotion_system
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+    depends_on:
+      foundation_services:
+        condition: service_started
+      audio_speech:
+        condition: service_started
+    networks: [backplane]
+    ports:
+      - "5590:5590"  # EmotionEngine
+      - "5704:5704"  # MoodTrackerAgent
+      - "5705:5705"  # HumanAwarenessAgent
+      - "5625:5625"  # ToneDetector
+      - "5708:5708"  # VoiceProfilingAgent
+      - "5703:5703"  # EmpathyAgent
+    volumes:
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5590/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-### **File Corruption Protection**
-- Atomic save operations
-- Automatic backup creation
-- Graceful fallback to backup files
-- Temp file cleanup
+  # ---------------------------------------------------------------------------
+  # 10. LEARNING_SERVICES – Learning & training agents
+  # ---------------------------------------------------------------------------
+  learning_services:
+    build:
+      context: .
+      dockerfile: docker/mainpc/Dockerfile
+    image: mainpc/learning_services:latest
+    container_name: mainpc-learning-services
+    command: >-
+      python -m main_pc_code.system_launcher_containerized \
+      --groups learning_knowledge,utility_services,reasoning_services
+    environment:
+      PYTHONPATH: /app
+      MACHINE_TYPE: mainpc
+      LOG_LEVEL: INFO
+      REDIS_URL: redis://redis:6380/0
+      NVIDIA_VISIBLE_DEVICES: 0
+    depends_on:
+      foundation_services:
+        condition: service_started
+    networks: [backplane]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+        limits:
+          cpus: "4"
+          memory: 8G
+    ports:
+      - "7210:7210"  # LearningOrchestrationService
+      - "7202:7202"  # LearningOpportunityDetector
+      - "5580:5580"  # LearningManager
+      - "5638:5638"  # ActiveLearningMonitor
+      - "5643:5643"  # LearningAdjusterAgent
+      - "5660:5660"  # SelfTrainingOrchestrator
+      - "5642:5642"  # LocalFineTunerAgent
+      - "5612:5612"  # ChainOfThoughtAgent
+      - "5646:5646"  # GoTToTAgent
+      - "5641:5641"  # CognitiveModelAgent
+    volumes:
+      - models:/app/models:ro
+      - data:/app/data:ro
+      - logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7210/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
-### **Concurrent Access Handling**
-- File locking mechanisms
-- Session conflict detection
-- Safe multi-session operation
 
-### **Data Validation**
-- Tool existence verification
-- Config file health checks  
-- System state consistency
 
-## 📊 Current System State
+📊 UPDATED STRUCTURE:
+Service	Agents	Dependencies
+1. redis	1	None
+2. foundation_services	7	redis
+3. language_pipeline	5	foundation_services
+4. translation_services	3	foundation_services
+5. audio_speech	9	foundation_services
+6. vision_processing	1	foundation_services
+7. memory_system	3	foundation_services
+8. emotion_system	6	foundation_services, audio_speech
+9. learning_services	10	foundation_services
+�� BENEFITS:
+✅ No more invalid health checks
+✅ Cleaner dependency chain
+✅ GPU resources handled by foundation_services
+✅ 9 services instead of 10 (more efficient)
+Ready to deploy now! 🚀
 
-### **Tracked Completions**
-- ✅ **Docker WSL Space Optimization** (123GB saved)
-  - Tools: docker-cleanup-script.sh, wsl-shrink-script.ps1, docker-daemon-config.json
-  - Impact: Eliminated storage growth problem permanently
 
-### **Pending Tasks**
-- 📌 **WSL VHDX Manual Compaction** 
-  - Explanation: Windows PowerShell script execution required
-- 📌 **Docker Daemon Config Installation**
-  - Explanation: Enable automatic cleanup limits
-
-### **Available Tools**
-- `docker-cleanup-script.sh` - Weekly Docker maintenance
-- `wsl-shrink-script.ps1` - Windows VHDX compaction
-- `docker-daemon-config.json` - Auto-cleanup configuration
-- `DOCKER_WSL_SPACE_MANAGEMENT.md` - Complete guide
-
-## 🚀 Usage Examples
-
-### **For AI Sessions**
-```bash
-# Automatic on session start
-./auto_load_memory.sh
-
-# Manual task operations  
-python3 -c "
-from task_state_manager import TaskStateManager
-tsm = TaskStateManager()
-print(tsm.get_session_summary())
-"
-```
-
-### **Task Completion**
-```python
-# Mark task as completed
-tsm.store_completed_task(
-    task_id='new_task_id',
-    title='Task Title',
-    impact='What was accomplished',
-    tools_created=['tool1.sh', 'tool2.py']
-)
-
-# Remove from pending
-tsm.remove_pending_task('completed_task_id')
-```
-
-### **Add Pending Task**
-```python
-# Add new pending task  
-tsm.add_pending_task(
-    task_id='pending_task_id',
-    title='Task Title',
-    explanation='Clear explanation of what needs to be done and why'
-)
-```
-
-## 🔄 Workflow Integration
-
-### **Session Start**
-1. `auto_load_memory.sh` runs automatically
-2. TaskStateManager loads persistent state
-3. Displays pending tasks with explanations
-4. Shows completed work to prevent repetition
-5. Validates tool availability
-
-### **Task Completion**  
-1. Task completed by AI
-2. Automatically logged to task-state.json
-3. Tools registered for future sessions
-4. Impact metrics recorded
-5. Pending tasks updated
-
-### **Session Handover**
-1. All progress persisted automatically
-2. Next session has full context
-3. No repetition of completed work
-4. Clear pending task guidance
-
-## 💡 Benefits Achieved
-
-### **Zero Task Repetition**
-- AI never repeats completed tasks
-- Instant awareness of previous solutions
-- Tool availability maintained
-
-### **Clear Task Guidance**  
-- Pending tasks shown with explanations
-- User understands what needs to be done
-- Context for each pending item
-
-### **Session Continuity**
-- Seamless handover between sessions
-- Progress never lost
-- System state awareness maintained
-
-### **Automated Documentation**
-- Self-updating task history
-- Tool catalog maintenance  
-- Impact tracking
-
-## 🎯 Success Metrics
-
-- **Task Repetition**: ✅ Eliminated
-- **Session Startup**: ✅ Comprehensive context display
-- **Pending Tasks**: ✅ Clear explanations provided
-- **Tool Persistence**: ✅ 4 tools tracked and available
-- **System Awareness**: ✅ 77 agents architecture recognized
-- **Safety**: ✅ File corruption protection active
-
-## 🔮 Future Enhancements
-
-### **Phase 2 (Not Yet Implemented)**
-- Real-time progress tracking during tasks
-- Interrupt/resume capability  
-- Cross-session task hierarchy
-- Advanced context management
-
-### **Current Status**
-**PHASE 1 COMPLETE** - Core task continuity system operational and ready for production use.
-
-**Status**: ✅ **FULLY FUNCTIONAL** - No task repetition, clear pending task guidance, robust session continuity. 

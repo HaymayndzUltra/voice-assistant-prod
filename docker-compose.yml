@@ -46,7 +46,7 @@ services:
     container_name: mainpc-foundation-services
     command: >-
       python -m main_pc_code.system_launcher_containerized \
-      --groups core_services
+      --groups foundation_services
     environment:
       PYTHONPATH: /app
       MACHINE_TYPE: mainpc
@@ -61,6 +61,9 @@ services:
       - "7200:7200"   # ServiceRegistry
       - "7220:7220"   # SystemDigitalTwin
       - "26002:26002" # RequestCoordinator
+      - "7211:7211"   # ModelManagerSuite
+      - "5572:5572"   # VRAMOptimizerAgent
+      - "7201:7201"   # UnifiedSystemAgent
       - "9000:9000"   # ObservabilityHub
     volumes:
       - logs:/app/logs
@@ -74,48 +77,10 @@ services:
       start_period: 20s
 
   # ---------------------------------------------------------------------------
-  # 3. MODEL_MANAGEMENT – Heavy GPU services (2 agents)
+  # 3. MODEL_MANAGEMENT – Heavy GPU services (currently empty)
   # ---------------------------------------------------------------------------
-  model_management:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/model_management:latest
-    container_name: mainpc-model-management
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups gpu_infrastructure
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-      NVIDIA_VISIBLE_DEVICES: 0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-        limits:
-          cpus: "8"
-          memory: 16G
-    ports:
-      - "7211:7211"  # ModelManagerSuite
-      - "5572:5572"  # VRAMOptimizerAgent
-    volumes:
-      - models:/app/models:ro
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:7211/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
+  # model_management service removed - no agents in gpu_infrastructure group
+  # GPU resources are handled by foundation_services (ModelManagerSuite, VRAMOptimizerAgent)
 
   # ---------------------------------------------------------------------------
   # 4. LANGUAGE_PIPELINE – Core NLP stack (language_processing group)
@@ -137,8 +102,6 @@ services:
     depends_on:
       foundation_services:
         condition: service_started
-      model_management:
-        condition: service_healthy
     networks: [backplane]
     ports:
       - "5709:5709"  # NLUAgent
@@ -177,8 +140,6 @@ services:
     depends_on:
       foundation_services:
         condition: service_started
-      model_management:
-        condition: service_healthy
     networks: [backplane]
     ports:
       - "5595:5595"  # TranslationService
@@ -215,8 +176,6 @@ services:
     depends_on:
       foundation_services:
         condition: service_started
-      model_management:
-        condition: service_healthy
     networks: [backplane]
     ports:
       - "5800:5800"  # STTService
@@ -259,8 +218,6 @@ services:
     depends_on:
       foundation_services:
         condition: service_started
-      model_management:
-        condition: service_healthy
     networks: [backplane]
     ports:
       - "5610:5610"  # FaceRecognitionAgent
@@ -362,7 +319,7 @@ services:
     container_name: mainpc-learning-services
     command: >-
       python -m main_pc_code.system_launcher_containerized \
-      --groups learning_knowledge,utility_services
+      --groups learning_knowledge,utility_services,reasoning_services
     environment:
       PYTHONPATH: /app
       MACHINE_TYPE: mainpc
@@ -372,8 +329,6 @@ services:
     depends_on:
       foundation_services:
         condition: service_started
-      model_management:
-        condition: service_healthy
     networks: [backplane]
     deploy:
       resources:
@@ -391,6 +346,9 @@ services:
       - "5643:5643"  # LearningAdjusterAgent
       - "5660:5660"  # SelfTrainingOrchestrator
       - "5642:5642"  # LocalFineTunerAgent
+      - "5612:5612"  # ChainOfThoughtAgent
+      - "5646:5646"  # GoTToTAgent
+      - "5641:5641"  # CognitiveModelAgent
     volumes:
       - models:/app/models:ro
       - data:/app/data:ro

@@ -14,7 +14,7 @@ import logging
 import sys
 import time
 from types import ModuleType
-from typing import Any, Callable, Iterable, List, Optional
+from typing import Any, Callable, List, Optional
 
 __all__ = [
     "retry",
@@ -34,18 +34,7 @@ def retry(
     backoff: float = 2.0,
     logger: Optional[logging.Logger] = None,
 ):
-    """Retry calling the decorated function using an exponential backoff.
-
-    Source-agnostic helper pulled out from several agents.
-
-    Args:
-        exceptions: exception(s) that trigger a retry.
-        tries: total number of attempts.
-        delay: initial delay between attempts in seconds.
-        backoff: multiplier applied to delay after each failure.
-        logger: optional logger to write exceptions to; if None, root logger.
-    """
-
+    """Retry calling the decorated function using an exponential backoff."""
     def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -61,19 +50,15 @@ def retry(
                     time.sleep(_delay)
                     _tries -= 1
                     _delay *= backoff
-            # Final attempt – let exceptions propagate
             return func(*args, **kwargs)
-
         return wrapper
-
     return decorator
-
 
 # ----------------------------------------------------------------------------
 # Standard health-check response
 # ----------------------------------------------------------------------------
-_START_TS = time.time()
 
+_START_TS = time.time()
 
 def std_health_response(additional: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Return a consistent health-check payload used across agents."""
@@ -85,31 +70,26 @@ def std_health_response(additional: Optional[dict[str, Any]] = None) -> dict[str
         data.update(additional)
     return data
 
-
 # ----------------------------------------------------------------------------
 # Cleanup handling
 # ----------------------------------------------------------------------------
 
 _cleanup_funcs: List[Callable[[], Any]] = []
 
-
 def register_cleanup(func: Callable[[], Any]) -> None:
     """Register a callable to be executed at interpreter exit."""
     _cleanup_funcs.append(func)
 
-
-@atexit.register  # noqa: D401 – Simple phrase is fine here
+@atexit.register
 def _run_cleanups() -> None:
-    """Execute all registered cleanup functions."""
     for func in _cleanup_funcs:
         try:
             func()
-        except Exception as e:
-            logging.getLogger(__name__).error("Cleanup function %s failed: %s", func, e)
-
+        except Exception:
+            logging.exception("Cleanup callable %s raised", func)
 
 # ----------------------------------------------------------------------------
-# Lazy import utilities
+# Lazy import helper (FIXED VERSION)
 # ----------------------------------------------------------------------------
 
 class _LazyModule(ModuleType):
@@ -122,17 +102,24 @@ class _LazyModule(ModuleType):
 
     def _load(self):
         if self.__dict__["__loaded__"]:
-            return sys.modules[self.__dict__["__lazy_name__"]]
-        real_module = importlib.import_module(self.__dict__["__lazy_name__"])
-        sys.modules[self.__dict__["__lazy_name__"]] = real_module
+            return sys.modules[self.__lazy_name__]
+
+        # ✅ Fix: remove self from sys.modules to break recursion trap
+        del sys.modules[self.__lazy_name__]
+
+        real_module = importlib.import_module(self.__lazy_name__)
         self.__dict__["__loaded__"] = True
         self.__dict__.update(real_module.__dict__)
+        sys.modules[self.__lazy_name__] = real_module  # 🔥 Final replace
         return real_module
 
     def __getattr__(self, item):
+        # ✅ FIX: Check if already loaded to prevent recursion
+        if self.__dict__["__loaded__"]:
+            return getattr(sys.modules[self.__dict__["__lazy_name__"]], item)
+        
         module = self._load()
         return getattr(module, item)
-
 
 def lazy_import(module_name: str) -> ModuleType:
     """Return a lazy proxy for *module_name* and register it in *sys.modules*.

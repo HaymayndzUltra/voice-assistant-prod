@@ -1,7 +1,7 @@
 ---
-alwaysApply: true
+trigger: always_on
 description: |
-  Auto-load and auto-save persistent memory every session and after major changes.
+globs:
 ---
 
 - On session start:

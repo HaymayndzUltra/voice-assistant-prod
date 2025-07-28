@@ -103,7 +103,7 @@ agent_groups:
         models_dir: models
         vram_budget_percentage: 80
         idle_timeout: 300
-      hybrid_inference_policy_ref: global
+        hybrid_inference_policy_ref: global  # Enables the hybrid local-first, cloud-backed routing
     VRAMOptimizerAgent:
       script_path: main_pc_code/agents/vram_optimizer_agent.py
       port: "${PORT_OFFSET}+5572"
@@ -125,18 +125,13 @@ agent_groups:
         parallel_health_checks: true
         prediction_enabled: true
         dynamic_batch_tuning: true
-    ModelManagerSuite:
-      script_path: main_pc_code/model_manager_suite.py
-      port: "${PORT_OFFSET}+7211"
-      health_check_port: "${PORT_OFFSET}+8211"
+    UnifiedSystemAgent:
+      script_path: main_pc_code/agents/unified_system_agent.py
+      port: "${PORT_OFFSET}+7201"
+      health_check_port: "${PORT_OFFSET}+8201"
       required: true
       dependencies:
       - SystemDigitalTwin
-      config:
-        models_dir: models
-        vram_budget_percentage: 80
-        idle_timeout: 300
-        hybrid_inference_policy_ref: global  # Enables the hybrid local-first, cloud-backed routing
   memory_system:
     MemoryClient:
       script_path: main_pc_code/agents/memory_client.py
@@ -218,15 +213,7 @@ agent_groups:
       dependencies:
       - SystemDigitalTwin
   gpu_infrastructure:
-    VRAMOptimizerAgent:
-      script_path: main_pc_code/agents/vram_optimizer_agent.py
-      port: "${PORT_OFFSET}+5572"
-      health_check_port: "${PORT_OFFSET}+6572"
-      required: true
-      dependencies:
-      - ModelManagerSuite
-      - RequestCoordinator
-      - SystemDigitalTwin
+    # VRAMOptimizerAgent moved to foundation_services to avoid duplication
   reasoning_services:
     ChainOfThoughtAgent:
       script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
