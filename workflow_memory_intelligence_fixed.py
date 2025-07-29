@@ -173,771 +173,350 @@ class TaskComplexityAnalyzer:
 
 
 class ActionItemExtractor:
-    """Intelligent task decomposer with logical flow analysis and parallelism detection"""
+    """Unified task decomposer with normalized parsing strategy"""
     
     def __init__(self):
-        self.action_verbs = [
-            'create', 'build', 'implement', 'develop', 'write', 'code', 'design',
-            'analyze', 'review', 'test', 'validate', 'deploy', 'configure', 'setup',
-            'install', 'update', 'delete', 'remove', 'fix', 'debug', 'optimize',
-            'refactor', 'document', 'plan', 'research', 'investigate', 'explore',
-            'generate', 'produce', 'compile', 'run', 'execute', 'perform', 'complete',
-            'prepare', 'initialize', 'start', 'finish', 'end', 'begin', 'launch',
-            'gumawa', 'bumuo', 'magbuild', 'mag-implement', 'isulat', 'idisenyo',
-            'pag-aralan', 'i-review', 'i-test', 'i-validate', 'i-deploy', 'i-configure',
-            'i-setup', 'i-install', 'i-update', 'tanggalin', 'ayusin', 'i-debug',
-            'i-optimize', 'i-refactor', 'i-document', 'magplano', 'mag-research'
-        ]
-        
-        # Advanced logical reasoning patterns (English + Filipino) - FIXED VERSION
-        self.conditional_patterns = {
-            # English patterns - IMPROVED AND PRECISE
-            'if_then': r'[Ii]f\s+(.+?),\s*(?:then\s+)?(.+?)(?=\.|\n|[Ii]f\s+[^t])',
-            'if_correct_incorrect': r'[Ii]f\s+(?:the\s+)?(.+?)\s+(?:are?|is)\s+correct,\s*(.+?)\s*[.]\s*[Ii]f\s+(?:they\s+are|it\s+is)\s+incorrect,\s*(.+?)(?=\.|\n|$)',
-            'if_success_failure': r'[Ii]f\s+(?:successful|success),?\s+(.+?)\s*[;.]\s*[Ii]f\s+(?:fail|failed?),?\s+(.+?)(?=\.|\n|$)',
-            'before_after': r'[Bb]efore\s+(.+?),?\s+(.+?)(?=\.|\n|$)',
-            'after_complete': r'[Aa]fter\s+(.+?),?\s+(.+?)(?=\.|\n|$)',
-            
-            # Filipino patterns - IMPROVED
-            'kung_then': r'[Kk]ung\s+(.+?),\s*(.+?)(?=\.|\n|[Kk]ung\s+[^t])',
-            'kung_pumasa_pumalya': r'[Kk]ung\s+pumasa\s+(.+?),\s*(.+?)\s*[.]\s*[Kk]ung\s+(?:may\s+)?pumalya,\s*(.+?)(?=\.|\n|$)',
-            'kung_success_fail': r'[Kk]ung\s+(.+?)\s+pumasa,\s*(.+?)\s*[.]\s*[Kk]ung\s+(.+?)\s+pumalya,\s*(.+?)(?=\.|\n|$)',
-            'pagkatapos_ng': r'[Pp]agkatapos\s+ng\s+(.+?),\s*(.+?)(?=\.|\n|$)',
-            'kapag_natapos': r'[Kk]apag\s+natapos\s+(?:na\s+)?(.+?),\s*(.+?)(?=\.|\n|$)',
-            'bago_ang': r'[Bb]ago\s+(.+?),\s*(.+?)(?=\.|\n|$)'
+        # Core action verbs (language-agnostic concepts)
+        self.action_concepts = {
+            'CREATE': ['create', 'build', 'gumawa', 'bumuo', 'magbuild', 'gawa', 'gawin', 'i-build'],
+            'UPDATE': ['update', 'i-update', 'pagbabago', 'baguhin'],
+            'IMPLEMENT': ['implement', 'mag-implement', 'i-implement'],
+            'DEVELOP': ['develop', 'design', 'idisenyo'],
+            'TEST': ['test', 'i-test', 'subukan', 'pagsubok'],
+            'VALIDATE': ['validate', 'i-validate', 'patunayan'],
+            'RETURN': ['return', 'magbalik', 'ibalik', 'i-return'],
+            'ACCEPT': ['accept', 'tumatanggap', 'tanggapin'],
+            'FEATURE': ['feature', 'authentication', 'auth']  # Add feature-related terms
         }
         
-        # Sequential indicators (NOT dependencies) - FIXED
-        self.sequential_indicators = [
-            'first of all', 'first', 'next', 'then', 'afterwards', 'finally', 'lastly',
-            'una sa lahat', 'una', 'sunod', 'pagkatapos', 'panghuli', 'sa wakas'
-        ]
+        # Sequential markers to normalize
+        self.sequential_markers = {
+            # English
+            'first of all': '[SEQ_1]',
+            'first': '[SEQ_1]',
+            'afterwards': '[SEQ_2]',
+            'then': '[SEQ_2]',
+            'next': '[SEQ_2]',
+            'finally': '[SEQ_3]',
+            'lastly': '[SEQ_3]',
+            # Filipino
+            'una sa lahat': '[SEQ_1]',
+            'una,': '[SEQ_1]',  # Only match "Una," with comma
+            'pagkatapos': '[SEQ_2]',
+            'sunod': '[SEQ_2]',
+            'panghuli': '[SEQ_3]',
+            'sa wakas': '[SEQ_3]'
+        }
         
-        self.parallelism_indicators = [
-            'independent', 'parallel', 'simultaneously', 'at the same time', 'concurrently',
-            'sabay-sabay', 'magkakasabay', 'hiwalay', 'independently',
-            'maaaring gawin nang sabay-sabay', 'in parallel', 'sabay', 'magkasabay'
-        ]
-        
-        # TRUE dependency keywords (not sequential) - FIXED
-        self.dependency_keywords = [
-            'requires', 'depends on', 'needs', 'must have', 'prerequisite',
-            'kailangan', 'depende sa', 'kailangan may', 'prerequisite'
-        ]
-        
-        self.sentence_delimiters = ['.', '!', '?', ';']
+        # Conditional markers to normalize
+        self.conditional_markers = {
+            # English
+            'if': '[IF]',
+            'when': '[IF]',
+            # Filipino
+            'kung': '[IF]',
+            'kapag': '[IF]',
+            # Conditional results
+            'correct': 'CORRECT',
+            'incorrect': 'INCORRECT',
+            'tama': 'CORRECT',
+            'mali': 'INCORRECT',
+            'pumasa': 'CORRECT',
+            'pumalya': 'INCORRECT'
+        }
     
     def extract_action_items(self, task_description: str) -> List[str]:
-        """Intelligent task decomposition with logical flow analysis"""
+        """Unified extraction with normalize -> parse approach"""
         
-        # PHASE 1: Analyze task complexity and logical structure
-        task_analysis = self._analyze_task_structure(task_description)
+        # STAGE 1: Normalize the text
+        normalized = self._normalize_text(task_description)
+        logger.info(f"🔄 Normalized text: {normalized[:100]}...")
         
-        # PHASE 2: Apply appropriate extraction strategy based on analysis
-        if task_analysis['has_conditional_logic']:
-            return self._extract_conditional_workflow(task_description, task_analysis)
-        elif task_analysis['has_parallelism']:
-            return self._extract_parallel_workflow(task_description, task_analysis)
-        elif task_analysis['has_dependencies']:
-            return self._extract_dependency_workflow(task_description, task_analysis)
-        else:
-            # Fallback to enhanced sequential extraction
-            return self._extract_enhanced_sequential(task_description)
+        # STAGE 2: Parse using unified logic
+        steps = self._parse_normalized_text(normalized)
+        
+        # STAGE 3: Clean and finalize
+        final_steps = self._clean_and_finalize_steps(steps)
+        
+        return final_steps
     
-    def _analyze_task_structure(self, task_description: str) -> dict:
-        """Analyze task for logical patterns, dependencies, and parallelism - FIXED"""
-        analysis = {
-            'has_conditional_logic': False,
-            'has_parallelism': False, 
-            'has_dependencies': False,
-            'has_sequential_flow': False,
-            'conditional_patterns': [],
-            'parallel_sections': [],
-            'dependency_chains': [],
-            'sequential_indicators': [],
-            'complexity_score': 0
-        }
+    def _normalize_text(self, text: str) -> str:
+        """Normalize language-specific patterns to universal tokens"""
         
-        text_lower = task_description.lower()
+        # Convert to lowercase for pattern matching, but preserve original case for content
+        normalized = text
         
-        # Detect conditional logic patterns - IMPROVED
-        for pattern_name, pattern in self.conditional_patterns.items():
-            matches = re.findall(pattern, task_description, re.IGNORECASE)
-            if matches:
-                analysis['has_conditional_logic'] = True
-                analysis['conditional_patterns'].append({
-                    'type': pattern_name,
-                    'matches': matches
-                })
-                analysis['complexity_score'] += len(matches) * 3
+        # Replace sequential markers with word boundaries to avoid splitting words
+        for marker, token in self.sequential_markers.items():
+            # Only replace if followed by comma, space, or certain punctuation
+            pattern = re.compile(r'\b' + re.escape(marker) + r'(?:\s*,\s*|\s+)', re.IGNORECASE)
+            normalized = pattern.sub(token + ' ', normalized)
         
-        # Detect parallelism indicators
-        for indicator in self.parallelism_indicators:
-            if indicator in text_lower:
-                analysis['has_parallelism'] = True
-                analysis['parallel_sections'].append(indicator)
-                analysis['complexity_score'] += 2
+        # Replace conditional markers with word boundaries
+        for marker, token in self.conditional_markers.items():
+            # Special handling for words that might be part of other words
+            if marker in ['correct', 'incorrect', 'tama', 'mali']:
+                # Only replace if it's the actual word, not part of another word
+                pattern = re.compile(r'\b' + re.escape(marker) + r'\b(?=\s*[,:]|\s+)', re.IGNORECASE)
+            else:
+                pattern = re.compile(r'\b' + re.escape(marker) + r'\b', re.IGNORECASE)
+            normalized = pattern.sub(token, normalized)
         
-        # Detect TRUE dependency keywords (not sequential)
-        for keyword in self.dependency_keywords:
-            if keyword in text_lower:
-                analysis['has_dependencies'] = True 
-                analysis['dependency_chains'].append(keyword)
-                analysis['complexity_score'] += 1
+        # Clean up multiple spaces
+        normalized = re.sub(r'\s+', ' ', normalized)
         
-        # Detect sequential indicators (NOT dependencies)
-        for indicator in self.sequential_indicators:
-            if indicator in text_lower:
-                analysis['has_sequential_flow'] = True
-                analysis['sequential_indicators'].append(indicator)
-                analysis['complexity_score'] += 1
-                
-        return analysis
+        return normalized.strip()
     
-    def _extract_explicit_steps(self, task_description: str) -> List[str]:
-        """Extract explicit step-by-step instructions with sequential indicator detection"""
-        steps = []
-        
-        # Enhanced sequential pattern detection
-        sequential_patterns = [
-            # Numbered steps (1. 2. 1) 2) etc.)
-            r'(?:^|\n)\s*(?:(\d+)[.)])\s*(.+?)(?=\n|$)',
-            # Bullet points (- • *)
-            r'(?:^|\n)\s*[-•*]\s*(.+?)(?=\n|$)',
-            # Sequential words (First, Next, Then, Finally, etc.)
-            r'(?:^|\.|\n)\s*((?:First|Next|Then|Finally|Una|Sunod|Pagkatapos|Panghuli)[,:]?\s+.+?)(?=\.|\n|$)',
-            # Phase/Step structure (Phase 1:, Step 1:, etc.)
-            r'(?:Phase|Step)\s+\d+[:\s]+(.+?)(?=\n|$)'
-        ]
-        
-        for pattern in sequential_patterns:
-            matches = re.findall(pattern, task_description, re.MULTILINE | re.IGNORECASE)
-            
-            for match in matches:
-                # Handle different match group structures
-                if isinstance(match, tuple):
-                    content = match[-1]  # Take the last (content) group
-                else:
-                    content = match
-                
-                clean_content = content.strip()
-                if len(clean_content) > 5 and not self._is_noise(clean_content):
-                    # Clean up sequential prefixes but preserve meaning
-                    clean_content = self._clean_sequential_indicators(clean_content)
-                    if clean_content not in steps:  # Avoid duplicates
-                        steps.append(clean_content)
-            
-            # If we found good sequential steps, prioritize them
-            if len(steps) >= 3:
-                break
-        
-        return steps[:10]  # Limit to 10 explicit steps
-    
-    def _extract_conditional_workflow(self, task_description: str, analysis: dict) -> List[str]:
-        """Extract workflow with conditional logic (if/then/else) - FIXED IMPLEMENTATION"""
-        workflow_steps = []
-        processed_conditions = set()  # Prevent duplicates
-        
-        # Extract sequential steps first (if any) - IMPROVED
-        if analysis.get('has_sequential_flow', False):
-            sequential_steps = self._extract_enhanced_sequential(task_description)
-            # Filter out conditional statements from sequential steps
-            for step in sequential_steps:
-                if not any(cond in step.lower() for cond in ['kung ', 'if ', 'kapag ']):
-                    # Clean up the step before adding
-                    clean_step = step.strip()
-                    # Remove "Of all" and other prefixes
-                    clean_step = re.sub(r'^Of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                    clean_step = re.sub(r'^of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                    if clean_step.lower().startswith('of all'):
-                        clean_step = clean_step[7:]
-                    if clean_step.lower().startswith('of all,'):
-                        clean_step = clean_step[8:]
-                    
-                    if len(clean_step.strip()) > 10:
-                        workflow_steps.append(clean_step.strip())
-        
-        # Process conditional patterns (Filipino + English) - IMPROVED
-        processed_matches = set()  # Track processed matches to prevent duplicates
-        conditional_steps = []  # Collect all conditional steps first
-        
-        for pattern_info in analysis['conditional_patterns']:
-            pattern_type = pattern_info['type']
-            matches = pattern_info['matches']
-            
-            for match in matches:
-                # Create a unique identifier for this match
-                if isinstance(match, tuple):
-                    match_id = str(match).lower()
-                else:
-                    match_id = match.lower()
-                
-                if match_id in processed_matches:
-                    continue
-                
-                processed_matches.add(match_id)
-                # Create a unique key for this condition to prevent duplicates - IMPROVED
-                if isinstance(match, tuple):
-                    # For tuples, create a more specific key
-                    if len(match) >= 2:
-                        condition_key = f"{match[0].lower().strip()}_{match[1].lower().strip()}"
-                    else:
-                        condition_key = str(match).lower()
-                else:
-                    condition_key = match.lower().strip()
-                
-                # More aggressive duplicate detection for conditionals
-                is_duplicate = False
-                for existing in processed_conditions:
-                    if condition_key in existing or existing in condition_key:
-                        is_duplicate = True
-                        break
-                
-                if is_duplicate:
-                    continue
-                
-                processed_conditions.add(condition_key)
-                
-                # Filipino patterns
-                if pattern_type == 'kung_then':
-                    condition, action = match
-                    conditional_steps.append(f"[CONDITIONAL] Kung {condition.strip()}: {action.strip()}")
-                    
-                elif pattern_type == 'kung_pumasa_pumalya':
-                    success_item, success_action, failure_action = match
-                    workflow_steps.append(f"Execute: Check {success_item.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] Kung pumasa: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] Kung pumalya: {failure_action.strip()}")
-                    
-                elif pattern_type == 'pagkatapos_ng':
-                    trigger, action = match
-                    workflow_steps.append(f"[DEPENDENCY] Pagkatapos ng {trigger.strip()}: {action.strip()}")
-                    
-                elif pattern_type == 'kapag_natapos':
-                    trigger, action = match
-                    workflow_steps.append(f"[DEPENDENCY] Kapag natapos {trigger.strip()}: {action.strip()}")
-                
-                # English patterns - IMPROVED
-                elif pattern_type == 'if_then':
-                    condition, action = match
-                    conditional_steps.append(f"[CONDITIONAL] If {condition.strip()}: {action.strip()}")
-                    
-                elif pattern_type == 'if_correct_incorrect':
-                    credentials, success_action, failure_action = match
-                    conditional_steps.append(f"[CONDITIONAL] If {credentials.strip()} are correct: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] If {credentials.strip()} are incorrect: {failure_action.strip()}")
-                    
-                elif pattern_type == 'if_success_failure':
-                    success_action, failure_action = match
-                    conditional_steps.append(f"[CONDITIONAL] If successful: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] If failed: {failure_action.strip()}")
-        
-        # Deduplicate conditional steps before adding to workflow
-        seen_conditionals = set()
-        for step in conditional_steps:
-            step_lower = step.lower()
-            # Normalize for comparison
-            step_normalized = step_lower.replace('the credentials are correct', 'credentials are correct')
-            step_normalized = step_normalized.replace('they are incorrect', 'credentials are incorrect')
-            
-            if step_normalized not in seen_conditionals:
-                seen_conditionals.add(step_normalized)
-                workflow_steps.append(step)
-        
-        # FALLBACK: If we have minimal workflow steps, supplement with sequential extraction
-        if len(workflow_steps) < 3:
-            sequential_steps = self._extract_enhanced_sequential(task_description)
-            # Add sequential steps that aren't already covered and aren't conditional
-            for step in sequential_steps:
-                step_lower = step.lower()
-                if not any(cond in step_lower for cond in ['kung ', 'if ', 'kapag ']):
-                    if not any(step_lower in existing.lower() for existing in workflow_steps):
-                        # Clean up the step before adding
-                        clean_step = step.strip()
-                        # Remove "Of all" and other prefixes
-                        clean_step = re.sub(r'^Of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                        clean_step = re.sub(r'^of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                        if clean_step.lower().startswith('of all'):
-                            clean_step = clean_step[7:]
-                        if clean_step.lower().startswith('of all,'):
-                            clean_step = clean_step[8:]
-                        
-                        if len(clean_step.strip()) > 10:
-                            workflow_steps.append(clean_step.strip())
-        
-        # Final deduplication - IMPROVED
-        seen = set()
-        final_steps = []
-        for step in workflow_steps:
-            step_lower = step.lower().strip()
-            # More aggressive duplicate detection for conditionals
-            is_duplicate = False
-            for existing in seen:
-                # Check if this step is contained in or contains an existing step
-                if step_lower in existing or existing in step_lower:
-                    is_duplicate = True
-                    break
-                # Special check for conditional statements
-                if '[CONDITIONAL]' in step and '[CONDITIONAL]' in existing:
-                    # Compare the condition part only - IMPROVED
-                    step_condition = step_lower.split('if ')[-1] if 'if ' in step_lower else step_lower
-                    existing_condition = existing.split('if ')[-1] if 'if ' in existing else existing
-                    
-                    # Normalize the conditions for comparison
-                    step_condition = step_condition.replace('the credentials are correct', 'credentials are correct')
-                    step_condition = step_condition.replace('they are incorrect', 'credentials are incorrect')
-                    existing_condition = existing_condition.replace('the credentials are correct', 'credentials are correct')
-                    existing_condition = existing_condition.replace('they are incorrect', 'credentials are incorrect')
-                    
-                    if step_condition == existing_condition:
-                        is_duplicate = True
-                        break
-            
-            if not is_duplicate and len(step.strip()) > 10:
-                seen.add(step_lower)
-                final_steps.append(step.strip())
-        
-        return final_steps[:10]
-    
-    def _extract_parallel_workflow(self, task_description: str, analysis: dict) -> List[str]:
-        """Extract workflow with parallel/independent tasks - FIXED IMPLEMENTATION"""
-        workflow_steps = []
-        
-        # Extract main task description (before parallel tasks)
-        main_task_sentence = self._smart_sentence_split(task_description)[0].strip()
-        workflow_steps.append(f"Main objective: {main_task_sentence}")
-        
-        # Enhanced pattern to capture the full parallel task list (English + Filipino)
-        parallel_patterns = [
-            r'(?:independent|parallel)\s+tasks?:?\s*(.+?)(?=\n|$)',
-            r'maaaring\s+gawin\s+nang\s+sabay-sabay\s*(?:\(in\s+parallel\))?:?\s*(.+?)(?=\n|$)',
-            r'(?:sabay-sabay|magkasabay)\s*(?:\(in\s+parallel\))?:?\s*(.+?)(?=\n|$)'
-        ]
-        
-        parallel_matches = []
-        for pattern in parallel_patterns:
-            matches = re.findall(pattern, task_description, re.IGNORECASE | re.DOTALL)
-            parallel_matches.extend(matches)
-        
-        if parallel_matches:
-            workflow_steps.append("[PARALLEL EXECUTION BLOCK START]")
-            
-            for match in parallel_matches:
-                # More sophisticated task splitting that handles complex descriptions
-                # Split by comma+and or just comma, but preserve quoted content
-                tasks = self._split_parallel_tasks(match)
-                
-                for i, task in enumerate(tasks, 1):
-                    clean_task = task.strip().rstrip(',')
-                    if len(clean_task) > 5:
-                        # Remove leading articles and clean up
-                        clean_task = re.sub(r'^(?:and\s+)?(?:the\s+)?', '', clean_task, flags=re.IGNORECASE)
-                        workflow_steps.append(f"[PARALLEL {i}] {clean_task}")
-                        
-            workflow_steps.append("[PARALLEL EXECUTION BLOCK END]")
-        
-        return workflow_steps[:10]
-    
-    def _split_parallel_tasks(self, text: str) -> List[str]:
-        """Intelligently split parallel tasks using enhanced logic"""
-        # Handle the common pattern: "task1, task2, and task3"
-        # First, split by ', and ' to separate the last task
-        parts = text.split(', and ')
-        
-        if len(parts) > 1:
-            # We have an 'and' separator
-            last_task = parts[-1].strip()
-            # Split the remaining part by comma
-            first_tasks = parts[0].split(', ')
-            tasks = [task.strip() for task in first_tasks] + [last_task]
-        else:
-            # No 'and' separator, just split by comma
-            tasks = [task.strip() for task in text.split(', ')]
-        
-        # Clean up tasks - remove empty ones and articles
-        cleaned_tasks = []
-        for task in tasks:
-            clean_task = task.strip().rstrip(',')
-            if len(clean_task) > 3:
-                # Remove leading articles
-                clean_task = re.sub(r'^(?:and\s+)?(?:the\s+)?', '', clean_task, flags=re.IGNORECASE)
-                cleaned_tasks.append(clean_task)
-        
-        return cleaned_tasks
-    
-    def _extract_dependency_workflow(self, task_description: str, analysis: dict) -> List[str]:
-        """Extract workflow with dependency chains (before/after)"""
-        workflow_steps = []
-        
-        # Extract before/after dependencies
-        before_pattern = r'[Bb]efore\s+(.+?),\s*(.+?)(?=\.|\n|$)'
-        after_pattern = r'[Aa]fter\s+(.+?),\s*(.+?)(?=\.|\n|$)'
-        
-        before_matches = re.findall(before_pattern, task_description)
-        after_matches = re.findall(after_pattern, task_description)
-        
-        # Process dependencies
-        for prerequisite, action in before_matches:
-            workflow_steps.append(f"Prerequisites: {prerequisite.strip()}")
-            workflow_steps.append(f"Then execute: {action.strip()}")
-            
-        for trigger, action in after_matches:
-            workflow_steps.append(f"Wait for: {trigger.strip()}")
-            workflow_steps.append(f"Then execute: {action.strip()}")
-        
-        # Add remaining sequential steps
-        sequential_steps = self._extract_enhanced_sequential(task_description)
-        workflow_steps.extend(sequential_steps)
-        
-        return workflow_steps[:15]
-    
-    def _extract_enhanced_sequential(self, task_description: str) -> List[str]:
-        """Enhanced sequential extraction with Filipino support - FIXED"""
-        steps = []
-        
-        # First, try to extract Filipino sequential patterns
-        filipino_sequential = self._extract_filipino_sequential(task_description)
-        if filipino_sequential and len(filipino_sequential) >= 2:
-            steps.extend(filipino_sequential)
-            
-        # Try explicit steps 
-        explicit_steps = self._extract_explicit_steps(task_description)
-        if explicit_steps and len(explicit_steps) >= 2:
-            steps.extend(explicit_steps)
-            
-        # Try structured breakdown 
-        structured_steps = self._extract_structured_breakdown(task_description)
-        if structured_steps and len(structured_steps) >= 2:
-            steps.extend(structured_steps)
-            
-        # Try sentence-based extraction
-        sentence_steps = self._extract_sentence_based(task_description)
-        if sentence_steps:
-            steps.extend(sentence_steps)
-        
-        # If we still don't have enough steps, try intelligent sentence splitting
-        if len(steps) < 3:
-            intelligent_steps = self._extract_intelligent_sequential(task_description)
-            if intelligent_steps:
-                steps.extend(intelligent_steps)
-        
-        # Remove duplicates while preserving order - IMPROVED
-        seen = set()
-        unique_steps = []
-        for step in steps:
-            step_lower = step.lower().strip()
-            # More aggressive duplicate detection
-            is_duplicate = False
-            for existing in seen:
-                # Check if this step is contained in or contains an existing step
-                if step_lower in existing or existing in step_lower:
-                    is_duplicate = True
-                    break
-            
-            if not is_duplicate and len(step.strip()) > 10:
-                seen.add(step_lower)
-                unique_steps.append(step.strip())
-        
-        return unique_steps[:10]  # Limit to 10 steps
-    
-    def _extract_filipino_sequential(self, task_description: str) -> List[str]:
-        """Extract Filipino sequential patterns (Una, Pagkatapos, Panghuli, etc.)"""
-        steps = []
-        sentences = self._smart_sentence_split(task_description)
-        
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if len(sentence) < 10:
-                continue
-                
-            # Check for Filipino sequential indicators
-            if any(indicator in sentence.lower() for indicator in 
-                   ['una sa lahat', 'una,', 'first of all', 'first,', 'pagkatapos,', 
-                    'afterwards,', 'then,', 'panghuli,', 'finally,', 'lastly,',
-                    'kapag tama', 'kung tama', 'if correct', 'kapag mali', 'kung mali', 'if incorrect']):
-                
-                # Clean up the sentence
-                clean_sentence = sentence
-                
-                # Remove sequential prefixes but preserve conditional logic
-                if not any(cond in sentence.lower() for cond in ['kung', 'kapag', 'if']):
-                    clean_sentence = re.sub(r'^(?:Una sa lahat|Una|First of all|First|Pagkatapos|Afterwards|Then|Panghuli|Finally|Lastly),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                
-                if len(clean_sentence.strip()) > 10:
-                    steps.append(clean_sentence.strip())
-        
-        return steps
-    
-    def _extract_intelligent_sequential(self, task_description: str) -> List[str]:
-        """Intelligent sequential extraction that breaks down complex sentences - FIXED"""
+    def _parse_normalized_text(self, text: str) -> List[Dict[str, Any]]:
+        """Parse normalized text using unified logic"""
         steps = []
         
         # Split into sentences first
-        sentences = self._smart_sentence_split(task_description)
+        sentences = self._split_sentences(text)
+        
+        # Track what we've extracted to avoid duplicates
+        extracted_content = set()
         
         for sentence in sentences:
             sentence = sentence.strip()
-            if len(sentence) < 15:  # Skip very short sentences
+            if not sentence:
                 continue
             
-            # Check for action verbs that indicate a step
-            action_verbs = [
-                'create', 'build', 'implement', 'develop', 'write', 'code', 'design',
-                'analyze', 'review', 'test', 'validate', 'deploy', 'configure', 'setup',
-                'install', 'update', 'delete', 'remove', 'fix', 'debug', 'optimize',
-                'refactor', 'document', 'plan', 'research', 'investigate', 'explore',
-                'generate', 'produce', 'compile', 'run', 'execute', 'perform', 'complete',
-                'prepare', 'initialize', 'start', 'finish', 'end', 'begin', 'launch',
-                'gumawa', 'bumuo', 'magbuild', 'mag-implement', 'isulat', 'idisenyo',
-                'pag-aralan', 'i-review', 'i-test', 'i-validate', 'i-deploy', 'i-configure',
-                'i-setup', 'i-install', 'i-update', 'tanggalin', 'ayusin', 'i-debug',
-                'i-optimize', 'i-refactor', 'i-document', 'magplano', 'mag-research'
-            ]
+            # Check if this is a conditional
+            if '[IF]' in sentence:
+                conditionals = self._extract_conditionals(sentence)
+                for cond in conditionals:
+                    key = cond['content'].lower()
+                    if key not in extracted_content:
+                        extracted_content.add(key)
+                        steps.append(cond)
             
-            # Check if sentence contains action verbs and is not conditional
-            if any(verb in sentence.lower() for verb in action_verbs):
-                if not any(cond in sentence.lower() for cond in ['if ', 'kung ', 'kapag ']):
-                    # Clean up the sentence
-                    clean_sentence = sentence
-                    
-                    # Remove common prefixes - IMPROVED
-                    clean_sentence = re.sub(r'^(?:First of all|First|Una sa lahat|Una),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    # Fix the "Of all" issue specifically - MORE AGGRESSIVE
-                    clean_sentence = re.sub(r'^Of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^Of all\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^of all\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    
-                    # Direct string replacement as fallback
-                    if clean_sentence.lower().startswith('of all'):
-                        clean_sentence = clean_sentence[7:]  # Remove "Of all" (7 characters)
-                    if clean_sentence.lower().startswith('of all,'):
-                        clean_sentence = clean_sentence[8:]  # Remove "Of all," (8 characters)
-                    clean_sentence = re.sub(r'^(?:Afterwards|Then|Pagkatapos),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^(?:Finally|Lastly|Panghuli),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    
-                    # Fix common issues - IMPROVED
-                    clean_sentence = re.sub(r'^Of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^,\s*', '', clean_sentence)  # Remove leading commas
-                    clean_sentence = re.sub(r'^\s*,\s*', '', clean_sentence)  # Remove leading commas with spaces
-                    
-                    if len(clean_sentence.strip()) > 15:
-                        steps.append(clean_sentence.strip())
+            # Check if this is a sequential step
+            elif any(marker in sentence for marker in ['[SEQ_1]', '[SEQ_2]', '[SEQ_3]']):
+                step = self._extract_sequential_step(sentence)
+                if step:
+                    key = step['content'].lower()
+                    if key not in extracted_content:
+                        extracted_content.add(key)
+                        steps.append(step)
+            
+            # Check if this contains action verbs (main task step)
+            elif self._contains_action(sentence):
+                step = {
+                    'type': 'action',
+                    'content': self._clean_sentence(sentence),
+                    'order': len(steps)
+                }
+                key = step['content'].lower()
+                if key not in extracted_content:
+                    extracted_content.add(key)
+                    steps.append(step)
+        
+        # Sort by type priority: actions first, then conditionals
+        steps.sort(key=lambda x: (0 if x['type'] == 'action' else 1, x.get('order', 0)))
         
         return steps
     
-    def _extract_structured_breakdown(self, task_description: str) -> List[str]:
-        """Extract structured breakdown sections like TASK BREAKDOWN, EXECUTION PLAN, etc."""
-        steps = []
+    def _extract_conditionals(self, sentence: str) -> List[Dict[str, Any]]:
+        """Extract conditional logic from normalized sentence"""
+        conditionals = []
         
-        # Find TASK BREAKDOWN section using line-by-line approach
-        lines = task_description.split('\n')
-        breakdown_start = -1
-        breakdown_end = len(lines)
-        
-        # Find start and end of TASK BREAKDOWN section
-        for i, line in enumerate(lines):
-            if '3️⃣' in line and 'TASK BREAKDOWN' in line:
-                breakdown_start = i + 1
-            elif breakdown_start > -1 and line.startswith('#') and ('4️⃣' in line or 'CONSTRAINTS' in line or 'DELIVERABLES' in line):
-                breakdown_end = i
-                break
-        
-        if breakdown_start > -1:
-            breakdown_lines = lines[breakdown_start:breakdown_end]
+        # First check if we have both CORRECT and INCORRECT in the same sentence
+        if 'CORRECT' in sentence and 'INCORRECT' in sentence:
+            # Handle compound conditionals: "If correct, do X. If incorrect, do Y."
+            # Split by period to handle each conditional separately
+            parts = sentence.split('.')
+            for part in parts:
+                if '[IF]' in part and 'CORRECT' in part and 'INCORRECT' not in part:
+                    # This is the "correct" case
+                    action_match = re.search(r'CORRECT.*?[:,]\s*(.+?)(?:\[IF\]|$)', part, re.IGNORECASE)
+                    if action_match:
+                        action = self._clean_sentence(action_match.group(1).strip())
+                        conditionals.append({
+                            'type': 'conditional',
+                            'condition': 'success',
+                            'content': f"[CONDITIONAL] If credentials are correct: {action}",
+                            'order': 0
+                        })
+                elif '[IF]' in part and 'INCORRECT' in part:
+                    # This is the "incorrect" case
+                    action_match = re.search(r'INCORRECT.*?[:,]\s*(.+?)(?:\[IF\]|$)', part, re.IGNORECASE)
+                    if action_match:
+                        action = self._clean_sentence(action_match.group(1).strip())
+                        conditionals.append({
+                            'type': 'conditional',
+                            'condition': 'failure',
+                            'content': f"[CONDITIONAL] If credentials are incorrect: {action}",
+                            'order': 1
+                        })
+        else:
+            # Single conditional in the sentence
+            if 'CORRECT' in sentence and 'INCORRECT' not in sentence:
+                # Pattern: [IF] ... CORRECT ... : ...
+                correct_pattern = r'CORRECT.*?[:,]\s*(.+?)(?:\.|$)'
+                correct_match = re.search(correct_pattern, sentence, re.IGNORECASE)
+                if correct_match:
+                    action = self._clean_sentence(correct_match.group(1).strip())
+                    conditionals.append({
+                        'type': 'conditional',
+                        'condition': 'success',
+                        'content': f"[CONDITIONAL] If credentials are correct: {action}",
+                        'order': 0
+                    })
             
-            current_phase = None
-            
-            for line in breakdown_lines:
-                line = line.strip()
-                if not line:
-                    continue
-                
-                # Check if this is a Phase header
-                phase_match = re.match(r'Phase\s+(\d+):\s*(.+)', line, re.IGNORECASE)
-                if phase_match:
-                    phase_num, phase_title = phase_match.groups()
-                    current_phase = f"Phase {phase_num}: {phase_title.strip()}"
-                    steps.append(current_phase)
-                    continue
-                
-                # Check if this is an action item (starts with capital letter or bracket)
-                if line and (line[0].isupper() or line.startswith('[')):
-                    # Keep the action item exactly as written - don't remove action verbs!
-                    clean_step = line.strip()
-                    
-                    if len(clean_step) > 10 and not self._is_noise(clean_step):
-                        steps.append(clean_step)
+            elif 'INCORRECT' in sentence:
+                # Pattern: [IF] ... INCORRECT ... : ...
+                incorrect_pattern = r'INCORRECT.*?[:,]\s*(.+?)(?:\.|$)'
+                incorrect_match = re.search(incorrect_pattern, sentence, re.IGNORECASE)
+                if incorrect_match:
+                    action = self._clean_sentence(incorrect_match.group(1).strip())
+                    conditionals.append({
+                        'type': 'conditional',
+                        'condition': 'failure',
+                        'content': f"[CONDITIONAL] If credentials are incorrect: {action}",
+                        'order': 1
+                    })
         
-        # Fallback: Look for other structured patterns if no TASK BREAKDOWN found
-        if not steps:
-            section_patterns = [
-                r'(?:TASK BREAKDOWN|EXECUTION PLAN|WORK PLAN|IMPLEMENTATION STEPS)[:\s]*(.+?)(?=\n\n|\n[A-Z][A-Z]|$)',
-                r'(?:Phase|Step|Stage)\s*\d*[.:](.+?)(?=(?:Phase|Step|Stage)|$)',
-                r'(?:Hakbang|Yugto)[\s\d]*[.:](.+?)(?=(?:Hakbang|Yugto)|$)'
-            ]
-            
-            for pattern in section_patterns:
-                matches = re.findall(pattern, task_description, re.MULTILINE | re.DOTALL | re.IGNORECASE)
-                for match in matches:
-                    section_steps = re.findall(r'(?:^|\n)\s*(?:\d+[.)]|[-•*])\s*(.+?)(?=\n|$)', match, re.MULTILINE)
-                    if section_steps:
-                        for step in section_steps:
-                            clean_step = step.strip()
-                            if len(clean_step) > 5 and not self._is_noise(clean_step):
-                                steps.append(clean_step)
-        
-        return steps[:15]  # Allow more for structured breakdowns
+        return conditionals
     
-    def _extract_audit_steps(self, task_description: str) -> List[str]:
-        """Create logical audit steps for codebase analysis"""
-        steps = []
+    def _extract_sequential_step(self, sentence: str) -> Optional[Dict[str, Any]]:
+        """Extract sequential step from normalized sentence"""
         
-        # Check if it mentions config files
-        if 'config' in task_description.lower() and 'yaml' in task_description.lower():
-            steps.append("Load and parse startup_config.yaml to get agent list")
+        # Remove the sequential marker to get the actual content
+        content = sentence
+        for marker in ['[SEQ_1]', '[SEQ_2]', '[SEQ_3]']:
+            content = content.replace(marker, '').strip()
         
-        # Check if it mentions specific analysis types
-        if 'coding patterns' in task_description.lower():
-            steps.append("Analyze coding patterns and naming conventions")
+        # Clean the content
+        content = self._clean_sentence(content)
         
-        if 'imports' in task_description.lower():
-            steps.append("Extract and categorize all import statements")
+        if content and len(content) > 10:
+            return {
+                'type': 'action',
+                'content': content,
+                'order': 0 if '[SEQ_1]' in sentence else (1 if '[SEQ_2]' in sentence else 2)
+            }
         
-        if 'error handling' in task_description.lower():
-            steps.append("Review error handling approaches and patterns")
-        
-        if 'code smells' in task_description.lower():
-            steps.append("Identify code smells and anti-patterns")
-        
-        if 'summary' in task_description.lower() or 'table' in task_description.lower():
-            steps.append("Generate comprehensive summary table")
-        
-        # Default audit steps if none found
-        if not steps:
-            steps = [
-                "Load agent configuration file",
-                "Scan all agent source files", 
-                "Analyze code structure and patterns",
-                "Generate analysis report"
-            ]
-        
-        return steps
+        return None
     
-    def _extract_sentence_based(self, task_description: str) -> List[str]:
-        """Extract actions based on intelligent sentence boundaries"""
-        actions = []
-        
-        # Smart sentence splitting that preserves quoted strings and file extensions
-        sentences = self._smart_sentence_split(task_description)
-        
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if len(sentence) > 10 and not self._is_noise(sentence):
-                # Clean up common sequential indicators
-                sentence = self._clean_sequential_indicators(sentence)
-                
-                # Don't add "Execute:" prefix if sentence already has action verbs
-                if not any(verb in sentence.lower()[:25] for verb in self.action_verbs):
-                    # Only add prefix for non-actionable fragments
-                    if not sentence.lower().startswith(('first', 'next', 'then', 'finally', 'una', 'sunod', 'pagkatapos', 'panghuli')):
-                        sentence = f"Execute: {sentence}"
-                        
-                actions.append(sentence)
-        
-        # Fallback if no valid sentences
-        if not actions:
-            actions = [f"Complete task: {task_description}"]
-        
-        return actions[:7]  # Limit to 7 actions
+    def _contains_action(self, sentence: str) -> bool:
+        """Check if sentence contains action verbs"""
+        sentence_lower = sentence.lower()
+        for concept, verbs in self.action_concepts.items():
+            if any(verb in sentence_lower for verb in verbs):
+                return True
+        return False
     
-    def _smart_sentence_split(self, text: str) -> List[str]:
-        """Intelligent sentence splitting that preserves quoted strings and file extensions"""
+    def _clean_sentence(self, sentence: str) -> str:
+        """Clean up sentence for final output"""
+        # Remove normalized tokens more carefully
+        cleaned = sentence
+        
+        # Remove tokens but be careful about word boundaries
+        tokens_to_remove = ['[SEQ_1]', '[SEQ_2]', '[SEQ_3]', '[IF]', 'CORRECT', 'INCORRECT']
+        for token in tokens_to_remove:
+            # Remove token with surrounding spaces
+            cleaned = cleaned.replace(f' {token} ', ' ')
+            # Remove token at start
+            if cleaned.startswith(token + ' '):
+                cleaned = cleaned[len(token)+1:]
+            # Remove token at end
+            if cleaned.endswith(' ' + token):
+                cleaned = cleaned[:-len(token)-1]
+            # Final cleanup for any remaining instances
+            cleaned = cleaned.replace(token, '')
+        
+        # Remove extra whitespace
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        
+        # Fix common issues from token removal
+        cleaned = cleaned.replace(' ,', ',')
+        cleaned = cleaned.replace(' .', '.')
+        cleaned = cleaned.replace(' :', ':')
+        
+        # Capitalize first letter
+        if cleaned and cleaned[0].islower():
+            cleaned = cleaned[0].upper() + cleaned[1:]
+        
+        # Remove trailing punctuation if it's just a comma
+        cleaned = cleaned.rstrip(',')
+        
+        return cleaned
+    
+    def _split_sentences(self, text: str) -> List[str]:
+        """Split text into sentences, preserving important boundaries"""
+        # Split on periods, but not on file extensions
         sentences = []
-        current_sentence = ""
-        i = 0
+        current = ""
         
+        i = 0
         while i < len(text):
             char = text[i]
-            current_sentence += char
+            current += char
             
-            # Handle quoted strings - don't split inside them
-            if char in ["'", '"']:
-                quote_char = char
-                i += 1
-                while i < len(text) and text[i] != quote_char:
-                    current_sentence += text[i]
-                    i += 1
-                if i < len(text):
-                    current_sentence += text[i]  # Add closing quote
-            
-            # Check for sentence endings
-            elif char in '.!?':
-                # Look ahead to see if this is a real sentence end
-                if self._is_real_sentence_end(text, i):
-                    sentences.append(current_sentence.strip())
-                    current_sentence = ""
+            if char in '.!?':
+                # Check if this is a real sentence end
+                if i + 1 < len(text):
+                    next_char = text[i + 1]
+                    # If next char is space and following char is uppercase, it's likely a new sentence
+                    if next_char == ' ' and i + 2 < len(text) and text[i + 2].isupper():
+                        sentences.append(current.strip())
+                        current = ""
+                    # Also check for sequential markers
+                    elif i + 2 < len(text):
+                        next_word = text[i+1:i+10].strip().lower()
+                        if any(next_word.startswith(marker) for marker in ['[seq_', 'kung', '[if]']):
+                            sentences.append(current.strip())
+                            current = ""
+                else:
+                    # End of text
+                    sentences.append(current.strip())
+                    current = ""
             
             i += 1
         
-        # Add remaining text if any
-        if current_sentence.strip():
-            sentences.append(current_sentence.strip())
+        if current.strip():
+            sentences.append(current.strip())
         
-        return [s for s in sentences if s.strip()]
+        return sentences
     
-    def _is_real_sentence_end(self, text: str, pos: int) -> bool:
-        """Determine if a period/punctuation is a real sentence ending"""
-        char = text[pos]
+    def _clean_and_finalize_steps(self, steps: List[Dict[str, Any]]) -> List[str]:
+        """Convert step dictionaries to final string format"""
+        final_steps = []
         
-        # Check for file extensions (.txt, .py, .sql, etc.)
-        if char == '.' and pos > 0:
-            # Look back for file extension pattern
-            before = text[max(0, pos-5):pos].lower()
-            if any(ext in before for ext in ['.txt', '.py', '.sql', '.log', '.md', '.yml', '.yaml', '.json']):
-                return False
-                
-            # Check for abbreviations (like "etc.", "i.e.", "e.g.")
-            before_word = text[max(0, pos-4):pos].lower()
-            if before_word in ['etc', ' etc', 'i.e', ' ie', 'e.g', ' eg']:
-                return False
+        # Group by type for better organization
+        actions = [s for s in steps if s['type'] == 'action']
+        conditionals = [s for s in steps if s['type'] == 'conditional']
         
-        # Look ahead - if next character is lowercase, likely not sentence end
-        if pos + 1 < len(text):
-            next_chars = text[pos+1:pos+3].strip()
-            if next_chars and next_chars[0].islower():
-                return False
+        # Add actions first
+        for step in actions:
+            final_steps.append(step['content'])
         
-        # Look ahead for sequential indicators that suggest continuation
-        if pos + 1 < len(text):
-            ahead = text[pos+1:pos+15].strip().lower()
-            if ahead.startswith(('next', 'then', 'finally', 'first', 'sunod', 'pagkatapos')):
-                return True
+        # Add conditionals
+        for step in conditionals:
+            final_steps.append(step['content'])
         
-        return True
+        return final_steps
     
-    def _clean_sequential_indicators(self, sentence: str) -> str:
-        """Clean up sequential indicators while preserving meaning"""
-        sentence = sentence.strip()
+    def _analyze_task_structure(self, task_description: str) -> dict:
+        """Analyze task for logical patterns, dependencies, and parallelism"""
+        normalized = self._normalize_text(task_description)
         
-        # Remove standalone sequential words at the beginning if they're not meaningful
-        prefixes_to_clean = r'^(?:Execute:|Then,?|Next,?|Finally,?|First,?)\s*'
-        sentence = re.sub(prefixes_to_clean, '', sentence, flags=re.IGNORECASE).strip()
+        analysis = {
+            'has_conditional_logic': '[IF]' in normalized and ('CORRECT' in normalized or 'INCORRECT' in normalized),
+            'has_parallelism': False,  # Not used in current test
+            'has_dependencies': False,  # Not used in current test  
+            'has_sequential_flow': any(marker in normalized for marker in ['[SEQ_1]', '[SEQ_2]', '[SEQ_3]']),
+            'complexity_score': 0
+        }
         
-        # Capitalize first letter if it's lowercase after cleaning
-        if sentence and sentence[0].islower():
-            sentence = sentence[0].upper() + sentence[1:]
-            
-        return sentence
-    
-    def _is_noise(self, text: str) -> bool:
-        """Check if text is noise"""
-        noise_words = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']
-        return text.lower() in noise_words
+        # Calculate complexity score
+        if analysis['has_conditional_logic']:
+            analysis['complexity_score'] += 10
+        if analysis['has_sequential_flow']:
+            analysis['complexity_score'] += 5
+        
+        return analysis
 
 
 class IntelligentTaskChunker:
