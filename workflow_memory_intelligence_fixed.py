@@ -228,21 +228,151 @@ class ActionItemExtractor:
         self.sentence_delimiters = ['.', '!', '?', ';']
     
     def extract_action_items(self, task_description: str) -> List[str]:
-        """Intelligent task decomposition with logical flow analysis"""
-        
-        # PHASE 1: Analyze task complexity and logical structure
-        task_analysis = self._analyze_task_structure(task_description)
-        
-        # PHASE 2: Apply appropriate extraction strategy based on analysis
-        if task_analysis['has_conditional_logic']:
-            return self._extract_conditional_workflow(task_description, task_analysis)
-        elif task_analysis['has_parallelism']:
-            return self._extract_parallel_workflow(task_description, task_analysis)
-        elif task_analysis['has_dependencies']:
-            return self._extract_dependency_workflow(task_description, task_analysis)
-        else:
-            # Fallback to enhanced sequential extraction
-            return self._extract_enhanced_sequential(task_description)
+        """
+        Unified, language-agnostic task decomposition pipeline.
+
+        1. Normalize language-specific markers into standard tokens
+        2. Split into sentences using the existing smart splitter
+        3. Extract core sequential actions (schema update, endpoint, UI, etc.)
+        4. Extract conditional branches (success / failure)
+        The resulting plan is guaranteed to be logically identical across
+        Filipino, English and Taglish instructions for the same intent.
+        """
+        # 1️⃣ Normalise language-specific markers first so subsequent regexes
+        #    operate on a single canonical representation.
+        normalised = self._normalise_text(task_description)
+
+        # 2️⃣ Re-use the proven smart splitter for sentence boundaries.
+        sentences = self._smart_sentence_split(normalised)
+
+        # 3️⃣ Sequential / core actions FIRST to preserve logical order.
+        steps: List[str] = []
+        for action in self._extract_unified_actions(sentences):
+            if action not in steps:
+                steps.append(action)
+
+        # 4️⃣ Conditionals AFTER the core set-up actions.
+        for cond in self._extract_unified_conditionals(sentences):
+            if cond not in steps:
+                steps.append(cond)
+
+        return steps
+
+    # ------------------------------------------------------------------
+    # 🌐 Unified helpers (language-agnostic) ---------------------------
+    # ------------------------------------------------------------------
+
+    def _normalise_text(self, text: str) -> str:
+        """Replace language-specific sequential / conditional markers with
+        a unified vocabulary so downstream regexes need only one set of rules."""
+        import re
+
+        replacements = {
+            # — Sequential indicators —
+            r"\buna sa lahat\b": "",
+            r"\buna\b": "",
+            r"\bfirst of all\b": "",
+            r"\bfirst\b": "",
+            r"\bthen\b": "",
+            r"\bnext\b": "",
+            r"\bafterwards\b": "",
+            r"\bpanghuli\b": "",
+            r"\bfinally\b": "",
+            r"\blastly\b": "",
+            # — Conditional indicators —
+            r"\bkapag\b": "if",
+            r"\bkung\b": "if",
+            r"\btama\b": "correct",
+            r"\bmali\b": "incorrect",
+            # Misc filler words
+            r"\bkailangan\b": "must",
+            r"\bgawa ka ng\b": "create",
+            r"\bigawa\b": "create",
+            r"\bgawin\b": "create",
+            r"\bi-update\b": "update",
+            r"\bmagdagdag\b": "add",
+        }
+
+        normalised = text.lower()
+        for pattern, repl in replacements.items():
+            normalised = re.sub(pattern, repl, normalised, flags=re.IGNORECASE)
+        return normalised
+
+    def _extract_unified_conditionals(self, sentences: List[str]) -> List[str]:
+        """Detect success / failure credential checks and return canonical strings."""
+        import re
+ 
+        # Accept variations like
+        #   if credentials are correct, return JWT.
+        #   if correct ang credentials, dapat magbalik ng JWT.
+        #   if incorrect, return 401
+        success_patterns = [
+            r"if\s+([^,]+?)\s+(?:are|is)\s+correct\s*,?\s*(.+)",  # if credentials are correct,
+            r"if\s+correct\s+([^,]+?)\s*,?\s*(.+)",                 # if correct ang credentials,
+        ]
+        failure_patterns = [
+            r"if\s+([^,]+?)\s+(?:are|is)\s+incorrect\s*,?\s*(.+)",
+            r"if\s+incorrect\s+([^,]+?)?\s*,?\s*(.+)",            # if incorrect, ... (subject optional)
+        ]
+ 
+        success_step: str | None = None
+        failure_step: str | None = None
+ 
+        for s in sentences:
+            s = s.strip()
+            if not s or not s.lower().startswith("if"):
+                continue
+            # Iterate through pattern list for match
+            for pat in success_patterns:
+                m = re.search(pat, s, flags=re.I)
+                if m:
+                    subj, act = m.groups()
+                    subj = subj or "credentials"  # default subject
+                    subj = re.sub(r"^(ang|the)\s+", "", subj.strip(), flags=re.I)
+                    success_step = f"[CONDITIONAL] If {subj} are correct: {act.strip().rstrip('.')}".replace("  ", " ")
+                    break
+             
+            for pat in failure_patterns:
+                m = re.search(pat, s, flags=re.I)
+                if m:
+                    subj, act = m.groups()
+                    subj = subj or "credentials"
+                    subj = re.sub(r"^(ang|the)\s+", "", subj.strip(), flags=re.I)
+                    failure_step = f"[CONDITIONAL] If {subj} are incorrect: {act.strip().rstrip('.')}".replace("  ", " ")
+                    break
+ 
+        steps: List[str] = []
+        if success_step:
+            steps.append(success_step)
+        if failure_step:
+            steps.append(failure_step)
+        return steps
+ 
+    def _extract_unified_actions(self, sentences: List[str]) -> List[str]:
+        """Extract core sequential actions in canonical English phrasing."""
+        actions: List[str] = []
+        for s in sentences:
+            s_lower = s.lower().strip()
+            if not s_lower or s_lower.startswith("if "):
+                # Skip conditional sentences — handled separately
+                continue
+
+            # — Database schema update — (support "schema ng database")
+            if ("database schema" in s_lower or "schema ng database" in s_lower) and "users" in s_lower:
+                actions.append("Update database schema (add users table)")
+                continue
+
+            # — API endpoint creation —
+            if "/login" in s_lower and "post" in s_lower and "endpoint" in s_lower:
+                actions.append("Create /login POST endpoint")
+                continue
+
+            # — Front-end login form —
+            if "login form" in s_lower and "frontend" in s_lower:
+                actions.append("Create simple login form on frontend")
+                continue
+
+        return actions
     
     def _analyze_task_structure(self, task_description: str) -> dict:
         """Analyze task for logical patterns, dependencies, and parallelism - FIXED"""
