@@ -245,7 +245,12 @@ class IntelligentTaskChunker:
         
         # Use integrated chunking strategy
         action_items = self._integrated_chunking(task_description)
-        logger.info(f"📝 Extracted {len(action_items)} action items using integrated chunking")
+
+        # ------------------------------------------------------------------
+        # 🧹 New: Deduplicate & normalise to avoid redundant TODOs
+        # ------------------------------------------------------------------
+        action_items = self._deduplicate_actions(action_items)
+        logger.info(f"📝 Extracted {len(action_items)} unique action items after deduplication")
         
         # Create subtasks
         subtasks = []
@@ -335,6 +340,53 @@ class IntelligentTaskChunker:
             return 30
         else:
             return 10
+
+    # ------------------------------------------------------------------
+    # 🔬 Advanced post-processing helpers (new)
+    # ------------------------------------------------------------------
+
+    def _deduplicate_actions(self, actions: List[str]) -> List[str]:
+        """Remove near-duplicate or semantically identical action strings.
+
+        Uses simple textual normalisation + fuzzy ratio (difflib) to identify
+        overlaps. This lightweight approach avoids heavy NLP dependencies but
+        is sufficient for obvious redundancy such as "-audit code" vs
+        "audit the code"."""
+        from difflib import SequenceMatcher
+
+        def norm(txt: str) -> str:
+            """Lightweight normalisation for duplicate detection."""
+            txt = txt.lower()
+            txt = re.sub(r"^[\-•*]\s*", "", txt)  # leading bullet chars
+            txt = re.sub(r"\bi-", "", txt)  # remove Tagalog verb prefix "i-"
+            txt = re.sub(r"[^a-z0-9\s]", "", txt)  # keep alphanum + space
+            txt = re.sub(r"\s+", " ", txt)
+            return txt.strip()
+
+        def token_jaccard(a: str, b: str) -> float:
+            ta, tb = set(a.split()), set(b.split())
+            if not ta or not tb:
+                return 0.0
+            return len(ta & tb) / len(ta | tb)
+
+        unique: List[str] = []
+        seen_norms: List[str] = []
+
+        for action in actions:
+            n = norm(action)
+            if not n:
+                continue
+            # Compare against previous normals using token Jaccard and SequenceMatcher
+            is_dup = False
+            for prev in seen_norms:
+                if token_jaccard(n, prev) >= 0.8 or SequenceMatcher(None, n, prev).ratio() >= 0.75:
+                    is_dup = True
+                    break
+            if not is_dup:
+                unique.append(action.strip())
+                seen_norms.append(n)
+
+        return unique
 
 
 class SmartTaskExecutionManager:
