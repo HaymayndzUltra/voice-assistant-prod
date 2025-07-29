@@ -355,10 +355,19 @@ class IntelligentTaskChunker:
         from difflib import SequenceMatcher
 
         def norm(txt: str) -> str:
-            txt = txt.lower().strip(" -•*:\t\n")  # strip bullet markers & punc
+            """Lightweight normalisation for duplicate detection."""
+            txt = txt.lower()
+            txt = re.sub(r"^[\-•*]\s*", "", txt)  # leading bullet chars
+            txt = re.sub(r"\bi-", "", txt)  # remove Tagalog verb prefix "i-"
             txt = re.sub(r"[^a-z0-9\s]", "", txt)  # keep alphanum + space
             txt = re.sub(r"\s+", " ", txt)
             return txt.strip()
+
+        def token_jaccard(a: str, b: str) -> float:
+            ta, tb = set(a.split()), set(b.split())
+            if not ta or not tb:
+                return 0.0
+            return len(ta & tb) / len(ta | tb)
 
         unique: List[str] = []
         seen_norms: List[str] = []
@@ -367,10 +376,10 @@ class IntelligentTaskChunker:
             n = norm(action)
             if not n:
                 continue
-            # Check similarity against already kept items
+            # Compare against previous normals using token Jaccard and SequenceMatcher
             is_dup = False
             for prev in seen_norms:
-                if SequenceMatcher(None, n, prev).ratio() >= 0.8:
+                if token_jaccard(n, prev) >= 0.8 or SequenceMatcher(None, n, prev).ratio() >= 0.75:
                     is_dup = True
                     break
             if not is_dup:
