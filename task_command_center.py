@@ -101,6 +101,33 @@ class TaskCommandCenter:
         print("10. 🧠 Intelligent Task Execution")
         print("0. ❌ Exit")
         print()
+    # ------------------------------------------------------------------
+    # 📝 Utility Helpers
+    # ------------------------------------------------------------------
+
+    def _collect_multiline_input(self, prompt: str = "> ") -> str:
+        """Collect multi-line input from the user until a blank line or EOF.
+
+        1. Displays a hint to the user on how to finish the input.
+        2. Works in both interactive (TTY) and non-interactive (piped) modes.
+        3. Returns the full string with embedded newlines (\n)."""
+
+        # If input is being piped (non-interactive), read everything at once
+        if not sys.stdin.isatty():
+            return sys.stdin.read().strip()
+
+        print("(Press ENTER twice to finish input)")
+        lines = []
+        while True:
+            try:
+                line = input(prompt)
+            except EOFError:
+                # End of stream (Ctrl-D) – treat whatever we gathered
+                break
+            if line == "":  # Blank line terminates input
+                break
+            lines.append(line)
+        return "\n".join(lines).strip()
     
     def get_user_choice(self, max_choice: int) -> int:
         """Get user choice with validation"""
@@ -162,9 +189,8 @@ class TaskCommandCenter:
         # Show current status first
         self.show_current_status()
         
-        print("Enter your new task description:")
-        print("💡 You can paste long descriptions here")
-        task_description = input("> ").strip()
+        print("Enter your new task description (multi-line supported):")
+        task_description = self._collect_multiline_input()
         
         if task_description:
             # Show a preview for long descriptions
@@ -511,10 +537,9 @@ class TaskCommandCenter:
 
         print("🧠 INTELLIGENT TASK EXECUTION:")
         print("=" * 35)
-        print("Enter your task description (will be analyzed and executed intelligently):")
-        print("💡 You can paste long descriptions here - they will be automatically chunked into TODOs")
+        print("Enter your task description (multi-line supported – auto-chunked):")
 
-        task_description = input("> ").strip()
+        task_description = self._collect_multiline_input()
 
         if not task_description:
             print("❌ Task description cannot be empty")

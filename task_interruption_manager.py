@@ -145,7 +145,29 @@ class TaskInterruptionManager:
             return self.format_status(status)
         
         # Regular command - continue with current task
-        return f"📋 Continuing with current task: {self.current_task['description'] if self.current_task else 'None'}"
+        return f"📋 Continuing with current task: {self._get_current_task_desc()}"
+
+    # --------------------------------------------------------------
+    # 🛠️  Helper Methods
+    # --------------------------------------------------------------
+
+    def _get_current_task_desc(self) -> str:
+        """Return a human-readable description of the current task, if any."""
+        if not self.current_task:
+            return "None"
+        if isinstance(self.current_task, str):
+            # Fetch task details from todo_manager for richer description
+            try:
+                from todo_manager import list_open_tasks
+                tasks = list_open_tasks()
+                for t in tasks:
+                    if t["id"] == self.current_task:
+                        return t.get("description", self.current_task)
+            except Exception:  # pragma: no cover – best-effort only
+                pass
+            return self.current_task  # fallback to ID
+        # Dict format
+        return self.current_task.get("description", "Unknown")
     
     def format_status(self, status: Dict[str, Any]) -> str:
         """Format status for display"""
