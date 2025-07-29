@@ -831,11 +831,12 @@ class ActionItemExtractor:
         # namespace when this method runs.
 
         self._strategies: _List[_BaseParsingStrategy] = [
-            _ConditionalStrategy(self),   # Conditionals first – they may also mark sequential pieces
-            _SequentialStrategy(self),    # Generic ordered steps
-            _ParallelStrategy(self),      # Parallel execution hints
-            _InlineListStrategy(self),    # Inline bullet/letter lists
-            _HierarchicalStrategy(self),  # Bullet/numbered lists
+            _CompoundConditionalStrategy(self),  # Advanced conditionals first
+            _ConditionalStrategy(self),          # Simple conditionals
+            _SequentialStrategy(self),           # Generic ordered steps
+            _ParallelStrategy(self),             # Parallel execution hints
+            _InlineListStrategy(self),           # Inline bullet/letter lists
+            _HierarchicalStrategy(self),         # Bullet/numbered lists
         ]
 
 
@@ -904,7 +905,8 @@ class _ParallelStrategy(_BaseParsingStrategy):
         for s in sentences:
             if any(k in s for k in self._PARALLEL_KEYWORDS):
                 # Very naive split – future improvement: graph-based planning
-                parts = [p.strip() for p in re.split(r"(?:,| and |;)", s) if p.strip()]
+                core = re.sub(r"in parallel[:]?\s*", "", s, flags=re.I)
+                parts = [p.strip() for p in re.split(r"(?:,| and |;)", core) if p.strip()]
                 for p in parts:
                     # Remove leading conjunctions
                     p = re.sub(r"^(and|&|then)\s+", "", p, flags=re.I)
@@ -928,6 +930,9 @@ class _HierarchicalStrategy(_BaseParsingStrategy):
                 m = self._BULLET_REGEX.match(line)
                 if m:
                     step = line[m.end():].strip()
+                    # Skip pure headings (trailing ':')
+                    if step.endswith(":"):
+                        continue
                     step = step[0].upper() + step[1:] if step else step
                     if step and step not in steps:
                         steps.append(step)
@@ -942,8 +947,9 @@ class _HierarchicalStrategy(_BaseParsingStrategy):
 class _InlineListStrategy(_BaseParsingStrategy):
     """Extracts inline lists like "Please: - Do A, - Do B" or "a) Step1; b) Step2"."""
 
-    _DASH_PATTERN = re.compile(r"-\s*[A-Za-z0-9].+?")
-    _LETTER_PATTERN = re.compile(r"\b[a-z]\)\s*[A-Za-z0-9].+?")
+    # Capture text after dash / letter until newline, semicolon, or comma
+    _DASH_PATTERN = re.compile(r"-\s*([^\n,;]+)")
+    _LETTER_PATTERN = re.compile(r"\b[a-z]\)\s*([^\n;]+)", re.I)
 
     def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
         joined = " ".join(sentences)
@@ -955,8 +961,7 @@ class _InlineListStrategy(_BaseParsingStrategy):
 
         # 1. Dash bullets
         for m in self._DASH_PATTERN.finditer(joined):
-            text = m.group(0)
-            text = re.sub(r"^-\s*", "", text).strip()
+            text = m.group(1).strip()
             text = text.rstrip(',;')
             if text and text not in steps:
                 steps.append(text[0].upper() + text[1:])
@@ -971,6 +976,52 @@ class _InlineListStrategy(_BaseParsingStrategy):
                     if text and text not in steps:
                         steps.append(text[0].upper() + text[1:])
 
+        return steps
+
+# -----------------------------------------------------------------------------
+# 🔗 Compound Conditional Strategy
+# -----------------------------------------------------------------------------
+
+
+class _CompoundConditionalStrategy(_BaseParsingStrategy):
+    """Handle chained `if / else-if / else` constructs in a single sentence."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return "else if" in normalized_text or (" if " in normalized_text and " else " in normalized_text)
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            if not s.lower().startswith("if"):
+                continue
+            # Break by ';' first, then by ',' if still long chain
+            clauses = re.split(r";", s)
+            if len(clauses) == 1:
+                clauses = re.split(r",\s*else", s)
+            for cl in clauses:
+                cl = cl.strip()
+                if not cl:
+                    continue
+                # Identify keyword
+                if cl.lower().startswith("if"):
+                    label = "If"
+                    content = cl[2:].lstrip()
+                elif cl.lower().startswith("else if"):
+                    label = "Else-if"
+                    content = cl[7:].lstrip()
+                elif cl.lower().startswith("else"):
+                    label = "Else"
+                    content = cl[4:].lstrip()
+                else:
+                    continue
+                # Split condition vs action by first comma
+                parts = content.split(',', 1)
+                if len(parts) == 2:
+                    condition, action = parts[0].strip(), parts[1].strip()
+                else:
+                    condition, action = "", content.strip()
+                human = f"[CONDITIONAL] {label} {condition}: {action}".strip()
+                steps.append(human)
         return steps
 
 
