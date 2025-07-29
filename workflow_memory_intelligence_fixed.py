@@ -315,14 +315,28 @@ class IntelligentTaskChunker:
 
     def _post_process_actions(self, actions: List[str]) -> List[str]:
         """Clean, deduplicate, and trim action texts to avoid redundant subtasks."""
-        # 1. Strip whitespace/newlines & normalise spaces
-        cleaned = [re.sub(r"\s+", " ", act).strip() for act in actions if act and act.strip()]
+        def _normalise(act: str) -> str:
+            # Remove common list/bullet prefixes and surrounding punctuation
+            act = act.strip()
+            act = re.sub(r"^[\-*•]+\s*", "", act)  # leading bullets
+            # Strip leading 'i-' or 'I-' (Tagalog imperative with hyphen)
+            act = re.sub(r"^[iI]-", "", act)
+            # Collapse whitespace
+            act = re.sub(r"\s+", " ", act)
+            # Remove trailing period
+            act = act.rstrip(". ")
+            return act.strip()
+
+        cleaned = [_normalise(act) for act in actions if act and act.strip()]
+
+        # Remove empties after normalisation
+        cleaned = [c for c in cleaned if c]
 
         # 2. Deduplicate case-insensitively while preserving order
         deduped = self._deduplicate_actions(cleaned)
 
         return deduped
-
+    
     @staticmethod
     def _deduplicate_actions(actions: List[str]) -> List[str]:
         """Return actions preserving original order but removing duplicates (case-insensitive)."""
