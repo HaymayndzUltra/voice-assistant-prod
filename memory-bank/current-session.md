@@ -1,4 +1,4 @@
-# 📝 Current Cursor Session — 2025-07-29 13:13:16 UTC
+# 📝 Current Cursor Session — 2025-07-29 15:10:51 UTC
 
 | Field | Value |
 |-------|-------|
@@ -7,9 +7,45 @@
 | current_task | I-audit mo ang buong codebase at i-list lahatt |
 | progress | 0.0 |
 | last_activity | 2025-07-29T11:02:20.874571+08:00 |
-| disconnected_at | 2025-07-29T13:13:16.298051 |
+| disconnected_at | 2025-07-29T15:10:51.119867 |
 
 ## 🕒 Open Tasks (Todo Manager)
+- **- Phase 1: System Analysis & Cleanup
+        - Inventory all existing Docker/Podman containers, images, and compose files.
+        - Delete all old containers/images/compose files.
+        - Identify all agent groups, dependencies, and required libraries.
+    - Phase 2: Logical Grouping & Compose Generation
+        - Design optimal container groupings (by function, dependency, resource needs).
+        - Generate new docker-compose SoT with correct build contexts, volumes, networks, and healthchecks.
+        - Ensure requirements.txt per container is minimal and correct.
+    - Phase 3: Validation & Optimization
+        - Build and start all containers in dependency-correct order.
+        - Validate agent startup, health, and inter-container communication.
+        - Optimize for image size, startup time, and resource usage.
+        - Document the new architecture and compose setup.** (10 todos left)
+- **I-build natin ang bagong user auth feature. First, i-update mo ang database schema, magdagdag ka ng 'users' table na may 'username' at 'password_hash' columns. Then, gawa ka ng API endpoint, sa '/login', na tatanggap ng POST requests. Kapag tama ang credentials, kailangan mag-return ito ng JWT. Kung mali naman, dapat 401 Unauthorized error ang i-return. Lastly, gawa ka ng simpleng login form sa frontend para ma-test natin yung endpoint.** (1 todos left)
+- **Let's build the new user authentication feature. First of all, update the database schema to include a 'users' table with 'username' and 'password_hash' columns. Afterwards, create an API endpoint at '/login' that accepts POST requests. If the credentials are correct, it must return a JWT. If they are incorrect, it must return a 401 Unauthorized error. Finally, create a simple login form on the frontend to test the new endpoint.** (1 todos left)
+- **Gawin natin ang bagong user authentication feature. Una sa lahat, i-update ang schema ng database para magkaroon ng 'users' table na may 'username' at 'password_hash' na mga column. Pagkatapos, bumuo ka ng isang API endpoint na '/login' na tumatanggap ng POST requests. Kung tama ang credentials, dapat itong magbalik ng isang JWT. Kung mali, dapat itong magbalik ng 401 Unauthorized error. Panghuli, gumawa ka ng isang simpleng login form sa frontend para i-test ang bagong endpoint.** (2 todos left)
+- **
+    Complete Backend API Development:
+    
+    Phase 1 - Foundation (parallel execution possible):
+    - Setup mo ang database schema at migrations
+    - Configure authentication middleware 
+    - I-implement ang basic CRUD operations
+    
+    Phase 2 - Features (conditional on Phase 1):
+    Kung successful ang foundation setup:
+    - Add advanced search functionality
+    - Implement caching layer
+    - Create API documentation
+    
+    Phase 3 - Testing & Deployment:
+    Una, run comprehensive test suite.
+    Kung lahat ng tests ay passing, deploy sa staging.
+    Panghuli, if staging validation succeeds, deploy to production.
+    ** (3 todos left)
+- **Create a test task with automatic TODO generation** (1 todos left)
 - **Universal Prompt for Infrastructure Refactoring
 # 🚀 TOP-LEVEL GOAL
 Perform a complete refactoring of the containerized agent infrastructure, from analysis and cleanup to generation, validation, and documentation of a new, optimized deployment.

@@ -189,17 +189,18 @@ class ActionItemExtractor:
             'i-optimize', 'i-refactor', 'i-document', 'magplano', 'mag-research'
         ]
         
-        # Advanced logical reasoning patterns (English + Filipino) - FIXED VERSION
+        # Advanced logical reasoning patterns (English + Filipino)
         self.conditional_patterns = {
-            # English patterns - IMPROVED AND PRECISE
-            'if_then': r'[Ii]f\s+(.+?),\s*(?:then\s+)?(.+?)(?=\.|\n|[Ii]f\s+[^t])',
+            # English patterns - FIXED AND ENHANCED
+            'if_then': r'[Ii]f\s+(.+?),\s*(?:then\s+)?(.+?)(?=\.|\n|[Ii]f)',
             'if_correct_incorrect': r'[Ii]f\s+(?:the\s+)?(.+?)\s+(?:are?|is)\s+correct,\s*(.+?)\s*[.]\s*[Ii]f\s+(?:they\s+are|it\s+is)\s+incorrect,\s*(.+?)(?=\.|\n|$)',
             'if_success_failure': r'[Ii]f\s+(?:successful|success),?\s+(.+?)\s*[;.]\s*[Ii]f\s+(?:fail|failed?),?\s+(.+?)(?=\.|\n|$)',
             'before_after': r'[Bb]efore\s+(.+?),?\s+(.+?)(?=\.|\n|$)',
             'after_complete': r'[Aa]fter\s+(.+?),?\s+(.+?)(?=\.|\n|$)',
+            'first_afterwards_finally': r'(?:[Ff]irst\s+of\s+all|[Aa]fterwards|[Ff]inally),?\s*(.+?)(?=\.|\n|[Ff]irst|[Aa]fterwards|[Ff]inally)',
             
-            # Filipino patterns - IMPROVED
-            'kung_then': r'[Kk]ung\s+(.+?),\s*(.+?)(?=\.|\n|[Kk]ung\s+[^t])',
+            # Filipino patterns
+            'kung_then': r'[Kk]ung\s+(.+?),\s*(.+?)(?=\.|\n|[Kk]ung)',
             'kung_pumasa_pumalya': r'[Kk]ung\s+pumasa\s+(.+?),\s*(.+?)\s*[.]\s*[Kk]ung\s+(?:may\s+)?pumalya,\s*(.+?)(?=\.|\n|$)',
             'kung_success_fail': r'[Kk]ung\s+(.+?)\s+pumasa,\s*(.+?)\s*[.]\s*[Kk]ung\s+(.+?)\s+pumalya,\s*(.+?)(?=\.|\n|$)',
             'pagkatapos_ng': r'[Pp]agkatapos\s+ng\s+(.+?),\s*(.+?)(?=\.|\n|$)',
@@ -207,22 +208,15 @@ class ActionItemExtractor:
             'bago_ang': r'[Bb]ago\s+(.+?),\s*(.+?)(?=\.|\n|$)'
         }
         
-        # Sequential indicators (NOT dependencies) - FIXED
-        self.sequential_indicators = [
-            'first of all', 'first', 'next', 'then', 'afterwards', 'finally', 'lastly',
-            'una sa lahat', 'una', 'sunod', 'pagkatapos', 'panghuli', 'sa wakas'
-        ]
-        
         self.parallelism_indicators = [
             'independent', 'parallel', 'simultaneously', 'at the same time', 'concurrently',
             'sabay-sabay', 'magkakasabay', 'hiwalay', 'independently',
             'maaaring gawin nang sabay-sabay', 'in parallel', 'sabay', 'magkasabay'
         ]
         
-        # TRUE dependency keywords (not sequential) - FIXED
         self.dependency_keywords = [
-            'requires', 'depends on', 'needs', 'must have', 'prerequisite',
-            'kailangan', 'depende sa', 'kailangan may', 'prerequisite'
+            'before', 'after', 'once', 'when', 'until', 'requires', 'depends on',
+            'bago', 'pagkatapos', 'kapag', 'hanggang sa', 'kailangan'
         ]
         
         self.sentence_delimiters = ['.', '!', '?', ';']
@@ -245,22 +239,20 @@ class ActionItemExtractor:
             return self._extract_enhanced_sequential(task_description)
     
     def _analyze_task_structure(self, task_description: str) -> dict:
-        """Analyze task for logical patterns, dependencies, and parallelism - FIXED"""
+        """Analyze task for logical patterns, dependencies, and parallelism"""
         analysis = {
             'has_conditional_logic': False,
             'has_parallelism': False, 
             'has_dependencies': False,
-            'has_sequential_flow': False,
             'conditional_patterns': [],
             'parallel_sections': [],
             'dependency_chains': [],
-            'sequential_indicators': [],
             'complexity_score': 0
         }
         
         text_lower = task_description.lower()
         
-        # Detect conditional logic patterns - IMPROVED
+        # Detect conditional logic patterns
         for pattern_name, pattern in self.conditional_patterns.items():
             matches = re.findall(pattern, task_description, re.IGNORECASE)
             if matches:
@@ -278,18 +270,11 @@ class ActionItemExtractor:
                 analysis['parallel_sections'].append(indicator)
                 analysis['complexity_score'] += 2
         
-        # Detect TRUE dependency keywords (not sequential)
+        # Detect dependency keywords
         for keyword in self.dependency_keywords:
             if keyword in text_lower:
                 analysis['has_dependencies'] = True 
                 analysis['dependency_chains'].append(keyword)
-                analysis['complexity_score'] += 1
-        
-        # Detect sequential indicators (NOT dependencies)
-        for indicator in self.sequential_indicators:
-            if indicator in text_lower:
-                analysis['has_sequential_flow'] = True
-                analysis['sequential_indicators'].append(indicator)
                 analysis['complexity_score'] += 1
                 
         return analysis
@@ -336,78 +321,47 @@ class ActionItemExtractor:
     def _extract_conditional_workflow(self, task_description: str, analysis: dict) -> List[str]:
         """Extract workflow with conditional logic (if/then/else) - FIXED IMPLEMENTATION"""
         workflow_steps = []
-        processed_conditions = set()  # Prevent duplicates
         
-        # Extract sequential steps first (if any) - IMPROVED
-        if analysis.get('has_sequential_flow', False):
-            sequential_steps = self._extract_enhanced_sequential(task_description)
-            # Filter out conditional statements from sequential steps
-            for step in sequential_steps:
-                if not any(cond in step.lower() for cond in ['kung ', 'if ', 'kapag ']):
-                    # Clean up the step before adding
-                    clean_step = step.strip()
-                    # Remove "Of all" and other prefixes
-                    clean_step = re.sub(r'^Of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                    clean_step = re.sub(r'^of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                    if clean_step.lower().startswith('of all'):
-                        clean_step = clean_step[7:]
-                    if clean_step.lower().startswith('of all,'):
-                        clean_step = clean_step[8:]
-                    
-                    if len(clean_step.strip()) > 10:
-                        workflow_steps.append(clean_step.strip())
+        # Extract the core task first (everything before the conditional logic)
+        main_task_parts = []
         
-        # Process conditional patterns (Filipino + English) - IMPROVED
-        processed_matches = set()  # Track processed matches to prevent duplicates
-        conditional_steps = []  # Collect all conditional steps first
+        # Look for the main action before conditional statements
+        sentences = self._smart_sentence_split(task_description)
         
+        for sentence in sentences:
+            sentence = sentence.strip()
+            
+            # Skip if this sentence contains conditional logic keywords
+            if any(keyword in sentence.lower() for keyword in ['if ', 'before anything', 'then ', 'after ']):
+                continue
+            
+            # Extract main preparatory actions
+            if any(verb in sentence.lower() for verb in ['attempt', 'prepare', 'create', 'backup', 'run', 'execute']):
+                if not any(cond in sentence.lower() for cond in ['if', 'fails', 'successful']):
+                    main_task_parts.append(sentence)
+        
+        # Add main task steps
+        workflow_steps.extend(main_task_parts)
+        
+        # Now extract and properly parse conditional logic (English + Filipino)
+        conditional_text = task_description
+        
+        # Process conditional patterns (Filipino + English)
         for pattern_info in analysis['conditional_patterns']:
             pattern_type = pattern_info['type']
             matches = pattern_info['matches']
             
             for match in matches:
-                # Create a unique identifier for this match
-                if isinstance(match, tuple):
-                    match_id = str(match).lower()
-                else:
-                    match_id = match.lower()
-                
-                if match_id in processed_matches:
-                    continue
-                
-                processed_matches.add(match_id)
-                # Create a unique key for this condition to prevent duplicates - IMPROVED
-                if isinstance(match, tuple):
-                    # For tuples, create a more specific key
-                    if len(match) >= 2:
-                        condition_key = f"{match[0].lower().strip()}_{match[1].lower().strip()}"
-                    else:
-                        condition_key = str(match).lower()
-                else:
-                    condition_key = match.lower().strip()
-                
-                # More aggressive duplicate detection for conditionals
-                is_duplicate = False
-                for existing in processed_conditions:
-                    if condition_key in existing or existing in condition_key:
-                        is_duplicate = True
-                        break
-                
-                if is_duplicate:
-                    continue
-                
-                processed_conditions.add(condition_key)
-                
                 # Filipino patterns
                 if pattern_type == 'kung_then':
                     condition, action = match
-                    conditional_steps.append(f"[CONDITIONAL] Kung {condition.strip()}: {action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] Kung {condition.strip()}: {action.strip()}")
                     
                 elif pattern_type == 'kung_pumasa_pumalya':
                     success_item, success_action, failure_action = match
                     workflow_steps.append(f"Execute: Check {success_item.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] Kung pumasa: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] Kung pumalya: {failure_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] Kung pumasa: {success_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] Kung pumalya: {failure_action.strip()}")
                     
                 elif pattern_type == 'pagkatapos_ng':
                     trigger, action = match
@@ -417,87 +371,65 @@ class ActionItemExtractor:
                     trigger, action = match
                     workflow_steps.append(f"[DEPENDENCY] Kapag natapos {trigger.strip()}: {action.strip()}")
                 
-                # English patterns - IMPROVED
+                # English patterns - ENHANCED SUPPORT
                 elif pattern_type == 'if_then':
                     condition, action = match
-                    conditional_steps.append(f"[CONDITIONAL] If {condition.strip()}: {action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] If {condition.strip()}: {action.strip()}")
                     
                 elif pattern_type == 'if_correct_incorrect':
                     credentials, success_action, failure_action = match
-                    conditional_steps.append(f"[CONDITIONAL] If {credentials.strip()} are correct: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] If {credentials.strip()} are incorrect: {failure_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] If {credentials.strip()} are correct: {success_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] If {credentials.strip()} are incorrect: {failure_action.strip()}")
                     
                 elif pattern_type == 'if_success_failure':
                     success_action, failure_action = match
-                    conditional_steps.append(f"[CONDITIONAL] If successful: {success_action.strip()}")
-                    conditional_steps.append(f"[CONDITIONAL] If failed: {failure_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] If successful: {success_action.strip()}")
+                    workflow_steps.append(f"[CONDITIONAL] If failed: {failure_action.strip()}")
+                    
+                elif pattern_type == 'first_afterwards_finally':
+                    action = match if isinstance(match, str) else match[0]
+                    if 'first' in pattern_type.lower():
+                        workflow_steps.append(f"[DEPENDENCY] First: {action.strip()}")
+                    elif 'afterwards' in pattern_type.lower():
+                        workflow_steps.append(f"[DEPENDENCY] Afterwards: {action.strip()}")
+                    elif 'finally' in pattern_type.lower():
+                        workflow_steps.append(f"[DEPENDENCY] Finally: {action.strip()}")
         
-        # Deduplicate conditional steps before adding to workflow
-        seen_conditionals = set()
-        for step in conditional_steps:
-            step_lower = step.lower()
-            # Normalize for comparison
-            step_normalized = step_lower.replace('the credentials are correct', 'credentials are correct')
-            step_normalized = step_normalized.replace('they are incorrect', 'credentials are incorrect')
+        # English migration-specific logic (fallback)
+        if 'migration' in conditional_text.lower() and not workflow_steps:
+            workflow_steps.append("Execute: Run the 'migrate.py' script")
             
-            if step_normalized not in seen_conditionals:
-                seen_conditionals.add(step_normalized)
-                workflow_steps.append(step)
+            # Extract failure condition
+            failure_pattern = r'[Ii]f\s+(?:the\s+)?migration\s+fails?,\s*(.+?)(?=\.|\n|[Ii]f\s+successful)'
+            failure_matches = re.findall(failure_pattern, conditional_text, re.IGNORECASE | re.DOTALL)
+            if failure_matches:
+                workflow_steps.append(f"[CONDITIONAL] If migration fails: {failure_matches[0].strip()}")
+            
+            # Extract success condition  
+            success_pattern = r'[Ii]f\s+successful,\s*(.+?)(?=\.|\n|$)'
+            success_matches = re.findall(success_pattern, conditional_text, re.IGNORECASE | re.DOTALL)
+            if success_matches:
+                workflow_steps.append(f"[CONDITIONAL] If migration succeeds: {success_matches[0].strip()}")
+        
+        # Pattern for "Before X, do Y"
+        before_pattern = r'[Bb]efore\s+(.+?),\s*(.+?)(?=[.]|$)'
+        before_matches = re.findall(before_pattern, task_description, re.IGNORECASE)
+        
+        for trigger, action in before_matches:
+            if 'anything else' in trigger.lower():
+                workflow_steps.insert(0, f"[PREREQUISITE] {action.strip()}")
+            else:
+                workflow_steps.append(f"[PREREQUISITE] Before {trigger.strip()}: {action.strip()}")
         
         # FALLBACK: If we have minimal workflow steps, supplement with sequential extraction
         if len(workflow_steps) < 3:
             sequential_steps = self._extract_enhanced_sequential(task_description)
-            # Add sequential steps that aren't already covered and aren't conditional
+            # Add sequential steps that aren't already covered
             for step in sequential_steps:
-                step_lower = step.lower()
-                if not any(cond in step_lower for cond in ['kung ', 'if ', 'kapag ']):
-                    if not any(step_lower in existing.lower() for existing in workflow_steps):
-                        # Clean up the step before adding
-                        clean_step = step.strip()
-                        # Remove "Of all" and other prefixes
-                        clean_step = re.sub(r'^Of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                        clean_step = re.sub(r'^of all,?\s*', '', clean_step, flags=re.IGNORECASE)
-                        if clean_step.lower().startswith('of all'):
-                            clean_step = clean_step[7:]
-                        if clean_step.lower().startswith('of all,'):
-                            clean_step = clean_step[8:]
-                        
-                        if len(clean_step.strip()) > 10:
-                            workflow_steps.append(clean_step.strip())
+                if not any(step.lower() in existing.lower() for existing in workflow_steps):
+                    workflow_steps.append(step)
         
-        # Final deduplication - IMPROVED
-        seen = set()
-        final_steps = []
-        for step in workflow_steps:
-            step_lower = step.lower().strip()
-            # More aggressive duplicate detection for conditionals
-            is_duplicate = False
-            for existing in seen:
-                # Check if this step is contained in or contains an existing step
-                if step_lower in existing or existing in step_lower:
-                    is_duplicate = True
-                    break
-                # Special check for conditional statements
-                if '[CONDITIONAL]' in step and '[CONDITIONAL]' in existing:
-                    # Compare the condition part only - IMPROVED
-                    step_condition = step_lower.split('if ')[-1] if 'if ' in step_lower else step_lower
-                    existing_condition = existing.split('if ')[-1] if 'if ' in existing else existing
-                    
-                    # Normalize the conditions for comparison
-                    step_condition = step_condition.replace('the credentials are correct', 'credentials are correct')
-                    step_condition = step_condition.replace('they are incorrect', 'credentials are incorrect')
-                    existing_condition = existing_condition.replace('the credentials are correct', 'credentials are correct')
-                    existing_condition = existing_condition.replace('they are incorrect', 'credentials are incorrect')
-                    
-                    if step_condition == existing_condition:
-                        is_duplicate = True
-                        break
-            
-            if not is_duplicate and len(step.strip()) > 10:
-                seen.add(step_lower)
-                final_steps.append(step.strip())
-        
-        return final_steps[:10]
+        return workflow_steps[:10]
     
     def _extract_parallel_workflow(self, task_description: str, analysis: dict) -> List[str]:
         """Extract workflow with parallel/independent tasks - FIXED IMPLEMENTATION"""
@@ -592,53 +524,29 @@ class ActionItemExtractor:
         return workflow_steps[:15]
     
     def _extract_enhanced_sequential(self, task_description: str) -> List[str]:
-        """Enhanced sequential extraction with Filipino support - FIXED"""
-        steps = []
-        
+        """Enhanced sequential extraction with Filipino support"""
         # First, try to extract Filipino sequential patterns
         filipino_sequential = self._extract_filipino_sequential(task_description)
-        if filipino_sequential and len(filipino_sequential) >= 2:
-            steps.extend(filipino_sequential)
+        if filipino_sequential and len(filipino_sequential) >= 3:
+            return filipino_sequential
             
         # Try explicit steps 
         explicit_steps = self._extract_explicit_steps(task_description)
-        if explicit_steps and len(explicit_steps) >= 2:
-            steps.extend(explicit_steps)
+        if explicit_steps and len(explicit_steps) >= 3:
+            return explicit_steps
             
         # Try structured breakdown 
         structured_steps = self._extract_structured_breakdown(task_description)
-        if structured_steps and len(structured_steps) >= 2:
-            steps.extend(structured_steps)
+        if structured_steps and len(structured_steps) >= 3:
+            return structured_steps
             
         # Try sentence-based extraction
         sentence_steps = self._extract_sentence_based(task_description)
         if sentence_steps:
-            steps.extend(sentence_steps)
-        
-        # If we still don't have enough steps, try intelligent sentence splitting
-        if len(steps) < 3:
-            intelligent_steps = self._extract_intelligent_sequential(task_description)
-            if intelligent_steps:
-                steps.extend(intelligent_steps)
-        
-        # Remove duplicates while preserving order - IMPROVED
-        seen = set()
-        unique_steps = []
-        for step in steps:
-            step_lower = step.lower().strip()
-            # More aggressive duplicate detection
-            is_duplicate = False
-            for existing in seen:
-                # Check if this step is contained in or contains an existing step
-                if step_lower in existing or existing in step_lower:
-                    is_duplicate = True
-                    break
+            return sentence_steps
             
-            if not is_duplicate and len(step.strip()) > 10:
-                seen.add(step_lower)
-                unique_steps.append(step.strip())
-        
-        return unique_steps[:10]  # Limit to 10 steps
+        # Final fallback
+        return [f"Complete task: {task_description}"]
     
     def _extract_filipino_sequential(self, task_description: str) -> List[str]:
         """Extract Filipino sequential patterns (Una, Pagkatapos, Panghuli, etc.)"""
@@ -666,67 +574,6 @@ class ActionItemExtractor:
                 
                 if len(clean_sentence.strip()) > 10:
                     steps.append(clean_sentence.strip())
-        
-        return steps
-    
-    def _extract_intelligent_sequential(self, task_description: str) -> List[str]:
-        """Intelligent sequential extraction that breaks down complex sentences - FIXED"""
-        steps = []
-        
-        # Split into sentences first
-        sentences = self._smart_sentence_split(task_description)
-        
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if len(sentence) < 15:  # Skip very short sentences
-                continue
-            
-            # Check for action verbs that indicate a step
-            action_verbs = [
-                'create', 'build', 'implement', 'develop', 'write', 'code', 'design',
-                'analyze', 'review', 'test', 'validate', 'deploy', 'configure', 'setup',
-                'install', 'update', 'delete', 'remove', 'fix', 'debug', 'optimize',
-                'refactor', 'document', 'plan', 'research', 'investigate', 'explore',
-                'generate', 'produce', 'compile', 'run', 'execute', 'perform', 'complete',
-                'prepare', 'initialize', 'start', 'finish', 'end', 'begin', 'launch',
-                'gumawa', 'bumuo', 'magbuild', 'mag-implement', 'isulat', 'idisenyo',
-                'pag-aralan', 'i-review', 'i-test', 'i-validate', 'i-deploy', 'i-configure',
-                'i-setup', 'i-install', 'i-update', 'tanggalin', 'ayusin', 'i-debug',
-                'i-optimize', 'i-refactor', 'i-document', 'magplano', 'mag-research'
-            ]
-            
-            # Check if sentence contains action verbs and is not conditional
-            if any(verb in sentence.lower() for verb in action_verbs):
-                if not any(cond in sentence.lower() for cond in ['if ', 'kung ', 'kapag ']):
-                    # Clean up the sentence
-                    clean_sentence = sentence
-                    
-                    # Remove common prefixes - IMPROVED
-                    clean_sentence = re.sub(r'^(?:First of all|First|Una sa lahat|Una),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    # Fix the "Of all" issue specifically - MORE AGGRESSIVE
-                    clean_sentence = re.sub(r'^Of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^Of all\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^of all\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    
-                    # Direct string replacement as fallback
-                    if clean_sentence.lower().startswith('of all'):
-                        clean_sentence = clean_sentence[7:]  # Remove "Of all" (7 characters)
-                    if clean_sentence.lower().startswith('of all,'):
-                        clean_sentence = clean_sentence[8:]  # Remove "Of all," (8 characters)
-                    clean_sentence = re.sub(r'^(?:Afterwards|Then|Pagkatapos),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^(?:Finally|Lastly|Panghuli),?\s*', 
-                                          '', clean_sentence, flags=re.IGNORECASE)
-                    
-                    # Fix common issues - IMPROVED
-                    clean_sentence = re.sub(r'^Of all,?\s*', '', clean_sentence, flags=re.IGNORECASE)
-                    clean_sentence = re.sub(r'^,\s*', '', clean_sentence)  # Remove leading commas
-                    clean_sentence = re.sub(r'^\s*,\s*', '', clean_sentence)  # Remove leading commas with spaces
-                    
-                    if len(clean_sentence.strip()) > 15:
-                        steps.append(clean_sentence.strip())
         
         return steps
     
