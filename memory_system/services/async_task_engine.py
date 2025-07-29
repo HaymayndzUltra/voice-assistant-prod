@@ -9,7 +9,7 @@ import asyncio
 from typing import Any, List, Dict
 
 from memory_system.services.telemetry import span
-from workflow_memory_intelligence import execute_task_intelligently_async
+from workflow_memory_intelligence_fixed import execute_task_intelligently_async
 
 __all__ = ["AsyncTaskEngine"]
 
