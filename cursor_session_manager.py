@@ -21,7 +21,11 @@ class CursorSessionManager:
     def __init__(self, state_file: str | None = None, autosave_interval: int = 30):
         self.state_file = state_file or self.DEFAULT_STATE_FILE
         self._state: Dict[str, Any] = {}
-        self._lock = threading.Lock()
+        # Use a *re-entrant* lock so that internal helpers that end up calling
+        # other public methods (e.g. _save_state_to_disk -> dump_markdown ->
+        # session_manager.get_state) do **not** dead-lock when they try to
+        # acquire the same lock in the same thread.
+        self._lock = threading.RLock()
         self.autosave_interval = autosave_interval
         self._stop_event = threading.Event()
         self._autosave_thread: Optional[threading.Thread] = None
