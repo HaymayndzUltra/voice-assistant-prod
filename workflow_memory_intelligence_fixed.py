@@ -245,7 +245,12 @@ class IntelligentTaskChunker:
         
         # Use integrated chunking strategy
         action_items = self._integrated_chunking(task_description)
-        logger.info(f"📝 Extracted {len(action_items)} action items using integrated chunking")
+
+        # ------------------------------------------------------------------
+        # 🧹 New: Deduplicate & normalise to avoid redundant TODOs
+        # ------------------------------------------------------------------
+        action_items = self._deduplicate_actions(action_items)
+        logger.info(f"📝 Extracted {len(action_items)} unique action items after deduplication")
         
         # Create subtasks
         subtasks = []
@@ -335,6 +340,44 @@ class IntelligentTaskChunker:
             return 30
         else:
             return 10
+
+    # ------------------------------------------------------------------
+    # 🔬 Advanced post-processing helpers (new)
+    # ------------------------------------------------------------------
+
+    def _deduplicate_actions(self, actions: List[str]) -> List[str]:
+        """Remove near-duplicate or semantically identical action strings.
+
+        Uses simple textual normalisation + fuzzy ratio (difflib) to identify
+        overlaps. This lightweight approach avoids heavy NLP dependencies but
+        is sufficient for obvious redundancy such as "-audit code" vs
+        "audit the code"."""
+        from difflib import SequenceMatcher
+
+        def norm(txt: str) -> str:
+            txt = txt.lower().strip(" -•*:\t\n")  # strip bullet markers & punc
+            txt = re.sub(r"[^a-z0-9\s]", "", txt)  # keep alphanum + space
+            txt = re.sub(r"\s+", " ", txt)
+            return txt.strip()
+
+        unique: List[str] = []
+        seen_norms: List[str] = []
+
+        for action in actions:
+            n = norm(action)
+            if not n:
+                continue
+            # Check similarity against already kept items
+            is_dup = False
+            for prev in seen_norms:
+                if SequenceMatcher(None, n, prev).ratio() >= 0.8:
+                    is_dup = True
+                    break
+            if not is_dup:
+                unique.append(action.strip())
+                seen_norms.append(n)
+
+        return unique
 
 
 class SmartTaskExecutionManager:
