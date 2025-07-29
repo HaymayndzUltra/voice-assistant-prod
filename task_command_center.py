@@ -9,8 +9,24 @@ import json
 from typing import List, Dict, Any
 from task_interruption_manager import auto_task_handler, get_interruption_status, resume_all_interrupted_tasks
 from todo_manager import list_open_tasks, add_todo, mark_done, delete_todo, show_task_details, new_task, hard_delete_task
-# 🚀 Intelligent workflow integration
-from workflow_memory_intelligence import execute_task_intelligently
+# 🚀 Intelligent workflow integration (FIXED VERSION)
+try:
+    from workflow_memory_intelligence_fixed import execute_task_intelligently
+    print("✅ Using fixed intelligent execution system")
+except ImportError:
+    from workflow_memory_intelligence import execute_task_intelligently
+    print("⚠️ Using original intelligent execution system")
+
+# 🔄 AUTO-SYNC INTEGRATION
+try:
+    from auto_sync_manager import get_auto_sync_manager, auto_sync
+    print("✅ Auto-sync system integrated")
+except ImportError:
+    print("⚠️ Auto-sync system not available")
+    def get_auto_sync_manager():
+        return None
+    def auto_sync():
+        return {"status": "error", "error": "Auto-sync not available"}
 
 class TaskCommandCenter:
     """Interactive command and control center for task management"""
@@ -38,8 +54,26 @@ class TaskCommandCenter:
         
         if status['current_task']:
             print(f"🚀 ACTIVE TASK:")
-            print(f"   {status['current_task']['description']}")
-            print(f"   ID: {status['current_task']['task_id']}")
+            # Handle both string (task ID) and dict formats
+            if isinstance(status['current_task'], str):
+                # It's a task ID, get the full task details
+                from todo_manager import list_open_tasks
+                tasks = list_open_tasks()
+                current_task = None
+                for task in tasks:
+                    if task['id'] == status['current_task']:
+                        current_task = task
+                        break
+                
+                if current_task:
+                    print(f"   {current_task['description']}")
+                    print(f"   ID: {current_task['id']}")
+                else:
+                    print(f"   Task ID: {status['current_task']} (details not found)")
+            else:
+                # It's already a dictionary
+                print(f"   {status['current_task']['description']}")
+                print(f"   ID: {status['current_task']['task_id']}")
         else:
             print("ℹ️  No active task")
         
@@ -73,6 +107,14 @@ class TaskCommandCenter:
         while True:
             try:
                 choice = input(f"Enter your choice (0-{max_choice}): ").strip()
+                
+                # Handle empty input
+                if not choice:
+                    print(f"❌ Please enter a number between 0 and {max_choice}")
+                    continue
+                
+                # No length restrictions - allow any input length
+                
                 choice_num = int(choice)
                 if 0 <= choice_num <= max_choice:
                     return choice_num
@@ -121,11 +163,21 @@ class TaskCommandCenter:
         self.show_current_status()
         
         print("Enter your new task description:")
+        print("💡 You can paste long descriptions here")
         task_description = input("> ").strip()
         
         if task_description:
+            # Show a preview for long descriptions
+            if len(task_description) > 100:
+                print(f"\n📋 Task Preview: {task_description[:100]}...")
+                print(f"📏 Total length: {len(task_description)} characters")
+            
             result = auto_task_handler(task_description)
             print(f"\n{result}")
+            
+            # 🔄 Auto-sync after task creation
+            auto_sync()
+            print("🔄 State files auto-synced")
         else:
             print("❌ Task description cannot be empty")
         
@@ -142,8 +194,27 @@ class TaskCommandCenter:
         status = get_interruption_status()
         
         if status['current_task']:
-            print(f"Current task: {status['current_task']['description']}")
-            print(f"Task ID: {status['current_task']['task_id']}")
+            # Handle both string (task ID) and dict formats
+            if isinstance(status['current_task'], str):
+                # It's a task ID, get the full task details
+                from todo_manager import list_open_tasks
+                tasks = list_open_tasks()
+                current_task = None
+                for task in tasks:
+                    if task['id'] == status['current_task']:
+                        current_task = task
+                        break
+                
+                if current_task:
+                    print(f"Current task: {current_task['description']}")
+                    print(f"Task ID: {current_task['id']}")
+                else:
+                    print(f"Current task ID: {status['current_task']} (details not found)")
+                    print(f"Task ID: {status['current_task']}")
+            else:
+                # It's already a dictionary
+                print(f"Current task: {status['current_task']['description']}")
+                print(f"Task ID: {status['current_task']['task_id']}")
             
             confirm = input("\nAre you sure you want to interrupt this task? (y/N): ").strip().lower()
             if confirm in ['y', 'yes']:
@@ -441,6 +512,7 @@ class TaskCommandCenter:
         print("🧠 INTELLIGENT TASK EXECUTION:")
         print("=" * 35)
         print("Enter your task description (will be analyzed and executed intelligently):")
+        print("💡 You can paste long descriptions here - they will be automatically chunked into TODOs")
 
         task_description = input("> ").strip()
 
@@ -448,6 +520,14 @@ class TaskCommandCenter:
             print("❌ Task description cannot be empty")
             input("\nPress Enter to continue...")
             return
+        
+        # Show a preview of the task description
+        if len(task_description) > 100:
+            print(f"\n📋 Task Preview: {task_description[:100]}...")
+            print(f"📏 Total length: {len(task_description)} characters")
+            print("🔄 This will be automatically chunked into manageable TODOs")
+        else:
+            print(f"\n📋 Task: {task_description}")
 
         # Execute task using intelligent workflow system
         print("\n🚀 Processing task with intelligent executor...\n")
@@ -456,6 +536,10 @@ class TaskCommandCenter:
             # Pretty-print the JSON result for the user
             print("\n✅ Intelligent Execution Result:")
             print(json.dumps(result, indent=2))
+            
+            # 🔄 Auto-sync after intelligent execution
+            auto_sync()
+            print("🔄 State files auto-synced")
         except Exception as e:
             # Catch any unexpected errors to ensure command center stability
             print(f"❌ An error occurred during intelligent execution: {e}")

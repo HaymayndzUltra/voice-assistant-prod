@@ -39,7 +39,24 @@ def main():
     if status['current_task'] or status['interrupted_tasks_count'] > 0:
         print("📊 Current Status:")
         if status['current_task']:
-            print(f"   🚀 Active: {status['current_task']['description']}")
+            # Handle both string (task ID) and dict formats
+            if isinstance(status['current_task'], str):
+                # It's a task ID, get the full task details
+                from todo_manager import list_open_tasks
+                tasks = list_open_tasks()
+                current_task = None
+                for task in tasks:
+                    if task['id'] == status['current_task']:
+                        current_task = task
+                        break
+                
+                if current_task:
+                    print(f"   🚀 Active: {current_task['description']}")
+                else:
+                    print(f"   🚀 Active Task ID: {status['current_task']} (details not found)")
+            else:
+                # It's already a dictionary
+                print(f"   🚀 Active: {status['current_task']['description']}")
         if status['interrupted_tasks_count'] > 0:
             print(f"   ⏸️  Waiting: {status['interrupted_tasks_count']} task(s)")
             for task in status['interrupted_tasks']:

@@ -152,9 +152,30 @@ class TaskInterruptionManager:
         lines = ["📊 Task Interruption Status:"]
         
         if status['current_task']:
-            lines.append(f"   🚀 Current Task: {status['current_task']['description']}")
-            lines.append(f"      ID: {status['current_task']['task_id']}")
-            lines.append(f"      Status: {status['current_task']['status']}")
+            # Handle both string (task ID) and dict formats
+            if isinstance(status['current_task'], str):
+                # It's a task ID, get the full task details
+                from todo_manager import list_open_tasks
+                tasks = list_open_tasks()
+                current_task = None
+                for task in tasks:
+                    if task['id'] == status['current_task']:
+                        current_task = task
+                        break
+                
+                if current_task:
+                    lines.append(f"   🚀 Current Task: {current_task['description']}")
+                    lines.append(f"      ID: {current_task['id']}")
+                    lines.append(f"      Status: {current_task['status']}")
+                else:
+                    lines.append(f"   🚀 Current Task ID: {status['current_task']} (details not found)")
+                    lines.append(f"      ID: {status['current_task']}")
+                    lines.append(f"      Status: Unknown")
+            else:
+                # It's already a dictionary
+                lines.append(f"   🚀 Current Task: {status['current_task']['description']}")
+                lines.append(f"      ID: {status['current_task']['task_id']}")
+                lines.append(f"      Status: {status['current_task']['status']}")
         else:
             lines.append("   ℹ️  No current task")
         

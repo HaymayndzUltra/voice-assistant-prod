@@ -1,83 +1,36 @@
-# AUTONOMOUS WORKFLOW SYSTEM - PRACTICAL BACKGROUND AGENT PROMPT
+ang iyong tungkulin ngayon ay maging isang "AI Prompt Architect". Ang iyong misyon ay bumuo ng isang kumpletong at strategic na `memory-bank/universal-background-agent-prompt.md` para sa ating Background Agent.**
 
-## 🎯 **GOAL**: Build Simple Session Continuity System for Cursor
-
-**CONTEXT**: Need simple system na maalala ang ginagawa mo sa cursor across sessions, at maging proactive sa pag-suggest ng next steps.
+**Ang iyong output ay dapat ang kumpletong, filled-out na `UNIVERSAL` prompt, wala nang iba. Sundin mo ang mga panuntunan sa ibaba para sa bawat section.**
 
 ---
 
-## 🚀 **SIMPLIFIED BACKGROUND AGENT PROMPT**
+### **Paano Buuin ang `UNIVERSAL` Prompt:**
 
-```
+#### **Para sa `# 🚀 TOP-LEVEL GOAL`:**
+*   **Gawin:** I-summarize ang pinaka-layunin ng user sa isang pangungusap na nakatuon sa **OUTCOME**, hindi sa proseso.
+*   **Halimbawa:** Kung sinabi ng user na "Gusto kong i-refactor ang code para gumamit ng async", ang isusulat mo ay "Evolve the system to handle concurrent tasks efficiently."
 
+#### **Para sa `# 1️⃣ CONTEXT`:**
+*   **Gawin:** Huwag maglista ng mga specific na file maliban kung iyon lang talaga ang sakop. Sa halip, hanapin at ituro ang **"Source of Truth"**.
+*   **Itanong sa sarili:** "Saan sa codebase nakasulat ang configuration, manifest, o entry point na nagde-define sa mga relevant na components?"
+*   **Halimbawa:** Imbes na "Tingnan ang `agent_A.py`, `agent_B.py`", ang isusulat mo ay "The list of active agents is defined in `config/startup_config.yaml`. Use this as the starting point for your analysis."
 
-## OBJECTIVE:
-Create simple system na maalala ang current task, progress, at context across cursor sessions.
+#### **Para sa `# 2️⃣ DELIVERABLES`:**
+*   **Gawin:** Ilahad ang mga **verifiable artifacts** na kailangang i-produce. Maging tiyak sa kung ano ang mababago o madadagdag.
+*   **Halimbawa:** "One modified file: `task_command_center.py`", "A new markdown file: `performance_benchmark.md`".
 
-## ANALYZE EXISTING FILES:
-- task_automation_hub.py - current task management
-- task_state_manager.py - state persistence  
-- session_action_logger.py - session tracking
-- task-state.json - current state
-- memory-bank/ - existing memory system
+#### **Para sa `# 3️⃣ TASK BREAKDOWN`:**
+*   **Gawin:** Bumuo ng isang high-level, phased na plano. Huwag magbigay ng micro-level na instructions.
+*   **Halimbawa:** "1. Analyze performance using the specified tool. 2. Implement the optimization. 3. Validate the changes using the test suite."
 
-## CREATE THESE SIMPLE FILES:
+#### **Para sa `# 4️⃣ CONSTRAINTS / ACCEPTANCE CRITERIA`:**
+*   **Gawin:** Mag-focus sa **"Definition of Done"** at mga **"Quality Gates"**.
+*   **Halimbawa:** "The final code must pass all tests in the `tests/` directory when `pytest` is run.", "The public API of `module_X` must not be altered."
 
-1. **cursor_session_manager.py** (NEW)
-   - Save current task every 30 seconds
-   - Detect when cursor session ends/disconnects
-   - Auto-resume from last state when reconnected
-   - Store: current file, cursor position, task description
+#### **Para sa `# 5️⃣ RESOURCES THE AGENT MAY USE`:**
+*   **Gawin:** Bigyan siya ng kalayaan pero may gabay. I-specify ang mga **klase ng tools** na pwede niyang gamitin.
+*   **Halimbawa:** "You may use any built-in Python profiling tools like `cProfile`.", "You are authorized to read any `.py`, `.json`, and `.yaml` file in the repository to gather context."
 
-2. **cursor_memory_bridge.py** (NEW) 
-   - Connect cursor state to memory-bank/
-   - Save task progress to memory-bank/current-session.md
-   - Load previous session on startup
-   - Simple natural language commands
-
-3. **ENHANCE EXISTING**:
-   - task_state_manager.py: Add cursor session tracking
-   - session_action_logger.py: Add disconnection detection
-   - auto_load_memory.sh: Load cursor session state
-
-## NATURAL LANGUAGE COMMANDS:
-- "anong susunod na task" → Show next task from memory
-- "ipagpatuloy muna" → Resume from last cursor position
-- "kung saan ako natigil" → Show last known state
-- "tumingin ka sa memory hub folder" → Analyze memory context
-
-## SIMPLE STATE STRUCTURE:
-```json
-{
-  "cursor_session": {
-    "current_file": "file.py",
-    "cursor_line": 42,
-    "current_task": "fixing import error",
-    "progress": 0.75,
-    "last_activity": "2024-01-01 10:30:00"
-  },
-  "task_history": [
-    {"task": "fixed syntax error", "completed": "2024-01-01 10:25:00"}
-  ]
-}
-```
-
-## SUCCESS CRITERIA:
-- Cursor remembers current task across sessions
-- Natural language commands work
-- Simple and lightweight
-- Integrates with existing memory-bank/
-
-COMMIT: "CURSOR SESSION CONTINUITY: Simple system for remembering tasks across cursor sessions"
-```
-
----
-
-## 🎯 **WHAT THIS DOES:**
-
-1. **Simple Session Memory** - Remembers current file, cursor position, task
-2. **Auto-Resume** - Continues from where you left off
-3. **Natural Commands** - "anong susunod na task", "ipagpatuloy muna"
-4. **Lightweight** - No complex architecture, just practical functionality
-
-**Much better na ba?** 😅 
+#### **Para sa `# 7️⃣ OUTPUT FORMAT`:**
+*   **Gawin:** Maging malinaw kung ang output ay code, text, o pareho.
+*   **Halimbawa:** "(D) Mixture: First, apply code-edit calls (B). Second, create the analysis report as a new file."

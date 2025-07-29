@@ -86,10 +86,22 @@ def _save(data: Dict[str, Any]) -> None:
         dump_markdown()
     except Exception:
         pass
+    
+    # 🔄 Auto-sync state files after any data change
+    try:
+        from auto_sync_manager import auto_sync
+        auto_sync()
+    except Exception:
+        pass  # Don't fail if auto-sync is not available
 
 
 def _timestamp() -> str:
-    return datetime.utcnow().isoformat()
+    """Get current Philippines time in ISO format"""
+    from datetime import timezone, timedelta
+    utc_now = datetime.utcnow()
+    philippines_tz = timezone(timedelta(hours=8))
+    ph_time = utc_now.astimezone(philippines_tz)
+    return ph_time.isoformat()
 
 
 # ------------------------------------------------------------------
@@ -99,7 +111,11 @@ def _timestamp() -> str:
 def new_task(description: str) -> str:
     data = _load()
     # Create a more descriptive task ID that's not truncated
-    timestamp = datetime.utcnow().strftime('%Y%m%dT%H%M%S')
+    from datetime import timezone, timedelta
+    utc_now = datetime.utcnow()
+    philippines_tz = timezone(timedelta(hours=8))
+    ph_time = utc_now.astimezone(philippines_tz)
+    timestamp = ph_time.strftime('%Y%m%dT%H%M%S')
     # Use first 50 characters of description for better readability
     desc_part = description.replace(' ', '_')[:50]
     task_id = f"{timestamp}_{desc_part}"

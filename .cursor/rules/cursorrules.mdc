@@ -1,25 +1,61 @@
----
-alwaysApply: true
-description: |
-  Auto-load and auto-save persistent memory every session and after major changes.
----
 
 - On session start:
     - Run `mcp_memory_read_graph` (para i-load ang memory sa lahat ng MCP server na naka-define).
     - Basahin at i-load lahat ng `memory-bank/*.md` bilang context (kung meron).
+    - **SYNC ALL STATE FILES** to ensure consistency:
+        • Read `todo-tasks.json` as source of truth
+        • Update `cursor_state.json` with latest task
+        • Update `task-state.json` with current execution state
+        • Update `task_interruption_state.json` with active task
+        • Update `memory-bank/current-session.md` with latest info
+
 - After any significant code change, new decision, or bug fix:
     - Run `mcp_memory_store` (isave ang summary ng pagbabago).
     - I-append din ang summary sa tamang `memory-bank/*.md`.
+    - **UPDATE ALL STATE FILES** to maintain consistency:
+        • Sync `cursor_state.json` with current task
+        • Update `task-state.json` with progress
+        • Ensure `task_interruption_state.json` reflects current state
+        • Update `memory-bank/current-session.md` with latest activity
+
 - For all Q&A:
     - Laging unahin ang MCP memory at memory-bank para sa sagot.
+    - **VERIFY STATE CONSISTENCY** before answering:
+        • Check if all state files are in sync
+        • Use `todo-tasks.json` as primary source
+        • Ensure timestamps are consistent
 
 # === Cursor Session Continuity Add-on ===
 - After any file save, code edit, or test run:
-    - Prefer latest context from:
-        • cursor_state.json
-        • task-state.json
-        • todo-tasks.json
-        • memory-bank/current-session.md
+    - **ENFORCE STATE SYNCHRONIZATION**:
+        • Read latest task from `todo-tasks.json` (source of truth)
+        • Update `cursor_state.json` with current task and progress
+        • Update `task-state.json` with execution details
+        • Update `task_interruption_state.json` with active task ID
+        • Update `memory-bank/current-session.md` with latest session info
     - Use these to answer questions like "anong memory mo ngayon" or "anong susunod na gagawin".
+
+- On disconnect / reconnect events:
+    - **RESUME FROM CONSISTENT STATE**:
+        • Read `todo-tasks.json` to get current tasks
+        • Update `cursor_state.json` to resume cursor position
+        • Sync all other state files to match current reality
+        • Ensure no duplicate tasks exist
+
+# === CONSISTENCY ENFORCEMENT ===
+- **PREVENT DUPLICATE TASKS**:
+    • Before creating new task, check `todo-tasks.json` for existing tasks with same description
+    • If duplicate found, reuse existing task instead of creating new one
+    • Update existing task with new TODOs if needed
+
+- **MAINTAIN TIMESTAMP CONSISTENCY**:
+    • Use ISO format timestamps consistently
+    • Update `last_activity` and `disconnected_at` timestamps
+    • Ensure all state files have consistent timestamps
+
+- **VALIDATE STATE INTEGRITY**:
+    • Check that `task-state.json` matches active task in `todo-tasks.json`
+    • Verify `task_interruption_state.json` points to valid task ID
+    • Ensure `cursor_state.json` reflects current reality
 - On disconnect / reconnect events:
     - Look at cursor_state.json to resume cursor position.
