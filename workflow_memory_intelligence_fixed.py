@@ -176,6 +176,17 @@ class ActionItemExtractor:
     """Intelligent task decomposer with logical flow analysis and parallelism detection"""
     
     def __init__(self):
+        # Common step separators across English, Filipino and Taglish
+        self.separators_regex = re.compile(
+            r"(?:,|;|\band\b|\bor\b|\bat\b|\bett\b|\bthen\b|\bpagkatapos\b|\bbago\b|\bkapag\b|\bkung\b)",
+            flags=re.IGNORECASE,
+        )
+
+        # Bullet/number prefix remover
+        self.prefix_regex = re.compile(r"^\s*(?:[-*•]|\d+\.?|\d+\)|(?:Step|Hakbang)\s*\d+:?)\s*", re.IGNORECASE)
+        # Noise words
+        self.noise_words = set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for'])
+        
         self.action_verbs = [
             'create', 'build', 'implement', 'develop', 'write', 'code', 'design',
             'analyze', 'review', 'test', 'validate', 'deploy', 'configure', 'setup',
@@ -221,21 +232,34 @@ class ActionItemExtractor:
         self.sentence_delimiters = ['.', '!', '?', ';']
     
     def extract_action_items(self, task_description: str) -> List[str]:
-        """Intelligent task decomposition with logical flow analysis"""
-        
-        # PHASE 1: Analyze task complexity and logical structure
-        task_analysis = self._analyze_task_structure(task_description)
-        
-        # PHASE 2: Apply appropriate extraction strategy based on analysis
-        if task_analysis['has_conditional_logic']:
-            return self._extract_conditional_workflow(task_description, task_analysis)
-        elif task_analysis['has_parallelism']:
-            return self._extract_parallel_workflow(task_description, task_analysis)
-        elif task_analysis['has_dependencies']:
-            return self._extract_dependency_workflow(task_description, task_analysis)
+        """Extract action items from multilingual (Filipino/English/Taglish) description."""
+        # Normalise whitespace
+        normalized = re.sub(r"\s+", " ", task_description).strip()
+
+        # First, detect explicit enumeration (e.g., "1. Do this 2. Do that")
+        numbered = re.split(r"\b\d+[.)]\s*", normalized)
+        segments = []
+        if len(numbered) > 1:
+            segments.extend([s.strip() for s in numbered if s.strip()])
         else:
-            # Fallback to enhanced sequential extraction
-            return self._extract_enhanced_sequential(task_description)
+            # Fallback: split by separators
+            segments = [s.strip() for s in self.separators_regex.split(normalized) if s.strip()]
+
+        # Clean prefixes and filter
+        cleaned_actions: List[str] = []
+        for seg in segments:
+            seg = self.prefix_regex.sub("", seg).strip()
+            if not seg:
+                continue
+            if self._is_noise(seg):
+                continue
+            cleaned_actions.append(seg)
+
+        if not cleaned_actions:
+            cleaned_actions = [f"Complete: {normalized}"]
+
+        # Cap to reasonable number of steps (10)
+        return cleaned_actions[:10]
     
     def _analyze_task_structure(self, task_description: str) -> dict:
         """Analyze task for logical patterns, dependencies, and parallelism"""
@@ -748,9 +772,8 @@ class ActionItemExtractor:
         return sentence
     
     def _is_noise(self, text: str) -> bool:
-        """Check if text is noise"""
-        noise_words = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']
-        return text.lower() in noise_words
+        words = text.lower().split()
+        return len(words) == 1 and words[0] in self.noise_words
 
 
 class IntelligentTaskChunker:
