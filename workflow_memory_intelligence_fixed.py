@@ -243,9 +243,10 @@ class IntelligentTaskChunker:
         complexity = self.complexity_analyzer.analyze_complexity(task_description)
         logger.info(f"📊 Complexity: {complexity.level} (score: {complexity.score})")
         
-        # Use integrated chunking strategy
-        action_items = self._integrated_chunking(task_description)
-        logger.info(f"📝 Extracted {len(action_items)} action items using integrated chunking")
+        # Use integrated chunking strategy and post-process results to ensure quality
+        raw_action_items = self._integrated_chunking(task_description)
+        action_items = self._post_process_actions(raw_action_items)
+        logger.info(f"📝 Extracted {len(action_items)} final action items after post-processing (raw: {len(raw_action_items)})")
         
         # Create subtasks
         subtasks = []
@@ -275,53 +276,64 @@ class IntelligentTaskChunker:
     
     def _integrated_chunking(self, task_description: str) -> List[str]:
         """Integrated chunking using auto-detect chunker with fallback strategies"""
-        
-        # If auto-detect chunker is available, try it first (PRIORITY)
+
+        actions: List[str] = []
+
+        # 1️⃣ Prefer auto-detect chunker for splitting large descriptions into coherent chunks.
         if self.auto_chunker_available:
             try:
-                logger.info("🤖 Using auto-detect chunker for intelligent memory-optimized chunking...")
-                
-                # Auto-detect optimal chunking
+                logger.info("🤖 Using auto-detect chunker for memory-optimized splitting…")
                 chunks, analysis = self.auto_chunker.auto_chunk(task_description)
-                
-                logger.info(f"   Auto-analysis: {analysis['structure_complexity']:.2f} complexity, {analysis['optimal_chunk_size']} chars optimal")
-                logger.info(f"   Strategy used: {analysis['strategy_used']}")
-                
-                # Validate chunks for AI memory management
-                if chunks and len(chunks) <= 10:  # Reasonable number of chunks for AI memory
-                    logger.info(f"✅ Auto-detect chunker created {len(chunks)} memory-optimized chunks")
-                    return chunks
-                else:
-                    logger.warning("⚠️ Auto-detect chunker produced too many chunks, falling back...")
-                    
+                logger.info(
+                    f"   Auto-analysis ⇒ complexity={analysis.get('structure_complexity')} optimal={analysis.get('optimal_chunk_size')} strategy={analysis.get('strategy_used')}"
+                )
+                for ch in chunks:
+                    actions.extend(self.action_extractor.extract_action_items(ch))
             except Exception as e:
-                logger.warning(f"⚠️ Auto-detect chunker failed: {e}, falling back...")
-        
-        # If command_chunker is available, try it next
-        elif hasattr(self, 'command_chunker_available') and self.command_chunker_available:
+                logger.warning(f"⚠️ Auto-detect chunker failure: {e}")
+
+        # 2️⃣ If still empty, try command_chunker (fallback) then extract actions from each chunk.
+        if not actions and getattr(self, 'command_chunker_available', False):
             try:
-                logger.info("🔧 Using command_chunker for intelligent chunking...")
-                
-                # Analyze task size
-                analysis = self.command_chunker.analyze_command_size(task_description)
-                logger.info(f"   Size analysis: {analysis}")
-                
-                # Use auto strategy for best results
+                logger.info("🔧 Using command_chunker fallback…")
                 chunks = self.command_chunker.chunk_command(task_description, strategy="auto")
-                
-                # Validate chunks
-                if chunks and len(chunks) <= 10:  # Reasonable number of chunks
-                    logger.info(f"✅ Command chunker created {len(chunks)} chunks")
-                    return chunks
-                else:
-                    logger.warning("⚠️ Command chunker produced too many chunks, falling back...")
-                    
+                for ch in chunks:
+                    actions.extend(self.action_extractor.extract_action_items(ch))
             except Exception as e:
-                logger.warning(f"⚠️ Command chunker failed: {e}, falling back...")
-        
-        # Final fallback to original action item extraction
-        logger.info("🔄 Using fallback action item extraction...")
-        return self.action_extractor.extract_action_items(task_description)
+                logger.warning(f"⚠️ Command chunker failure: {e}")
+
+        # 3️⃣ Final fallback – plain action extraction from full description.
+        if not actions:
+            logger.info("🔄 Falling back to direct action extraction…")
+            actions = self.action_extractor.extract_action_items(task_description)
+
+        return actions
+
+    # ------------------------------------------------------------------
+    # 🔧 Post-processing helpers
+    # ------------------------------------------------------------------
+
+    def _post_process_actions(self, actions: List[str]) -> List[str]:
+        """Clean, deduplicate, and trim action texts to avoid redundant subtasks."""
+        # 1. Strip whitespace/newlines & normalise spaces
+        cleaned = [re.sub(r"\s+", " ", act).strip() for act in actions if act and act.strip()]
+
+        # 2. Deduplicate case-insensitively while preserving order
+        deduped = self._deduplicate_actions(cleaned)
+
+        return deduped
+
+    @staticmethod
+    def _deduplicate_actions(actions: List[str]) -> List[str]:
+        """Return actions preserving original order but removing duplicates (case-insensitive)."""
+        seen = set()
+        unique_actions = []
+        for act in actions:
+            key = act.lower()
+            if key not in seen:
+                seen.add(key)
+                unique_actions.append(act)
+        return unique_actions
     
     def _estimate_duration(self, action: str) -> int:
         """Estimate duration in minutes"""
