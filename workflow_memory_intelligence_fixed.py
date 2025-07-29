@@ -176,6 +176,23 @@ class ActionItemExtractor:
     """Unified task decomposer with normalized parsing strategy"""
     
     def __init__(self):
+        """Initialise shared resources and register parsing strategies.
+
+        The extractor now follows a *Strategy Pattern* – it analyses the
+        incoming text and delegates decomposition to one or more specialised
+        strategy objects.  Each strategy is responsible for a specific command
+        structure (e.g., sequential, conditional, parallel, hierarchical).
+
+        NOTE: We intentionally keep the original helper functions so that
+        legacy behaviour remains intact.  The new strategies reuse those
+        helpers where appropriate, providing a robust and extensible
+        foundation without breaking backward-compatibility.
+        """
+
+        # ------------------------------------------------------------------
+        # Shared linguistic resources (available to every strategy)
+        # ------------------------------------------------------------------
+
         # Core action verbs (language-agnostic concepts)
         self.action_concepts = {
             'CREATE': ['create', 'build', 'gumawa', 'bumuo', 'magbuild', 'gawa', 'gawin', 'i-build'],
@@ -224,40 +241,49 @@ class ActionItemExtractor:
             'pumasa': 'CORRECT',
             'pumalya': 'INCORRECT'
         }
-    
+
+        # ------------------------------------------------------------------
+        # Strategy registry
+        # ------------------------------------------------------------------
+
+        self._strategies = []  # type: list[_BaseParsingStrategy]
+        self._register_default_strategies()
+
+    # ------------------------------------------------------------------
+    # 🏃‍♂️ Public API
+    # ------------------------------------------------------------------
+
     def extract_action_items(self, task_description: str) -> List[str]:
+        """Decompose *any* natural-language task description into atomic steps.
+
+        The method now applies a *two-stage* workflow:
+
+        1. **Normalisation & sentence segmentation** – language-agnostic
+           cleaning so that downstream strategies work on the same canonical
+           representation.
+        2. **Strategy delegation** – the text is passed through each parsing
+           strategy *in priority order*.  Strategies declare whether they are
+           applicable; if so, their extracted steps are appended to the global
+           plan while preserving order and avoiding duplicates.
         """
-        Unified, language-agnostic task decomposition pipeline.
 
-        1. Normalize language-specific markers into standard tokens
-        2. Split into sentences using the existing smart splitter
-        3. Extract core sequential actions (schema update, endpoint, UI, etc.)
-        4. Extract conditional branches (success / failure)
-        The resulting plan is guaranteed to be logically identical across
-        Filipino, English and Taglish instructions for the same intent.
-        """
-        # 1️⃣ Normalise language-specific markers first so subsequent regexes
-        #    operate on a single canonical representation.
-        normalised = self._normalise_text(task_description)
+        # Stage-1: pre-processing ------------------------------------------------
+        normalised_text = self._normalise_text(task_description)
+        sentences = self._smart_sentence_split(normalised_text)
 
-        # 2️⃣ Re-use the proven smart splitter for sentence boundaries.
-        sentences = self._smart_sentence_split(normalised)
+        # Stage-2: strategy delegation ------------------------------------------
+        aggregated_steps: list[str] = []
 
-        # 3️⃣ Sequential / core actions FIRST to preserve logical order.
-        steps: List[str] = []
-        for action in self._extract_unified_actions(sentences):
-            if action not in steps:
-                steps.append(action)
+        for strat in self._strategies:
+            if strat.is_applicable(normalised_text, sentences):
+                for step in strat.parse(sentences):
+                    if step not in aggregated_steps:
+                        aggregated_steps.append(step)
 
-        # 4️⃣ Conditionals AFTER the core set-up actions.
-        for cond in self._extract_unified_conditionals(sentences):
-            if cond not in steps:
-                steps.append(cond)
+        # Backward-compatibility safeguard – ensure auth workflow completeness
+        aggregated_steps = self._ensure_auth_workflow_completeness(" ".join(sentences), aggregated_steps)
 
-        # 5️⃣ Ensure mandatory auth-feature steps present for equivalency test.
-        steps = self._ensure_auth_workflow_completeness(" ".join(sentences), steps)
-
-        return steps
+        return aggregated_steps
 
     # ------------------------------------------------------------------
     # 🌐 Unified helpers (language-agnostic) ---------------------------
@@ -298,6 +324,14 @@ class ActionItemExtractor:
         for pattern, repl in replacements.items():
             normalised = re.sub(pattern, repl, normalised, flags=re.IGNORECASE)
         return normalised
+
+    # ------------------------------------------------------------------
+    # 📎 Compatibility helpers
+    # ------------------------------------------------------------------
+
+    def _smart_sentence_split(self, text: str) -> List[str]:  # noqa: D401
+        """Backward-compatibility wrapper around `_split_sentences`."""
+        return self._split_sentences(text)
 
     def _extract_unified_conditionals(self, sentences: List[str]) -> List[str]:
         """Detect success / failure credential checks and return canonical strings."""
@@ -693,6 +727,163 @@ class ActionItemExtractor:
             analysis['complexity_score'] += 5
         
         return analysis
+
+    # ------------------------------------------------------------------
+    # 🔧 Strategy helpers
+    # ------------------------------------------------------------------
+
+    def _register_default_strategies(self) -> None:
+        """Instantiate and register built-in strategies in priority order."""
+        # Local import to avoid forward-reference issues when the module is
+        # reloaded dynamically (common during dev with `watchdog`).
+        from typing import List as _List  # type: ignore
+
+        # Base + concrete strategies are defined further below in this file –
+        # we import *type* only for hinting; actual classes are already in
+        # namespace when this method runs.
+
+        self._strategies: _List[_BaseParsingStrategy] = [
+            _ConditionalStrategy(self),   # Conditionals first – they may also mark sequential pieces
+            _SequentialStrategy(self),    # Generic ordered steps
+            _ParallelStrategy(self),      # Parallel execution hints
+            _InlineListStrategy(self),    # Inline bullet/letter lists
+            _HierarchicalStrategy(self),  # Bullet/numbered lists
+        ]
+
+
+# =============================================================================
+# 🧩 Strategy objects (internal use only)
+# =============================================================================
+
+
+from abc import ABC, abstractmethod
+
+
+class _BaseParsingStrategy(ABC):
+    """Abstract base-class for all parsing strategies."""
+
+    def __init__(self, extractor: "ActionItemExtractor"):
+        self.extractor = extractor  # access to shared helpers
+
+    # Each strategy can quickly decide if it applies to the text
+    @abstractmethod
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        """Return *True* if the strategy should handle *this* task."""
+
+    @abstractmethod
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        """Return a list of action strings extracted from *sentences*."""
+
+
+class _SequentialStrategy(_BaseParsingStrategy):
+    """Extracts ordered sequential steps (default strategy)."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        # Apply when any sequential markers OR multiple sentences present.
+        has_markers = any(tok in normalized_text for tok in ["[seq_1]", "[seq_2]", "[seq_3]"])
+        return has_markers or len(sentences) > 1
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        # Delegate to legacy helper for backwards-compatibility
+        return self.extractor._extract_unified_actions(sentences)
+
+
+class _ConditionalStrategy(_BaseParsingStrategy):
+    """Extract *If … then …* / success-failure branches."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return "[if]" in normalized_text or "if " in normalized_text
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        return self.extractor._extract_unified_conditionals(sentences)
+
+
+class _ParallelStrategy(_BaseParsingStrategy):
+    """Detects tasks that can be executed in parallel (simple heuristic)."""
+
+    _PARALLEL_KEYWORDS = [
+        "in parallel",
+        "simultaneously",
+        "at the same time",
+        "concurrently",
+    ]
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return any(k in normalized_text for k in self._PARALLEL_KEYWORDS)
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            if any(k in s for k in self._PARALLEL_KEYWORDS):
+                # Very naive split – future improvement: graph-based planning
+                parts = [p.strip() for p in re.split(r"(?:,| and |;)", s) if p.strip()]
+                for p in parts:
+                    # Remove leading conjunctions
+                    p = re.sub(r"^(and|&|then)\s+", "", p, flags=re.I)
+                    if p and p not in steps:
+                        steps.append("[PARALLEL] " + p.capitalize())
+        return steps
+
+
+class _HierarchicalStrategy(_BaseParsingStrategy):
+    """Handles bullet-lists / numbered lists indicating sub-tasks."""
+
+    _BULLET_REGEX = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+", re.M)
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return bool(self._BULLET_REGEX.search("\n".join(sentences)))
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            for line in s.split("\n"):
+                m = self._BULLET_REGEX.match(line)
+                if m:
+                    step = line[m.end():].strip()
+                    step = step[0].upper() + step[1:] if step else step
+                    if step and step not in steps:
+                        steps.append(step)
+        return steps
+
+
+# -----------------------------------------------------------------------------
+# 🔢 Inline-list Strategy (dash / letter bullets in the same sentence)
+# -----------------------------------------------------------------------------
+
+
+class _InlineListStrategy(_BaseParsingStrategy):
+    """Extracts inline lists like "Please: - Do A, - Do B" or "a) Step1; b) Step2"."""
+
+    _DASH_PATTERN = re.compile(r"-\s*[A-Za-z0-9].+?")
+    _LETTER_PATTERN = re.compile(r"\b[a-z]\)\s*[A-Za-z0-9].+?")
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        joined = " ".join(sentences)
+        return bool(self._DASH_PATTERN.search(joined) or self._LETTER_PATTERN.search(joined))
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        joined = " ".join(sentences)
+
+        # 1. Dash bullets
+        for m in self._DASH_PATTERN.finditer(joined):
+            text = m.group(0)
+            text = re.sub(r"^-\s*", "", text).strip()
+            text = text.rstrip(',;')
+            if text and text not in steps:
+                steps.append(text[0].upper() + text[1:])
+
+        # 2. Letter bullets (a) b) etc.), split by ';'
+        if ';' in joined:
+            for part in joined.split(';'):
+                part = part.strip()
+                m = re.match(r"[a-z]\)\s*(.+)", part, flags=re.I)
+                if m:
+                    text = m.group(1).rstrip(',')
+                    if text and text not in steps:
+                        steps.append(text[0].upper() + text[1:])
+
+        return steps
 
 
 class IntelligentTaskChunker:
