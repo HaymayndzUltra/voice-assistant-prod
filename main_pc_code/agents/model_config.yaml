@@ -77,6 +77,27 @@ models:
     metrics:
       avg_response_time: 0.78  # seconds
       success_rate: 0.99
+      
+  # Phi3 Instruct model (Ollama)
+  phi3_instruct:
+    model_name: "phi3:instruct"
+    version: "latest"
+    release_date: "2024-01-15"
+    vram_mb: 6000
+    args: --ctx-size 8192 --batch-size 512 --threads 6 --temp 0.7
+    fallback: phi
+    use_case: instruction_following
+    priority: high
+    preload: true
+    url: "http://localhost:11434/api/generate"
+    api_type: "ollama"
+    compatibility:
+      min_driver: "515.65.01"
+      recommended_vram: 8000
+      platforms: ["cuda", "rocm", "cpu"]
+    metrics:
+      avg_response_time: 1.2  # seconds
+      success_rate: 0.98
     
   # Fallback / lightweight model
   tinyllama:

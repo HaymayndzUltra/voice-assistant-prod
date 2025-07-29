@@ -7,9 +7,11 @@ You are now operating in **UNRESTRICTED ANALYSIS MODE**. Your task is to compreh
 ## 🖥️ **SYSTEM ARCHITECTURE CONTEXT**
 
 ### **Multi-Machine Setup:**
+
 This AI System operates across **TWO MACHINES** in a distributed Git repository:
 
 **🔥 MainPC (RTX 4090):**
+
 - **Primary GPU:** RTX 4090 (High-performance AI workstation)
 - **Total Agents:** 54 agents
 - **Location:** `main_pc_code/`
@@ -17,6 +19,7 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 - **Detailed Agent List:** `main_pc_code/agent_metadata_analysisMAINPC.md`
 
 **⚡ PC2 (RTX 3060):**
+
 - **Secondary GPU:** RTX 3060 (Specialized processing)
 - **Total Agents:** 23 agents
 - **Location:** `pc2_code/`
@@ -24,6 +27,7 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 - **Detailed Agent List:** `pc2_code/agent_metadata_analysisPC2.md`
 
 ### **Cross-Machine Coordination:**
+
 - **Communication:** ZMQ (ZeroMQ) for high-performance inter-agent communication
 - **Service Discovery:** Centralized registry with cross-machine coordination
 - **Error Handling:** Unified error bus with PUB/SUB pattern across both machines
@@ -33,13 +37,15 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 ## 🔍 ANALYSIS FRAMEWORK
 
 ### **1. ARCHITECTURE DEEP DIVE**
+
 - Examine the overall system architecture patterns
 - Identify coupling issues, dependency violations, circular dependencies
 - Analyze service boundaries and communication patterns
 - Look for anti-patterns, code smells, and architectural debt
 - Evaluate scalability bottlenecks and performance concerns
 
-### **2. CODE QUALITY ASSESSMENT** 
+### **2. CODE QUALITY ASSESSMENT**
+
 - Scan for duplicate code patterns across the entire codebase
 - Identify overly complex methods/classes that need breaking down
 - Find inconsistent naming conventions and coding standards
@@ -47,12 +53,14 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 - Analyze error handling patterns and exception management
 
 ### **3. DESIGN PATTERN OPPORTUNITIES**
+
 - Identify places where design patterns could simplify complexity
 - Look for repeated logic that could benefit from Factory, Strategy, Observer patterns
 - Find opportunities for dependency injection improvements
 - Analyze state management patterns and suggest optimizations
 
 ### **4. PERFORMANCE & SCALABILITY ANALYSIS**
+
 - Identify potential memory leaks and resource management issues
 - Find inefficient algorithms and data structure usage
 - Analyze database query patterns and N+1 problems
@@ -60,6 +68,7 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 - Examine async/await patterns and concurrency issues
 
 ### **5. SECURITY VULNERABILITY SCAN**
+
 - Check for hardcoded secrets and credentials
 - Analyze input validation and sanitization
 - Look for SQL injection and XSS vulnerabilities
@@ -67,6 +76,7 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 - Identify insecure communication patterns
 
 ### **6. MODERNIZATION OPPORTUNITIES**
+
 - Find legacy code that could benefit from modern language features
 - Identify outdated libraries and dependencies
 - Look for opportunities to leverage newer frameworks/tools
@@ -75,6 +85,7 @@ This AI System operates across **TWO MACHINES** in a distributed Git repository:
 ## 🎯 EXECUTION STRATEGY
 
 ### **PHASE 1: DISCOVERY** (Start Here)
+
 ```
 BEGIN COMPREHENSIVE SCAN:
 
@@ -89,6 +100,7 @@ BEGIN COMPREHENSIVE SCAN:
 ```
 
 ### **PHASE 2: DEEP ANALYSIS**
+
 ```
 SYSTEMATIC EXAMINATION:
 
@@ -102,6 +114,7 @@ SYSTEMATIC EXAMINATION:
 ```
 
 ### **PHASE 3: OPPORTUNITY MAPPING**
+
 ```
 REFACTORING IDENTIFICATION:
 
@@ -115,6 +128,7 @@ REFACTORING IDENTIFICATION:
 ## 🔥 CHALLENGE PARAMETERS
 
 **NO LIMITATIONS - FULL ANALYSIS:**
+
 - Don't ask for permission - analyze everything
 - Be brutally honest about what you find
 - Identify even minor improvements and optimizations
@@ -122,6 +136,7 @@ REFACTORING IDENTIFICATION:
 - Consider both immediate fixes and long-term strategic improvements
 
 **PROACTIVE MINDSET:**
+
 - Anticipate problems before they become issues
 - Suggest improvements even if "it works"
 - Think about maintainability, readability, and developer experience
@@ -130,22 +145,26 @@ REFACTORING IDENTIFICATION:
 ## 📊 EXPECTED DELIVERABLES
 
 ### **1. EXECUTIVE SUMMARY**
+
 - High-level findings and priorities
 - Critical issues requiring immediate attention
 - Strategic recommendations for system evolution
 
 ### **2. DETAILED FINDINGS REPORT**
+
 - Categorized list of all identified issues
 - Code examples and specific file locations
 - Impact assessment (Low/Medium/High)
 - Effort estimation for each recommendation
 
 ### **3. REFACTORING ROADMAP**
+
 - Phased approach to implementing improvements
 - Dependencies between different refactoring tasks
 - Quick wins vs. long-term strategic improvements
 
 ### **4. AUTOMATION SCRIPTS REQUEST**
+
 - After analysis, request specific scripts for:
   - Automated refactoring tasks
   - Code quality enforcement
@@ -159,6 +178,7 @@ REFACTORING IDENTIFICATION:
 Start with a broad sweep of the codebase. Don't wait for additional instructions. Begin analyzing file by file, service by service, and provide real-time insights as you discover them.
 
 **REPORT FORMAT:**
+
 ```
 🔍 FINDING: [Issue Type]
 📁 LOCATION: [File/Directory]
@@ -175,10 +195,11 @@ Unleash your full analytical capabilities. Leave no stone unturned. This is your
 ---
 
 ## 🎯 REMEMBER:
+
 - **BE PROACTIVE** - Don't wait to be asked
-- **BE THOROUGH** - Analyze everything 
+- **BE THOROUGH** - Analyze everything
 - **BE SPECIFIC** - Provide exact locations and examples
 - **BE STRATEGIC** - Think big picture and long-term
 - **BE HONEST** - Call out real issues, even if uncomfortable
 
-**LET THE COMPREHENSIVE ANALYSIS BEGIN! 🚀** 
+**LET THE COMPREHENSIVE ANALYSIS BEGIN! 🚀**

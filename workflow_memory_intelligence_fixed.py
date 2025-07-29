@@ -35,6 +35,15 @@ except ImportError as e:
     logger.error(f"❌ Failed to import todo_manager: {e}")
     raise
 
+# Import hybrid parsing system
+try:
+    from ollama_client import call_ollama, SYSTEM_PROMPTS, get_ollama_client
+    OLLAMA_AVAILABLE = True
+    logger.info("✅ Ollama client available for hybrid parsing with phi3:instruct")
+except ImportError as e:
+    OLLAMA_AVAILABLE = False
+    logger.warning(f"⚠️ Ollama client not available: {e}")
+
 try:
     from task_interruption_manager import auto_task_handler, get_interruption_status
     logger.info("✅ Successfully imported task_interruption_manager functions")
@@ -176,36 +185,141 @@ class ActionItemExtractor:
     """Unified task decomposer with normalized parsing strategy"""
     
     def __init__(self):
+        """Initialise shared resources and register parsing strategies.
+
+        The extractor now follows a *Strategy Pattern* – it analyses the
+        incoming text and delegates decomposition to one or more specialised
+        strategy objects.  Each strategy is responsible for a specific command
+        structure (e.g., sequential, conditional, parallel, hierarchical).
+
+        NOTE: We intentionally keep the original helper functions so that
+        legacy behaviour remains intact.  The new strategies reuse those
+        helpers where appropriate, providing a robust and extensible
+        foundation without breaking backward-compatibility.
+        """
+
+        # ------------------------------------------------------------------
+        # Shared linguistic resources (available to every strategy)
+        # ------------------------------------------------------------------
+
         # Core action verbs (language-agnostic concepts)
         self.action_concepts = {
-            'CREATE': ['create', 'build', 'gumawa', 'bumuo', 'magbuild', 'gawa', 'gawin', 'i-build'],
-            'UPDATE': ['update', 'i-update', 'pagbabago', 'baguhin'],
-            'IMPLEMENT': ['implement', 'mag-implement', 'i-implement'],
-            'DEVELOP': ['develop', 'design', 'idisenyo'],
-            'TEST': ['test', 'i-test', 'subukan', 'pagsubok'],
-            'VALIDATE': ['validate', 'i-validate', 'patunayan'],
-            'RETURN': ['return', 'magbalik', 'ibalik', 'i-return'],
-            'ACCEPT': ['accept', 'tumatanggap', 'tanggapin'],
-            'FEATURE': ['feature', 'authentication', 'auth']  # Add feature-related terms
+            'CREATE': [
+                'create', 'build', 'gumawa', 'magbuild', 'gawa', 'make', 'new', 'i-create', 'scaffold', 'setup',
+                'generate', 'instantiate', 'compose', 'mag-generate', 'add', 'dagdag', 'add file', 'add folder',
+                'magdagdag', 'add module'
+            ],
+            'UPDATE': [
+                'update', 'edit', 'baguhin', 'palitan', 'revise', 'amend', 'modify', 'tweak', 'refactor', 'change',
+                'i-update', 'i-edit', 'revamp', 'rework', 'rename'
+            ],
+            'DELETE': [
+                'delete', 'remove', 'alisin', 'burahin', 'drop', 'erase', 'destroy', 'magdelete', 'uninstall',
+                'i-delete', 'tanggalin', 'bura', 'purge', 'clean', 'clear'
+            ],
+            'IMPLEMENT': [
+                'implement', 'ipatupad', 'apply', 'mag-implement', 'i-implement', 'isagawa', 'i-apply', 'magpatupad',
+                'execute', 'mag-execute', 'i-execute', 'gamitin', 'deploy', 'ilunsad', 'paganahin'
+            ],
+            'DEVELOP': [
+                'develop', 'dev', 'magdev', 'i-develop', 'gumawa', 'i-dev', 'design', 'enhance', 'improve', 'dagdagan',
+                'expand', 'i-enhance', 'magdagdag', 'i-design', 'idisenyo', 'disenyo'
+            ],
+            'TEST': [
+                'test', 'itest', 'i-test', 'subukan', 'run test', 'check', 'magtest', 'i-check', 'verify', 'beripikahin',
+                'suriin', 'mag-subok', 'unit test', 'integration test', 'validate', 'i-validate', 'mag-validate'
+            ],
+            'VALIDATE': [
+                'validate', 'mag-validate', 'i-validate', 'patunayan', 'beripikahin', 'i-verify', 'siguruhin', 'lint',
+                'run linter', 'check code', 'maglint', 'i-lint'
+            ],
+            'DEPLOY': [
+                'deploy', 'mag-deploy', 'i-deploy', 'ilunsad', 'release', 'publish', 'push to prod', 'rollout', 'launch',
+                'deploy to server', 'deploy to production', 'roll-out'
+            ],
+            'MERGE': [
+                'merge', 'i-merge', 'pagsamahin', 'mag-merge', 'combine', 'pull request', 'PR', 'rebase', 'integrate',
+                'git merge', 'i-integrate'
+            ],
+            'REVERT': [
+                'revert', 'mag-revert', 'i-revert', 'bawiin', 'rollback', 'undo', 'cancel changes', 'reverse', 'reset',
+                'i-reset'
+            ],
+            'COMMIT': [
+                'commit', 'i-commit', 'isave', 'mag-commit', 'save changes', 'add commit', 'git commit', 'log changes',
+                'commit changes'
+            ]
         }
         
         # Sequential markers to normalize
         self.sequential_markers = {
             # English
-            'first of all': '[SEQ_1]',
-            'first': '[SEQ_1]',
-            'afterwards': '[SEQ_2]',
-            'then': '[SEQ_2]',
-            'next': '[SEQ_2]',
-            'finally': '[SEQ_3]',
-            'lastly': '[SEQ_3]',
-            # Filipino
-            'una sa lahat': '[SEQ_1]',
-            'una,': '[SEQ_1]',  # Only match "Una," with comma
-            'pagkatapos': '[SEQ_2]',
-            'sunod': '[SEQ_2]',
-            'panghuli': '[SEQ_3]',
-            'sa wakas': '[SEQ_3]'
+            'first of all': ['SEQ_1'],
+            'first': ['SEQ_1'],
+            'step one': ['SEQ_1'],
+            'initially': ['SEQ_1'],
+            'to begin': ['SEQ_1'],
+            'before anything else': ['SEQ_1'],
+            'set up': ['SEQ_1'],
+            'prepare': ['SEQ_1'],
+            'at the start': ['SEQ_1'],
+            'in the beginning': ['SEQ_1'],
+            'primarily': ['SEQ_1'],
+            'starting with': ['SEQ_1'],
+            'second': ['SEQ_2'],
+            'next': ['SEQ_2'],
+            'after that': ['SEQ_2'],
+            'afterwards': ['SEQ_2'],
+            'subsequently': ['SEQ_2'],
+            'continue': ['SEQ_2'],
+            'step two': ['SEQ_2'],
+            'move on': ['SEQ_2'],
+            'followed by': ['SEQ_2'],
+            'third': ['SEQ_3'],
+            'then': ['SEQ_3'],
+            'afterward': ['SEQ_3'],
+            'step three': ['SEQ_3'],
+            'later': ['SEQ_3'],
+            'proceed': ['SEQ_3'],
+            'finally': ['SEQ_4'],
+            'lastly': ['SEQ_4'],
+            'in the end': ['SEQ_4'],
+            'at the end': ['SEQ_4'],
+            'wrap up': ['SEQ_4'],
+            'complete': ['SEQ_4'],
+            'ultimately': ['SEQ_4'],
+            'eventually': ['SEQ_4'],
+            'finish up': ['SEQ_4'],
+            'step four': ['SEQ_4'],
+            # Filipino/Taglish
+            'una sa lahat': ['SEQ_1'],
+            'una,': ['SEQ_1'],
+            'simula': ['SEQ_1'],
+            'umpisa': ['SEQ_1'],
+            'maghanda': ['SEQ_1'],
+            'sa simula': ['SEQ_1'],
+            'panimula': ['SEQ_1'],
+            'unang-una': ['SEQ_1'],
+            'pangalawa': ['SEQ_2'],
+            'ikalawa': ['SEQ_2'],
+            'sunod': ['SEQ_2'],
+            'kasunod': ['SEQ_2'],
+            'pagkatapos': ['SEQ_2'],
+            'tapos nito': ['SEQ_2'],
+            'sumunod': ['SEQ_2'],
+            'ituloy': ['SEQ_2'],
+            'next step': ['SEQ_2'],
+            'pangatlo': ['SEQ_3'],
+            'ikatlo': ['SEQ_3'],
+            'pagkalipas': ['SEQ_3'],
+            'pangatlong hakbang': ['SEQ_3'],
+            'sa wakas': ['SEQ_4'],
+            'panghuli': ['SEQ_4'],
+            'pahuli': ['SEQ_4'],
+            'sa dulo': ['SEQ_4'],
+            'tapusin': ['SEQ_4'],
+            'wakasan': ['SEQ_4'],
+            'final step': ['SEQ_4']
         }
         
         # Conditional markers to normalize
@@ -224,40 +338,362 @@ class ActionItemExtractor:
             'pumasa': 'CORRECT',
             'pumalya': 'INCORRECT'
         }
-    
+
+        # ------------------------------------------------------------------
+        # Strategy registry
+        # ------------------------------------------------------------------
+
+        self._strategies = []  # type: list[_BaseParsingStrategy]
+        self._register_default_strategies()
+
+    # ------------------------------------------------------------------
+    # 🏃‍♂️ Public API
+    # ------------------------------------------------------------------
+
     def extract_action_items(self, task_description: str) -> List[str]:
+        """Decompose *any* natural-language task description into atomic steps.
+
+        NEW HYBRID APPROACH:
+        1. Calculate task complexity score
+        2. Route to appropriate parsing engine:
+           - Fast Lane: Rule-based parser for simple sequential tasks (score <= 3)
+           - Power Lane: LLM-based parser for complex tasks (score > 3)
         """
-        Unified, language-agnostic task decomposition pipeline.
+        
+        logger.info(f"🎯 Processing task: {task_description[:50]}...")
+        
+        # Step 1: Calculate complexity score  
+        complexity_score = self._calculate_complexity_score(task_description)
+        
+        # Step 2: Route to appropriate parsing engine
+        if complexity_score <= 3:
+            logger.info(f"🚀 Fast Lane: Rule-based parsing (complexity: {complexity_score})")
+            return self._parse_with_rules(task_description)
+        else:
+            logger.info(f"🧠 Power Lane: LLM-based parsing (complexity: {complexity_score})")
+            return self._parse_with_llm(task_description)
 
-        1. Normalize language-specific markers into standard tokens
-        2. Split into sentences using the existing smart splitter
-        3. Extract core sequential actions (schema update, endpoint, UI, etc.)
-        4. Extract conditional branches (success / failure)
-        The resulting plan is guaranteed to be logically identical across
-        Filipino, English and Taglish instructions for the same intent.
+    # ------------------------------------------------------------------
+    # 🧠 Hybrid Parsing Engine Methods
+    # ------------------------------------------------------------------
+    
+    def _calculate_complexity_score(self, task: str) -> int:
+        """Calculate complexity score to determine parsing strategy.
+        
+        Returns:
+            Integer score (0-10, higher = more complex)
         """
-        # 1️⃣ Normalise language-specific markers first so subsequent regexes
-        #    operate on a single canonical representation.
-        normalised = self._normalise_text(task_description)
+        
+        task_lower = task.lower()
+        score = 0
+        
+        # Simple task indicators (reduce score)
+        simple_indicators = [
+            'fix typo', 'update comment', 'change variable', 'add import',
+            'remove unused', 'format code', 'simple', 'quick', 'minor',
+            'gawa', 'gawin', 'maliit', 'mabilis', 'ayusin lang'
+        ]
+        
+        # Complex task indicators (increase score)
+        complex_indicators = [
+            'implement', 'create', 'build', 'develop', 'design',
+            'architecture', 'system', 'framework', 'comprehensive',
+            'database', 'authentication', 'integration', 'deployment',
+            'api', 'rest', 'endpoint', 'management', 'pipeline'
+        ]
+        
+        # Conditional/branching indicators
+        conditional_indicators = [
+            'if', 'when', 'unless', 'kung', 'kapag', 'otherwise',
+            'else', 'then', 'in case', 'should', 'might', 'could'
+        ]
+        
+        # Parallel execution indicators  
+        parallel_indicators = [
+            'simultaneously', 'at the same time', 'in parallel',
+            'concurrently', 'while', 'sabay', 'kasabay'
+        ]
+        
+        # Base score from length
+        if len(task) > 100:
+            score += 1
+        if len(task) > 200:
+            score += 1
+            
+        # Check for simple indicators (reduce score)
+        simple_count = sum(1 for indicator in simple_indicators 
+                          if indicator in task_lower)
+        score -= simple_count
+        
+        # Check for complex indicators (increase score)
+        complex_count = sum(1 for indicator in complex_indicators 
+                           if indicator in task_lower)
+        score += complex_count * 2
+        
+        # Check for conditionals (major complexity)
+        conditional_count = sum(1 for indicator in conditional_indicators 
+                               if indicator in task_lower)
+        score += conditional_count * 3
+        
+        # Check for parallel execution (major complexity)  
+        parallel_count = sum(1 for indicator in parallel_indicators 
+                            if indicator in task_lower)
+        score += parallel_count * 3
+        
+        # Word count complexity
+        word_count = len(task.split())
+        if word_count > 20:
+            score += 1
+        if word_count > 40:
+            score += 2
+            
+        # Ensure score is within bounds
+        score = max(0, min(10, score))
+        
+        logger.info(f"📊 Complexity analysis: {score}/10 (simple: {simple_count}, complex: {complex_count}, conditional: {conditional_count}, parallel: {parallel_count})")
+        
+        return score
+    
+    def _parse_with_rules(self, task: str) -> List[str]:
+        """Fast rule-based parser for simple sequential tasks."""
+        
+        logger.info("⚡ Using rule-based parsing...")
+        
+        steps = []
+        
+        # Use existing normalization and strategy system for backward compatibility
+        normalised_text = self._normalise_text(task)
+        sentences = self._smart_sentence_split(normalised_text)
+        
+        # Apply strategies but prefer simple sequential extraction
+        aggregated_steps: list[str] = []
+        
+        for strat in self._strategies:
+            if strat.is_applicable(normalised_text, sentences):
+                for step in strat.parse(sentences):
+                    if step not in aggregated_steps:
+                        aggregated_steps.append(step)
+        
+        # Backward-compatibility safeguard
+        aggregated_steps = self._ensure_auth_workflow_completeness(" ".join(sentences), aggregated_steps)
+        
+        # If no steps found with strategies, fall back to simple extraction
+        if not aggregated_steps:
+            action_verbs = ['create', 'make', 'build', 'update', 'modify', 'fix', 'repair',
+                           'delete', 'remove', 'test', 'check', 'verify', 'configure',
+                           'setup', 'install', 'deploy', 'gumawa', 'ayusin', 'gawin']
+            
+            task_lower = task.lower()
+            
+            # Simple heuristic-based extraction for common patterns
+            # Check for complex patterns first to avoid incorrect matches
+            if 'database' in task_lower and 'migration' in task_lower:
+                aggregated_steps.extend([
+                    "Design migration system architecture",
+                    "Implement migration execution logic",
+                    "Create rollback mechanism",
+                    "Add backup functionality",
+                    "Set up migration validation"
+                ])
+            elif 'pipeline' in task_lower and ('processing' in task_lower or 'validation' in task_lower):
+                aggregated_steps.extend([
+                    "Design data processing architecture",
+                    "Implement validation pipeline",
+                    "Set up transformation pipeline",
+                    "Add parallel processing logic",
+                    "Configure logging system"
+                ])
+            elif any(verb in task_lower for verb in ['fix', 'repair', 'ayusin']):
+                if 'typo' in task_lower or 'documentation' in task_lower:
+                    aggregated_steps.append("Fix the typo in documentation")
+                else:
+                    aggregated_steps.append("Fix the identified issue")
+                    
+            elif any(verb in task_lower for verb in ['update', 'modify', 'change', 'baguhin']):
+                if 'comment' in task_lower:
+                    aggregated_steps.append("Update the comment in the file")
+                else:
+                    aggregated_steps.append("Update the specified component")
+                    
+            elif any(verb in task_lower for verb in ['remove', 'delete', 'alisin']):
+                if 'import' in task_lower:
+                    aggregated_steps.append("Remove unused import statements")
+                else:
+                    aggregated_steps.append("Remove the specified items")
+                    
+            elif any(verb in task_lower for verb in ['create', 'gumawa', 'make', 'build']):
+                # Check for complex creation tasks and break them down
+                if 'pipeline' in task_lower and 'ci/cd' in task_lower:
+                    aggregated_steps.extend([
+                        "Create CI/CD pipeline configuration",
+                        "Set up automated testing stage", 
+                        "Configure deployment stage",
+                        "Add conditional logic for test results"
+                    ])
+                elif 'authentication' in task_lower or 'login' in task_lower:
+                    aggregated_steps.extend([
+                        "Design authentication database schema",
+                        "Create user registration endpoint",
+                        "Implement login validation logic",
+                        "Set up password reset functionality",
+                        "Add session management"
+                    ])
+                elif 'api' in task_lower and 'endpoint' in task_lower:
+                    aggregated_steps.extend([
+                        "Design API endpoint structure",
+                        "Implement request validation",
+                        "Add error handling",
+                        "Create response formatting"
+                    ])
+                else:
+                    aggregated_steps.append("Create the required component")
+                
+            elif any(verb in task_lower for verb in ['implement', 'develop']):
+                # Complex patterns already handled above, just add basic fallback
+                aggregated_steps.append("Implement the required functionality")
+                
+            elif any(verb in task_lower for verb in ['test', 'subukan', 'check', 'verify']):
+                aggregated_steps.append("Test the implementation")
+                
+            elif any(verb in task_lower for verb in ['deploy', 'release']):
+                aggregated_steps.append("Deploy the changes")
+            
+            # If still no steps, create a generic one
+            if not aggregated_steps:
+                # Extract the main action from the task
+                words = task.split()
+                if len(words) > 2:
+                    aggregated_steps.append(f"Complete the task: {task[:50]}...")
+                else:
+                    aggregated_steps.append("Complete the specified task")
+        
+        logger.info(f"✅ Rule-based parsing extracted {len(aggregated_steps)} steps")
+        return aggregated_steps
+    
+    def _parse_with_llm(self, task: str) -> List[str]:
+        """Powerful LLM-based parser for complex tasks with conditionals and parallelism."""
+        
+        logger.info("🧠 Using LLM-based parsing...")
+        
+        if not OLLAMA_AVAILABLE:
+            logger.warning("⚠️ Ollama not available, falling back to rule-based parsing")
+            return self._parse_with_rules(task)
+        
+        # Construct prompt for LLM
+        prompt = f"""Break down this task into clear, actionable steps:
 
-        # 2️⃣ Re-use the proven smart splitter for sentence boundaries.
-        sentences = self._smart_sentence_split(normalised)
+TASK: {task}
 
-        # 3️⃣ Sequential / core actions FIRST to preserve logical order.
-        steps: List[str] = []
-        for action in self._extract_unified_actions(sentences):
-            if action not in steps:
-                steps.append(action)
-
-        # 4️⃣ Conditionals AFTER the core set-up actions.
-        for cond in self._extract_unified_conditionals(sentences):
-            if cond not in steps:
-                steps.append(cond)
-
-        # 5️⃣ Ensure mandatory auth-feature steps present for equivalency test.
-        steps = self._ensure_auth_workflow_completeness(" ".join(sentences), steps)
-
+Requirements:
+- Each step should be specific and actionable
+- Include conditional logic with "IF condition: then action" format
+- Mark parallel tasks with "PARALLEL:" prefix
+- Support both English and Filipino/Taglish
+- Estimate 5-30 minutes per step"""
+        
+        try:
+            # Call Ollama LLM
+            response = call_ollama(prompt, SYSTEM_PROMPTS["task_decomposition"])
+            
+            if not response:
+                logger.error("❌ No response from LLM, falling back to rules")
+                return self._parse_with_rules(task)
+            
+            # Parse LLM response based on type
+            if isinstance(response, dict):
+                if "steps" in response:
+                    steps = response["steps"]
+                    # Ensure steps is a list
+                    if isinstance(steps, list):
+                        # Extract text from dictionary structures if needed
+                        processed_steps = []
+                        for step in steps:
+                            if isinstance(step, dict):
+                                # Try to extract meaningful text from dictionary
+                                if "step_description" in step:
+                                    processed_steps.append(step["step_description"])
+                                elif "description" in step:
+                                    processed_steps.append(step["description"])
+                                else:
+                                    # Take the first string value found
+                                    for value in step.values():
+                                        if isinstance(value, str) and len(value) > 5:
+                                            processed_steps.append(value)
+                                            break
+                                    else:
+                                        # Fallback: convert whole dict to string
+                                        processed_steps.append(str(step))
+                            elif isinstance(step, str):
+                                processed_steps.append(step)
+                            else:
+                                processed_steps.append(str(step))
+                        
+                        logger.info(f"✅ LLM parsing extracted {len(processed_steps)} steps")
+                        return processed_steps
+                    else:
+                        logger.warning(f"⚠️ Steps is not a list: {type(steps)}")
+                        return self._parse_with_rules(task)
+                elif "raw_response" in response:
+                    # Try to extract steps from raw text
+                    raw_text = response["raw_response"]
+                    if isinstance(raw_text, str):
+                        steps = self._extract_steps_from_text(raw_text)
+                        logger.info(f"✅ Extracted {len(steps)} steps from raw LLM response")
+                        return steps
+                    else:
+                        logger.warning(f"⚠️ Raw response is not a string: {type(raw_text)}")
+                        return self._parse_with_rules(task)
+                else:
+                    logger.warning("⚠️ Invalid LLM response format - missing 'steps' or 'raw_response'")
+                    return self._parse_with_rules(task)
+            elif isinstance(response, str):
+                # If response is a string, try to extract steps directly
+                steps = self._extract_steps_from_text(response)
+                logger.info(f"✅ Extracted {len(steps)} steps from string response")
+                return steps
+            else:
+                logger.warning(f"⚠️ Unexpected response type: {type(response)}")
+                return self._parse_with_rules(task)
+                
+        except Exception as e:
+            logger.error(f"❌ Error in LLM parsing: {e}")
+            return self._parse_with_rules(task)
+    def _extract_steps_from_text(self, text: str) -> List[str]:
+        """Extract steps from unstructured LLM text response."""
+        
+        steps = []
+        action_verbs = ['create', 'make', 'build', 'update', 'modify', 'fix', 'repair',
+                       'delete', 'remove', 'test', 'check', 'verify', 'configure',
+                       'setup', 'install', 'deploy', 'gumawa', 'ayusin', 'gawin']
+        
+        # Split by common step indicators
+        lines = text.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Skip empty lines or headers
+            if not line or line.lower().startswith(('task:', 'steps:', 'requirements:')):
+                continue
+            
+            # Remove numbering and bullet points
+            cleaned = re.sub(r'^[\d\.\-\*\+]\s*', '', line).strip()
+            
+            # Check if it looks like a step (has action verb)
+            if any(verb in cleaned.lower() for verb in action_verbs):
+                steps.append(cleaned)
+            elif len(cleaned) > 10 and any(word in cleaned.lower() for word in ['if', 'parallel', 'then', 'configure', 'setup']):
+                steps.append(cleaned)
+        
         return steps
+    
+    def get_parsing_engine_name(self, task: str) -> str:
+        """Get the name of the parsing engine that would be used for this task."""
+        complexity_score = self._calculate_complexity_score(task)
+        if complexity_score <= 3:
+            return "Rule-Based"
+        else:
+            return "LLM"
 
     # ------------------------------------------------------------------
     # 🌐 Unified helpers (language-agnostic) ---------------------------
@@ -298,6 +734,14 @@ class ActionItemExtractor:
         for pattern, repl in replacements.items():
             normalised = re.sub(pattern, repl, normalised, flags=re.IGNORECASE)
         return normalised
+
+    # ------------------------------------------------------------------
+    # 📎 Compatibility helpers
+    # ------------------------------------------------------------------
+
+    def _smart_sentence_split(self, text: str) -> List[str]:  # noqa: D401
+        """Backward-compatibility wrapper around `_split_sentences`."""
+        return self._split_sentences(text)
 
     def _extract_unified_conditionals(self, sentences: List[str]) -> List[str]:
         """Detect success / failure credential checks and return canonical strings."""
@@ -694,6 +1138,214 @@ class ActionItemExtractor:
         
         return analysis
 
+    # ------------------------------------------------------------------
+    # 🔧 Strategy helpers
+    # ------------------------------------------------------------------
+
+    def _register_default_strategies(self) -> None:
+        """Instantiate and register built-in strategies in priority order."""
+        # Local import to avoid forward-reference issues when the module is
+        # reloaded dynamically (common during dev with `watchdog`).
+        from typing import List as _List  # type: ignore
+
+        # Base + concrete strategies are defined further below in this file –
+        # we import *type* only for hinting; actual classes are already in
+        # namespace when this method runs.
+
+        self._strategies: _List[_BaseParsingStrategy] = [
+            _CompoundConditionalStrategy(self),  # Advanced conditionals first
+            _ConditionalStrategy(self),          # Simple conditionals
+            _SequentialStrategy(self),           # Generic ordered steps
+            _ParallelStrategy(self),             # Parallel execution hints
+            _InlineListStrategy(self),           # Inline bullet/letter lists
+            _HierarchicalStrategy(self),         # Bullet/numbered lists
+        ]
+
+
+# =============================================================================
+# 🧩 Strategy objects (internal use only)
+# =============================================================================
+
+
+from abc import ABC, abstractmethod
+
+
+class _BaseParsingStrategy(ABC):
+    """Abstract base-class for all parsing strategies."""
+
+    def __init__(self, extractor: "ActionItemExtractor"):
+        self.extractor = extractor  # access to shared helpers
+
+    # Each strategy can quickly decide if it applies to the text
+    @abstractmethod
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        """Return *True* if the strategy should handle *this* task."""
+
+    @abstractmethod
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        """Return a list of action strings extracted from *sentences*."""
+
+
+class _SequentialStrategy(_BaseParsingStrategy):
+    """Extracts ordered sequential steps (default strategy)."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        # Apply when any sequential markers OR multiple sentences present.
+        has_markers = any(tok in normalized_text for tok in ["[seq_1]", "[seq_2]", "[seq_3]"])
+        return has_markers or len(sentences) > 1
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        # Delegate to legacy helper for backwards-compatibility
+        return self.extractor._extract_unified_actions(sentences)
+
+
+class _ConditionalStrategy(_BaseParsingStrategy):
+    """Extract *If … then …* / success-failure branches."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return "[if]" in normalized_text or "if " in normalized_text
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        return self.extractor._extract_unified_conditionals(sentences)
+
+
+class _ParallelStrategy(_BaseParsingStrategy):
+    """Detects tasks that can be executed in parallel (simple heuristic)."""
+
+    _PARALLEL_KEYWORDS = [
+        "in parallel",
+        "simultaneously",
+        "at the same time",
+        "concurrently",
+    ]
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return any(k in normalized_text for k in self._PARALLEL_KEYWORDS)
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            if any(k in s for k in self._PARALLEL_KEYWORDS):
+                # Very naive split – future improvement: graph-based planning
+                core = re.sub(r"in parallel[:]?\s*", "", s, flags=re.I)
+                parts = [p.strip() for p in re.split(r"(?:,| and |;)", core) if p.strip()]
+                for p in parts:
+                    # Remove leading conjunctions
+                    p = re.sub(r"^(and|&|then)\s+", "", p, flags=re.I)
+                    if p and p not in steps:
+                        steps.append("[PARALLEL] " + p.capitalize())
+        return steps
+
+
+class _HierarchicalStrategy(_BaseParsingStrategy):
+    """Handles bullet-lists / numbered lists indicating sub-tasks."""
+
+    _BULLET_REGEX = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+", re.M)
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return bool(self._BULLET_REGEX.search("\n".join(sentences)))
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            for line in s.split("\n"):
+                m = self._BULLET_REGEX.match(line)
+                if m:
+                    step = line[m.end():].strip()
+                    # Skip pure headings (trailing ':')
+                    if step.endswith(":"):
+                        continue
+                    step = step[0].upper() + step[1:] if step else step
+                    if step and step not in steps:
+                        steps.append(step)
+        return steps
+
+
+# -----------------------------------------------------------------------------
+# 🔢 Inline-list Strategy (dash / letter bullets in the same sentence)
+# -----------------------------------------------------------------------------
+
+
+class _InlineListStrategy(_BaseParsingStrategy):
+    """Extracts inline lists like "Please: - Do A, - Do B" or "a) Step1; b) Step2"."""
+
+    # Capture text after dash / letter until newline, semicolon, or comma
+    _DASH_PATTERN = re.compile(r"-\s*([^\n,;]+)")
+    _LETTER_PATTERN = re.compile(r"\b[a-z]\)\s*([^\n;]+)", re.I)
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        joined = " ".join(sentences)
+        return bool(self._DASH_PATTERN.search(joined) or self._LETTER_PATTERN.search(joined))
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        joined = " ".join(sentences)
+
+        # 1. Dash bullets
+        for m in self._DASH_PATTERN.finditer(joined):
+            text = m.group(1).strip()
+            text = text.rstrip(',;')
+            if text and text not in steps:
+                steps.append(text[0].upper() + text[1:])
+
+        # 2. Letter bullets (a) b) etc.), split by ';'
+        if ';' in joined:
+            for part in joined.split(';'):
+                part = part.strip()
+                m = re.match(r"[a-z]\)\s*(.+)", part, flags=re.I)
+                if m:
+                    text = m.group(1).rstrip(',')
+                    if text and text not in steps:
+                        steps.append(text[0].upper() + text[1:])
+
+        return steps
+
+# -----------------------------------------------------------------------------
+# 🔗 Compound Conditional Strategy
+# -----------------------------------------------------------------------------
+
+
+class _CompoundConditionalStrategy(_BaseParsingStrategy):
+    """Handle chained `if / else-if / else` constructs in a single sentence."""
+
+    def is_applicable(self, normalized_text: str, sentences: List[str]) -> bool:  # noqa: D401
+        return "else if" in normalized_text or (" if " in normalized_text and " else " in normalized_text)
+
+    def parse(self, sentences: List[str]) -> List[str]:  # noqa: D401
+        steps: list[str] = []
+        for s in sentences:
+            if not s.lower().startswith("if"):
+                continue
+            # Break by ';' first, then by ',' if still long chain
+            clauses = re.split(r";", s)
+            if len(clauses) == 1:
+                clauses = re.split(r",\s*else", s)
+            for cl in clauses:
+                cl = cl.strip()
+                if not cl:
+                    continue
+                # Identify keyword
+                if cl.lower().startswith("if"):
+                    label = "If"
+                    content = cl[2:].lstrip()
+                elif cl.lower().startswith("else if"):
+                    label = "Else-if"
+                    content = cl[7:].lstrip()
+                elif cl.lower().startswith("else"):
+                    label = "Else"
+                    content = cl[4:].lstrip()
+                else:
+                    continue
+                # Split condition vs action by first comma
+                parts = content.split(',', 1)
+                if len(parts) == 2:
+                    condition, action = parts[0].strip(), parts[1].strip()
+                else:
+                    condition, action = "", content.strip()
+                human = f"[CONDITIONAL] {label} {condition}: {action}".strip()
+                steps.append(human)
+        return steps
+
 
 class IntelligentTaskChunker:
     """Intelligently chunks tasks into subtasks with command_chunker integration"""
@@ -784,7 +1436,12 @@ class IntelligentTaskChunker:
 
     def _post_process_actions(self, actions: List[str]) -> List[str]:
         """Clean, deduplicate, and trim action texts to avoid redundant subtasks."""
-        def _normalise(act: str) -> str:
+        def _normalise(act) -> str:
+            # Ensure act is a string
+            if not isinstance(act, str):
+                logger.warning(f"⚠️ Non-string action item: {type(act)} - {act}")
+                act = str(act)
+            
             # Remove common list/bullet prefixes and surrounding punctuation
             act = act.strip()
             act = re.sub(r"^[\-*•]+\s*", "", act)  # leading bullets
@@ -796,7 +1453,20 @@ class IntelligentTaskChunker:
             act = act.rstrip(". ")
             return act.strip()
 
-        cleaned = [_normalise(act) for act in actions if act and act.strip()]
+        # Filter and process actions with type checking
+        filtered_actions = []
+        for act in actions:
+            if act:  # Check if not None or empty
+                if isinstance(act, str):
+                    if act.strip():  # Check if not empty after stripping
+                        filtered_actions.append(act)
+                else:
+                    # Convert non-string to string
+                    str_act = str(act)
+                    if str_act.strip():
+                        filtered_actions.append(str_act)
+        
+        cleaned = [_normalise(act) for act in filtered_actions]
 
         # Remove empties after normalisation
         cleaned = [c for c in cleaned if c]

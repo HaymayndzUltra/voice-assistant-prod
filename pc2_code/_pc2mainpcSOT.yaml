@@ -199,6 +199,7 @@ ollama:
   available_tags:
     - phi:latest
     - phi3:latest
+    - phi3:instruct
     - mistral:7b-instruct
     - codellama:13b
 

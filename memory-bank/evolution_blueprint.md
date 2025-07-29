@@ -167,7 +167,7 @@ The system is designed for **ephemeral developer environments** (Cursor, Codespa
 | **Packaging**             | Installable package skeleton (`memory_system/…`) with Domain / Service / Interface layers | `memory_system/__init__.py`                   |
 | **Unified CLI**           | `memoryctl` entry-point with sub-commands: `tcc`, `run`, `migrate`                        | `memory_system/cli.py`                        |
 | **Interactive UI**        | Task Command Center (TCC) with added _Intelligent Task Execution_ option                  | `task_command_center.py`                      |
-| **Workflow Intelligence** | Complexity analysis, action-item extraction, adaptive memory loading, smart execution     | `workflow_memory_intelligence.py`             |
+| **Workflow Intelligence** | Complexity analysis, action-item extraction, adaptive memory loading, smart execution     | `workflow_memory_intelligencefixed.py`             |
 | **Async Task Engine**     | Native-async concurrent task runner (`memoryctl run …`)                                   | `memory_system/services/async_task_engine.py` |
 | **Telemetry**             | JSON-line events: `*_start`, `*_end`, `*_error`, duration captured via `span()`           | `memory_system/services/telemetry.py`         |
 | **Structured Logging**    | Root logger emits single-line JSON records                                                | `memory_system/logger.py`                     |
