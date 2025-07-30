@@ -5,10 +5,14 @@ Memory system visualization with MCP integration and
 knowledge graph interface.
 """
 
+# Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter.constants import *
+import subprocess
+import sys
+from pathlib import Path
+from datetime import datetime
 
 try:
     import ttkbootstrap as ttk
@@ -374,25 +378,37 @@ class MemoryIntelligenceView(ttk.Frame):
     # Action methods
     def _search_brain(self):
         """Search project brain"""
-        query = self.brain_search.get()
-        self._display_content(f"Brain Search: {query}", f"Search results for '{query}' in project brain...")
+        query = self.brain_search.get().strip()
+        if not query:
+            return
+
+        results = self._run_memory_cli("search", query)
+        content = results.stdout if results else "No results"
+        self._display_content(f"Brain Search: {query}", content)
     
     def _search_knowledge(self):
         """Search all knowledge"""
-        query = self.knowledge_search.get()
+        query = self.knowledge_search.get().strip()
+        if not query:
+            return
+
         # Clear existing results
         for item in self.search_results.get_children():
             self.search_results.delete(item)
-        
-        # Add sample results
-        sample_results = [
-            ("Task automation patterns", "95%", "Strategy", "2025-07-30"),
-            ("GUI implementation notes", "87%", "Implementation", "2025-07-29"),
-            ("Memory system design", "82%", "Architecture", "2025-07-28")
-        ]
-        
-        for i, (title, relevance, type_, date) in enumerate(sample_results):
-            self.search_results.insert('', tk.END, text=title, values=(relevance, type_, date))
+
+        results = self._run_memory_cli("search", query)
+        if results and results.returncode == 0:
+            try:
+                import json
+                parsed = json.loads(results.stdout)
+                # Expect list of {title, relevance, type, date}
+                for res in parsed[:100]:
+                    self.search_results.insert('', tk.END, text=res.get("title"), values=(res.get("relevance"), res.get("type"), res.get("date")))
+            except Exception:
+                # fallback plain text
+                self._display_content("Search Results", results.stdout)
+        else:
+            messagebox.showerror("Search Failed", results.stderr if results else "Unknown error")
     
     def _refresh_graph(self):
         """Refresh knowledge graph"""
@@ -433,11 +449,21 @@ class MemoryIntelligenceView(ttk.Frame):
     
     def _sync_all_memory(self):
         """Sync all memory systems"""
-        self._display_content("Sync Status", "Memory synchronization in progress...")
+        result = self._run_memory_cli("sync")
+        if result and result.returncode == 0:
+            messagebox.showinfo("Sync Complete", "Memory synchronized successfully")
+        else:
+            messagebox.showerror("Sync Failed", result.stderr if result else "Unknown error")
     
     def _cleanup_memory(self):
         """Cleanup memory systems"""
-        self._display_content("Cleanup", "Memory cleanup operations...")
+        if not messagebox.askyesno("Confirm Cleanup", "Delete orphaned memory items and temp files?"):
+            return
+        result = self._run_memory_cli("cleanup")
+        if result and result.returncode == 0:
+            messagebox.showinfo("Cleanup", "Memory cleanup completed")
+        else:
+            messagebox.showerror("Cleanup Failed", result.stderr if result else "Unknown error")
     
     def _memory_analytics(self):
         """Show memory analytics"""
@@ -448,5 +474,71 @@ class MemoryIntelligenceView(ttk.Frame):
         self._display_content("Settings", "Memory system configuration options...")
     
     def refresh(self):
-        """Refresh view data"""
-        pass
+        """Refresh memory data: status label, brain tree, recent list"""
+        try:
+            mem_status = self.system_service.get_memory_status()
+            brain_files = mem_status.get("brain_files", 0)
+            arch_files = mem_status.get("architecture_plans", 0)
+            self.memory_status.configure(text=f"📚 {brain_files} brain files, {arch_files} plans | Updated {datetime.now().strftime('%H:%M:%S')}")
+
+            self._load_brain_tree()
+            self._load_recent_memories()
+        except Exception as e:
+            print(f"Memory refresh error: {e}")
+
+        # auto-refresh every 120s
+        self.after(120_000, self.refresh)
+
+    # ---------- Internal helpers ----------
+    def _run_memory_cli(self, *args):
+        """Run memory_system/cli.py with given args and return CompletedProcess"""
+        try:
+            cmd = [sys.executable, "memory_system/cli.py"] + list(args)
+            return subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except Exception as e:
+            messagebox.showerror("Memory CLI Error", str(e))
+            return None
+
+    def _load_brain_tree(self):
+        """Scan project-brain directory and populate tree"""
+        # clear tree
+        for item in self.brain_tree.get_children():
+            self.brain_tree.delete(item)
+
+        brain_dir = self.system_service.memory_bank / "project-brain"
+        if not brain_dir.exists():
+            return
+
+        for md_path in brain_dir.rglob("*.md"):
+            rel = md_path.relative_to(brain_dir)
+            parent = ""
+            parts = rel.parts
+            for i, part in enumerate(parts):
+                current_path = "/".join(parts[: i + 1])
+                # add node if not exists
+                nodes = self.brain_tree.get_children(parent)
+                existing = None
+                for n in nodes:
+                    if self.brain_tree.item(n, "text") == part:
+                        existing = n
+                        break
+                if existing is None:
+                    node = self.brain_tree.insert(parent, tk.END, text=part, values=("Dir" if i < len(parts) - 1 else "File", md_path.stat().st_size))
+                    existing = node
+                parent = existing
+
+    def _load_recent_memories(self):
+        """Load recent modified markdown files"""
+        self.recent_memories.delete(0, tk.END)
+        brain_dir = self.system_service.memory_bank / "project-brain"
+        if not brain_dir.exists():
+            return
+        files = sorted(brain_dir.rglob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)[:20]
+        for f in files:
+            self.recent_memories.insert(tk.END, f.name)

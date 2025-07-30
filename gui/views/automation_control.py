@@ -5,10 +5,12 @@ Automation control interface for autonomous queue engine
 and auto-sync management.
 """
 
+# Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter.constants import *
+import subprocess
+import sys
 
 try:
     import ttkbootstrap as ttk
@@ -312,27 +314,44 @@ class AutomationControlView(ttk.Frame):
         log_scrollbar.pack(side=RIGHT, fill=Y)
     
     # Control method implementations
+    # ---------- Internal helpers ----------
+    def _run_python_cli(self, script_name: str, *args, timeout: int = 20):
+        """Utility to run a python CLI tool located at project root and return subprocess.CompletedProcess"""
+        cmd = [sys.executable, script_name] + list(args)
+        return subprocess.run(
+            cmd,
+            cwd=self.system_service.project_root,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+    # ---------- Queue engine controls ----------
     def _start_queue_engine(self):
-        """Start the autonomous queue engine"""
+        """Start the autonomous queue engine using queue_cli.py"""
         try:
-            result = self.system_service.execute_cli_command("queue start --daemon")
-            if result.get("success"):
+            result = self._run_python_cli("queue_cli.py", "start", "--daemon")
+            if result.returncode == 0:
                 self._log_automation("✅ Queue engine started successfully")
                 self.status_cards["queue_engine"].status_label.configure(text="Running")
             else:
-                self._log_automation(f"❌ Failed to start queue engine: {result.get('error')}")
+                self._log_automation(f"❌ Failed to start queue engine: {result.stderr}")
+        except subprocess.TimeoutExpired:
+            self._log_automation("❌ Queue start command timed out")
         except Exception as e:
             self._log_automation(f"❌ Error starting queue engine: {e}")
     
     def _stop_queue_engine(self):
         """Stop the autonomous queue engine"""
         try:
-            result = self.system_service.execute_cli_command("queue stop")
-            if result.get("success"):
+            result = self._run_python_cli("queue_cli.py", "stop")
+            if result.returncode == 0:
                 self._log_automation("⏹️ Queue engine stopped")
                 self.status_cards["queue_engine"].status_label.configure(text="Stopped")
             else:
-                self._log_automation(f"❌ Failed to stop queue engine: {result.get('error')}")
+                self._log_automation(f"❌ Failed to stop queue engine: {result.stderr}")
+        except subprocess.TimeoutExpired:
+            self._log_automation("❌ Queue stop command timed out")
         except Exception as e:
             self._log_automation(f"❌ Error stopping queue engine: {e}")
     
@@ -347,31 +366,55 @@ class AutomationControlView(ttk.Frame):
     def _check_queue_status(self):
         """Check queue engine status"""
         try:
-            result = self.system_service.execute_cli_command("queue status")
-            status_text = result.get("output", "No status available")
-            
+            result = self._run_python_cli("queue_cli.py", "status")
+            status_text = result.stdout or result.stderr or "No status available"
+
             self.queue_status_display.configure(state=tk.NORMAL)
             self.queue_status_display.delete(1.0, tk.END)
             self.queue_status_display.insert(tk.END, status_text)
             self.queue_status_display.configure(state=tk.DISABLED)
-            
+
             self._log_automation("📊 Queue status updated")
+        except subprocess.TimeoutExpired:
+            self._log_automation("❌ Queue status command timed out")
         except Exception as e:
             self._log_automation(f"❌ Error checking queue status: {e}")
     
+    # ---------- Auto-sync controls ----------
     def _enable_auto_sync(self):
-        """Enable auto-sync"""
-        self._log_automation("▶️ Auto-sync enabled")
-        self.status_cards["auto_sync"].status_label.configure(text="Active")
+        """Enable auto-sync via auto_sync_manager.py"""
+        try:
+            result = self._run_python_cli("auto_sync_manager.py", "enable")
+            if result.returncode == 0:
+                self._log_automation("▶️ Auto-sync enabled")
+                self.status_cards["auto_sync"].status_label.configure(text="Active")
+            else:
+                self._log_automation(f"❌ Failed to enable auto-sync: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error enabling auto-sync: {e}")
     
     def _disable_auto_sync(self):
         """Disable auto-sync"""
-        self._log_automation("⏸️ Auto-sync disabled")
-        self.status_cards["auto_sync"].status_label.configure(text="Disabled")
+        try:
+            result = self._run_python_cli("auto_sync_manager.py", "disable")
+            if result.returncode == 0:
+                self._log_automation("⏸️ Auto-sync disabled")
+                self.status_cards["auto_sync"].status_label.configure(text="Disabled")
+            else:
+                self._log_automation(f"❌ Failed to disable auto-sync: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error disabling auto-sync: {e}")
     
     def _force_sync(self):
         """Force immediate sync"""
-        self._log_automation("🔄 Force sync triggered")
+        try:
+            result = self._run_python_cli("auto_sync_manager.py", "sync")
+            if result.returncode == 0:
+                self._log_automation("🔄 Force sync triggered")
+            else:
+                self._log_automation(f"❌ Force sync failed: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error forcing sync: {e}")
     
     def _set_automation_level(self):
         """Set automation level"""

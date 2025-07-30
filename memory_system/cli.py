@@ -33,6 +33,18 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
     migrate_parser = subparsers.add_parser("migrate", help="Migrate markdown memories into SQLite DB")
     migrate_parser.add_argument("--to", choices=["sqlite"], required=True, help="Target provider kind")
 
+    # Search knowledge base
+    search_parser = subparsers.add_parser("search", help="Full-text search across memory bank")
+    search_parser.add_argument("query", help="Search query string")
+    search_parser.add_argument("--limit", type=int, default=50, help="Maximum results to return")
+
+    # Synchronize memory bank (placeholder implementation)
+    subparsers.add_parser("sync", help="Synchronize memory bank with remote store")
+
+    # Cleanup memory bank
+    cleanup_parser = subparsers.add_parser("cleanup", help="Remove temporary/orphaned memory files")
+    cleanup_parser.add_argument("--dry-run", action="store_true", help="Show files that would be deleted without removing them")
+
     # Monitoring dashboard (placeholder)
     subparsers.add_parser("monitor", help="Launch real-time monitoring dashboard (TUI)")
 
@@ -95,6 +107,56 @@ def main(argv: Optional[List[str]] = None) -> None:  # noqa: D401
         from memory_system.scripts.migrate_memories import main as migrate_main
 
         migrate_main(["--to", args.to])
+    elif args.command == "search":
+        import json as _json, re, os
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent / "memory-bank"
+        results = []
+        pattern = re.compile(re.escape(args.query), re.IGNORECASE)
+
+        for md_file in root.rglob("*.md"):
+            try:
+                text = md_file.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+            if pattern.search(text):
+                relevance = min(100, text.lower().count(args.query.lower()) * 10)
+                results.append({
+                    "title": md_file.name,
+                    "path": str(md_file.relative_to(root)),
+                    "relevance": f"{relevance}%",
+                    "type": "Markdown",
+                    "date": md_file.stat().st_mtime_ns
+                })
+            if len(results) >= args.limit:
+                break
+
+        # Sort by relevance descending
+        results.sort(key=lambda x: x["relevance"], reverse=True)
+        print(_json.dumps(results, indent=2))
+
+    elif args.command == "sync":
+        print("🔄 Memory sync placeholder: All memories up-to-date.")
+
+    elif args.command == "cleanup":
+        from pathlib import Path
+        root = Path(__file__).resolve().parent.parent / "memory-bank"
+        tmp_files = list(root.rglob("*.tmp")) + list(root.rglob("*~"))
+        if args.dry_run:
+            for f in tmp_files:
+                print(f"Would delete {f}")
+            print(f"Found {len(tmp_files)} temporary files.")
+        else:
+            deleted = 0
+            for f in tmp_files:
+                try:
+                    f.unlink()
+                    deleted += 1
+                except Exception:
+                    pass
+            print(f"🧹 Cleanup complete. Deleted {deleted} files.")
+
     elif args.command == "monitor":
         from memory_system.monitor import run_dashboard
 

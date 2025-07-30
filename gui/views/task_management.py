@@ -5,10 +5,12 @@ Task management interface with real-time queue visualization,
 task creation, editing, and execution control.
 """
 
+# Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter.constants import *
+import subprocess
+import sys
 
 try:
     import ttkbootstrap as ttk
@@ -149,41 +151,96 @@ class TaskManagementView(ttk.Frame):
         ttk.Button(btn_frame, text="🧹 Cleanup", command=self._cleanup_completed).pack(side=LEFT, padx=5)
     
     def _create_new_task(self):
-        """Create new task dialog"""
-        # Simple implementation for now
+        """Create a new task using todo_manager CLI"""
         from tkinter import simpledialog
+
         task_desc = simpledialog.askstring("New Task", "Enter task description:")
-        if task_desc:
-            try:
-                import subprocess
-                result = subprocess.run(
-                    ["python3", "todo_manager.py", "new", task_desc],
-                    cwd="/home/haymayndz/AI_System_Monorepo",
-                    capture_output=True,
-                    text=True
-                )
-                if result.returncode == 0:
-                    self.refresh()
-                    print(f"✅ Created task: {task_desc}")
-                else:
-                    print(f"❌ Failed to create task: {result.stderr}")
-            except Exception as e:
-                print(f"Error creating task: {e}")
+        if not task_desc:
+            return  # User cancelled
+
+        try:
+            cmd = [sys.executable, "todo_manager.py", "new", task_desc]
+            result = subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+
+            if result.returncode == 0:
+                messagebox.showinfo("Task Created", f"✅ Task added: {task_desc}")
+                self.refresh()
+            else:
+                messagebox.showerror("Task Creation Failed", result.stderr or "Unknown error")
+        except subprocess.TimeoutExpired:
+            messagebox.showerror("Timeout", "todo_manager did not respond in time.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
     
     def _pause_queue(self):
-        """Pause autonomous queue"""
-        print("⏸️ Queue paused (placeholder)")
+        """Pause the task queue using queue_cli"""
+        try:
+            cmd = [sys.executable, "queue_cli.py", "pause"]
+            result = subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            if result.returncode == 0:
+                messagebox.showinfo("Queue Paused", "⏸️ Task queue paused.")
+                self.refresh()
+            else:
+                messagebox.showerror("Pause Failed", result.stderr or "Unknown error")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
     
     def _resume_queue(self):
-        """Resume autonomous queue"""
-        print("▶️ Queue resumed (placeholder)")
+        """Resume/start the task queue using queue_cli"""
+        try:
+            cmd = [sys.executable, "queue_cli.py", "start"]
+            result = subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            if result.returncode == 0:
+                messagebox.showinfo("Queue Started", "▶️ Task queue running.")
+                self.refresh()
+            else:
+                messagebox.showerror("Start Failed", result.stderr or "Unknown error")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
     
     def _cleanup_completed(self):
-        """Cleanup completed tasks"""
-        print("🧹 Cleanup completed (placeholder)")
+        """Remove completed tasks using todo_manager CLI"""
+        if not messagebox.askyesno("Confirm Cleanup", "Delete all completed tasks? This action cannot be undone."):
+            return
+
+        try:
+            cmd = [sys.executable, "todo_manager.py", "cleanup", "--completed"]
+            result = subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode == 0:
+                messagebox.showinfo("Cleanup Complete", "🧹 Completed tasks removed.")
+                self.refresh()
+            else:
+                messagebox.showerror("Cleanup Failed", result.stderr or "Unknown error")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
     
     def refresh(self):
-        """Refresh view data"""
+        """Refresh view data and schedule next auto-refresh"""
         try:
             # Load task data from system service
             active_tasks = self.system_service.get_active_tasks()
@@ -202,6 +259,9 @@ class TaskManagementView(ttk.Frame):
         except Exception as e:
             print(f"Error refreshing task data: {e}")
             self.queue_status.configure(text="❌ Error loading tasks")
+
+        # Schedule next refresh (30 s)
+        self.after(30_000, self.refresh)
     
     def _update_task_list(self, queue_type, tasks):
         """Update specific task list with data"""

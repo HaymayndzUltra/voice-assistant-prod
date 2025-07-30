@@ -5,10 +5,12 @@ Agent management interface with health monitoring and
 control for 294 discovered agents across MainPC and PC2.
 """
 
+# Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter.constants import *
+import subprocess
+import sys
 
 try:
     import ttkbootstrap as ttk
@@ -280,33 +282,58 @@ class AgentControlView(ttk.Frame):
         selection = self.agent_tree.selection()
         if selection:
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"🚀 Starting agent: {agent_name} (placeholder)")
+            self._run_agent_cli("start", agent_name)
+
+    def _run_agent_cli(self, command: str, *args):
+        """Utility to run agent_cli.py commands"""
+        try:
+            cmd = [sys.executable, "agent_cli.py", command] + list(args)
+            result = subprocess.run(
+                cmd,
+                cwd=self.system_service.project_root,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            if result.returncode == 0:
+                self._log(f"✅ Agent command succeeded: {command} {' '.join(args)}")
+                self.refresh()
+            else:
+                self._log(f"❌ Agent command failed: {result.stderr}")
+                messagebox.showerror("Agent Error", result.stderr or "Unknown error")
+        except subprocess.TimeoutExpired:
+            messagebox.showerror("Timeout", "Agent command timed out.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _log(self, msg: str):
+        print(msg)
     
     def _stop_agent(self):
         """Stop selected agent"""
         selection = self.agent_tree.selection()
         if selection:
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"⏹️ Stopping agent: {agent_name} (placeholder)")
+            self._run_agent_cli("stop", agent_name)
     
     def _restart_agent(self):
         """Restart selected agent"""
         selection = self.agent_tree.selection()
         if selection:
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"🔁 Restarting agent: {agent_name} (placeholder)")
+            self._run_agent_cli("restart", agent_name)
     
     def _cleanup_conflicts(self):
         """Cleanup port conflicts"""
-        print("🧹 Cleaning up port conflicts (placeholder)")
+        self._run_agent_cli("cleanup-conflicts")
     
     def _rescan_agents(self):
         """Rescan all agents"""
-        print("🔍 Rescanning all agents (placeholder)")
-        self.refresh()
+        self._run_agent_cli("scan")
     
     def refresh(self):
-        """Refresh view data"""
+        """Refresh view data and schedule next update"""
         try:
             # Load agent data from system service
             agent_status = self.system_service.get_agent_status()
@@ -327,6 +354,9 @@ class AgentControlView(ttk.Frame):
         except Exception as e:
             print(f"Error refreshing agent data: {e}")
             self.agent_summary.configure(text="❌ Error loading agent data")
+
+        # schedule auto-refresh 60s
+        self.after(60_000, self.refresh)
     
     def _update_overview_cards(self, agent_status):
         """Update overview cards with agent data"""
@@ -337,8 +367,9 @@ class AgentControlView(ttk.Frame):
             total_agents = summary.get("total_agents", 294)
             self.overview_cards["total"].value_label.configure(text=str(total_agents))
             
-            # Online agents (placeholder - would need real-time check)
-            online_count = 0  # This would be calculated from actual agent health checks
+            # Online agents count
+            agents_list = agent_status.get("agents", [])
+            online_count = sum(1 for a in agents_list if a.get("status") in ("running", "online"))
             self.overview_cards["online"].value_label.configure(text=str(online_count))
             
             # Port conflicts
