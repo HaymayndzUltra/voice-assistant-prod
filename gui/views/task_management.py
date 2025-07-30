@@ -47,7 +47,11 @@ class TaskManagementView(ttk.Frame):
         # Control panel
         self._create_control_panel(main_container)
         
-        # Load initial data
+        # Subscribe to task updates
+        if hasattr(self.system_service, "bus") and self.system_service.bus:
+            self.system_service.bus.subscribe("tasks_updated", lambda **_: self.refresh())
+
+        # Initial load
         self.refresh()
     
     def _create_header(self, parent):
@@ -260,8 +264,7 @@ class TaskManagementView(ttk.Frame):
             print(f"Error refreshing task data: {e}")
             self.queue_status.configure(text="❌ Error loading tasks")
 
-        # Schedule next refresh (30 s)
-        self.after(30_000, self.refresh)
+        # No need for periodic polling – EventBus will trigger on changes
     
     def _update_task_list(self, queue_type, tasks):
         """Update specific task list with data"""

@@ -50,7 +50,9 @@ class AgentControlView(ttk.Frame):
         # Control panel
         self._create_control_panel(main_container)
         
-        # Load initial data
+        # EventBus subscribe
+        if hasattr(self.system_service, "bus") and self.system_service.bus:
+            self.system_service.bus.subscribe("agent_status_changed", lambda **_: self.refresh())
         self.refresh()
     
     def _create_header(self, parent):
@@ -355,9 +357,8 @@ class AgentControlView(ttk.Frame):
             print(f"Error refreshing agent data: {e}")
             self.agent_summary.configure(text="❌ Error loading agent data")
 
-        # schedule auto-refresh 60s
-        self.after(60_000, self.refresh)
-    
+        # Event-driven; no periodic polling
+
     def _update_overview_cards(self, agent_status):
         """Update overview cards with agent data"""
         try:
