@@ -320,14 +320,40 @@ class SystemService:
     def get_agent_status(self) -> Dict[str, Any]:
         """Get agent system status"""
         try:
-            scan_results_file = self.memory_bank / "agent-scan-results.json"
+            # Check both possible locations for agent scan results
+            scan_results_file = self.project_root / "agent_scan_results.json"
+            if not scan_results_file.exists():
+                # Try memory-bank location
+                scan_results_file = self.memory_bank / "agent_scan_results.json"
+                
             if scan_results_file.exists():
                 with open(scan_results_file, 'r') as f:
-                    return json.load(f)
-            return {}
+                    data = json.load(f)
+                    # Add summary for dashboard
+                    data['summary'] = {
+                        'total_agents': data.get('total_agents', len(data.get('agents', []))),
+                        'active_agents': data.get('active_agents', 0),
+                        'port_conflicts': data.get('port_conflicts', 0)
+                    }
+                    return data
+            return {
+                'summary': {
+                    'total_agents': 0,
+                    'active_agents': 0,
+                    'port_conflicts': 0
+                },
+                'agents': []
+            }
         except Exception as e:
             print(f"Error loading agent status: {e}")
-            return {}
+            return {
+                'summary': {
+                    'total_agents': 0,
+                    'active_agents': 0,  
+                    'port_conflicts': 0
+                },
+                'agents': []
+            }
     
     def get_memory_status(self) -> Dict[str, Any]:
         """Get memory system status"""

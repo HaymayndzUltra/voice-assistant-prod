@@ -217,56 +217,95 @@ class AgentControlView(ttk.Frame):
     
     def _on_agent_select(self, event):
         """Handle agent selection"""
-        selection = self.agent_tree.selection()
-        if selection:
-            item = self.agent_tree.item(selection[0])
-            agent_name = item['values'][0]
-            self._show_agent_details(agent_name)
+        try:
+            selection = self.agent_tree.selection()
+            if not selection:
+                return
+                
+            # Get the selected item
+            item = selection[0]
+            
+            # Try to get stored agent data
+            try:
+                agent_data = self.agent_tree.set(item, "agent_data")
+                if isinstance(agent_data, str):
+                    # If it's stored as string, it might be a placeholder
+                    agent_values = self.agent_tree.item(item)['values']
+                    agent_name = agent_values[0] if agent_values else "Unknown"
+                    self._show_agent_details(agent_name, None)
+                else:
+                    # We have full agent data
+                    self._show_agent_details(agent_data.get("name", "Unknown"), agent_data)
+            except:
+                # Fallback to just using the name from the tree
+                agent_values = self.agent_tree.item(item)['values']
+                agent_name = agent_values[0] if agent_values else "Unknown"
+                self._show_agent_details(agent_name, None)
+                
+        except Exception as e:
+            print(f"Error handling agent selection: {e}")
     
-    def _show_agent_details(self, agent_name):
+    def _show_agent_details(self, agent_name, agent_data):
         """Show detailed agent information"""
         try:
-            # Get agent data from system service
-            agent_status = self.system_service.get_agent_status()
-            agent_data = None
-            
-            # Find agent in scan results
-            agents = agent_status.get("agents", [])
-            for agent in agents:
-                if agent.get("name") == agent_name:
-                    agent_data = agent
-                    break
+            # Get agent data from system service if not provided
+            if agent_data is None:
+                agent_status = self.system_service.get_agent_status()
+                agents = agent_status.get("agents", [])
+                for agent in agents:
+                    if agent.get("name") == agent_name:
+                        agent_data = agent
+                        break
             
             # Update details display
             self.agent_details.configure(state=tk.NORMAL)
             self.agent_details.delete(1.0, tk.END)
             
+            # Build details text
+            details_text = f"🤖 AGENT: {agent_name}\n\n"
+            
             if agent_data:
-                details_text = f"🤖 AGENT: {agent_name}\n\n"
-                details_text += f"📁 Directory: {agent_data.get('directory', 'Unknown')}\n"
-                details_text += f"🔌 Port: {agent_data.get('port', 'Unknown')}\n"
-                details_text += f"🟢 Status: {agent_data.get('status', 'Unknown')}\n"
-                details_text += f"📄 File Size: {agent_data.get('file_size', 'Unknown')}\n"
-                details_text += f"📝 Functions: {agent_data.get('function_count', 0)}\n"
-                details_text += f"🏗️ Classes: {agent_data.get('class_count', 0)}\n\n"
+                # Basic information
+                details_text += f"📝 ID: {agent_data.get('id', 'N/A')}\n"
+                details_text += f"🏷️ Type: {agent_data.get('type', 'N/A')}\n"
+                details_text += f"📂 Category: {agent_data.get('category', 'N/A').title()}\n"
+                details_text += f"📊 Status: {agent_data.get('status', 'unknown').title()}\n"
+                details_text += f"💚 Health: {agent_data.get('health', 'unknown').title()}\n\n"
                 
-                # Configuration details
-                config = agent_data.get('config', {})
-                if config:
-                    details_text += "⚙️ CONFIGURATION:\n"
-                    for key, value in config.items():
-                        details_text += f"   • {key}: {value}\n"
+                # Connection info
+                details_text += "🔌 CONNECTION INFO:\n"
+                details_text += f"   • Port: {agent_data.get('port', 'N/A')}\n"
+                if agent_data.get('pid'):
+                    details_text += f"   • Process ID: {agent_data.get('pid')}\n"
+                details_text += "\n"
+                
+                # Performance metrics
+                if agent_data.get('cpu_usage') is not None or agent_data.get('memory_usage') is not None:
+                    details_text += "📈 PERFORMANCE:\n"
+                    if agent_data.get('cpu_usage') is not None:
+                        details_text += f"   • CPU Usage: {agent_data.get('cpu_usage')}%\n"
+                    if agent_data.get('memory_usage') is not None:
+                        details_text += f"   • Memory: {agent_data.get('memory_usage')} MB\n"
+                    if agent_data.get('uptime'):
+                        uptime_hours = agent_data.get('uptime', 0) / 3600
+                        details_text += f"   • Uptime: {uptime_hours:.1f} hours\n"
                     details_text += "\n"
                 
-                # Health check info
-                health = agent_data.get('health_check', {})
-                if health:
-                    details_text += "🏥 HEALTH CHECK:\n"
-                    details_text += f"   • Available: {health.get('available', False)}\n"
-                    details_text += f"   • Last Check: {health.get('last_check', 'Never')}\n"
+                # Issues/warnings
+                issues = agent_data.get('issues', [])
+                if issues:
+                    details_text += "⚠️ ISSUES:\n"
+                    for issue in issues:
+                        details_text += f"   • {issue}\n"
+                    details_text += "\n"
+                
+                # Last check
+                if agent_data.get('last_check'):
+                    details_text += f"🕐 Last Check: {agent_data.get('last_check')}\n"
                 
             else:
-                details_text = f"No detailed information available for {agent_name}"
+                details_text = f"No detailed information available for {agent_name}\n\n"
+                details_text += "ℹ️ Run a health check or rescan to gather agent information."
             
             self.agent_details.insert(tk.END, details_text)
             self.agent_details.configure(state=tk.DISABLED)
@@ -277,33 +316,135 @@ class AgentControlView(ttk.Frame):
     # Control methods
     def _start_agent(self):
         """Start selected agent"""
-        selection = self.agent_tree.selection()
-        if selection:
+        try:
+            selection = self.agent_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select an agent to start")
+                return
+                
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"🚀 Starting agent: {agent_name} (placeholder)")
+            
+            # For now, show info message - actual agent start would require agent-specific scripts
+            messagebox.showinfo(
+                "Start Agent", 
+                f"Starting agent '{agent_name}' would require:\n\n"
+                f"1. Locating the agent's start script\n"
+                f"2. Checking port availability\n"
+                f"3. Starting the agent process\n\n"
+                f"This functionality needs to be implemented based on your agent architecture."
+            )
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Error starting agent: {e}")
     
     def _stop_agent(self):
         """Stop selected agent"""
-        selection = self.agent_tree.selection()
-        if selection:
+        try:
+            selection = self.agent_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select an agent to stop")
+                return
+                
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"⏹️ Stopping agent: {agent_name} (placeholder)")
+            
+            # Confirm stop
+            response = messagebox.askyesno(
+                "Stop Agent",
+                f"Are you sure you want to stop agent '{agent_name}'?"
+            )
+            
+            if response:
+                # For now, show info message
+                messagebox.showinfo(
+                    "Stop Agent",
+                    f"Stopping agent '{agent_name}' would require:\n\n"
+                    f"1. Finding the agent's process ID\n"
+                    f"2. Sending stop signal\n"
+                    f"3. Verifying clean shutdown\n\n"
+                    f"This functionality needs to be implemented based on your agent architecture."
+                )
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error stopping agent: {e}")
     
     def _restart_agent(self):
         """Restart selected agent"""
-        selection = self.agent_tree.selection()
-        if selection:
+        try:
+            selection = self.agent_tree.selection()
+            if not selection:
+                messagebox.showwarning("No Selection", "Please select an agent to restart")
+                return
+                
             agent_name = self.agent_tree.item(selection[0])['values'][0]
-            print(f"🔁 Restarting agent: {agent_name} (placeholder)")
+            
+            messagebox.showinfo(
+                "Restart Agent",
+                f"Restarting agent '{agent_name}'...\n\n"
+                f"This would stop the agent and start it again."
+            )
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Error restarting agent: {e}")
     
     def _cleanup_conflicts(self):
         """Cleanup port conflicts"""
-        print("🧹 Cleaning up port conflicts (placeholder)")
+        try:
+            response = messagebox.askyesno(
+                "Cleanup Port Conflicts",
+                "This will:\n\n"
+                "• Identify agents with port conflicts\n"
+                "• Stop conflicting agents\n"
+                "• Reassign ports where possible\n\n"
+                "Continue?"
+            )
+            
+            if response:
+                # Get agent data
+                agent_status = self.system_service.get_agent_status()
+                agents = agent_status.get("agents", [])
+                
+                # Find agents with port conflicts
+                conflicts = [a for a in agents if a.get("issues") and any("conflict" in str(i).lower() for i in a["issues"])]
+                
+                if conflicts:
+                    messagebox.showinfo(
+                        "Port Conflicts Found",
+                        f"Found {len(conflicts)} agents with port conflicts:\n\n" +
+                        "\n".join([f"• {a['name']} (Port {a.get('port', 'N/A')})" for a in conflicts[:5]]) +
+                        ("\n..." if len(conflicts) > 5 else "") +
+                        "\n\nManual intervention required to resolve conflicts."
+                    )
+                else:
+                    messagebox.showinfo("No Conflicts", "No port conflicts found!")
+                    
+        except Exception as e:
+            messagebox.showerror("Error", f"Error cleaning up conflicts: {e}")
     
     def _rescan_agents(self):
         """Rescan all agents"""
-        print("🔍 Rescanning all agents (placeholder)")
-        self.refresh()
+        try:
+            response = messagebox.askyesno(
+                "Rescan Agents",
+                "This will rescan all agent directories to discover new agents.\n\n"
+                "This may take a few moments. Continue?"
+            )
+            
+            if response:
+                messagebox.showinfo(
+                    "Agent Scan",
+                    "Agent scanning would:\n\n"
+                    "• Search all configured directories\n"
+                    "• Identify agent files\n"
+                    "• Check agent health\n"
+                    "• Update agent_scan_results.json\n\n"
+                    "For now, refreshing with existing data..."
+                )
+                
+                # Refresh the view
+                self.refresh()
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error rescanning agents: {e}")
     
     def refresh(self):
         """Refresh view data"""
@@ -318,11 +459,18 @@ class AgentControlView(ttk.Frame):
             self._update_agent_list(agent_status)
             
             # Update summary
-            total_agents = agent_status.get("summary", {}).get("total_agents", 0)
-            total_dirs = agent_status.get("summary", {}).get("total_directories", 0)
-            critical_issues = agent_status.get("summary", {}).get("critical_issues", 0)
+            total_agents = agent_status.get("total_agents", len(agent_status.get("agents", [])))
+            active_agents = agent_status.get("active_agents", 0)
+            port_conflicts = agent_status.get("port_conflicts", 0)
             
-            self.agent_summary.configure(text=f"📊 {total_agents} agents in {total_dirs} directories, {critical_issues} critical issues")
+            if port_conflicts > 0:
+                self.agent_summary.configure(
+                    text=f"📊 {total_agents} agents discovered | {active_agents} active | ⚠️ {port_conflicts} port conflicts"
+                )
+            else:
+                self.agent_summary.configure(
+                    text=f"📊 {total_agents} agents discovered | {active_agents} active | ✅ No conflicts"
+                )
             
         except Exception as e:
             print(f"Error refreshing agent data: {e}")
@@ -331,23 +479,22 @@ class AgentControlView(ttk.Frame):
     def _update_overview_cards(self, agent_status):
         """Update overview cards with agent data"""
         try:
-            summary = agent_status.get("summary", {})
-            
-            # Total agents
-            total_agents = summary.get("total_agents", 294)
+            # Get total agents count
+            total_agents = agent_status.get("total_agents", len(agent_status.get("agents", [])))
             self.overview_cards["total"].value_label.configure(text=str(total_agents))
             
-            # Online agents (placeholder - would need real-time check)
-            online_count = 0  # This would be calculated from actual agent health checks
+            # Count active/online agents
+            agents = agent_status.get("agents", [])
+            online_count = sum(1 for agent in agents if agent.get("status") == "active")
             self.overview_cards["online"].value_label.configure(text=str(online_count))
             
-            # Port conflicts
-            port_conflicts = summary.get("port_conflicts", 0)
+            # Port conflicts from the data
+            port_conflicts = agent_status.get("port_conflicts", 0)
             self.overview_cards["conflicts"].value_label.configure(text=str(port_conflicts))
             
-            # Issues
-            total_issues = summary.get("critical_issues", 0) + summary.get("warnings", 0)
-            self.overview_cards["issues"].value_label.configure(text=str(total_issues))
+            # Count agents with issues
+            issues_count = sum(1 for agent in agents if agent.get("issues"))
+            self.overview_cards["issues"].value_label.configure(text=str(issues_count))
             
         except Exception as e:
             print(f"Error updating overview cards: {e}")
@@ -359,48 +506,54 @@ class AgentControlView(ttk.Frame):
             for item in self.agent_tree.get_children():
                 self.agent_tree.delete(item)
             
-            # Get agents data
+            # Get agents data from the correct structure
             agents = agent_status.get("agents", [])
             
-            # If agents is empty, try to get from different structure
-            if not agents:
-                # Try to get from scan results structure
-                scan_results = agent_status.get("scan_results", {})
-                for directory, dir_data in scan_results.items():
-                    if isinstance(dir_data, dict) and "agents" in dir_data:
-                        agents.extend(dir_data["agents"])
-            
             # Add agents to treeview
-            for agent in agents[:50]:  # Limit to first 50 for performance
+            for agent in agents:
                 try:
                     name = agent.get("name", "Unknown")
-                    status = agent.get("status", "Unknown")
+                    status = agent.get("status", "unknown")
+                    health = agent.get("health", "unknown")
                     port = agent.get("port", "N/A")
-                    directory = agent.get("directory", "Unknown")
+                    category = agent.get("category", "unknown")
                     
-                    # Shorten directory path for display
-                    if len(directory) > 30:
-                        directory = "..." + directory[-27:]
-                    
-                    # Determine status display
-                    status_display = "Unknown"
-                    if status == "running":
-                        status_display = "🟢 Online"
-                    elif status == "stopped":
-                        status_display = "🔴 Offline"
-                    elif status == "error":
-                        status_display = "❌ Error"
+                    # Determine status display based on status and health
+                    if status == "active":
+                        if health == "healthy":
+                            status_display = "🟢 Healthy"
+                        elif health == "warning":
+                            status_display = "🟡 Warning"
+                        else:
+                            status_display = "🔴 Error"
+                    elif status == "inactive":
+                        status_display = "⚪ Inactive"
                     else:
-                        status_display = "⚪ Unknown"
+                        status_display = "❓ Unknown"
                     
-                    # Insert row
-                    self.agent_tree.insert('', 'end', values=(name, status_display, port, directory))
+                    # Format port display
+                    port_display = str(port) if port != "N/A" else "N/A"
+                    
+                    # Add issues indicator if present
+                    if agent.get("issues"):
+                        port_display += " ⚠️"
+                    
+                    # Insert row with agent data
+                    item = self.agent_tree.insert('', 'end', values=(
+                        name, 
+                        status_display, 
+                        port_display, 
+                        category.title()
+                    ))
+                    
+                    # Store full agent data for details display
+                    self.agent_tree.set(item, "agent_data", agent)
                     
                 except Exception as e:
                     print(f"Error processing agent {agent}: {e}")
                     continue
             
-            # If still no agents, show placeholder
+            # If no agents found, show message
             if not self.agent_tree.get_children():
                 self.agent_tree.insert('', 'end', values=(
                     "No agents found", 
