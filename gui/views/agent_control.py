@@ -20,6 +20,8 @@ except ImportError:
     import tkinter.ttk as ttk
     MODERN_STYLING = False
 
+from gui.utils.toast import show_info, show_error
+
 
 class AgentControlView(ttk.Frame):
     """Agent control view"""
@@ -299,15 +301,14 @@ class AgentControlView(ttk.Frame):
             )
 
             if result.returncode == 0:
-                self._log(f"✅ Agent command succeeded: {command} {' '.join(args)}")
+                show_info(self.winfo_toplevel(), f"✅ {command} succeeded for {args[0] if args else ''}")
                 self.refresh()
             else:
-                self._log(f"❌ Agent command failed: {result.stderr}")
-                messagebox.showerror("Agent Error", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Agent Error")
         except subprocess.TimeoutExpired:
-            messagebox.showerror("Timeout", "Agent command timed out.")
+            show_error(self.winfo_toplevel(), "Agent command timed out.", "Timeout")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
 
     def _log(self, msg: str):
         print(msg)
