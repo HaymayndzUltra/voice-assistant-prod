@@ -14,6 +14,8 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import subprocess
 import sys
+import asyncio
+from gui.services.async_runner import AsyncRunner, RunResult
 from gui.services.event_bus import EventBus
 from watchdog.observers import Observer  # type: ignore
 from watchdog.events import FileSystemEventHandler  # type: ignore
@@ -393,6 +395,23 @@ class SystemService:
                 "error": str(e),
                 "return_code": -1
             }
+
+    # ------------------------------------------------------------------
+    # Async variant using AsyncRunner
+    # ------------------------------------------------------------------
+    async def async_execute_cli(self, command: str) -> Dict[str, Any]:
+        """Async version suitable for non-blocking calls from views."""
+        cmd_parts = command.split()
+        full_cmd = [sys.executable, "memory_system/cli.py"] + cmd_parts
+
+        result: RunResult = await AsyncRunner().run(*full_cmd, cwd=self.project_root, timeout=60)
+
+        return {
+            "success": result.success,
+            "output": result.stdout,
+            "error": result.stderr,
+            "return_code": result.returncode,
+        }
     
     def _update_system_health(self):
         """Update system health in background"""
