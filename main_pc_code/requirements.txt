@@ -23,7 +23,6 @@ flake8>=6.0.0
 flask==2.3.3
 requests==2.31.0
 pyyaml==6.0.1
-python-dotenv==1.0.0
 fastapi==0.103.1
 uvicorn==0.23.2
 websockets==12.0

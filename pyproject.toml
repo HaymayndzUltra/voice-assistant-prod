@@ -8,10 +8,22 @@ version = "0.0.0-dev"
 description = "Memory System package skeleton"
 requires-python = ">=3.8"
 authors = [{ name = "Memory System Team" }]
+dependencies = [
+    "aiofiles>=23.0.0",
+    "aiohttp>=3.9.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.0.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+    "python-dateutil>=2.8.0",
+    "pytz>=2023.3"
+]
 
 [project.scripts]
 memoryctl = "memory_system.cli:main"
-
 dependencies = [
     "aiofiles>=23.0.0",
     "aiohttp>=3.9.0",
