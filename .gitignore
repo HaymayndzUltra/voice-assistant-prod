@@ -2,7 +2,6 @@
 # Python / General
 # ===================================================================
 memory-bank/current-session.md
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -191,4 +190,5 @@ models_cache/
 whisper.cpp/
 secrets/
 .env
+memory-bank/current-session.md
 memory-bank/current-session.md

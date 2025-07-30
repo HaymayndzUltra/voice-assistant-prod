@@ -20,6 +20,8 @@ except ImportError:
     import tkinter.ttk as ttk
     MODERN_STYLING = False
 
+from gui.utils.toast import show_info, show_error
+
 
 class TaskManagementView(ttk.Frame):
     """Task management view"""
@@ -47,7 +49,11 @@ class TaskManagementView(ttk.Frame):
         # Control panel
         self._create_control_panel(main_container)
         
-        # Load initial data
+        # Subscribe to task updates
+        if hasattr(self.system_service, "bus") and self.system_service.bus:
+            self.system_service.bus.subscribe("tasks_updated", lambda **_: self.refresh())
+
+        # Initial load
         self.refresh()
     
     def _create_header(self, parent):
@@ -169,14 +175,14 @@ class TaskManagementView(ttk.Frame):
             )
 
             if result.returncode == 0:
-                messagebox.showinfo("Task Created", f"✅ Task added: {task_desc}")
+                show_info(self.winfo_toplevel(), f"✅ Task added: {task_desc}", "Task Created")
                 self.refresh()
             else:
-                messagebox.showerror("Task Creation Failed", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Task Creation Failed")
         except subprocess.TimeoutExpired:
-            messagebox.showerror("Timeout", "todo_manager did not respond in time.")
+            show_error(self.winfo_toplevel(), "todo_manager did not respond in time.", "Timeout")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
     
     def _pause_queue(self):
         """Pause the task queue using queue_cli"""
@@ -190,12 +196,12 @@ class TaskManagementView(ttk.Frame):
                 timeout=15,
             )
             if result.returncode == 0:
-                messagebox.showinfo("Queue Paused", "⏸️ Task queue paused.")
+                show_info(self.winfo_toplevel(), "⏸️ Task queue paused.", "Queue Paused")
                 self.refresh()
             else:
-                messagebox.showerror("Pause Failed", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Pause Failed")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
     
     def _resume_queue(self):
         """Resume/start the task queue using queue_cli"""
@@ -209,12 +215,12 @@ class TaskManagementView(ttk.Frame):
                 timeout=15,
             )
             if result.returncode == 0:
-                messagebox.showinfo("Queue Started", "▶️ Task queue running.")
+                show_info(self.winfo_toplevel(), "▶️ Task queue running.", "Queue Started")
                 self.refresh()
             else:
-                messagebox.showerror("Start Failed", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Start Failed")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
     
     def _cleanup_completed(self):
         """Remove completed tasks using todo_manager CLI"""
@@ -232,12 +238,12 @@ class TaskManagementView(ttk.Frame):
             )
 
             if result.returncode == 0:
-                messagebox.showinfo("Cleanup Complete", "🧹 Completed tasks removed.")
+                show_info(self.winfo_toplevel(), "🧹 Completed tasks removed.", "Cleanup Complete")
                 self.refresh()
             else:
-                messagebox.showerror("Cleanup Failed", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Cleanup Failed")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
     
     def refresh(self):
         """Refresh view data and schedule next auto-refresh"""
@@ -260,8 +266,7 @@ class TaskManagementView(ttk.Frame):
             print(f"Error refreshing task data: {e}")
             self.queue_status.configure(text="❌ Error loading tasks")
 
-        # Schedule next refresh (30 s)
-        self.after(30_000, self.refresh)
+        # No need for periodic polling – EventBus will trigger on changes
     
     def _update_task_list(self, queue_type, tasks):
         """Update specific task list with data"""

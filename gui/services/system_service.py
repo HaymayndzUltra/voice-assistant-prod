@@ -14,12 +14,17 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import subprocess
 import sys
+import asyncio
+from gui.services.async_runner import AsyncRunner, RunResult
+from gui.services.event_bus import EventBus
+from watchdog.observers import Observer  # type: ignore
+from watchdog.events import FileSystemEventHandler  # type: ignore
 
 
 class SystemService:
     """Main system service for GUI integration"""
     
-    def __init__(self):
+    def __init__(self, tk_root=None):
         """Initialize system service"""
         self.project_root = Path(__file__).parent.parent.parent
         self.memory_bank = self.project_root / "memory-bank"
@@ -31,10 +36,16 @@ class SystemService:
         self._system_health = {}
         self._cached_data = {}
         
+        # Event bus
+        self.bus = EventBus(tk_root) if tk_root is not None else None
+
         # Initialize services
         self._initialize_paths()
         self._update_system_health()
-    
+
+        # Start file watchers
+        self._start_watchers()
+
     def _initialize_paths(self):
         """Initialize required paths"""
         try:
@@ -384,6 +395,23 @@ class SystemService:
                 "error": str(e),
                 "return_code": -1
             }
+
+    # ------------------------------------------------------------------
+    # Async variant using AsyncRunner
+    # ------------------------------------------------------------------
+    async def async_execute_cli(self, command: str) -> Dict[str, Any]:
+        """Async version suitable for non-blocking calls from views."""
+        cmd_parts = command.split()
+        full_cmd = [sys.executable, "memory_system/cli.py"] + cmd_parts
+
+        result: RunResult = await AsyncRunner().run(*full_cmd, cwd=self.project_root, timeout=60)
+
+        return {
+            "success": result.success,
+            "output": result.stdout,
+            "error": result.stderr,
+            "return_code": result.returncode,
+        }
     
     def _update_system_health(self):
         """Update system health in background"""
@@ -399,6 +427,33 @@ class SystemService:
         # Start background thread
         health_thread = threading.Thread(target=update_loop, daemon=True)
         health_thread.start()
+
+    # ------------------------------------------------------------------
+    # Watchdog integration
+    # ------------------------------------------------------------------
+    def _start_watchers(self):
+        if self.bus is None:
+            return  # need tk_root for safe callbacks
+
+        class _Handler(FileSystemEventHandler):
+            def __init__(self, parent):
+                self.parent = parent
+
+            def on_modified(self, event):
+                if event.is_directory:
+                    return
+                path = Path(event.src_path)
+                if path.name.startswith("tasks_") and path.suffix == ".json":
+                    self.parent.bus.publish("tasks_updated")
+                elif path.name == "agent-scan-results.json":
+                    self.parent.bus.publish("agent_status_changed")
+
+        handler = _Handler(self)
+        observer = Observer()
+        observer.schedule(handler, str(self.queue_system), recursive=False)
+        observer.schedule(handler, str(self.memory_bank), recursive=False)
+        observer.daemon = True
+        observer.start()
     
     def stop(self):
         """Stop the system service"""

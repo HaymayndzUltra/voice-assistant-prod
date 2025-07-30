@@ -31,6 +31,12 @@ class DashboardView(ttk.Frame):
         # Create dashboard layout
         self._create_layout()
         
+        # Subscribe to system events for reactive updates
+        if hasattr(self.system_service, "bus") and self.system_service.bus:
+            bus = self.system_service.bus
+            bus.subscribe("tasks_updated", lambda **_: self.refresh())
+            bus.subscribe("agent_status_changed", lambda **_: self.refresh())
+
         # Initial data load
         self.refresh()
     

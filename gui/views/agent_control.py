@@ -20,6 +20,8 @@ except ImportError:
     import tkinter.ttk as ttk
     MODERN_STYLING = False
 
+from gui.utils.toast import show_info, show_error
+
 
 class AgentControlView(ttk.Frame):
     """Agent control view"""
@@ -50,7 +52,9 @@ class AgentControlView(ttk.Frame):
         # Control panel
         self._create_control_panel(main_container)
         
-        # Load initial data
+        # EventBus subscribe
+        if hasattr(self.system_service, "bus") and self.system_service.bus:
+            self.system_service.bus.subscribe("agent_status_changed", lambda **_: self.refresh())
         self.refresh()
     
     def _create_header(self, parent):
@@ -297,15 +301,14 @@ class AgentControlView(ttk.Frame):
             )
 
             if result.returncode == 0:
-                self._log(f"✅ Agent command succeeded: {command} {' '.join(args)}")
+                show_info(self.winfo_toplevel(), f"✅ {command} succeeded for {args[0] if args else ''}")
                 self.refresh()
             else:
-                self._log(f"❌ Agent command failed: {result.stderr}")
-                messagebox.showerror("Agent Error", result.stderr or "Unknown error")
+                show_error(self.winfo_toplevel(), result.stderr or "Unknown error", "Agent Error")
         except subprocess.TimeoutExpired:
-            messagebox.showerror("Timeout", "Agent command timed out.")
+            show_error(self.winfo_toplevel(), "Agent command timed out.", "Timeout")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            show_error(self.winfo_toplevel(), str(e), "Error")
 
     def _log(self, msg: str):
         print(msg)
@@ -355,9 +358,8 @@ class AgentControlView(ttk.Frame):
             print(f"Error refreshing agent data: {e}")
             self.agent_summary.configure(text="❌ Error loading agent data")
 
-        # schedule auto-refresh 60s
-        self.after(60_000, self.refresh)
-    
+        # Event-driven; no periodic polling
+
     def _update_overview_cards(self, agent_status):
         """Update overview cards with agent data"""
         try:
