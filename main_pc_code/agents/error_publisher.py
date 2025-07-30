@@ -114,7 +114,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
     # ------------------------------------------------------------------
     @staticmethod
     def _build_default_endpoint() -> str:
-        host = os.environ.get("ERROR_BUS_HOST") or get_pc2_ip())
+        host = os.environ.get("ERROR_BUS_HOST") or get_pc2_ip()
         port = int(os.environ.get("ERROR_BUS_PORT", 7150))
         return f"tcp://{host}:{port}"
 

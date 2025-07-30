@@ -167,7 +167,7 @@ agent_groups:
       - SystemDigitalTwin
       - ModelManagerSuite
     SelfTrainingOrchestrator:
-      script_path: main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py
+      script_path: main_pc_code/FORMAINPC/self_training_orchestrator.py
       port: "${PORT_OFFSET}+5660"
       health_check_port: "${PORT_OFFSET}+6660"
       required: true
@@ -190,7 +190,7 @@ agent_groups:
       - CodeGenerator
       - SystemDigitalTwin
     TinyLlamaServiceEnhanced:
-      script_path: main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py
+      script_path: main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
       port: "${PORT_OFFSET}+5615"
       health_check_port: "${PORT_OFFSET}+6615"
       required: false
@@ -198,7 +198,7 @@ agent_groups:
       - ModelManagerSuite
       - SystemDigitalTwin
     LocalFineTunerAgent:
-      script_path: main_pc_code/FORMAINPC/LocalFineTunerAgent.py
+      script_path: main_pc_code/FORMAINPC/local_fine_tuner_agent.py
       port: "${PORT_OFFSET}+5642"
       health_check_port: "${PORT_OFFSET}+6642"
       required: true
@@ -209,7 +209,7 @@ agent_groups:
     # VRAMOptimizerAgent moved to foundation_services to avoid duplication
   reasoning_services:
     ChainOfThoughtAgent:
-      script_path: main_pc_code/FORMAINPC/ChainOfThoughtAgent.py
+      script_path: main_pc_code/FORMAINPC/chain_of_thought_agent.py
       port: "${PORT_OFFSET}+5612"
       health_check_port: "${PORT_OFFSET}+6612"
       required: true
@@ -217,7 +217,7 @@ agent_groups:
       - ModelManagerSuite
       - SystemDigitalTwin
     GoTToTAgent:
-      script_path: main_pc_code/FORMAINPC/GOT_TOTAgent.py
+      script_path: main_pc_code/FORMAINPC/got_tot_agent.py
       port: "${PORT_OFFSET}+5646"
       health_check_port: "${PORT_OFFSET}+6646"
       required: false
@@ -226,7 +226,7 @@ agent_groups:
       - SystemDigitalTwin
       - ChainOfThoughtAgent
     CognitiveModelAgent:
-      script_path: main_pc_code/FORMAINPC/CognitiveModelAgent.py
+      script_path: main_pc_code/FORMAINPC/cognitive_model_agent.py
       port: "${PORT_OFFSET}+5641"
       health_check_port: "${PORT_OFFSET}+6641"
       required: false
@@ -279,7 +279,7 @@ agent_groups:
       - LearningManager
       - SystemDigitalTwin
     LearningAdjusterAgent:
-      script_path: main_pc_code/FORMAINPC/LearningAdjusterAgent.py
+      script_path: main_pc_code/FORMAINPC/learning_adjuster_agent.py
       port: "${PORT_OFFSET}+5643"
       health_check_port: "${PORT_OFFSET}+6643"
       required: true
@@ -530,7 +530,7 @@ agent_groups:
       - ModelManagerSuite
       - SystemDigitalTwin
     NLLBAdapter:
-      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
+      script_path: main_pc_code/FORMAINPC/nllb_adapter.py
       port: "${PORT_OFFSET}+5582"
       health_check_port: "${PORT_OFFSET}+6582"
       required: true

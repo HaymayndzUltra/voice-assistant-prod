@@ -1,4 +1,17 @@
-# 🚀 Session Start Workflow
+# 🚀 Session Start Workflow - ENHANCED WITH AUTO-SYNC
+
+## ⚡ CRITICAL: AUTOMATIC STATE SYNCHRONIZATION
+
+### 0. Immediate State Validation & Sync
+```bash
+# AUTOMATIC: Validate and sync all state files on session start
+python3 auto_state_sync_hook.py --validate
+```
+
+```bash
+# AUTO-FIX: Sync states if inconsistencies detected
+python3 session_continuity_manager.py --sync-all
+```
 
 ## 📋 AUTO-TRIGGER ACTIONS ON SESSION START
 

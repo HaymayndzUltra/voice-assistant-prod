@@ -2,13 +2,19 @@
 
 ## 📋 AUTO-TRIGGER ACTIONS AFTER SIGNIFICANT CHANGES
 
-### 1. Memory System Update
+### 1. AUTOMATIC STATE SYNC (CRITICAL)
+```bash
+# AUTO-SYNC: Update all state files with current progress
+python3 auto_state_sync_hook.py "[task_name]" "in_progress"
+```
+
+### 2. Memory System Update
 ```bash
 # Store summary of changes in memory system
 python3 memory_system/cli.py store --summary "Code changes completed: $(date)"
 ```
 
-### 2. State Files Synchronization
+### 3. State Files Synchronization
 ```python
 # Update all state files to maintain consistency
 python3 -c "

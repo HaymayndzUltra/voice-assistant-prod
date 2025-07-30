@@ -16,6 +16,13 @@ Natural Language Understanding agent that analyzes user input and extracts inten
 """
 
 from common.core.base_agent import BaseAgent
+# Enhanced BaseAgent capabilities for performance monitoring
+try:
+    from common.core.enhanced_base_agent import EnhancedBaseAgent, PerformanceMetrics
+    ENHANCED_AVAILABLE = True
+except ImportError:
+    ENHANCED_AVAILABLE = False
+    
 import os
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
@@ -54,7 +61,10 @@ logger = logging.getLogger("NLUAgent")
 # Constants
 ZMQ_REQUEST_TIMEOUT = 5000  # ms
 
-class NLUAgent(BaseAgent):
+# Use enhanced BaseAgent if available for better performance monitoring
+BaseClass = EnhancedBaseAgent if ENHANCED_AVAILABLE else BaseAgent
+
+class NLUAgent(BaseClass):
     """Natural Language Understanding agent that analyzes user input and extracts intents and entities. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
     
     def __init__(self, port: int = None, name: str = None, **kwargs):
@@ -66,8 +76,19 @@ class NLUAgent(BaseAgent):
         
         # Initialize basic state
         self.running = True
-        # Hybrid LLM adapter
-        self.remote_api = RemoteApiAdapter()
+        
+        # Initialize enhanced features if available
+        if ENHANCED_AVAILABLE:
+            self.performance_metrics = PerformanceMetrics()
+            logger.info(f"Enhanced monitoring enabled for {agent_name}")
+        
+        # Hybrid LLM adapter for complex processing
+        try:
+            self.remote_api = RemoteApiAdapter()
+            logger.info("Remote API adapter initialized")
+        except Exception as e:
+            logger.warning(f"Remote API adapter not available: {e}")
+            self.remote_api = None
         
         # Define intent patterns
         self.intent_patterns = [
@@ -333,12 +354,22 @@ class NLUAgent(BaseAgent):
 
     def _get_health_status(self):
         """Return detailed health status information."""
-        return {
+        base_status = {
             "status": "ok" if self.initialization_status["is_initialized"] else "initializing",
             "message": "NLUAgent is running",
             "initialization": self.initialization_status,
-            "uptime_seconds": time.time() - self.start_time
+            "uptime_seconds": time.time() - self.start_time,
+            "remote_api_available": self.remote_api is not None
         }
+        
+        # Add enhanced metrics if available
+        if ENHANCED_AVAILABLE and hasattr(self, 'performance_metrics'):
+            base_status["performance_metrics"] = self.performance_metrics.get_current_metrics()
+            base_status["enhanced_monitoring"] = True
+        else:
+            base_status["enhanced_monitoring"] = False
+            
+        return base_status
     
     def health_check(self):
         """Perform a health check and return status."""

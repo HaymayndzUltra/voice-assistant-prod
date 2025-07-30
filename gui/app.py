@@ -31,7 +31,10 @@ try:
     from .views.memory_intelligence import MemoryIntelligenceView
     from .views.monitoring import MonitoringView
     from .views.automation_control import AutomationControlView
-    from .services.system_service import SystemService
+    from services.system_service import SystemService
+    from services.event_bus import EventBus
+    from services.async_runner import AsyncRunner
+    from services.nlu_integration import get_nlu_service
 except ImportError:
     from styles.theme import ModernTheme
     from views.dashboard import DashboardView
