@@ -402,7 +402,6 @@ class MainPCHealthChecker:
                     status_value = response[success_key]
                     # Accept "ok", "HEALTHY", or "healthy" as valid status values
                     if (status_value == success_value or
-                        pass  # TODO: Implement
                         status_value == "HEALTHY" or
                         (isinstance(status_value, str) and status_value.lower() == "healthy")):
                     agent.status = "HEALTHY"

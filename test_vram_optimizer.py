@@ -294,7 +294,7 @@ def run_test_suite(vra_host: str, vra_port: int, mma_host: str, mma_port: int, s
 
     # Print summary
     logger.info("\n=== Test Results Summary ===")
-    logger.info(f"VRAMOptimizerAgent: {\"HEALTHY\" if test_vram_optimizer_health(vra_host, vra_port) else \"UNHEALTHY\"}")
+    logger.info(f"VRAMOptimizerAgent: {'HEALTHY' if test_vram_optimizer_health(vra_host, vra_port) else 'UNHEALTHY'}")
 
     # Get current VRAM status
     final_vram_status = test_get_vram_status(vra_host, vra_port)
