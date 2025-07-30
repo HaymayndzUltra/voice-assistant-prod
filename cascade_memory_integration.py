@@ -13,17 +13,18 @@ logger = logging.getLogger(__name__)
 
 class CascadeMemoryHelper:
     """Memory helper specifically designed for Cascade AI"""
-    
+
     def __init__(self):
+        """TODO: Add description for __init__."""
         self.memory_manager = unified_memory
         self.session_start = datetime.now()
-    
+
     def check_my_memory(self) -> dict:
         """Function that mimics Cursor's memory check"""
         logger.info("🧠 Checking Cascade memory state...")
-        
+
         context = continue_session()
-        
+
         memory_status = {
             "session_start": self.session_start.isoformat(),
             "memory_provider": self.memory_manager.provider_type,
@@ -33,7 +34,7 @@ class CascadeMemoryHelper:
             "todo_count": 0,
             "last_session_activity": None
         }
-        
+
         # Extract active tasks
         if "active_tasks" in context and context["active_tasks"].get("tasks"):
             for task in context["active_tasks"]["tasks"]:
@@ -45,41 +46,41 @@ class CascadeMemoryHelper:
                         "todos_remaining": len([t for t in task.get("todos", []) if not t.get("done", False)])
                     })
             memory_status["todo_count"] = sum(len(task.get("todos", [])) for task in context["active_tasks"]["tasks"])
-        
+
         # Get current focus from cursor state
         if "cursor_state" in context:
             cursor_data = context["cursor_state"]
             if "cursor_session" in cursor_data:
                 memory_status["current_focus"] = cursor_data["cursor_session"].get("current_task", "No current task")
                 memory_status["last_session_activity"] = cursor_data["cursor_session"].get("last_activity", "Unknown")
-        
+
         # Search for recent activities
         recent_memories = search_memory("2025-07", limit=3)
         memory_status["recent_activities"] = recent_memories
-        
+
         return memory_status
-    
+
     def continue_work(self) -> dict:
         """Function that mimics Cursor's continue functionality"""
         logger.info("🔄 Continuing from where we left off...")
-        
+
         memory_status = self.check_my_memory()
-        
+
         continuation_plan = {
             "can_continue": False,
             "next_action": "No clear next action",
             "context_summary": "No previous context",
             "suggested_commands": []
         }
-        
+
         # Determine if we can continue
         if memory_status["active_tasks"]:
             continuation_plan["can_continue"] = True
-            
+
             # Find the most recent or important task
             current_task = memory_status["active_tasks"][0]  # Most recent
             continuation_plan["context_summary"] = f"Working on: {current_task['description']}"
-            
+
             if current_task["todos_remaining"] > 0:
                 continuation_plan["next_action"] = f"Continue task '{current_task['id']}' with {current_task['todos_remaining']} TODOs remaining"
                 continuation_plan["suggested_commands"] = [
@@ -94,7 +95,7 @@ class CascadeMemoryHelper:
                     "Review completed tasks",
                     "Start new task if needed"
                 ]
-        
+
         # Add to memory
         memory_entry = f"""
 # Cascade Session Continue - {datetime.now().isoformat()}
@@ -113,14 +114,14 @@ class CascadeMemoryHelper:
 - Memory Provider: {memory_status['memory_provider']}
 - Session Start: {memory_status['session_start']}
 """
-        
+
         add_memory("cascade_session_continue", memory_entry)
-        
+
         return {
             "memory_status": memory_status,
             "continuation_plan": continuation_plan
         }
-    
+
     def add_session_memory(self, title: str, content: str) -> bool:
         """Add memory about current session"""
         timestamp = datetime.now().isoformat()
@@ -156,24 +157,24 @@ def remember_this(title: str, content: str):
 if __name__ == "__main__":
     print("🧠 Cascade Memory Integration Test")
     print("=" * 50)
-    
+
     print("\n1. Checking memory...")
     memory_status = check_memory()
     print(f"   Active tasks: {len(memory_status['active_tasks'])}")
     print(f"   Current focus: {memory_status['current_focus']}")
     print(f"   Total TODOs: {memory_status['todo_count']}")
-    
+
     print("\n2. Testing continuation...")
     continuation = continue_from_memory()
     print(f"   Can continue: {continuation['continuation_plan']['can_continue']}")
     print(f"   Next action: {continuation['continuation_plan']['next_action']}")
-    
+
     print("\n3. Adding test memory...")
     success = remember_this("test_integration", "Testing Cascade memory integration system")
     print(f"   Memory added: {success}")
-    
+
     print("\n✅ Cascade memory integration ready!")
     print("\nUsage:")
     print("- check_memory() - Check current memory state")
-    print("- continue_from_memory() - Continue from where we left off") 
+    print("- continue_from_memory() - Continue from where we left off")
     print("- remember_this(title, content) - Add something to memory")

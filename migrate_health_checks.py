@@ -11,34 +11,34 @@ from pathlib import Path
 def remove_custom_health_loop(file_path):
     """Remove custom _health_check_loop method from file"""
     print(f"\n🔧 Processing: {file_path}")
-    
+
     with open(file_path, 'r') as f:
         content = f.read()
-    
+
     original_length = len(content.splitlines())
-    
+
     # Pattern to match custom health check loop method (more flexible)
     patterns = [
         r'\n    def _health_check_loop\(self\):.*?(?=\n    def |\n\nclass |\nif __name__|\Z)',
         r'\n\s+def _health_check_loop\(self\):.*?(?=\n\s+def |\n\nclass |\nif __name__|\Z)',
     ]
-    
+
     modified_content = content
     removed_lines = 0
-    
+
     for pattern in patterns:
         new_content = re.sub(pattern, '', modified_content, flags=re.DOTALL)
         if new_content != modified_content:
             removed_lines = original_length - len(new_content.splitlines())
             modified_content = new_content
             break
-    
+
     # Also remove threading import for health check if it exists and not used elsewhere
     if '_health_check_loop' not in modified_content and 'threading.Thread' not in modified_content:
         # Remove unused threading import
         modified_content = re.sub(r'\nimport threading\n', '\n', modified_content)
         modified_content = re.sub(r'\nfrom threading import Thread\n', '\n', modified_content)
-    
+
     # Write back if changed
     if content != modified_content:
         with open(file_path, 'w') as f:
@@ -53,7 +53,7 @@ def validate_baseagent_inheritance(file_path):
     """Verify that file inherits from BaseAgent"""
     with open(file_path, 'r') as f:
         content = f.read()
-    
+
     if re.search(r'class\s+\w+\s*\([^)]*BaseAgent[^)]*\)', content):
         print(f"  ✅ Inherits from BaseAgent")
         return True
@@ -62,8 +62,9 @@ def validate_baseagent_inheritance(file_path):
         return False
 
 def main():
+    """TODO: Add description for main."""
     safe_targets = []
-    
+
     # Read safe migration targets
     try:
         with open('safe_migration_targets.txt', 'r') as f:
@@ -71,13 +72,13 @@ def main():
     except FileNotFoundError:
         print("❌ safe_migration_targets.txt not found!")
         return
-    
+
     print(f"🚀 Found {len(safe_targets)} safe migration targets")
     print("=" * 60)
-    
+
     total_lines_removed = 0
     successful_migrations = 0
-    
+
     for target in safe_targets:
         if os.path.exists(target):
             # Validate inheritance first
@@ -90,7 +91,7 @@ def main():
                 print(f"  ⚠️  Skipping - does not inherit BaseAgent")
         else:
             print(f"❌ File not found: {target}")
-    
+
     print("\n" + "=" * 60)
     print(f"🎯 MIGRATION COMPLETE!")
     print(f"📊 Results:")
@@ -100,4 +101,4 @@ def main():
     print("\n✅ All agents now use BaseAgent standard health checks!")
 
 if __name__ == "__main__":
-    main() 
+    main()

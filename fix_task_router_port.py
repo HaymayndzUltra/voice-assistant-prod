@@ -49,24 +49,25 @@ def kill_process(pid):
         return False
 
 def main():
+    """TODO: Add description for main."""
     port = 7000
     print(f"Looking for processes using port {port}...")
-    
+
     pids = find_process_using_port(port)
-    
+
     if not pids:
         print(f"No processes found using port {port}")
         return
-    
+
     print(f"Found {len(pids)} process(es) using port {port}: {pids}")
-    
+
     for pid in pids:
         print(f"Killing process {pid}...")
         if kill_process(pid):
             print(f"Successfully killed process {pid}")
         else:
             print(f"Failed to kill process {pid}")
-    
+
     # Verify
     remaining_pids = find_process_using_port(port)
     if remaining_pids:
@@ -75,4 +76,4 @@ def main():
         print(f"Port {port} is now free")
 
 if __name__ == "__main__":
-    main() 
+    main()

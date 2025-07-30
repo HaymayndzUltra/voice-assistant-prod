@@ -9,17 +9,17 @@ if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
 try:
-from pc2_code.agents.ForPC2.UnifiedErrorAgent import UnifiedErrorAgent
+from pc2_code.agents.ForPC2.UnifiedErrorAgent import unified_error_agent
     print("SUCCESS: UnifiedErrorAgent imported successfully")
-    
+
     # Test instantiation
     agent = UnifiedErrorAgent()
     print("SUCCESS: UnifiedErrorAgent instantiated successfully")
-    
+
     # Test health check
     health = agent._health_check()
     print(f"SUCCESS: Health check returned: {health}")
-    
+
     # Test for 5 seconds
     print("Testing agent for 5 seconds...")
     import threading
@@ -34,4 +34,4 @@ from pc2_code.agents.ForPC2.UnifiedErrorAgent import UnifiedErrorAgent
     print("SUCCESS: UnifiedErrorAgent.py proactively fixed and validated.")
 except Exception as e:
     print(f"FAILED: {e}")
-    sys.exit(1) 
+    sys.exit(1)

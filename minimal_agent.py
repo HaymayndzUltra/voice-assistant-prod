@@ -31,18 +31,20 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 class MinimalAgent:
+    """TODO: Add description for MinimalAgent."""
     def __init__(self, name="MinimalAgent", port=7777):
+        """TODO: Add description for __init__."""
         self.name = name
         self.port = port
         self.health_port = port + 1
         self.running = True
         self.start_time = time.time()
-        
+
         # Initialize ZMQ
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
         self.health_socket = self.context.socket(zmq.REP)
-        
+
         # Bind sockets
         try:
             self.socket.bind(f"tcp://*:{self.port}")
@@ -50,7 +52,7 @@ class MinimalAgent:
         except zmq.error.ZMQError as e:
             logger.error(f"Failed to bind main socket to port {self.port}: {e}")
             sys.exit(1)
-            
+
         try:
             self.health_socket.bind(f"tcp://*:{self.health_port}")
             logger.info(f"Bound health socket to port {self.health_port}")
@@ -58,11 +60,11 @@ class MinimalAgent:
             logger.error(f"Failed to bind health socket to port {self.health_port}: {e}")
             self.socket.close()
             sys.exit(1)
-    
+
     def _health_check_loop(self):
         """Health check loop"""
         logger.info("Starting health check loop")
-        
+
         while self.running:
             try:
                 # Check for health check requests with timeout
@@ -70,7 +72,7 @@ class MinimalAgent:
                     # Receive request (don't care about content)
                     message = self.health_socket.recv()
                     logger.info(f"Received health check request: {message}")
-                    
+
                     # Send response
                     response = {
                         "status": "ok",
@@ -81,18 +83,18 @@ class MinimalAgent:
                     logger.info("Sent health check response")
             except Exception as e:
                 logger.error(f"Error in health check loop: {e}")
-            
+
             time.sleep(1)
-    
+
     def run(self):
         """Main run loop"""
         logger.info(f"Starting {self.name}")
-        
+
         import threading
         health_thread = threading.Thread(target=self._health_check_loop)
         health_thread.daemon = True
         health_thread.start()
-        
+
         try:
             while self.running:
                 # Check for main socket messages with timeout
@@ -100,7 +102,7 @@ class MinimalAgent:
                     # Receive request
                     message = self.socket.recv()
                     logger.info(f"Received message: {message}")
-                    
+
                     # Send response
                     response = {
                         "status": "ok",
@@ -108,7 +110,7 @@ class MinimalAgent:
                     }
                     self.socket.send_json(response)
                     logger.info("Sent response")
-                
+
                 # Log that we're still alive
                 if int(time.time()) % 10 == 0:  # Log every 10 seconds
                     logger.info(f"{self.name} is running (uptime: {time.time() - self.start_time:.1f}s)")
@@ -119,22 +121,22 @@ class MinimalAgent:
             logger.info("Keyboard interrupt received")
         finally:
             self.cleanup()
-    
+
     def cleanup(self):
         """Clean up resources"""
         logger.info("Cleaning up resources")
         self.running = False
         time.sleep(1)  # Give threads time to finish
-        
+
         if hasattr(self, 'socket'):
             self.socket.close()
-        
+
         if hasattr(self, 'health_socket'):
             self.health_socket.close()
-        
+
         if hasattr(self, 'context'):
             self.context.term()
-        
+
         logger.info(f"{self.name} stopped")
 
 if __name__ == "__main__":

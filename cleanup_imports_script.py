@@ -7,14 +7,13 @@ Fixes all BaseAgent imports to use the standard path: from common.core.base_agen
 
 import os
 import re
-import sys
 from pathlib import Path
 
 # Files that need BaseAgent import fixes (from our search results)
 FILES_TO_FIX = [
     # Main PC files with wrong imports
     "main_pc_code/agents/needtoverify/custom_command_handler.py",
-    "main_pc_code/agents/needtoverify/filesystem_assistant_agent.py", 
+    "main_pc_code/agents/needtoverify/filesystem_assistant_agent.py",
     "main_pc_code/agents/needtoverify/autonomous_agent_framework.py",
     "main_pc_code/agents/needtoverify/error_handler.py",
     "main_pc_code/agents/needtoverify/command_queue.py",
@@ -48,7 +47,7 @@ FILES_TO_FIX = [
     "main_pc_code/agents/voicemeeter_control_agent.py",
     "main_pc_code/agents/streaming_whisper_asr.py",
     "main_pc_code/agents/speech_processor.py",
-    
+
     # Files using 'from main_pc_code.agents.base_agent import BaseAgent' (wrong)
     "main_pc_code/agents/unified_system_agent.py",
 ]
@@ -76,17 +75,17 @@ def fix_imports_in_file(file_path: str) -> bool:
     if not os.path.exists(file_path):
         print(f"⚠️  File not found: {file_path}")
         return False
-    
+
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         original_content = content
-        
+
         # Apply import fixes
         for pattern, replacement in IMPORT_FIXES:
             content = re.sub(pattern, replacement, content)
-        
+
         # Check if changes were made
         if content != original_content:
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -96,7 +95,7 @@ def fix_imports_in_file(file_path: str) -> bool:
         else:
             print(f"ℹ️  No changes needed: {file_path}")
             return False
-            
+
     except Exception as e:
         print(f"❌ Error processing {file_path}: {e}")
         return False
@@ -105,21 +104,21 @@ def main():
     """Main execution function."""
     print("🔧 BaseAgent Import Standardization Script")
     print("=" * 50)
-    
+
     total_files = len(FILES_TO_FIX)
     files_fixed = 0
     files_errors = 0
-    
+
     for file_path in FILES_TO_FIX:
         if fix_imports_in_file(file_path):
             files_fixed += 1
-    
+
     print("\n" + "=" * 50)
     print(f"📊 SUMMARY:")
     print(f"   Total files processed: {total_files}")
     print(f"   Files fixed: {files_fixed}")
     print(f"   Files with errors: {files_errors}")
-    
+
     # Also remove the duplicate base_agent.py
     duplicate_base_agent = "main_pc_code/agents/base_agent.py"
     if os.path.exists(duplicate_base_agent):
@@ -129,9 +128,9 @@ def main():
             print("✅ Duplicate BaseAgent removed")
         except Exception as e:
             print(f"❌ Error removing duplicate: {e}")
-    
+
     print("\n✅ BaseAgent import standardization complete!")
     print("📌 All agents now use: from common.core.base_agent import BaseAgent")
 
 if __name__ == "__main__":
-    main() 
+    main()

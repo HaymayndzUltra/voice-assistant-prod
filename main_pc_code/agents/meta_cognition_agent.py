@@ -61,7 +61,7 @@ SECURE_ZMQ = is_secure_zmq_enabled()
 
 class MetaCognitionAgent(BaseAgent):
     """Agent for monitoring and analyzing system performance and behavior. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
-    
+
     def __init__(self):
         """Initialize the meta cognition agent."""
         # Standard BaseAgent initialization at the beginning
@@ -70,7 +70,7 @@ class MetaCognitionAgent(BaseAgent):
             name=getattr(self.config, 'name', 'MetaCognitionAgent'),
             port=getattr(self.config, 'port', None)
         )
-        
+
         # Initialize state
         self.start_time = time.time()
         self.running = True
@@ -80,13 +80,13 @@ class MetaCognitionAgent(BaseAgent):
             "progress": 0.0,
             "components": {"core": False}
         }
-        
+
         # Initialize threads
         self.init_thread = threading.Thread(target=self._perform_initialization, daemon=True)
         self.init_thread.start()
         logger.info("MetaCognitionAgent basic init complete, async init started")
 
-    
+
 
         self.error_bus_port = 7150
 
@@ -113,75 +113,75 @@ class MetaCognitionAgent(BaseAgent):
     def _init_components(self):
         """Initialize all components of the MetaCognitionAgent."""
         self.context = None  # Using pool
-        
+
         # Main REP socket for handling requests
         self.socket = get_rep_socket(self.endpoint).socket
         self.socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
         self.socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-        
+
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
             self.socket = configure_secure_server(self.socket)
             logger.info("Secure ZMQ enabled for MetaCognitionAgent")
-        
+
         # Get port from config
         port = None
         if hasattr(self.config, 'port'):
             port = self.config.port
-        
+
         # Bind to address using BIND_ADDRESS for Docker compatibility
         bind_address = f"tcp://{BIND_ADDRESS}:{port}"
         self.socket.bind(bind_address)
         logger.info(f"MetaCognitionAgent socket bound to {bind_address}")
-        
+
         # Register with service discovery
         self._register_service()
-        
+
         # SUB sockets for observing other agents - use service discovery
         self.cot_sub = self.context.socket(zmq.SUB)
         cot_address = get_service_address("ChainOfThoughtAgent")
         if not cot_address:
             cot_address = f"tcp://localhost:{default_ports.chain_of_thought_port}"  # Fallback
             logger.warning(f"Could not discover ChainOfThoughtAgent, using fallback address: {cot_address}")
-        
+
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
             self.cot_sub = configure_secure_client(self.cot_sub)
-        
+
         self.cot_sub.connect(cot_address)
         self.cot_sub.setsockopt_string(zmq.SUBSCRIBE, "reasoning")
         logger.info(f"Connected to ChainOfThoughtAgent at {cot_address}")
-        
+
         self.voting_sub = self.context.socket(zmq.SUB)
         voting_address = get_service_address("ModelVotingManager")
         if not voting_address:
             voting_address = f"tcp://localhost:{default_ports.voting_port}"  # Fallback
             logger.warning(f"Could not discover ModelVotingManager, using fallback address: {voting_address}")
-        
+
         # Apply secure ZMQ if enabled
         if SECURE_ZMQ:
             self.voting_sub = configure_secure_client(self.voting_sub)
-        
+
         self.voting_sub.connect(voting_address)
         self.voting_sub.setsockopt_string(zmq.SUBSCRIBE, "voting")
         logger.info(f"Connected to ModelVotingManager at {voting_address}")
-        
+
         # Initialize database
         self.db_path = str(PathManager.get_data_dir() / "meta_cognition.db")
         self._init_database()
-        
+
         # Start observation threads
         self.observation_threads = []
-        
+
         # Connect to KnowledgeBase and RequestCoordinator using service discovery
         self.kb_socket = self._create_service_socket("KnowledgeBase")
         self.request_coordinator_socket = self._create_service_socket("RequestCoordinator")
-        
+
         # Initialize learning analysis components
         self.learning_metrics = defaultdict(list)
         self.performance_history = []
         self.knowledge_graph = {}
-        
+
         # Initialize memory optimization components
         self.memory_threshold = 0.8  # 80% memory usage threshold
         self.cache_size = 1000
@@ -191,7 +191,7 @@ class MetaCognitionAgent(BaseAgent):
             'peak_usage': 0.0,
             'optimization_count': 0.0
         }
-        
+
         # Initialize monitoring systems
         self.system_metrics = {
             'cpu_usage': [],
@@ -206,20 +206,20 @@ class MetaCognitionAgent(BaseAgent):
             'response_time': 1.0,  # seconds
             'error_rate': 0.05  # 5%
         }
-        
+
         # Initialize counters for health metrics
         self.processed_items = 0
         self.meta_operations = 0
-        
+
         logger.info(f"Enhanced MetaCognitionAgent initialized on port {port}")
-    
+
     def _register_service(self):
         """Register this agent with the service discovery system"""
         try:
             port = None
             if hasattr(self.config, 'port'):
                 port = self.config.port
-                
+
             register_result = register_service(
                 name="MetaCognitionAgent",
                 port=port,
@@ -234,18 +234,18 @@ class MetaCognitionAgent(BaseAgent):
                 logger.warning(f"Service registration failed: {register_result.get('message', 'Unknown error')}")
         except Exception as e:
             logger.error(f"Error registering service: {e}")
-    
+
     def _create_service_socket(self, service_name: str) -> Optional[zmq.Socket]:
         """Helper to create a REQ socket to a discovered service."""
         try:
             socket = self.context.socket(zmq.REQ)
             socket.setsockopt(zmq.RCVTIMEO, ZMQ_REQUEST_TIMEOUT)
             socket.setsockopt(zmq.SNDTIMEO, ZMQ_REQUEST_TIMEOUT)
-            
+
             # Apply secure ZMQ if enabled
             if SECURE_ZMQ:
                 socket = configure_secure_client(socket)
-            
+
             # Get service address from service discovery
             service_address = get_service_address(service_name)
             if service_address:
@@ -269,7 +269,7 @@ class MetaCognitionAgent(BaseAgent):
         """Initialize SQLite database with enhanced tables."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         # Existing tables
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS thought_traces (
@@ -281,7 +281,7 @@ class MetaCognitionAgent(BaseAgent):
                 summary TEXT
             )
         ''')
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS reasoning_steps (
                 step_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -294,7 +294,7 @@ class MetaCognitionAgent(BaseAgent):
                 FOREIGN KEY (trace_id) REFERENCES thought_traces(trace_id)
             )
         ''')
-        
+
         # New tables for learning analysis
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS learning_metrics (
@@ -305,7 +305,7 @@ class MetaCognitionAgent(BaseAgent):
                 context TEXT
             )
         ''')
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_graph (
                 node_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -315,7 +315,7 @@ class MetaCognitionAgent(BaseAgent):
                 last_updated TIMESTAMP
             )
         ''')
-        
+
         # New tables for memory optimization
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS memory_stats (
@@ -326,7 +326,7 @@ class MetaCognitionAgent(BaseAgent):
                 optimization_count INTEGER
             )
         ''')
-        
+
         # New tables for monitoring
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS system_metrics (
@@ -338,7 +338,7 @@ class MetaCognitionAgent(BaseAgent):
                 error_rate REAL
             )
         ''')
-        
+
         conn.commit()
         conn.close()
 
@@ -349,30 +349,30 @@ class MetaCognitionAgent(BaseAgent):
             confidence = data.get('confidence', 0.0)
             performance = data.get('performance', 0.0)
             context = data.get('context', {})
-            
+
             # Update learning metrics
             self.learning_metrics['confidence'].append(confidence)
             self.learning_metrics['performance'].append(performance)
-            
+
             # Calculate learning trends
             trends = {
                 'confidence_trend': np.mean(self.learning_metrics['confidence'][-10:]),
                 'performance_trend': np.mean(self.learning_metrics['performance'][-10:]),
                 'learning_rate': self._calculate_learning_rate()
             }
-            
+
             # Update knowledge graph
             self._update_knowledge_graph(context, confidence)
-            
+
             # Store metrics
             self._store_learning_metrics(trends)
-            
+
             return {
                 'status': 'success',
                 'trends': trends,
                 'knowledge_updates': len(self.knowledge_graph)
             }
-            
+
         except Exception as e:
             logger.error(f"Error in learning analysis: {str(e)}")
             return {'status': 'error', 'message': str(e)}
@@ -383,27 +383,27 @@ class MetaCognitionAgent(BaseAgent):
             current_memory = psutil.Process().memory_percent()
             self.memory_stats['total_usage'] = current_memory
             self.memory_stats['peak_usage'] = max(self.memory_stats['peak_usage'], current_memory)
-            
+
             if current_memory > self.memory_threshold:
                 # Perform memory optimization
                 self._clear_old_cache()
                 self._compress_memory()
                 self.memory_stats['optimization_count'] += 1
-                
+
                 # Store memory stats
                 self._store_memory_stats()
-                
+
                 return {
                     'status': 'optimized',
                     'memory_usage': current_memory,
                     'optimization_count': self.memory_stats['optimization_count']
                 }
-            
+
             return {
                 'status': 'normal',
                 'memory_usage': current_memory
             }
-            
+
         except Exception as e:
             logger.error(f"Error in memory optimization: {str(e)}")
             return {'status': 'error', 'message': str(e)}
@@ -416,19 +416,19 @@ class MetaCognitionAgent(BaseAgent):
             memory_usage = psutil.virtual_memory().percent
             response_time = self._calculate_response_time()
             error_rate = self._calculate_error_rate()
-            
+
             # Update metrics history
             self.system_metrics['cpu_usage'].append(cpu_usage)
             self.system_metrics['memory_usage'].append(memory_usage)
             self.system_metrics['response_times'].append(response_time)
             self.system_metrics['error_rates'].append(error_rate)
-            
+
             # Check for alerts
             alerts = self._check_alerts()
-            
+
             # Store metrics
             self._store_system_metrics()
-            
+
             return {
                 'status': 'success',
                 'metrics': {
@@ -439,7 +439,7 @@ class MetaCognitionAgent(BaseAgent):
                 },
                 'alerts': alerts
             }
-            
+
         except Exception as e:
             logger.error(f"Error in system monitoring: {str(e)}")
             return {'status': 'error', 'message': str(e)}
@@ -448,11 +448,11 @@ class MetaCognitionAgent(BaseAgent):
         """Calculate the current learning rate based on performance history."""
         if len(self.performance_history) < 2:
             return 0.0
-        
+
         recent_performance = self.performance_history[-10:]
         if len(recent_performance) < 2:
             return 0.0
-            
+
         return np.mean(np.diff(recent_performance))
 
     def _update_knowledge_graph(self, context: Dict[str, Any], confidence: float):
@@ -486,7 +486,7 @@ class MetaCognitionAgent(BaseAgent):
         # Implement memory compression strategies
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        
+
         # Clear unused variables
         import gc
         gc.collect()
@@ -506,45 +506,45 @@ class MetaCognitionAgent(BaseAgent):
     def _check_alerts(self) -> List[Dict[str, Any]]:
         """Check for system alerts based on thresholds."""
         alerts = []
-        
+
         if self.system_metrics['cpu_usage'][-1] > self.alert_thresholds['cpu']:
             alerts.append({
                 'type': 'cpu',
                 'level': 'warning',
                 'message': f'High CPU usage: {self.system_metrics["cpu_usage"][-1]}%'
             })
-            
+
         if self.system_metrics['memory_usage'][-1] > self.alert_thresholds['memory']:
             alerts.append({
                 'type': 'memory',
                 'level': 'warning',
                 'message': f'High memory usage: {self.system_metrics["memory_usage"][-1]}%'
             })
-            
+
         if self._calculate_response_time() > self.alert_thresholds['response_time']:
             alerts.append({
                 'type': 'performance',
                 'level': 'warning',
                 'message': 'High response time detected'
             })
-            
+
         if self._calculate_error_rate() > self.alert_thresholds['error_rate']:
             alerts.append({
                 'type': 'error',
                 'level': 'critical',
                 'message': 'High error rate detected'
             })
-            
+
         return alerts
 
     def _store_learning_metrics(self, metrics: Dict[str, Any]):
         """Store learning metrics in database."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         for metric_type, value in metrics.items():
             cursor.execute('''
-                INSERT INTO learning_metrics 
+                INSERT INTO learning_metrics
                 (timestamp, metric_type, value, context)
                 VALUES (?, ?, ?, ?)
             ''', (
@@ -553,7 +553,7 @@ class MetaCognitionAgent(BaseAgent):
                 value,
                 json.dumps(self.knowledge_graph)
             ))
-        
+
         conn.commit()
         conn.close()
 
@@ -561,9 +561,9 @@ class MetaCognitionAgent(BaseAgent):
         """Store memory statistics in database."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            INSERT INTO memory_stats 
+            INSERT INTO memory_stats
             (timestamp, total_usage, peak_usage, optimization_count)
             VALUES (?, ?, ?, ?)
         ''', (
@@ -572,7 +572,7 @@ class MetaCognitionAgent(BaseAgent):
             self.memory_stats['peak_usage'],
             self.memory_stats['optimization_count']
         ))
-        
+
         conn.commit()
         conn.close()
 
@@ -580,9 +580,9 @@ class MetaCognitionAgent(BaseAgent):
         """Store system metrics in database."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            INSERT INTO system_metrics 
+            INSERT INTO system_metrics
             (timestamp, cpu_usage, memory_usage, response_time, error_rate)
             VALUES (?, ?, ?, ?, ?)
         ''', (
@@ -592,7 +592,7 @@ class MetaCognitionAgent(BaseAgent):
             self._calculate_response_time(),
             self._calculate_error_rate()
         ))
-        
+
         conn.commit()
         conn.close()
 
@@ -600,33 +600,33 @@ class MetaCognitionAgent(BaseAgent):
         """Handle incoming requests."""
         try:
             action = request.get('action', '')
-            
+
             if action == 'analyze_learning':
                 data = request.get('data', {})
                 return self.analyze_learning(data)
-                
+
             elif action == 'optimize_memory':
                 threshold = request.get('threshold', self.memory_threshold)
                 cache_size = request.get('cache_size', self.cache_size)
                 self.memory_threshold = threshold
                 self.cache_size = cache_size
                 return self.optimize_memory()
-                
+
             elif action == 'monitor_system':
                 return self.monitor_system()
-                
+
             elif action == 'health_check':
                 return {
                     'status': 'ok' if self.initialization_status["is_initialized"] else "initializing",
                     'initialization_status': self.initialization_status
                 }
-                
+
             else:
                 return {
                     'status': 'error',
                     'message': f'Unknown action: {action}'
                 }
-                
+
         except Exception as e:
             logger.error(f"Error handling request: {str(e)}")
             return {
@@ -682,29 +682,29 @@ class MetaCognitionAgent(BaseAgent):
         """Stop the MetaCognitionAgent gracefully."""
         logger.info("Stopping MetaCognitionAgent...")
         self.running = False
-        
+
         # Stop all threads
         for thread in self.observation_threads:
             thread.join(timeout=2.0)  # Add timeout to avoid hanging
-        
+
         # Close sockets in a try-finally block to ensure they're all closed
         try:
             if hasattr(self, 'socket'):
         # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.debug("Closed main socket")
-            
+
             if hasattr(self, 'cot_sub'):
                 self.cot_sub.close()
                 logger.debug("Closed CoT subscription socket")
-            
+
             if hasattr(self, 'voting_sub'):
                 self.voting_sub.close()
                 logger.debug("Closed voting subscription socket")
-            
+
             if hasattr(self, 'kb_socket'):
                 self.kb_
                 logger.debug("Closed knowledge base socket")
-            
+
             if hasattr(self, 'request_coordinator_socket'):
                 self.request_coordinator_
                 logger.debug("Closed coordinator socket")
@@ -715,24 +715,24 @@ class MetaCognitionAgent(BaseAgent):
             if hasattr(self, 'context'):
         # TODO-FIXME – removed stray 'self.' (O3 Pro Max fix)
                 logger.debug("Terminated ZMQ context")
-        
+
         logger.info("MetaCognitionAgent stopped successfully")
 
     def _observe_chain_of_thought(self):
-        """Observe and log reasoning steps from ChainOfThoughtAgent."""
+        """Observe and log reasoning steps from chain_of_thought_agent."""
         while self.running:
             try:
                 topic, message = self.cot_sub.recv_multipart()
                 data = json.loads(message)
-                
+
                 # Extract session ID or create new trace
                 session_id = data.get('session_id')
                 if not session_id:
                     session_id = f"session_{int(time.time())}"
-                
+
                 # Get or create trace
                 trace_id = self._get_or_create_trace(session_id, data.get('context', {}))
-                
+
                 # Log reasoning step
                 self._log_reasoning_step(
                     trace_id,
@@ -741,30 +741,30 @@ class MetaCognitionAgent(BaseAgent):
                     data.get('confidence', 0.0),
                     data.get('metadata', {})
                 )
-                
+
                 # Analyze learning from this step
                 self.analyze_learning(data)
-                
+
             except Exception as e:
                 logger.error(f"Error observing ChainOfThought: {str(e)}")
-    
+
     def _observe_voting(self):
         """Observe and log voting results from ModelVotingManager."""
         while self.running:
             try:
                 topic, message = self.voting_sub.recv_multipart()
                 data = json.loads(message)
-                
+
                 # Extract session ID
                 session_id = data.get('session_id')
                 if not session_id:
                     continue
-                
+
                 # Get trace
                 trace_id = self._get_trace_id(session_id)
                 if not trace_id:
                     continue
-                
+
                 # Log voting result
                 self._log_voting_result(
                     trace_id,
@@ -773,10 +773,10 @@ class MetaCognitionAgent(BaseAgent):
                     data.get('confidence', 0.0),
                     data.get('metadata', {})
                 )
-                
+
                 # Optimize memory after voting
                 self.optimize_memory()
-                
+
             except Exception as e:
                 logger.error(f"Error observing voting: {str(e)}")
 
@@ -784,22 +784,22 @@ class MetaCognitionAgent(BaseAgent):
         """Get existing trace or create new one."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         # Check for existing trace
         cursor.execute('''
-            SELECT trace_id 
-            FROM thought_traces 
+            SELECT trace_id
+            FROM thought_traces
             WHERE session_id = ? AND end_time IS NULL
         ''', (session_id,))
-        
+
         result = cursor.fetchone()
-        
+
         if result:
             trace_id = result[0]
         else:
             # Create new trace
             cursor.execute('''
-                INSERT INTO thought_traces 
+                INSERT INTO thought_traces
                 (session_id, start_time, context)
                 VALUES (?, ?, ?)
             ''', (
@@ -808,18 +808,18 @@ class MetaCognitionAgent(BaseAgent):
                 json.dumps(context)
             ))
             trace_id = cursor.lastrowid
-        
+
         conn.commit()
         conn.close()
-        
+
         return trace_id
-    
+
     def _get_trace_id(self, session_id: str) -> Optional[int]:
         """Get trace ID for a session.
-        
+
         Args:
             session_id: The session ID to look up
-            
+
         Returns:
             Optional[int]: The trace ID if found, None otherwise
         """
@@ -834,15 +834,15 @@ class MetaCognitionAgent(BaseAgent):
             return result[0] if result else None
         finally:
             conn.close()
-    
-    def _log_reasoning_step(self, trace_id: int, step_number: int, thought: str, 
+
+    def _log_reasoning_step(self, trace_id: int, step_number: int, thought: str,
                           confidence: float, metadata: Dict[str, Any]):
         """Log a reasoning step."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            INSERT INTO reasoning_steps 
+            INSERT INTO reasoning_steps
             (trace_id, timestamp, step_number, thought, confidence, metadata)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (
@@ -853,18 +853,18 @@ class MetaCognitionAgent(BaseAgent):
             confidence,
             json.dumps(metadata)
         ))
-        
+
         conn.commit()
         conn.close()
-    
-    def _log_voting_result(self, trace_id: int, model_id: str, vote: str, 
+
+    def _log_voting_result(self, trace_id: int, model_id: str, vote: str,
                           confidence: float, metadata: Dict[str, Any]):
         """Log a voting result."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            INSERT INTO voting_results 
+            INSERT INTO voting_results
             (trace_id, timestamp, model_id, vote, confidence, metadata)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (
@@ -958,7 +958,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
-        print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
+print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):

@@ -36,8 +36,9 @@ def format_philippines_time_iso(dt: datetime) -> str:
 
 class AutoSyncManager:
     """Automatically syncs state files without manual intervention"""
-    
+
     def __init__(self):
+        """TODO: Add description for __init__."""
         self.state_files = {
             'cursor_state': 'cursor_state.json',
             'task_state': 'task-state.json',
@@ -47,37 +48,37 @@ class AutoSyncManager:
         }
         self._setup_auto_sync()
         logger.info("🔄 AutoSyncManager initialized - automatic sync enabled")
-    
+
     def _setup_auto_sync(self):
         """Setup automatic sync on session start and exit"""
         # Auto-sync on session start
         self.sync_all_states()
-        
+
         # Auto-sync on session exit
         atexit.register(self._sync_on_exit)
-        
+
         logger.info("✅ Auto-sync setup complete")
-    
+
     def _sync_on_exit(self):
         """Sync all states when session ends"""
         logger.info("🔄 Auto-syncing on session exit...")
         self.sync_all_states()
-    
+
     def sync_all_states(self) -> Dict[str, Any]:
         """Sync all state files automatically"""
         try:
             # Step 1: Read current state from todo-tasks.json (source of truth)
             current_tasks = self._get_current_tasks()
-            
+
             # Step 2: Determine the most recent active task
             active_task = self._get_most_recent_active_task(current_tasks)
-            
+
             # Step 3: Update all state files
             self._update_cursor_state(active_task)
             self._update_task_state(active_task)
             self._update_task_interruption_state(active_task)
             self._update_current_session(active_task, current_tasks)
-            
+
             logger.info("✅ Auto-sync completed successfully")
             return {
                 "status": "success",
@@ -85,7 +86,7 @@ class AutoSyncManager:
                 "total_tasks": len(current_tasks),
                 "synced_at": format_philippines_time_iso(get_philippines_time())
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Auto-sync failed: {e}")
             return {
@@ -93,7 +94,7 @@ class AutoSyncManager:
                 "error": str(e),
                 "synced_at": format_philippines_time_iso(get_philippines_time())
             }
-    
+
     def _get_current_tasks(self) -> List[Dict[str, Any]]:
         """Get current tasks from todo-tasks.json"""
         try:
@@ -103,24 +104,24 @@ class AutoSyncManager:
         except Exception as e:
             logger.error(f"❌ Failed to read todo-tasks.json: {e}")
             return []
-    
+
     def _get_most_recent_active_task(self, tasks: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Get the most recent active task"""
         if not tasks:
             return None
-        
+
         # Filter for in_progress tasks
         active_tasks = [task for task in tasks if task.get('status') == 'in_progress']
-        
+
         if not active_tasks:
             # If no in_progress tasks, get the most recent task
             active_tasks = tasks
-        
+
         # Sort by updated timestamp (most recent first)
         active_tasks.sort(key=lambda x: x.get('updated', ''), reverse=True)
-        
+
         return active_tasks[0] if active_tasks else None
-    
+
     def _update_cursor_state(self, active_task: Optional[Dict[str, Any]]):
         """Update cursor_state.json"""
         try:
@@ -133,13 +134,13 @@ class AutoSyncManager:
                     "last_activity": active_task.get('updated', format_philippines_time_iso(ph_time)) if active_task else format_philippines_time_iso(ph_time)
                 }
             }
-            
+
             with open(self.state_files['cursor_state'], 'w') as f:
                 json.dump(cursor_state, f, indent=2)
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to update cursor_state.json: {e}")
-    
+
     def _update_task_state(self, active_task: Optional[Dict[str, Any]]):
         """Update task-state.json"""
         try:
@@ -155,13 +156,13 @@ class AutoSyncManager:
                 }
             else:
                 task_state = {}
-            
+
             with open(self.state_files['task_state'], 'w') as f:
                 json.dump(task_state, f, indent=2)
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to update task-state.json: {e}")
-    
+
     def _update_task_interruption_state(self, active_task: Optional[Dict[str, Any]]):
         """Update task_interruption_state.json"""
         try:
@@ -171,19 +172,19 @@ class AutoSyncManager:
                 "interrupted_tasks": [],
                 "last_updated": format_philippines_time_iso(ph_time)
             }
-            
+
             with open(self.state_files['task_interruption'], 'w') as f:
                 json.dump(interruption_state, f, indent=2)
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to update task_interruption_state.json: {e}")
-    
+
     def _update_current_session(self, active_task: Optional[Dict[str, Any]], all_tasks: List[Dict[str, Any]]):
         """Update memory-bank/current-session.md"""
         try:
             # Get in_progress tasks for display
             in_progress_tasks = [task for task in all_tasks if task.get('status') == 'in_progress']
-            
+
             ph_time = get_philippines_time()
             session_content = f"""# 📝 Current Cursor Session — {format_philippines_time(ph_time)} PH
 
@@ -198,42 +199,42 @@ class AutoSyncManager:
 
 ## 🕒 Open Tasks (Todo Manager)
 """
-            
+
             for task in in_progress_tasks:
                 todos_left = len([todo for todo in task.get('todos', []) if not todo.get('done', False)])
                 session_content += f"- **{task.get('description', 'Unknown task')}** ({todos_left} todos left)\n"
-            
+
             if not in_progress_tasks:
                 session_content += "- No active tasks\n"
-            
+
             # Ensure memory-bank directory exists
             os.makedirs('memory-bank', exist_ok=True)
-            
+
             with open(self.state_files['current_session'], 'w') as f:
                 f.write(session_content)
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to update current-session.md: {e}")
-    
+
     def _calculate_progress(self, task: Optional[Dict[str, Any]]) -> float:
         """Calculate progress based on completed TODOs"""
         if not task or not task.get('todos'):
             return 0.0
-        
+
         todos = task.get('todos', [])
         completed = len([todo for todo in todos if todo.get('done', False)])
         total = len(todos)
-        
+
         return completed / total if total > 0 else 0.0
-    
+
     def cleanup_duplicate_tasks(self) -> Dict[str, Any]:
         """Clean up duplicate tasks in todo-tasks.json"""
         logger.info("🧹 Starting duplicate task cleanup...")
-        
+
         try:
             tasks = self._get_current_tasks()
             original_count = len(tasks)
-            
+
             # Group tasks by description
             tasks_by_description = {}
             for task in tasks:
@@ -241,11 +242,11 @@ class AutoSyncManager:
                 if description not in tasks_by_description:
                     tasks_by_description[description] = []
                 tasks_by_description[description].append(task)
-            
+
             # Keep only the most recent task for each description
             cleaned_tasks = []
             duplicates_removed = 0
-            
+
             for description, task_list in tasks_by_description.items():
                 if len(task_list) > 1:
                     # Sort by updated timestamp (most recent first)
@@ -255,25 +256,25 @@ class AutoSyncManager:
                     logger.info(f"🔍 Removed {len(task_list) - 1} duplicates for: {description[:50]}...")
                 else:
                     cleaned_tasks.append(task_list[0])
-            
+
             # Update todo-tasks.json
             with open(self.state_files['todo_tasks'], 'r') as f:
                 data = json.load(f)
-            
+
             data['tasks'] = cleaned_tasks
-            
+
             with open(self.state_files['todo_tasks'], 'w') as f:
                 json.dump(data, f, indent=2)
-            
+
             logger.info(f"✅ Cleanup complete: {duplicates_removed} duplicates removed")
-            
+
             return {
                 "status": "success",
                 "original_count": original_count,
                 "final_count": len(cleaned_tasks),
                 "duplicates_removed": duplicates_removed
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Cleanup failed: {e}")
             return {
@@ -302,4 +303,4 @@ def auto_sync():
     return manager.force_sync()
 
 # Auto-initialize on import
-get_auto_sync_manager() 
+get_auto_sync_manager()

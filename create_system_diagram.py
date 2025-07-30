@@ -7,7 +7,6 @@ Generates an HTML file with a visual representation of the agents.
 """
 
 import yaml
-import os
 import sys
 from datetime import datetime
 
@@ -25,7 +24,7 @@ COLOR_SCHEME = {
     'emotion_system': '#e1d5e7',
     'utilities_support': '#fff2cc',
     'reasoning_services': '#d5e8d4',
-    
+
     # PC2 colors
     'pc2_integration': '#ffe6cc',
     'pc2_core': '#d0cee2',
@@ -52,11 +51,11 @@ def categorize_pc2_agents(agents):
         'pc2_additional': [],
         'pc2_central': []
     }
-    
+
     for agent in agents:
         path = agent.get('script_path', '')
         name = agent.get('name', '')
-        
+
         if 'ForPC2' in path:
             categorized['pc2_for_pc2'].append(agent)
         elif any(word in name for word in ['Memory', 'MemoryOrchestrator']):
@@ -70,7 +69,7 @@ def categorize_pc2_agents(agents):
                 categorized['pc2_core'].append(agent)
         else:
             categorized['pc2_core'].append(agent)
-    
+
     return categorized
 
 def generate_agent_html(agent_name, port, health_port, bg_color):
@@ -85,7 +84,7 @@ def generate_agent_html(agent_name, port, health_port, bg_color):
 
 def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.html'):
     """Create an HTML representation of the system architecture."""
-    
+
     # Start the HTML content
     html_content = f'''<!DOCTYPE html>
 <html lang="en">
@@ -186,7 +185,7 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
 <body>
     <div class="container">
         <h1>AI System Architecture</h1>
-        
+
         <!-- MainPC System -->
         <div class="mainpc">
             <h2>MainPC System</h2>
@@ -200,13 +199,13 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
                 <h3>{group_name.replace('_', ' ').title()}</h3>
                 <div class="agents-container">
 '''
-        
+
         # Add agents in this group
         for agent_name, agent_data in agents.items():
             port = agent_data.get('port', 'N/A')
             health_port = agent_data.get('health_check_port', 'N/A')
             html_content += generate_agent_html(agent_name, port, health_port, group_color)
-        
+
         html_content += '''
                 </div>
             </div>
@@ -215,7 +214,7 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
     # Start PC2 section
     html_content += '''
         </div>
-        
+
         <!-- PC2 System -->
         <div class="pc2">
             <h2>PC2 System</h2>
@@ -229,13 +228,13 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
                 <h3>Central Services</h3>
                 <div class="agents-container">
 '''
-        
+
         for service in pc2_config.get('core_services', []):
             name = service.get('name', '')
             port = service.get('port', 'N/A')
             health_port = service.get('health_check_port', 'N/A')
             html_content += generate_agent_html(name, port, health_port, group_color)
-        
+
         html_content += '''
                 </div>
             </div>
@@ -244,26 +243,26 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
     # Categorize PC2 agents
     pc2_agents = pc2_config.get('pc2_services', [])
     categorized_agents = categorize_pc2_agents(pc2_agents)
-    
+
     # Add PC2 agent groups
     for group_name, agents in categorized_agents.items():
         if not agents:
             continue
-            
+
         group_color = COLOR_SCHEME.get(group_name, '#f0f0f0')
         html_content += f'''
             <div class="group" style="background-color: {group_color};">
                 <h3>{group_name.replace('pc2_', '').replace('_', ' ').title()}</h3>
                 <div class="agents-container">
 '''
-        
+
         # Add agents in this group
         for agent in agents:
             name = agent.get('name', '')
             port = agent.get('port', 'N/A')
             health_port = agent.get('health_check_port', 'N/A')
             html_content += generate_agent_html(name, port, health_port, group_color)
-        
+
         html_content += '''
                 </div>
             </div>
@@ -273,7 +272,7 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     html_content += f'''
         </div>
-        
+
         <div class="timestamp">Generated on {timestamp}</div>
     </div>
 </body>
@@ -283,26 +282,27 @@ def create_html_diagram(mainpc_config, pc2_config, output_file='system_diagram.h
     # Write to file
     with open(output_file, 'w') as f:
         f.write(html_content)
-    
+
     print(f"HTML diagram created: {output_file}")
     return output_file
 
 def main():
     # Get file paths
+        """TODO: Add description for main."""
     mainpc_config_path = 'main_pc_code/config/startup_config.yaml'
     pc2_config_path = 'pc2_code/config/startup_config.yaml'
-    
+
     # Load configurations
     mainpc_config = load_config(mainpc_config_path)
     pc2_config = load_config(pc2_config_path)
-    
+
     if not mainpc_config or not pc2_config:
         print("Error: Could not load one or more configuration files.")
         sys.exit(1)
-    
+
     # Create the diagram
     output_file = create_html_diagram(mainpc_config, pc2_config, 'ai_system_architecture.html')
     print(f"Please open {output_file} in your browser to view the system diagram.")
 
 if __name__ == "__main__":
-    main() 
+    main()

@@ -23,42 +23,42 @@ def fix_health_check_indentation(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         lines = content.splitlines()
         modified = False
         i = 0
-        
+
         # Find the health_check method
         while i < len(lines):
             match = HEALTH_CHECK_PATTERN.match(lines[i])
             if match:
                 # Found a health_check method
                 current_indent = match.group(1)
-                
+
                 # Determine the correct indentation (4 spaces)
                 correct_indent = "    "
-                
+
                 # If the indentation is already correct, skip
                 if current_indent == correct_indent:
                     i += 1
                     continue
-                
+
                 # Fix the indentation for this line and all following indented lines
                 j = i
                 block_lines = []
-                
+
                 # Collect all lines that belong to the health_check method
                 while j < len(lines):
                     if j == i:  # First line (method definition)
                         block_lines.append(correct_indent + lines[j].lstrip())
                         j += 1
                         continue
-                    
+
                     if lines[j].strip() == "":
                         block_lines.append(lines[j])
                         j += 1
                         continue
-                    
+
                     # If we encounter a line with less or equal indentation to the class level,
                     # we've reached the end of the method
                     if not lines[j].startswith(current_indent) and lines[j].strip():
@@ -71,7 +71,7 @@ def fix_health_check_indentation(file_path):
                         else:
                             # End of method
                             break
-                    
+
                     # Fix indentation for method body
                     if lines[j].startswith(current_indent):
                         # For method body, add an extra level of indentation
@@ -79,16 +79,16 @@ def fix_health_check_indentation(file_path):
                     else:
                         # Line with incorrect indentation
                         block_lines.append(correct_indent + "    " + lines[j].lstrip())
-                    
+
                     j += 1
-                
+
                 # Replace the original lines with the fixed ones
                 lines = lines[:i] + block_lines + lines[j:]
                 modified = True
                 i = i + len(block_lines)
             else:
                 i += 1
-        
+
         if modified:
             # Write the fixed content back to the file
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -98,7 +98,7 @@ def fix_health_check_indentation(file_path):
         else:
             print(f"No indentation issues found in {file_path}")
             return False
-    
+
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return False
@@ -112,18 +112,19 @@ def find_agent_files(directory):
                 file_path = os.path.join(root, file)
                 # Simple heuristic: check if the file contains 'Agent' in the name
                 # or if it's in an 'agents' directory
-                if ('agent' in file.lower() or 
+                if ('agent' in file.lower() or
                     'agents' in os.path.basename(root).lower() or
                     'src/core' in os.path.join(root, file).lower()):
                     agent_files.append(file_path)
     return agent_files
 
 def main():
+    """TODO: Add description for main."""
     parser = argparse.ArgumentParser(description='Fix indentation of health_check methods in agent files')
     parser.add_argument('--directory', '-d', default='.', help='Directory to search for agent files')
     parser.add_argument('--file', '-f', help='Process a specific file')
     args = parser.parse_args()
-    
+
     if args.file:
         file_path = os.path.abspath(args.file)
         if os.path.isfile(file_path):
@@ -133,16 +134,16 @@ def main():
     else:
         directory = os.path.abspath(args.directory)
         print(f"Searching for agent files in {directory}")
-        
+
         agent_files = find_agent_files(directory)
         print(f"Found {len(agent_files)} potential agent files")
-        
+
         fixed_count = 0
         for file_path in agent_files:
             if fix_health_check_indentation(file_path):
                 fixed_count += 1
-        
+
         print(f"Fixed health_check indentation in {fixed_count} files")
 
 if __name__ == "__main__":
-    main() 
+    main()

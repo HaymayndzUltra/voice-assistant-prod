@@ -12,6 +12,7 @@ _BARE_MSG = "E900 bare except or 'except Exception' is forbidden"
 
 
 class BareExceptChecker:
+    """TODO: Add description for BareExceptChecker."""
     name = "flake8-bare-except"
     version = __version__
 

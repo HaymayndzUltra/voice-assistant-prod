@@ -19,11 +19,11 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirna
 from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the agent to test
-from pc2_code.agents.UnifiedMemoryReasoningAgent import UnifiedMemoryReasoningAgent
+from pc2_code.agents.UnifiedMemoryReasoningAgent import unified_memory_reasoning_agent
 from common.env_helpers import get_env
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,13 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
         """Set up test environment before each test."""
         # Mock dependencies
         mock_discover_service.return_value = {'host': 'localhost', 'port': 7102}  # CacheManager port
-        
+
         # Create an instance of the agent with test configuration
         self.agent = UnifiedMemoryReasoningAgent(port=9999, test_mode=True)
-        
+
         # Mock the agent's dependencies
         self.agent.cache_manager = MagicMock()
-        
+
         # Initialize test data
         self.test_memory = {
             "memory_id": "mem-123456",
@@ -54,7 +54,7 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
                 "importance": 0.8
             }
         }
-        
+
         self.test_query = {
             "query": "What is the capital of France?",
             "context": "Geography discussion",
@@ -79,10 +79,10 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
         mock_socket_instance = MagicMock()
         mock_socket.return_value = mock_socket_instance
         mock_socket_instance.recv_json.return_value = {"action": "health_check"}
-        
+
         # Call the health check method
         response = self.agent._get_health_status()
-        
+
         # Verify the response
         self.assertEqual(response["status"], "healthy")
         self.assertEqual(response["agent"], "UnifiedMemoryReasoningAgent")
@@ -96,16 +96,16 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
             "memory_id": self.test_memory["memory_id"],
             "message": "Memory stored successfully"
         }
-        
+
         # Create a message requesting memory storage
         message = {
             "action": "store_memory",
             "memory": self.test_memory
         }
-        
+
         # Process the message
         response = self.agent._handle_message(message)
-        
+
         # Verify the response
         self.assertEqual(response["status"], "success")
         self.assertEqual(response["memory_id"], self.test_memory["memory_id"])
@@ -119,16 +119,16 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
             "memories": [self.test_memory],
             "count": 1
         }
-        
+
         # Create a message requesting memory retrieval
         message = {
             "action": "retrieve_memory",
             "query": self.test_query
         }
-        
+
         # Process the message
         response = self.agent._handle_message(message)
-        
+
         # Verify the response
         self.assertEqual(response["status"], "success")
         self.assertEqual(len(response["memories"]), 1)
@@ -143,17 +143,17 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
             "reasoning": "Paris is the capital of France, which is a country in Europe.",
             "confidence": 0.95
         }
-        
+
         # Create a message requesting memory reasoning
         message = {
             "action": "reason",
             "query": "Tell me about the capital of France",
             "context": [self.test_memory]
         }
-        
+
         # Process the message
         response = self.agent._handle_message(message)
-        
+
         # Verify the response
         self.assertEqual(response["status"], "success")
         self.assertIn("reasoning", response)
@@ -161,4 +161,4 @@ class TestUnifiedMemoryReasoningAgent(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()

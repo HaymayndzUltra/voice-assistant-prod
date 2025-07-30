@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 class TaskMetadata:
+    """TODO: Add description for TaskMetadata."""
     def __init__(self, task_type, context_length, estimated_tokens, priority="normal", user_preference=None):
         self.task_type = task_type
         self.context_length = context_length
@@ -17,6 +18,7 @@ class TaskMetadata:
         self.priority = priority
         self.user_preference = user_preference
 
+    """TODO: Add description for SimpleRouter."""
 class SimpleRouter:
     def __init__(self):
         self.complexity_threshold = 0.7
@@ -25,11 +27,11 @@ class SimpleRouter:
             'cloud': 0,
             'local': 0
         }
-        
+
     def calculate_complexity(self, task):
         """Simple complexity calculation"""
         complexity = 0.0
-        
+
         # Task type complexity
         if any(t in task.task_type for t in ['code_generation', 'large_context_reasoning', 'training']):
             complexity = max(complexity, 0.9)
@@ -37,40 +39,40 @@ class SimpleRouter:
             complexity = max(complexity, 0.3)
         else:
             complexity = 0.5
-            
+
         # Context length factor
         if task.context_length > 8000:
             complexity = max(complexity, 0.9)
         elif task.context_length > 4000:
             complexity = max(complexity, 0.7)
-            
+
         return complexity
-        
+
     def route(self, task):
         """Route task to cloud or local"""
         complexity = self.calculate_complexity(task)
-        
+
         if task.user_preference:
             backend = task.user_preference
         elif complexity >= self.complexity_threshold:
             backend = 'cloud'
         else:
             backend = 'local'
-            
+
         self.stats['total'] += 1
         self.stats[backend] += 1
-        
+
         return backend, complexity
 
 def run_benchmark():
     print("=== Simplified Hybrid LLM Routing Benchmark ===\n")
-    
+
     router = SimpleRouter()
     results = []
-    
+
     # Generate test tasks
     tasks = []
-    
+
     # Heavy tasks
     for i in range(40):
         tasks.append(TaskMetadata(
@@ -78,7 +80,7 @@ def run_benchmark():
             random.randint(5000, 10000),
             random.randint(1500, 3000)
         ))
-        
+
     # Light tasks
     for i in range(40):
         tasks.append(TaskMetadata(
@@ -86,39 +88,39 @@ def run_benchmark():
             random.randint(100, 1000),
             random.randint(50, 500)
         ))
-        
+
     # Edge cases
     tasks.extend([
         TaskMetadata('simple_chat', 8000, 100),  # Large context, simple task
         TaskMetadata('code_generation', 500, 200),  # Complex task, small context
         TaskMetadata('code_generation', 5000, 2000, 'normal', 'local'),  # User override
     ])
-    
+
     # Run benchmark
     start_time = time.time()
     heavy_correct = 0
     heavy_total = 0
-    
+
     for i, task in enumerate(tasks):
         backend, complexity = router.route(task)
-        
+
         # Track heavy task accuracy
         if any(t in task.task_type for t in ['code_generation', 'large_context_reasoning', 'training']):
             heavy_total += 1
             if backend == 'cloud' and not task.user_preference:
                 heavy_correct += 1
-                
+
         results.append({
             'task': task.task_type,
             'backend': backend,
             'complexity': complexity
         })
-        
+
     duration = time.time() - start_time
-    
+
     # Calculate metrics
     heavy_accuracy = (heavy_correct / heavy_total * 100) if heavy_total > 0 else 0
-    
+
     # Generate report
     report = f"""# Hybrid LLM Routing Benchmark Results
 
@@ -138,18 +140,18 @@ def run_benchmark():
 | Task Type | Backend | Complexity |
 |-----------|---------|------------|
 """
-    
+
     for r in results[:10]:
         report += f"| {r['task']} | {r['backend']} | {r['complexity']:.2f} |\n"
-        
+
     # Save report
     Path('artifacts').mkdir(exist_ok=True)
     with open('artifacts/routing_benchmark.md', 'w') as f:
         f.write(report)
-        
+
     print(report)
     print(f"\nReport saved to: artifacts/routing_benchmark.md")
-    
+
     return heavy_accuracy >= 95
 
 if __name__ == "__main__":

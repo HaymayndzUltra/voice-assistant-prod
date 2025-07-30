@@ -23,6 +23,7 @@ if 'dependencies' in config:
 
 # Sort agents by dependencies to determine launch order
 def get_dependencies(agent):
+    """TODO: Add description for get_dependencies."""
     return agent.get('dependencies', [])
 
 # First launch agents with no dependencies
@@ -30,29 +31,30 @@ independent_agents = [agent for agent in all_agents if not get_dependencies(agen
 dependent_agents = [agent for agent in all_agents if get_dependencies(agent)]
 
 # Function to launch an agent
+"""TODO: Add description for launch_agent."""
 def launch_agent(agent):
     name = agent.get('name')
     script_path = agent.get('script_path')
     port = agent.get('port')
-    
+
     # Skip if script path is not specified
     if not script_path:
         print(f"Skipping {name}: No script path specified")
         return None
-    
+
     # Construct full path - go up two directories to reach project root
     full_path = os.path.join("../../", "main_pc_code", script_path)
-    
+
     # Check if file exists
     if not os.path.exists(full_path):
         print(f"Skipping {name}: Script not found at {full_path}")
         return None
-    
+
     # Construct command
     cmd = [sys.executable, full_path]
     if port:
         cmd.extend(["--port", str(port)])
-    
+
     # Launch the agent
     print(f"Launching {name} from {full_path}")
     process = subprocess.Popen(cmd)
@@ -75,13 +77,13 @@ max_attempts = 3
 for attempt in range(max_attempts):
     if not remaining_agents:
         break
-        
+
     still_remaining = []
     for agent in remaining_agents:
         # Check if all dependencies are launched
         deps = get_dependencies(agent)
         deps_launched = all(any(p[0] == dep for p in processes) for dep in deps)
-        
+
         if deps_launched:
             process = launch_agent(agent)
             if process:
@@ -89,7 +91,7 @@ for attempt in range(max_attempts):
             time.sleep(2)  # Give the agent time to start
         else:
             still_remaining.append(agent)
-    
+
     remaining_agents = still_remaining
     if remaining_agents and attempt < max_attempts - 1:
         print(f"Waiting for dependencies to start before launching: {[a.get('name') for a in remaining_agents]}")
@@ -117,5 +119,5 @@ except KeyboardInterrupt:
         except subprocess.TimeoutExpired:
             # Force kill if needed
             process.kill()
-    
-    print("All agents stopped") 
+
+    print("All agents stopped")

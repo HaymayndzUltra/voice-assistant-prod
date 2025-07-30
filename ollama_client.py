@@ -21,26 +21,27 @@ class OllamaConfig:
     timeout: int = 60  # Increased timeout for phi3:instruct
     max_retries: int = 2  # Reduced retries to fail faster
     stream: bool = False  # Disable streaming for better reliability
-    
+
 class OllamaClient:
     """Robust Ollama client for LLM-based task parsing"""
-    
+
     def __init__(self, config: Optional[OllamaConfig] = None):
+        """TODO: Add description for __init__."""
         self.config = config or OllamaConfig()
         self.session = requests.Session()
-        
+
     def call_ollama(self, prompt: str, system_prompt: str = "") -> Optional[Dict[str, Any]]:
         """
         Send a prompt to Ollama and parse JSON response
-        
+
         Args:
             prompt: User prompt for task decomposition
             system_prompt: System instructions for the LLM
-            
+
         Returns:
             Parsed JSON response or None if failed
         """
-        
+
         # Construct the request payload optimized for phi3:instruct
         payload = {
             "model": self.config.model,
@@ -56,65 +57,65 @@ class OllamaClient:
                 "stop": ["\n\n\n", "---", "###"]  # Stop tokens for cleaner output
             }
         }
-        
+
         if system_prompt:
             payload["system"] = system_prompt
-            
+
         # Retry mechanism
         for attempt in range(self.config.max_retries):
             try:
                 logger.info(f"🤖 Calling Ollama (attempt {attempt + 1}/{self.config.max_retries})...")
-                
+
                 response = self.session.post(
                     f"{self.config.base_url}/api/generate",
                     json=payload,
                     timeout=self.config.timeout
                 )
-                
+
                 response.raise_for_status()
-                
+
                 # Parse the response
                 result = response.json()
-                
+
                 if "response" not in result:
                     logger.error("❌ Ollama response missing 'response' field")
                     continue
-                
+
                 # Ensure response is a string before processing
                 ollama_response = result["response"]
                 if not isinstance(ollama_response, str):
                     logger.warning(f"⚠️ Unexpected response type: {type(ollama_response)}")
                     return {"raw_response": str(ollama_response), "error": "non_string_response"}
-                    
+
                 # Try to parse the JSON response
                 try:
                     parsed_response = json.loads(ollama_response)
                     logger.info("✅ Successfully parsed Ollama JSON response")
                     return parsed_response
-                    
+
                 except json.JSONDecodeError as e:
                     logger.warning(f"⚠️ Failed to parse JSON response: {e}")
                     # Return raw response as fallback
                     return {"raw_response": ollama_response, "error": "json_parse_failed"}
-                    
+
             except requests.exceptions.ConnectionError:
                 logger.error(f"❌ Connection error to Ollama (attempt {attempt + 1})")
                 if attempt == self.config.max_retries - 1:
                     logger.error("❌ Max retries exceeded - Ollama unavailable")
                     return None
-                    
+
             except requests.exceptions.Timeout:
                 logger.error(f"❌ Timeout calling Ollama (attempt {attempt + 1})")
                 if attempt == self.config.max_retries - 1:
                     logger.error("❌ Max retries exceeded - Ollama timeout")
                     return None
-                    
+
             except Exception as e:
                 logger.error(f"❌ Unexpected error calling Ollama: {e}")
                 return None
-                
+
         return None
-    
+
     def test_connection(self) -> bool:
         """Test if Ollama is available and responding"""
         try:
@@ -125,18 +126,18 @@ class OllamaClient:
         except Exception as e:
             logger.error(f"❌ Ollama connection test failed: {e}")
             return False
-    
+
     def get_available_models(self) -> List[str]:
         """Get list of available models from Ollama"""
         try:
             response = self.session.get(f"{self.config.base_url}/api/tags", timeout=10)
             response.raise_for_status()
-            
+
             data = response.json()
             models = [model["name"] for model in data.get("models", [])]
             logger.info(f"📋 Available Ollama models: {models}")
             return models
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to get available models: {e}")
             return []
@@ -214,23 +215,23 @@ Be conservative - when in doubt, mark as complex."""
 if __name__ == "__main__":
     # Test the Ollama client
     client = OllamaClient()
-    
+
     print("🧪 Testing Ollama connection...")
     if client.test_connection():
         print("✅ Connection successful")
-        
+
         print("\n📋 Available models:")
         models = client.get_available_models()
         for model in models:
             print(f"  - {model}")
-            
+
         print("\n🤖 Testing task decomposition...")
         test_prompt = "Create a login system with authentication and error handling"
         result = client.call_ollama(
-            test_prompt, 
+            test_prompt,
             SYSTEM_PROMPTS["task_decomposition"]
         )
-        
+
         if result:
             print("✅ LLM response received:")
             print(json.dumps(result, indent=2))
