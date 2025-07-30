@@ -32,8 +32,13 @@ def _load() -> List[Dict[str, Any]]:
         try:
             data = json.loads(DATA_FILE.read_text("utf-8"))
             # Handle both old format {"tasks": [...]} and new format [...]
-            if isinstance(data, dict) and "tasks" in data:
-                data = data["tasks"]  # Convert old format to new
+            if isinstance(data, dict):
+                # Legacy formats: either {'tasks': [...]} OR mapping of id->task
+                if "tasks" in data:
+                    data = data["tasks"]
+                else:
+                    # assume dict of id->task objects
+                    data = list(data.values())
             # Opportunistically clean up outdated tasks on every load
             if _cleanup_outdated_tasks(data):
                 _save(data)
