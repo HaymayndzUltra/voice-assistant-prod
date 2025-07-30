@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any
 """
 🔥 RTX 4090 MODEL DOWNLOADER
 Download all premium models for the AI system

@@ -10,6 +10,7 @@ import psutil
 from pathlib import Path
 
 # Load the minimal system configuration - use local copy
+from typing import Any
 config_path = "minimal_system_config.yaml"
 with open(config_path, 'r') as f:
     config = yaml.safe_load(f)

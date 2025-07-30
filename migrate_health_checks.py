@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Union
 """
 Health Check Migration Script
 Removes duplicate _health_check_loop implementations from agents that inherit BaseAgent

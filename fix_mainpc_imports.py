@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Union
 """
 Batch fix script for MainPC agent import issues
 Fixes get_main_pc_code() and get_project_root() import problems

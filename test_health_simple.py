@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any
 """
 Simple Health Check Script for Updated Services
 Tests: SystemDigitalTwin, ModelManagerSuite, LearningOrchestrationService

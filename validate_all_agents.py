@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any, Union
 """
 Comprehensive SOT Agent Import Validator
 Tests all 54 MainPC agents + 27 PC2 agents for import issues
