@@ -4,10 +4,11 @@
 Real-time system monitoring with charts and analytics.
 """
 
+# Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter.constants import *
+import subprocess, os, time, sys, pathlib
 
 try:
     import ttkbootstrap as ttk
@@ -253,10 +254,16 @@ class MonitoringView(ttk.Frame):
     
     def _export_logs(self):
         """Export logs to file"""
-        print("💾 Export logs (placeholder)")
+        try:
+            log_txt = self.logs_display.get(1.0, tk.END)
+            out_path = pathlib.Path.home() / f"system_logs_{int(time.time())}.txt"
+            out_path.write_text(log_txt)
+            messagebox.showinfo("Logs Exported", f"Saved to {out_path}")
+        except Exception as e:
+            messagebox.showerror("Export Failed", str(e))
     
     def refresh(self):
-        """Refresh view data"""
+        """Refresh view data and schedule next update"""
         try:
             # Update metrics cards
             self._update_metrics()
@@ -275,6 +282,9 @@ class MonitoringView(ttk.Frame):
         except Exception as e:
             print(f"Error refreshing monitoring data: {e}")
             self.monitoring_status.configure(text="❌ Monitoring error")
+
+        # schedule next refresh every 15 seconds
+        self.after(15_000, self.refresh)
     
     def _update_metrics(self):
         """Update system metrics cards"""
@@ -471,34 +481,19 @@ class MonitoringView(ttk.Frame):
             print(f"Error updating agent health: {e}")
     
     def _update_logs(self):
-        """Update real-time system logs"""
+        """Tail system log file and display recent lines"""
         try:
+            log_file = self.system_service.project_root / "system.log"
             self.logs_display.configure(state=tk.NORMAL)
-            
-            # Add new log entry
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            
-            # Simulate system log entries
-            log_entries = [
-                f"[{timestamp}] 🟢 System monitoring refresh completed",
-                f"[{timestamp}] 📊 Metrics updated successfully",
-                f"[{timestamp}] 📈 Charts refreshed",
-            ]
-            
-            # Add recent entries
-            for entry in log_entries:
-                self.logs_display.insert(tk.END, entry + "\n")
-            
-            # Keep only last 50 lines
-            lines = self.logs_display.get(1.0, tk.END).split('\n')
-            if len(lines) > 50:
-                self.logs_display.delete(1.0, tk.END)
-                self.logs_display.insert(tk.END, '\n'.join(lines[-50:]))
-            
-            # Auto-scroll to bottom
-            self.logs_display.see(tk.END)
+            self.logs_display.delete(1.0, tk.END)
+
+            if log_file.exists():
+                lines = log_file.read_text().splitlines()[-200:]
+                for line in lines:
+                    self.logs_display.insert(tk.END, line + "\n")
+            else:
+                self.logs_display.insert(tk.END, "Log file not found.\n")
+
             self.logs_display.configure(state=tk.DISABLED)
-            
         except Exception as e:
             print(f"Error updating logs: {e}")
