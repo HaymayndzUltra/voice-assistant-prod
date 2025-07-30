@@ -26,7 +26,7 @@ from common.env_helpers import get_env
 import cv2
 import numpy as np
 import insightface
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_rep_socket
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any
@@ -34,14 +34,7 @@ from dataclasses import dataclass
 
 from filterpy.kalman import KalmanFilter
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
 import onnxruntime as ort
-from scipy.spatial.distance import cosine
-import sounddevice as sd
-import librosa
-import soundfile as sf
 from main_pc_code.utils.env_loader import get_env
 import psutil
 from main_pc_code.agents.error_publisher import ErrorPublisher
@@ -221,7 +214,7 @@ class EmotionAnalyzer(BaseAgent):
         def process_voice():
             while True:
                 if len(self.voice_buffer) > 0:
-                    audio = self.voice_buffer.pop(0)
+                    self.voice_buffer.pop(0)
                     # TODO: Process audio and update emotion state
                 time.sleep(0.1)
         self.voice_thread = threading.Thread(target=process_voice, daemon=True)

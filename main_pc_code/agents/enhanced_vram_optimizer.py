@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -27,10 +26,9 @@ import threading
 import gc
 from typing import Dict, List, Optional, Any, Tuple, Set
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from collections import defaultdict, deque
+from datetime import datetime
+from collections import deque
 from enum import Enum
-import math
 
 # Core imports
 from common.core.base_agent import BaseAgent
@@ -38,24 +36,21 @@ from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.model_events import (
-    ModelEventType, ModelLoadEvent, VRAMEvent, ModelPerformanceEvent,
-    CrossMachineModelEvent, create_model_load_request, create_vram_warning,
+    ModelEventType, ModelLoadEvent, ModelPerformanceEvent,
+    CrossMachineModelEvent, create_vram_warning,
     create_cross_machine_request, create_model_status_change, ModelStatus
 )
 from events.memory_events import (
-    MemoryEventType, create_memory_pressure_warning, create_memory_operation,
-    MemoryType, MemoryPerformanceEvent
+    MemoryEventType, create_memory_pressure_warning, MemoryPerformanceEvent
 )
 from events.event_bus import (
     get_event_bus, publish_model_event, publish_memory_event, 
-    subscribe_to_model_events, subscribe_to_memory_events,
-    event_handler, auto_subscribe_handlers
+    subscribe_to_model_events, subscribe_to_memory_events
 )
 
 # Try to import GPU libraries
 try:
     import torch
-    import GPUtil
     GPU_AVAILABLE = True
 except ImportError:
     GPU_AVAILABLE = False
@@ -250,7 +245,7 @@ class EnhancedVRAMOptimizer(BaseAgent):
                 try:
                     # Get current memory info
                     memory_allocated = torch.cuda.memory_allocated(i)
-                    memory_reserved = torch.cuda.memory_reserved(i)
+                    torch.cuda.memory_reserved(i)
                     memory_total = torch.cuda.get_device_properties(i).total_memory
                     
                     self.current_memory_usage_mb = int(memory_allocated / (1024 * 1024))
@@ -303,7 +298,7 @@ class EnhancedVRAMOptimizer(BaseAgent):
         def get_memory_info():
             if GPU_AVAILABLE and torch.cuda.is_available():
                 memory_allocated = torch.cuda.memory_allocated(0)
-                memory_reserved = torch.cuda.memory_reserved(0)
+                torch.cuda.memory_reserved(0)
                 
                 self.current_memory_usage_mb = int(memory_allocated / (1024 * 1024))
                 self.peak_memory_usage_mb = max(self.peak_memory_usage_mb, self.current_memory_usage_mb)

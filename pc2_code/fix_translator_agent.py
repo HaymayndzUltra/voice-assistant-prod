@@ -7,7 +7,6 @@ pattern matching is correctly prioritized for common commands.
 """
 import os
 import re
-import sys
 
 def fix_translator_agent():
     """Fix the translator_agent.py file"""

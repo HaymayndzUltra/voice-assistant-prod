@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -26,9 +25,8 @@ import json
 import logging
 import hashlib
 import secrets
-import hmac
-from typing import Dict, List, Optional, Any, Tuple, Set, Union
-from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Optional, Any, Tuple, Set
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from enum import Enum
@@ -46,13 +44,12 @@ except ImportError:
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.memory_events import (
     MemoryEventType, create_memory_operation, MemoryType
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 class AuthenticationMethod(Enum):
     """Authentication methods"""

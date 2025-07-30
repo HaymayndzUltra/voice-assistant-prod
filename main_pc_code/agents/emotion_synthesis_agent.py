@@ -1,13 +1,11 @@
 # ✅ Path patch fix for src/ and utils/ imports
 import sys
 import os
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
@@ -16,8 +14,6 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
 import logging
 import random
 from datetime import datetime

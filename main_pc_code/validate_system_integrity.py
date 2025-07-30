@@ -1,12 +1,10 @@
 import yaml
-import os
 from pathlib import Path
 from collections import defaultdict
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 SOT_CONFIG_PATH = Path(PathManager.join_path("config", "source_of_truth_config.yaml"))

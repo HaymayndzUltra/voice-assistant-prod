@@ -10,7 +10,6 @@ import os
 import sys
 import yaml
 import shutil
-from pathlib import Path
 
 # ANSI color codes for terminal output
 GREEN = "\033[92m"

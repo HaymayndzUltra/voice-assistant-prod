@@ -6,11 +6,10 @@ Standardized API contracts and communication patterns for all agents
 import json
 import time
 import uuid
-from typing import Dict, Any, Optional, List, Union, Type
-from dataclasses import dataclass, field, asdict
+from typing import Dict, Any, Optional, List, Type
+from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
-import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -186,28 +185,23 @@ class APIContract(ABC):
     @abstractmethod
     def name(self) -> str:
         """Contract name"""
-        pass
     
     @property
     @abstractmethod
     def version(self) -> APIVersion:
         """Contract version"""
-        pass
     
     @abstractmethod
     def validate_request(self, payload: Dict[str, Any]) -> bool:
         """Validate request payload"""
-        pass
     
     @abstractmethod
     def validate_response(self, payload: Dict[str, Any]) -> bool:
         """Validate response payload"""
-        pass
     
     @abstractmethod
     async def process_request(self, message: APIMessage) -> APIResponse:
         """Process API request"""
-        pass
 
 class StandardAPIContract(APIContract):
     """Standard API contract implementation"""
@@ -341,12 +335,10 @@ class APIMiddleware(ABC):
     @abstractmethod
     async def process_request(self, message: APIMessage) -> Optional[APIMessage]:
         """Process incoming request. Return None to continue, modified message to override"""
-        pass
     
     @abstractmethod
     async def process_response(self, message: APIMessage, response: APIResponse) -> Optional[APIResponse]:
         """Process outgoing response. Return None to continue, modified response to override"""
-        pass
 
 class LoggingMiddleware(APIMiddleware):
     """Logging middleware for API calls"""

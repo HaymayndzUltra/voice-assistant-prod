@@ -1,6 +1,5 @@
 import torch
 import sys
-from common.core.base_agent import BaseAgent
 
 print("Python version:", sys.version)
 print("PyTorch version:", torch.__version__)

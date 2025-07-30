@@ -1,6 +1,6 @@
 import msgpack
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import zlib
 import base64
 import hashlib
@@ -115,7 +115,7 @@ def optimize_zmq_message(message: Dict[str, Any], optimize_references: bool = Tr
 
 def main():
     # Example usage
-    optimizer = DataOptimizer()
+    DataOptimizer()
     
     # Example large message
     large_message = {

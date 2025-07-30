@@ -8,11 +8,10 @@ import zmq.asyncio
 import threading
 import time
 import logging
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from queue import Queue, Empty
 from contextlib import contextmanager
-import weakref
 from enum import Enum
 
 from common.env_helpers import get_env

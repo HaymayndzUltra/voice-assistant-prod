@@ -1,0 +1,68 @@
+# Production Configuration Overrides
+# These settings override base.yaml for production environment
+
+system:
+  environment: "production"
+  debug_mode: false
+
+logging:
+  level: "INFO"
+  console_output: false
+  file_output: true
+  structured_logging: true
+
+performance:
+  cpu_percent_limit: 70  # Conservative CPU usage in production
+  memory_limit_mb: 1536  # Conservative memory usage
+  max_threads: 2  # Conservative threading
+
+network:
+  timeout:
+    request: 15  # Shorter timeouts in production
+    connection: 5
+    health_check: 3
+
+health:
+  interval_seconds: 60  # Less frequent health checks in prod
+  enable_alerts: true
+
+monitoring:
+  prometheus_enabled: true
+  detailed_metrics: false  # Less detailed for performance
+  enable_dashboards: true
+  alert_webhooks: true
+
+security:
+  enable_auth: true
+  strict_mode: true
+  rate_limit:
+    requests_per_minute: 60  # More conservative rate limits
+    burst_size: 10
+
+# Production-optimized agent settings
+agents:
+  default:
+    startup_timeout: 15  # Faster startup required
+    shutdown_timeout: 5
+    restart_policy: "always"
+    max_restarts: 5
+    log_level: "INFO"
+    enable_profiling: false
+
+# Production ports (standard range)
+ports:
+  base_port: 5000
+  production_mode: true
+
+# Production reliability features
+reliability:
+  enable_circuit_breaker: true
+  enable_retry_logic: true
+  enable_graceful_degradation: true
+  backup_instances: true
+
+# Disable debugging features
+debugging:
+  enable_stacktraces: false
+  verbose_errors: false
+  log_config_loading: false

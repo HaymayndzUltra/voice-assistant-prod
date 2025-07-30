@@ -5,7 +5,6 @@ PC2 Services Configuration Loader
 Utility module for loading PC2 services configuration
 """
 
-import os
 import yaml
 import logging
 from pathlib import Path
@@ -13,7 +12,7 @@ from typing import Dict, Any, Optional
 from functools import lru_cache
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_pc2_ip
 
 logger = logging.getLogger("PC2Config")
 

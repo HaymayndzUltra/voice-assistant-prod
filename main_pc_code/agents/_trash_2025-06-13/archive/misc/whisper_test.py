@@ -1,9 +1,7 @@
-from main_pc_code.src.core.base_agent import BaseAgent
 """
 Whisper Test - Test if Whisper model loading is working
 """
 
-import os
 import sys
 import time
 import logging

@@ -8,7 +8,7 @@ import zmq
 import logging
 import time
 import os
-from typing import Dict, Any, Optional, Union, Tuple
+from typing import Any, Optional, Union, Tuple
 
 logger = logging.getLogger(__name__)
 

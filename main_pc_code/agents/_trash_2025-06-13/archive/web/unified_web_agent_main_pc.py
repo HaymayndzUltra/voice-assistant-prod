@@ -12,12 +12,11 @@ Handles all web-related tasks including:
 """
 
 import sys
-import os
 import logging
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Optional, List
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver

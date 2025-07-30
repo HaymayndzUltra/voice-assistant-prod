@@ -302,7 +302,6 @@ class ErrorBusService(BaseAgent):
     def _forward_error(self, error_data: Dict):
         """Forward error to subscribers if needed"""
         # If errors need to be forwarded to other systems or services
-        pass
     
     def _run_log_scanning(self):
         """Run the log scanning loop"""

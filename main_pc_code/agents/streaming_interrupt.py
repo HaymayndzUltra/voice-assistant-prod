@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.utils.path_manager import PathManager
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -15,7 +14,6 @@ Streaming Interrupt Detection Module
 - Uses Vosk (lightweight, local, supports Tagalog/English)
 - Sends interrupt signal to main state machine via ZMQ
 """
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import queue
 import sounddevice as sd
 
@@ -36,7 +34,6 @@ except ImportError:
     import json
     json_loads = json.loads
     json_dumps = json.dumps
-import threading
 import time
 import psutil
 from datetime import datetime

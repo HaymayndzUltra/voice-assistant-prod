@@ -1,11 +1,10 @@
 # system_config.py - Centralized configuration for Voice Assistant (PC2)
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 import os
-from typing import Dict, Any, Optional
+from typing import Any
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 def get_env_override(key: str, default: Any) -> Any:
     """

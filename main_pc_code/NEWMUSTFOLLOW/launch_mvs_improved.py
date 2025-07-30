@@ -13,7 +13,6 @@ import time
 import signal
 import subprocess
 import argparse
-from pathlib import Path
 import logging
 import threading
 
@@ -285,7 +284,6 @@ def main():
             
             if not processes:
                 logging.error("All processes have terminated")
-                running = False
         
         return 0
     except Exception as e:

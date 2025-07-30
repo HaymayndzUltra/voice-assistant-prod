@@ -4,8 +4,7 @@ Handles both MainPC (agent_groups) and PC2 (pc2_services) formats
 """
 import yaml
 import os
-from pathlib import Path
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any
 
 def load_unified_config(config_path: str = None) -> Dict[str, Any]:
     """

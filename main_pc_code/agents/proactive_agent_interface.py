@@ -8,11 +8,9 @@ Digital Twin, Learning Mode) to send proactive events, reminders, and suggestion
 """
 import zmq
 import json
-import os
 import time
-import logging
 import threading
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from datetime import datetime
 from queue import Queue, Empty
 
@@ -20,10 +18,7 @@ from queue import Queue, Empty
 from common.core.base_agent import BaseAgent
 
 # Standardized utilities
-from common.utils.path_manager import PathManager
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
-from main_pc_code.utils.network import get_host
 
 # Constants for proactive interface
 DEFAULT_PROACTIVE_PORT = 5558

@@ -7,13 +7,9 @@ import threading
 import time
 import logging
 import psutil
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List, Union
-import hashlib
+from datetime import timedelta
+from typing import Dict, Any, Optional, Union
 from pathlib import Path
-from collections import defaultdict
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # ✅ MODERNIZED: Standardized path management using PathManager only  
 from common.utils.path_manager import PathManager
 
@@ -33,15 +29,15 @@ from pc2_code.agents.utils.config_loader import Config
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
 # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 # Now using: self.report_error() method from BaseAgent
-from common.env_helpers import get_env
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
 
 # Load configuration at the module level
 config = Config().get_config()
 
 # Constants
-${SECRET_PLACEHOLDER} 'localhost'
-${SECRET_PLACEHOLDER} 6379
-${SECRET_PLACEHOLDER} 0
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
 HEALTH_PORT = 5618
 HEALTH_CHECK_INTERVAL = 30  # seconds
 MAX_CACHE_SIZE = 1000  # Maximum number of cache entries
@@ -70,6 +66,8 @@ class ResourceMonitor:
         self.stats_history.append(stats)
         return stats
         
+        # PC2 Error Bus Integration (Phase 1.3)
+        self.error_publisher = create_pc2_error_publisher("cache_manager")
     def check_resources(self) -> bool:
         """Check if resources are available"""
         stats = self.get_stats()
@@ -485,16 +483,15 @@ def main():
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
         if agent and hasattr(agent, 'cleanup'):
             print(f"Cleaning up {agent.name}...")
             agent.cleanup()
+
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 # Load network configuration
 def load_network_config():
@@ -517,7 +514,7 @@ def load_network_config():
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = get_mainpc_ip())
+MAIN_PC_IP = get_mainpc_ip()
 PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 

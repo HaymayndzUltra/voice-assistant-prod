@@ -22,7 +22,6 @@ import zmq
 import pickle
 import numpy as np
 import time
-import threading
 import logging
 import os
 import sys
@@ -32,8 +31,6 @@ from pathlib import Path
 from datetime import datetime
 from collections import deque
 import noisereduce as nr
-from scipy import signal
-import librosa
 # from main_pc_code.src.core.http_server import setup_health_check_server  # Module doesn't exist
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service
@@ -48,7 +45,6 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
-from common.env_helpers import get_env
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -467,7 +463,7 @@ class FusedAudioPreprocessor(BaseAgent):
         # Calculate statistics
         if len(self.speech_prob_history) > 10:
             mean = np.mean(list(self.speech_prob_history))
-            std = np.std(list(self.speech_prob_history))
+            np.std(list(self.speech_prob_history))
             
             # Adjust threshold - higher when noisy, lower when quiet
             noise_level = mean

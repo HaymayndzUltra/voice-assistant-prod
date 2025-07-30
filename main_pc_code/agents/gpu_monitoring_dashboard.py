@@ -14,7 +14,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -22,11 +21,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import time
-import json
 import logging
 import threading
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 import asyncio
@@ -35,7 +33,6 @@ from contextlib import asynccontextmanager
 # Web framework imports
 try:
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-    from fastapi.staticfiles import StaticFiles
     from fastapi.responses import HTMLResponse, JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
@@ -50,10 +47,9 @@ from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.model_events import (
-    ModelEventType, ModelLoadEvent, VRAMEvent, ModelPerformanceEvent,
-    CrossMachineModelEvent
+    ModelEventType
 )
-from events.memory_events import MemoryEventType, MemoryPerformanceEvent
+from events.memory_events import MemoryEventType
 from events.event_bus import (
     get_event_bus, subscribe_to_model_events, subscribe_to_memory_events
 )

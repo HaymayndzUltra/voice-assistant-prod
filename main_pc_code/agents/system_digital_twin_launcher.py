@@ -8,7 +8,6 @@ to avoid conflicts with any existing processes.
 
 import sys
 import os
-from pathlib import Path
 
 
 # Import path manager for containerization-friendly paths
@@ -22,13 +21,7 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 # Import required modules
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
-import time
 import logging
-import threading
-from datetime import datetime
-from typing import Dict, Any, Optional, List, Union, cast
 
 # Import the agent class and base agent
 from main_pc_code.agents.system_digital_twin import SystemDigitalTwinAgent

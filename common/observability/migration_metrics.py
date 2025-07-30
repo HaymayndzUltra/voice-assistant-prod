@@ -7,7 +7,6 @@ Provides real-time migration monitoring, alerting, and comprehensive metrics col
 """
 
 import time
-import json
 import logging
 import threading
 from typing import Dict, List, Optional, Any
@@ -15,7 +14,6 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
 import requests
-from pathlib import Path
 from common.path_manager import PathManager
 
 logger = logging.getLogger("MigrationMetrics")
@@ -488,7 +486,6 @@ class MigrationObservabilityHub:
         """Check for batch-level timeouts"""
         # This would check if any batch is taking too long
         # and generate appropriate alerts
-        pass
     
     def _send_status_update(self):
         """Send periodic status update to observability system"""

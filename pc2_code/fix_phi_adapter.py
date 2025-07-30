@@ -4,9 +4,6 @@ This script will fix the syntax errors in phi_adapter.py using a simplified, min
 """
 
 import re
-import os
-import sys
-import logging
 
 def fix_phi_adapter_file():
     # Read the existing file

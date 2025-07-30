@@ -5,12 +5,8 @@ Part of PC2 Phase 1 - Core Agents Implementation
 """
 
 import sys
-import os
 import time
 import threading
-import signal
-import zmq
-import json
 from pathlib import Path
 
 # Add agents directory to path

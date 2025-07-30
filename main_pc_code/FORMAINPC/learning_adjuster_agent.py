@@ -3,12 +3,10 @@ Learning Adjuster Agent
 Purpose: Manages and optimizes learning parameters for PC2 agents
 Features: Learning rate adjustment, parameter optimization, performance monitoring
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
-import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
@@ -20,19 +18,16 @@ import logging
 import sqlite3
 import numpy as np
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 import time
-import threading
 from typing import Dict, Any
 from common.core.base_agent import BaseAgent
-import argparse
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
@@ -46,7 +41,6 @@ if str(project_root) not in sys.path:
 
 # Import common utilities if available
 try:
-    from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
 except ImportError as e:
     print(f"Import error: {e}")
@@ -95,7 +89,7 @@ class LearningAdjusterAgent(BaseAgent):
         
         # Get port from config with fallback
         agent_port = int(config.get("port", 5643))
-        agent_name = kwargs.get('name', "LearningAdjusterAgent")
+        kwargs.get('name', "LearningAdjusterAgent")
         
         # Call BaseAgent's __init__ with proper parameters
         super().__init__(port=agent_port, **kwargs)

@@ -7,10 +7,9 @@ Provides standardized health endpoints and response formats
 import time
 import psutil
 import zmq
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
+from datetime import datetime
 from dataclasses import dataclass, asdict
-import asyncio
 import threading
 
 @dataclass

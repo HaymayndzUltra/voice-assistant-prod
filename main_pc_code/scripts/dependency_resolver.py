@@ -7,16 +7,13 @@ based on agent dependencies using topological sorting.
 """
 
 import yaml
-import os
 import sys
 from collections import defaultdict, deque
 from pathlib import Path
-from pprint import pprint
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 # Add project root to Python path

@@ -1,8 +1,4 @@
 import zmq
-import json
-import time
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # CONFIGURE THESE:
 MAIN_PC_IP = "localhost"  # Palitan ng actual IP ng main PC kung remote

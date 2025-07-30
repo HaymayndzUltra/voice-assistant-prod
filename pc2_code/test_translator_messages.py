@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script for the Translator Agent with various Taglish/Tagalog messages
 """
 import zmq
 import json
 import time
-import sys
-from pathlib import Path
-from common.env_helpers import get_env
 
 # Setup ZMQ
 context = zmq.Context()

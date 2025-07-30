@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Environment Variable Loader
 
@@ -9,7 +8,7 @@ with appropriate defaults and type conversion.
 
 import os
 import logging
-from typing import Any, Dict, Optional, Union, List, Tuple
+from typing import Any, Dict, List
 from common.env_helpers import get_env
 
 # Set up logging

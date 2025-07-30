@@ -14,23 +14,20 @@ Features:
 """
 
 import os
-import sys
-import time
 import logging
 import asyncio
-import aiohttp
 import zmq
 import zmq.asyncio as azmq
-from typing import Dict, List, Optional, Any, Tuple, Union
-from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime
 from dataclasses import dataclass
 
 # Import the modern service mesh client
-from .client import ServiceMeshClient, ServiceEndpoint, CircuitBreakerState
+from .client import ServiceMeshClient, ServiceEndpoint
 
 # Hostname-based service discovery (Blueprint.md Step 6)
 try:
-    from common.utils.hostname_resolver import get_hostname_resolver, resolve_service_address, DiscoveryMode
+    from common.utils.hostname_resolver import get_hostname_resolver
     HOSTNAME_RESOLVER_AVAILABLE = True
 except ImportError:
     logger.warning("Hostname resolver not available, falling back to IP-based discovery")

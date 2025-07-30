@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # -*- coding: utf-8 -*-
 """
 Test module for UnifiedPlanningAgent.
 """
 
 import unittest
-import json
-import zmq
 import logging
 import sys
 import os
@@ -15,11 +12,9 @@ from unittest.mock import MagicMock, patch
 
 # Ensure the parent directory is in the path for imports
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-from common.utils.path_env import get_project_root, get_main_pc_code
 
 # Import the agent to test
 from main_pc_code.agents.unified_planning_agent import UnifiedPlanningAgent
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 

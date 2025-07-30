@@ -22,11 +22,9 @@ import os
 import sys
 import zmq
 import time
-import json
 import logging
 import unittest
 from pathlib import Path
-from typing import Dict, Any, Optional
 
 # Add project root to Python path
 current_dir = Path(__file__).resolve().parent

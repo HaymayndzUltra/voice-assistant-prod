@@ -1,10 +1,8 @@
 import yaml
-import os
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 SOT_PATH = PathManager.join_path("config", "startup_config.yaml")

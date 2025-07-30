@@ -8,7 +8,6 @@ PC2 GPU Performance Test
 """
 import torch
 import time
-import numpy as np
 import psutil
 import platform
 from datetime import datetime
@@ -78,7 +77,7 @@ def run_benchmark(sizes=[1000, 2000, 4000]):
         b_cpu = torch.randn(size, size)
         
         start = time.time()
-        c_cpu = torch.matmul(a_cpu, b_cpu)
+        torch.matmul(a_cpu, b_cpu)
         cpu_time = (time.time() - start) * 1000  # ms
         cpu_gflops = (flops / (cpu_time / 1000)) / 1e9
         
@@ -90,11 +89,11 @@ def run_benchmark(sizes=[1000, 2000, 4000]):
             b_gpu = torch.randn(size, size, device='cuda')
             
             # Warmup
-            warmup = torch.matmul(a_gpu, b_gpu)
+            torch.matmul(a_gpu, b_gpu)
             torch.cuda.synchronize()
             
             start = time.time()
-            c_gpu = torch.matmul(a_gpu, b_gpu)
+            torch.matmul(a_gpu, b_gpu)
             torch.cuda.synchronize()
             gpu_time = (time.time() - start) * 1000  # ms
             gpu_gflops = (flops / (gpu_time / 1000)) / 1e9

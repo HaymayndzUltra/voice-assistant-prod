@@ -1,6 +1,5 @@
 import zmq
 import json
-import time
 import sys
 from pathlib import Path
 

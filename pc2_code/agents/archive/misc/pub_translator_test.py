@@ -6,7 +6,6 @@ Uses the correct socket pattern (PUB to translator's SUB socket)
 import zmq
 import json
 import time
-import sys
 from colorama import init, Fore, Style
 from common.env_helpers import get_env
 

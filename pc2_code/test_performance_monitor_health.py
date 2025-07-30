@@ -1,5 +1,4 @@
 import zmq
-import json
 import time
 
 class PerformanceMonitorHealth:

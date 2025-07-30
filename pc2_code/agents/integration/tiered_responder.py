@@ -7,9 +7,7 @@ This agent provides tiered response processing for PC2, optimized for
 the PC2 machine environment with instant, fast, and deep processing tiers.
 """
 import zmq
-import json
-from typing import Dict, Any, Callable, List
-import logging
+from typing import Dict, Any
 import asyncio
 import time
 from datetime import datetime
@@ -19,10 +17,7 @@ import threading
 from common.core.base_agent import BaseAgent
 
 # Standardized utilities
-from common.utils.path_manager import PathManager
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
-from common.utils.path_manager import PathManager
 
 # Constants for PC2 tiered responder
 PC2_PULL_PORT = 5619

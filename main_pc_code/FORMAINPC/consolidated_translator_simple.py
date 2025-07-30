@@ -5,19 +5,16 @@ Simplified Consolidated Translator for Health Check Validation
 - Dynamic port support
 - Separate health check port
 """
-import os
 import sys
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-import json
 import time
 import zmq
 import logging
 import threading
-import argparse
 from typing import Dict, Any
 
 # Import config parser for dynamic port support

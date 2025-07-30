@@ -6,7 +6,6 @@ import os
 import yaml
 
 # IMPORTANT: This requires the ModelManagerAgent class to be importable.
-from main_pc_code.model_manager_suite import get_instance as get_model_manager_instance
 from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)

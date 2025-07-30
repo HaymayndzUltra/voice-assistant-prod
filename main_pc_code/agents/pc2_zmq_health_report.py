@@ -7,16 +7,13 @@ This agent provides continuous health monitoring of PC2 ZMQ services,
 generating periodic health reports and maintaining system visibility
 across the distributed MainPC-PC2 architecture.
 """
-import os
 import sys
 import json
 import time
 import re
-import logging
 import threading
 from pathlib import Path
 from datetime import datetime
-import traceback
 import prettytable
 from typing import Dict, Any, List, Optional
 
@@ -25,10 +22,8 @@ from common.core.base_agent import BaseAgent
 
 # Standardized utilities
 from common.utils.path_manager import PathManager
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
 from common.utils.path_manager import PathManager
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 
 # Constants for health reporting
 DEFAULT_HEALTH_REPORT_PORT = 5640

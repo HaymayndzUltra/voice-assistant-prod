@@ -5,7 +5,7 @@ import time
 import logging
 import sqlite3
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List
 from collections import defaultdict
 from threading import Thread
 import psutil

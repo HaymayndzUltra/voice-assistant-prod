@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Code Generation Intent Handler
 -----------------------------
@@ -9,10 +8,7 @@ Connects to Model Manager Agent to request code generation
 import os
 import zmq
 import json
-import time
-import uuid
 import logging
-import pickle
 from typing import Dict, Any, Optional
 
 
@@ -21,7 +17,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
 from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

@@ -1,8 +1,7 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
-from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from main_pc_code.utils.service_discovery_client import register_service
 from common.env_helpers import get_env
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 import psutil
@@ -26,7 +25,6 @@ import pickle
 import json
 import time
 import logging
-import threading
 import os
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
 from main_pc_code.utils.env_loader import get_env
@@ -65,7 +63,7 @@ class StreamingInterruptHandler(BaseAgent):
         
         # Get configuration values with fallbacks
         agent_port = int(config.get("port", 5576))
-        agent_name = kwargs.get('name', "StreamingInterruptHandler")
+        kwargs.get('name', "StreamingInterruptHandler")
         bind_address = config.get("bind_address", get_env('BIND_ADDRESS', '<BIND_ADDR>'))
         zmq_timeout = int(config.get("zmq_request_timeout", 5000))
         
@@ -339,6 +337,6 @@ if __name__ == "__main__":
         agent.run()
     except KeyboardInterrupt:
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
-    except Exception as e:
+    except Exception:
 # Cleanup completed
             agent.cleanup()

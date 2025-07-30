@@ -8,11 +8,9 @@ PyTorch Installation Script for NLLB Translator
 - Provides clear instructions and feedback
 """
 
-import os
 import sys
 import subprocess
 import platform
-import time
 import argparse
 from colorama import init, Fore, Style
 

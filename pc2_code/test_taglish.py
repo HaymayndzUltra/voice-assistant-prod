@@ -3,7 +3,6 @@
 
 import zmq
 import time
-import json
 from colorama import Fore, Style, init
 from common.env_helpers import get_env
 

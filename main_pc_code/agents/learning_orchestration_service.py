@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Learning Orchestration Service (LOS)
 
@@ -14,18 +13,15 @@ import logging
 import threading
 import json
 import zmq
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_rep_socket
 import sqlite3
-import psutil
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List, Optional, cast
+from typing import Dict, Any, cast
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
@@ -101,7 +97,7 @@ class LearningOrchestrationService(BaseAgent):
         """Register this agent with the service discovery system if available."""
         try:
             from main_pc_code.utils.service_discovery_client import get_service_discovery_client
-            client = get_service_discovery_client()
+            get_service_discovery_client()
             self.service_registry[self.name] = {
                 "name": self.name,
                 "ip": self.config.get('bind_address', '0.0.0.0'),
@@ -201,8 +197,8 @@ class LearningOrchestrationService(BaseAgent):
         try:
             # Use shared TrainingCycle model
             opportunity_id = request.get('opportunity_id')
-            score = request.get('score')
-            category = request.get('category')
+            request.get('score')
+            request.get('category')
             timestamp = request.get('timestamp', datetime.utcnow().isoformat())
             self.metrics['opportunities_received'] += 1
             # Create a new TrainingCycle instance

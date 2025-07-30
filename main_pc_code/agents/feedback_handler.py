@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 """
 Feedback Handler Module
@@ -8,16 +7,13 @@ Provides visual and voice confirmation feedback for command execution
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import threading
 import time
-import json
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, Any, Tuple
 from common.config_manager import load_unified_config
 import psutil
-from common.env_helpers import get_env
 
 # Load config at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

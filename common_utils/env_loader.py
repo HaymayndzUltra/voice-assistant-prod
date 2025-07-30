@@ -1,8 +1,8 @@
 import os
 import yaml
 import pathlib
-from typing import Dict, Any, Optional
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from typing import Dict, Any
+from common.config_manager import get_service_ip
 
 def load_network_config() -> Dict[str, Any]:
     """

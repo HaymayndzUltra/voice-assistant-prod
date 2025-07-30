@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # -*- coding: utf-8 -*-
 
 """
@@ -7,15 +6,13 @@ System Configuration
 This module provides system configuration values and configuration management
 """
 
-import os
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
-from common.env_helpers import get_env
+from typing import Dict, Any
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_current_machine
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

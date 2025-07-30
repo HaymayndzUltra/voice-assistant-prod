@@ -7,32 +7,26 @@ Responsible for:
 - Adjusting learning parameters based on feedback
 - Coordinating with other agents for continuous learning
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
-from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import zmq
-import json
 import time
 import logging
 import threading
 import os
 import sys
-import numpy as np
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-import psutil
+from typing import Dict, Any
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.env_helpers import get_env
 
 # Parse command line arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

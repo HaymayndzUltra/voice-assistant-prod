@@ -11,13 +11,11 @@ import logging
 import threading
 import json
 import uuid
-import re
 import subprocess
-import zmq
 import tempfile
 import numpy as np
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Optional
 import pickle
 from datetime import datetime
 import psutil # Added for health check
@@ -36,7 +34,7 @@ if project_root not in sys.path:
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
-from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
+from common.utils.data_models import TaskDefinition, ErrorSeverity
 from common.config_manager import load_unified_config
 from main_pc_code.agents.request_coordinator import CircuitBreaker # Pansamantalang import
 from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration

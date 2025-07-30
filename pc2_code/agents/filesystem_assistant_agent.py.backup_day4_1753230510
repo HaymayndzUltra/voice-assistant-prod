@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.config_manager import get_service_ip
 """
 FileSystem Assistant Agent
 --------------------------
@@ -9,8 +9,6 @@ to perform controlled file operations across the distributed system.
 The agent runs with a REP socket pattern to handle requests and provide responses.
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
 import os
 import sys
 import threading
@@ -20,7 +18,7 @@ import yaml
 import zmq
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import time
 
 
@@ -36,15 +34,13 @@ if project_root not in sys.path:
 
 # Import base agent and config loaders
 from common.core.base_agent import BaseAgent
-from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.utils.config_loader import parse_agent_args
 
 # Import common utilities if available
 try:
     # Assuming this module exists and provides `create_socket`
-    from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
 except ImportError as e:
     print(f"Import error: {e}. Some common utilities might not be available.")

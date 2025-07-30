@@ -7,7 +7,6 @@ Predictive Health Monitor
 - Coordinates agent lifecycle and dependencies
 - Supports distributed system deployment
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
@@ -20,7 +19,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 
 import logging
 import socket
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_req_socket, get_rep_socket
 
 # Import path manager for containerization-friendly paths
 import sys
@@ -44,7 +43,7 @@ import pickle
 import json
 import traceback
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Union, Tuple
+from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 
 from common.core.base_agent import BaseAgent, logger
@@ -310,7 +309,7 @@ class PredictiveHealthMonitor(BaseAgent):
         # Initialize psutil availability
         self.psutil_available = True
         try:
-            import psutil
+            pass
         except ImportError:
             logger.warning("psutil is not installed. Some functionality will be limited.")
             logger.warning("Install psutil with: pip install psutil")
@@ -1065,7 +1064,6 @@ class PredictiveHealthMonitor(BaseAgent):
     def _ensure_dependencies(self) -> None:
         """Ensure all required dependencies are installed"""
         try:
-            import psutil
             logger.info("All required dependencies are installed")
             self.psutil_available = True
         except ImportError as e:

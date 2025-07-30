@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Configuration loader utility for PC2 agents.
 Provides standardized access to configuration parameters.
@@ -8,11 +7,9 @@ Provides standardized access to configuration parameters.
 import os
 import yaml
 import logging
-from typing import Dict, Any, Optional
-from common.env_helpers import get_env
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
 logger = logging.getLogger(__name__)
 

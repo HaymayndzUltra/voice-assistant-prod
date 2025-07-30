@@ -1,6 +1,6 @@
 import zmq
 import threading
-from typing import Callable, Any, Dict, List, Optional
+from typing import Callable, Any, Dict, Optional
 from functools import wraps
 import time
 import logging
@@ -8,9 +8,7 @@ import psutil
 import torch
 from datetime import datetime
 from collections import deque, defaultdict
-import asyncio
 from pathlib import Path
-import json
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
@@ -191,7 +189,7 @@ class AsyncProcessor:
         """Process incoming task message"""
         task_type = message.get('type')
         data = message.get('data')
-        priority = message.get('priority', 'medium')
+        message.get('priority', 'medium')
         
         if task_type and data:
             start_time = time.time()

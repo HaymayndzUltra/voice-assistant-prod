@@ -9,11 +9,9 @@ import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional
 import logging
-import os
 import sys
-from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

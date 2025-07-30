@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test Self-Healing Agent
 ---------------------
@@ -10,10 +9,8 @@ import zmq
 import json
 import time
 import logging
-import sys
 import os
 from pathlib import Path
-from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

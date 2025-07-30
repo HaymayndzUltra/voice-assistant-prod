@@ -1,5 +1,3 @@
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 

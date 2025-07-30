@@ -13,9 +13,7 @@ import os
 import json
 import threading
 import traceback
-from datetime import datetime
 import uuid
-from pathlib import Path
 import sys
 import queue
 import sounddevice as sd
@@ -32,7 +30,6 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
 from main_pc_code.utils import model_client
 from common.env_helpers import get_env
 

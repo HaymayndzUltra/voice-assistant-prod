@@ -7,8 +7,7 @@ import os
 import yaml
 import json
 import time
-from pathlib import Path
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from functools import lru_cache
 import threading
@@ -117,7 +116,7 @@ class UnifiedConfigManager:
                     return json.load(f) or {}
                 else:
                     return {}
-        except Exception as e:
+        except Exception:
             # Silently ignore config file errors to maintain backward compatibility
             return {}
     
@@ -127,7 +126,7 @@ class UnifiedConfigManager:
         
         # Process configs in reverse priority order (highest priority last)
         for config in sorted(configs, key=lambda x: x.get('_priority', 999)):
-            priority = config.pop('_priority', None)
+            config.pop('_priority', None)
             self._deep_merge(merged, config)
         
         return merged

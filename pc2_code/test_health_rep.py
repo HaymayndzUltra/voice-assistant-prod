@@ -1,6 +1,4 @@
 import zmq
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 ctx = zmq.Context()
 s = ctx.socket(zmq.REQ)
 s.setsockopt(zmq.RCVTIMEO, 3000)

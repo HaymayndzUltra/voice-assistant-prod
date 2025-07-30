@@ -1,5 +1,4 @@
 from __future__ import annotations
-from common.core.base_agent import BaseAgent
 """Utility class for standardized error-bus publishing.
 
 All agents should use `ErrorPublisher` (instantiated once, ideally in `__init__`) and call
@@ -14,8 +13,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-from common.env_helpers import get_env
+from common.pools.zmq_pool import get_pub_socket
 
 
 class ErrorPublisher:

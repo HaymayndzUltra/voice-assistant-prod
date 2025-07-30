@@ -1,5 +1,4 @@
 # File: main_pc_code/agents/memory_orchestrator_service.py
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # (O kung saan man dapat ilagay ang bagong central orchestrator)
 #
 # Ito ang FINAL at PINAHUSAY na bersyon ng Memory Orchestrator.
@@ -15,11 +14,9 @@ import json
 import uuid
 import sqlite3
 import redis
-import zmq  # Add missing import for ZMQ
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union, cast, TypeVar, Literal
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from collections import defaultdict
 
 
 # Import path manager for containerization-friendly paths
@@ -32,14 +29,13 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
-from common.utils.data_models import ErrorSeverity
 
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus
 # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 # Now using: self.report_error() method from BaseAgent
 
 from pc2_code.agents.utils.config_loader import Config, parse_agent_args
-from common.env_helpers import get_env
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
 
 # Load configuration at the module level
 config = Config().get_config()
@@ -93,6 +89,8 @@ class MemoryStorageManager:
         """Creates a new database connection."""
         return sqlite3.connect(self.db_path, timeout=10)
 
+        # PC2 Error Bus Integration (Phase 1.3)
+        self.error_publisher = create_pc2_error_publisher("memory_orchestrator_service")
     def _init_database(self):
         """CHECKLIST ITEM: Extend database schema & Add new tables"""
         with self.db_lock:

@@ -9,14 +9,13 @@ Usage:
     python test_pc2_containers.py [--containers all|core|memory|ai|user|monitoring]
 """
 
-import os
 import sys
 import time
 import json
 import argparse
 import subprocess
 import requests
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, Tuple
 import logging
 from common.env_helpers import get_env
 

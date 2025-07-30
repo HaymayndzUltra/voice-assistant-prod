@@ -6,36 +6,28 @@ Code Generator Agent
 - Integrates with the AutoGen framework
 - Uses local LLMs for code generation
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
-import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
-import os
-import uuid
 import time
 import zmq
 import json
 import logging
 import traceback
 import sys
-import gc
-from typing import Dict, List, Optional, Any, Union, Tuple
+from typing import Dict, Any
 from pathlib import Path
-import tempfile
 import re
-import threading
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
@@ -306,8 +298,6 @@ class CodeGeneratorAgent(BaseAgent):
 
     def forward_to_model_manager(self, request):
         import zmq
-        import psutil
-        from datetime import datetime
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.setsockopt(zmq.SNDTIMEO, self.zmq_timeout)

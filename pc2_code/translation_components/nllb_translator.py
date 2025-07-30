@@ -4,13 +4,8 @@ Connects to No Language Left Behind (NLLB) model for translation
 Implementation: facebook/nllb-200-distilled-600M
 """
 import zmq
-import json
-import time
 import logging
-import sys
-import os
 import argparse
-from datetime import datetime
 
 # Import Hugging Face Transformers
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -55,7 +50,7 @@ class NLLBTranslatorAgent:
         logger.info("Model loaded successfully")
 
     def translate(self, text, src_lang, tgt_lang):
-        src_code = LANG_MAPPING.get(src_lang, src_lang)
+        LANG_MAPPING.get(src_lang, src_lang)
         tgt_code = LANG_MAPPING.get(tgt_lang, tgt_lang)
         inputs = self.tokenizer(text, return_tensors="pt")
         translated_tokens = self.model.generate(

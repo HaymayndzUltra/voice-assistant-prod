@@ -5,7 +5,7 @@ Pre-defined contracts for common agent operations
 
 from typing import Dict, Any, List
 from common.api.contract import (
-    APIContract, APIMessage, APIResponse, APIVersion, Status
+    APIContract, APIMessage, APIResponse, APIVersion
 )
 import logging
 
@@ -402,7 +402,6 @@ STANDARD_CONTRACTS = {
 
 def get_standard_contract(name: str) -> APIContract:
     """Get a standard contract by name"""
-    from typing import Optional
     contract = STANDARD_CONTRACTS.get(name)
     if contract is None:
         raise ValueError(f"Standard contract not found: {name}")

@@ -1,19 +1,13 @@
-import os
 import sys
 from pathlib import Path
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import unittest
 import zmq
-import json
 import time
-import threading
-from main_pc_code.FORMAINPC.consolidated_translator import TranslatorServer, TranslationPipeline, SessionManager, TranslationCache
-from pc2_code.config.system_config import get_config_for_service
-from common.env_helpers import get_env
+from main_pc_code.FORMAINPC.consolidated_translator import TranslationPipeline
 
 class TestConsolidatedTranslator(unittest.TestCase):
     @classmethod

@@ -1,7 +1,6 @@
 """
 Test script to demonstrate the translation cache functionality
 """
-import sys
 import time
 from pc2_code.agents.translator_agent import TranslatorAgent
 

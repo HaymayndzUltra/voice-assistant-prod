@@ -20,7 +20,7 @@ Combines wake word detection and speech processing:
 
 import logging
 import time
-from typing import Optional, Callable, Dict, Any
+from typing import Dict, Any
 from main_pc_code.agents.wake_word_detector import WakeWordDetector
 from main_pc_code.agents.speech_processor import SpeechProcessor
 import psutil

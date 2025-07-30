@@ -1,7 +1,5 @@
 import zmq
 import json
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 AGENT_PORT = 5710
 HEALTH_PORT = AGENT_PORT + 1

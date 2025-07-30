@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Context Bridge Agent
 Connects face recognition events to the context manager for seamless context switching.
@@ -9,7 +8,6 @@ import zmq
 import json
 import time
 import logging
-import threading
 import os
 import sys
 import traceback
@@ -17,10 +15,9 @@ import traceback
 
 # Add parent directory to path to allow importing from agents
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from main_pc_code.agents.context_manager import create_context_manager, add_to_context, get_context, clear_context
+from main_pc_code.agents.context_manager import create_context_manager, add_to_context
 import psutil
 from datetime import datetime
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(
@@ -96,7 +93,7 @@ class ContextBridgeAgent(BaseAgent):
                 speaker = event_data.get("speaker")
                 confidence = event_data.get("confidence", 0.0)
                 emotion = event_data.get("emotion")
-                timestamp = event_data.get("timestamp", time.time())
+                event_data.get("timestamp", time.time())
                 
                 # Add speaker to seen speakers
                 if speaker and speaker not in self.seen_speakers:

@@ -10,13 +10,12 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from dataclasses import asdict
+from typing import Dict, List, Optional
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
 import redis
 
-from .nats_error_bus import NATSErrorBus, ErrorSeverity, ErrorCategory
+from .nats_error_bus import NATSErrorBus
 
 logger = logging.getLogger(__name__)
 
@@ -191,9 +190,9 @@ class ErrorDashboard:
         @self.app.route('/api/errors')
         def get_errors():
             """Get recent errors with filtering"""
-            hours = int(request.args.get('hours', 24))
-            severity = request.args.get('severity')
-            agent = request.args.get('agent')
+            int(request.args.get('hours', 24))
+            request.args.get('severity')
+            request.args.get('agent')
             
             # This would be async in real implementation
             # For now, return cached data
@@ -244,7 +243,7 @@ class ErrorDashboard:
             """Mark an error as resolved"""
             data = request.get_json()
             error_id = data.get('error_id')
-            resolution_notes = data.get('resolution_notes', '')
+            data.get('resolution_notes', '')
             
             # Implementation would update error in NATS JetStream
             return jsonify({

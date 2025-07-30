@@ -3,37 +3,21 @@ Enhanced BaseAgent Class - Phase 1 Week 2 Optimization
 Unified configuration, performance optimizations, and advanced features
 """
 
-import sys
-import os
-import zmq
-import json
 import time
 import logging
 import threading
-import uuid
-import socket
-from typing import Dict, Any, Optional, Union, List, Tuple
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
 import psutil
 
 # Import the PathManager for consistent path resolution
-from common.utils.path_manager import PathManager
 
 # Import unified configuration manager
-from common.core.unified_config_manager import UnifiedConfigManager, BaseAgentConfigMixin
+from common.core.unified_config_manager import BaseAgentConfigMixin
 
 # Import existing BaseAgent components
 from common.core.base_agent import BaseAgent as OriginalBaseAgent
-from common.utils.data_models import (
-    SystemEvent, ErrorReport, ErrorSeverity, AgentRegistration
-)
-from common.utils.logger_util import get_json_logger
-from common.env_helpers import get_env
-from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
-from common.error_bus.unified_error_handler import UnifiedErrorHandler, create_unified_error_handler
-from common.utils.prometheus_exporter import create_agent_exporter, PrometheusExporter
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -398,7 +382,7 @@ class EnhancedBaseAgent(OriginalBaseAgent, BaseAgentConfigMixin):
         try:
             # Save final performance report
             if self.metrics_enabled:
-                performance_report = self.get_performance_report()
+                self.get_performance_report()
                 # TODO: Save to metrics storage
             
             # Call original graceful shutdown

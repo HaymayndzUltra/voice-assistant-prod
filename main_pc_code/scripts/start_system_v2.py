@@ -10,7 +10,6 @@ Enhanced with Universal Config Manager support.
 import os
 import sys
 import time
-import yaml
 import subprocess
 import signal
 import psutil

@@ -21,38 +21,31 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import ast
-import astor
 import subprocess
 import time
 import json
 import logging
 import threading
-import difflib
-from typing import Dict, List, Optional, Any, Tuple, Set, Union, Callable
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from collections import defaultdict, deque
+from typing import Dict, List, Optional, Any, Callable
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 import re
 import shutil
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Complexity analysis imports
-from main_pc_code.complexity.complexity_analyzer import ComplexityAnalyzer, CodeIssue, RefactoringOpportunity
 
 # Event system imports
 from events.memory_events import (
     MemoryEventType, create_memory_operation, MemoryType
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 # Try to import AST manipulation libraries
 try:
-    import astor
-    import libcst as cst
     CST_AVAILABLE = True
 except ImportError:
     CST_AVAILABLE = False
@@ -856,32 +849,26 @@ class IntelligentRefactoring(BaseAgent):
     def _detect_code_patterns(self) -> None:
         """Detect code patterns for refactoring"""
         # This would scan code for patterns
-        pass
     
     def _detect_code_duplication(self) -> None:
         """Detect code duplication"""
         # This would detect duplicate code blocks
-        pass
     
     def _execute_safe_refactorings(self) -> None:
         """Execute safe automatic refactorings"""
         # This would execute low-risk refactorings automatically
-        pass
     
     def _monitor_active_refactorings(self) -> None:
         """Monitor active refactoring executions"""
         # This would monitor long-running refactorings
-        pass
     
     def _cleanup_completed_refactorings(self) -> None:
         """Clean up completed refactoring data"""
         # This would clean up old refactoring data
-        pass
     
     async def _update_refactoring_metrics(self, plan: RefactoringPlan, execution: RefactoringExecution) -> None:
         """Update refactoring metrics after successful execution"""
         # This would calculate complexity reduction, lines saved, etc.
-        pass
     
     def _generate_plan_id(self, file_path: str, refactoring_type: str) -> str:
         """Generate unique plan ID"""

@@ -7,11 +7,9 @@ Provides gradual migration strategy with dual-send capability during transition
 """
 
 import logging
-import json
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Union
-from enum import Enum
 
 # Legacy imports
 from common.utils.data_models import ErrorReport, ErrorSeverity as LegacyErrorSeverity

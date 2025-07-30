@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Comprehensive Health Check for Voice Assistant Agents
 Tests EmotionSynthesisAgent, ToneDetector, and VoiceProfiler agents
@@ -12,8 +11,7 @@ import json
 import logging
 import sys
 import signal
-from typing import Dict, List, Optional, Tuple
-from common.env_helpers import get_env
+from typing import Dict, Optional
 
 # Configure logging
 logging.basicConfig(

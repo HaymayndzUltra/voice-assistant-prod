@@ -12,7 +12,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -25,7 +24,7 @@ import logging
 import threading
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict, deque
 from enum import Enum
 
@@ -36,12 +35,10 @@ from common_utils.error_handling import SafeExecutor
 # Event system imports
 from events.model_events import (
     ModelEventType, ModelLoadEvent, VRAMEvent, ModelPerformanceEvent,
-    CrossMachineModelEvent, create_model_load_request, create_vram_warning,
-    create_cross_machine_request, create_model_status_change, ModelStatus
+    CrossMachineModelEvent, create_cross_machine_request
 )
 from events.event_bus import (
-    get_event_bus, publish_model_event, subscribe_to_model_events,
-    event_handler, auto_subscribe_handlers
+    get_event_bus, publish_model_event, subscribe_to_model_events
 )
 
 # Try to import GPU monitoring libraries
@@ -304,7 +301,7 @@ class GPULoadBalancer(BaseAgent):
                         
                         # Get memory info
                         memory_allocated = torch.cuda.memory_allocated(i)
-                        memory_cached = torch.cuda.memory_reserved(i)
+                        torch.cuda.memory_reserved(i)
                         memory_total = props.total_memory
                         
                         # Try to get additional metrics with GPUtil

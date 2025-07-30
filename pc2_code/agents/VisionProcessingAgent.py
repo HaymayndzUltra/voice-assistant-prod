@@ -10,13 +10,12 @@ processing visual data captured by the VisionCaptureAgent on mainPC.
 
 import sys
 import os
-import json
 import time
 import logging
 import base64
 import io
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from pathlib import Path
 from PIL import Image
 
@@ -90,6 +89,8 @@ class VisionProcessingAgent(BaseAgent):
         else:
             return {"status": "error", "error": f"Unknown request type: {request_type}"}
     
+        # PC2 Error Bus Integration (Phase 1.3)
+        self.error_publisher = create_pc2_error_publisher("VisionProcessingAgent")
     def _describe_image(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process an image and return a description"""
         try:

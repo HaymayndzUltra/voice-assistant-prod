@@ -13,7 +13,6 @@ import uuid
 import socket
 from typing import Dict, Any, cast, Optional, Union, List, Tuple, TypeVar, cast
 from datetime import datetime
-from abc import ABC, abstractmethod
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
@@ -24,22 +23,20 @@ from common.utils.path_manager import PathManager
 # Now that the path is set, we can use absolute imports
 from main_pc_code.utils.config_loader import parse_agent_args
 from common.utils.data_models import (
-    SystemEvent, ErrorReport, ErrorSeverity, AgentRegistration
+    SystemEvent, AgentRegistration
 )
 
 # Use centralized JSON logger
-from common.utils.logger_util import get_json_logger
 from common.env_helpers import get_env
 
 # Import standardized health checking
 from common.health.standardized_health import StandardizedHealthChecker, HealthStatus
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import unified error handling (replaces direct NATS import)
 from common.error_bus.unified_error_handler import UnifiedErrorHandler, create_unified_error_handler
 
 # Import Prometheus metrics support
-from common.utils.prometheus_exporter import create_agent_exporter, PrometheusExporter
+from common.utils.prometheus_exporter import create_agent_exporter
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -1027,12 +1024,11 @@ class BaseAgent:
             
             # Check if we have a running event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 in_async_context = True
             except RuntimeError:
                 # No running loop, we're in sync context
                 in_async_context = False
-                loop = None
             
             if in_async_context and not wait_for_completion:
                 # SAFE ASYNC: Managed task creation with proper cleanup
@@ -1205,7 +1201,7 @@ class BaseAgent:
                                 status='200',
                                 duration=duration
                             )
-                    except Exception as e:
+                    except Exception:
                         s.send_error(500)
                         if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
                             self.prometheus_exporter.record_error('health_endpoint_error', 'error')
@@ -1236,7 +1232,7 @@ class BaseAgent:
                             s.send_header('Content-type', 'text/plain')
                             s.end_headers()
                             s.wfile.write(b"Prometheus metrics not enabled or available")
-                    except Exception as e:
+                    except Exception:
                         s.send_error(500)
                         if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
                             self.prometheus_exporter.record_error('metrics_endpoint_error', 'error')
@@ -1265,7 +1261,7 @@ class BaseAgent:
                             s.send_header('Content-type', 'application/json')
                             s.end_headers()
                             s.wfile.write(json.dumps({"error": "Metrics not available"}).encode())
-                    except Exception as e:
+                    except Exception:
                         s.send_error(500)
                         if hasattr(self, 'prometheus_exporter') and self.prometheus_exporter:
                             self.prometheus_exporter.record_error('metrics_summary_error', 'error')

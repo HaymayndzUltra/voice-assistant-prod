@@ -1,11 +1,9 @@
-from common.core.base_agent import BaseAgent
 """
 Simple script to record audio and transcribe it using Whisper
 """
 
 import os
 import sys
-import time
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
@@ -17,7 +15,6 @@ from datetime import datetime
 import sys
 import os
 sys.path.insert(0, os.path.abspath(PathManager.join_path("main_pc_code", "..")))
-from common.utils.path_manager import PathManager
 # Constants
 DEVICE_INDEX = 39  # SteelSeries Sonar - Microphone (WASAPI)
 SAMPLE_RATE = 48000  # Device's native sample rate

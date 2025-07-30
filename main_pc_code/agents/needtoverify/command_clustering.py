@@ -15,11 +15,7 @@ import os
 import sys
 import json
 import csv
-import numpy as np
-from datetime import datetime
-from typing import Dict, List, Any, Tuple, Set
-from collections import defaultdict, Counter
-import time
+from typing import Dict, List, Any
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -254,7 +250,7 @@ class CommandClusteringEngine(BaseAgent):
         current_cluster = self.find_command_cluster(current_command)
         
         # Get all commands in the same cluster
-        cluster_commands = self.command_clusters.get(current_cluster, [])
+        self.command_clusters.get(current_cluster, [])
         
         # Calculate similarity of base suggestions with the current command
         suggestion_scores = []

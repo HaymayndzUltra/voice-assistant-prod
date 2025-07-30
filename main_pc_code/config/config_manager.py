@@ -9,19 +9,16 @@ and persisting configuration data.
 import os
 import sys
 import yaml
-import json
 import logging
 import threading
-from typing import Dict, Any, Optional, List, Union, Callable
+from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
-from pathlib import Path
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
 sys.path.insert(0, get_project_root())
-from common.utils.path_manager import PathManager
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -334,7 +331,7 @@ class ConfigManager:
         config_types = [config_type] if config_type else self._config_cache.keys()
         
         for ctype in config_types:
-            config = self.get_config(ctype)
+            self.get_config(ctype)
             # Find all relevant validators
             for path, validator in self._validators.items():
                 if path.startswith(ctype + '.'):

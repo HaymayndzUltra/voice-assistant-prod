@@ -6,14 +6,12 @@ Handles voice enrollment, speaker recognition, and voice profile management.
 import sys
 import os
 import json
-import uuid
 import numpy as np
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import time
 import psutil
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Tuple, Union, cast
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
@@ -26,7 +24,6 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
-from common.env_helpers import get_env
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging

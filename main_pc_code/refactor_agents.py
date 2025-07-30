@@ -5,7 +5,7 @@ Script to help refactor agents to use the new BaseAgent pattern
 import os
 import re
 import logging
-from typing import List, Dict, Any
+from typing import List
 
 # Configure logging
 logging.basicConfig(

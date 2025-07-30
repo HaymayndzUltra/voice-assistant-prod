@@ -3,7 +3,6 @@ WP-10 Encryption & Secrets Management
 Advanced encryption, key management, and secrets protection for AI system security
 """
 
-import asyncio
 import os
 import base64
 import secrets
@@ -20,8 +19,6 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.backends import default_backend
 
 logger = logging.getLogger(__name__)
@@ -649,13 +646,12 @@ class SecretsManager:
         # Re-encrypt all secrets with new key
         for secret_name, secret_value in self._secrets_cache.items():
             # Temporarily store value
-            temp_value = secret_value
+            pass
             
             # Update key ID
             self._secrets_key_id = new_key_id
             
             # Re-encrypt with new key (this happens in _save_secrets)
-            pass
         
         # Save with new key
         self._save_secrets()

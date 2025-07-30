@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.config_manager import get_service_ip
 """
 System Digital Twin Agent
 
@@ -26,15 +26,14 @@ import json
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import threading
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_rep_socket
 import psutil
 import sqlite3
 import redis
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Tuple, Union, cast, TypeVar
+from typing import Dict, Any, Optional, TypeVar
 
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import get_service_discovery_client
 from main_pc_code.utils.metrics_client import get_metrics_client
 from main_pc_code.utils.env_loader import get_env

@@ -31,15 +31,13 @@ from common.core.base_agent import BaseAgent
 import time
 import logging
 import threading
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
+from common.pools.zmq_pool import get_req_socket, get_sub_socket
 import yaml
 from datetime import datetime
 from queue import Queue
 import re
 import numpy as np
-import wave
-from typing import Dict, Any, Optional
+from typing import Dict
 from common.config_manager import load_unified_config
 import psutil
 from common.env_helpers import get_env

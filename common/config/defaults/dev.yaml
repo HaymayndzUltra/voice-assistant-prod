@@ -1,0 +1,46 @@
+# Development Configuration Overrides
+# These settings override base.yaml for development environment
+
+system:
+  environment: "development"
+  debug_mode: true
+
+logging:
+  level: "DEBUG"
+  console_output: true
+  file_output: true
+
+performance:
+  cpu_percent_limit: 90  # Allow higher CPU usage in dev
+  memory_limit_mb: 4096  # Allow more memory in dev
+
+network:
+  timeout:
+    request: 60  # Longer timeouts for debugging
+    connection: 30
+
+health:
+  interval_seconds: 15  # More frequent health checks in dev
+
+monitoring:
+  detailed_metrics: true
+  trace_requests: true
+  
+# Development-specific agent settings
+agents:
+  default:
+    startup_timeout: 60  # Longer timeout for debugging
+    log_level: "DEBUG"
+    enable_profiling: true
+
+# Development ports (higher range to avoid conflicts)
+ports:
+  base_port: 7000
+  development_mode: true
+
+# Enable all debugging features
+debugging:
+  enable_stacktraces: true
+  verbose_errors: true
+  log_config_loading: true
+  log_port_assignments: true

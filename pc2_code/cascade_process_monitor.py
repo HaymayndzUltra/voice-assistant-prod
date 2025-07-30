@@ -6,7 +6,6 @@ Cascade Process Monitor
 - Helps identify background processes started by Cascade
 """
 import os
-import sys
 import time
 import psutil
 from datetime import datetime

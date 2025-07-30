@@ -6,8 +6,6 @@ import logging
 import threading
 import time
 from playwright.sync_api import sync_playwright
-from common.env_helpers import get_env
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

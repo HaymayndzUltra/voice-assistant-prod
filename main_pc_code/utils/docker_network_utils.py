@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Docker Network Utilities
 
@@ -11,11 +10,9 @@ import os
 import socket
 import logging
 import yaml
-from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
 
 # Import the environment loader
-from main_pc_code.utils.env_loader import get_env, ENV
+from main_pc_code.utils.env_loader import get_env
 from common.env_helpers import get_env
 
 # Set up logging

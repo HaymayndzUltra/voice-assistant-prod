@@ -196,7 +196,6 @@ class OrchestratorAgent(BaseAgent):
     
     # Parse agent arguments
     _agent_args = parse_agent_args()# (Insert orchestrator.py's OrchestratorAgent class and log_collector function here, refactored to avoid conflict with UnifiedMonitor)
-    pass
 
 # ... existing code ... 
     def _get_health_status(self) -> Dict[str, Any]:

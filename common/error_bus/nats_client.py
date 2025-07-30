@@ -1,5 +1,4 @@
 
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 NATS Error Bus Library for WP-10 NATS Error Bus Integration
 Provides centralized error handling, flood detection, and error correlation
@@ -9,7 +8,6 @@ import asyncio
 import nats
 import json
 import uuid
-import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, asdict

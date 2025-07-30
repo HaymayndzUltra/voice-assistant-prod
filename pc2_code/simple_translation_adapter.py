@@ -3,12 +3,8 @@ Simple Translation Adapter
 A simplified version that just responds to ZMQ requests without Ollama dependency
 """
 import zmq
-import json
 import time
 import logging
-import sys
-import os
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(

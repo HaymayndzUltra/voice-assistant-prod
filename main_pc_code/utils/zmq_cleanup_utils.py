@@ -8,8 +8,7 @@ and help prevent resource leaks.
 
 import zmq
 import logging
-import time
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 

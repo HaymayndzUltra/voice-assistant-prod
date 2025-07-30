@@ -9,7 +9,7 @@ import threading
 import hashlib
 import pickle
 import json
-from typing import Dict, Any, Optional, Union, Callable, List, TypeVar, Generic
+from typing import Dict, Any, Optional, Callable, List, TypeVar, Generic
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -466,7 +466,7 @@ def cached(cache_name: str = "default",
         def sync_wrapper(*args, **kwargs):
             # For sync functions, we need to handle this differently
             # This is a simplified version - consider using asyncio.run in real scenarios
-            cache_key = cache._generate_key(func.__name__, *args, **kwargs) if not key_func else key_func(*args, **kwargs)
+            cache._generate_key(func.__name__, *args, **kwargs) if not key_func else key_func(*args, **kwargs)
             
             # Execute function (cache operations would need async context)
             result = func(*args, **kwargs)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Health Check Verification Script
 
@@ -10,15 +9,11 @@ Usage:
     python scripts/verify_all_health_checks.py [--timeout SECONDS]
 """
 
-import os
 import sys
 import yaml
 import json
 import argparse
-import requests
 import socket
-import time
-from requests.exceptions import RequestException
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tabulate import tabulate
@@ -27,7 +22,6 @@ import subprocess
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Add project root to Python path

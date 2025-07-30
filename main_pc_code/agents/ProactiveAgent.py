@@ -8,7 +8,7 @@ import asyncio
 import json
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
@@ -17,9 +17,7 @@ import zmq
 
 # Modern imports using BaseAgent infrastructure
 from common.core.base_agent import BaseAgent
-from common.utils.path_manager import PathManager
 from common.utils.data_models import ErrorSeverity
-from common.config_manager import get_service_ip, get_service_url
 from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 class ProactivityLevel(Enum):

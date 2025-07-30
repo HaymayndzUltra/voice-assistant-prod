@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from typing import Dict, Any, Optional, Union, List, Tuple
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from typing import Dict, Any, Optional, List
+from common.pools.zmq_pool import get_rep_socket
 import json
 import time
 import logging
@@ -14,26 +14,19 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime
 import hashlib
-import base64
 from bs4 import BeautifulSoup
 import urllib.parse
-import tempfile
 import socket
 import yaml
 import pickle
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import Selenium for browser automation
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException,
-    WebDriverException,
     StaleElementReferenceException
 )
 
@@ -44,14 +37,13 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 # Import service discovery and network utilities
-from main_pc_code.utils.service_discovery_client import register_service, discover_service, get_service_address
-from main_pc_code.utils.network_utils import load_network_config, get_current_machine
+from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
 # Standard imports for PC2 agents
-from pc2_code.utils.config_loader import load_config, parse_agent_args
+from pc2_code.utils.config_loader import parse_agent_args
 # ✅ MODERNIZED: Using BaseAgent's UnifiedErrorHandler instead of custom error bus  
 # Removed: from pc2_code.agents.error_bus_template import setup_error_reporting, report_error
 # Now using: self.report_error() method from BaseAgent
@@ -60,7 +52,7 @@ from common.env_helpers import get_env
 
 # Import secure ZMQ utilities if available
 try:
-    from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server, start_auth
+    from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
     SECURE_ZMQ_AVAILABLE = True
 except ImportError as e:
     print(f"Import error: {e}")

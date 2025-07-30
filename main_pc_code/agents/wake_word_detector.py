@@ -1,7 +1,6 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
-from main_pc_code.utils.service_discovery_client import discover_service, register_service
 
 """
 Wake Word Detector
@@ -14,19 +13,15 @@ Integrates with existing streaming pipeline:
 """
 
 import pvporcupine
-import pyaudio
 import numpy as np
 import json
 import os
 import logging
 import threading
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import time
 import pickle
 from datetime import datetime
-from typing import Optional, Dict, Any
 import psutil
-from common.env_helpers import get_env
 
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

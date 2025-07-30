@@ -7,7 +7,6 @@ from common.utils.path_manager import PathManager
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
-from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
 # Ensure the main_pc_code directory is in sys.path  
@@ -19,7 +18,7 @@ import logging
 import threading
 import json
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from datetime import datetime
 import sys
 
@@ -29,7 +28,6 @@ import sys
 import os
 import os
 import sys
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 project_root = str(PathManager.get_project_root())
@@ -39,7 +37,6 @@ if project_root not in sys.path:
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 import psutil
-from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +78,6 @@ class HumanAwarenessAgent(BaseAgent):
         self.start_time = time.time()
         
         # Modern error reporting using BaseAgent.report_error()
-        import zmq
         self.context = None  # Using pool
         
     def _load_config(self) -> Dict:
@@ -110,7 +106,6 @@ class HumanAwarenessAgent(BaseAgent):
     def _init_components(self):
         """Initialize agent components."""
         # TODO: Initialize actual components based on config
-        pass
         
     def _get_health_status(self) -> Dict[str, Any]:
         """Get detailed health status."""
@@ -186,12 +181,10 @@ class HumanAwarenessAgent(BaseAgent):
     def _update_presence(self):
         """Update human presence detection."""
         # TODO: Implement actual presence detection logic
-        pass
         
     def _update_emotion(self):
         """Update emotion and attention analysis."""
         # TODO: Implement actual emotion analysis logic
-        pass
 
     def health_check(self):
         '''

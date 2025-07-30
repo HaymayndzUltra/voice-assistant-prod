@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 import zmq
 import json
-import sys
-import time
-from common.env_helpers import get_env
 
 ctx = zmq.Context()
 s = ctx.socket(zmq.REQ)

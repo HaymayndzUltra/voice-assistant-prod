@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 
 # Define the target agent batches
 TARGET_AGENT_BATCHES = [

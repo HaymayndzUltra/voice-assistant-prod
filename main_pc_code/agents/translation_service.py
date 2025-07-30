@@ -1,5 +1,5 @@
 import logging
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_rep_socket
 import time
 import uuid
 import json
@@ -8,34 +8,26 @@ import os
 import random
 import hashlib
 import zmq
-from typing import Optional, Dict, Any, List, Tuple
-from pathlib import Path
+from typing import Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 from main_pc_code.agents.request_coordinator import CircuitBreaker
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from common.config_manager import load_unified_config
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 # Try importing optional dependencies
 try:
-    import langdetect
-    from langdetect import detect
-    from langdetect.lang_detect_exception import LangDetectException
     LANGDETECT_AVAILABLE = True
 except ImportError:
     LANGDETECT_AVAILABLE = False
     
 try:
-    import fasttext
     FASTTEXT_AVAILABLE = True
 except ImportError:
     FASTTEXT_AVAILABLE = False
@@ -323,7 +315,6 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds
 # --- Add AdvancedTimeoutManager (from legacy) ---
 import numpy as np
 from collections import defaultdict
-from common.env_helpers import get_env
 
 class AdvancedTimeoutManager:
     """Manages dynamic timeouts for translation requests."""
@@ -547,7 +538,6 @@ class BaseEngineClient:
     def cleanup(self):
         """Clean up resources."""
         # No resources to clean up as socket management is handled by ConnectionManager
-        pass
 
 class NLLBEngineClient(BaseEngineClient):
     def __init__(self, agent, connection_manager=None):
@@ -709,7 +699,7 @@ class LanguageDetector:
         
         # Test TagaBERTa service connection
         try:
-            pc2_ip = agent.get_config("pc2_ip", "localhost")
+            agent.get_config("pc2_ip", "localhost")
             self.tagabert_available = self._test_tagabert_connection()
         except Exception as e:
             self.logger.warning(f"Failed to test TagaBERTa service connection: {e}")
@@ -1028,7 +1018,7 @@ class TranslationCache:
             # Evict least recently used entry
             lru_key = self.memory_cache_access_order[0]
             lru_entry = self.memory_cache[lru_key]
-            lru_size = len(lru_key) + len(lru_entry['value']) * 2
+            len(lru_key) + len(lru_entry['value']) * 2
             
             # Remove from memory cache
             self._remove_from_memory_cache(lru_key)

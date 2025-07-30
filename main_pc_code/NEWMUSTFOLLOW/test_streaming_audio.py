@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 """
 StreamingAudioCapture Test Script
@@ -9,14 +8,11 @@ Tests the StreamingAudioCapture agent in isolation
 
 import os
 import sys
-import time
 import argparse
 import logging
 import zmq
 import json
 import pickle
-from pathlib import Path
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

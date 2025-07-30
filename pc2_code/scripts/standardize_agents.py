@@ -15,12 +15,9 @@ Usage:
 import os
 import sys
 import re
-import glob
 import argparse
 import logging
-import time  # Import time for health check template
-from pathlib import Path
-from typing import Dict, List, Set, Optional, Union, Any, Tuple
+from typing import Dict, List, Set, Optional, Any, Tuple
 
 
 # Import path manager for containerization-friendly paths

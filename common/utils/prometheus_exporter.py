@@ -20,7 +20,7 @@ try:
     from prometheus_client import (
         Counter, Histogram, Gauge, Info, Enum,
         generate_latest, CollectorRegistry, 
-        CONTENT_TYPE_LATEST, REGISTRY
+        CONTENT_TYPE_LATEST
     )
     PROMETHEUS_AVAILABLE = True
 except ImportError:

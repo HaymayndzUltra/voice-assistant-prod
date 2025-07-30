@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -29,28 +28,24 @@ import asyncio
 import threading
 import json
 import logging
-from typing import Dict, List, Optional, Any, Tuple, Set, Union, Callable
+from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from collections import defaultdict, deque
+from datetime import datetime
+from collections import deque
 from enum import Enum
-import re
-import gc
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.memory_events import (
     MemoryEventType, create_memory_operation, MemoryType
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 # Try to import performance monitoring libraries
 try:
     import psutil
-    import memory_profiler
     PROFILING_LIBS_AVAILABLE = True
 except ImportError:
     PROFILING_LIBS_AVAILABLE = False
@@ -407,7 +402,7 @@ class PerformanceOptimizer(BaseAgent):
             if target_function:
                 # Profile specific function
                 start_time = time.time()
-                result = target_function()
+                target_function()
                 execution_time = time.time() - start_time
                 
                 session.total_time = execution_time
@@ -739,7 +734,6 @@ SELECT * FROM large_table WHERE column = 'exact_match'
     def _analyze_profiling_results(self, session: ProfilingSession) -> None:
         """Analyze profiling session results"""
         # This would perform deeper analysis of profiling results
-        pass
     
     def _generate_session_id(self) -> str:
         """Generate unique session ID"""

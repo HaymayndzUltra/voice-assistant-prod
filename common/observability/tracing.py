@@ -7,7 +7,7 @@ import asyncio
 import time
 import threading
 import uuid
-from typing import Dict, Any, Optional, List, Callable, Union
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 from contextlib import contextmanager, asynccontextmanager

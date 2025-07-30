@@ -1,10 +1,8 @@
-from common.core.base_agent import BaseAgent
 """
 Sounddevice Configuration Module
 Sets the correct sounddevice settings for all modules in the Voice Assistant system
 """
 import sounddevice as sd
-import sys
 import logging
 
 # Configure logging

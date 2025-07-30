@@ -544,11 +544,10 @@ def main() -> None:
 
     # Set up signal handlers for graceful shutdown
     # Container-specific logs directory – e.g. logs/core_services
-    logs_dir_suffix = "all_agents"
     if args.groups:
-        logs_dir_suffix = "_".join(sorted(wanted_groups))
+        "_".join(sorted(wanted_groups))
     elif args.agent_names:
-        logs_dir_suffix = "custom_selection"
+        pass
 
     processes: Dict[str, subprocess.Popen] = {}
 

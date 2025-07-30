@@ -6,13 +6,12 @@ Configuration Loader
 This module provides a simple configuration loader class
 """
 
-import os
 import json
 import yaml
 import logging
 import argparse
 import sys
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from pathlib import Path
 
 
@@ -25,7 +24,6 @@ def get_project_root():
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, str(get_project_root()))
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env

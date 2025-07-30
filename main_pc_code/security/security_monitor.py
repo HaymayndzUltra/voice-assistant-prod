@@ -20,7 +20,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import asyncio
 import time
 import json
 import logging
@@ -28,28 +27,23 @@ import threading
 import hashlib
 import ipaddress
 import subprocess
-from typing import Dict, List, Optional, Any, Tuple, Set, Union
+from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from enum import Enum
-import re
 import statistics
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Security imports
-from main_pc_code.security.vulnerability_scanner import VulnerabilityScanner
-from main_pc_code.security.auth_hardening import AuthenticationHardening
 
 # Event system imports
 from events.memory_events import (
-    MemoryEventType, create_memory_pressure_warning, 
-    create_memory_operation, MemoryType
+    create_memory_pressure_warning
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 class ThreatLevel(Enum):
     """Threat severity levels"""
@@ -417,7 +411,6 @@ class SecurityMonitor(BaseAgent):
         """Analyze security events for threats"""
         # This would integrate with auth system and other security components
         # For now, simulate analysis
-        pass
     
     def _evaluate_monitoring_rules(self) -> None:
         """Evaluate monitoring rules against current data"""
@@ -942,7 +935,6 @@ class SecurityMonitor(BaseAgent):
         """Check for unusual user permissions"""
         # This would check for users with unusual privileges
         # For now, just a placeholder
-        pass
     
     def _analyze_user_behavior(self) -> None:
         """Analyze user behavior patterns"""

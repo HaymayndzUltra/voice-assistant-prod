@@ -10,7 +10,6 @@ of the health status of each agent.
 import os
 import sys
 import zmq
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional

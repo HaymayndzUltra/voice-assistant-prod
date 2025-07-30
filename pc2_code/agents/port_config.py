@@ -1,4 +1,3 @@
-from common.core.base_agent import BaseAgent
 """
 Centralized port configuration for PC2 agents.
 This file serves as the single source of truth for all port numbers.

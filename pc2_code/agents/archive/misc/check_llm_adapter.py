@@ -1,6 +1,5 @@
 import zmq
 import json
-from common.core.base_agent import BaseAgent
 from common.env_helpers import get_env
 
 PORT = 5581

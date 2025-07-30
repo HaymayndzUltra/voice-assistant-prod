@@ -12,18 +12,15 @@ import json
 import time
 import logging
 import sys
-import os
 import traceback
 import warnings
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Callable
+from typing import Dict, List, Any, Optional
 import threading
 import uuid
 
 # Import standardized BaseAgent
 from common.core.base_agent import BaseAgent
-from common.utils.path_manager import PathManager
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
 
 # Add the parent directory to sys.path to import the config module

@@ -5,15 +5,12 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 import threading
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 # Constants
 PERFORMANCE_TOPIC = "performance_metrics"
 PUB_PORT = 5614  # For broadcasting metrics

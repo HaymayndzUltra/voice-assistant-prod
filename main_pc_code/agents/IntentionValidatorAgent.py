@@ -9,8 +9,7 @@ import json
 import re
 import time
 import threading
-from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -18,9 +17,7 @@ import zmq
 
 # Modern imports using BaseAgent infrastructure
 from common.core.base_agent import BaseAgent
-from common.utils.path_manager import PathManager
 from common.utils.data_models import ErrorSeverity
-from common.config_manager import get_service_ip, get_service_url
 
 class IntentionType(Enum):
     """Types of user intentions"""

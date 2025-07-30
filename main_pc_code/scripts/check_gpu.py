@@ -7,7 +7,7 @@ import os
 import sys
 import subprocess
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Tuple, Any
 
 # Configure logging
 logging.basicConfig(
@@ -46,7 +46,7 @@ def check_nvidia_smi() -> Tuple[bool, Dict[str, Any]]:
             gpu_info["cuda_version"] = parts[3].strip()
             
             # Check if this is an RTX 4090
-            is_rtx_4090 = "4090" in gpu_info["name"]
+            "4090" in gpu_info["name"]
             
             return True, gpu_info
         else:

@@ -1,5 +1,4 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Streaming Whisper ASR Module (CTranslate2, Real-Time)
 Subscribes to audio chunks from streaming_audio_capture.py via ZMQ and transcribes in near real-time.
@@ -11,7 +10,6 @@ import numpy as np
 import time
 import logging
 import whisper
-import os
 from queue import Queue
 from threading import Thread
 import json
@@ -24,7 +22,6 @@ sys.path.insert(0, str(project_root))
 
 # --- Dynamic Model Management Imports ---
 from modular_system.model_manager.model_manager_agent import DynamicSTTModelManager
-from common.env_helpers import get_env
 
 # Load model config
 config_path = Path(__file__).parent.parent.parent / 'config' / 'model_config.json'

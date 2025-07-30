@@ -6,9 +6,8 @@ Handles critical command confirmation and disambiguation
 """
 import logging
 import time
-import json
 import uuid
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, Any, Optional, Tuple
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

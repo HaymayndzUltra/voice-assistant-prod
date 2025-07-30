@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
@@ -7,8 +6,6 @@ from common.utils.path_manager import PathManager
 
 import zmq
 import json
-import os
-import threading
 import time
 import logging
 import re
@@ -23,15 +20,13 @@ from main_pc_code.utils.config_loader import load_config
 config = load_config()
 from common.core.base_agent import BaseAgent
 from main_pc_code.utils.config_loader import load_config
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 
 # === PHASE A: BASEAGENT INHERITANCE ===
 
 # Add the project's main_pc_code directory to the Python path
 import sys
-import os
 from pathlib import Path
-from common.env_helpers import get_env
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))

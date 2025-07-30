@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -24,11 +23,10 @@ import asyncio
 import time
 import json
 import logging
-import hashlib
 import secrets
 import base64
 from typing import Dict, List, Optional, Any, Tuple, Set, Union
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from enum import Enum
@@ -37,9 +35,7 @@ from enum import Enum
 try:
     from cryptography.fernet import Fernet
     from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     from cryptography.hazmat.primitives.asymmetric import rsa, padding
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -47,13 +43,12 @@ except ImportError:
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.memory_events import (
     MemoryEventType, create_memory_operation, MemoryType
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 class DataClassification(Enum):
     """Data classification levels"""
@@ -939,7 +934,7 @@ class DataProtectionSystem(BaseAgent):
         if isinstance(encrypted_data.encrypted_content, bytes):
             # In Python, bytes are immutable, so we can't actually overwrite
             # In a production system, this would use more sophisticated techniques
-            random_data = secrets.token_bytes(len(encrypted_data.encrypted_content))
+            secrets.token_bytes(len(encrypted_data.encrypted_content))
             # The original data will be garbage collected
     
     def get_protection_status(self) -> Dict[str, Any]:

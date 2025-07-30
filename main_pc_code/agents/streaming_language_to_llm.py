@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -13,16 +12,11 @@ if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
 Streaming Language to LLM Connector
 Connects the language analyzer to the LLM translation connector.
 """
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
-import json
 import time
 import logging
-import threading
 import psutil
 from datetime import datetime
-from common.env_helpers import get_env
-from common.utils.path_manager import PathManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

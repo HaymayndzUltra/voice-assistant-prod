@@ -9,7 +9,7 @@ import time
 import threading
 import traceback
 import uuid
-from typing import Dict, Any, Optional, List, Union, Callable
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timezone
@@ -618,9 +618,8 @@ def log_function_calls(level: LogLevel = LogLevel.DEBUG,
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
             # For sync functions, create async context in thread
-            import asyncio
             
-            logger = get_distributed_logger()
+            get_distributed_logger()
             func_name = f"{func.__module__}.{func.__qualname__}"
             
             log_data = {"function": func_name}

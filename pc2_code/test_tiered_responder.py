@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script for TieredResponder agent validation
 Part of PC2 Phase 1 - Core Agents Implementation
 """
 
 import sys
-import os
 import time
 import threading
-import signal
 import zmq
 import json
 from pathlib import Path
-from common.env_helpers import get_env
 
 # Add agents directory to path
 sys.path.insert(0, str(Path(__file__).parent / 'agents'))

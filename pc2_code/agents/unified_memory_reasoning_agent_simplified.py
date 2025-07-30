@@ -4,14 +4,12 @@ Simplified Unified Memory Reasoning Agent for PC2
 This version is focused on passing validation requirements
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import os
 import threading
 import time
 import logging
 import sys
-from datetime import datetime
 from pathlib import Path
 
 

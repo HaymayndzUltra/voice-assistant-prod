@@ -8,8 +8,7 @@ import json
 import socket
 import logging
 import subprocess
-import threading
-from typing import Dict, List, Set
+from typing import Dict, Set
 import yaml
 import os
 import sys

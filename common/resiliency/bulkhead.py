@@ -6,12 +6,12 @@ Resource isolation and fault containment to prevent cascading failures
 import asyncio
 import threading
 import time
-from typing import Dict, Any, Optional, Callable, Union, List
+from typing import Dict, Any, Optional, Callable, List
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-from queue import Queue, Empty, Full
-from concurrent.futures import ThreadPoolExecutor, Future
+from queue import Queue, Full
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 

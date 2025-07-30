@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
+# Migrated to unified config manager - legacy imports maintained for compatibility
+from common.config.unified_config_manager import Config
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -24,8 +25,7 @@ except ImportError:
     ENHANCED_AVAILABLE = False
     
 import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
+from common.pools.zmq_pool import get_rep_socket
 import time
 import logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
@@ -33,19 +33,19 @@ import re
 import threading
 import traceback
 from typing import Dict, Any, List, Tuple
-from common.config_manager import load_unified_config
+# Now using unified config manager instead of old load_unified_config
 from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 # Load configuration at module level
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+# New unified config manager - cached singleton with environment awareness
+config = Config.for_agent(__file__)
 
 # Configure logging
 logging.basicConfig(

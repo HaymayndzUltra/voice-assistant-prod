@@ -7,7 +7,6 @@ across various input types and contexts.
 """
 
 import zmq
-import json
 import time
 import random
 import argparse
@@ -293,7 +292,7 @@ class TranslatorTester:
                 import sys
                 sys.stdout.flush()
                 
-            except Exception as e:
+            except Exception:
                 print(f"{Fore.RED}✗{Style.RESET_ALL} Error", end=" ")
         
         print("\n")

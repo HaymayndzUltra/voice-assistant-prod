@@ -1,12 +1,10 @@
 # File: main_pc_code/agents/goal_manager.py
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #
 # Ito ang FINAL at PINAHUSAY na bersyon ng GoalManager.
 # Pinagsasama nito ang goal-setting ng GoalOrchestrator at ang
 # task execution/swarm logic ng MultiAgentSwarmManager.
 
 import sys
-import os
 import time
 import logging
 import threading
@@ -16,12 +14,10 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
-import zmq  # Added for error bus
 
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
@@ -32,7 +28,7 @@ if project_root not in sys.path:
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
-from common.utils.data_models import TaskDefinition, TaskResult, TaskStatus, ErrorSeverity
+from common.utils.data_models import TaskDefinition, TaskStatus, ErrorSeverity
 from main_pc_code.agents.memory_client import MemoryClient
 
 from common.config_manager import load_unified_config

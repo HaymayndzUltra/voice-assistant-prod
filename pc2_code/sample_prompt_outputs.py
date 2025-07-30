@@ -1,8 +1,6 @@
-import random
 import time
-import os
 import colorama
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 from phi_adapter import PhiTranslationAdapter
 
 # Initialize colorama for Windows terminal color support

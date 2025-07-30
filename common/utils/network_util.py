@@ -37,7 +37,7 @@ def retry_with_backoff(
             while True:
                 try:
                     return fn(*args, **kwargs)
-                except exceptions as err:
+                except exceptions:
                     if attempt >= max_retries:
                         raise
                     # Compute exponential back-off delay

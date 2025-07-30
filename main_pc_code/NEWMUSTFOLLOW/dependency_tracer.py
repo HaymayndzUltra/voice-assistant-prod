@@ -207,7 +207,6 @@ def get_required_directories(file_paths):
     
     # Find common parent directories
     required_dirs = set()
-    processed_dirs = set()
     
     # First, add top-level directories that must be included in full
     top_level_dirs = {

@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Test script to verify Task Router health check
 """
 import zmq
 import json
-import time
 import sys
 from pathlib import Path
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_mainpc_ip
 
 # Add the parent directory to sys.path
 sys.path.append(str(Path(__file__).parent.parent))

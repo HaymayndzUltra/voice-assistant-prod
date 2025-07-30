@@ -12,7 +12,6 @@ import zmq
 import threading
 import re
 import logging
-from pathlib import Path
 from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
@@ -172,7 +171,7 @@ class CodeCommandHandler(BaseAgent):
                 response = json.loads(self.code_gen_socket.recv_string())
                 
                 if response.get("status") == "success":
-                    code = response.get("code", "")
+                    response.get("code", "")
                     filename = response.get("filename", "")
                     
                     if filename:

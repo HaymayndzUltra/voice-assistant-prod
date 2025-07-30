@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 ModelManagerSuite - Consolidated Model Management Service
 =======================================================
@@ -124,9 +123,8 @@ import sqlite3
 import uuid
 import gc
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any, Tuple
-from datetime import datetime, timedelta
-import traceback
+from typing import Dict, List, Optional, Any
+from datetime import datetime
 import socket
 import errno
 
@@ -134,8 +132,6 @@ import errno
 # import yaml
 # import numpy as np
 # import requests
-import pickle
-import re
 
 # ----- Ensure pydantic availability (minimal stub for unit tests) -----
 try:
@@ -233,12 +229,8 @@ from common.utils.path_manager import PathManager
 sys.path.insert(0, str(PathManager.get_project_root()))
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
-from common.utils.learning_models import PerformanceMetric, ModelEvaluationScore
 
 # Import config modules
-from main_pc_code.utils.config_loader import load_config, Config, parse_agent_args
-from main_pc_code.config import system_config
-from main_pc_code.config.pc2_services_config import load_pc2_services, get_service_connection, list_available_services
 
 # Try to import Llama from llama_cpp
 try:
@@ -560,7 +552,6 @@ class ModelManagerSuite(BaseAgent):
     
     def _init_error_reporting(self):
         """Initialize error reporting system - now using BaseAgent.report_error()"""
-        pass
     
     def _init_circuit_breakers(self):
         """Initialize circuit breakers for downstream services"""
@@ -881,7 +872,7 @@ class ModelManagerSuite(BaseAgent):
             try:
                 events = dict(poller.poll(1000))
                 if self.health_socket in events and events[self.health_socket] == zmq.POLLIN:
-                    message = self.health_socket.recv_json()
+                    self.health_socket.recv_json()
                     self.health_socket.send_json(self._get_health_status())
             except Exception as e:
                 logger.error(f"Health check error: {e}")

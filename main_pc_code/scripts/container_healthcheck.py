@@ -6,7 +6,6 @@ This script checks the health of all agents running in a container group.
 
 import os
 import sys
-import json
 import yaml
 import socket
 import logging

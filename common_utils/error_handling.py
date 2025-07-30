@@ -15,10 +15,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
-import traceback
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Tuple, Type
 
 try:
     import zmq
@@ -31,7 +29,6 @@ except ImportError:
 
 class SafeExecutorError(Exception):
     """Raised when SafeExecutor encounters an unrecoverable error."""
-    pass
 
 
 class SafeExecutor:

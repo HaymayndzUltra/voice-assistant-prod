@@ -8,14 +8,12 @@ import aiohttp
 import threading
 import time
 import logging
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from contextlib import asynccontextmanager
 import ssl
 from urllib.parse import urlparse
 
 try:
-    import httpx
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False

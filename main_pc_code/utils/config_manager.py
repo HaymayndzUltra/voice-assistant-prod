@@ -11,14 +11,11 @@ This module provides a standardized way to manage configuration across the syste
 """
 
 import os
-import sys
 import yaml
-import json
 import logging
 import threading
-import time
 from pathlib import Path
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Dict, Any, Optional, List, Callable
 
 # Import the PathManager for consistent path resolution
 from utils.path_manager import PathManager

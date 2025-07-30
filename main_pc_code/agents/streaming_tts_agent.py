@@ -1,12 +1,10 @@
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
@@ -36,15 +34,10 @@ logger.info(f"[{__name__}] Initial sys.path: {sys.path}")
 import os
 import threading
 import queue
-import numpy as np
 import sounddevice as sd
-from pathlib import Path
-import hashlib
-import tempfile
 import re
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address, discover_service
 from main_pc_code.utils.env_loader import get_env
-import pickle
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from collections import OrderedDict
 
@@ -519,8 +512,8 @@ class UltimateTTSAgent(BaseAgent):
                         
                         # Extract request data
                         text = request.get("text", "")
-                        emotion = request.get("emotion")
-                        language = request.get("language")
+                        request.get("emotion")
+                        request.get("language")
                         command = request.get("command")
                         
                         # Check for special commands
@@ -725,8 +718,8 @@ if __name__ == "__main__":
         agent.run()
     except KeyboardInterrupt:
         logger.info(f"Shutting down {agent.name if agent else 'agent'}...")
-    except Exception as e:
-        import traceback
+    except Exception:
+        pass
     # Error handling completed successfully
     def cleanup(self):
         """Clean up resources before shutdown."""

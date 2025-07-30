@@ -6,11 +6,10 @@ Fault tolerance and resiliency patterns for agent communication
 import asyncio
 import time
 import threading
-from typing import Dict, Any, Optional, Callable, Union, List
+from typing import Dict, Any, Optional, Callable, List
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +133,7 @@ class CircuitBreaker:
         """Transition circuit to open state"""
         with self._lock:
             if self._state != CircuitState.OPEN:
-                old_state = self._state
+                self._state
                 self._state = CircuitState.OPEN
                 self._last_failure_time = time.time()
                 self._metrics['circuit_opened_count'] += 1
@@ -157,7 +156,7 @@ class CircuitBreaker:
         """Transition circuit to closed state"""
         with self._lock:
             if self._state != CircuitState.CLOSED:
-                old_state = self._state
+                self._state
                 self._state = CircuitState.CLOSED
                 self._failure_count = 0
                 self._success_count = 0

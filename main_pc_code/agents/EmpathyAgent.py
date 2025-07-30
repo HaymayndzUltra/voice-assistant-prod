@@ -7,7 +7,6 @@ import sys
 import os
 import os
 import sys
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
@@ -16,15 +15,13 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from common.core.base_agent import BaseAgent
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
 import logging
 import time
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 import threading
 from common.config_manager import load_unified_config
-from main_pc_code.utils.service_discovery_client import get_service_address, register_service
+from main_pc_code.utils.service_discovery_client import get_service_address
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
 # ZMQ timeout settings
@@ -290,7 +287,7 @@ class EmpathyAgent(BaseAgent):
         
         elif action == 'get_voice_settings':
             # Get voice settings for specific text if provided
-            text = request.get('text', '')
+            request.get('text', '')
             emotion_override = request.get('emotion', None)
             
             # If emotion override is provided, temporarily update emotional state

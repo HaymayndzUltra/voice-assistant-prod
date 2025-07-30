@@ -1,0 +1,101 @@
+# Base Configuration for AI System Monorepo
+# This file contains default settings that apply to all agents
+
+# System-wide settings
+system:
+  name: "AI_System_Monorepo"
+  version: "1.0.0"
+  environment: "development"
+  debug_mode: false
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_rotation: true
+  max_file_size: "50MB"
+  backup_count: 5
+
+# Network and communication settings
+network:
+  timeout:
+    request: 30
+    connection: 10
+    health_check: 5
+  retry:
+    max_attempts: 3
+    backoff_factor: 1.5
+  
+# Performance settings
+performance:
+  max_threads: 4
+  memory_limit_mb: 2048
+  cpu_percent_limit: 80
+  gc_threshold: 1000
+
+# Health check settings
+health:
+  interval_seconds: 30
+  timeout_seconds: 10
+  retries: 3
+  port_offset: 1000  # Health port = main port + 1000
+
+# Redis settings (used by multiple agents)
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  timeout: 5
+  retry_on_timeout: true
+  max_connections: 50
+
+# ZMQ settings
+zmq:
+  context_threads: 1
+  socket_timeout: 5000
+  linger: 1000
+  hwm: 1000
+
+# Model settings
+models:
+  cache_dir: "models"
+  download_timeout: 300
+  vram_budget_percentage: 80
+  idle_timeout: 300
+
+# Security settings
+security:
+  enable_auth: false
+  token_expiry: 3600
+  rate_limit:
+    requests_per_minute: 100
+    burst_size: 20
+
+# Monitoring and metrics
+monitoring:
+  prometheus_enabled: true
+  metrics_port: 9090
+  health_checks_parallel: true
+  prediction_enabled: true
+
+# Data optimization
+data:
+  enable_optimizer: true
+  method: "compressed_msgpack"
+  compression_level: 6
+
+# Agent-specific default configurations
+agents:
+  default:
+    startup_timeout: 30
+    shutdown_timeout: 10
+    restart_policy: "on-failure"
+    max_restarts: 3
+    
+# Port management
+ports:
+  base_port: 5000
+  port_range:
+    start: 5000
+    end: 9999
+  reserved_ports: [22, 80, 443, 3306, 5432, 6379]

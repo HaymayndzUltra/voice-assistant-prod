@@ -6,14 +6,12 @@ This provides a simplified interface for generating text, transcribing audio, et
 
 import zmq
 import time
-import json
 import logging
 import os
 import uuid
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional
 
 from common.utils.network_util import retry_with_backoff
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

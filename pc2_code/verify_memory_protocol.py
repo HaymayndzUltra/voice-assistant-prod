@@ -7,9 +7,7 @@ For testing both payload formats with the Memory Agent
 import zmq
 import json
 import time
-import sys
-from colorama import Fore, Style, init
-from common.env_helpers import get_env
+from colorama import Fore, init
 
 init(autoreset=True)
 

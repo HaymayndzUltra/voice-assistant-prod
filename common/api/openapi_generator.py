@@ -6,11 +6,9 @@ Generates OpenAPI/Swagger documentation for API contracts
 
 import json
 from typing import Dict, Any, List, Optional
-from dataclasses import asdict
 from common.api.contract import APIProcessor, APIContract, APIVersion, Status, Priority, MessageType
 from common.api.standard_contracts import STANDARD_CONTRACTS
 import logging
-from common.env_helpers import get_env
 
 logger = logging.getLogger(__name__)
 

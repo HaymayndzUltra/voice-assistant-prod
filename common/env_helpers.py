@@ -8,7 +8,7 @@ scattered throughout the codebase.
 """
 
 import os
-from typing import Optional, TypeVar, Callable, cast
+from typing import Optional, TypeVar
 
 T = TypeVar("T")
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 System Health Check Script
 
@@ -16,7 +15,6 @@ import socket
 import json
 import logging
 import time
-from pathlib import Path
 
 
 # Import path manager for containerization-friendly paths
@@ -24,7 +22,6 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

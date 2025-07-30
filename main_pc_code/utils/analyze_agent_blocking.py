@@ -7,7 +7,6 @@ results.
 Heuristics based; not perfect but good enough for triage.
 """
 
-import ast
 import re
 import sys
 from pathlib import Path

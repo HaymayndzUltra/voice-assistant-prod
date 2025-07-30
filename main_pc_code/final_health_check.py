@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Final Agent Health Check Test
 Robust health check with better error handling and clear reporting
@@ -10,10 +9,8 @@ import zmq
 import json
 import time
 import sys
-import os
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
-from common.env_helpers import get_env
 
 def launch_agent(script_path: str, agent_name: str, port: int) -> Optional[subprocess.Popen]:
     """Launch an agent with specific port."""

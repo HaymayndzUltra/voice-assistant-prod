@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Translator Service Deployment Script
 - Starts the translator service as a managed background process
@@ -9,15 +8,12 @@ Translator Service Deployment Script
 import os
 import sys
 import time
-import signal
 import logging
 import argparse
 import subprocess
 import json
 import zmq
 from pathlib import Path
-from datetime import datetime
-from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

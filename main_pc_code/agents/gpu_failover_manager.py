@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -25,29 +24,21 @@ import json
 import logging
 import threading
 import hashlib
-from typing import Dict, List, Optional, Any, Tuple, Set
+from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict, deque
 from enum import Enum
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.model_events import (
-    ModelEventType, ModelLoadEvent, VRAMEvent, ModelPerformanceEvent,
-    CrossMachineModelEvent, create_model_load_request, create_vram_warning,
-    create_cross_machine_request, create_model_status_change, ModelStatus
-)
-from events.memory_events import (
-    MemoryEventType, create_memory_operation, create_cross_machine_replication,
-    MemoryType
+    ModelEventType, create_cross_machine_request, create_model_status_change, ModelStatus
 )
 from events.event_bus import (
-    get_event_bus, publish_model_event, publish_memory_event,
-    subscribe_to_model_events, subscribe_to_memory_events
+    get_event_bus, publish_model_event, subscribe_to_model_events, subscribe_to_memory_events
 )
 
 class FailoverTrigger(Enum):

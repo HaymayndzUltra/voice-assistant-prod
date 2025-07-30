@@ -1,8 +1,6 @@
 import zmq
-import json
 import time
 from main_pc_code.utils.config_loader import load_config
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 config = load_config()
 
@@ -65,7 +63,6 @@ print(resp)
 print("[TEST] Log model evaluation score to MEF")
 from uuid import uuid4
 from datetime import datetime
-from common.env_helpers import get_env
 model_eval = {
     'evaluation': {
         'evaluation_id': str(uuid4()),

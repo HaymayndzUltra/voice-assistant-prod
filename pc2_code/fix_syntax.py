@@ -4,7 +4,6 @@ Emergency Syntax Fix Script for phi_adapter.py
 This script will fix the unterminated triple-quoted string issue
 """
 
-import os
 
 def fix_unterminated_string():
     # Paths

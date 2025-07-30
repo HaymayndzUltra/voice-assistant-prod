@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # -*- coding: utf-8 -*-
 """
 PC2 TARGET CONFIGURATION VERIFICATION TOOL
@@ -12,11 +11,9 @@ import zmq
 import json
 import socket
 import time
-import sys
 import os
 from datetime import datetime
 from pathlib import Path
-from common.env_helpers import get_env
 
 # ANSI colors for terminal output
 class Colors:
@@ -249,10 +246,8 @@ def print_service_status(service, result):
     
     if result["status"] == "HEALTHY":
         status_color = Colors.OKGREEN
-        status_symbol = "✓"
     else:
         status_color = Colors.FAIL
-        status_symbol = "✗"
     
     print(f"\n{Colors.BOLD}■ {name} (Port {port}){Colors.ENDC}")
     print(f"  Status: {status_color}{result['status']}{Colors.ENDC}")

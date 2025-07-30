@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 import json
@@ -11,7 +10,6 @@ from pathlib import Path
 
 # Import path manager for containerization-friendly paths
 import sys
-import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
 # Configure logging

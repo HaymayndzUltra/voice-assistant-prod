@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Network Utilities
 
@@ -20,7 +19,7 @@ import os
 from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Import standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env as get_std_env
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine
 sys.path.insert(0, get_project_root())
 # Add the project's main_pc_code directory to the Python path
 PROJECT_ROOT = get_project_root()

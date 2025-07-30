@@ -6,19 +6,15 @@ Startup time optimization: 2.37s → <0.5s target through lazy loading
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common.utils.path_manager import PathManager
-import sys
 import os
 import time
 import json
 import logging
-import threading
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 
 # Essential imports only (fast imports)
-import zmq  # Required for ErrorPublisher
-from common.env_helpers import get_env
 from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Lazy import placeholders - imported only when needed

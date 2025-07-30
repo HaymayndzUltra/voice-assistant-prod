@@ -1,6 +1,4 @@
-import os
 from pathlib import Path
-import json
 
 def update_system_config():
     # Read the current system_config.py

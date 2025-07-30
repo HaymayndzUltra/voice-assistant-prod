@@ -12,7 +12,7 @@ import pstats
 import tracemalloc
 import psutil
 import gc
-from typing import Dict, Any, Optional, Callable, List, Union
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 from contextlib import contextmanager, asynccontextmanager

@@ -24,7 +24,6 @@ import json
 import time
 import logging
 import sys
-import os
 import traceback
 import threading
 from pathlib import Path
@@ -32,7 +31,7 @@ from pathlib import Path
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
 import torch
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 import psutil
@@ -41,7 +40,6 @@ from datetime import datetime
 
 # Centralized LLM router client
 from main_pc_code.utils import model_client
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add project root to Python path for common_utils import
@@ -307,7 +305,6 @@ class TinyLlamaService(BaseAgent):
         """Setup ZMQ socket with proper configuration"""
         # BaseAgent already initialized the main socket in super().__init__()
         # This method is kept for compatibility but doesn't need to do anything
-        pass
     
     def _load_model(self) -> bool:
         """Load the TinyLlama model with resource checks"""

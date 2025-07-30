@@ -2,31 +2,26 @@
 MoodTrackerAgent
 Tracks and analyzes user mood over time based on emotional state updates
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
-from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import sys
 import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
-import json
 import logging
 import threading
 import time
 import psutil
 from datetime import datetime
 from collections import deque
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from common.config_manager import load_unified_config
 from common.core.base_agent import BaseAgent
-from common.env_helpers import get_env
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 

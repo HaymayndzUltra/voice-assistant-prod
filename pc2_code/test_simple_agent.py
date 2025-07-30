@@ -1,7 +1,5 @@
 import zmq
-import json
 import time
-import threading
 
 class SimpleTestAgent:
     def __init__(self, port=7101):

@@ -7,23 +7,20 @@ Includes intelligent multi-layer fallback system and advanced performance monito
 """
 
 import zmq
-import json
 import logging
 import time
 import threading
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional
 import os
-import re
 from googletrans import Translator as GoogleTranslator
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-from datetime import datetime, timedelta
 from collections import defaultdict
 from common.env_helpers import get_env
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.env_standardizer import get_pc2_ip, get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager
@@ -227,7 +224,7 @@ class AdvancedTimeoutManager(BaseAgent):
             
             # Adjust based on history if we have enough samples
             if char_count in self.timeout_history and len(self.timeout_history[char_count]) >= self.min_samples:
-                avg_response_time = np.mean(self.timeout_history[char_count])
+                np.mean(self.timeout_history[char_count])
                 std_response_time = np.std(self.timeout_history[char_count])
                 
                 # Add buffer based on standard deviation

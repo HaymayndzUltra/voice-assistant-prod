@@ -1,5 +1,4 @@
 import sys
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.argv = [sys.argv[0]]
 import pytest
 import time
@@ -9,7 +8,6 @@ import os
 import socket
 import importlib
 import logging
-from common.env_helpers import get_env
 
 # Configure logging for the test
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

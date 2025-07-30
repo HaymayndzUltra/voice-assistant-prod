@@ -4,17 +4,14 @@ Coordinator Module
 Manages and coordinates all modules in the voice assistant system
 """
 
-import os
 import sys
 import json
 import logging
 import time
-import subprocess
-import signal
 import zmq
 import threading
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 from pathlib import Path
 
 # Containerization-friendly paths (Blueprint.md Step 5)

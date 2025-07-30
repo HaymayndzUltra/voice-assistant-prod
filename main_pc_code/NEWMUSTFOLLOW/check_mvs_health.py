@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 """
 MVS Health Checker
@@ -12,13 +11,10 @@ import os
 import sys
 import zmq
 import json
-import time
 import yaml
-from pathlib import Path
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Union, cast
+from typing import Dict, Any, List
 
 
 # Import path manager for containerization-friendly paths
@@ -26,7 +22,6 @@ import sys
 import os
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 # ANSI color codes for terminal output
 GREEN = "\033[92m"
 RED = "\033[91m"

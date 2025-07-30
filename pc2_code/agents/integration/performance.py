@@ -1,7 +1,6 @@
 import zmq
 import time
 import json
-import logging
 from datetime import datetime
 from typing import Dict, Any, Callable
 import threading
@@ -11,11 +10,7 @@ from functools import wraps
 from common.core.base_agent import BaseAgent
 
 # Standardized utilities
-from common.utils.path_manager import PathManager
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.logger_util import get_json_logger
-from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 
 # Constants
 PERFORMANCE_TOPIC = "performance_metrics"

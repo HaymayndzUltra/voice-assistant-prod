@@ -1,5 +1,4 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 #!/usr/bin/env python3
 # Chain-of-Thought Agent - Implements multi-step reasoning for more reliable code generation
 # Transforms a single request into a sequence of reasoning steps
@@ -7,15 +6,12 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 import zmq
 import json
-import os
-import threading
 import time
 import logging
 import re
 from datetime import datetime
 import psutil
 from datetime import datetime
-from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

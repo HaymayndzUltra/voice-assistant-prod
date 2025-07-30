@@ -1,5 +1,4 @@
 from main_pc_code.src.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Streaming Text Processor Module
 Processes text input and generates appropriate responses
@@ -14,10 +13,8 @@ import socket
 import queue
 import hashlib
 import psutil
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List
 from collections import deque, OrderedDict
-from datetime import datetime
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -10,13 +10,12 @@ processing visual data captured by the VisionCaptureAgent on mainPC.
 
 import sys
 import os
-import json
 import time
 import logging
 import base64
 import io
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from pathlib import Path
 from PIL import Image
 

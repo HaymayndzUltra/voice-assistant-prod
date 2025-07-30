@@ -14,11 +14,10 @@ Features:
 """
 
 import os
-import sys
 import yaml
 import logging
 import threading
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime

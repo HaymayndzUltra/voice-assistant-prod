@@ -7,14 +7,11 @@ PC2 Translator Performance Benchmark
 - Outputs detailed metrics and charts
 """
 import zmq
-import json
 import time
 import random
 import statistics
-import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Any, Tuple
 from common.env_helpers import get_env
 
 # Sample texts of varying lengths for testing

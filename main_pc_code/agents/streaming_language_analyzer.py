@@ -4,7 +4,6 @@ Streaming Language Analyzer Module
 Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import logging
 import re
@@ -12,19 +11,17 @@ import time
 import json
 import threading
 import os
-import psutil
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-import requests
 import socket
-from typing import Dict, Optional, Any
+from typing import Dict, Any
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import register_service, get_service_address
 from main_pc_code.utils.env_loader import get_env
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 # from main_pc_code.src.network.secure_zmq import configure_secure_client, configure_secure_server
 from main_pc_code.utils import model_client
 from common.env_helpers import get_env

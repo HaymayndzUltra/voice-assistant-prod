@@ -9,7 +9,6 @@ import json
 import time
 import threading
 from typing import Dict, Any, Optional, List
-from datetime import datetime
 import asyncio
 import zmq
 from dataclasses import dataclass, field
@@ -19,7 +18,6 @@ from enum import Enum
 from common.core.base_agent import BaseAgent
 from common.utils.path_manager import PathManager
 from common.utils.data_models import ErrorSeverity
-from common.config_manager import get_service_ip, get_service_url
 
 @dataclass
 class IdentityProfile:

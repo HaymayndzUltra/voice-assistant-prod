@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 print('hello')
-import os
 import ast
 import re
 import argparse

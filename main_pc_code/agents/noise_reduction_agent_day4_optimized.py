@@ -4,7 +4,6 @@
 # Original: main_pc_code/agents/noise_reduction_agent.py
 
 from main_pc_code.src.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 
 # Add the project's main_pc_code directory to the Python path
@@ -23,22 +22,16 @@ Implements real-time noise reduction for the voice assistant system:
 - Publishes cleaned audio to downstream components
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
 import threading
 import logging
-import os
 import sys
-import json
-from pathlib import Path
 from datetime import datetime
 import noisereduce as nr
-from scipy import signal
 import psutil
 from datetime import datetime
-from common.env_helpers import get_env
 from common.utils.path_manager import PathManager
 
 # Configure logging

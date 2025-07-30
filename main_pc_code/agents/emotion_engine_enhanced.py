@@ -11,7 +11,6 @@ from common.utils.path_manager import PathManager
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 
 sys.path.insert(0, str(PathManager.get_project_root()))
 # Add the project's main_pc_code directory to the Python path
@@ -20,7 +19,7 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import os
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_rep_socket
 import json
 import logging
 import threading
@@ -28,13 +27,9 @@ import time
 import psutil
 import signal
 from datetime import datetime
-from typing import Dict, Any, Optional, List
-from common.config_manager import load_unified_config
+from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 # Enhanced BaseAgent capabilities
-from common.core.enhanced_base_agent import EnhancedBaseAgent, PerformanceMetrics
-from common.core.unified_config_manager import UnifiedConfigManager
-from common.env_helpers import get_env
 
 # Configure logging
 logging.basicConfig(

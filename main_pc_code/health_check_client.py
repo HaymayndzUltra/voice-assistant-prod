@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 ZMQ Health Check Client for ConsolidatedTranslator Agent
 """
 
 import zmq
 import json
-import time
 import sys
-from common.env_helpers import get_env
 
 def send_health_check(port=5564, timeout=5):
     """Send health check request to agent"""

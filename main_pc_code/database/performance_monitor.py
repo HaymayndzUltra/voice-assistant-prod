@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -25,16 +24,15 @@ import time
 import json
 import logging
 import threading
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict, deque
 from enum import Enum
 import statistics
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Database imports
 from main_pc_code.database.async_connection_pool import get_connection_pool
@@ -42,10 +40,9 @@ from main_pc_code.database.intelligent_query_optimizer import get_query_optimize
 
 # Event system imports
 from events.memory_events import (
-    MemoryEventType, create_memory_pressure_warning, 
-    create_memory_operation, MemoryType
+    create_memory_pressure_warning
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 class AlertSeverity(Enum):
     """Alert severity levels"""
@@ -816,7 +813,7 @@ class DatabasePerformanceMonitor(BaseAgent):
     
     def get_monitoring_status(self) -> Dict[str, Any]:
         """Get comprehensive monitoring status"""
-        current_time = datetime.now()
+        datetime.now()
         
         # Get recent metrics
         recent_metrics = {}

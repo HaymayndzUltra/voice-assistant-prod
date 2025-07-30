@@ -3,11 +3,10 @@ WP-08 Performance Optimizer
 Automatic performance optimization and tuning recommendations
 """
 
-import asyncio
 import time
 import gc
 import threading
-from typing import Dict, Any, Optional, List, Callable, Union, Tuple
+from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 import logging

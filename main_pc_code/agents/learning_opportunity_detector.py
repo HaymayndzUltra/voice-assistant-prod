@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Learning Opportunity Detector (LOD)
 
@@ -19,20 +18,15 @@ import logging
 import threading
 import json
 import zmq
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import sqlite3
-import psutil
-from pathlib import Path
 from datetime import datetime
 from collections import deque
-from typing import Dict, Any, List, Optional, Union, Tuple
-from uuid import UUID
+from typing import Dict, Any, List, Optional
 
 
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
@@ -48,7 +42,6 @@ from common.config_manager import load_unified_config
 
 # --- Shared Utilities ---
 from main_pc_code.agents.request_coordinator import CircuitBreaker
-from common.env_helpers import get_env
 
 # --- Logging Setup ---
 log_dir = 'logs'
@@ -108,12 +101,11 @@ class LearningOpportunityDetector(BaseAgent):
         """Register this agent with the service discovery system if available."""
         try:
             from main_pc_code.utils.service_discovery_client import get_service_discovery_client
-            from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
         except ImportError as e:
             print(f"Import error in learning_opportunity_detector: {e}")
             return
         try:
-            client = get_service_discovery_client()
+            get_service_discovery_client()
             self.service_registry[self.name] = {
                 "name": self.name,
                 "ip": self.config.get('bind_address', '0.0.0.0'),

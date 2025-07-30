@@ -15,7 +15,6 @@ Streams audio chunks in real-time to downstream modules via ZMQ
 Includes integrated wake word detection using Whisper
 """
 
-import sounddevice as sd
 import time
 import pickle
 import zmq
@@ -24,11 +23,8 @@ import logging
 import json
 import threading
 import sys
-import queue
 import wave
 import os
-from pathlib import Path
-from collections import deque
 from datetime import datetime
 try:
     import pyaudio
@@ -41,7 +37,6 @@ import psutil
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Add project root to the Python path to allow for absolute imports
@@ -52,7 +47,6 @@ if project_root not in sys.path:
 # Import with canonical path
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
-from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
@@ -251,7 +245,6 @@ class StreamingAudioCapture(BaseAgent):
         logger.info("DEBUG_ENTER_CALLED: __enter__ method invoked.")
         logger.info("Entering __enter__ (using pre-initialized self.p and hardcoded audio params)...")
         import zmq
-        import threading
         # Import pyaudio only if not in dummy mode (avoids dependency when dummy)
         if not getattr(self, "dummy_mode", False):
             import pyaudio

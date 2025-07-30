@@ -11,7 +11,6 @@ Response Format:
 - For translation: {"status": "success", "translated_text": "Translated text"}
                  or {"status": "error", "message": "Error details"}
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 import sys
 import os
@@ -23,8 +22,6 @@ import traceback
 import psutil
 import torch
 import zmq
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -36,11 +33,10 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
 # Import model_client for centralized model loading
 from main_pc_code.utils import model_client
 from main_pc_code.utils.config_loader import load_config
-from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
+from main_pc_code.utils.network_utils import get_zmq_connection_string
 
 # Import base agent class
 from common.core.base_agent import BaseAgent
-from common.env_helpers import get_env
 
 # Define proxy classes for model_client integration
 class ModelClientModel:

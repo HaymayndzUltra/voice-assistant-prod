@@ -5,15 +5,15 @@ from common.core.base_agent import BaseAgent
 
 # Add the project's main_pc_code directory to the Python path
 import sys
-import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_project_root()
 if MAIN_PC_CODE_DIR not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE_DIR)
 
-from main_pc_code.utils.config_loader import load_config
-config = load_config()
+# Migrated to unified config manager (replacing Pattern 4)
+from common.config.unified_config_manager import Config
+config = Config.for_agent(__file__)
 """
 Unified System Agent
 -------------------
@@ -21,24 +21,18 @@ Central command center for system orchestration, service discovery, maintenance,
 Provides comprehensive system management capabilities through ZMQ interface.
 """
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import logging
-import os
 import sys
-import yaml
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict
 from datetime import datetime
 import threading
 import time
 import psutil
-import subprocess
-import signal
 import socket
 import platform
 import traceback
-from main_pc_code.agents.error_publisher import ErrorPublisher
 
 # Configure logging
 logging.basicConfig(
@@ -234,7 +228,6 @@ class UnifiedSystemAgent(BaseAgent):
         """Restart a service by name."""
         logger.info(f"Restarting service: {service_name}")
         # Implementation would go here
-        pass
     
     def handle_request(self, request: Dict) -> Dict:
         """Handle incoming requests."""

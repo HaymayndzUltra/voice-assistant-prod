@@ -11,21 +11,16 @@ import os
 import logging
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple, Union
-import json
-import yaml
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
 class SecretNotFoundError(Exception):
     """Raised when a required secret cannot be found in any configured source."""
-    pass
 
 
 class SecretValidationError(Exception):
     """Raised when a secret fails validation checks."""
-    pass
 
 
 class SecretManager:

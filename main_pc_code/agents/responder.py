@@ -1,14 +1,12 @@
 from common.core.base_agent import BaseAgent
 import sys
 import os
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 # Auto-accept Coqui CPML terms for non-commercial use.
 # Set the env var only if user hasn't explicitly provided one.
 
 # Add the project's main_pc_code directory to the Python path
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
@@ -17,10 +15,9 @@ if str(MAIN_PC_CODE_DIR) not in sys.path:
     sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
+from common.pools.zmq_pool import get_sub_socket
 import json
 # import os
-import sounddevice as sd
 import numpy as np
 import threading
 import queue
@@ -31,7 +28,6 @@ import time
 import pickle
 from common.config_manager import load_unified_config
 from main_pc_code.utils.service_discovery_client import discover_service, get_service_address
-from main_pc_code.utils.env_loader import get_env
 from common.utils.path_manager import PathManager
 # from main_pc_code.src.network.secure_zmq import is_secure_zmq_enabled, configure_secure_client, configure_secure_server
 
@@ -59,12 +55,6 @@ LOG_PATH = os.path.join(current_dir, str(PathManager.get_logs_dir() / "../logs/r
 
 # Import common Tagalog phrases module
 try:
-    from main_pc_code.agents.common_tagalog_phrases import (
-        translate_common_phrase,
-        check_and_replace_common_phrases,
-        TAGALOG_TO_ENGLISH,
-        ENGLISH_TO_TAGALOG
-    )
     COMMON_PHRASES_AVAILABLE = True
     logging.info("[Responder] Common Tagalog phrases module loaded successfully")
 except ImportError as e:

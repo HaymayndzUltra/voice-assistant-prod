@@ -1,5 +1,4 @@
 from common.core.base_agent import BaseAgent
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 """
 Discovery Service Agent
 Provides service discovery for distributed agents across the network.
@@ -14,7 +13,6 @@ import logging
 import threading
 import zmq
 from datetime import datetime
-from common.env_helpers import get_env
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

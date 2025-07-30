@@ -3,18 +3,16 @@ WP-05 SQL Connection Pool
 High-performance database connection pooling with automatic lifecycle management
 """
 
-import asyncio
 import threading
 import time
 import logging
-from typing import Dict, List, Optional, Any, Union, AsyncGenerator
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import contextmanager
 import sqlite3
 from queue import Queue, Empty
 
 try:
-    import asyncpg
     ASYNC_PG_AVAILABLE = True
 except ImportError:
     ASYNC_PG_AVAILABLE = False

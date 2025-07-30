@@ -7,10 +7,8 @@ import logging
 from typing import List, Dict, Tuple, Optional
 import urllib.request
 import urllib.error
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 sys.path.insert(0, get_project_root())
 from common.utils.path_manager import PathManager
-from common.env_helpers import get_env
 
 # Configure logging
 LOGS_DIR = PathManager.join_path("logs")

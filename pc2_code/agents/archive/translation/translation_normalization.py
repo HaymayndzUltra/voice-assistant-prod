@@ -1,4 +1,3 @@
-from common.core.base_agent import BaseAgent
 """
 Utility functions for text normalization to improve translation caching and context handling.
 These functions help maintain consistent cache keys and improve translation quality.

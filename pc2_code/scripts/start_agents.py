@@ -1,9 +1,7 @@
 import subprocess
 import time
-import json
 import os
 import zmq
-import sys
 import argparse
 
 def start_agent(script, args=None, port=None, dry_run=False):

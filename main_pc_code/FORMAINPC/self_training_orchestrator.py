@@ -11,11 +11,10 @@ import logging
 import sqlite3
 import threading
 import time
-import argparse
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 from queue import PriorityQueue
@@ -26,7 +25,6 @@ from main_pc_code.utils.config_loader import load_config
 # Import path manager for containerization-friendly paths
 import sys
 import os
-from pathlib import Path
 from common.utils.path_manager import PathManager
 
 sys.path.insert(0, str(PathManager.get_project_root()))

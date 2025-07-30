@@ -12,7 +12,7 @@ import subprocess
 import sys
 import os
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional
 
 # Add project root to Python path
 project_root = Path(os.path.abspath(__file__)).parent.parent.parent

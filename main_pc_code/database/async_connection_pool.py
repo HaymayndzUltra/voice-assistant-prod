@@ -13,7 +13,6 @@ Features:
 """
 from __future__ import annotations
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -25,10 +24,10 @@ import time
 import json
 import logging
 import threading
-from typing import Dict, List, Optional, Any, Tuple, Callable, Union
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from collections import defaultdict, deque
+from collections import deque
 from contextlib import asynccontextmanager
 from enum import Enum
 import hashlib
@@ -44,14 +43,13 @@ except ImportError:
 
 # Core imports
 from common.core.base_agent import BaseAgent
-from common_utils.error_handling import SafeExecutor
 
 # Event system imports
 from events.memory_events import (
-    MemoryEventType, create_memory_operation, create_memory_pressure_warning,
-    MemoryType, MemoryPerformanceEvent
+    MemoryEventType, create_memory_pressure_warning,
+    MemoryPerformanceEvent
 )
-from events.event_bus import get_event_bus, publish_memory_event
+from events.event_bus import publish_memory_event
 
 class ConnectionState(Enum):
     """Connection state tracking"""

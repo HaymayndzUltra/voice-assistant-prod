@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-import json
 import logging
-import threading
 import zmq
 import torch
 from transformers import MarianMTModel, MarianTokenizer

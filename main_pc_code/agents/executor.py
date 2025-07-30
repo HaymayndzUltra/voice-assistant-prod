@@ -1,5 +1,4 @@
 import os, sys
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 # Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -8,7 +7,6 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from common.core.base_agent import BaseAgent
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import json
 import subprocess
 import threading
@@ -17,7 +15,6 @@ import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
 from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
-from datetime import datetime
 import zmq
 
 # Load configuration at module level
@@ -52,7 +49,6 @@ def log_usage_analytics(user: str, command: str, status: str):
         # Fall back to local logging if PUB socket unavailable
         logging.debug(f"[Executor] Failed to send usage analytics: {_e}")
 
-from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 from common.env_helpers import get_env
 ZMQ_LOG_PORT = 5600  # Central log collector port
 log_context = zmq.Context()  # Initialize context instead of None

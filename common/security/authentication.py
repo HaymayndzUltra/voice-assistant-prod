@@ -10,11 +10,10 @@ import hmac
 import jwt
 import secrets
 import bcrypt
-from typing import Dict, Any, Optional, List, Set, Callable, Union
+from typing import Dict, Any, Optional, List, Set
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta, timezone
-import json
 import logging
 
 logger = logging.getLogger(__name__)

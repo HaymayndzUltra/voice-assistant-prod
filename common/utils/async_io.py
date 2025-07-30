@@ -14,7 +14,6 @@ from pathlib import Path
 import time
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
-import functools
 
 logger = logging.getLogger(__name__)
 

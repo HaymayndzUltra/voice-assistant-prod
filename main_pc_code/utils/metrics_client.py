@@ -7,11 +7,9 @@ regardless of whether the metrics backend is available.
 """
 
 import os
-import sys
 import time
 import logging
-import socket
-from typing import Dict, Any, Optional, Union, List, Callable
+from typing import Any
 from contextlib import contextmanager
 
 # Configure logging

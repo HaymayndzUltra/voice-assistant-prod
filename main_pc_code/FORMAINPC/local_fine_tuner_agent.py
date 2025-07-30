@@ -3,7 +3,6 @@ Local Fine Tuner Agent
 Purpose: Manages model fine-tuning and artifact management
 Features: Model tuning, artifact management, job queuing
 """
-from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
 # Add the project's main_pc_code directory to the Python path
@@ -21,17 +20,14 @@ import sqlite3
 import threading
 import time
 import os
-import shutil
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
 from queue import Queue
-from transformers import Trainer, TrainingArguments, AutoModelForCausalLM, AutoTokenizer
+from transformers import Trainer, TrainingArguments
 from peft import get_peft_model, LoraConfig, TaskType, prepare_model_for_kbit_training
-import torch
-from datasets import load_dataset, Dataset
-import numpy as np
+from datasets import Dataset
 from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 # Import the model_client for centralized model loading
@@ -60,7 +56,6 @@ from main_pc_code.utils.config_loader import load_config
 config = load_config()
 
 try:
-    from common_utils.zmq_helper import create_socket
     USE_COMMON_UTILS = True
 except ImportError as e:
     print(f"Import error: {e}")
@@ -454,7 +449,7 @@ class LocalFineTunerAgent(BaseAgent):
     def _cleanup_job(self, job_id: str):
         """Clean up a completed job."""
         try:
-            job = self.active_jobs[job_id]
+            self.active_jobs[job_id]
             
             # Remove from active jobs
             del self.active_jobs[job_id]
