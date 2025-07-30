@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from typing import Any, Dict
 """
 PC2 Agents Startup Script
 ------------------------
@@ -10,7 +11,6 @@ Usage:
     python start_pc2_agents.py [--dry-run]
 """
 
-import os
 import sys
 import yaml
 import time
@@ -55,7 +55,7 @@ def check_agent_health(name, port, timeout=5):
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, timeout * 1000)
     socket.connect(f"tcp://localhost:{port}")
-    
+
     try:
         socket.send_json({"action": "health_check"})
         response = socket.recv_json()
@@ -74,26 +74,26 @@ def start_agent(agent, dry_run=False):
     script_path = agent.get('script_path', '')
     port = agent.get('port', 0)
     health_port = agent.get('health_check_port', port + 1)
-    
+
     if not script_path:
         print(f"❌ {name}: No script path specified")
         return False
-    
+
     full_script_path = PC2_AGENTS_DIR / script_path
     if not full_script_path.exists():
         print(f"❌ {name}: Script not found at {full_script_path}")
         return False
-    
+
     # Check if port is already in use
     if port > 0 and not check_port_available(port):
         print(f"⚠️ {name}: Port {port} is already in use")
-        
+
     print(f"\n=== Starting {name} ({script_path}) on port {port} ===")
-    
+
     if dry_run:
         print(f"🔍 DRY RUN: Would start {name} using python3 {full_script_path}")
         return True
-    
+
     try:
         # Start the process
         process = subprocess.Popen(
@@ -103,13 +103,13 @@ def start_agent(agent, dry_run=False):
             text=True,
             cwd=PC2_AGENTS_DIR
         )
-        
+
         # Store the process
         running_processes[name] = process
-        
+
         # Wait a bit for the agent to start
         time.sleep(2)
-        
+
         # Check if process is still running
         if process.poll() is not None:
             stdout, stderr = process.communicate()
@@ -119,16 +119,16 @@ def start_agent(agent, dry_run=False):
             if stderr:
                 print(f"Error: {stderr[:200]}...")
             return False
-        
+
         print(f"✅ {name} started with PID {process.pid}")
-        
+
         # Check agent health if health port is available
         if health_port > 0:
             time.sleep(3)  # Give more time for health endpoint to be ready
             check_agent_health(name, health_port)
-            
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Error starting {name}: {e}")
         return False
@@ -138,23 +138,23 @@ def start_agents_in_order(config, dry_run=False):
     if not config:
         print("No configuration loaded")
         return False
-    
+
     agents = config.get('pc2_services', [])
     if not agents:
         print("No agents found in configuration")
         return False
-    
+
     print(f"Found {len(agents)} agents in configuration")
-    
+
     # First pass: Start agents with no dependencies
     print("\n=== Starting agents with no dependencies ===")
     for agent in agents:
         if not agent.get('dependencies'):
             start_agent(agent, dry_run)
-    
+
     # Give some time for the first batch to initialize
     time.sleep(5)
-    
+
     # Second pass: Start agents with dependencies
     print("\n=== Starting agents with dependencies ===")
     for agent in agents:
@@ -162,14 +162,14 @@ def start_agents_in_order(config, dry_run=False):
             dependencies = agent.get('dependencies', [])
             print(f"Starting {agent.get('name')} with dependencies: {dependencies}")
             start_agent(agent, dry_run)
-    
+
     return True
 
 def cleanup(signum=None, frame=None):
     """Clean up all running processes"""
     print("\n\n=== Cleaning up processes ===")
     stop_event.set()
-    
+
     for name, process in running_processes.items():
         if process.poll() is None:  # Process is still running
             print(f"Stopping {name}...")
@@ -181,7 +181,7 @@ def cleanup(signum=None, frame=None):
                     process.kill()
             except Exception as e:
                 print(f"Error stopping {name}: {e}")
-    
+
     print("All processes stopped")
     sys.exit(0)
 
@@ -190,21 +190,21 @@ def main():
     parser = argparse.ArgumentParser(description="Start PC2 agents")
     parser.add_argument("--dry-run", action="store_true", help="Show commands without executing")
     args = parser.parse_args()
-    
+
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
-    
+
     print("=== PC2 Agents Startup Script ===")
-    
+
     # Load configuration
     config = load_config()
     if not config:
         sys.exit(1)
-    
+
     # Start agents
     success = start_agents_in_order(config, args.dry_run)
-    
+
     if success:
         print("\n✅ All agents started successfully!")
         if not args.dry_run:
@@ -219,4 +219,4 @@ def main():
         cleanup()
 
 if __name__ == "__main__":
-    main() 
+    main()

@@ -14,7 +14,7 @@ logging.basicConfig(
 def find_agent_files():
     """Find all Python files in agent directories."""
     agent_files = []
-    
+
     # Main PC agent directories
     main_pc_dirs = [
         'main_pc_code/agents',
@@ -24,34 +24,34 @@ def find_agent_files():
         'main_pc_code/src/audio',
         'main_pc_code/src/vision'
     ]
-    
+
     # PC2 agent directories
     pc2_dirs = [
         'pc2_code/agents',
         'pc2_code/agents/ForPC2',
         'pc2_code/agents/core_agents'
     ]
-    
+
     # Exclude directories
     exclude_dirs = [
-        'backups', 
-        '_archive', 
+        'backups',
+        '_archive',
         '_trash_2025-06-13',
         'needtoverify',
         'agent_backups'
     ]
-    
+
     # Find all Python files
     for directory in main_pc_dirs + pc2_dirs:
         if os.path.exists(directory):
             for root, dirs, files in os.walk(directory):
                 # Skip excluded directories
                 dirs[:] = [d for d in dirs if d not in exclude_dirs]
-                
+
                 for file in files:
                     if file.endswith('.py'):
                         agent_files.append(os.path.join(root, file))
-    
+
     return agent_files
 
 def check_syntax(file_path):
@@ -67,11 +67,12 @@ def check_syntax(file_path):
         return False, f"Unexpected error: {str(e)}"
 
 def main():
+    """TODO: Add description for main."""
     agent_files = find_agent_files()
     logging.info(f"Found {len(agent_files)} agent files to check")
-    
+
     errors = []
-    
+
     for file_path in agent_files:
         success, error = check_syntax(file_path)
         if success:
@@ -79,7 +80,7 @@ def main():
         else:
             logging.error(f"✗ {file_path}: {error}")
             errors.append((file_path, error))
-    
+
     if errors:
         logging.error(f"Found {len(errors)} files with syntax errors:")
         for file_path, error in errors:
@@ -90,4 +91,4 @@ def main():
         return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

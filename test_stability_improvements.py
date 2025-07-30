@@ -35,35 +35,35 @@ logger = get_logger("test_stability")
 def test_path_manager():
     """Test the PathManager component."""
     logger.info("Testing PathManager...")
-    
+
     # Test project root resolution
     project_root = PathManager.get_project_root()
     logger.info(f"Project root: {project_root}")
     assert project_root.exists(), "Project root does not exist"
-    
+
     # Test config directory resolution
     config_dir = PathManager.get_config_dir()
     logger.info(f"Config directory: {config_dir}")
     assert config_dir.exists(), "Config directory does not exist"
-    
+
     # Test logs directory resolution
     logs_dir = PathManager.get_logs_dir()
     logger.info(f"Logs directory: {logs_dir}")
     assert logs_dir.exists(), "Logs directory does not exist"
-    
+
     # Test path resolution
     test_path = "main_pc_code/utils/path_manager.py"
     resolved_path = PathManager.resolve_path(test_path)
     logger.info(f"Resolved path: {resolved_path}")
     assert resolved_path.exists(), f"Resolved path {resolved_path} does not exist"
-    
+
     logger.info("PathManager tests passed")
     return True
 
 def test_config_manager():
     """Test the ConfigManager component."""
     logger.info("Testing ConfigManager...")
-    
+
     # Create a test configuration
     test_config = {
         "test_section": {
@@ -86,21 +86,21 @@ def test_config_manager():
             }
         }
     }
-    
+
     # Save configuration
     result = ConfigManager.save_config("test_config", test_config)
     logger.info(f"Save configuration result: {result}")
     assert result, "Failed to save configuration"
-    
+
     # Load configuration
     loaded_config = ConfigManager.load_config("test_config")
     logger.info(f"Loaded configuration: {loaded_config}")
     assert "test_section" in loaded_config, "Missing section in loaded configuration"
-    
+
     # Get configuration value
     string_value = ConfigManager.get_config("test_config", "test_section.string_value")
     logger.info(f"String value: {string_value}")
-    
+
     # Test environment overrides
     prev_env = os.environ.get("ENV")
     try:
@@ -108,7 +108,7 @@ def test_config_manager():
         dev_config = ConfigManager.load_config("test_config", reload=True)
         logger.info(f"Development configuration: {dev_config}")
         assert dev_config["test_section"]["string_value"] == "development", "Environment override failed"
-        
+
         os.environ["ENV"] = "production"
         prod_config = ConfigManager.load_config("test_config", reload=True)
         logger.info(f"Production configuration: {prod_config}")
@@ -119,7 +119,7 @@ def test_config_manager():
             os.environ["ENV"] = prev_env
         else:
             os.environ.pop("ENV", None)
-    
+
     # Update configuration
     update_result = ConfigManager.update_config("test_config", {
         "test_section": {
@@ -128,19 +128,19 @@ def test_config_manager():
     })
     logger.info(f"Update configuration result: {update_result}")
     assert update_result, "Failed to update configuration"
-    
+
     # Verify update
     updated_config = ConfigManager.load_config("test_config", reload=True)
     logger.info(f"Updated configuration: {updated_config}")
     assert updated_config["test_section"].get("new_value") == "added", "Configuration update failed"
-    
+
     logger.info("ConfigManager tests passed")
     return True
 
 def test_logging_manager():
     """Test the LogManager component."""
     logger.info("Testing LogManager...")
-    
+
     # Test structured logging
     extra_data = {
         "test_key": "test_value",
@@ -148,11 +148,11 @@ def test_logging_manager():
         "bool_value": True
     }
     logger.info("Testing structured logging", extra={"data": json.dumps(extra_data)})
-    
+
     # Test metrics
     log_metric("test", "test_metric", 123)
     log_metric("test", "another_metric", "string_value")
-    
+
     # Test exception logging
     try:
         # Cause an exception
@@ -161,34 +161,34 @@ def test_logging_manager():
         log_exception("test", e, "Caught test exception", {
             "context": "test_logging_manager"
         })
-    
+
     # Test different log levels
     logger.debug("Debug message")
     logger.info("Info message")
     logger.warning("Warning message")
     logger.error("Error message")
-    
+
     logger.info("LogManager tests passed")
     return True
 
 def test_agent_supervisor(test_config_path: Optional[str] = None):
     """Test the AgentSupervisor component."""
     logger.info("Testing AgentSupervisor...")
-    
+
     # Initialize supervisor with proper type casting to handle None
     config_path = test_config_path if test_config_path is not None else ""
     supervisor = AgentSupervisor(config_path=config_path)
-    
+
     # Test agent management directly
     if test_config_path is None:
         logger.info("No test config provided, testing agent supervisor with sample agent")
-        
+
         # Create a simple test agent
         from main_pc_code.utils.agent_supervisor import AgentProcess
-        
+
         # Find a Python script to use as a test agent
         test_script = PathManager.resolve_path("main_pc_code/utils/path_manager.py")
-        
+
         # Create an agent process
         agent = AgentProcess(
             name="test_agent",
@@ -196,37 +196,37 @@ def test_agent_supervisor(test_config_path: Optional[str] = None):
             port=9999,
             health_port=10000
         )
-        
+
         # Add to supervisor
         supervisor.agents["test_agent"] = agent
-        
+
         # Start the agent
         start_result = agent.start()
         logger.info(f"Agent start result: {start_result}")
-        
+
         # Wait a bit
         time.sleep(2)
-        
+
         # Stop the agent
         stop_result = agent.stop()
         logger.info(f"Agent stop result: {stop_result}")
     else:
         # Load agents from config
         logger.info(f"Testing agent supervisor with config: {test_config_path}")
-        
+
         # Start all agents
         supervisor.start_all()
-        
+
         # Wait for them to start
         time.sleep(5)
-        
+
         # Check health
         health = supervisor.check_health()
         logger.info(f"Agent health: {health}")
-        
+
         # Stop all agents
         supervisor.stop_all()
-    
+
     logger.info("AgentSupervisor tests passed")
     return True
 
@@ -240,34 +240,34 @@ def main():
     parser.add_argument("--test-config", help="Path to test configuration for AgentSupervisor")
     parser.add_argument("--all", action="store_true", help="Test all components")
     args = parser.parse_args()
-    
+
     # If no specific tests are selected, test all
     if not any([args.path_manager, args.config_manager, args.log_manager, args.agent_supervisor, args.all]):
         args.all = True
-    
+
     # Run tests
     if args.path_manager or args.all:
         if not test_path_manager():
             logger.error("PathManager tests failed")
             return 1
-    
+
     if args.config_manager or args.all:
         if not test_config_manager():
             logger.error("ConfigManager tests failed")
             return 1
-    
+
     if args.log_manager or args.all:
         if not test_logging_manager():
             logger.error("LogManager tests failed")
             return 1
-    
+
     if args.agent_supervisor or args.all:
         if not test_agent_supervisor(args.test_config):
             logger.error("AgentSupervisor tests failed")
             return 1
-    
+
     logger.info("All tests passed")
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

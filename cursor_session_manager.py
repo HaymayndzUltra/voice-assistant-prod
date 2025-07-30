@@ -19,6 +19,7 @@ class CursorSessionManager:
     DEFAULT_STATE_FILE = os.path.join(os.getcwd(), "cursor_state.json")
 
     def __init__(self, state_file: str | None = None, autosave_interval: int = 30):
+        """TODO: Add description for __init__."""
         self.state_file = state_file or self.DEFAULT_STATE_FILE
         self._state: Dict[str, Any] = {}
         # Use a *re-entrant* lock so that internal helpers that end up calling
@@ -79,6 +80,8 @@ class CursorSessionManager:
     # ------------------------------------------------------------------
     # Internal helpers --------------------------------------------------
     # ------------------------------------------------------------------
+        """TODO: Add description for _start_autosave."""
+        """TODO: Add description for _save_loop."""
     def _start_autosave(self) -> None:
         def _save_loop() -> None:
             while not self._stop_event.wait(self.autosave_interval):
@@ -86,6 +89,7 @@ class CursorSessionManager:
         self._autosave_thread = threading.Thread(
             target=_save_loop, name="CursorSessionAutosave", daemon=True
         )
+            """TODO: Add description for _load_state_from_disk."""
         self._autosave_thread.start()
 
     def _load_state_from_disk(self) -> None:
@@ -96,6 +100,7 @@ class CursorSessionManager:
             except (json.JSONDecodeError, OSError):
                 # Corrupted or inaccessible state file – start fresh.
                 self._state = {}
+                    """TODO: Add description for _save_state_to_disk."""
         else:
             self._state = {}
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any, Union
 """
 Phase 3 - Batch 2 Configuration Standardization Script
 This script refactors 10 agent files to standardize configuration loading.

@@ -23,6 +23,7 @@ STATE_FILE = os.path.join(os.getcwd(), "task-state.json")
 # ------------------------------------------------------------------
 
 def load_task_state() -> Dict[str, Any]:
+    """TODO: Add description for load_task_state."""
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r", encoding="utf-8") as fp:

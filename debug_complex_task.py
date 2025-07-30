@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(me
 
 def test_complex_tasks():
     """Test complex tasks that should trigger LLM parsing"""
-    
+
     complex_tasks = [
         "Build a comprehensive microservices architecture with load balancing, service discovery, and distributed logging",
         "Implement a machine learning pipeline with data preprocessing, model training, validation, and deployment to production",
@@ -30,11 +30,11 @@ def test_complex_tasks():
         - Optimize for image size, startup time, and resource usage.
         - Document the new architecture and compose setup."""
     ]
-    
+
     for i, task in enumerate(complex_tasks, 1):
         print(f"\n=== Testing Complex Task {i} ===")
         print(f"Task: {task[:100]}...")
-        
+
         try:
             result = execute_task_intelligently(task)
             print(f"✅ Success: {result.get('execution_type', 'Unknown')}")

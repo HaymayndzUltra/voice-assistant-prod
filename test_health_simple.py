@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Any
 """
 Simple Health Check Script for Updated Services
 Tests: SystemDigitalTwin, ModelManagerSuite, LearningOrchestrationService
@@ -27,14 +28,14 @@ def test_zmq_health(port, service_name, action="health_check"):
         socket = ctx.socket(zmq.REQ)
         socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5 second timeout
         socket.connect(f"tcp://localhost:{port}")
-        
+
         socket.send_json({"action": action})
         response = socket.recv_json()
-        
+
         status = response.get('status', 'unknown')
         print(f"✅ {service_name} ZMQ ({port}): {status}")
         print(f"   Response: {json.dumps(response, indent=2)}")
-        
+
         socket.close()
         ctx.term()
         return True
@@ -43,30 +44,31 @@ def test_zmq_health(port, service_name, action="health_check"):
         return False
 
 def main():
+    """TODO: Add description for main."""
     print("🔍 Testing Updated Service Health Endpoints...")
     print("=" * 50)
-    
+
     tests = [
         # SystemDigitalTwin
         ("SystemDigitalTwin HTTP", lambda: test_http_health(8220, "SystemDigitalTwin")),
         ("SystemDigitalTwin ZMQ", lambda: test_zmq_health(7220, "SystemDigitalTwin", "ping")),
-        
-        # ModelManagerSuite  
+
+        # ModelManagerSuite
         ("ModelManagerSuite ZMQ Main", lambda: test_zmq_health(7211, "ModelManagerSuite")),
         ("ModelManagerSuite ZMQ Health", lambda: test_zmq_health(8211, "ModelManagerSuite")),
-        
+
         # LearningOrchestrationService
         ("LearningOrchestrationService ZMQ Main", lambda: test_zmq_health(7210, "LearningOrchestrationService")),
         ("LearningOrchestrationService ZMQ Health", lambda: test_zmq_health(8212, "LearningOrchestrationService")),
     ]
-    
+
     results = []
     for test_name, test_func in tests:
         print(f"\n🧪 Testing {test_name}...")
         success = test_func()
         results.append((test_name, success))
         time.sleep(0.5)  # Small delay between tests
-    
+
     print("\n" + "=" * 50)
     print("📊 SUMMARY:")
     passed = 0
@@ -75,9 +77,9 @@ def main():
         print(f"  {status}: {test_name}")
         if success:
             passed += 1
-    
+
     print(f"\n🎯 Result: {passed}/{len(results)} tests passed")
-    
+
     if passed == len(results):
         print("🎉 ALL HEALTH CHECKS PASSED! Services are ready.")
         return 0
@@ -86,4 +88,4 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

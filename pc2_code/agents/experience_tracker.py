@@ -155,7 +155,7 @@ class ExperienceTrackerAgent(BaseAgent):
                 'expires_at': request.get('expires_at') if isinstance(request.get('expires_at'), str) else None
             })
             response = self.episodic_socket.recv_json()
-            return response if isinstance(response, dict) else {'status': 'error', 'message': 'Invalid response from EpisodicMemoryAgent'}
+            return response if isinstance(response, dict) else {'status': 'error', 'message': 'Invalid response from episodic_memory_agent'}
         elif action == 'get_experiences':
             self.episodic_socket.send_json({
                 'action': 'retrieve_memory',
@@ -163,7 +163,7 @@ class ExperienceTrackerAgent(BaseAgent):
                 'limit': request.get('limit', 10) if isinstance(request.get('limit', 10), int) else 10
             })
             response = self.episodic_socket.recv_json()
-            return response if isinstance(response, dict) else {'status': 'error', 'message': 'Invalid response from EpisodicMemoryAgent'}
+            return response if isinstance(response, dict) else {'status': 'error', 'message': 'Invalid response from episodic_memory_agent'}
         else:
             return {'status': 'error', 'message': f'Unknown action: {action}'}
 

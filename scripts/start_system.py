@@ -36,6 +36,7 @@ def load_startup_config():
         return yaml.safe_load(f)
 
 class DependencyResolver:
+    """TODO: Add description for DependencyResolver."""
     def __init__(self, config):
         self.config = config
         self.agents = {}  # name -> agent dict
@@ -43,7 +44,7 @@ class DependencyResolver:
         self.dependents = defaultdict(set)  # name -> set of agents that depend on this
         self.extract_agents()
         self.build_dependency_graph()
-    
+
     def extract_agents(self):
         for section_name, section_data in self.config.items():
             if not isinstance(section_data, list):
@@ -206,4 +207,4 @@ def main():
     print("\n[SYSTEM STARTUP] All phases complete. System is fully started.")
 
 if __name__ == "__main__":
-    main() 
+    main()

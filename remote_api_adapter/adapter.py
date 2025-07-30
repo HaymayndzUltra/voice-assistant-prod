@@ -106,7 +106,7 @@ class RemoteApiAdapter:
         global _LOCAL_MODEL
         if _LOCAL_MODEL is None:
             try:
-                from main_pc_code.agents.tiny_llama_service_enhanced import TinyLlamaServiceEnhanced  # type: ignore
+                from main_pc_code.agents.tiny_llama_service_enhanced import tiny_llama_service_enhanced  # type: ignore
 
                 _LOCAL_MODEL = TinyLlamaServiceEnhanced()
             except Exception:

@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 class LearningOpportunity(BaseModel):
     """
     Represents a detected opportunity for model learning or improvement.
-    
+
     This model captures instances where an agent might benefit from additional
     training, such as user corrections, negative feedback, or high uncertainty
     in responses.
@@ -28,8 +28,9 @@ class LearningOpportunity(BaseModel):
     priority_score: float = Field(..., ge=0.0, le=1.0, description="Priority score for this learning opportunity (0.0 to 1.0)")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when the learning opportunity was created")
     status: str = Field(default='pending', description="Current status of the learning opportunity ('pending', 'processed', 'discarded')")
-    
+
     class Config:
+        """TODO: Add description for Config."""
         json_schema_extra = {
             "example": {
                 "opportunity_id": "123e4567-e89b-12d3-a456-426614174000",
@@ -50,7 +51,7 @@ class LearningOpportunity(BaseModel):
 class TrainingCycle(BaseModel):
     """
     Represents a complete cycle of model training.
-    
+
     This model captures all information related to a specific training run,
     including the learning opportunities used, resource allocation, and results.
     """
@@ -63,7 +64,7 @@ class TrainingCycle(BaseModel):
     resource_allocation: Dict[str, Any] = Field(..., description="Resources allocated for this training cycle (e.g., GPU ID, VRAM)")
     hyperparameters: Dict[str, Any] = Field(..., description="Training hyperparameters (e.g., learning rate, epochs)")
     training_logs: Optional[str] = Field(default=None, description="Path to log file or the logs themselves")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -93,7 +94,7 @@ class TrainingCycle(BaseModel):
 class PerformanceMetric(BaseModel):
     """
     Represents a single performance metric measurement.
-    
+
     This model captures individual performance measurements for agents and models,
     which can be used for monitoring and evaluation.
     """
@@ -103,7 +104,7 @@ class PerformanceMetric(BaseModel):
     value: float = Field(..., description="Numeric value of the metric")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when the metric was recorded")
     context: Optional[Dict[str, Any]] = Field(default=None, description="Additional contextual information (e.g., request ID)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -124,7 +125,7 @@ class PerformanceMetric(BaseModel):
 class ModelEvaluationScore(BaseModel):
     """
     Represents a comprehensive evaluation of a trained model.
-    
+
     This model captures the results of evaluating a model after training,
     including various performance metrics and comparison to previous versions.
     """
@@ -137,7 +138,7 @@ class ModelEvaluationScore(BaseModel):
     avg_latency_ms: float = Field(..., description="Average inference latency in milliseconds")
     evaluation_timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp when the evaluation was performed")
     comparison_data: Optional[Dict[str, Any]] = Field(default=None, description="Comparison with previous model versions")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -156,4 +157,4 @@ class ModelEvaluationScore(BaseModel):
                     "latency_improvement_percent": 15.2
                 }
             }
-        } 
+        }
