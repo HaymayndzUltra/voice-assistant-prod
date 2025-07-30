@@ -33,6 +33,9 @@ class DashboardView(ttk.Frame):
         
         # Initial data load
         self.refresh()
+        
+        # Start auto-refresh (every 60 seconds for dashboard)
+        self._start_auto_refresh()
     
     def _create_layout(self):
         """Create the dashboard layout"""
@@ -92,6 +95,39 @@ class DashboardView(ttk.Frame):
             foreground="gray"
         )
         self.last_update_label.pack(side=RIGHT)
+        
+        # Quick action buttons in header
+        quick_actions_frame = ttk.Frame(header_frame)
+        quick_actions_frame.pack(fill=X, pady=(15, 0))
+        
+        # Task and queue control buttons
+        ttk.Button(
+            quick_actions_frame,
+            text="🆕 New Task",
+            command=self._create_new_task,
+            bootstyle="primary" if MODERN_STYLING else None
+        ).pack(side=LEFT, padx=(0, 10))
+        
+        ttk.Button(
+            quick_actions_frame,
+            text="▶️ Start Queue",
+            command=self._start_queue,
+            bootstyle="success" if MODERN_STYLING else None
+        ).pack(side=LEFT, padx=(0, 10))
+        
+        ttk.Button(
+            quick_actions_frame,
+            text="⏸️ Pause Queue",
+            command=self._pause_queue,
+            bootstyle="warning" if MODERN_STYLING else None
+        ).pack(side=LEFT, padx=(0, 10))
+        
+        ttk.Button(
+            quick_actions_frame,
+            text="📊 System Health",
+            command=self._run_full_health_check,
+            bootstyle="info" if MODERN_STYLING else None
+        ).pack(side=LEFT)
     
     def _create_stats_cards(self, parent):
         """Create stats cards showing key metrics"""
@@ -383,7 +419,7 @@ class DashboardView(ttk.Frame):
             
             if active_tasks:
                 for i, task in enumerate(active_tasks[:5]):  # Show only first 5 tasks
-                    task_id = task.get("task_id", "Unknown")
+                    task_id = task.get("id", task.get("task_id", "Unknown"))
                     description = task.get("description", "No description")
                     status = task.get("status", "unknown")
                     
@@ -391,7 +427,7 @@ class DashboardView(ttk.Frame):
                     if len(description) > 60:
                         description = description[:57] + "..."
                     
-                    status_icon = {"in_progress": "🔄", "pending": "⏳", "done": "✅"}.get(status, "❓")
+                    status_icon = {"in_progress": "🔄", "pending": "⏳", "completed": "✅", "done": "✅"}.get(status, "❓")
                     
                     task_line = f"{status_icon} {description}\n"
                     if i < len(active_tasks) - 1:
@@ -499,3 +535,146 @@ class DashboardView(ttk.Frame):
     def _open_cli_terminal(self):
         """Open CLI terminal"""
         print("Opening CLI Terminal...")
+    
+    def _create_new_task(self):
+        """Create new task"""
+        try:
+            from tkinter import simpledialog, messagebox
+            import subprocess
+            
+            task_desc = simpledialog.askstring("New Task", "Enter task description:")
+            if task_desc:
+                result = subprocess.run(
+                    ["python3", "todo_manager.py", "new", task_desc],
+                    cwd=str(self.system_service.project_root),
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode == 0:
+                    messagebox.showinfo("Task Created", f"✅ Created task: {task_desc}")
+                    self.refresh()  # Refresh dashboard to show new task
+                else:
+                    messagebox.showerror("Task Creation Failed", f"Failed to create task: {result.stderr}")
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Error creating task: {e}")
+    
+    def _start_queue(self):
+        """Start the task queue engine"""
+        try:
+            import subprocess
+            from tkinter import messagebox
+            
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "start", "--daemon"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                messagebox.showinfo("Queue Started", "✅ Task queue started successfully")
+                self.system_status_label.configure(text="🟢 Queue engine running")
+            else:
+                messagebox.showerror("Queue Start Failed", f"Failed to start queue: {result.stderr}")
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Error starting queue: {e}")
+    
+    def _pause_queue(self):
+        """Pause the task queue engine"""
+        try:
+            import subprocess
+            from tkinter import messagebox
+            
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "pause"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                messagebox.showinfo("Queue Paused", "⏸️ Task queue paused successfully")
+                self.system_status_label.configure(text="🟡 Queue engine paused")
+            else:
+                messagebox.showerror("Queue Pause Failed", f"Failed to pause queue: {result.stderr}")
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Error pausing queue: {e}")
+    
+    def _run_full_health_check(self):
+        """Run comprehensive system health check"""
+        try:
+            self.system_status_label.configure(text="🔄 Running comprehensive health check...")
+            
+            # Run health check in background
+            import threading
+            def run_check():
+                health_data = self.system_service.get_system_health()
+                self.after(0, lambda: self._show_health_report(health_data))
+            
+            threading.Thread(target=run_check, daemon=True).start()
+            
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Error running health check: {e}")
+    
+    def _show_health_report(self, health_data):
+        """Show health check report in a dialog"""
+        try:
+            from tkinter import messagebox
+            
+            status = health_data.get("overall_status", "unknown").upper()
+            issues = health_data.get("issues", [])
+            warnings = health_data.get("warnings", [])
+            
+            report = f"System Status: {status}\n\n"
+            
+            if issues:
+                report += "🚨 ISSUES:\n"
+                for issue in issues[:5]:
+                    report += f"• {issue}\n"
+                if len(issues) > 5:
+                    report += f"... and {len(issues) - 5} more\n"
+                report += "\n"
+            
+            if warnings:
+                report += "⚠️ WARNINGS:\n"
+                for warning in warnings[:5]:
+                    report += f"• {warning}\n"
+                if len(warnings) > 5:
+                    report += f"... and {len(warnings) - 5} more\n"
+            
+            if not issues and not warnings:
+                report += "✅ All systems operating normally!"
+            
+            messagebox.showinfo("System Health Report", report)
+            self.refresh()  # Refresh dashboard with latest data
+            
+        except Exception as e:
+            print(f"Error showing health report: {e}")
+    
+    def _start_auto_refresh(self):
+        """Start auto-refresh timer"""
+        self.auto_refresh_enabled = True
+        self._schedule_refresh()
+    
+    def _schedule_refresh(self):
+        """Schedule next refresh"""
+        if hasattr(self, 'auto_refresh_enabled') and self.auto_refresh_enabled:
+            # Refresh every 60 seconds for dashboard (less frequent than task view)
+            self.after(60000, self._auto_refresh)
+    
+    def _auto_refresh(self):
+        """Perform auto-refresh"""
+        try:
+            self.refresh()
+        except Exception as e:
+            print(f"Error during dashboard auto-refresh: {e}")
+        finally:
+            # Schedule next refresh
+            self._schedule_refresh()
+    
+    def destroy(self):
+        """Clean up on destroy"""
+        self.auto_refresh_enabled = False
+        super().destroy()

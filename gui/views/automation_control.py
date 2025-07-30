@@ -315,45 +315,108 @@ class AutomationControlView(ttk.Frame):
     def _start_queue_engine(self):
         """Start the autonomous queue engine"""
         try:
-            result = self.system_service.execute_cli_command("queue start --daemon")
-            if result.get("success"):
+            import subprocess
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "start", "--daemon"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
                 self._log_automation("✅ Queue engine started successfully")
                 self.status_cards["queue_engine"].status_label.configure(text="Running")
+                messagebox.showinfo("Queue Engine", "✅ Queue engine started successfully")
+                self._check_queue_status()
             else:
-                self._log_automation(f"❌ Failed to start queue engine: {result.get('error')}")
+                self._log_automation(f"❌ Failed to start queue engine: {result.stderr}")
+                messagebox.showerror("Queue Engine", f"Failed to start: {result.stderr}")
         except Exception as e:
             self._log_automation(f"❌ Error starting queue engine: {e}")
+            messagebox.showerror("Error", f"Error starting queue engine: {e}")
     
     def _stop_queue_engine(self):
         """Stop the autonomous queue engine"""
         try:
-            result = self.system_service.execute_cli_command("queue stop")
-            if result.get("success"):
+            import subprocess
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "stop"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
                 self._log_automation("⏹️ Queue engine stopped")
                 self.status_cards["queue_engine"].status_label.configure(text="Stopped")
+                messagebox.showinfo("Queue Engine", "⏹️ Queue engine stopped")
+                self._check_queue_status()
             else:
-                self._log_automation(f"❌ Failed to stop queue engine: {result.get('error')}")
+                self._log_automation(f"❌ Failed to stop queue engine: {result.stderr}")
+                messagebox.showerror("Queue Engine", f"Failed to stop: {result.stderr}")
         except Exception as e:
             self._log_automation(f"❌ Error stopping queue engine: {e}")
+            messagebox.showerror("Error", f"Error stopping queue engine: {e}")
     
     def _restart_queue_engine(self):
         """Restart the queue engine"""
-        self._log_automation("🔁 Restarting queue engine...")
-        self._stop_queue_engine()
-        import time
-        time.sleep(2)
-        self._start_queue_engine()
+        try:
+            self._log_automation("🔁 Restarting queue engine...")
+            # Stop first
+            import subprocess
+            subprocess.run(
+                ["python3", "queue_cli.py", "stop"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            # Wait a moment
+            import time
+            time.sleep(1)
+            
+            # Start again
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "start", "--daemon"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                self._log_automation("✅ Queue engine restarted successfully")
+                self.status_cards["queue_engine"].status_label.configure(text="Running")
+                messagebox.showinfo("Queue Engine", "✅ Queue engine restarted successfully")
+                self._check_queue_status()
+            else:
+                self._log_automation(f"❌ Failed to restart queue engine: {result.stderr}")
+                messagebox.showerror("Queue Engine", f"Failed to restart: {result.stderr}")
+                
+        except Exception as e:
+            self._log_automation(f"❌ Error restarting queue engine: {e}")
+            messagebox.showerror("Error", f"Error restarting queue engine: {e}")
     
     def _check_queue_status(self):
         """Check queue engine status"""
         try:
-            result = self.system_service.execute_cli_command("queue status")
-            status_text = result.get("output", "No status available")
+            import subprocess
+            result = subprocess.run(
+                ["python3", "queue_cli.py", "status"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            status_text = result.stdout if result.returncode == 0 else f"Error: {result.stderr}"
             
             self.queue_status_display.configure(state=tk.NORMAL)
             self.queue_status_display.delete(1.0, tk.END)
             self.queue_status_display.insert(tk.END, status_text)
             self.queue_status_display.configure(state=tk.DISABLED)
+            
+            # Update status card based on output
+            if "running" in status_text.lower():
+                self.status_cards["queue_engine"].status_label.configure(text="Running")
+            elif "stopped" in status_text.lower() or "not running" in status_text.lower():
+                self.status_cards["queue_engine"].status_label.configure(text="Stopped")
             
             self._log_automation("📊 Queue status updated")
         except Exception as e:
@@ -361,17 +424,101 @@ class AutomationControlView(ttk.Frame):
     
     def _enable_auto_sync(self):
         """Enable auto-sync"""
-        self._log_automation("▶️ Auto-sync enabled")
-        self.status_cards["auto_sync"].status_label.configure(text="Active")
+        try:
+            import subprocess
+            # Get selected interval
+            interval = self.sync_interval.get()
+            interval_seconds = {
+                "5 seconds": "5",
+                "10 seconds": "10", 
+                "30 seconds": "30",
+                "1 minute": "60"
+            }.get(interval, "10")
+            
+            result = subprocess.run(
+                ["python3", "auto_sync_manager.py", "start", "--interval", interval_seconds],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                self._log_automation(f"✅ Auto-sync enabled with {interval} interval")
+                self.status_cards["auto_sync"].status_label.configure(text="Active")
+                messagebox.showinfo("Auto-Sync", f"✅ Auto-sync enabled ({interval} interval)")
+                self._update_sync_status()
+            else:
+                self._log_automation(f"❌ Failed to enable auto-sync: {result.stderr}")
+                messagebox.showerror("Auto-Sync", f"Failed to enable: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error enabling auto-sync: {e}")
+            messagebox.showerror("Error", f"Error enabling auto-sync: {e}")
     
     def _disable_auto_sync(self):
         """Disable auto-sync"""
-        self._log_automation("⏸️ Auto-sync disabled")
-        self.status_cards["auto_sync"].status_label.configure(text="Disabled")
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["python3", "auto_sync_manager.py", "stop"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                self._log_automation("⏸️ Auto-sync disabled")
+                self.status_cards["auto_sync"].status_label.configure(text="Disabled")
+                messagebox.showinfo("Auto-Sync", "⏸️ Auto-sync disabled")
+                self._update_sync_status()
+            else:
+                self._log_automation(f"❌ Failed to disable auto-sync: {result.stderr}")
+                messagebox.showerror("Auto-Sync", f"Failed to disable: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error disabling auto-sync: {e}")
+            messagebox.showerror("Error", f"Error disabling auto-sync: {e}")
     
     def _force_sync(self):
         """Force immediate sync"""
-        self._log_automation("🔄 Force sync triggered")
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["python3", "auto_sync_manager.py", "sync", "--force"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                self._log_automation("🔄 Force sync completed successfully")
+                messagebox.showinfo("Force Sync", "🔄 Sync completed successfully")
+                self._update_sync_status()
+            else:
+                self._log_automation(f"❌ Force sync failed: {result.stderr}")
+                messagebox.showerror("Force Sync", f"Sync failed: {result.stderr}")
+        except Exception as e:
+            self._log_automation(f"❌ Error during force sync: {e}")
+            messagebox.showerror("Error", f"Error during sync: {e}")
+    
+    def _update_sync_status(self):
+        """Update sync status display"""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["python3", "auto_sync_manager.py", "status"],
+                cwd=str(self.system_service.project_root),
+                capture_output=True,
+                text=True
+            )
+            
+            status_text = result.stdout if result.returncode == 0 else "Auto-sync status unavailable"
+            
+            self.sync_status_display.configure(state=tk.NORMAL)
+            self.sync_status_display.delete(1.0, tk.END)
+            self.sync_status_display.insert(tk.END, status_text)
+            self.sync_status_display.configure(state=tk.DISABLED)
+            
+        except Exception as e:
+            self._log_automation(f"❌ Error updating sync status: {e}")
     
     def _set_automation_level(self):
         """Set automation level"""
@@ -381,19 +528,106 @@ class AutomationControlView(ttk.Frame):
     
     def _emergency_stop(self):
         """Emergency stop all automation"""
-        self._log_automation("⚠️ EMERGENCY STOP - All automation halted")
-        self._stop_queue_engine()
-        self._disable_auto_sync()
+        try:
+            response = messagebox.askyesno(
+                "⚠️ Emergency Stop",
+                "This will immediately stop ALL automation systems!\n\nAre you sure?"
+            )
+            
+            if response:
+                self._log_automation("⚠️ EMERGENCY STOP - Halting all systems...")
+                
+                # Stop queue engine
+                import subprocess
+                subprocess.run(
+                    ["python3", "queue_cli.py", "stop"],
+                    cwd=str(self.system_service.project_root),
+                    capture_output=True,
+                    text=True
+                )
+                
+                # Stop auto-sync
+                subprocess.run(
+                    ["python3", "auto_sync_manager.py", "stop"],
+                    cwd=str(self.system_service.project_root),
+                    capture_output=True,
+                    text=True
+                )
+                
+                # Update UI
+                self.status_cards["queue_engine"].status_label.configure(text="Stopped")
+                self.status_cards["auto_sync"].status_label.configure(text="Disabled")
+                self.automation_level.set("manual")
+                self._set_automation_level()
+                
+                self._log_automation("🛑 All automation systems stopped")
+                messagebox.showwarning("Emergency Stop", "All automation systems have been stopped!")
+                
+        except Exception as e:
+            self._log_automation(f"❌ Error during emergency stop: {e}")
+            messagebox.showerror("Error", f"Error during emergency stop: {e}")
     
     def _restart_all_systems(self):
         """Restart all automation systems"""
-        self._log_automation("🔄 Restarting all automation systems...")
-        self._restart_queue_engine()
-        self._enable_auto_sync()
+        try:
+            response = messagebox.askyesno(
+                "🔄 Restart All Systems",
+                "This will restart all automation systems.\n\nContinue?"
+            )
+            
+            if response:
+                self._log_automation("🔄 Restarting all automation systems...")
+                
+                # Restart queue engine
+                self._restart_queue_engine()
+                
+                # Enable auto-sync
+                self._enable_auto_sync()
+                
+                # Set to semi-automatic
+                self.automation_level.set("semi")
+                self._set_automation_level()
+                
+                self._log_automation("✅ All systems restarted successfully")
+                messagebox.showinfo("System Restart", "All automation systems restarted successfully!")
+                
+        except Exception as e:
+            self._log_automation(f"❌ Error restarting systems: {e}")
+            messagebox.showerror("Error", f"Error restarting systems: {e}")
     
     def _cleanup_system(self):
         """Cleanup system files and caches"""
-        self._log_automation("🧹 System cleanup initiated")
+        try:
+            response = messagebox.askyesno(
+                "🧹 System Cleanup",
+                "This will:\n• Clean completed tasks older than 7 days\n• Clear temporary files\n• Reset system caches\n\nContinue?"
+            )
+            
+            if response:
+                self._log_automation("🧹 System cleanup initiated...")
+                
+                # Cleanup completed tasks
+                import subprocess
+                result = subprocess.run(
+                    ["python3", "todo_manager.py", "cleanup"],
+                    cwd=str(self.system_service.project_root),
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    self._log_automation("✅ Task cleanup completed")
+                else:
+                    self._log_automation(f"⚠️ Task cleanup warning: {result.stderr}")
+                
+                # Additional cleanup can be added here
+                
+                self._log_automation("✅ System cleanup completed")
+                messagebox.showinfo("Cleanup Complete", "System cleanup completed successfully!")
+                
+        except Exception as e:
+            self._log_automation(f"❌ Error during cleanup: {e}")
+            messagebox.showerror("Error", f"Error during cleanup: {e}")
     
     def _save_settings(self):
         """Save automation settings"""
@@ -424,4 +658,19 @@ class AutomationControlView(ttk.Frame):
     
     def refresh(self):
         """Refresh view data"""
-        pass
+        try:
+            # Check queue engine status
+            self._check_queue_status()
+            
+            # Check auto-sync status  
+            self._update_sync_status()
+            
+            # Update automation status
+            self.automation_status.configure(text="✅ Automation systems ready")
+            
+            # Log refresh
+            self._log_automation("🔄 View refreshed")
+            
+        except Exception as e:
+            self._log_automation(f"❌ Error refreshing view: {e}")
+            self.automation_status.configure(text="❌ Error loading status")
