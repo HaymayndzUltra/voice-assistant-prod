@@ -1,7 +1,7 @@
 # ===================================================================
 # Python / General
 # ===================================================================
-
+memory-bank/current-session.md
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
