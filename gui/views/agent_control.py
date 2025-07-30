@@ -7,7 +7,7 @@ control for 294 discovered agents across MainPC and PC2.
 
 # Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from tkinter.constants import *
 import subprocess
 import sys

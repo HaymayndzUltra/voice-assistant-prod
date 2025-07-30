@@ -6,9 +6,12 @@ Real-time system monitoring with charts and analytics.
 
 # Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from tkinter.constants import *
 import subprocess, os, time, sys, pathlib
+
+# GUI utilities
+from gui.utils.toast import show_info, show_error, show_warning
 
 try:
     import ttkbootstrap as ttk
@@ -27,8 +30,16 @@ class MonitoringView(ttk.Frame):
         self.system_service = system_service
         self.pack(fill=BOTH, expand=True)
         
+        # Subscribe to events
+        self.system_service.bus.subscribe("tasks_updated", self._on_tasks_updated)
+        self.system_service.bus.subscribe("agent_status_changed", self._on_agents_updated)
+        self.system_service.bus.subscribe("metrics_tick", self._on_metrics_updated)
+        
         # Create placeholder layout
         self._create_placeholder()
+        
+        # Start metrics timer (only for CPU/RAM)
+        self._start_metrics_timer()
     
     def _create_placeholder(self):
         """Create comprehensive monitoring dashboard"""
@@ -258,33 +269,76 @@ class MonitoringView(ttk.Frame):
             log_txt = self.logs_display.get(1.0, tk.END)
             out_path = pathlib.Path.home() / f"system_logs_{int(time.time())}.txt"
             out_path.write_text(log_txt)
-            messagebox.showinfo("Logs Exported", f"Saved to {out_path}")
+            show_info(self, f"Logs exported to {out_path}")
         except Exception as e:
-            messagebox.showerror("Export Failed", str(e))
+            show_error(self, f"Export failed: {e}")
     
-    def refresh(self):
-        """Refresh view data and schedule next update"""
+    def _start_metrics_timer(self):
+        """Start periodic timer for CPU/RAM metrics only"""
+        self._update_system_metrics()
+        # Schedule next metrics update (10 seconds)
+        self.after(10_000, self._start_metrics_timer)
+    
+    def _on_tasks_updated(self, event_data):
+        """Handle tasks updated event"""
         try:
-            # Update metrics cards
+            self._update_task_trends()
             self._update_metrics()
-            
-            # Update charts
-            self._update_charts()
-            
-            # Update logs
-            self._update_logs()
-            
-            # Update monitoring status
+            show_info(self, "Task data updated")
+        except Exception as e:
+            show_error(self, f"Error updating task data: {e}")
+    
+    def _on_agents_updated(self, event_data):
+        """Handle agent status changed event"""
+        try:
+            self._update_agent_health()
+            self._update_metrics()
+            show_info(self, "Agent status updated")
+        except Exception as e:
+            show_error(self, f"Error updating agent data: {e}")
+    
+    def _on_metrics_updated(self, event_data):
+        """Handle metrics tick event"""
+        try:
+            self._update_performance_metrics()
             from datetime import datetime
             current_time = datetime.now().strftime("%H:%M:%S")
             self.monitoring_status.configure(text=f"🟢 Real-time monitoring active - {current_time}")
-            
         except Exception as e:
-            print(f"Error refreshing monitoring data: {e}")
+            show_error(self, f"Error updating metrics: {e}")
             self.monitoring_status.configure(text="❌ Monitoring error")
-
-        # schedule next refresh every 15 seconds
-        self.after(15_000, self.refresh)
+    
+    def refresh(self):
+        """Manual refresh - now event-driven"""
+        try:
+            # Trigger events for updates
+            self.system_service.bus.publish("tasks_updated", {})
+            self.system_service.bus.publish("agent_status_changed", {})
+            self.system_service.bus.publish("metrics_tick", {})
+            self._update_logs()
+            show_info(self, "Monitoring data refreshed")
+        except Exception as e:
+            show_error(self, f"Error refreshing monitoring: {e}")
+    
+    def _update_system_metrics(self):
+        """Update CPU/RAM metrics only"""
+        try:
+            # Emit metrics tick event with current CPU/RAM data
+            import psutil
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            memory = psutil.virtual_memory()
+            
+            self.system_service.bus.publish("metrics_tick", {
+                "cpu": cpu_percent,
+                "memory": memory.percent,
+                "memory_used": memory.used // (1024**2),  # MB
+                "timestamp": time.time()
+            })
+        except ImportError:
+            # psutil not available
+            pass
+        except Exception as e:
+            print(f"Error updating system metrics: {e}")
     
     def _update_metrics(self):
         """Update system metrics cards"""

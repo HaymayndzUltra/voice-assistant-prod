@@ -314,10 +314,20 @@ class ModernGUIApplication:
         
     def _setup_bindings(self):
         """Setup keyboard shortcuts and event bindings"""
-        # Keyboard shortcuts
+        # Essential shortcuts
         self.root.bind("<Control-q>", lambda e: self._on_closing())
         self.root.bind("<F11>", lambda e: self._toggle_fullscreen())
         self.root.bind("<Control-r>", lambda e: self._refresh_current_view())
+        
+        # Event-driven shortcuts
+        self.root.bind("<Control-n>", lambda e: self.system_service.bus.publish("new_task", {}))
+        self.root.bind("<F5>", lambda e: self.system_service.bus.publish("global_refresh", {}))
+        self.root.bind("<Control-t>", lambda e: self._switch_view("task_management"))
+        self.root.bind("<Control-d>", lambda e: self._switch_view("dashboard"))
+        self.root.bind("<Control-a>", lambda e: self._switch_view("agent_control"))
+        self.root.bind("<Control-m>", lambda e: self._switch_view("memory_intelligence"))
+        self.root.bind("<Control-Shift-m>", lambda e: self._switch_view("monitoring"))
+        self.root.bind("<Control-u>", lambda e: self._switch_view("automation_control"))
         
         # Window events
         self.root.bind("<Configure>", self._on_window_configure)

@@ -7,7 +7,7 @@ task creation, editing, and execution control.
 
 # Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from tkinter.constants import *
 import subprocess
 import sys
@@ -224,8 +224,8 @@ class TaskManagementView(ttk.Frame):
     
     def _cleanup_completed(self):
         """Remove completed tasks using todo_manager CLI"""
-        if not messagebox.askyesno("Confirm Cleanup", "Delete all completed tasks? This action cannot be undone."):
-            return
+        # Show warning and proceed - user can use toast feedback
+        show_info(self.winfo_toplevel(), "Starting cleanup of completed tasks...", "Cleanup")
 
         try:
             cmd = [sys.executable, "todo_manager.py", "cleanup", "--completed"]

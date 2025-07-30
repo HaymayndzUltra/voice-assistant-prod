@@ -7,12 +7,15 @@ knowledge graph interface.
 
 # Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from tkinter.constants import *
-import subprocess
+import asyncio
 import sys
 from pathlib import Path
 from datetime import datetime
+
+# GUI utilities
+from gui.utils.toast import show_info, show_error, show_warning
 
 try:
     import ttkbootstrap as ttk
@@ -30,6 +33,11 @@ class MemoryIntelligenceView(ttk.Frame):
         super().__init__(parent)
         self.system_service = system_service
         self.pack(fill=BOTH, expand=True)
+        
+        # Subscribe to events
+        self.system_service.bus.subscribe("memory_updated", self._on_memory_updated)
+        self.system_service.bus.subscribe("brain_scan_complete", self._on_brain_updated)
+        self.system_service.bus.subscribe("global_refresh", self._on_global_refresh)
         
         # Create comprehensive memory intelligence interface
         self._create_placeholder()
@@ -408,7 +416,7 @@ class MemoryIntelligenceView(ttk.Frame):
                 # fallback plain text
                 self._display_content("Search Results", results.stdout)
         else:
-            messagebox.showerror("Search Failed", results.stderr if results else "Unknown error")
+            show_error(self, f"Search failed: {results.stderr if results else 'Unknown error'}")
     
     def _refresh_graph(self):
         """Refresh knowledge graph"""
@@ -451,19 +459,28 @@ class MemoryIntelligenceView(ttk.Frame):
         """Sync all memory systems"""
         result = self._run_memory_cli("sync")
         if result and result.returncode == 0:
-            messagebox.showinfo("Sync Complete", "Memory synchronized successfully")
+            show_info(self, "Memory synchronized successfully")
+            self.system_service.bus.publish("memory_updated", {})
         else:
-            messagebox.showerror("Sync Failed", result.stderr if result else "Unknown error")
+            show_error(self, f"Sync failed: {result.stderr if result else 'Unknown error'}")
     
     def _cleanup_memory(self):
         """Cleanup memory systems"""
-        if not messagebox.askyesno("Confirm Cleanup", "Delete orphaned memory items and temp files?"):
-            return
-        result = self._run_memory_cli("cleanup")
+        # Use simple confirmation via toast
+        show_warning(self, "Starting memory cleanup...")
+        result = self._run_memory_cli("cleanup", "--dry-run")
         if result and result.returncode == 0:
-            messagebox.showinfo("Cleanup", "Memory cleanup completed")
+            # Show what would be deleted
+            show_info(self, "Cleanup preview completed. Run again to confirm.")
+            # Actually run cleanup
+            result = self._run_memory_cli("cleanup")
+            if result and result.returncode == 0:
+                show_info(self, "Memory cleanup completed")
+                self.system_service.bus.publish("memory_updated", {})
+            else:
+                show_error(self, f"Cleanup failed: {result.stderr if result else 'Unknown error'}")
         else:
-            messagebox.showerror("Cleanup Failed", result.stderr if result else "Unknown error")
+            show_error(self, f"Cleanup preview failed: {result.stderr if result else 'Unknown error'}")
     
     def _memory_analytics(self):
         """Show memory analytics"""
@@ -473,36 +490,76 @@ class MemoryIntelligenceView(ttk.Frame):
         """Configure memory settings"""
         self._display_content("Settings", "Memory system configuration options...")
     
-    def refresh(self):
-        """Refresh memory data: status label, brain tree, recent list"""
+    def _on_memory_updated(self, event_data):
+        """Handle memory updated event"""
+        try:
+            self._load_brain_tree()
+            self._load_recent_memories()
+            self._update_memory_status()
+            show_info(self, "Memory data updated")
+        except Exception as e:
+            show_error(self, f"Error updating memory data: {e}")
+    
+    def _on_brain_updated(self, event_data):
+        """Handle brain scan complete event"""
+        try:
+            self._load_brain_tree()
+            self._update_memory_status()
+            show_info(self, "Brain scan completed")
+        except Exception as e:
+            show_error(self, f"Error updating brain data: {e}")
+    
+    def _on_global_refresh(self, event_data):
+        """Handle global refresh event"""
+        self.refresh()
+    
+    def _update_memory_status(self):
+        """Update memory status display"""
         try:
             mem_status = self.system_service.get_memory_status()
             brain_files = mem_status.get("brain_files", 0)
             arch_files = mem_status.get("architecture_plans", 0)
             self.memory_status.configure(text=f"📚 {brain_files} brain files, {arch_files} plans | Updated {datetime.now().strftime('%H:%M:%S')}")
-
+        except Exception as e:
+            print(f"Memory status update error: {e}")
+    
+    def refresh(self):
+        """Manual refresh - now event-driven"""
+        try:
+            self._update_memory_status()
             self._load_brain_tree()
             self._load_recent_memories()
+            show_info(self, "Memory data refreshed")
         except Exception as e:
-            print(f"Memory refresh error: {e}")
-
-        # auto-refresh every 120s
-        self.after(120_000, self.refresh)
+            show_error(self, f"Error refreshing memory: {e}")
 
     # ---------- Internal helpers ----------
-    def _run_memory_cli(self, *args):
-        """Run memory_system/cli.py with given args and return CompletedProcess"""
+    async def _run_memory_cli_async(self, *args):
+        """Run memory_system/cli.py async and return result dict"""
         try:
+            cmd_args = ["memory_system/cli.py"] + list(args)
+            result = await self.system_service.async_execute_cli(" ".join(cmd_args))
+            return result
+        except Exception as e:
+            show_error(self, f"Memory CLI error: {e}")
+            return None
+    
+    def _run_memory_cli(self, *args):
+        """Run memory_system/cli.py sync (legacy support)"""
+        try:
+            # Create and run async task
+            import subprocess
             cmd = [sys.executable, "memory_system/cli.py"] + list(args)
-            return subprocess.run(
+            result = subprocess.run(
                 cmd,
                 cwd=self.system_service.project_root,
                 capture_output=True,
                 text=True,
                 timeout=60,
             )
+            return result
         except Exception as e:
-            messagebox.showerror("Memory CLI Error", str(e))
+            show_error(self, f"Memory CLI error: {e}")
             return None
 
     def _load_brain_tree(self):

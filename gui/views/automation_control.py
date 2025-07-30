@@ -7,10 +7,13 @@ and auto-sync management.
 
 # Built-in & stdlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from tkinter.constants import *
 import subprocess
 import sys
+
+# GUI utilities
+from gui.utils.toast import show_info, show_error, show_warning
 
 try:
     import ttkbootstrap as ttk
