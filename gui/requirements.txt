@@ -1,0 +1,22 @@
+# Modern GUI Control Center - Dependencies
+
+# Modern Tkinter Styling (Optional)
+ttkbootstrap>=1.10.1
+
+# Standard library dependencies (included with Python)
+# - tkinter
+# - json  
+# - threading
+# - pathlib
+# - datetime
+# - subprocess
+# - sys
+
+# For future advanced features:
+# matplotlib>=3.7.0    # For charts and graphs
+# pillow>=10.0.0       # For image handling
+# requests>=2.31.0     # For API integration
+
+# Development tools (optional)
+# black>=23.0.0        # Code formatting
+# flake8>=6.0.0        # Code linting
