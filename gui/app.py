@@ -24,18 +24,6 @@ except ImportError:
     MODERN_STYLING = False
 
 try:
-    from .styles.theme import ModernTheme
-    from .views.dashboard import DashboardView
-    from .views.task_management import TaskManagementView
-    from .views.agent_control import AgentControlView
-    from .views.memory_intelligence import MemoryIntelligenceView
-    from .views.monitoring import MonitoringView
-    from .views.automation_control import AutomationControlView
-    from services.system_service import SystemService
-    from services.event_bus import EventBus
-    from services.async_runner import AsyncRunner
-    from services.nlu_integration import get_nlu_service
-except ImportError:
     from styles.theme import ModernTheme
     from views.dashboard import DashboardView
     from views.task_management import TaskManagementView
@@ -44,6 +32,21 @@ except ImportError:
     from views.monitoring import MonitoringView
     from views.automation_control import AutomationControlView
     from services.system_service import SystemService
+    from services.event_bus import EventBus
+    from services.async_runner import AsyncRunner
+    from services.nlu_integration import get_nlu_service
+    from widgets.nlu_command_bar import NLUCommandBar
+except ImportError:
+    from .styles.theme import ModernTheme
+    from .views.dashboard import DashboardView
+    from .views.task_management import TaskManagementView
+    from .views.agent_control import AgentControlView
+    from .views.memory_intelligence import MemoryIntelligenceView
+    from .views.monitoring import MonitoringView
+    from .views.automation_control import AutomationControlView
+    from .services.system_service import SystemService
+    from .services.nlu_integration import get_nlu_service
+    from .widgets.nlu_command_bar import NLUCommandBar
 
 
 class ModernGUIApplication:
@@ -58,8 +61,9 @@ class ModernGUIApplication:
         self.content_area = None
         self.current_view = None
         
-        # Services
-        self.system_service = SystemService()
+        # Services (initialized after root window)
+        self.system_service = None
+        self.nlu_service = None
         
         # Views
         self.views = {}
@@ -74,6 +78,7 @@ class ModernGUIApplication:
         
         # Initialize application
         self._create_root_window()
+        self._initialize_services()
         self._setup_styles()
         self._create_main_layout()
         self._create_views()
@@ -99,6 +104,20 @@ class ModernGUIApplication:
         
         # Configure window properties
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+        
+    def _initialize_services(self):
+        """Initialize services after root window is created"""
+        # System Service
+        self.system_service = SystemService(self.root)
+        
+        # Initialize NLU Integration Service
+        try:
+            self.nlu_service = get_nlu_service(self.system_service.bus)
+            self.nlu_service.start()
+            print("🤖 NLU Integration Service initialized")
+        except Exception as e:
+            print(f"⚠️ NLU Service initialization failed: {e}")
+            self.nlu_service = None
         
     def _setup_styles(self):
         """Setup modern styling for the application"""
@@ -223,6 +242,9 @@ class ModernGUIApplication:
         # Content header
         self._create_content_header()
         
+        # NLU Command Bar
+        self._create_nlu_command_bar()
+        
         # Content body (where views will be displayed)
         self.content_body = ttk.Frame(self.content_area)
         self.content_body.pack(fill=BOTH, expand=True, padx=10, pady=5)
@@ -260,6 +282,71 @@ class ModernGUIApplication:
             foreground="gray"
         )
         self.last_update_label.pack(side=RIGHT, padx=10)
+        
+    def _create_nlu_command_bar(self):
+        """Create the NLU command bar for natural language input"""
+        try:
+            # Get NLU service instance
+            nlu_service = get_nlu_service()
+            
+            # Create command bar with NLU integration
+            self.nlu_command_bar = NLUCommandBar(
+                self.content_area,
+                nlu_service=nlu_service,
+                event_bus=self.system_service.bus if hasattr(self, 'system_service') else None
+            )
+            self.nlu_command_bar.pack(fill=X, padx=10, pady=5)
+            
+            # Subscribe to NLU events
+            if hasattr(self, 'system_service') and self.system_service.bus:
+                self.system_service.bus.subscribe("nlu_command_processed", self._handle_nlu_command)
+                self.system_service.bus.subscribe("nlu_error", self._handle_nlu_error)
+                
+        except Exception as e:
+            print(f"Warning: Could not initialize NLU command bar: {e}")
+            # Create fallback simple command bar
+            self._create_simple_command_bar()
+            
+    def _create_simple_command_bar(self):
+        """Create a simple command bar fallback"""
+        command_frame = ttk.Frame(self.content_area)
+        command_frame.pack(fill=X, padx=10, pady=5)
+        
+        ttk.Label(command_frame, text="Command:").pack(side=LEFT, padx=(0, 5))
+        
+        self.simple_command_entry = ttk.Entry(command_frame)
+        self.simple_command_entry.pack(side=LEFT, fill=X, expand=True, padx=(0, 5))
+        
+        ttk.Button(command_frame, text="Execute", command=self._execute_simple_command).pack(side=LEFT)
+        
+    def _execute_simple_command(self):
+        """Execute simple command (placeholder)"""
+        command = self.simple_command_entry.get()
+        if command:
+            print(f"Executing command: {command}")
+            self.simple_command_entry.delete(0, 'end')
+            
+    def _handle_nlu_command(self, event_data):
+        """Handle processed NLU command"""
+        intent = event_data.get('intent')
+        params = event_data.get('params', {})
+        
+        # Route commands to appropriate handlers
+        if intent == 'navigate_view':
+            view_name = params.get('view')
+            if view_name in self.views:
+                self.show_view(view_name)
+        elif intent == 'create_task':
+            task_name = params.get('task_name', 'New Task')
+            self.system_service.bus.publish("new_task", {"name": task_name})
+        elif intent == 'refresh_view':
+            self._refresh_current_view()
+        # Add more intent handling as needed
+        
+    def _handle_nlu_error(self, event_data):
+        """Handle NLU processing errors"""
+        error_msg = event_data.get('error', 'Unknown NLU error')
+        print(f"NLU Error: {error_msg}")
         
     def _create_views(self):
         """Create all application views"""

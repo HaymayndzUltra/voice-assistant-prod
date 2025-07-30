@@ -279,25 +279,23 @@ class MonitoringView(ttk.Frame):
         # Schedule next metrics update (10 seconds)
         self.after(10_000, self._start_metrics_timer)
     
-    def _on_tasks_updated(self, event_data):
+    def _on_tasks_updated(self, **kwargs):
         """Handle tasks updated event"""
         try:
             self._update_task_trends()
             self._update_metrics()
-            show_info(self, "Task data updated")
         except Exception as e:
             show_error(self, f"Error updating task data: {e}")
     
-    def _on_agents_updated(self, event_data):
+    def _on_agents_updated(self, **kwargs):
         """Handle agent status changed event"""
         try:
             self._update_agent_health()
             self._update_metrics()
-            show_info(self, "Agent status updated")
         except Exception as e:
             show_error(self, f"Error updating agent data: {e}")
     
-    def _on_metrics_updated(self, event_data):
+    def _on_metrics_updated(self, **kwargs):
         """Handle metrics tick event"""
         try:
             self._update_performance_metrics()

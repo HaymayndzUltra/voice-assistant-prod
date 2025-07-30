@@ -36,6 +36,13 @@ class DashboardView(ttk.Frame):
             bus = self.system_service.bus
             bus.subscribe("tasks_updated", lambda **_: self.refresh())
             bus.subscribe("agent_status_changed", lambda **_: self.refresh())
+            bus.subscribe("dashboard_data_updated", lambda **data: self._update_ui(
+                data.get('health_data', {}),
+                data.get('active_tasks', []),
+                data.get('agent_status', {}),
+                data.get('memory_status', {})
+            ))
+            bus.subscribe("dashboard_error", lambda error, **_: self._show_error(f"Failed to refresh data: {error}"))
 
         # Initial data load
         self.refresh()
@@ -323,12 +330,19 @@ class DashboardView(ttk.Frame):
             # Get memory status
             memory_status = self.system_service.get_memory_status()
             
-            # Update UI from main thread
-            self.after(0, lambda: self._update_ui(health_data, active_tasks, agent_status, memory_status))
+            # Update UI from main thread using event bus
+            if self.system_service and self.system_service.bus:
+                self.system_service.bus.publish("dashboard_data_updated", {
+                    "health_data": health_data,
+                    "active_tasks": active_tasks, 
+                    "agent_status": agent_status,
+                    "memory_status": memory_status
+                })
             
         except Exception as e:
             print(f"Error refreshing dashboard data: {e}")
-            self.after(0, lambda: self._show_error(f"Failed to refresh data: {e}"))
+            if self.system_service and self.system_service.bus:
+                self.system_service.bus.publish("dashboard_error", {"error": str(e)})
     
     def _update_ui(self, health_data, active_tasks, agent_status, memory_status):
         """Update UI with fresh data"""

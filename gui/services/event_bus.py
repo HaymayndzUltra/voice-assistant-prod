@@ -32,8 +32,23 @@ class EventBus:
         if callback in self._subscribers[event_name]:
             self._subscribers[event_name].remove(callback)
 
-    def publish(self, event_name: str, **payload) -> None:
+    def publish(self, event_name: str, payload=None, **kwargs) -> None:
         """Fire event and schedule callbacks on main thread."""
+        # Handle both dictionary and keyword arguments
+        if payload is None:
+            payload = kwargs
+        elif isinstance(payload, dict):
+            payload.update(kwargs)
+        else:
+            payload = kwargs
+            
         for cb in list(self._subscribers.get(event_name, [])):
             # Ensure callbacks run in Tk thread
-            self._tk_root.after(0, lambda c=cb, p=payload: c(**p))
+            if self._tk_root:
+                self._tk_root.after(0, lambda c=cb, p=payload: c(**p))
+            else:
+                # Fallback for when no Tk root is available
+                try:
+                    cb(**payload)
+                except Exception as e:
+                    print(f"Event callback error: {e}")

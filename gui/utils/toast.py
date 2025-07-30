@@ -35,6 +35,16 @@ def show_error(root: tk.Tk | tk.Toplevel, message: str, title: str = "Error") ->
     _show(root, title, message, "danger")
 
 
+def show_warning(root: tk.Tk | tk.Toplevel, message: str, title: str = "Warning") -> None:
+    """Display warning toast."""
+    _show(root, title, message, "warning")
+
+
+def show_warning(root: tk.Tk | tk.Toplevel, message: str, title: str = "Warning") -> None:
+    """Display warning toast."""
+    _show(root, title, message, "warning")
+
+
 def _show(root: tk.Misc, title: str, message: str, bootstyle: str) -> None:  # noqa: D401
     if ToastNotification is None:
         _fallback(title, message, "error" if bootstyle == "danger" else "info")

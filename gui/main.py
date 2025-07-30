@@ -30,7 +30,7 @@ except ImportError:
 from app import ModernGUIApplication
 from styles.theme import ModernTheme
 from services.dependency_check import check_dependencies
-from utils.toast import show_warning
+from gui.utils.toast import show_warning
 
 
 def main():
