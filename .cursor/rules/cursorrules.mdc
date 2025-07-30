@@ -1,52 +1,123 @@
+# 🎯 **AUTONOMOUS TASK QUEUE SYSTEM RULES** 🎯
+# Updated: 2025-07-30 - Full Production Integration
+
+---
+
+## **🚀 SESSION START PROTOCOL**
 
 - On session start:
-    - Run `mcp_memory_read_graph` (para i-load ang memory sa lahat ng MCP server na naka-define).
-    - Basahin at i-load lahat ng `memory-bank/*.md` bilang context (kung meron).
-    - **SYNC ALL STATE FILES** to ensure consistency:
-        • Read `todo-tasks.json` as source of truth
-        • Update `cursor_state.json` with latest task
-        • Update `task-state.json` with current execution state
-        • Update `task_interruption_state.json` with active task
-        • Update `memory-bank/current-session.md` with latest info
+    - **LOAD MEMORY SYSTEMS**:
+        • Run `mcp_memory_read_graph` (i-load ang memory sa lahat ng MCP server)
+        • Load all `memory-bank/*.md` files as context
+        • Read previous session memory for continuity
+    
+    - **SYNC AUTONOMOUS QUEUE SYSTEM**:
+        • **PRIMARY FOCUS**: Read `memory-bank/queue-system/tasks_active.json` (AI execution scope)
+        • Update `memory-bank/cursor_state.json` with current active task
+        • Update `memory-bank/task_state.json` with execution state
+        • Update `memory-bank/task_interruption_state.json` with interruption status
+        • Update `memory-bank/current-session.md` with session info
+        • Auto-sync triggers on all state changes
 
-- After any significant code change, new decision, or bug fix:
-    - Run `mcp_memory_store` (isave ang summary ng pagbabago).
-    - I-append din ang summary sa tamang `memory-bank/*.md`.
-    - **UPDATE ALL STATE FILES** to maintain consistency:
-        • Sync `cursor_state.json` with current task
-        • Update `task-state.json` with progress
-        • Ensure `task_interruption_state.json` reflects current state
-        • Update `memory-bank/current-session.md` with latest activity
+---
 
-- For all Q&A:
-    - Laging unahin ang MCP memory at memory-bank para sa sagot.
-    - **VERIFY STATE CONSISTENCY** before answering:
-        • Check if all state files are in sync
-        • Use `todo-tasks.json` as primary source
-        • Ensure timestamps are consistent
+## **⚡ TASK EXECUTION PROTOCOL**
 
-# === Cursor Session Continuity Add-on ===
-- After any file save, code edit, or test run:
-    - **ENFORCE STATE SYNCHRONIZATION**:
-        • Read latest task from `todo-tasks.json` (source of truth)
-        • Update `cursor_state.json` with current task and progress
-        • Update `task-state.json` with execution details
-        • Update `task_interruption_state.json` with active task ID
-        • Update `memory-bank/current-session.md` with latest session info
-    - Use these to answer questions like "anong memory mo ngayon" or "anong susunod na gagawin".
+- **AI ASSISTANT SCOPE (CRITICAL)**:
+    - **ONLY WORK WITH**: `memory-bank/queue-system/tasks_active.json`
+    - **DO NOT MANAGE**: Queue transitions, task distribution, system management
+    - **FOCUS ON**: Pure task execution and TODO completion
+    - **AUTO-SYNC**: Triggers automatically on every task modification
 
-- On disconnect / reconnect events:
-    - **RESUME FROM CONSISTENT STATE**:
-        • Read `todo-tasks.json` to get current tasks
-        • Update `cursor_state.json` to resume cursor position
-        • Sync all other state files to match current reality
-        • Ensure no duplicate tasks exist
+- After any significant code change, task completion, or decision:
+    - **STORE MEMORY**: Run `mcp_memory_store` (save summary ng pagbabago)
+    - **UPDATE DOCUMENTATION**: Append summary sa tamang `memory-bank/*.md`
+    - **TRIGGER AUTO-SYNC**: All state files automatically updated
+        • `memory-bank/cursor_state.json` - Current task focus
+        • `memory-bank/task_state.json` - Execution progress
+        • `memory-bank/task_interruption_state.json` - Active interruptions
+        • `memory-bank/current-session.md` - Session activity
+        • Queue system files - Managed by autonomous engine
 
-# === CONSISTENCY ENFORCEMENT ===
-- **PREVENT DUPLICATE TASKS**:
-    • Before creating new task, check `todo-tasks.json` for existing tasks with same description
-    • If duplicate found, reuse existing task instead of creating new one
-    • Update existing task with new TODOs if needed
+---
+
+## **🔄 AUTONOMOUS QUEUE INTEGRATION**
+
+- **QUEUE SYSTEM FLOW**:
+    • Queue (`tasks_queue.json`) → Active (`tasks_active.json`) → Done (`tasks_done.json`)
+    • **AI READS ONLY**: `tasks_active.json` for pure execution focus
+    • **SYSTEM MANAGES**: All queue transitions, priority, interruptions
+    • **AUTO-DETECTION**: Completion triggers automatic queue movement
+
+- **TASK LIFECYCLE**:
+    • New tasks → Added to queue automatically
+    • Active tasks → AI executes and marks TODOs done
+    • Completed tasks → Auto-moved to done queue
+    • Interrupted tasks → Priority resume on next session
+
+---
+
+## **💬 Q&A AND MEMORY PROTOCOL**
+
+- For all questions and responses:
+    - **PRIORITY ORDER**: MCP memory → memory-bank → execution context
+    - **STATE VERIFICATION**: Always check state file consistency
+    - **CURRENT FOCUS**: Use `tasks_active.json` as primary task source
+    - **SESSION CONTEXT**: Reference `current-session.md` for recent activity
+
+---
+
+## **🔧 SESSION CONTINUITY SYSTEM**
+
+- **AUTOMATIC STATE SYNC** (After file saves, edits, tests):
+    • Auto-sync manager handles all state consistency
+    • No manual intervention required
+    • Real-time state updates across all files
+    • Timestamps automatically managed
+
+- **DISCONNECT/RECONNECT HANDLING**:
+    • **RESUME STATE**: Read `tasks_active.json` for current work
+    • **RESTORE CONTEXT**: Load `cursor_state.json` for cursor position
+    • **SYNC REALITY**: Ensure all state files match current system state
+    • **QUEUE CONTINUITY**: Autonomous queue system maintains flow
+
+---
+
+## **🛡️ CONSISTENCY ENFORCEMENT**
+
+- **DUPLICATE PREVENTION**:
+    • Check existing tasks before creating new ones
+    • Reuse and update existing tasks instead of duplicating
+    • Maintain task ID consistency across system
+
+- **DATA INTEGRITY**:
+    • All timestamps in Philippines timezone (UTC+8)
+    • Consistent JSON formatting across all files
+    • Automatic backup and rollback capabilities
+    • Error recovery with graceful degradation
+
+---
+
+## **🎯 SUCCESS METRICS**
+
+- **OPERATIONAL EXCELLENCE**:
+    • Zero manual queue management required
+    • 100% auto-sync success rate
+    • Complete task execution focus for AI
+    • Seamless session continuity across disconnections
+
+- **AUTOMATION GOALS**:
+    • AI focuses purely on task execution
+    • System handles all queue and state management
+    • No state inconsistencies or data loss
+    • Real-time monitoring and auto-correction
+
+---
+
+**SYSTEM STATUS**: 🟢 FULLY OPERATIONAL
+**AUTO-SYNC**: ✅ ACTIVE  
+**QUEUE ENGINE**: ✅ AUTONOMOUS
+**AI SCOPE**: ✅ EXECUTION FOCUSED
 
 - **MAINTAIN TIMESTAMP CONSISTENCY**:
     • Use ISO format timestamps consistently
@@ -54,8 +125,9 @@
     • Ensure all state files have consistent timestamps
 
 - **VALIDATE STATE INTEGRITY**:
-    • Check that `task-state.json` matches active task in `todo-tasks.json`
-    • Verify `task_interruption_state.json` points to valid task ID
-    • Ensure `cursor_state.json` reflects current reality
+    • Check that `memory-bank/task_state.json` matches active tasks
+    • Verify `memory-bank/task_interruption_state.json` points to valid task ID
+    • Ensure `memory-bank/cursor_state.json` reflects current reality
+    • Confirm AI only reads `memory-bank/queue-system/tasks_active.json`
 - On disconnect / reconnect events:
     - Look at cursor_state.json to resume cursor position.

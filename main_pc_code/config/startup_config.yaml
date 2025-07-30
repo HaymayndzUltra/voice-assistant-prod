@@ -204,14 +204,7 @@ agent_groups:
       required: true
       dependencies:
       - SelfTrainingOrchestrator
-      - SystemDigitalTwin
-    NLLBAdapter:
-      script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
-      port: "${PORT_OFFSET}+5582"
-      health_check_port: "${PORT_OFFSET}+6582"
-      required: true
-      dependencies:
-      - SystemDigitalTwin
+      - SystemDigitalTwin    
   gpu_infrastructure:
     # VRAMOptimizerAgent moved to foundation_services to avoid duplication
   reasoning_services:
@@ -538,8 +531,8 @@ agent_groups:
       - SystemDigitalTwin
     NLLBAdapter:
       script_path: main_pc_code/FORMAINPC/NLLBAdapter.py
-      port: "${PORT_OFFSET}+5581"
-      health_check_port: "${PORT_OFFSET}+6581"
+      port: "${PORT_OFFSET}+5582"
+      health_check_port: "${PORT_OFFSET}+6582"
       required: true
       dependencies:
       - SystemDigitalTwin

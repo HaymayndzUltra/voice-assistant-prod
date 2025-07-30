@@ -39,10 +39,10 @@ class AutoSyncManager:
     
     def __init__(self):
         self.state_files = {
-            'cursor_state': 'cursor_state.json',
-            'task_state': 'task-state.json',
-            'task_interruption': 'task_interruption_state.json',
-            'todo_tasks': 'todo-tasks.json',
+            'cursor_state': 'memory-bank/cursor_state.json',
+            'task_state': 'memory-bank/task_state.json',
+            'task_interruption': 'memory-bank/task_interruption_state.json',
+            'active_tasks': 'memory-bank/queue-system/tasks_active.json',
             'current_session': 'memory-bank/current-session.md'
         }
         self._setup_auto_sync()
@@ -66,8 +66,8 @@ class AutoSyncManager:
     def sync_all_states(self) -> Dict[str, Any]:
         """Sync all state files automatically"""
         try:
-            # Step 1: Read current state from todo-tasks.json (source of truth)
-            current_tasks = self._get_current_tasks()
+            # Step 1: Read current state from active tasks (new system)
+            current_tasks = self._get_current_active_tasks()
             
             # Step 2: Determine the most recent active task
             active_task = self._get_most_recent_active_task(current_tasks)
@@ -94,14 +94,16 @@ class AutoSyncManager:
                 "synced_at": format_philippines_time_iso(get_philippines_time())
             }
     
-    def _get_current_tasks(self) -> List[Dict[str, Any]]:
-        """Get current tasks from todo-tasks.json"""
+    def _get_current_active_tasks(self) -> List[Dict[str, Any]]:
+        """Get current active tasks from queue system"""
         try:
-            with open(self.state_files['todo_tasks'], 'r') as f:
-                data = json.load(f)
-            return data.get('tasks', [])
+            with open(self.state_files['active_tasks'], 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            logger.warning("Active tasks file not found - creating empty")
+            return []
         except Exception as e:
-            logger.error(f"❌ Failed to read todo-tasks.json: {e}")
+            logger.error(f"❌ Failed to read active tasks: {e}")
             return []
     
     def _get_most_recent_active_task(self, tasks: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -227,11 +229,11 @@ class AutoSyncManager:
         return completed / total if total > 0 else 0.0
     
     def cleanup_duplicate_tasks(self) -> Dict[str, Any]:
-        """Clean up duplicate tasks in todo-tasks.json"""
+        """Clean up duplicate tasks in active tasks queue"""
         logger.info("🧹 Starting duplicate task cleanup...")
         
         try:
-            tasks = self._get_current_tasks()
+            tasks = self._get_current_active_tasks()
             original_count = len(tasks)
             
             # Group tasks by description
@@ -256,14 +258,9 @@ class AutoSyncManager:
                 else:
                     cleaned_tasks.append(task_list[0])
             
-            # Update todo-tasks.json
-            with open(self.state_files['todo_tasks'], 'r') as f:
-                data = json.load(f)
-            
-            data['tasks'] = cleaned_tasks
-            
-            with open(self.state_files['todo_tasks'], 'w') as f:
-                json.dump(data, f, indent=2)
+            # Update active tasks file
+            with open(self.state_files['active_tasks'], 'w') as f:
+                json.dump(cleaned_tasks, f, indent=2)
             
             logger.info(f"✅ Cleanup complete: {duplicates_removed} duplicates removed")
             

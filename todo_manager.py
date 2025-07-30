@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-DATA_FILE = Path(os.getcwd()) / "todo-tasks.json"
+DATA_FILE = Path(os.getcwd()) / "memory-bank" / "queue-system" / "tasks_active.json"
 
 # ------------------------------------------------------------------
 # Configuration -----------------------------------------------------
@@ -27,21 +27,20 @@ DATA_FILE = Path(os.getcwd()) / "todo-tasks.json"
 DEFAULT_CLEANUP_DAYS = int(os.getenv("TODO_CLEANUP_DAYS", "7"))
 
 
-def _load() -> Dict[str, Any]:
+def _load() -> List[Dict[str, Any]]:
     if DATA_FILE.exists():
         try:
             data = json.loads(DATA_FILE.read_text("utf-8"))
-            # Opportunistically clean up outdated tasks on every load so the
-            # JSON never grows unbounded even if explicit cleanup commands
-            # are forgotten.
+            # Handle both old format {"tasks": [...]} and new format [...]
+            if isinstance(data, dict) and "tasks" in data:
+                data = data["tasks"]  # Convert old format to new
+            # Opportunistically clean up outdated tasks on every load
             if _cleanup_outdated_tasks(data):
-                # Persist the pruned dataset immediately so the rest of the
-                # call-sites operate on a consistent view.
                 _save(data)
             return data
         except json.JSONDecodeError:
             pass
-    return {"tasks": []}
+    return []
 
 
 # ------------------------------------------------------------------
@@ -49,7 +48,7 @@ def _load() -> Dict[str, Any]:
 # ------------------------------------------------------------------
 
 
-def _cleanup_outdated_tasks(data: Dict[str, Any]) -> bool:
+def _cleanup_outdated_tasks(data: List[Dict[str, Any]]) -> bool:
     """Auto-purge completed tasks older than *DEFAULT_CLEANUP_DAYS*.
 
     Returns True if the dataset was modified (i.e. tasks removed).
@@ -71,12 +70,12 @@ def _cleanup_outdated_tasks(data: Dict[str, Any]) -> bool:
             # the task – we don't want to delete user data accidentally.
             return False
 
-    before = len(data.get("tasks", []))
-    data["tasks"] = [t for t in data.get("tasks", []) if not _is_stale(t)]
-    return len(data["tasks"]) < before
+    before = len(data)
+    data[:] = [t for t in data if not _is_stale(t)]  # In-place modification
+    return len(data) < before
 
 
-def _save(data: Dict[str, Any]) -> None:
+def _save(data: List[Dict[str, Any]]) -> None:
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False))
 
     # Update Markdown session dump for visibility.
@@ -120,7 +119,7 @@ def new_task(description: str) -> str:
     desc_part = description.replace(' ', '_')[:50]
     task_id = f"{timestamp}_{desc_part}"
     
-    data["tasks"].append(
+    data.append(
         {
             "id": task_id,
             "description": description,
@@ -138,7 +137,7 @@ def new_task(description: str) -> str:
 
 def add_todo(task_id: str, text: str) -> None:
     data = _load()
-    task = next((t for t in data["tasks"] if t["id"] == task_id), None)
+    task = next((t for t in data if t["id"] == task_id), None)
     if task is None:
         print(f"❌ Task '{task_id}' not found.")
         return
@@ -150,7 +149,7 @@ def add_todo(task_id: str, text: str) -> None:
 
 def mark_done(task_id: str, index: int) -> None:
     data = _load()
-    task = next((t for t in data["tasks"] if t["id"] == task_id), None)
+    task = next((t for t in data if t["id"] == task_id), None)
     if task is None:
         print(f"❌ Task '{task_id}' not found.")
         return
@@ -193,7 +192,7 @@ def mark_done(task_id: str, index: int) -> None:
 def delete_todo(task_id: str, index: int) -> None:
     """Delete a TODO item completely from the task"""
     data = _load()
-    task = next((t for t in data["tasks"] if t["id"] == task_id), None)
+    task = next((t for t in data if t["id"] == task_id), None)
     if task is None:
         print(f"❌ Task '{task_id}' not found.")
         return
@@ -243,7 +242,7 @@ def list_open_tasks() -> List[Dict[str, Any]]:
 
     # Return newest tasks first so fresh items always grab the user's
     # attention at the top of interactive menus.
-    open_tasks = [t for t in data["tasks"] if t.get("status") != "completed"]
+    open_tasks = [t for t in data if t.get("status") != "completed"]
     try:
         open_tasks.sort(key=lambda t: t.get("created", ""), reverse=True)
     except Exception:
@@ -255,7 +254,7 @@ def list_open_tasks() -> List[Dict[str, Any]]:
 
 def set_task_status(task_id: str, status: str) -> None:
     data = _load()
-    for t in data["tasks"]:
+    for t in data:
         if t["id"] == task_id:
             t["status"] = status
             t["updated"] = _timestamp()
@@ -268,12 +267,12 @@ def set_task_status(task_id: str, status: str) -> None:
 def hard_delete_task(task_id: str) -> None:
     """Completely remove task from memory (hard delete)"""
     data = _load()
-    original_count = len(data["tasks"])
+    original_count = len(data)
     
-    # Remove task completely
-    data["tasks"] = [t for t in data["tasks"] if t["id"] != task_id]
+    # Remove task completely  
+    data[:] = [t for t in data if t["id"] != task_id]  # In-place modification
     
-    if len(data["tasks"]) < original_count:
+    if len(data) < original_count:
         _save(data)
         print(f"🗑️  Completely deleted task '{task_id}' from memory")
         
@@ -355,12 +354,12 @@ def hard_delete_task(task_id: str) -> None:
 def cleanup_completed_tasks() -> None:
     """Remove all completed tasks from memory"""
     data = _load()
-    original_count = len(data["tasks"])
+    original_count = len(data)
     
     # Keep only non-completed tasks
-    data["tasks"] = [t for t in data["tasks"] if t.get("status") != "completed"]
+    data[:] = [t for t in data if t.get("status") != "completed"]  # In-place modification
     
-    removed_count = original_count - len(data["tasks"])
+    removed_count = original_count - len(data)
     
     if removed_count > 0:
         _save(data)
@@ -372,7 +371,7 @@ def cleanup_completed_tasks() -> None:
 def show_task_details(task_id: str) -> None:
     """Show detailed information about a specific task"""
     data = _load()
-    task = next((t for t in data["tasks"] if t["id"] == task_id), None)
+    task = next((t for t in data if t["id"] == task_id), None)
     if task is None:
         print(f"❌ Task '{task_id}' not found.")
         return
