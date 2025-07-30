@@ -190,3 +190,4 @@ models_cache/
 whisper.cpp/
 secrets/
 .env
+memory-bank/current-session.md
