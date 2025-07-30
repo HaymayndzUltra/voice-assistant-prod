@@ -1,0 +1,380 @@
+D	AGENT_ANALYSIS_PROMPT.md
+D	AGENT_CONFIGURATION_AUDIT.md
+D	AGENT_PATTERNS_QUICK_REF.md
+D	AGENT_VALIDATION_SYSTEM_SUMMARY.md
+D	AUTO_SYNC_IMPLEMENTATION.md
+D	BACKGROUND_AGENT_GUIDE.md
+D	BACKGROUND_AGENT_IMPLEMENTATION_REQUEST.md
+D	BACKGROUND_AGENT_LOGICAL_GROUPING_TASK.md
+D	BACKGROUND_AGENT_REPORT.md
+D	BASEAGENT_OPTIMIZATION_BEST_PRACTICES_GUIDE.md
+D	CLEANUP_DUPLICATES_PLAN.md
+A	CODEBASE_REFACTORING_FINAL_SUMMARY.md
+D	COMMAND_CHUNKER_INTEGRATION.md
+D	COMPREHENSIVE_CONTAINERIZATION_ACTION_PLAN.md
+D	CONSISTENCY_FIX_REPORT.md
+D	CONTAINERIZATION.md
+D	CRITICAL_ISSUES_FIXED.md
+D	CURRENT_TASK_FIX_REPORT.md
+D	CURSOR_BACKGROUND_AGENT_PROMPT.md
+D	DETAILED_PODMAN_CONTAINERIZATION_PLAN.md
+D	DETAILED_PODMAN_PLAN.md
+D	DOCKER_DEPLOYMENT_PLAN.md
+D	DOCKER_WSL_SPACE_MANAGEMENT.md
+A	FILES_FOR_DELETION_REVIEW.md
+D	INFRASTRUCTURE_FIXES_COMPLETION_REPORT.md
+D	INPUT_HANDLING_FIX_SUMMARY.md
+D	LOGICAL_GROUPING_QUESTIONS.md
+D	LONG_TASK_CHUNKING_SOLUTION.md
+D	MAINPC_AGENTS_AUDIT_SUMMARY.md
+D	MAINPC_AI_SESSION_INSTRUCTIONS.md
+D	MAINPC_PC2_COORDINATION_MESSAGE.md
+D	MARKDOWN_FORMATTING_GUIDE.md
+D	MARKDOWN_FORMATTING_OPTIONS_SUMMARY.md
+D	MERGE_INSTRUCTIONS.md
+M	NEWPLAN/PHASE1/coordinator_agent.py
+D	O3_PRO_TASK.md
+D	OPTIMIZATION_PROGRESS.md
+D	OPTION_10_FIX_SUMMARY.md
+D	OVERALLNAGINAWA.md
+D	PATHMANAGER_USAGE_ANALYSIS.md
+D	PC2_AGENT_PATTERN_VIOLATIONS.md
+D	PC2_FINAL_COMPLETION_REPORT.md
+D	PC2_FIXES_COMPLETION_REPORT.md
+D	PC2_IMPORT_FIXES_COORDINATION.md
+D	PC2_IMPORT_FIXES_MESSAGE.md
+D	PC2_VIOLATIONS_SUMMARY.md
+D	PHASE1_UNIFIED_SYSTEM_SUMMARY.md
+D	PHASE2_UNIFIED_SYSTEM_SUMMARY.md
+D	PHASE_1_WEEK_2_COMPREHENSIVE_OPTIMIZATION_REPORT.md
+D	PHASE_2_3_EXECUTION_PLAN.md
+D	PHILIPPINES_TIME_UPDATE.md
+D	PRODUCTION_READY_SUMMARY.md
+D	QUICK_MAINPC_SUMMARY.md
+D	REVISED_MAINPC_COORDINATION.md
+D	SERVICE_REGISTRY_ROADMAP.md
+D	SESSION_HANDOVER_CONTAINERIZATION.md
+D	STABILITY_IMPROVEMENTS.md
+D	SYNC_TEMPLATE.md
+D	SYSTEM_CONTEXT_SNAPSHOT.md
+D	TODOExtractionmapping.md
+D	UNIFIED_PARSER_REPORT.md
+D	UNIFIED_SYSTEM_COMPLETE.md
+D	UserAndAi.md
+D	V3_CONFIG_ANALYSIS.md
+D	actionplan.md
+M	add_health_check_batch2.py
+D	agent_analysis_report.md
+M	agent_validation_checklist.py
+D	agent_validation_report.md
+D	analysis_health_check_failures.md
+D	analysis_output/BACKGROUND_AGENT_FIXES_IMPLEMENTATION.md
+D	analysis_output/COMPREHENSIVE_SOURCE_ANALYSIS_SUMMARY.md
+D	analysis_output/COMPREHENSIVE_SYSTEM_ANALYSIS_REPORT.md
+D	analysis_output/CRITICAL_AGENT_ISSUES_REPORT.md
+D	analysis_output/DOCKER_STARTUP_ANALYSIS_REPORT.md
+M	auto_detect_chunker.py
+M	auto_sync_manager.py
+D	autonomous_task_lifecycle_implementation_status.md
+D	background_agent_clear_instruction.md
+D	background_agent_v3_analysis_command.md
+M	backups/task2d_pilot_agent_backups/observabilityhub_original.py
+M	backups/week4_mma_migration/model_manager_agent_original.py
+D	batch3_audit_report.md
+M	cascade_memory_integration.py
+M	check_agent_health.py
+M	check_all_agents_health.py
+M	check_syntax.py
+M	cleanup_imports_script.py
+D	cleanup_plan.md
+D	code-snippets-01-core-system-files.md
+M	command_chunker.py
+M	common/core/base_agent.py
+M	common/core/enhanced_base_agent.py
+M	common/utils/learning_models.py
+A	common/utils/main_runner.py
+M	common/utils/prometheus_exporter.py
+A	common/utils/shared_utilities.py
+D	conceptual_attack_vector.md
+D	container_migration_strategy.md
+D	cot_agent_audit.md
+D	cot_agent_audit_phase_c.md
+M	create_system_diagram.py
+D	current-system-flow-mapping.md
+M	cursor_session_manager.py
+M	debug_complex_task.py
+D	distributed_containerization_strategy.md
+R100	docker/pc2/validate-pc2.py	docker/pc2/validate_pc2.py
+R100	docker/scripts/validate-setup.py	docker/scripts/validate_setup.py
+D	docs/BACKGROUND_AGENT_AGENT_CRASH_FIX.md
+D	docs/BACKGROUND_AGENT_ANALYSIS_CHECKLIST.md
+D	docs/BACKGROUND_AGENT_ANALYSIS_QUESTIONS.md
+D	docs/BACKGROUND_AGENT_BRIEFING.md
+D	docs/BACKGROUND_AGENT_DEBUG_SESSION.md
+D	docs/BACKGROUND_AGENT_INSTRUCTIONS.md
+D	docs/BACKGROUND_AGENT_REPORT.md
+D	docs/BACKGROUND_AGENT_TASKS.md
+D	docs/COMPLETE_SESSION_MEMORY.md
+D	docs/COMPREHENSIVE_AGENT_ANALYSIS.md
+D	docs/COMPREHENSIVE_PRODUCTION_ANALYSIS.md
+D	docs/CORRECTED_AGENT_ANALYSIS_FINAL.md
+D	docs/CURRENT_STATUS_QUICK_REF.md
+D	docs/CURRENT_SYSTEM_STATE.md
+D	docs/PC2_DOCKER_SETUP_STATUS.md
+D	docs/PROACTIVE_ANALYSIS_CONTEXT.md
+D	docs/TECHNICAL_DEBUGGING_CONTEXT.md
+D	docs/TECHNICAL_ENVIRONMENT_CONTEXT.md
+D	docs/background_agent_instructions.md
+D	docs/critical_issues_audit.md
+D	docs/phase1_completion_report.md
+D	docs/phase2_completion_report.md
+D	docs/phase3_completion_report.md
+R100	docs/resiliency_examples/MetaCognitionAgent_bulkhead.py	docs/resiliency_examples/meta_cognition_agent_bulkhead.py
+R100	docs/resiliency_examples/MetaCognitionAgent_circuit_breaker.py	docs/resiliency_examples/meta_cognition_agent_circuit_breaker.py
+R100	docs/resiliency_examples/MetaCognitionAgent_health.py	docs/resiliency_examples/meta_cognition_agent_health.py
+D	docs/runbook_unified.md
+M	download_all_models.py
+D	duplicate_agents_analysis.md
+M	fix_all_health_checks.py
+M	fix_health_check_indentation.py
+M	fix_mainpc_imports.py
+M	fix_mood_tracker.py
+M	fix_task_router_port.py
+D	full_system_audit_report.md
+D	health_check_migration_plan.md
+D	health_report_20250705_004850.md
+D	health_report_20250705_014118.md
+D	health_report_20250705_113058.md
+D	health_report_20250705_113408.md
+D	health_report_final.md
+M	hybrid_action_extractor.py
+D	implementation_roadmap/BACKGROUND_AGENT_GUIDE.md
+D	implementation_roadmap/BASEAGENT_PERFORMANCE_ANALYSIS.md
+D	implementation_roadmap/OLDSESSION.md
+D	implementation_roadmap/PHASE0_ACTION_PLAN/PHASE_0_ACTION_PLAN.md
+D	implementation_roadmap/PHASE0_ACTION_PLAN/PHASE_0_TO_PHASE_1_TRANSITION_SUMMARY.md
+D	implementation_roadmap/PHASE0_ACTION_PLAN/PHASE_0_VALIDATION_REPORT.md
+D	implementation_roadmap/PHASE0_ACTION_PLAN/phase_0_completion_report.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/BASEAGENT_MIGRATION_PLAYBOOK_v2.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PERFORMANCE_OPTIMIZATION_OPPORTUNITIES.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_ACTION_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_COMPLETION_VALIDATION.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_LESSONS_LEARNED_METHODOLOGY.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_REFINED_STRATEGY.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_1_ANALYSIS_COMPLETE_SUMMARY.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_1_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_1_LESSONS_LEARNED.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_BASEAGENT_MIGRATION_ACTION_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_COMPLETION_VALIDATION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_DAY_2_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_DAY_4_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_PLANNING_STRATEGY.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_2_STRATEGIC_PIVOT_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_1_PROMETHEUS_INFRASTRUCTURE_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_2_DISTRIBUTED_ARCHITECTURE_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_3_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_4_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_5_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_6_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_DAY_7_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_PROMETHEUS_MONITORING_ACTION_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_3_STRATEGIC_PLANNING_TRIGGER.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_ACTION_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_1_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_2_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_3_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_4_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_5_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_6_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DAY_7_COMPLETION_REPORT.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_DETAILED_ACTION_PLAN.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_EMERGENCY_PROTOCOLS.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_1_WEEK_4_TODO.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_2_GO_NO_GO_DECISION.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/PHASE_2_STRATEGY_FRAMEWORK.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/phase1_week1_circular_import_analysis.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/phase1_week1_circular_import_report.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/phase1_week1_dependency_mapping_report.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/phase1_week1_import_analysis_report.md
+D	implementation_roadmap/PHASE1_ACTION_PLAN/phase1_week1_import_remediation_strategy.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_ACTION_PLAN.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_INITIALIZATION.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_RESILIENCE_ACTION_PLAN.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_TRANSITION_SUMMARY.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_1_ACTION_PLAN.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_1_DAY_2_COMPLETION.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_1_DAY_3_COMPLETION.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_1_FINAL_COMPLETION.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_1_PROGRESS_REPORT.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_2_COMPLETION_VALIDATION_REPORT.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_2_SYSTEMATIC_AGENT_MIGRATION_ACTION_PLAN.md
+D	implementation_roadmap/PHASE2_ACTION_PLAN/PHASE_2_WEEK_3_PRODUCTION_RESILIENCE_ACTION_PLAN.md
+D	implementation_roadmap/PHASE3_ACTION_PLAN/PHASE_3_ACTION_PLAN.md
+D	implementation_roadmap/PHASE4_ACTION_PLAN/PHASE_4_ACTION_PLAN.md
+M	improved_command_chunker.py
+M	integrate_translator_and_interrupt.py
+M	launch_layer0_fixed.py
+M	launch_mvs.py
+D	layer0_agent_remediation_report.md
+D	lint_agents_report.md
+A	logging_config.py
+D	main_pc_code/AI_SYSTEM_DEBUG_SOLUTION.md
+D	main_pc_code/CURSOR_AI_BLUEPRINT.md
+R100	main_pc_code/FORMAINPC/ChainOfThoughtAgent.py	main_pc_code/FORMAINPC/chain_of_thought_agent.py
+R100	main_pc_code/FORMAINPC/CognitiveModelAgent.py	main_pc_code/FORMAINPC/cognitive_model_agent.py
+R100	main_pc_code/FORMAINPC/ConsolidatedTranslator.py	main_pc_code/FORMAINPC/consolidated_translator.py
+R100	main_pc_code/FORMAINPC/GOT_TOTAgent.py	main_pc_code/FORMAINPC/got_tot_agent.py
+R100	main_pc_code/FORMAINPC/LearningAdjusterAgent.py	main_pc_code/FORMAINPC/learning_adjuster_agent.py
+R100	main_pc_code/FORMAINPC/LocalFineTunerAgent.py	main_pc_code/FORMAINPC/local_fine_tuner_agent.py
+R100	main_pc_code/FORMAINPC/NLLBAdapter.py	main_pc_code/FORMAINPC/nllb_adapter.py
+R100	main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py	main_pc_code/FORMAINPC/self_training_orchestrator.py
+R100	main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py	main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py
+D	main_pc_code/GEMINI_INSTRUCTION_GENERATOR_PROMPT.md
+D	main_pc_code/agent_batch_list.md
+D	main_pc_code/agent_batch_list1.md
+D	main_pc_code/agent_batch_list_REAL.md
+D	main_pc_code/agent_batch_list_enhanced.md
+D	main_pc_code/agent_metadata_analysisMAINPC.md
+R100	main_pc_code/agents/_trash_2025-06-13/AgentBreeder.py	main_pc_code/agents/_trash_2025-06-13/agent_breeder.py
+R100	main_pc_code/agents/_trash_2025-06-13/archive/translation/PC2TRANSLATOR_AGENT.py	main_pc_code/agents/_trash_2025-06-13/archive/translation/pc2_translator_agent.py
+R100	main_pc_code/agents/_trash_2025-06-13/LearningAgent.py	main_pc_code/agents/_trash_2025-06-13/learning_agent.py
+R100	main_pc_code/agents/_trash_2025-06-13/PredictiveActionAgent.py	main_pc_code/agents/_trash_2025-06-13/predictive_action_agent.py
+R100	main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py	main_pc_code/agents/_trash_2025-06-13/security_policy_agent.py
+R100	main_pc_code/agents/DynamicIdentityAgent.py	main_pc_code/agents/dynamic_identity_agent.py
+R100	main_pc_code/agents/EmpathyAgent.py	main_pc_code/agents/empathy_agent.py
+R100	main_pc_code/agents/IntentionValidatorAgent.py	main_pc_code/agents/intention_validator_agent.py
+R095	main_pc_code/agents/MetaCognitionAgent.py	main_pc_code/agents/meta_cognition_agent.py
+R100	main_pc_code/agents/needtoverify/SessionAgent.py	main_pc_code/agents/needtoverify/session_agent.py
+R093	main_pc_code/agents/needtoverify/TimelineUIServer.py	main_pc_code/agents/needtoverify/timeline_ui_server.py
+R100	main_pc_code/agents/ProactiveAgent.py	main_pc_code/agents/proactive_agent.py
+D	main_pc_code/backgroundagentfeatures.md
+D	main_pc_code/mainpc_batch_diagnostic_report.md
+D	main_pc_code/mainpc_health_and_analysis_report.md
+D	main_pc_code/newrulesfollow.md
+M	main_pc_code/working_agent_health_test.py
+M	mainpc_health_checker.py
+M	migrate_hardcoded_ips.py
+M	migrate_health_checks.py
+M	minimal_agent.py
+D	mvs_status_report.md
+D	mvs_summary.md
+D	my_terminal_log.md
+D	new_full_system_audit_report.md
+D	newaiassistant.md
+D	o3_pro_task.md
+M	ollama_client.py
+M	path_manager.py
+M	payload_serialized_object.py
+D	payload_support_ticket.md
+R100	PC2_AGENT_STATUS_TEST.py	pc2_agent_status_test.py
+D	pc2_code/DOCKERIZATION_ANALYSIS_PC2.md
+D	pc2_code/IMPORTANT.md
+D	pc2_code/INTEGRATION_GUIDE.md
+D	pc2_code/agent_metadata_analysisPC2.md
+R100	pc2_code/agents/ForPC2/AuthenticationAgent.py	pc2_code/agents/ForPC2/authentication_agent.py
+R100	pc2_code/agents/ForPC2/Error_Management_System.py	pc2_code/agents/ForPC2/error_management_system.py
+R100	pc2_code/agents/AgentTrustScorer.py	pc2_code/agents/agent_trust_scorer.py
+R100	pc2_code/agents/backups/AgentTrustScorer.py	pc2_code/agents/backups/agent_trust_scorer.py
+R100	pc2_code/agents/backups/AuthenticationAgent.py	pc2_code/agents/backups/authentication_agent.py
+R100	pc2_code/agents/backups/DreamWorldAgent.py	pc2_code/agents/backups/dream_world_agent.py
+R100	pc2_code/agents/backups/DreamingModeAgent.py	pc2_code/agents/backups/dreaming_mode_agent.py
+R100	pc2_code/agents/backups/EpisodicMemoryAgent.py	pc2_code/agents/backups/episodic_memory_agent.py
+R100	pc2_code/agents/backups/LearningAdjusterAgent.py	pc2_code/agents/backups/learning_adjuster_agent.py
+R100	pc2_code/agents/backups/PerformanceLoggerAgent.py	pc2_code/agents/backups/performance_logger_agent.py
+R100	pc2_code/agents/backups/UnifiedErrorAgent.py	pc2_code/agents/backups/unified_error_agent.py
+R100	pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py	pc2_code/agents/backups/unified_memory_reasoning_agent.py
+R100	pc2_code/agents/core_agents/LearningAdjusterAgent.py	pc2_code/agents/core_agents/learning_adjuster_agent.py
+R100	pc2_code/agents/DreamWorldAgent.py	pc2_code/agents/dream_world_agent.py
+R100	pc2_code/agents/DreamingModeAgent.py	pc2_code/agents/dreaming_mode_agent.py
+M	pc2_code/agents/experience_tracker.py
+R100	pc2_code/agents/LearningAdjusterAgent.py	pc2_code/agents/learning_adjuster_agent.py
+R100	pc2_code/agents/PerformanceLoggerAgent.py	pc2_code/agents/performance_logger_agent.py
+R100	pc2_code/agents/VisionProcessingAgent.py	pc2_code/agents/vision_processing_agent.py
+D	pc2_code/main_pc_response.md
+D	pc2_code/pc2_agent_health_check_report.md
+D	pc2_code/pc2_focused_health_check_report.md
+M	pc2_code/test_auth_agent.py
+M	pc2_code/test_dreaming_mode_agent.py
+M	pc2_code/test_dreamworld_agent.py
+M	pc2_code/test_episodic_memory_agent.py
+M	pc2_code/test_unified_error_agent.py
+M	pc2_code/test_unified_memory_agent.py
+M	pc2_code/tests/test_unified_memory_reasoning_agent.py
+D	pc2_code/umra_validation_report.md
+R100	PC2_FAILURE_ANALYSIS.py	pc2_failure_analysis.py
+M	phase3_batch2_refactoring.py
+D	phase3_batch2_report.md
+M	real_agent_communication_test.py
+D	recom_implementation_status.md
+D	refac-flow.md
+D	refactoring_report.md
+D	refactoring_summary.md
+M	remote_api_adapter/adapter.py
+D	report.md
+A	requirements-pinned.txt
+M	run_consistency_fix.py
+M	run_language_test_fixed.py
+M	run_system_digital_twin.py
+M	scripts/analyze_model_manager_agent_architecture.py
+M	scripts/cross_machine_sync.py
+M	scripts/deploy_system.py
+M	scripts/enhanced_baseagent_validator.py
+M	scripts/execute_batch4_specialized_services_migration.py
+M	scripts/expand_agent_table.py
+M	scripts/fix_critical_issues.py
+M	scripts/identify_high_risk_legacy_agents.py
+M	scripts/launch_unified.py
+M	scripts/launch_unified_phase2.py
+M	scripts/launch_unified_profile.py
+M	scripts/lazy_loader_service.py
+M	scripts/lint_no_bare_except.py
+M	scripts/phase2_week2_migration_manager.py
+M	scripts/resilience_enhancements.py
+M	scripts/routing_benchmark.py
+M	scripts/routing_benchmark_simple.py
+M	scripts/run_all_tests.py
+M	scripts/run_tests_individually.py
+M	scripts/secure_sdt_client.py
+M	scripts/start_system.py
+M	scripts/test_secure_twin_connection.py
+M	scripts/validate_deployment.py
+M	scripts/verify_logging_upgrade.py
+D	secrets_analysis.md
+M	session_continuity_manager.py
+M	setup_memory_mcp.py
+M	simple_debug.py
+M	simple_integration.py
+M	smart_nlp_pipeline_test.py
+M	source_code_scanner.py
+M	start_pc2_agents.py
+D	system_health_report.md
+D	systemic_instability_summary.md
+D	systemic_stability_remediation_plan.md
+D	task&report.md
+M	task_automation_hub.py
+D	task_command_center_code_snippets.md
+D	task_command_center_flow_analysis.md
+D	task_command_center_summary.md
+M	task_interruption_manager.py
+M	task_state_manager.py
+M	test_advanced_extraction.py
+M	test_chunking.py
+M	test_framework.py
+M	test_health_simple.py
+M	test_memory_health.py
+M	test_service_discovery.py
+M	test_stability_improvements.py
+M	test_umra.py
+M	test_unified_error_reporting.py
+M	test_vram_optimizer.py
+A	tests/test_base_agent.py
+A	tests/test_memory_orchestrator.py
+M	todo_completion_detector.py
+D	truly_corrected_audit_report.md
+D	truly_corrected_full_system_audit.md
+A	type_hints_example.py
+M	unified_memory_access.py
+M	validate_all_agents.py
+M	verify_config_standardization_batch1.py
+M	voice_command_end_to_end_test.py
+M	whisper_cpp_tagalog_integration.py
