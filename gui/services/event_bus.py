@@ -45,7 +45,14 @@ class EventBus:
         for cb in list(self._subscribers.get(event_name, [])):
             # Ensure callbacks run in Tk thread
             if self._tk_root:
-                self._tk_root.after(0, lambda c=cb, p=payload: c(**p))
+                try:
+                    self._tk_root.after(0, lambda c=cb, p=payload: c(**p))
+                except RuntimeError:
+                    # Main loop not running, call directly
+                    try:
+                        cb(**payload)
+                    except Exception as e:
+                        print(f"Event callback error: {e}")
             else:
                 # Fallback for when no Tk root is available
                 try:
