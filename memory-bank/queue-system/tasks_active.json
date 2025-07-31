@@ -414,7 +414,7 @@
       },
       {
         "text": "Deploy core AI services using Docker Compose",
-        "done": false
+        "done": true
       },
       {
         "text": "Deploy observability stack (Prometheus, Grafana, Jaeger)",
@@ -435,11 +435,15 @@
       {
         "text": "Setup automated backup and health monitoring",
         "done": false
+      },
+      {
+        "text": "Deploy core AI services using Docker Compose\n    4.1 Verify docker-compose.yml and .env are up to date\n        └── Command: diff docker-compose.yml docker-compose.yml.backup || echo 'Files are different or backup not found'\n    4.2 Build images: docker-compose build\n        └── Command: docker-compose build --no-cache\n    4.3 Start services: docker-compose up -d\n        └── Command: docker-compose up -d --remove-orphans\n    4.4 Check service health: docker-compose ps && docker-compose logs\n        └── Command: docker-compose ps && docker-compose logs --tail=50\n    4.5 Run post-deploy script: ./scripts/verify-services.sh\n        └── Command: chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh\n    4.6 Validate endpoints: curl http://localhost:...\n        └── Command: curl -f http://localhost:8080/health || echo 'Health endpoint check'\n    4.7 If failed, rollback: docker-compose down && alert\n        └── Command: docker-compose down && echo 'DEPLOYMENT FAILED - ROLLBACK COMPLETED'",
+        "done": false
       }
     ],
     "status": "in_progress",
     "created": "2025-07-31T20:19:47.923682+08:00",
-    "updated": "2025-07-31T20:20:00.580552+08:00"
+    "updated": "2025-08-01T01:18:50.221996+08:00"
   },
   {
     "id": "20250731T225350_test_task_1",
