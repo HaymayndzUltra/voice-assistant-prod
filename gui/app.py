@@ -36,6 +36,7 @@ try:
     from services.async_runner import AsyncRunner
     from services.nlu_integration import get_nlu_service
     from widgets.nlu_command_bar import NLUCommandBar
+    from widgets.enhanced_nlu_command_bar import CursorIntelligentCommandBar
 except ImportError:
     from .styles.theme import ModernTheme
     from .views.dashboard import DashboardView
@@ -289,18 +290,19 @@ class ModernGUIApplication:
             # Get NLU service instance
             nlu_service = get_nlu_service()
             
-            # Create command bar with NLU integration
-            self.nlu_command_bar = NLUCommandBar(
+            # Create enhanced Cursor AI command bar
+            self.nlu_command_bar = CursorIntelligentCommandBar(
                 self.content_area,
                 nlu_service=nlu_service,
                 event_bus=self.system_service.bus if hasattr(self, 'system_service') else None
             )
-            self.nlu_command_bar.pack(fill=X, padx=10, pady=5)
+            # Note: Command bar packs itself in _create_widgets(), no need to pack again
             
             # Subscribe to NLU events
             if hasattr(self, 'system_service') and self.system_service.bus:
                 self.system_service.bus.subscribe("nlu_command_processed", self._handle_nlu_command)
                 self.system_service.bus.subscribe("nlu_error", self._handle_nlu_error)
+                self.system_service.bus.subscribe("cursor_todo_created", self._handle_cursor_todo_created)
                 
         except Exception as e:
             print(f"Warning: Could not initialize NLU command bar: {e}")
@@ -594,6 +596,20 @@ class ModernGUIApplication:
             
         except Exception as e:
             print(f"Status update error: {e}")
+    
+    def _handle_cursor_todo_created(self, **kwargs):
+        """Handle Cursor AI TODO creation events"""
+        try:
+            print(f"✅ Cursor AI created TODO: {kwargs.get('task_id', 'Unknown')}")
+            
+            # Refresh task management view if it's currently visible
+            if (hasattr(self, 'current_view') and 
+                hasattr(self.current_view, 'refresh') and
+                self.current_view.__class__.__name__ == 'TaskManagementView'):
+                self.current_view.refresh()
+                
+        except Exception as e:
+            print(f"Error handling Cursor TODO creation: {e}")
     
     def run(self):
         """Start the GUI application main loop"""
