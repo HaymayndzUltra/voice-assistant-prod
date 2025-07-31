@@ -1,0 +1,42 @@
+# Dockerfile for Core Platform Services
+FROM python:3.11-slim
+
+ARG SERVICE
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    g++ \
+    libzmq3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements
+COPY requirements/core-requirements.txt .
+RUN pip install --no-cache-dir -r core-requirements.txt
+
+# Copy common modules
+COPY common/ ./common/
+
+# Copy service-specific code based on build argument
+COPY main_pc_code/agents/ ./main_pc_code/agents/
+COPY phase1_implementation/ ./phase1_implementation/
+
+# Copy configuration
+COPY main_pc_code/config/ ./main_pc_code/config/
+
+# Copy health check script
+COPY docker-deployment/shared/health_check.py .
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV SERVICE_TYPE=core
+
+# Create volume mount points
+VOLUME ["/app/logs", "/app/data"]
+
+# Default command (can be overridden)
+CMD ["python", "-m", "main_pc_code.agents.${SERVICE}"]
