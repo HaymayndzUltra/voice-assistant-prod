@@ -1,8 +1,8 @@
 {
   "current_task_id": "20250731T192348_Enable_NVIDIA_MIG/CUDA_MPS_partitioning_and_add_DC",
   "current_task_description": "Enable NVIDIA MIG/CUDA MPS partitioning and add DCGM exporter metrics",
-  "status": "in_progress",
-  "last_updated": "2025-07-31T19:23:48.753852+08:00",
-  "todos_count": 0,
-  "completed_todos": 0
+  "status": "completed",
+  "last_updated": "2025-07-31T19:26:12.021036+08:00",
+  "todos_count": 3,
+  "completed_todos": 3
 }

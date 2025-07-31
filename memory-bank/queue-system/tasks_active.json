@@ -277,9 +277,22 @@
   {
     "id": "20250731T192348_Enable_NVIDIA_MIG/CUDA_MPS_partitioning_and_add_DC",
     "description": "Enable NVIDIA MIG/CUDA MPS partitioning and add DCGM exporter metrics",
-    "todos": [],
-    "status": "in_progress",
+    "todos": [
+      {
+        "text": "Create scripts/setup-gpu-partitioning.sh for MIG/MPS configuration",
+        "done": true
+      },
+      {
+        "text": "Setup DCGM exporter with Docker Compose for GPU metrics",
+        "done": true
+      },
+      {
+        "text": "Create GPU allocation configuration and systemd services",
+        "done": true
+      }
+    ],
+    "status": "completed",
     "created": "2025-07-31T19:23:48.753838+08:00",
-    "updated": "2025-07-31T19:23:48.753852+08:00"
+    "updated": "2025-07-31T19:26:12.021036+08:00"
   }
 ]
