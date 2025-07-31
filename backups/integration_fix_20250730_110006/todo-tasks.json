@@ -1,0 +1,788 @@
+{
+  "tasks": [
+    {
+      "id": "20250728T165715_Semantic_Bug_Detection_Process_para_sa_MainPC_Agen",
+      "description": "Semantic Bug Detection Process para sa MainPC Agents",
+      "todos": [
+        {
+          "text": "Semantic Bug Detection Process para sa MainPC Agents",
+          "done": false
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T16:57:15.424169",
+      "updated": "2025-07-28T16:57:15.428564"
+    },
+    {
+      "id": "20250728T165747_\"Semantic_Bug_Detection_Process_para_sa_MainPC_Age",
+      "description": "\"Semantic Bug Detection Process para sa MainPC Agents",
+      "todos": [
+        {
+          "text": "\"Semantic Bug Detection Process para sa MainPC Agents",
+          "done": false
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T16:57:47.323896",
+      "updated": "2025-07-28T16:57:47.325386"
+    },
+    {
+      "id": "20250728T170552_Semantic_Bug_Detection_Process_–_MainPC_AgentsPhas",
+      "description": "Semantic Bug Detection Process – MainPC AgentsPhase 1: Systematic Agent AnalysisExtract agent pathsSource: startup_config.yamlCategorize agents by functionGroup: foundation, memory, utility, etc.Prioritize critical agentsFocus: ServiceRegistry, SystemDigitalTwin, RequestCoordinatorPhase 2: Multi-Level Code AnalysisFor each agent:A. Import & Dependency AnalysisCheck all imports are validVerify dependencies match startup_config.yamlIdentify circular importsB. Class & Method Structure AnalysisValidate class inheritance treeCheck method signatures (params, return types)Verify async/sync consistencyC. Logic Flow AnalysisTrace request/response logicReview error handling codeValidate state management patternsD. Integration Point AnalysisReview ZMQ comms (send/receive patterns)Check port config matches specVerify health check logicPhase 3: Semantic Bug DetectionSpot-check common semantic bugs:Resource ManagementMemory leaks (long-running agents)Unclosed file handlesImproper cleanup in async codeState SynchronizationRace conditions in shared stateInconsistent state updatesDeadlock risksError PropagationSilent failures (no log, no raise)Bad exception handlingMissing error loggingCommunication ProtocolZMQ message format mismatchesPort conflictsPoor timeout handlingConfiguration DependenciesMissing/invalid config valuesBad defaultsBroken env variable usePhase 4: Automated Analysis ToolsRun static analysis (Python)Generate dependency graphCompute code complexity metricsDetect import cyclesPhase 5: Report GenerationFor each agent:✅ Passed checks⚠️ Warnings (potential issues)❌ Critical issues (must fix)📋 Recommendations",
+      "todos": [
+        {
+          "text": "Semantic Bug Detection Process – MainPC AgentsPhase 1: Systematic Agent AnalysisExtract agent pathsSource: startup_config.",
+          "done": true
+        },
+        {
+          "text": "Prioritize critical agentsFocus: ServiceRegistry, SystemDigitalTwin, RequestCoordinatorPhase 2: Multi-Level Code AnalysisFor each agent:A.",
+          "done": true
+        },
+        {
+          "text": "Integration Point AnalysisReview ZMQ comms (send/receive patterns)Check port config matches specVerify health check logicPhase 3: Semantic Bug DetectionSpot-check common semantic bugs:Resource ManagementMemory leaks (long-running agents)Unclosed file handlesImproper cleanup in async codeState SynchronizationRace conditions in shared stateInconsistent state updatesDeadlock risksError PropagationSilent failures (no log, no raise)Bad exception handlingMissing error loggingCommunication ProtocolZMQ message format mismatchesPort conflictsPoor timeout handlingConfiguration DependenciesMissing/invalid config valuesBad defaultsBroken env variable usePhase 4: Automated Analysis ToolsRun static analysis (Python)Generate dependency graphCompute code complexity metricsDetect import cyclesPhase 5: Report GenerationFor each agent:✅ Passed checks⚠️ Warnings (potential issues)❌ Critical issues (must fix)📋 Recommendations",
+          "done": true
+        },
+        {
+          "text": "-check common semantic bugs:Resource ManagementMemory leaks (long-running agents)Unclosed file handlesImproper cleanup in async codeState SynchronizationRace conditions in shared stateInconsistent state updatesDeadlock risksError PropagationSilent failures (no log, no raise)Bad exception handlingMissing error loggingCommunication ProtocolZMQ message format mismatchesPort conflictsPoor timeout handlingConfiguration DependenciesMissing/invalid config valuesBad defaultsBroken env variable usePhase 4: Automated Analysis ToolsRun static analysis (Python)Generate dependency graphCompute code complexity metricsDetect import cyclesPhase 5: Report GenerationFor each agent:✅ Passed checks⚠️ Warnings (potential issues)❌ Critical issues (must fix)📋 Recommendations",
+          "done": true
+        },
+        {
+          "text": "Class & Method Structure AnalysisValidate class inheritance treeCheck method signatures (params, return types)Verify async/sync consistencyC.",
+          "done": true
+        },
+        {
+          "text": "yamlCategorize agents by functionGroup: foundation, memory, utility, etc.",
+          "done": true
+        },
+        {
+          "text": "-Level Code AnalysisFor each agent:A",
+          "done": true
+        },
+        {
+          "text": "yamlIdentify circular importsB.",
+          "done": true
+        },
+        {
+          "text": "Logic Flow AnalysisTrace request/response logicReview error handling codeValidate state management patternsD.",
+          "done": true
+        },
+        {
+          "text": "Import & Dependency AnalysisCheck all imports are validVerify dependencies match startup_config.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T17:05:52.797067",
+      "updated": "2025-07-28T17:05:52.830044"
+    },
+    {
+      "id": "20250728T172915_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.",
+          "done": true
+        },
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones.",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones",
+          "done": true
+        },
+        {
+          "text": "analyze",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T17:29:15.615492",
+      "updated": "2025-07-28T17:29:15.635892"
+    },
+    {
+      "id": "20250728T172955_extract_all_agents_from_pc2_code/config/startup_co",
+      "description": "extract all agents from pc2_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "analyze",
+          "done": true
+        },
+        {
+          "text": "extract all agents from pc2_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones.",
+          "done": true
+        },
+        {
+          "text": "yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T17:29:55.950013",
+      "updated": "2025-07-28T17:29:55.956406"
+    },
+    {
+      "id": "20250728T195017_a",
+      "description": "a",
+      "todos": [
+        {
+          "text": "a",
+          "done": false
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T19:50:17.501241",
+      "updated": "2025-07-28T19:50:17.503493"
+    },
+    {
+      "id": "20250728T203347_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "analyze",
+          "done": true
+        },
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones",
+          "done": true
+        },
+        {
+          "text": "Use this checklist to systematically analyze each agent, starting with critical ones.",
+          "done": true
+        },
+        {
+          "text": "yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:33:47.733039",
+      "updated": "2025-07-28T20:33:47.754936"
+    },
+    {
+      "id": "20250728T203826_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.yaml",
+          "done": true
+        },
+        {
+          "text": "then load a full checklist of validation patterns (imports",
+          "done": true
+        },
+        {
+          "text": "dependencies",
+          "done": true
+        },
+        {
+          "text": "communication",
+          "done": true
+        },
+        {
+          "text": "etc.). Use this checklist to systematically analyze each agent",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:38:26.412109",
+      "updated": "2025-07-28T20:38:26.435585"
+    },
+    {
+      "id": "20250728T204226_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.yaml",
+          "done": true
+        },
+        {
+          "text": "then load a full checklist of validation patterns (imports",
+          "done": true
+        },
+        {
+          "text": "dependencies",
+          "done": true
+        },
+        {
+          "text": "communication",
+          "done": true
+        },
+        {
+          "text": "etc.). Use this checklist to systematically analyze each agent",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:42:26.141638",
+      "updated": "2025-07-28T20:42:26.150773"
+    },
+    {
+      "id": "20250728T204312_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.yaml",
+          "done": true
+        },
+        {
+          "text": "then load a full checklist of validation patterns (imports",
+          "done": true
+        },
+        {
+          "text": "dependencies",
+          "done": true
+        },
+        {
+          "text": "communication",
+          "done": true
+        },
+        {
+          "text": "etc.). Use this checklist to systematically analyze each agent",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:43:12.652182",
+      "updated": "2025-07-28T20:43:12.673363"
+    },
+    {
+      "id": "20250728T204331_extract_all_agents_from_main_pc_code/config/startu",
+      "description": "extract all agents from main_pc_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "extract all agents from main_pc_code/config/startup_config.yaml",
+          "done": true
+        },
+        {
+          "text": "then load a full checklist of validation patterns (imports",
+          "done": true
+        },
+        {
+          "text": "dependencies",
+          "done": true
+        },
+        {
+          "text": "communication",
+          "done": true
+        },
+        {
+          "text": "etc.). Use this checklist to systematically analyze each agent",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:43:31.122411",
+      "updated": "2025-07-28T20:43:31.143257"
+    },
+    {
+      "id": "20250728T204349_extract_all_agents_from_pc2_code/config/startup_co",
+      "description": "extract all agents from pc2_code/config/startup_config.yaml, then load a full checklist of validation patterns (imports, logic, dependencies, communication, etc.). Use this checklist to systematically analyze each agent, starting with critical ones. Allow for dynamic loading of new checks as needed",
+      "todos": [
+        {
+          "text": "extract all agents from pc2_code/config/startup_config.yaml",
+          "done": true
+        },
+        {
+          "text": "then load a full checklist of validation patterns (imports",
+          "done": true
+        },
+        {
+          "text": "dependencies",
+          "done": true
+        },
+        {
+          "text": "communication",
+          "done": true
+        },
+        {
+          "text": "etc.). Use this checklist to systematically analyze each agent",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-28T20:43:49.704157",
+      "updated": "2025-07-28T20:43:49.711421"
+    },
+    {
+      "id": "20250729T093907_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T09:39:07.473407+08:00",
+      "updated": "2025-07-29T09:39:07.498117+08:00"
+    },
+    {
+      "id": "20250729T095314_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T09:53:14.861516+08:00",
+      "updated": "2025-07-29T09:53:14.879531+08:00"
+    },
+    {
+      "id": "20250729T100754_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T10:07:54.491084+08:00",
+      "updated": "2025-07-29T10:07:54.512809+08:00"
+    },
+    {
+      "id": "20250729T101423_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T10:14:23.232115+08:00",
+      "updated": "2025-07-29T10:14:23.265996+08:00"
+    },
+    {
+      "id": "20250729T110840_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:08:40.259978+08:00",
+      "updated": "2025-07-29T11:08:40.281715+08:00"
+    },
+    {
+      "id": "20250729T111102_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:11:02.421624+08:00",
+      "updated": "2025-07-29T11:11:02.453368+08:00"
+    },
+    {
+      "id": "20250729T113226_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:32:26.724380+08:00",
+      "updated": "2025-07-29T11:32:26.757295+08:00"
+    },
+    {
+      "id": "20250729T114121_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:41:21.396867+08:00",
+      "updated": "2025-07-29T11:41:21.416390+08:00"
+    },
+    {
+      "id": "20250729T114615_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:46:15.485517+08:00",
+      "updated": "2025-07-29T11:46:15.518494+08:00"
+    },
+    {
+      "id": "20250729T115144_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:51:44.962202+08:00",
+      "updated": "2025-07-29T11:51:44.982224+08:00"
+    },
+    {
+      "id": "20250729T115518_Perform_a_comprehensive_audit_of_the_agent_codebas",
+      "description": "Perform a comprehensive audit of the agent codebase located in 'main_pc_code/', using 'main_pc_code/config/startup_config.yaml' as the manifest of agents to analyze. For each agent, identify and list the following: all coding patterns (naming, structure), all imports (with frequency counts), error handling approaches, and any notable code smells or anti-patterns. Finally, generate a summary table of all observed patterns, highlighting any inconsistencies.",
+      "todos": [
+        {
+          "text": "Finally, generate a summary table of all observed patterns, highlighting any inconsistencies.",
+          "done": true
+        },
+        {
+          "text": "-patterns",
+          "done": true
+        },
+        {
+          "text": "For each agent, identify and list the following: all coding patterns (naming, structure), all imports (with frequency counts), error handling approaches, and any notable code smells or anti-patterns.",
+          "done": true
+        },
+        {
+          "text": "yaml' as the manifest of agents to analyze",
+          "done": true
+        },
+        {
+          "text": "yaml' as the manifest of agents to analyze.",
+          "done": true
+        },
+        {
+          "text": "analyze",
+          "done": true
+        },
+        {
+          "text": "Perform a comprehensive audit of the agent codebase located in 'main_pc_code/', using 'main_pc_code/config/startup_config.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:55:18.167886+08:00",
+      "updated": "2025-07-29T11:55:18.197486+08:00"
+    },
+    {
+      "id": "20250729T115927_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T11:59:27.465795+08:00",
+      "updated": "2025-07-29T11:59:27.504777+08:00"
+    },
+    {
+      "id": "20250729T120002_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        },
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T12:00:02.681635+08:00",
+      "updated": "2025-07-29T12:00:02.702527+08:00"
+    },
+    {
+      "id": "20250729T120030_I-audit_mo_ang_buong_codebase_ng_mga_ahente_sa_mai",
+      "description": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.yaml. I-list lahat ng coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+      "todos": [
+        {
+          "text": "-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config",
+          "done": true
+        },
+        {
+          "text": "-list lahat ng coding patterns, imports, error handling, at code smells",
+          "done": true
+        },
+        {
+          "text": "I-list lahat ng coding patterns, imports, error handling, at code smells.",
+          "done": true
+        },
+        {
+          "text": "Gumawa ka ng summary table ng lahat ng patterns na nakita mo.",
+          "done": true
+        },
+        {
+          "text": "I-audit mo ang buong codebase ng mga ahente sa mainpc na nakalista sa mainpc_code/config/startup_config.",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T12:00:30.845692+08:00",
+      "updated": "2025-07-29T12:00:30.868412+08:00"
+    },
+    {
+      "id": "20250729T161957_I-audit_mo_ang_codebase_ng_mainpc_agents_(gamit_an",
+      "description": "I-audit mo ang codebase ng mainpc agents (gamit ang startup_config.yaml) para sa coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng mga resulta.",
+      "todos": [
+        {
+          "text": "Complete task: I-audit mo ang codebase ng mainpc agents (gamit ang startup_config.yaml) para sa coding patterns, imports, error handling, at code smells. Gumawa ka ng summary table ng mga resulta",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-29T16:19:57.419916+08:00",
+      "updated": "2025-07-29T16:30:00.000000+08:00"
+    },
+    {
+      "id": "20250730T001813_\"Initiate_a_non-destructive_audit_of_the_'mainpc_c",
+      "description": "\"Initiate a non-destructive audit of the 'mainpc_code' codebase. Your goal is to identify all potential candidates for cleanup, including orphan files, unused code, and redundant assets. Consolidate all your findings into a single, detailed markdown report named 'cleanup_plan.md'. This report must categorize each item with a proposed action ([DELETE], [REFACTOR], [ARCHIVE]) and provide a clear, evidence-based justification for each proposal. Do not modify or delete any files in this phase.\"",
+      "todos": [
+        {
+          "text": "Review the 'mainpc_code' codebase to identify orphan files, unused code segments, and redundant assets",
+          "done": true
+        },
+        {
+          "text": "Create a list categorizing each identified item as orphan files, unused code segments, and redundant assets",
+          "done": true
+        },
+        {
+          "text": "Develop a markdown template 'cleanup_plan.md' with sections for orphan files, unused code segments, and redundant assets",
+          "done": true
+        },
+        {
+          "text": "Populate the markdown template with findings from step one using IF condition: then action logic",
+          "done": true
+        },
+        {
+          "text": "For each identified item in the codebase: IF it is an orphan file THEN propose [ARCHIVE], ELSEIF unused, THEN suggest [REFACTOR] (if applicable), OTHERWISE recommend [DELETE]",
+          "done": true
+        },
+        {
+          "text": "Write evidence-based justifications for each proposed action within the markdown report",
+          "done": true
+        },
+        {
+          "text": "Review and finalize 'cleanup_plan.md' for accuracy and completeness",
+          "done": true
+        }
+      ],
+      "status": "completed",
+      "created": "2025-07-30T00:18:13.978356+08:00",
+      "updated": "2025-07-30T00:18:13.993687+08:00"
+    }
+  ]
+}

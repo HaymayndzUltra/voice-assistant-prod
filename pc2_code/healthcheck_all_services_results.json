@@ -1,0 +1,154 @@
+[
+  {
+    "Service Name": "Enhanced Model Router",
+    "Port": 5598,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Advanced Router",
+    "Port": 5599,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Unified Memory Reasoning Agent",
+    "Port": 5591,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Memory Decay Manager",
+    "Port": 5592,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Episodic Memory Agent",
+    "Port": 5593,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Cognitive Model Agent",
+    "Port": 5594,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Learning Adjuster Agent",
+    "Port": 5595,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Self Training Orchestrator",
+    "Port": 5596,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Dream World Agent",
+    "Port": 5597,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Dreaming Mode Agent",
+    "Port": 5601,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Agent Trust Scorer",
+    "Port": 5602,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "TinyLLaMA Service",
+    "Port": 5615,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Self Healing Agent",
+    "Port": 5614,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Performance Logger Agent",
+    "Port": 5603,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Unified Web Agent",
+    "Port": 5604,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Remote Connector Agent",
+    "Port": 5557,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Consolidated Translator",
+    "Port": 5563,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Filesystem Assistant Agent",
+    "Port": 5605,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  },
+  {
+    "Service Name": "Tutoring Service Agent",
+    "Port": 5606,
+    "Health Check Payload Used": {
+      "action": "health_check"
+    },
+    "Health Check Result": "No response (Resource temporarily unavailable)"
+  }
+]

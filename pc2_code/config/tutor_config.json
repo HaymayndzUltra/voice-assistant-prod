@@ -1,0 +1,8 @@
+{
+  "tutor": {
+    "default_subjects": ["Mathematics", "Science", "English", "History"],
+    "difficulty_levels": ["easy", "medium", "hard"],
+    "max_sessions": 5,
+    "feedback_mode": "standard"
+  }
+}

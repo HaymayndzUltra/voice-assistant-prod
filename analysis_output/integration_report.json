@@ -1,0 +1,38 @@
+{
+  "timestamp": 1751451678.9907568,
+  "date": "2025-07-02 18:21:18",
+  "translator_integration": {
+    "status": "failed",
+    "details": [
+      {
+        "test": "direct_connection",
+        "status": "error",
+        "error": "Resource temporarily unavailable"
+      },
+      {
+        "test": "task_router_integration",
+        "status": "error",
+        "error": "Resource temporarily unavailable"
+      }
+    ]
+  },
+  "interrupt_handler_integration": {
+    "status": "failed",
+    "details": [
+      {
+        "test": "interrupt_detection",
+        "status": "error",
+        "error": "Resource temporarily unavailable"
+      },
+      {
+        "test": "direct_interrupt",
+        "status": "failed",
+        "error": "No response received"
+      }
+    ]
+  },
+  "configurations_updated": {
+    "task_router": true,
+    "audio_pipeline": true
+  }
+}

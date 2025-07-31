@@ -1,0 +1,27 @@
+{
+  "sessions": {
+    "test_user_2025-06-26": [
+      {
+        "timestamp": 1750948560.3717318,
+        "type": "system_response",
+        "content": "This is a test response"
+      },
+      {
+        "timestamp": 1750948560.3715367,
+        "type": "user_query",
+        "content": "This is a test query"
+      },
+      {
+        "timestamp": 1750948547.8241987,
+        "type": "system_response",
+        "content": "This is a test response"
+      },
+      {
+        "timestamp": 1750948547.8240745,
+        "type": "user_query",
+        "content": "This is a test query"
+      }
+    ]
+  },
+  "summaries": {}
+}

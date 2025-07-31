@@ -1,0 +1,77 @@
+[
+  {
+    "file": "main_pc_code/agents/test_meta_cognition.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/scripts/test_pc2_sdt_connection.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/scripts/test_script.py",
+    "status": "PASSED",
+    "output": "test script executed successfully\n"
+  },
+  {
+    "file": "main_pc_code/scripts/test_sdt_improved.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/scripts/test_sdt_local_connection.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/scripts/test_task_router_health.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_base_agent_health.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_emotion_engine_minimal.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_health.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_health_check.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_health_monitor.py",
+    "status": "PASSED",
+    "output": "\u2713 Log directory 'logs' created successfully\n\u2713 Log file 'logs/health_monitor.log' created successfully\n\u2713 Logging configuration successful\n\nAll tests passed successfully!\n"
+  },
+  {
+    "file": "main_pc_code/test_health_simple.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_imports.py",
+    "status": "PASSED",
+    "output": "PYTHONPATH set to: /home/haymayndz/AI_System_Monorepo:/home/haymayndz/AI_System_Monorepo/main_pc_code::/home/haymayndz/Voice-Assistant-Prod:/home/haymayndz/Voice-Assistant-Prod\nutils symlink already exists\nsrc symlink already exists\nconfig symlink already exists\n\nTesting imports...\nTrying to import utils.config_parser...\nSuccessfully imported utils.config_parser\n\nTrying to import src.core.base_agent...\nSuccessfully imported src.core.base_agent\n\nTrying to import config.system_config...\nFailed to import config.system_config: No module named 'config.system_config'\n\nPython sys.path:\n  /home/haymayndz\n  /home/haymayndz/AI_System_Monorepo\n  /home/haymayndz/AI_System_Monorepo\n  /home/haymayndz/Voice-Assistant-Prod\n  /usr/lib/python310.zip\n  /usr/lib/python3.10\n  /usr/lib/python3.10/lib-dynload\n  /home/haymayndz/.local/lib/python3.10/site-packages\n  /usr/local/lib/python3.10/dist-packages\n  /usr/local/lib/python3.10/dist-packages/PyRIC-0.0.3-py3.10.egg\n  /usr/lib/python3/dist-packages\n\nTest complete\n"
+  },
+  {
+    "file": "main_pc_code/test_mood_tracker_health.py",
+    "status": "PASSED",
+    "output": ""
+  },
+  {
+    "file": "main_pc_code/test_port_connection.py",
+    "status": "PASSED",
+    "output": ""
+  }
+]

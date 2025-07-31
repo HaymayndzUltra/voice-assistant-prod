@@ -1,0 +1,14 @@
+{
+  "components": {
+    "interrupt_handler": {
+      "name": "StreamingInterruptHandler",
+      "port": 5576,
+      "host": "localhost",
+      "capabilities": [
+        "interrupt",
+        "streaming"
+      ],
+      "priority": 1
+    }
+  }
+}

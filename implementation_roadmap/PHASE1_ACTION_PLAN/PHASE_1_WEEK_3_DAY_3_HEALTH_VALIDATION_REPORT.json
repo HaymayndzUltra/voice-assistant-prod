@@ -1,0 +1,53 @@
+{
+  "validation_session": {
+    "timestamp": 1753227993.8477683,
+    "duration_seconds": 0.008633136749267578,
+    "total_checks": 8,
+    "passed_checks": 3,
+    "success_rate": 37.5
+  },
+  "health_criteria": {
+    "system_health_threshold": 95.0,
+    "agent_availability_threshold": 90.0,
+    "response_time_threshold": 5.0,
+    "error_rate_threshold": 5.0
+  },
+  "validation_results": {
+    "overall_health": 37.5,
+    "agent_health": {
+      "total_agents": 0,
+      "healthy_agents": 0,
+      "availability_rate": 0
+    },
+    "system_metrics": {
+      "error_rate": 0
+    },
+    "regression_alerts": [],
+    "passed_checks": [
+      "System Performance Metrics",
+      "Error Rate Analysis",
+      "Optimization Impact Assessment"
+    ],
+    "failed_checks": [
+      "ObservabilityHub Infrastructure",
+      "Agent Discovery & Connectivity",
+      "Cross-Machine Coordination",
+      "Regression Detection",
+      "System Stability"
+    ],
+    "critical_issues": [
+      "Central Hub: Status check failed",
+      "Edge Hub: Status check failed"
+    ]
+  },
+  "system_status": {
+    "overall_health": 37.5,
+    "critical_issues_count": 2,
+    "validation_passed": false
+  },
+  "recommendations": [
+    "Some health checks failed - investigate failed components",
+    "Critical issues detected - address immediately before proceeding",
+    "Agent availability below 90% - check agent connectivity"
+  ]
+}

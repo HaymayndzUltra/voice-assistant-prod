@@ -1,0 +1,5276 @@
+{
+  "total_agents": 272,
+  "agents_with_error_bus": 122,
+  "running_agents": 2,
+  "agents": [
+    {
+      "name": "HumanAwarenessAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/HumanAwarenessAgent.py"
+      ],
+      "ports": [
+        5705,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "HumanAwareness",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/HumanAwarenessAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CircuitBreaker",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_client.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/goal_manager.py"
+      ],
+      "ports": [
+        5713,
+        7140,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingSpeechRecognition",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py"
+      ],
+      "ports": [
+        6580,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ResourceManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/resource_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/async_processor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py"
+      ],
+      "ports": [
+        7113,
+        7114,
+        7150
+      ],
+      "health_ports": [
+        8113,
+        7114
+      ],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "FixedStreamingTranslation",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/fixed_streaming_translation.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "super",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_suggestion_system.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AdvancedSuggestionSystem",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_suggestion_system.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "base_suggestions",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_suggestion_system.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TelemetryDashboardHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/llm_runtime_tools.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TelemetryServer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/llm_runtime_tools.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ModelManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py"
+      ],
+      "ports": [
+        5604,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ModelManagerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py"
+      ],
+      "ports": [
+        5570,
+        5604,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TTS",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TTSAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SessionMemory",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SessionMemoryAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py"
+      ],
+      "ports": [
+        5572,
+        5574,
+        7150
+      ],
+      "health_ports": [
+        6583
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "CoordinatorAgent",
+        "ErrorBus",
+        "MemoryClient"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TextRequest",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/request_coordinator.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ChitchatAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/chitchat_agent.py"
+      ],
+      "ports": [
+        7150,
+        5711
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "NLUAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "Chitchat",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/chitchat_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ContextManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py"
+      ],
+      "ports": [
+        7112,
+        5716,
+        7150,
+        7111
+      ],
+      "health_ports": [
+        7112,
+        6716,
+        8111
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "SessionMemoryAgent",
+        "MemoryManager",
+        "ErrorBus",
+        "MemoryClient"
+      ],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ProactiveAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/proactive.py"
+      ],
+      "ports": [
+        5624,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "Proactive",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/proactive.py"
+      ],
+      "ports": [
+        5624,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PredictiveHealthMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_health_monitor.py"
+      ],
+      "ports": [
+        5613,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedSystem",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent2.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent copy.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/UnifiedSystemAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent_backup.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UnifiedSystemAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent2.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent copy.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/UnifiedSystemAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent_backup.py"
+      ],
+      "ports": [
+        5640
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedPlanningAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "IntentionValidatorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/IntentionValidatorAgent.py"
+      ],
+      "ports": [
+        5701,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "IntentionValidator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/IntentionValidatorAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "NLU",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/nlu_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "NLUAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/nlu_agent.py"
+      ],
+      "ports": [
+        5709,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "LanguageAndTranslationCoordinator"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ConnectionPool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_connector.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PluginEventHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/plugin_manager.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "EmpathyAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py"
+      ],
+      "ports": [
+        7150,
+        5703
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "Empathy",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TTSCache",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_cache.py"
+      ],
+      "ports": [
+        5628,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MemoryOrchestrator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_orchestrator.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/memory_orchestrator_service.py"
+      ],
+      "ports": [
+        5576,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "WakeWordDetectorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/wake_word_detector.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "WakeWordDetector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/wake_word_detector.py"
+      ],
+      "ports": [
+        6577,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "FusedAudioPreprocessor",
+        "AudioCapture"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "VRAMOptimizer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py"
+      ],
+      "ports": [
+        7120,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VRAMOptimizerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py"
+      ],
+      "ports": [
+        7120,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VisionCapture",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vision_capture_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VisionCaptureAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vision_capture_agent.py"
+      ],
+      "ports": [
+        5592,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AdvancedCommandHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_command_handler.py"
+      ],
+      "ports": [
+        5710,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "NLUAgent",
+        "CodeGenerator"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ToneDetector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tone_detector.py"
+      ],
+      "ports": [
+        5625,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "FeedbackHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/feedback_handler.py"
+      ],
+      "ports": [
+        5636,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "NLUAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TriggerWordDetector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/trigger_word_detector.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "with",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/base_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CodeGeneratorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CodeGenerator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py"
+      ],
+      "ports": [
+        5604,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "ModelManagerAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "StreamingAudioCapture",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_audio_capture.py"
+      ],
+      "ports": [
+        7150,
+        6575
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingAudioCaptureAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_audio_capture.py"
+      ],
+      "ports": [
+        7150,
+        6575
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SystemDigitalTwinAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SystemDigitalTwin",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py"
+      ],
+      "ports": [
+        7120,
+        5590,
+        7150
+      ],
+      "health_ports": [
+        6590
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "MemoryClient",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "NoiseReduction",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/noise_reduction_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "NoiseReductionAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/noise_reduction_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "KnowledgeBase",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py"
+      ],
+      "ports": [
+        5578,
+        5715,
+        7150
+      ],
+      "health_ports": [
+        6715
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "ErrorBus",
+        "MemoryClient"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "SpeechProcessor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/speech_processor.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "FusedAudioPreprocessor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fused_audio_preprocessor.py"
+      ],
+      "ports": [
+        6578,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "AudioCapture"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "FusedAudioPreprocessorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fused_audio_preprocessor.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingWhisperASR",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_whisper_asr.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VoiceMeeterControlAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voicemeeter_control_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VoiceMeeterControl",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voicemeeter_control_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingPartialTranscripts",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_partial_transcripts.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LearningOpportunityDetector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_opportunity_detector.py"
+      ],
+      "ports": [
+        7150,
+        5710
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "EmotionEngine",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py"
+      ],
+      "ports": [
+        7150,
+        5575
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "DynamicIdentity",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DynamicIdentityAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py"
+      ],
+      "ports": [
+        5702,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "VAD",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vad_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VADAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vad_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SelfHealingDatabase",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "class",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_manager copy.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/DreamWorldAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ZMQClient",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ZMQServer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ZMQSubscriber",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "from",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_manager copy.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/DreamWorldAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SelfHealingAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [
+        7125
+      ],
+      "health_ports": [
+        8125
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "PerformanceLoggerAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "RecoveryAction",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SystemResourceSnapshot",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SelfHealing",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "if",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AgentBase",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AgentStatus",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "for",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/test_compliant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/utils/pc2_agent_helpers.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ErrorRecord",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ZMQPublisher",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/agent_utils.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LazyVotingSystem",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/lazy_voting.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PersonalityEngine",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/personality_engine.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "MoodTrackerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py"
+      ],
+      "ports": [
+        5704,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MoodTracker",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ResponderAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/responder.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Responder",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/responder.py"
+      ],
+      "ports": [
+        5637,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "EmotionEngine",
+        "NLUAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "StreamingLanguageAnalyzer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_language_analyzer.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "EmotionSynthesis",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "EmotionSynthesisAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py"
+      ],
+      "ports": [
+        5706,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "CoordinatorAgent",
+        "ModelManagerAgent"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ModelVotingAdapter",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_voting_adapter.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VoiceProfiling",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_profiling_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VoiceProfilingAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_profiling_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PrivacyManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "FaceRecognitionAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py"
+      ],
+      "ports": [
+        5610,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "ModelManagerAgent",
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "FaceRecognition",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LivenessDetector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PredictiveLoader",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_loader.py"
+      ],
+      "ports": [
+        5617,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ExecutorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/executor.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": true
+    },
+    {
+      "name": "Executor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/executor.py"
+      ],
+      "ports": [
+        5606,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "PerformanceMetrics",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/fixed_streaming_translation.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AdvancedTimeoutManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/translation_service.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/fixed_streaming_translation.py"
+      ],
+      "ports": [
+        5595,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TranslationCache",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/fixed_streaming_translation.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "PerformanceMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/fixed_streaming_translation.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py"
+      ],
+      "ports": [
+        7150,
+        7103
+      ],
+      "health_ports": [
+        8103
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UltimateTTS",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_tts_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_speech_output/streaming_tts_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UltimateTTSAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_tts_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_speech_output/streaming_tts_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingLanguageToLLM",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_language_to_llm.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingInterruptHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt_handler.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "StreamingInterrupt",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "MetaCognitionAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MetaCognitionAgent.py"
+      ],
+      "ports": [
+        5630,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "CoordinatorAgent",
+        "KnowledgeBase"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MetaCognition",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MetaCognitionAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "GGUFStateTracker",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/gguf_model_manager.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "GGUFModelManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/gguf_model_manager.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LearningManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_manager.py"
+      ],
+      "ports": [
+        5579,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [
+        "CoordinatorAgent",
+        "MemoryClient"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ResourceType",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_orchestration_service.py"
+      ],
+      "ports": [
+        5720,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LearningOrchestration",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_orchestration_service.py"
+      ],
+      "ports": [
+        5720,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DigitalTwin",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/digital_twin_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UserProfile",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/digital_twin_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DigitalTwinAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/digital_twin_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ActiveLearningMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/active_learning_monitor.py"
+      ],
+      "ports": [
+        5638,
+        7150,
+        5591
+      ],
+      "health_ports": [
+        6591
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "MemoryClient",
+        "LearningManager",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "Translation",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/translation_service.py"
+      ],
+      "ports": [
+        5595
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "and",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin_launcher.py"
+      ],
+      "ports": [
+        8120
+      ],
+      "health_ports": [
+        8120
+      ],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VoiceController",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_controller.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ModelOrchestrator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_orchestrator.py"
+      ],
+      "ports": [
+        5571
+      ],
+      "health_ports": [
+        6571
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryClient",
+        "ContextManager",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "RemoteConnector",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/remote_connector_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "RemoteConnectorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py"
+      ],
+      "ports": [
+        7124,
+        7150
+      ],
+      "health_ports": [
+        8124
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "AdvancedRouter"
+      ],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "VRAMManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_manager copy.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DynamicSTTModelManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/stt/dynamic_stt_manager.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ContextSummarizer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_memory/context_summarizer_agent.py"
+      ],
+      "ports": [
+        5592
+      ],
+      "health_ports": [
+        6592
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryClient",
+        "ContextManager",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "names",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_memory/context_summarizer_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ContextSummarizerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/core_memory/context_summarizer_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CodeGenerationIntentHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/intent_handlers/code_generation_intent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AIStudioAssistant",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/ai_studio_assistant.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TimelineUIServer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/TimelineUIServer.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CommandClusteringEngine",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/command_clustering.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CoordinatorModule",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/coordinator.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DiscoveryService",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/discovery_service.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Discovery",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/discovery_service.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Task",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AgentRegistry",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AutoGenFramework",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Message",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "MessageBus",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autogen_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CommandConfirmation",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/command_confirmation.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SessionAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/SessionAgent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Session",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/SessionAgent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CodeCommandHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/code_command_handler.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AutoFixer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/auto_fixer_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AutoFixerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/auto_fixer_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/auto_fixer_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/auto_fixer_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/auto_fixer_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/auto_fixer_agent.py"
+      ],
+      "ports": [
+        7135
+      ],
+      "health_ports": [
+        8135
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "DistributedLauncher",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/distributed_launcher.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CommandSuggestionOptimized",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/command_suggestion_optimized.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ContextBridge",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/context_bridge_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ContextBridgeAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/context_bridge_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CommandSuggestion",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/command_suggestion.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CommandQueue",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/command_queue.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ErrorHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/error_handler.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ErrorSeverity",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/error_handler.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DataExtractionTool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Plan",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Tool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Goal",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ExperienceMemory",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "FileOperationTool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "APIRequestTool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "WebSearchTool",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/autonomous_agent_framework.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "FileSystemAssistant",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/filesystem_assistant_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "FileSystemAssistantAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py"
+      ],
+      "ports": [
+        7123,
+        7150
+      ],
+      "health_ports": [
+        8123
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "UnifiedUtilsAgent"
+      ],
+      "machines": [
+        "pc2",
+        "main_pc"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "CustomCommandHandler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/needtoverify/custom_command_handler.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "to",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/network/secure_zmq.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": true
+    },
+    {
+      "name": "ZMQAuthenticator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/network/secure_zmq.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DiskUsageInfo",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/unified_monitoring.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SecureClient",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/secure_agent_template.py"
+      ],
+      "ports": [
+        5555
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SecureServer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/secure_agent_template.py"
+      ],
+      "ports": [
+        5555
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "main_pc"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VisionProcessing",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/VisionProcessingAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "VisionProcessingAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/VisionProcessingAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TieredResponder",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py"
+      ],
+      "ports": [
+        7100,
+        7150
+      ],
+      "health_ports": [
+        8100
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "ResourceManager"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "DreamingMode",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DreamingModeAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py"
+      ],
+      "ports": [
+        7150,
+        7127
+      ],
+      "health_ports": [
+        8127
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "DreamWorldAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TaskScheduler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py"
+      ],
+      "ports": [
+        7115,
+        7116,
+        5555,
+        7150
+      ],
+      "health_ports": [
+        8115,
+        7116
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "HealthMonitor",
+        "AsyncProcessor"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TaskSchedulerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/task_scheduler.py"
+      ],
+      "ports": [
+        7115,
+        7116,
+        5555,
+        7150
+      ],
+      "health_ports": [
+        7116
+      ],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ResourceMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/performance_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/cache_manager.py"
+      ],
+      "ports": [
+        7102,
+        7150,
+        7103
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "definitions",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/advanced_router.py"
+      ],
+      "ports": [
+        5555,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AdvancedRouter",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py"
+      ],
+      "ports": [
+        7129,
+        5555,
+        7150
+      ],
+      "health_ports": [
+        8129
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "TaskScheduler"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TestCompliant",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/test_compliant_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AdvancedTutoring",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutoring_agent.py"
+      ],
+      "ports": [
+        5650,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AdvancedTutoringAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutoring_agent.py"
+      ],
+      "ports": [
+        5650,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "HealthMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/src/core/health_monitor.py"
+      ],
+      "ports": [
+        7152,
+        7114,
+        7115,
+        7150
+      ],
+      "health_ports": [
+        7153,
+        8114,
+        7115
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "ServiceRegistry",
+        "ErrorBus",
+        "ResourceManager"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "HealthMonitorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/health_monitor.py"
+      ],
+      "ports": [
+        7114,
+        7115,
+        7150
+      ],
+      "health_ports": [
+        7115
+      ],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TutoringService",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutoring_service_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TutoringServiceAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py"
+      ],
+      "ports": [
+        7130,
+        7150
+      ],
+      "health_ports": [
+        8130
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ExperienceTrackerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/experience_tracker.py"
+      ],
+      "ports": [
+        7112,
+        7113,
+        7106,
+        7150
+      ],
+      "health_ports": [
+        7113
+      ],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ExperienceTracker",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py"
+      ],
+      "ports": [
+        7112,
+        7113,
+        7106,
+        7150
+      ],
+      "health_ports": [
+        8112,
+        7113
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "EpisodicMemoryAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedWebAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py"
+      ],
+      "ports": [
+        7126,
+        7150
+      ],
+      "health_ports": [
+        8126
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent",
+        "FileSystemAssistantAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedWeb",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/unified_web_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Tutor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/tutor_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "TaskQueue",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ScenarioType",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DreamWorld",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "MemoryEntry",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/memory_orchestrator_service.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "CacheManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py"
+      ],
+      "ports": [
+        7102,
+        7150
+      ],
+      "health_ports": [
+        8102
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "AsyncProcessor"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MemoryScheduler",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/memory_scheduler.py"
+      ],
+      "ports": [
+        7140,
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LearningAdjuster",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/LearningAdjusterAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/LearningAdjusterAgent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "LearningAdjusterAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/LearningAdjusterAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/LearningAdjusterAgent.py"
+      ],
+      "ports": [
+        5643
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ModelEvaluationFramework",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/model_evaluation_framework.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "AgentTrustScorer",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/AgentTrustScorer.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py"
+      ],
+      "ports": [
+        7122,
+        5626,
+        7150
+      ],
+      "health_ports": [
+        8122
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "PerformanceLoggerAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py"
+      ],
+      "ports": [
+        7128,
+        7150
+      ],
+      "health_ports": [
+        8128
+      ],
+      "has_error_bus": true,
+      "dependencies": [
+        "PerformanceMonitor"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "PerformanceLogger",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/PerformanceLoggerAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ErrorCollectorModule",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/Error_Management_System.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "DummyArgs",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/unified_utils_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/DreamingModeAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/rca_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/self_healing_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/UnifiedErrorAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/AuthenticationAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UnifiedUtils",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UnifiedMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_monitoring.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Orchestrator",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_monitoring.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/health_monitor.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "OrchestratorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/health_monitor.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "SystemHealthManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/system_health_manager.py"
+      ],
+      "ports": [
+        7140,
+        7150,
+        7142
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "Authentication",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py"
+      ],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": true,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "ProactiveContextMonitor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py"
+      ],
+      "ports": [
+        7119
+      ],
+      "health_ports": [
+        8119
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "ContextManager"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "EpisodicMemory",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/EpisodicMemoryAgent.py"
+      ],
+      "ports": [
+        7106
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "EpisodicMemoryAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/EpisodicMemoryAgent.py"
+      ],
+      "ports": [
+        7106,
+        5596
+      ],
+      "health_ports": [
+        8106
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ErrorPattern",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/rca_agent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "UnifiedMemoryReasoningAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py"
+      ],
+      "ports": [
+        7105,
+        5596
+      ],
+      "health_ports": [
+        8105
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "HealthMonitor",
+        "MemoryOrchestrator",
+        "CacheManager"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedMemoryReasoning",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py"
+      ],
+      "ports": [],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [],
+      "running": false
+    },
+    {
+      "name": "MemoryManager",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/backups/memory_manager.py"
+      ],
+      "ports": [
+        7110
+      ],
+      "health_ports": [
+        8110
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "machines": [
+        "pc2"
+      ],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MemoryDecayManager",
+      "file_paths": [],
+      "ports": [
+        7133
+      ],
+      "health_ports": [
+        8133
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "EnhancedContextualMemory",
+      "file_paths": [],
+      "ports": [
+        7134
+      ],
+      "health_ports": [
+        8134
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryManager"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AuthenticationAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py"
+      ],
+      "ports": [
+        7116
+      ],
+      "health_ports": [
+        8116
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedErrorAgent",
+      "file_paths": [],
+      "ports": [
+        7117
+      ],
+      "health_ports": [
+        8117
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedUtilsAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py"
+      ],
+      "ports": [
+        7118
+      ],
+      "health_ports": [
+        8118
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedErrorAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AsyncProcessor",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py"
+      ],
+      "ports": [
+        7101
+      ],
+      "health_ports": [
+        8101
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "ResourceManager"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "RCAAgent",
+      "file_paths": [],
+      "ports": [
+        7121
+      ],
+      "health_ports": [
+        8121
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "HealthMonitor",
+        "SelfHealingAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "DreamWorldAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py"
+      ],
+      "ports": [
+        7104
+      ],
+      "health_ports": [
+        8104
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TutorAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py"
+      ],
+      "ports": [
+        7108
+      ],
+      "health_ports": [
+        8108
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "TutoringServiceAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TutoringAgent",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py"
+      ],
+      "ports": [
+        7131,
+        7108
+      ],
+      "health_ports": [
+        8131
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "TutoringServiceAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedMemoryReasoningAgentAlt",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_memory_reasoning_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_memory_reasoning_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_memory_reasoning_agent.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_memory_reasoning_agent.py"
+      ],
+      "ports": [
+        7132
+      ],
+      "health_ports": [
+        8132
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "CacheManager"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AgentUtils",
+      "file_paths": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/agent_utils.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/agent_utils.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/agent_utils.py",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/agent_utils.py"
+      ],
+      "ports": [
+        7136
+      ],
+      "health_ports": [
+        8136
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedUtilsAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml",
+        "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config_fixed.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ErrorBus",
+      "file_paths": [],
+      "ports": [
+        7150
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ServiceRegistry",
+      "file_paths": [],
+      "ports": [
+        7151
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "ErrorBus"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MemoryClient",
+      "file_paths": [],
+      "ports": [
+        5713
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "SpeechToText",
+      "file_paths": [],
+      "ports": [
+        5560
+      ],
+      "health_ports": [
+        6560
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "IntentRecognizer",
+      "file_paths": [],
+      "ports": [
+        5561
+      ],
+      "health_ports": [
+        6561
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryClient",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "InputProcessor",
+      "file_paths": [],
+      "ports": [
+        5562
+      ],
+      "health_ports": [
+        6562
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "SpeechToText",
+        "IntentRecognizer",
+        "SessionMemoryAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "RequestCoordinator",
+      "file_paths": [],
+      "ports": [
+        5570
+      ],
+      "health_ports": [
+        6570
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "SessionMemoryAgent",
+        "ContextManager",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "GoalManager",
+      "file_paths": [],
+      "ports": [
+        5572
+      ],
+      "health_ports": [
+        6572
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryClient",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ResponseGenerator",
+      "file_paths": [],
+      "ports": [
+        5580
+      ],
+      "health_ports": [
+        6580
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "ModelOrchestrator",
+        "MemoryClient"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TranslationService",
+      "file_paths": [],
+      "ports": [
+        5581
+      ],
+      "health_ports": [
+        6581
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "MemoryClient",
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "StreamingTTS",
+      "file_paths": [],
+      "ports": [
+        5582
+      ],
+      "health_ports": [
+        6582
+      ],
+      "has_error_bus": false,
+      "dependencies": [
+        "ErrorBus",
+        "ServiceRegistry"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TaskRouter",
+      "file_paths": [],
+      "ports": [
+        8570
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ChainOfThoughtAgent",
+      "file_paths": [],
+      "ports": [
+        5612
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "GOT_TOTAgent",
+      "file_paths": [],
+      "ports": [
+        5646
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "GoalOrchestratorAgent",
+      "file_paths": [],
+      "ports": [
+        7001
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "EnhancedModelRouter",
+      "file_paths": [],
+      "ports": [
+        5598
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TinyLlamaService",
+      "file_paths": [],
+      "ports": [
+        5615
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "NLLBAdapter",
+      "file_paths": [],
+      "ports": [
+        5581
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "LocalFineTunerAgent",
+      "file_paths": [],
+      "ports": [
+        5645
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "SelfTrainingOrchestrator",
+      "file_paths": [],
+      "ports": [
+        5644
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "CognitiveModelAgent",
+      "file_paths": [],
+      "ports": [
+        5641
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "ConsolidatedTranslator",
+      "file_paths": [],
+      "ports": [
+        5563
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "VoiceProfiler",
+      "file_paths": [],
+      "ports": [
+        5708
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "UnifiedPlanningAgent",
+      "file_paths": [],
+      "ports": [
+        5634
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "IntentionValidatorAgent",
+        "GoalOrchestratorAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MultiAgentSwarmManager",
+      "file_paths": [],
+      "ports": [
+        5639
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "UnifiedPlanningAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "TTSConnector",
+      "file_paths": [],
+      "ports": [
+        5582
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "CoordinatorAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "StreamingTTSAgent",
+      "file_paths": [],
+      "ports": [
+        5562
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "CoordinatorAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AudioCapture",
+      "file_paths": [],
+      "ports": [
+        6575
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "LanguageAndTranslationCoordinator",
+      "file_paths": [],
+      "ports": [
+        6581
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "LearningAgent",
+      "file_paths": [],
+      "ports": [
+        7107
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "EpisodicMemoryAgent"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "KnowledgeBaseAgent",
+      "file_paths": [],
+      "ports": [
+        7109
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [
+        "CacheManager"
+      ],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml",
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "HealthCheck",
+      "file_paths": [],
+      "ports": [
+        5591
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "MetricsCollector",
+      "file_paths": [],
+      "ports": [
+        5592
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    },
+    {
+      "name": "AlertManager",
+      "file_paths": [],
+      "ports": [
+        5593
+      ],
+      "health_ports": [],
+      "has_error_bus": false,
+      "dependencies": [],
+      "machines": [],
+      "in_config_files": [
+        "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/source_of_truth_config.yaml"
+      ],
+      "running": false
+    }
+  ]
+}

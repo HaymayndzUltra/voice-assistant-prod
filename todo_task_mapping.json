@@ -1,0 +1,39 @@
+{
+  "mappings": {
+    "wsl_compaction_todo": {
+      "todo_content": "Run wsl-shrink-script.ps1",
+      "task_id": "wsl_vhdx_compaction",
+      "task_todo_id": "wsl_vhdx_compaction_todo_3",
+      "created_at": "2025-07-27T17:18:40.447859"
+    },
+    "wsl_verify_todo": {
+      "todo_content": "Verify space reclaimed",
+      "task_id": "wsl_vhdx_compaction",
+      "task_todo_id": "wsl_vhdx_compaction_todo_4",
+      "created_at": "2025-07-27T17:19:40.899189"
+    },
+    "mapping_3": {
+      "todo_write_content": "Check if /etc/docker/daemon.json already exists",
+      "task_id": "docker_daemon_config",
+      "task_todo_content": "Backup existing Docker daemon.json",
+      "created_at": "2025-07-27T18:09:22.656861",
+      "status": "active"
+    },
+    "mapping_4": {
+      "todo_write_content": "Create backup of existing Docker daemon configuration",
+      "task_id": "docker_daemon_config",
+      "task_todo_content": "Copy docker-daemon-config.json to /etc/docker/",
+      "created_at": "2025-07-27T18:09:22.657579",
+      "status": "active"
+    },
+    "mapping_5": {
+      "todo_write_content": "Copy docker-daemon-config.json to /etc/docker/daemon.json",
+      "task_id": "docker_daemon_config",
+      "task_todo_content": "Restart Docker service",
+      "created_at": "2025-07-27T18:09:22.657898",
+      "status": "active"
+    }
+  },
+  "auto_mappings": {},
+  "last_updated": "2025-07-27T18:09:22.657904"
+}

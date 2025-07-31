@@ -1,0 +1,196 @@
+{
+  "timestamp": "2025-06-18T17:46:18.026042",
+  "summary": {
+    "total_services": 30,
+    "healthy": 1,
+    "unhealthy": 0,
+    "errors": 29
+  },
+  "results": [
+    {
+      "Service Name": "TieredResponder",
+      "Port": 7100,
+      "Status": "[OK] Healthy",
+      "Response": {
+        "status": "ok",
+        "service": "SimpleTestAgent",
+        "port": 7100,
+        "timestamp": 1750239890.7381976
+      }
+    },
+    {
+      "Service Name": "AsyncProcessor",
+      "Port": 7101,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "CacheManager",
+      "Port": 7102,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "PerformanceMonitor",
+      "Port": 7103,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "DreamWorldAgent",
+      "Port": 7104,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "UnifiedMemoryReasoningAgent",
+      "Port": 7105,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "EpisodicMemoryAgent",
+      "Port": 7106,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "LearningAgent",
+      "Port": 7107,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "TutoringAgent",
+      "Port": 7108,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "KnowledgeBaseAgent",
+      "Port": 7109,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "MemoryManager",
+      "Port": 7110,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "ContextManager",
+      "Port": 7111,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "ExperienceTracker",
+      "Port": 7112,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "ResourceManager",
+      "Port": 7113,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "HealthMonitor",
+      "Port": 7114,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "TaskScheduler",
+      "Port": 7115,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "AuthenticationAgent",
+      "Port": 7116,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "UnifiedErrorAgent",
+      "Port": 7117,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "UnifiedUtilsAgent",
+      "Port": 7118,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "ProactiveContextMonitor",
+      "Port": 7119,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "SystemDigitalTwin",
+      "Port": 7120,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "RCAAgent",
+      "Port": 7121,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "AgentTrustScorer",
+      "Port": 7122,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "FileSystemAssistantAgent",
+      "Port": 7123,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "RemoteConnectorAgent",
+      "Port": 7124,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "SelfHealingAgent",
+      "Port": 7125,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "UnifiedWebAgent",
+      "Port": 7126,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "DreamingModeAgent",
+      "Port": 7127,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "PerformanceLoggerAgent",
+      "Port": 7128,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    },
+    {
+      "Service Name": "AdvancedRouter",
+      "Port": 7129,
+      "Status": "[ERROR] Timeout",
+      "Response": "No response within 3 seconds"
+    }
+  ]
+}

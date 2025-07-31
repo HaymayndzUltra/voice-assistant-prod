@@ -1,0 +1,243 @@
+{
+  "total": 18,
+  "passed": 2,
+  "skipped": 3,
+  "failed": 13,
+  "by_method": {
+    "nllb_adapter_nllb": {
+      "count": 13,
+      "avg_confidence": 0.7192307692307691,
+      "avg_time_ms": 947.7696785560021
+    },
+    "skipped_english": {
+      "count": 3,
+      "avg_confidence": 1.0,
+      "avg_time_ms": 0.5023479461669922
+    },
+    "none": {
+      "count": 2,
+      "avg_confidence": 0.0,
+      "avg_time_ms": 0.0
+    }
+  },
+  "by_category": {
+    "basic": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "commands": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "complex": {
+      "total": 3,
+      "passed": 1,
+      "skipped": 0,
+      "failed": 2
+    },
+    "taglish": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "english": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 3,
+      "failed": 0
+    },
+    "edge_cases": {
+      "total": 3,
+      "passed": 1,
+      "skipped": 0,
+      "failed": 2
+    }
+  },
+  "tests": [
+    {
+      "category": "basic",
+      "text": "Magandang umaga",
+      "translated": "Magandang umaga",
+      "expected": "Good morning",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.0,
+      "time_ms": 685.849666595459,
+      "result": "FAILED"
+    },
+    {
+      "category": "basic",
+      "text": "Kumusta ka?",
+      "translated": "Kumusta ka? What is it?",
+      "expected": "How are you?",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 1104.1498184204102,
+      "result": "FAILED"
+    },
+    {
+      "category": "basic",
+      "text": "Salamat sa tulong mo",
+      "translated": "Thanks for your help.",
+      "expected": "Thank you for your help",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 776.67236328125,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "buksan mo ang file",
+      "translated": "Buksan mo ang file",
+      "expected": "open the file",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 732.7916622161865,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "i-save mo ang document",
+      "translated": "I-save your document",
+      "expected": "save the document",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 751.8177032470703,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "isara mo ang window",
+      "translated": "isara mo ang window",
+      "expected": "close the window",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.0,
+      "time_ms": 737.3096942901611,
+      "result": "FAILED"
+    },
+    {
+      "category": "complex",
+      "text": "Ang teknolohiya ay mabilis na umuunlad sa ating panahon",
+      "translated": "Technology is rapidly advancing in our time",
+      "expected": "Technology is rapidly advancing in our time",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 1231.1456203460693,
+      "result": "PASSED"
+    },
+    {
+      "category": "complex",
+      "text": "Mahalaga ang pag-aaral ng mga wika para sa komunikasyon",
+      "translated": "Mahalaga and pag-aral ng mga wika for sa komunikasyon",
+      "expected": "Learning languages is important for communication",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 2098.876714706421,
+      "result": "FAILED"
+    },
+    {
+      "category": "complex",
+      "text": "Ang artificial intelligence ay nagbibigay ng maraming oportunidad",
+      "translated": "Artificial intelligence offers many opportunities",
+      "expected": "Artificial intelligence provides many opportunities",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 856.0738563537598,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "Pwede mo ba i-check ang email ko?",
+      "translated": "Can I check your email?",
+      "expected": "Can you check my email?",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 1007.5433254241943,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "I-download mo yung file na yan",
+      "translated": "I-downloaded my yung file na yan",
+      "expected": "Download that file",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 860.0835800170898,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "Na-receive mo ba ang message ko?",
+      "translated": "Didn't you get a message from me?",
+      "expected": "Did you receive my message?",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 957.0345878601074,
+      "result": "FAILED"
+    },
+    {
+      "category": "english",
+      "text": "Hello, how are you today?",
+      "translated": "Hello, how are you today?",
+      "expected": "Hello, how are you today?",
+      "method": "skipped_english",
+      "confidence": 1.0,
+      "time_ms": 0.0,
+      "result": "SKIPPED"
+    },
+    {
+      "category": "english",
+      "text": "Can you help me with this?",
+      "translated": "Can you help me with this?",
+      "expected": "Can you help me with this?",
+      "method": "skipped_english",
+      "confidence": 1.0,
+      "time_ms": 0.9977817535400391,
+      "result": "SKIPPED"
+    },
+    {
+      "category": "english",
+      "text": "Open the document please",
+      "translated": "Open the document please",
+      "expected": "Open the document please",
+      "method": "skipped_english",
+      "confidence": 1.0,
+      "time_ms": 0.5092620849609375,
+      "result": "SKIPPED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "",
+      "translated": "",
+      "expected": "",
+      "method": "none",
+      "confidence": 0.0,
+      "time_ms": 0,
+      "result": "PASSED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "   ",
+      "translated": "",
+      "expected": "   ",
+      "method": "none",
+      "confidence": 0.0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "123456",
+      "translated": "123456 Other",
+      "expected": "123456",
+      "method": "nllb_adapter_nllb",
+      "confidence": 0.85,
+      "time_ms": 521.6572284698486,
+      "result": "FAILED"
+    }
+  ]
+}

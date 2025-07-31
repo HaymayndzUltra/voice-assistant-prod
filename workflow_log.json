@@ -1,0 +1,69 @@
+{
+  "workflow_events": [
+    {
+      "timestamp": "2025-07-27T18:09:22.658488",
+      "type": "todo_processed",
+      "data": {
+        "todo_content": "Check if /etc/docker/daemon.json already exists",
+        "result": {
+          "processed": false,
+          "method": "no_mapping",
+          "task_updated": false,
+          "task_completed": false,
+          "details": {
+            "message": "No mapping found for: 'Check if /etc/docker/daemon.json already exists'"
+          }
+        },
+        "processed_at": "2025-07-27T18:09:22.658451"
+      }
+    },
+    {
+      "timestamp": "2025-07-27T18:09:22.659254",
+      "type": "todo_processed",
+      "data": {
+        "todo_content": "Create backup of existing Docker daemon configuration",
+        "result": {
+          "processed": true,
+          "method": "similarity_matching",
+          "task_updated": true,
+          "task_completed": false,
+          "details": {
+            "match": {
+              "task_id": "docker_daemon_config",
+              "todo_content": "Backup existing Docker daemon.json",
+              "similarity_type": "current"
+            }
+          }
+        },
+        "processed_at": "2025-07-27T18:09:22.659206"
+      }
+    },
+    {
+      "timestamp": "2025-07-27T18:09:22.659960",
+      "type": "todo_processed",
+      "data": {
+        "todo_content": "Copy docker-daemon-config.json to /etc/docker/daemon.json",
+        "result": {
+          "processed": true,
+          "method": "similarity_matching",
+          "task_updated": true,
+          "task_completed": false,
+          "details": {
+            "match": {
+              "task_id": "docker_daemon_config",
+              "todo_content": "Copy docker-daemon-config.json to /etc/docker/",
+              "similarity_type": "next"
+            }
+          }
+        },
+        "processed_at": "2025-07-27T18:09:22.659919"
+      }
+    }
+  ],
+  "last_processed": "2025-07-27T18:09:22.659962",
+  "stats": {
+    "tasks_completed": 0,
+    "tasks_started": 0,
+    "todos_processed": 3
+  }
+}

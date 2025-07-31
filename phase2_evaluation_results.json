@@ -1,0 +1,3152 @@
+{
+  "mainpc_evaluations": [
+    {
+      "agent": {
+        "name": "ServiceRegistry",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/agents/service_registry_agent.py",
+        "port": "${PORT_OFFSET}+7200",
+        "health_check_port": "${PORT_OFFSET}+8200",
+        "required": true,
+        "dependencies": [],
+        "config": {
+          "backend": "memory",
+          "redis": {
+            "url": "redis://localhost:6379/0",
+            "prefix": "service_registry:"
+          }
+        },
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 0
+      },
+      "overall": {
+        "overall_score": 0.595,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "SystemDigitalTwin",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/agents/system_digital_twin.py",
+        "port": "${PORT_OFFSET}+7220",
+        "health_check_port": "${PORT_OFFSET}+8220",
+        "required": true,
+        "dependencies": [
+          "ServiceRegistry"
+        ],
+        "config": {
+          "db_path": "data/unified_memory.db",
+          "redis": {
+            "host": "localhost",
+            "port": "${PORT_OFFSET}+6379",
+            "db": 0
+          },
+          "zmq_request_timeout": 5000
+        },
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 52 dependents",
+        "dependent_count": 52,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.665,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "RequestCoordinator",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/agents/request_coordinator.py",
+        "port": 26002,
+        "health_check_port": 27002,
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 12 dependents",
+        "dependent_count": 12,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.7150000000000001,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "ModelManagerSuite",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/model_manager_suite.py",
+        "port": "${PORT_OFFSET}+7211",
+        "health_check_port": "${PORT_OFFSET}+8211",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {
+          "models_dir": "models",
+          "vram_budget_percentage": 80,
+          "idle_timeout": 300,
+          "hybrid_inference_policy_ref": "global"
+        },
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 1.0,
+        "impact_level": "gpu_intensive",
+        "reasoning": "GPU processing on RTX_4090 with 24GB VRAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 13 dependents",
+        "dependent_count": 13,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.865,
+        "rating": "CRITICAL",
+        "recommendation": "KEEP - Critical system component"
+      }
+    },
+    {
+      "agent": {
+        "name": "VRAMOptimizerAgent",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/agents/vram_optimizer_agent.py",
+        "port": "${PORT_OFFSET}+5572",
+        "health_check_port": "${PORT_OFFSET}+6572",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "RequestCoordinator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 1.0,
+        "impact_level": "gpu_intensive",
+        "reasoning": "GPU processing on RTX_4090 with 24GB VRAM",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.685,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "ObservabilityHub",
+        "group": "foundation_services",
+        "script_path": "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py",
+        "port": "${PORT_OFFSET}+9000",
+        "health_check_port": "${PORT_OFFSET}+9001",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {
+          "prometheus_enabled": true,
+          "parallel_health_checks": true,
+          "prediction_enabled": true,
+          "dynamic_batch_tuning": true
+        },
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 3 dependents",
+        "dependent_count": 3,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.605,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "UnifiedSystemAgent",
+        "group": "foundation_services",
+        "script_path": "main_pc_code/agents/unified_system_agent.py",
+        "port": "${PORT_OFFSET}+7201",
+        "health_check_port": "${PORT_OFFSET}+8201",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.9,
+        "usage_level": "critical",
+        "reasoning": "Foundation service - critical infrastructure"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.5449999999999999,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "MemoryClient",
+        "group": "memory_system",
+        "script_path": "main_pc_code/agents/memory_client.py",
+        "port": "${PORT_OFFSET}+5713",
+        "health_check_port": "${PORT_OFFSET}+6713",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 32GB RAM",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 5 dependents",
+        "dependent_count": 5,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.7449999999999999,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "SessionMemoryAgent",
+        "group": "memory_system",
+        "script_path": "main_pc_code/agents/session_memory_agent.py",
+        "port": "${PORT_OFFSET}+5574",
+        "health_check_port": "${PORT_OFFSET}+6574",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "SystemDigitalTwin",
+          "MemoryClient"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 32GB RAM",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.565,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "KnowledgeBase",
+        "group": "memory_system",
+        "script_path": "main_pc_code/agents/knowledge_base.py",
+        "port": "${PORT_OFFSET}+5715",
+        "health_check_port": "${PORT_OFFSET}+6715",
+        "required": true,
+        "dependencies": [
+          "MemoryClient",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 32GB RAM",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.33749999999999997,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "CodeGenerator",
+        "group": "utility_services",
+        "script_path": "main_pc_code/agents/code_generator_agent.py",
+        "port": "${PORT_OFFSET}+5650",
+        "health_check_port": "${PORT_OFFSET}+6650",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin",
+          "ModelManagerSuite"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.3075,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "SelfTrainingOrchestrator",
+        "group": "utility_services",
+        "script_path": "main_pc_code/FORMAINPC/self_training_orchestrator.py",
+        "port": "${PORT_OFFSET}+5660",
+        "health_check_port": "${PORT_OFFSET}+6660",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin",
+          "ModelManagerSuite"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.635,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "PredictiveHealthMonitor",
+        "group": "utility_services",
+        "script_path": "main_pc_code/agents/predictive_health_monitor.py",
+        "port": "${PORT_OFFSET}+5613",
+        "health_check_port": "${PORT_OFFSET}+6613",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.2,
+        "usage_level": "low",
+        "reasoning": "Utility service - background usage"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.24,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "Executor",
+        "group": "utility_services",
+        "script_path": "main_pc_code/agents/executor.py",
+        "port": "${PORT_OFFSET}+5606",
+        "health_check_port": "${PORT_OFFSET}+6606",
+        "required": true,
+        "dependencies": [
+          "CodeGenerator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "TinyLlamaServiceEnhanced",
+        "group": "utility_services",
+        "script_path": "main_pc_code/FORMAINPC/tiny_llama_service_enhanced.py",
+        "port": "${PORT_OFFSET}+5615",
+        "health_check_port": "${PORT_OFFSET}+6615",
+        "required": false,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.2375,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "LocalFineTunerAgent",
+        "group": "utility_services",
+        "script_path": "main_pc_code/FORMAINPC/local_fine_tuner_agent.py",
+        "port": "${PORT_OFFSET}+5642",
+        "health_check_port": "${PORT_OFFSET}+6642",
+        "required": true,
+        "dependencies": [
+          "SelfTrainingOrchestrator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ChainOfThoughtAgent",
+        "group": "reasoning_services",
+        "script_path": "main_pc_code/FORMAINPC/chain_of_thought_agent.py",
+        "port": "${PORT_OFFSET}+5612",
+        "health_check_port": "${PORT_OFFSET}+6612",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.3075,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "GoTToTAgent",
+        "group": "reasoning_services",
+        "script_path": "main_pc_code/FORMAINPC/got_tot_agent.py",
+        "port": "${PORT_OFFSET}+5646",
+        "health_check_port": "${PORT_OFFSET}+6646",
+        "required": false,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin",
+          "ChainOfThoughtAgent"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "CognitiveModelAgent",
+        "group": "reasoning_services",
+        "script_path": "main_pc_code/FORMAINPC/cognitive_model_agent.py",
+        "port": "${PORT_OFFSET}+5641",
+        "health_check_port": "${PORT_OFFSET}+6641",
+        "required": false,
+        "dependencies": [
+          "ChainOfThoughtAgent",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "AI processing service - high demand"
+      },
+      "resource": {
+        "resource_score": 1.0,
+        "impact_level": "gpu_intensive",
+        "reasoning": "GPU processing on RTX_4090 with 24GB VRAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.615,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "FaceRecognitionAgent",
+        "group": "vision_processing",
+        "script_path": "main_pc_code/agents/face_recognition_agent.py",
+        "port": "${PORT_OFFSET}+5610",
+        "health_check_port": "${PORT_OFFSET}+6610",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 1.0,
+        "impact_level": "gpu_intensive",
+        "reasoning": "GPU processing on RTX_4090 with 24GB VRAM",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.4475,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "LearningOrchestrationService",
+        "group": "learning_knowledge",
+        "script_path": "main_pc_code/agents/learning_orchestration_service.py",
+        "port": "${PORT_OFFSET}+7210",
+        "health_check_port": "${PORT_OFFSET}+8212",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.47,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "LearningOpportunityDetector",
+        "group": "learning_knowledge",
+        "script_path": "main_pc_code/agents/learning_opportunity_detector.py",
+        "port": "${PORT_OFFSET}+7202",
+        "health_check_port": "${PORT_OFFSET}+8202",
+        "required": true,
+        "dependencies": [
+          "LearningOrchestrationService",
+          "MemoryClient",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.41,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "LearningManager",
+        "group": "learning_knowledge",
+        "script_path": "main_pc_code/agents/learning_manager.py",
+        "port": "${PORT_OFFSET}+5580",
+        "health_check_port": "${PORT_OFFSET}+6580",
+        "required": true,
+        "dependencies": [
+          "MemoryClient",
+          "RequestCoordinator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.47,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "ActiveLearningMonitor",
+        "group": "learning_knowledge",
+        "script_path": "main_pc_code/agents/active_learning_monitor.py",
+        "port": "${PORT_OFFSET}+5638",
+        "health_check_port": "${PORT_OFFSET}+6638",
+        "required": true,
+        "dependencies": [
+          "LearningManager",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.41,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "LearningAdjusterAgent",
+        "group": "learning_knowledge",
+        "script_path": "main_pc_code/FORMAINPC/learning_adjuster_agent.py",
+        "port": "${PORT_OFFSET}+5643",
+        "health_check_port": "${PORT_OFFSET}+6643",
+        "required": true,
+        "dependencies": [
+          "SelfTrainingOrchestrator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.41,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "ModelOrchestrator",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/model_orchestrator.py",
+        "port": "${PORT_OFFSET}+7213",
+        "health_check_port": "${PORT_OFFSET}+8213",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 1.0,
+        "impact_level": "gpu_intensive",
+        "reasoning": "GPU processing on RTX_4090 with 24GB VRAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.675,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "GoalManager",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/goal_manager.py",
+        "port": "${PORT_OFFSET}+7205",
+        "health_check_port": "${PORT_OFFSET}+8205",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "ModelOrchestrator",
+          "SystemDigitalTwin",
+          "MemoryClient"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 0,
+        "dependency_count": 4
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "IntentionValidatorAgent",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/IntentionValidatorAgent.py",
+        "port": "${PORT_OFFSET}+5701",
+        "health_check_port": "${PORT_OFFSET}+6701",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "NLUAgent",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/nlu_agent.py",
+        "port": "${PORT_OFFSET}+5709",
+        "health_check_port": "${PORT_OFFSET}+6709",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "AI processing service - high demand"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 4 dependents",
+        "dependent_count": 4,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.5349999999999999,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "AdvancedCommandHandler",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/advanced_command_handler.py",
+        "port": "${PORT_OFFSET}+5710",
+        "health_check_port": "${PORT_OFFSET}+6710",
+        "required": true,
+        "dependencies": [
+          "NLUAgent",
+          "CodeGenerator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ChitchatAgent",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/chitchat_agent.py",
+        "port": "${PORT_OFFSET}+5711",
+        "health_check_port": "${PORT_OFFSET}+6711",
+        "required": true,
+        "dependencies": [
+          "NLUAgent",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "FeedbackHandler",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/feedback_handler.py",
+        "port": "${PORT_OFFSET}+5636",
+        "health_check_port": "${PORT_OFFSET}+6636",
+        "required": true,
+        "dependencies": [
+          "NLUAgent",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "Responder",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/responder.py",
+        "port": "${PORT_OFFSET}+5637",
+        "health_check_port": "${PORT_OFFSET}+6637",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "FaceRecognitionAgent",
+          "NLUAgent",
+          "StreamingTTSAgent",
+          "SystemDigitalTwin",
+          "TTSService"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 0,
+        "dependency_count": 6
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "DynamicIdentityAgent",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/DynamicIdentityAgent.py",
+        "port": "${PORT_OFFSET}+5802",
+        "health_check_port": "${PORT_OFFSET}+6802",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "EmotionSynthesisAgent",
+        "group": "language_processing",
+        "script_path": "main_pc_code/agents/emotion_synthesis_agent.py",
+        "port": "${PORT_OFFSET}+5706",
+        "health_check_port": "${PORT_OFFSET}+6706",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.31,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "STTService",
+        "group": "speech_services",
+        "script_path": "main_pc_code/services/stt_service.py",
+        "port": "${PORT_OFFSET}+5800",
+        "health_check_port": "${PORT_OFFSET}+6800",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.42,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "TTSService",
+        "group": "speech_services",
+        "script_path": "main_pc_code/services/tts_service.py",
+        "port": "${PORT_OFFSET}+5801",
+        "health_check_port": "${PORT_OFFSET}+6801",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.48,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "AudioCapture",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/streaming_audio_capture.py",
+        "port": "${PORT_OFFSET}+6550",
+        "health_check_port": "${PORT_OFFSET}+7550",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "good"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.43,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "FusedAudioPreprocessor",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/fused_audio_preprocessor.py",
+        "port": "${PORT_OFFSET}+6551",
+        "health_check_port": "${PORT_OFFSET}+7551",
+        "required": true,
+        "dependencies": [
+          "AudioCapture",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on Ryzen_9_7900 (12 cores)",
+        "hardware_match": "good"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.53,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "StreamingInterruptHandler",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/streaming_interrupt_handler.py",
+        "port": "${PORT_OFFSET}+5576",
+        "health_check_port": "${PORT_OFFSET}+6576",
+        "required": true,
+        "dependencies": [
+          "StreamingSpeechRecognition",
+          "StreamingTTSAgent",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.36,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "StreamingSpeechRecognition",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/streaming_speech_recognition.py",
+        "port": "${PORT_OFFSET}+6553",
+        "health_check_port": "${PORT_OFFSET}+7553",
+        "required": true,
+        "dependencies": [
+          "FusedAudioPreprocessor",
+          "RequestCoordinator",
+          "STTService",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "good"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 4
+      },
+      "overall": {
+        "overall_score": 0.48,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "StreamingTTSAgent",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/streaming_tts_agent.py",
+        "port": "${PORT_OFFSET}+5562",
+        "health_check_port": "${PORT_OFFSET}+6562",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "TTSService",
+          "SystemDigitalTwin",
+          "UnifiedSystemAgent"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 3 dependents",
+        "dependent_count": 3,
+        "dependency_count": 4
+      },
+      "overall": {
+        "overall_score": 0.48,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "WakeWordDetector",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/wake_word_detector.py",
+        "port": "${PORT_OFFSET}+6552",
+        "health_check_port": "${PORT_OFFSET}+7552",
+        "required": true,
+        "dependencies": [
+          "AudioCapture",
+          "FusedAudioPreprocessor",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "StreamingLanguageAnalyzer",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/streaming_language_analyzer.py",
+        "port": "${PORT_OFFSET}+5579",
+        "health_check_port": "${PORT_OFFSET}+6579",
+        "required": true,
+        "dependencies": [
+          "StreamingSpeechRecognition",
+          "SystemDigitalTwin",
+          "TranslationService"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.36,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ProactiveAgent",
+        "group": "audio_interface",
+        "script_path": "main_pc_code/agents/ProactiveAgent.py",
+        "port": "${PORT_OFFSET}+5624",
+        "health_check_port": "${PORT_OFFSET}+6624",
+        "required": true,
+        "dependencies": [
+          "RequestCoordinator",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "EmotionEngine",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/emotion_engine.py",
+        "port": "${PORT_OFFSET}+5590",
+        "health_check_port": "${PORT_OFFSET}+6590",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 6 dependents",
+        "dependent_count": 6,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.49,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "MoodTrackerAgent",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/mood_tracker_agent.py",
+        "port": "${PORT_OFFSET}+5704",
+        "health_check_port": "${PORT_OFFSET}+6704",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "HumanAwarenessAgent",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/human_awareness_agent.py",
+        "port": "${PORT_OFFSET}+5705",
+        "health_check_port": "${PORT_OFFSET}+6705",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ToneDetector",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/tone_detector.py",
+        "port": "${PORT_OFFSET}+5625",
+        "health_check_port": "${PORT_OFFSET}+6625",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "VoiceProfilingAgent",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/voice_profiling_agent.py",
+        "port": "${PORT_OFFSET}+5708",
+        "health_check_port": "${PORT_OFFSET}+6708",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "EmpathyAgent",
+        "group": "emotion_system",
+        "script_path": "main_pc_code/agents/EmpathyAgent.py",
+        "port": "${PORT_OFFSET}+5703",
+        "health_check_port": "${PORT_OFFSET}+6703",
+        "required": true,
+        "dependencies": [
+          "EmotionEngine",
+          "StreamingTTSAgent",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 3
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "TranslationService",
+        "group": "translation_services",
+        "script_path": "main_pc_code/agents/translation_service.py",
+        "port": "${PORT_OFFSET}+5595",
+        "health_check_port": "${PORT_OFFSET}+6595",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "Specialized service - contextual usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.42,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "FixedStreamingTranslation",
+        "group": "translation_services",
+        "script_path": "main_pc_code/agents/fixed_streaming_translation.py",
+        "port": "${PORT_OFFSET}+5584",
+        "health_check_port": "${PORT_OFFSET}+6584",
+        "required": true,
+        "dependencies": [
+          "ModelManagerSuite",
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.4,
+        "usage_level": "medium",
+        "reasoning": "User interface service - moderate usage"
+      },
+      "resource": {
+        "resource_score": 0.4,
+        "impact_level": "network_heavy",
+        "reasoning": "Network I/O operations and communication",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.36,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "NLLBAdapter",
+        "group": "translation_services",
+        "script_path": "main_pc_code/FORMAINPC/nllb_adapter.py",
+        "port": "${PORT_OFFSET}+5582",
+        "health_check_port": "${PORT_OFFSET}+6582",
+        "required": true,
+        "dependencies": [
+          "SystemDigitalTwin"
+        ],
+        "config": {},
+        "system": "MainPC"
+      },
+      "system": "MainPC",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    }
+  ],
+  "pc2_evaluations": [
+    {
+      "agent": {
+        "name": "MemoryOrchestratorService",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/memory_orchestrator_service.py",
+        "port": "${PORT_OFFSET}+7140",
+        "health_check_port": "${PORT_OFFSET}+8140",
+        "required": true,
+        "dependencies": [],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 16GB RAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.8,
+        "criticality_level": "critical_path",
+        "reasoning": "Critical path service with 8 dependents",
+        "dependent_count": 8,
+        "dependency_count": 0
+      },
+      "overall": {
+        "overall_score": 0.7449999999999999,
+        "rating": "HIGH_VALUE",
+        "recommendation": "KEEP - High value service"
+      }
+    },
+    {
+      "agent": {
+        "name": "TieredResponder",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/tiered_responder.py",
+        "port": "${PORT_OFFSET}+7100",
+        "health_check_port": "${PORT_OFFSET}+8100",
+        "required": true,
+        "dependencies": [
+          "ResourceManager"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "AsyncProcessor",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/async_processor.py",
+        "port": "${PORT_OFFSET}+7101",
+        "health_check_port": "${PORT_OFFSET}+8101",
+        "required": true,
+        "dependencies": [
+          "ResourceManager"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.6,
+        "impact_level": "cpu_intensive",
+        "reasoning": "CPU processing on lower_spec (8 cores)",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.3475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "CacheManager",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/cache_manager.py",
+        "port": "${PORT_OFFSET}+7102",
+        "health_check_port": "${PORT_OFFSET}+8102",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 16GB RAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.3975,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "VisionProcessingAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/VisionProcessingAgent.py",
+        "port": "${PORT_OFFSET}+7150",
+        "health_check_port": "${PORT_OFFSET}+8150",
+        "required": true,
+        "dependencies": [
+          "CacheManager"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.7,
+        "impact_level": "gpu_intensive_limited",
+        "reasoning": "GPU processing on RTX_3060 with limited VRAM",
+        "hardware_match": "limited"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.31249999999999994,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "DreamWorldAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/DreamWorldAgent.py",
+        "port": "${PORT_OFFSET}+7104",
+        "health_check_port": "${PORT_OFFSET}+8104",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "UnifiedMemoryReasoningAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/unified_memory_reasoning_agent.py",
+        "port": "${PORT_OFFSET}+7105",
+        "health_check_port": "${PORT_OFFSET}+8105",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.7,
+        "usage_level": "high",
+        "reasoning": "Core system service with high usage"
+      },
+      "resource": {
+        "resource_score": 0.8,
+        "impact_level": "memory_heavy",
+        "reasoning": "Memory operations on 16GB RAM",
+        "hardware_match": "optimal"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.565,
+        "rating": "MODERATE_VALUE",
+        "recommendation": "KEEP - Moderate value, optimize if possible"
+      }
+    },
+    {
+      "agent": {
+        "name": "TutorAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/tutor_agent.py",
+        "port": "${PORT_OFFSET}+7108",
+        "health_check_port": "${PORT_OFFSET}+8108",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "TutoringAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/tutoring_agent.py",
+        "port": "${PORT_OFFSET}+7131",
+        "health_check_port": "${PORT_OFFSET}+8131",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ContextManager",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/context_manager.py",
+        "port": "${PORT_OFFSET}+7111",
+        "health_check_port": "${PORT_OFFSET}+8111",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ExperienceTracker",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/experience_tracker.py",
+        "port": "${PORT_OFFSET}+7112",
+        "health_check_port": "${PORT_OFFSET}+8112",
+        "required": true,
+        "dependencies": [
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ResourceManager",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/resource_manager.py",
+        "port": "${PORT_OFFSET}+7113",
+        "health_check_port": "${PORT_OFFSET}+8113",
+        "required": true,
+        "dependencies": [
+          "ObservabilityHub"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.3075,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "TaskScheduler",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/task_scheduler.py",
+        "port": "${PORT_OFFSET}+7115",
+        "health_check_port": "${PORT_OFFSET}+8115",
+        "required": true,
+        "dependencies": [
+          "AsyncProcessor"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "AuthenticationAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/ForPC2/AuthenticationAgent.py",
+        "port": "${PORT_OFFSET}+7116",
+        "health_check_port": "${PORT_OFFSET}+8116",
+        "required": true,
+        "dependencies": [
+          "UnifiedUtilsAgent"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "UnifiedUtilsAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/ForPC2/unified_utils_agent.py",
+        "port": "${PORT_OFFSET}+7118",
+        "health_check_port": "${PORT_OFFSET}+8118",
+        "required": true,
+        "dependencies": [
+          "ObservabilityHub"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 2 dependents",
+        "dependent_count": 2,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.3075,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ProactiveContextMonitor",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/ForPC2/proactive_context_monitor.py",
+        "port": "${PORT_OFFSET}+7119",
+        "health_check_port": "${PORT_OFFSET}+8119",
+        "required": true,
+        "dependencies": [
+          "ContextManager"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.2,
+        "usage_level": "low",
+        "reasoning": "Utility service - background usage"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.24,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "AgentTrustScorer",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/AgentTrustScorer.py",
+        "port": "${PORT_OFFSET}+7122",
+        "health_check_port": "${PORT_OFFSET}+8122",
+        "required": true,
+        "dependencies": [
+          "ObservabilityHub"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "FileSystemAssistantAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/filesystem_assistant_agent.py",
+        "port": "${PORT_OFFSET}+7123",
+        "health_check_port": "${PORT_OFFSET}+8123",
+        "required": true,
+        "dependencies": [
+          "UnifiedUtilsAgent"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "RemoteConnectorAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/remote_connector_agent.py",
+        "port": "${PORT_OFFSET}+7124",
+        "health_check_port": "${PORT_OFFSET}+8124",
+        "required": true,
+        "dependencies": [
+          "AdvancedRouter"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "UnifiedWebAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/unified_web_agent.py",
+        "port": "${PORT_OFFSET}+7126",
+        "health_check_port": "${PORT_OFFSET}+8126",
+        "required": true,
+        "dependencies": [
+          "FileSystemAssistantAgent",
+          "MemoryOrchestratorService"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 2
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "DreamingModeAgent",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/DreamingModeAgent.py",
+        "port": "${PORT_OFFSET}+7127",
+        "health_check_port": "${PORT_OFFSET}+8127",
+        "required": true,
+        "dependencies": [
+          "DreamWorldAgent"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.2,
+        "criticality_level": "optional",
+        "reasoning": "Optional or leaf service",
+        "dependent_count": 0,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.1875,
+        "rating": "CANDIDATE_FOR_REMOVAL",
+        "recommendation": "REMOVE - Candidate for removal or major consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "AdvancedRouter",
+        "group": "pc2_services",
+        "script_path": "pc2_code/agents/advanced_router.py",
+        "port": "${PORT_OFFSET}+7129",
+        "health_check_port": "${PORT_OFFSET}+8129",
+        "required": true,
+        "dependencies": [
+          "TaskScheduler"
+        ],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.4,
+        "criticality_level": "specialized",
+        "reasoning": "Specialized service in dependency chain",
+        "dependent_count": 1,
+        "dependency_count": 1
+      },
+      "overall": {
+        "overall_score": 0.2475,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    },
+    {
+      "agent": {
+        "name": "ObservabilityHub",
+        "group": "pc2_services",
+        "script_path": "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py",
+        "port": "${PORT_OFFSET}+9100",
+        "health_check_port": "${PORT_OFFSET}+9110",
+        "required": true,
+        "dependencies": [],
+        "host": "0.0.0.0",
+        "system": "PC2"
+      },
+      "system": "PC2",
+      "usage": {
+        "usage_score": 0.05,
+        "usage_level": "minimal",
+        "reasoning": "Specialized/optional service"
+      },
+      "resource": {
+        "resource_score": 0.2,
+        "impact_level": "io_bound",
+        "reasoning": "Standard I/O and processing operations",
+        "hardware_match": "acceptable"
+      },
+      "criticality": {
+        "criticality_score": 0.6,
+        "criticality_level": "shared_service",
+        "reasoning": "Shared service with 3 dependents",
+        "dependent_count": 3,
+        "dependency_count": 0
+      },
+      "overall": {
+        "overall_score": 0.3075,
+        "rating": "LOW_VALUE",
+        "recommendation": "OPTIMIZE - Low efficiency, consider consolidation"
+      }
+    }
+  ],
+  "summary_stats": {
+    "total_agents": 77,
+    "mainpc_agents": 54,
+    "pc2_agents": 23,
+    "rating_distribution": {
+      "MODERATE_VALUE": 19,
+      "HIGH_VALUE": 9,
+      "CRITICAL": 1,
+      "LOW_VALUE": 23,
+      "CANDIDATE_FOR_REMOVAL": 25
+    },
+    "resource_distribution": {
+      "network_heavy": 11,
+      "io_bound": 46,
+      "gpu_intensive": 5,
+      "memory_heavy": 6,
+      "cpu_intensive": 8,
+      "gpu_intensive_limited": 1
+    },
+    "avg_scores": {
+      "overall": 0.3579545454545455,
+      "usage": 0.27597402597402626,
+      "resource": 0.3753246753246749,
+      "criticality": 0.3584415584415581
+    }
+  },
+  "optimization_recommendations": [
+    {
+      "type": "REMOVAL",
+      "title": "Agent Removal Candidates",
+      "agents": [
+        "Executor",
+        "LocalFineTunerAgent",
+        "GoTToTAgent",
+        "IntentionValidatorAgent",
+        "AdvancedCommandHandler",
+        "ChitchatAgent",
+        "FeedbackHandler",
+        "DynamicIdentityAgent",
+        "WakeWordDetector",
+        "ProactiveAgent",
+        "MoodTrackerAgent",
+        "HumanAwarenessAgent",
+        "ToneDetector",
+        "VoiceProfilingAgent",
+        "EmpathyAgent",
+        "NLLBAdapter",
+        "TieredResponder",
+        "TutorAgent",
+        "TutoringAgent",
+        "ExperienceTracker",
+        "AuthenticationAgent",
+        "AgentTrustScorer",
+        "RemoteConnectorAgent",
+        "UnifiedWebAgent",
+        "DreamingModeAgent"
+      ],
+      "impact": "Potential removal of 25 agents"
+    }
+  ]
+}

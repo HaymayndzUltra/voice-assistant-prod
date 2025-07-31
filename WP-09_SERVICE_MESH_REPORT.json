@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-07-19T07:55:33.841371",
+  "total_services": 132,
+  "mesh_ready_services": 66,
+  "istio_manifests_generated": 10,
+  "linkerd_manifests_generated": 10,
+  "service_mesh_coverage": 50.0,
+  "top_mesh_candidates": [
+    {
+      "service": "predictivehealthmonitor",
+      "mesh_score": 240,
+      "priority": "high"
+    },
+    {
+      "service": "metacognition",
+      "mesh_score": 225,
+      "priority": "high"
+    },
+    {
+      "service": "resourcemanager",
+      "mesh_score": 220,
+      "priority": "high"
+    },
+    {
+      "service": "unifiedsystem",
+      "mesh_score": 200,
+      "priority": "high"
+    },
+    {
+      "service": "streaminglanguageanalyzer",
+      "mesh_score": 190,
+      "priority": "high"
+    },
+    {
+      "service": "responder",
+      "mesh_score": 180,
+      "priority": "high"
+    },
+    {
+      "service": "performancemonitor",
+      "mesh_score": 180,
+      "priority": "high"
+    },
+    {
+      "service": "textrequest",
+      "mesh_score": 160,
+      "priority": "high"
+    },
+    {
+      "service": "learningopportunitydetector",
+      "mesh_score": 135,
+      "priority": "high"
+    },
+    {
+      "service": "modelevaluationframework",
+      "mesh_score": 135,
+      "priority": "high"
+    }
+  ]
+}

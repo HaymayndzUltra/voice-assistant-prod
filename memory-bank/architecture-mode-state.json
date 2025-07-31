@@ -1,0 +1,40 @@
+{
+  "active": true,
+  "loaded_domains": [
+    "all"
+  ],
+  "current_plan": "bedfadef",
+  "plan_history": [
+    {
+      "plan_id": "f2de541d",
+      "title": "Test feature for demonstration",
+      "created": "2025-07-30T03:22:20.704879+00:00",
+      "status": "draft"
+    },
+    {
+      "plan_id": "6fc78700",
+      "title": "Advanced task prediction and smart routing system",
+      "created": "2025-07-30T03:39:18.802349+00:00",
+      "status": "draft"
+    },
+    {
+      "plan_id": "cd275143",
+      "title": "ML-based task outcome prediction and smart routing system with learning capabilities",
+      "created": "2025-07-30T04:04:10.737425+00:00",
+      "status": "draft"
+    },
+    {
+      "plan_id": "4ab68870",
+      "title": "Create a new feature for user authentication",
+      "created": "2025-07-30T07:12:07.832396+00:00",
+      "status": "draft"
+    },
+    {
+      "plan_id": "bedfadef",
+      "title": "Advanced Modern GUI Control Center - Intelligent Tkinter Integration with Autonomous Task Queue System, Agent Management, Memory Intelligence, and Real-time Monitoring Dashboard",
+      "created": "2025-07-30T07:27:30.323360+00:00",
+      "status": "draft"
+    }
+  ],
+  "last_activated": "2025-07-30T07:26:53.836010+00:00"
+}

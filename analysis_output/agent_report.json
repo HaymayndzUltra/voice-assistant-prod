@@ -1,0 +1,1202 @@
+{
+  "total_agents": 87,
+  "mainpc_agents": 58,
+  "pc2_agents": 29,
+  "section_counts": {
+    "mainpc:core_services": 12,
+    "mainpc:main_pc_gpu_services": 8,
+    "mainpc:emotion_system": 6,
+    "mainpc:language_processing": 6,
+    "mainpc:memory_system": 3,
+    "pc2:pc2_services": 29,
+    "mainpc:learning_knowledge": 4,
+    "mainpc:planning_execution": 3,
+    "mainpc:tts_services": 5,
+    "mainpc:code_generation": 2,
+    "mainpc:audio_processing": 5,
+    "mainpc:vision": 2,
+    "mainpc:monitoring_security": 2
+  },
+  "issues": [],
+  "agents": {
+    "TaskRouter": {
+      "name": "TaskRouter",
+      "file_path": "src/core/task_router.py",
+      "host": "0.0.0.0",
+      "port": 8571,
+      "health_port": null,
+      "dependencies": [
+        "StreamingTTSAgent",
+        "StreamingSpeechRecognition"
+      ],
+      "required": true,
+      "params": {
+        "cot_host": "0.0.0.0",
+        "cot_port": 5612,
+        "got_tot_host": "0.0.0.0",
+        "got_tot_port": 5646,
+        "emr_host": "0.0.0.0",
+        "emr_port": 5598,
+        "translator_host": "0.0.0.0",
+        "translator_port": 5563,
+        "queue_max_size": 100,
+        "batch_max_size": 5,
+        "batch_timeout_ms": 200
+      },
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "ChainOfThoughtAgent": {
+      "name": "ChainOfThoughtAgent",
+      "file_path": "FORMAINPC/ChainOfThoughtAgent.py",
+      "host": "0.0.0.0",
+      "port": 5612,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "GOT_TOTAgent": {
+      "name": "GOT_TOTAgent",
+      "file_path": "FORMAINPC/GOT_TOTAgent.py",
+      "host": "0.0.0.0",
+      "port": 5646,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "ModelManagerAgent": {
+      "name": "ModelManagerAgent",
+      "file_path": "agents/model_manager_agent.py",
+      "host": "0.0.0.0",
+      "port": 5570,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {
+        "enable_pc2_services": true
+      },
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "VRAMOptimizerAgent": {
+      "name": "VRAMOptimizerAgent",
+      "file_path": "agents/vram_optimizer_agent.py",
+      "host": "0.0.0.0",
+      "port": 5572,
+      "health_port": null,
+      "dependencies": [
+        "ModelManagerAgent",
+        "SystemDigitalTwin"
+      ],
+      "required": true,
+      "params": {
+        "critical_threshold": 0.85,
+        "warning_threshold": 0.75,
+        "safe_threshold": 0.5,
+        "mainpc_vram_budget_mb": 20000,
+        "pc2_vram_budget_mb": 10000,
+        "idle_timeout": 900,
+        "idle_check_interval": 60,
+        "defragmentation_threshold": 0.7,
+        "optimization_interval": 300,
+        "predictive_loading_enabled": true,
+        "lookahead_window": 300,
+        "prediction_window": 3600
+      },
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "CoordinatorAgent": {
+      "name": "CoordinatorAgent",
+      "file_path": "agents/coordinator_agent.py",
+      "host": "0.0.0.0",
+      "port": 26002,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "GoalOrchestratorAgent": {
+      "name": "GoalOrchestratorAgent",
+      "file_path": "agents/GoalOrchestratorAgent.py",
+      "host": "0.0.0.0",
+      "port": 7001,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "IntentionValidatorAgent": {
+      "name": "IntentionValidatorAgent",
+      "file_path": "agents/IntentionValidatorAgent.py",
+      "host": "0.0.0.0",
+      "port": 5701,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "DynamicIdentityAgent": {
+      "name": "DynamicIdentityAgent",
+      "file_path": "agents/DynamicIdentityAgent.py",
+      "host": "0.0.0.0",
+      "port": 5802,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "EmpathyAgent": {
+      "name": "EmpathyAgent",
+      "file_path": "agents/EmpathyAgent.py",
+      "host": "0.0.0.0",
+      "port": 5703,
+      "health_port": null,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "ProactiveAgent": {
+      "name": "ProactiveAgent",
+      "file_path": "agents/ProactiveAgent.py",
+      "host": "0.0.0.0",
+      "port": 5624,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "PredictiveLoader": {
+      "name": "PredictiveLoader",
+      "file_path": "agents/predictive_loader.py",
+      "host": "0.0.0.0",
+      "port": 5617,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "core_services"
+    },
+    "EnhancedModelRouter": {
+      "name": "EnhancedModelRouter",
+      "file_path": "FORMAINPC/EnhancedModelRouter.py",
+      "host": "0.0.0.0",
+      "port": 5598,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "TinyLlamaService": {
+      "name": "TinyLlamaService",
+      "file_path": "FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "host": "0.0.0.0",
+      "port": 5615,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "NLLBAdapter": {
+      "name": "NLLBAdapter",
+      "file_path": "FORMAINPC/NLLBAdapter.py",
+      "host": "0.0.0.0",
+      "port": 5581,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "LearningAdjusterAgent": {
+      "name": "LearningAdjusterAgent",
+      "file_path": "FORMAINPC/LearningAdjusterAgent.py",
+      "host": "0.0.0.0",
+      "port": 5643,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "LocalFineTunerAgent": {
+      "name": "LocalFineTunerAgent",
+      "file_path": "FORMAINPC/LocalFineTunerAgent.py",
+      "host": "0.0.0.0",
+      "port": 5645,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "SelfTrainingOrchestrator": {
+      "name": "SelfTrainingOrchestrator",
+      "file_path": "FORMAINPC/SelfTrainingOrchestrator.py",
+      "host": "0.0.0.0",
+      "port": 5644,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "CognitiveModelAgent": {
+      "name": "CognitiveModelAgent",
+      "file_path": "FORMAINPC/CognitiveModelAgent.py",
+      "host": "0.0.0.0",
+      "port": 5641,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "ConsolidatedTranslator": {
+      "name": "ConsolidatedTranslator",
+      "file_path": "FORMAINPC/consolidated_translator.py",
+      "host": "0.0.0.0",
+      "port": 5564,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "main_pc_gpu_services"
+    },
+    "EmotionEngine": {
+      "name": "EmotionEngine",
+      "file_path": "agents/emotion_engine.py",
+      "host": "0.0.0.0",
+      "port": 5590,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "MoodTrackerAgent": {
+      "name": "MoodTrackerAgent",
+      "file_path": "agents/mood_tracker_agent.py",
+      "host": "0.0.0.0",
+      "port": 5704,
+      "health_port": null,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "HumanAwarenessAgent": {
+      "name": "HumanAwarenessAgent",
+      "file_path": "agents/human_awareness_agent.py",
+      "host": "0.0.0.0",
+      "port": 5705,
+      "health_port": null,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "EmotionSynthesisAgent": {
+      "name": "EmotionSynthesisAgent",
+      "file_path": "agents/emotion_synthesis_agent.py",
+      "host": "0.0.0.0",
+      "port": 5706,
+      "health_port": null,
+      "dependencies": [
+        "CoordinatorAgent",
+        "ModelManagerAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "ToneDetector": {
+      "name": "ToneDetector",
+      "file_path": "agents/tone_detector.py",
+      "host": "0.0.0.0",
+      "port": 5625,
+      "health_port": null,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "VoiceProfiler": {
+      "name": "VoiceProfiler",
+      "file_path": "agents/voice_profiling_agent.py",
+      "host": "0.0.0.0",
+      "port": 5708,
+      "health_port": null,
+      "dependencies": [
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "emotion_system"
+    },
+    "NLUAgent": {
+      "name": "NLUAgent",
+      "file_path": "agents/nlu_agent.py",
+      "host": "0.0.0.0",
+      "port": 5709,
+      "health_port": null,
+      "dependencies": [
+        "LanguageAndTranslationCoordinator"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "AdvancedCommandHandler": {
+      "name": "AdvancedCommandHandler",
+      "file_path": "agents/advanced_command_handler.py",
+      "host": "0.0.0.0",
+      "port": 5710,
+      "health_port": null,
+      "dependencies": [
+        "NLUAgent",
+        "CodeGenerator"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "ChitchatAgent": {
+      "name": "ChitchatAgent",
+      "file_path": "agents/chitchat_agent.py",
+      "host": "0.0.0.0",
+      "port": 5711,
+      "health_port": null,
+      "dependencies": [
+        "NLUAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "FeedbackHandler": {
+      "name": "FeedbackHandler",
+      "file_path": "agents/feedback_handler.py",
+      "host": "0.0.0.0",
+      "port": 5636,
+      "health_port": null,
+      "dependencies": [
+        "NLUAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "Responder": {
+      "name": "Responder",
+      "file_path": "agents/responder.py",
+      "host": "0.0.0.0",
+      "port": 5637,
+      "health_port": null,
+      "dependencies": [
+        "NLUAgent",
+        "EmotionEngine"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "StreamingLanguageAnalyzer": {
+      "name": "StreamingLanguageAnalyzer",
+      "file_path": "agents/streaming_language_analyzer.py",
+      "host": "0.0.0.0",
+      "port": 5579,
+      "health_port": null,
+      "dependencies": [
+        "StreamingSpeechRecognition"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "language_processing"
+    },
+    "SessionMemoryAgent": {
+      "name": "SessionMemoryAgent",
+      "file_path": "agents/session_memory_agent.py",
+      "host": "0.0.0.0",
+      "port": 5574,
+      "health_port": null,
+      "dependencies": [
+        "CoordinatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "memory_system"
+    },
+    "MemoryManager": {
+      "name": "MemoryManager",
+      "file_path": "agents/memory_manager.py",
+      "host": "0.0.0.0",
+      "port": 7110,
+      "health_port": 8110,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "MemoryOrchestrator": {
+      "name": "MemoryOrchestrator",
+      "file_path": "src/memory/memory_orchestrator.py",
+      "host": "0.0.0.0",
+      "port": 5575,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "memory_system"
+    },
+    "MemoryClient": {
+      "name": "MemoryClient",
+      "file_path": "src/memory/memory_client.py",
+      "host": "0.0.0.0",
+      "port": 5583,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "memory_system"
+    },
+    "LearningManager": {
+      "name": "LearningManager",
+      "file_path": "agents/learning_manager.py",
+      "host": "0.0.0.0",
+      "port": 5580,
+      "health_port": null,
+      "dependencies": [
+        "MemoryManager",
+        "CoordinatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "learning_knowledge"
+    },
+    "KnowledgeBase": {
+      "name": "KnowledgeBase",
+      "file_path": "agents/knowledge_base.py",
+      "host": "0.0.0.0",
+      "port": 5578,
+      "health_port": null,
+      "dependencies": [
+        "MemoryManager"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "learning_knowledge"
+    },
+    "MetaCognitionAgent": {
+      "name": "MetaCognitionAgent",
+      "file_path": "agents/MetaCognitionAgent.py",
+      "host": "0.0.0.0",
+      "port": 5630,
+      "health_port": null,
+      "dependencies": [
+        "KnowledgeBase",
+        "CoordinatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "learning_knowledge"
+    },
+    "ActiveLearningMonitor": {
+      "name": "ActiveLearningMonitor",
+      "file_path": "agents/active_learning_monitor.py",
+      "host": "0.0.0.0",
+      "port": 5638,
+      "health_port": null,
+      "dependencies": [
+        "LearningManager"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "learning_knowledge"
+    },
+    "UnifiedPlanningAgent": {
+      "name": "UnifiedPlanningAgent",
+      "file_path": "agents/unified_planning_agent.py",
+      "host": "0.0.0.0",
+      "port": 5634,
+      "health_port": null,
+      "dependencies": [
+        "GoalOrchestratorAgent",
+        "IntentionValidatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "planning_execution"
+    },
+    "MultiAgentSwarmManager": {
+      "name": "MultiAgentSwarmManager",
+      "file_path": "agents/MultiAgentSwarmManager.py",
+      "host": "0.0.0.0",
+      "port": 5639,
+      "health_port": null,
+      "dependencies": [
+        "UnifiedPlanningAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "planning_execution"
+    },
+    "UnifiedSystemAgent": {
+      "name": "UnifiedSystemAgent",
+      "file_path": "agents/unified_system_agent.py",
+      "host": "0.0.0.0",
+      "port": 5640,
+      "health_port": null,
+      "dependencies": [
+        "UnifiedPlanningAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "planning_execution"
+    },
+    "TTSConnector": {
+      "name": "TTSConnector",
+      "file_path": "agents/tts_connector.py",
+      "host": "0.0.0.0",
+      "port": 5582,
+      "health_port": null,
+      "dependencies": [
+        "CoordinatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "tts_services"
+    },
+    "TTSCache": {
+      "name": "TTSCache",
+      "file_path": "agents/tts_cache.py",
+      "host": "0.0.0.0",
+      "port": 5628,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "tts_services"
+    },
+    "StreamingTTSAgent": {
+      "name": "StreamingTTSAgent",
+      "file_path": "agents/streaming_tts_agent.py",
+      "host": "0.0.0.0",
+      "port": 5562,
+      "health_port": null,
+      "dependencies": [
+        "CoordinatorAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "tts_services"
+    },
+    "TTSAgent": {
+      "name": "TTSAgent",
+      "file_path": "agents/tts_agent.py",
+      "host": "0.0.0.0",
+      "port": 5563,
+      "health_port": null,
+      "dependencies": [
+        "StreamingInterruptHandler"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "tts_services"
+    },
+    "StreamingInterruptHandler": {
+      "name": "StreamingInterruptHandler",
+      "file_path": "agents/streaming_interrupt_handler.py",
+      "host": "0.0.0.0",
+      "port": 5576,
+      "health_port": null,
+      "dependencies": [
+        "StreamingSpeechRecognition"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "tts_services"
+    },
+    "CodeGenerator": {
+      "name": "CodeGenerator",
+      "file_path": "agents/code_generator_agent.py",
+      "host": "0.0.0.0",
+      "port": 5604,
+      "health_port": null,
+      "dependencies": [
+        "ModelManagerAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "code_generation"
+    },
+    "Executor": {
+      "name": "Executor",
+      "file_path": "agents/executor.py",
+      "host": "0.0.0.0",
+      "port": 5606,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "code_generation"
+    },
+    "AudioCapture": {
+      "name": "AudioCapture",
+      "file_path": "agents/streaming_audio_capture.py",
+      "host": "0.0.0.0",
+      "port": 6575,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "audio_processing"
+    },
+    "FusedAudioPreprocessor": {
+      "name": "FusedAudioPreprocessor",
+      "file_path": "src/audio/fused_audio_preprocessor.py",
+      "host": "0.0.0.0",
+      "port": 6578,
+      "health_port": null,
+      "dependencies": [
+        "AudioCapture"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "audio_processing"
+    },
+    "WakeWordDetector": {
+      "name": "WakeWordDetector",
+      "file_path": "agents/wake_word_detector.py",
+      "host": "0.0.0.0",
+      "port": 6577,
+      "health_port": null,
+      "dependencies": [
+        "AudioCapture",
+        "FusedAudioPreprocessor"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "audio_processing"
+    },
+    "StreamingSpeechRecognition": {
+      "name": "StreamingSpeechRecognition",
+      "file_path": "agents/streaming_speech_recognition.py",
+      "host": "0.0.0.0",
+      "port": 6580,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {
+        "model_config_path": "config/model_config.json"
+      },
+      "source_config": "mainpc",
+      "source_section": "audio_processing"
+    },
+    "LanguageAndTranslationCoordinator": {
+      "name": "LanguageAndTranslationCoordinator",
+      "file_path": "agents/language_and_translation_coordinator.py",
+      "host": "0.0.0.0",
+      "port": 6581,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "audio_processing"
+    },
+    "VisionCaptureAgent": {
+      "name": "VisionCaptureAgent",
+      "file_path": "src/vision/vision_capture_agent.py",
+      "host": "0.0.0.0",
+      "port": 5592,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "vision"
+    },
+    "FaceRecognitionAgent": {
+      "name": "FaceRecognitionAgent",
+      "file_path": "agents/face_recognition_agent.py",
+      "host": "0.0.0.0",
+      "port": 5610,
+      "health_port": null,
+      "dependencies": [
+        "TaskRouter",
+        "ModelManagerAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "vision"
+    },
+    "PredictiveHealthMonitor": {
+      "name": "PredictiveHealthMonitor",
+      "file_path": "src/agents/predictive_health_monitor.py",
+      "host": "0.0.0.0",
+      "port": 5613,
+      "health_port": null,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "monitoring_security"
+    },
+    "SystemDigitalTwin": {
+      "name": "SystemDigitalTwin",
+      "file_path": "agents/system_digital_twin.py",
+      "host": "0.0.0.0",
+      "port": 7120,
+      "health_port": 8120,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "mainpc",
+      "source_section": "monitoring_security"
+    },
+    "TieredResponder": {
+      "name": "TieredResponder",
+      "file_path": "agents/tiered_responder.py",
+      "host": "0.0.0.0",
+      "port": 7100,
+      "health_port": 8131,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "AsyncProcessor": {
+      "name": "AsyncProcessor",
+      "file_path": "agents/async_processor.py",
+      "host": "0.0.0.0",
+      "port": 7101,
+      "health_port": 8101,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "CacheManager": {
+      "name": "CacheManager",
+      "file_path": "agents/cache_manager.py",
+      "host": "0.0.0.0",
+      "port": 7102,
+      "health_port": 8102,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "PerformanceMonitor": {
+      "name": "PerformanceMonitor",
+      "file_path": "agents/performance_monitor.py",
+      "host": "0.0.0.0",
+      "port": 7103,
+      "health_port": 8103,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "DreamWorldAgent": {
+      "name": "DreamWorldAgent",
+      "file_path": "agents/DreamWorldAgent.py",
+      "host": "0.0.0.0",
+      "port": 7104,
+      "health_port": 8104,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "UnifiedMemoryReasoningAgent": {
+      "name": "UnifiedMemoryReasoningAgent",
+      "file_path": "agents/UnifiedMemoryReasoningAgent.py",
+      "host": "0.0.0.0",
+      "port": 7105,
+      "health_port": 8105,
+      "dependencies": [
+        "CacheManager"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "EpisodicMemoryAgent": {
+      "name": "EpisodicMemoryAgent",
+      "file_path": "agents/EpisodicMemoryAgent.py",
+      "host": "0.0.0.0",
+      "port": 7106,
+      "health_port": 8106,
+      "dependencies": [
+        "UnifiedMemoryReasoningAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "LearningAgent": {
+      "name": "LearningAgent",
+      "file_path": "agents/LearningAdjusterAgent.py",
+      "host": "0.0.0.0",
+      "port": 7107,
+      "health_port": 8107,
+      "dependencies": [
+        "EpisodicMemoryAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "TutorAgent": {
+      "name": "TutorAgent",
+      "file_path": "agents/tutor_agent.py",
+      "host": "0.0.0.0",
+      "port": 7108,
+      "health_port": 8108,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "TutoringServiceAgent": {
+      "name": "TutoringServiceAgent",
+      "file_path": "agents/tutoring_service_agent.py",
+      "host": "0.0.0.0",
+      "port": 7130,
+      "health_port": 8130,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "ContextManager": {
+      "name": "ContextManager",
+      "file_path": "agents/context_manager.py",
+      "host": "0.0.0.0",
+      "port": 7111,
+      "health_port": 8111,
+      "dependencies": [
+        "MemoryManager"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "ExperienceTracker": {
+      "name": "ExperienceTracker",
+      "file_path": "agents/experience_tracker.py",
+      "host": "0.0.0.0",
+      "port": 7112,
+      "health_port": 8112,
+      "dependencies": [
+        "EpisodicMemoryAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "ResourceManager": {
+      "name": "ResourceManager",
+      "file_path": "agents/resource_manager.py",
+      "host": "0.0.0.0",
+      "port": 7113,
+      "health_port": 8113,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "HealthMonitor": {
+      "name": "HealthMonitor",
+      "file_path": "agents/health_monitor.py",
+      "host": "0.0.0.0",
+      "port": 7114,
+      "health_port": 8114,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "TaskScheduler": {
+      "name": "TaskScheduler",
+      "file_path": "agents/task_scheduler.py",
+      "host": "0.0.0.0",
+      "port": 7115,
+      "health_port": 8115,
+      "dependencies": [
+        "AsyncProcessor"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "AuthenticationAgent": {
+      "name": "AuthenticationAgent",
+      "file_path": "agents/ForPC2/AuthenticationAgent.py",
+      "host": "0.0.0.0",
+      "port": 7116,
+      "health_port": 8116,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "UnifiedErrorAgent": {
+      "name": "UnifiedErrorAgent",
+      "file_path": "agents/ForPC2/UnifiedErrorAgent.py",
+      "host": "0.0.0.0",
+      "port": 7117,
+      "health_port": 8117,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "UnifiedUtilsAgent": {
+      "name": "UnifiedUtilsAgent",
+      "file_path": "agents/ForPC2/unified_utils_agent.py",
+      "host": "0.0.0.0",
+      "port": 7118,
+      "health_port": 8118,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "ProactiveContextMonitor": {
+      "name": "ProactiveContextMonitor",
+      "file_path": "agents/ForPC2/proactive_context_monitor.py",
+      "host": "0.0.0.0",
+      "port": 7119,
+      "health_port": 8119,
+      "dependencies": [
+        "ContextManager"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "RCAAgent": {
+      "name": "RCAAgent",
+      "file_path": "agents/ForPC2/rca_agent.py",
+      "host": "0.0.0.0",
+      "port": 7121,
+      "health_port": 8121,
+      "dependencies": [
+        "HealthMonitor"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "AgentTrustScorer": {
+      "name": "AgentTrustScorer",
+      "file_path": "agents/AgentTrustScorer.py",
+      "host": "0.0.0.0",
+      "port": 7122,
+      "health_port": 8122,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "FileSystemAssistantAgent": {
+      "name": "FileSystemAssistantAgent",
+      "file_path": "agents/filesystem_assistant_agent.py",
+      "host": "0.0.0.0",
+      "port": 7123,
+      "health_port": 8123,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "RemoteConnectorAgent": {
+      "name": "RemoteConnectorAgent",
+      "file_path": "agents/remote_connector_agent.py",
+      "host": "0.0.0.0",
+      "port": 7124,
+      "health_port": 8124,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "SelfHealingAgent": {
+      "name": "SelfHealingAgent",
+      "file_path": "agents/self_healing_agent.py",
+      "host": "0.0.0.0",
+      "port": 7125,
+      "health_port": 8125,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "UnifiedWebAgent": {
+      "name": "UnifiedWebAgent",
+      "file_path": "agents/unified_web_agent.py",
+      "host": "0.0.0.0",
+      "port": 7126,
+      "health_port": 8126,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "DreamingModeAgent": {
+      "name": "DreamingModeAgent",
+      "file_path": "agents/DreamingModeAgent.py",
+      "host": "0.0.0.0",
+      "port": 7127,
+      "health_port": 8127,
+      "dependencies": [
+        "DreamWorldAgent"
+      ],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "PerformanceLoggerAgent": {
+      "name": "PerformanceLoggerAgent",
+      "file_path": "agents/PerformanceLoggerAgent.py",
+      "host": "0.0.0.0",
+      "port": 7128,
+      "health_port": 8128,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    },
+    "AdvancedRouter": {
+      "name": "AdvancedRouter",
+      "file_path": "agents/advanced_router.py",
+      "host": "0.0.0.0",
+      "port": 7129,
+      "health_port": 8129,
+      "dependencies": [],
+      "required": true,
+      "params": {},
+      "source_config": "pc2",
+      "source_section": "pc2_services"
+    }
+  }
+}

@@ -1,0 +1,4111 @@
+[
+    {
+      "file_path": "main_pc_code/advanced_command_handler_health_check.py",
+      "size_bytes": 760,
+      "lines_of_code": 26,
+      "last_modified": 1752714480.2788634,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agent_health_check_validator.py",
+      "size_bytes": 10109,
+      "lines_of_code": 264,
+      "last_modified": 1752714480.2788634,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/auto_fix_health_checks.py",
+      "size_bytes": 6712,
+      "lines_of_code": 176,
+      "last_modified": 1752714480.3288646,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/check_health.py",
+      "size_bytes": 515,
+      "lines_of_code": 23,
+      "last_modified": 1752714480.3288646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/check_port_conflicts.py",
+      "size_bytes": 6671,
+      "lines_of_code": 106,
+      "last_modified": 1752714480.3288646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/check_system_health.py",
+      "size_bytes": 6136,
+      "lines_of_code": 184,
+      "last_modified": 1752714480.3288646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/comprehensive_health_check.py",
+      "size_bytes": 12697,
+      "lines_of_code": 334,
+      "last_modified": 1752714480.3288646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/conf.py",
+      "size_bytes": 425,
+      "lines_of_code": 14,
+      "last_modified": 1752714480.3288646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/debug_health_check.py",
+      "size_bytes": 1488,
+      "lines_of_code": 47,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/diagnose_environment.py",
+      "size_bytes": 2255,
+      "lines_of_code": 73,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/emotion_engine_health_check.py",
+      "size_bytes": 9856,
+      "lines_of_code": 254,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/final_health_check.py",
+      "size_bytes": 6907,
+      "lines_of_code": 210,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/fix_system.py",
+      "size_bytes": 9024,
+      "lines_of_code": 286,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/fixed_start_ai_system.py",
+      "size_bytes": 2440,
+      "lines_of_code": 72,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/generate_compose_from_sot.py",
+      "size_bytes": 1717,
+      "lines_of_code": 60,
+      "last_modified": 1752714480.3318646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/health_check_client.py",
+      "size_bytes": 1467,
+      "lines_of_code": 49,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/manual_health_check_test.py",
+      "size_bytes": 1207,
+      "lines_of_code": 43,
+      "last_modified": 1752714480.3338647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/move_to_pc2.py",
+      "size_bytes": 1477,
+      "lines_of_code": 55,
+      "last_modified": 1752714480.3338647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/nlu_health_check.py",
+      "size_bytes": 668,
+      "lines_of_code": 26,
+      "last_modified": 1752714480.3348646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/refactor_agents.py",
+      "size_bytes": 3109,
+      "lines_of_code": 91,
+      "last_modified": 1752714480.3348646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/setup.py",
+      "size_bytes": 207,
+      "lines_of_code": 11,
+      "last_modified": 1752714480.3378646,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/simple_agent_health_test.py",
+      "size_bytes": 7640,
+      "lines_of_code": 215,
+      "last_modified": 1752714480.3388648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/simple_start.py",
+      "size_bytes": 6176,
+      "lines_of_code": 206,
+      "last_modified": 1752714480.3388648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/start_ai_system.py",
+      "size_bytes": 3135,
+      "lines_of_code": 90,
+      "last_modified": 1752714480.3388648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/system_launcher.py",
+      "size_bytes": 16458,
+      "lines_of_code": 441,
+      "last_modified": 1752714480.3388648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/test_base_agent_health.py",
+      "size_bytes": 1585,
+      "lines_of_code": 60,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_emotion_engine_minimal.py",
+      "size_bytes": 1593,
+      "lines_of_code": 59,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_health.py",
+      "size_bytes": 2097,
+      "lines_of_code": 68,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_health_check.py",
+      "size_bytes": 3083,
+      "lines_of_code": 104,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_health_monitor.py",
+      "size_bytes": 1100,
+      "lines_of_code": 38,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_health_simple.py",
+      "size_bytes": 455,
+      "lines_of_code": 20,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_imports.py",
+      "size_bytes": 2170,
+      "lines_of_code": 72,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_mood_tracker_health.py",
+      "size_bytes": 3392,
+      "lines_of_code": 99,
+      "last_modified": 1752714480.3398647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_port_connection.py",
+      "size_bytes": 905,
+      "lines_of_code": 34,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_single_agent.py",
+      "size_bytes": 2889,
+      "lines_of_code": 87,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/test_system_digital_twin.py",
+      "size_bytes": 1845,
+      "lines_of_code": 55,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/validate_agent_paths.py",
+      "size_bytes": 2490,
+      "lines_of_code": 72,
+      "last_modified": 1752714480.3448648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/validate_system_integrity.py",
+      "size_bytes": 5302,
+      "lines_of_code": 131,
+      "last_modified": 1752714480.3448648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/working_agent_health_test.py",
+      "size_bytes": 6156,
+      "lines_of_code": 204,
+      "last_modified": 1752714480.3448648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/model_manager_suite.py",
+      "size_bytes": 20670,
+      "lines_of_code": 537,
+      "last_modified": 1752714480.3338647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+      "size_bytes": 20713,
+      "lines_of_code": 496,
+      "last_modified": 1752714480.2598631,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+      "size_bytes": 13955,
+      "lines_of_code": 376,
+      "last_modified": 1752714480.2598631,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/ConsolidatedTranslator.py",
+      "size_bytes": 793,
+      "lines_of_code": 24,
+      "last_modified": 1752714480.2598631,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+      "size_bytes": 15020,
+      "lines_of_code": 400,
+      "last_modified": 1752714480.2598631,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+      "size_bytes": 20380,
+      "lines_of_code": 572,
+      "last_modified": 1752714480.2598631,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+      "size_bytes": 30591,
+      "lines_of_code": 843,
+      "last_modified": 1752714480.260863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/NLLBAdapter.py",
+      "size_bytes": 27094,
+      "lines_of_code": 642,
+      "last_modified": 1752714480.260863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+      "size_bytes": 27100,
+      "lines_of_code": 756,
+      "last_modified": 1752714480.260863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "size_bytes": 19869,
+      "lines_of_code": 519,
+      "last_modified": 1752714480.260863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/consolidated_translator_simple.py",
+      "size_bytes": 7793,
+      "lines_of_code": 214,
+      "last_modified": 1752714480.260863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/AuthenticationAgent.py",
+      "size_bytes": 10442,
+      "lines_of_code": 276,
+      "last_modified": 1752714480.2618632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/UnifiedErrorAgent.py",
+      "size_bytes": 6699,
+      "lines_of_code": 178,
+      "last_modified": 1752714480.2618632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/health_monitor.py",
+      "size_bytes": 23645,
+      "lines_of_code": 629,
+      "last_modified": 1752714480.2618632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/proactive_context_monitor.py",
+      "size_bytes": 7198,
+      "lines_of_code": 193,
+      "last_modified": 1752714480.2618632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/rca_agent.py",
+      "size_bytes": 15505,
+      "lines_of_code": 367,
+      "last_modified": 1752714480.2618632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/system_digital_twin.py",
+      "size_bytes": 17311,
+      "lines_of_code": 429,
+      "last_modified": 1752714480.2628632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/unified_monitoring.py",
+      "size_bytes": 7291,
+      "lines_of_code": 186,
+      "last_modified": 1752714480.2628632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/ForPC2/unified_utils_agent.py",
+      "size_bytes": 8828,
+      "lines_of_code": 185,
+      "last_modified": 1752714480.2628632,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/MainPcDocs/docsmain.py",
+      "size_bytes": 4590,
+      "lines_of_code": 123,
+      "last_modified": 1752714480.263863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/check_mvs_health.py",
+      "size_bytes": 23362,
+      "lines_of_code": 581,
+      "last_modified": 1752714480.2648633,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/copy_agent_files.py",
+      "size_bytes": 5337,
+      "lines_of_code": 169,
+      "last_modified": 1752714480.2648633,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/dependency_tracer.py",
+      "size_bytes": 11727,
+      "lines_of_code": 319,
+      "last_modified": 1752714480.2648633,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/find_agent_files.py",
+      "size_bytes": 6462,
+      "lines_of_code": 183,
+      "last_modified": 1752714480.2688632,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/launch_mvs.py",
+      "size_bytes": 3930,
+      "lines_of_code": 122,
+      "last_modified": 1752714480.2688632,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/launch_mvs_improved.py",
+      "size_bytes": 9674,
+      "lines_of_code": 298,
+      "last_modified": 1752714480.2688632,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/launch_mvs_local.py",
+      "size_bytes": 9985,
+      "lines_of_code": 297,
+      "last_modified": 1752714480.2688632,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/start_mvs.py",
+      "size_bytes": 18979,
+      "lines_of_code": 500,
+      "last_modified": 1752714480.2698634,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/test_streaming_audio.py",
+      "size_bytes": 6927,
+      "lines_of_code": 186,
+      "last_modified": 1752714480.2698634,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/agents/DynamicIdentityAgent.py",
+      "size_bytes": 16281,
+      "lines_of_code": 404,
+      "last_modified": 1752714480.2788634,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/EmpathyAgent.py",
+      "size_bytes": 19214,
+      "lines_of_code": 480,
+      "last_modified": 1752714480.2788634,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/HumanAwarenessAgent.py",
+      "size_bytes": 9250,
+      "lines_of_code": 264,
+      "last_modified": 1752714480.2788634,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/IntentionValidatorAgent.py",
+      "size_bytes": 19257,
+      "lines_of_code": 482,
+      "last_modified": 1752714480.2798636,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/MetaCognitionAgent.py",
+      "size_bytes": 35810,
+      "lines_of_code": 958,
+      "last_modified": 1752714480.2798636,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/ProactiveAgent.py",
+      "size_bytes": 15631,
+      "lines_of_code": 405,
+      "last_modified": 1752714480.2798636,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/UnifiedSystemAgent.py",
+      "size_bytes": 8259,
+      "lines_of_code": 232,
+      "last_modified": 1752714480.2808635,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/__init__.py",
+      "size_bytes": 255,
+      "lines_of_code": 11,
+      "last_modified": 1752714480.2808635,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/active_learning_monitor.py",
+      "size_bytes": 12555,
+      "lines_of_code": 302,
+      "last_modified": 1752714480.2108622,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/advanced_command_handler.py",
+      "size_bytes": 32086,
+      "lines_of_code": 821,
+      "last_modified": 1752714480.2108622,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/advanced_suggestion_system.py",
+      "size_bytes": 31260,
+      "lines_of_code": 752,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/base_agent.py",
+      "size_bytes": 9546,
+      "lines_of_code": 225,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/check_pc2_zmq_services.py",
+      "size_bytes": 3932,
+      "lines_of_code": 90,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/check_ports.py",
+      "size_bytes": 2858,
+      "lines_of_code": 101,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/chitchat_agent.py",
+      "size_bytes": 19399,
+      "lines_of_code": 491,
+      "last_modified": 1752714480.211862,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/code_generator.py",
+      "size_bytes": 4331,
+      "lines_of_code": 121,
+      "last_modified": 1752714480.211862,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/code_generator_agent.py",
+      "size_bytes": 16994,
+      "lines_of_code": 379,
+      "last_modified": 1752714480.212862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/context_manager.py",
+      "size_bytes": 18426,
+      "lines_of_code": 467,
+      "last_modified": 1752714480.212862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/digital_twin_agent.py",
+      "size_bytes": 31826,
+      "lines_of_code": 783,
+      "last_modified": 1752714480.2708633,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/emotion_engine.py",
+      "size_bytes": 19546,
+      "lines_of_code": 492,
+      "last_modified": 1752714480.2718632,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/emotion_synthesis_agent.py",
+      "size_bytes": 10908,
+      "lines_of_code": 276,
+      "last_modified": 1752714480.2718632,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/error_publisher.py",
+      "size_bytes": 4723,
+      "lines_of_code": 123,
+      "last_modified": 1752714480.2718632,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/executor.py",
+      "size_bytes": 16937,
+      "lines_of_code": 392,
+      "last_modified": 1752714480.2718632,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/face_recognition_agent.py",
+      "size_bytes": 29551,
+      "lines_of_code": 763,
+      "last_modified": 1752714480.2718632,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/feedback_handler.py",
+      "size_bytes": 16614,
+      "lines_of_code": 446,
+      "last_modified": 1752714480.301864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/fixed_streaming_translation.py",
+      "size_bytes": 30737,
+      "lines_of_code": 741,
+      "last_modified": 1752714480.301864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/fused_audio_preprocessor.py",
+      "size_bytes": 44396,
+      "lines_of_code": 984,
+      "last_modified": 1752714480.301864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/generate_code_with_cga_method.py",
+      "size_bytes": 6421,
+      "lines_of_code": 156,
+      "last_modified": 1752714480.301864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/gguf_model_manager.py",
+      "size_bytes": 31135,
+      "lines_of_code": 785,
+      "last_modified": 1752714480.302864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/goal_manager.py",
+      "size_bytes": 30882,
+      "lines_of_code": 708,
+      "last_modified": 1752714480.302864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/human_awareness_agent.py",
+      "size_bytes": 11180,
+      "lines_of_code": 285,
+      "last_modified": 1752714480.302864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/knowledge_base.py",
+      "size_bytes": 11199,
+      "lines_of_code": 260,
+      "last_modified": 1752714480.302864,
+      "classification": "unused"
+    },
+    {
+      "file_path": "main_pc_code/agents/lazy_voting.py",
+      "size_bytes": 22530,
+      "lines_of_code": 556,
+      "last_modified": 1752714480.302864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_manager.py",
+      "size_bytes": 19693,
+      "lines_of_code": 504,
+      "last_modified": 1752714480.302864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_opportunity_detector.py",
+      "size_bytes": 26544,
+      "lines_of_code": 637,
+      "last_modified": 1752714480.303864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_orchestration_service.py",
+      "size_bytes": 16553,
+      "lines_of_code": 385,
+      "last_modified": 1752714480.303864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/llm_runtime_tools.py",
+      "size_bytes": 53095,
+      "lines_of_code": 1276,
+      "last_modified": 1752714480.303864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/memory_client.py",
+      "size_bytes": 25109,
+      "lines_of_code": 697,
+      "last_modified": 1752714480.303864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/memory_orchestrator.py",
+      "size_bytes": 16177,
+      "lines_of_code": 463,
+      "last_modified": 1752714480.303864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/model_evaluation_framework.py",
+      "size_bytes": 18210,
+      "lines_of_code": 427,
+      "last_modified": 1752714480.303864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/model_manager_agent.py",
+      "size_bytes": 234498,
+      "lines_of_code": 4843,
+      "last_modified": 1752714480.304864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/model_manager_agent_fixed.py",
+      "size_bytes": 211240,
+      "lines_of_code": 4322,
+      "last_modified": 1752714480.305864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/model_orchestrator.py",
+      "size_bytes": 35205,
+      "lines_of_code": 772,
+      "last_modified": 1752714480.305864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/model_voting_adapter.py",
+      "size_bytes": 7851,
+      "lines_of_code": 224,
+      "last_modified": 1752714480.305864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/mood_tracker_agent.py",
+      "size_bytes": 16994,
+      "lines_of_code": 438,
+      "last_modified": 1752714480.305864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/nlu_agent.py",
+      "size_bytes": 15418,
+      "lines_of_code": 385,
+      "last_modified": 1752714480.308864,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/noise_reduction_agent.py",
+      "size_bytes": 16706,
+      "lines_of_code": 411,
+      "last_modified": 1752714480.308864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_health_report.py",
+      "size_bytes": 12252,
+      "lines_of_code": 321,
+      "last_modified": 1752714480.308864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_health_report_win.py",
+      "size_bytes": 13052,
+      "lines_of_code": 353,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder.py",
+      "size_bytes": 8726,
+      "lines_of_code": 226,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_extended.py",
+      "size_bytes": 12479,
+      "lines_of_code": 294,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_win.py",
+      "size_bytes": 9017,
+      "lines_of_code": 236,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/personality_engine.py",
+      "size_bytes": 21159,
+      "lines_of_code": 512,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/plugin_manager.py",
+      "size_bytes": 3266,
+      "lines_of_code": 103,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/predictive_health_monitor.py",
+      "size_bytes": 61465,
+      "lines_of_code": 1622,
+      "last_modified": 1752714480.309864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/predictive_loader.py",
+      "size_bytes": 12807,
+      "lines_of_code": 361,
+      "last_modified": 1752714480.3108642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/proactive.py",
+      "size_bytes": 8366,
+      "lines_of_code": 205,
+      "last_modified": 1752714480.3108642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/proactive_agent_interface.py",
+      "size_bytes": 1468,
+      "lines_of_code": 42,
+      "last_modified": 1752714480.3108642,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/record_and_transcribe.py",
+      "size_bytes": 6347,
+      "lines_of_code": 173,
+      "last_modified": 1752714480.3108642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/remote_connector_agent.py",
+      "size_bytes": 20636,
+      "lines_of_code": 515,
+      "last_modified": 1752714480.3108642,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/request_coordinator.py",
+      "size_bytes": 52398,
+      "lines_of_code": 1157,
+      "last_modified": 1752714480.3108642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/responder.py",
+      "size_bytes": 39479,
+      "lines_of_code": 916,
+      "last_modified": 1752714480.3108642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/sd_config.py",
+      "size_bytes": 1657,
+      "lines_of_code": 46,
+      "last_modified": 1752714480.3118641,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/self_healing_agent.py",
+      "size_bytes": 52586,
+      "lines_of_code": 1349,
+      "last_modified": 1752714480.3118641,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/service_registry_agent.py",
+      "size_bytes": 10118,
+      "lines_of_code": 275,
+      "last_modified": 1752714480.3118641,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/session_memory_agent.py",
+      "size_bytes": 17764,
+      "lines_of_code": 452,
+      "last_modified": 1752714480.3118641,
+      "classification": "unused"
+    },
+    {
+      "file_path": "main_pc_code/agents/speech_processor.py",
+      "size_bytes": 10161,
+      "lines_of_code": 300,
+      "last_modified": 1752714480.3118641,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_audio_capture.py",
+      "size_bytes": 51690,
+      "lines_of_code": 1104,
+      "last_modified": 1752714480.3138642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_interrupt.py",
+      "size_bytes": 4111,
+      "lines_of_code": 106,
+      "last_modified": 1752714480.3138642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_interrupt_handler.py",
+      "size_bytes": 13826,
+      "lines_of_code": 347,
+      "last_modified": 1752714480.3138642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_language_analyzer.py",
+      "size_bytes": 36293,
+      "lines_of_code": 796,
+      "last_modified": 1752714480.3148642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_language_to_llm.py",
+      "size_bytes": 5653,
+      "lines_of_code": 155,
+      "last_modified": 1752714480.3148642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_partial_transcripts.py",
+      "size_bytes": 15161,
+      "lines_of_code": 307,
+      "last_modified": 1752714480.3148642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_speech_recognition.py",
+      "size_bytes": 46234,
+      "lines_of_code": 1013,
+      "last_modified": 1752714480.3148642,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_translation.py",
+      "size_bytes": 3718,
+      "lines_of_code": 103,
+      "last_modified": 1752714480.3148642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_tts_agent.py",
+      "size_bytes": 32844,
+      "lines_of_code": 756,
+      "last_modified": 1752714480.3148642,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_whisper_asr.py",
+      "size_bytes": 12236,
+      "lines_of_code": 275,
+      "last_modified": 1752714480.3148642,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/system_digital_twin.py",
+      "size_bytes": 41629,
+      "lines_of_code": 918,
+      "last_modified": 1752714480.3158643,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/system_digital_twin_launcher.py",
+      "size_bytes": 3432,
+      "lines_of_code": 96,
+      "last_modified": 1752714480.3158643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/test_meta_cognition.py",
+      "size_bytes": 4433,
+      "lines_of_code": 139,
+      "last_modified": 1752714480.3158643,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/agents/tiered_responder.py",
+      "size_bytes": 13428,
+      "lines_of_code": 355,
+      "last_modified": 1752714480.3158643,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/tone_detector.py",
+      "size_bytes": 28912,
+      "lines_of_code": 689,
+      "last_modified": 1752714480.3158643,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/translation_service.py",
+      "size_bytes": 92732,
+      "lines_of_code": 2226,
+      "last_modified": 1752714480.3168643,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/trigger_word_detector.py",
+      "size_bytes": 14485,
+      "lines_of_code": 382,
+      "last_modified": 1752714480.3168643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/unified_system_agent copy.py",
+      "size_bytes": 6772,
+      "lines_of_code": 178,
+      "last_modified": 1752714480.3168643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/unified_system_agent.py",
+      "size_bytes": 27334,
+      "lines_of_code": 793,
+      "last_modified": 1752714480.3168643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/unified_system_agent2.py",
+      "size_bytes": 20036,
+      "lines_of_code": 534,
+      "last_modified": 1752714480.3168643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/vad_agent.py",
+      "size_bytes": 27128,
+      "lines_of_code": 642,
+      "last_modified": 1752714480.3168643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/validate_pc2_zmq_services.py",
+      "size_bytes": 9750,
+      "lines_of_code": 255,
+      "last_modified": 1752714480.3178642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/vision_capture_agent.py",
+      "size_bytes": 8387,
+      "lines_of_code": 224,
+      "last_modified": 1752714480.3188643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/voice_controller.py",
+      "size_bytes": 5960,
+      "lines_of_code": 180,
+      "last_modified": 1752714480.3188643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/voice_profiling_agent.py",
+      "size_bytes": 18277,
+      "lines_of_code": 433,
+      "last_modified": 1752714480.3188643,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/agents/voicemeeter_control_agent.py",
+      "size_bytes": 15639,
+      "lines_of_code": 413,
+      "last_modified": 1752714480.3278644,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/vram_manager copy.py",
+      "size_bytes": 14427,
+      "lines_of_code": 354,
+      "last_modified": 1752714480.3278644,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/vram_optimizer_agent.py",
+      "size_bytes": 66241,
+      "lines_of_code": 1523,
+      "last_modified": 1752714480.3278644,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/wake_word_detector.py",
+      "size_bytes": 19122,
+      "lines_of_code": 472,
+      "last_modified": 1752714480.3288646,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/config/agent_ports.py",
+      "size_bytes": 2322,
+      "lines_of_code": 62,
+      "last_modified": 1752714480.3298645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/config/config_manager.py",
+      "size_bytes": 23351,
+      "lines_of_code": 607,
+      "last_modified": 1752714480.3298645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/config/pc2_services_config.py",
+      "size_bytes": 4077,
+      "lines_of_code": 129,
+      "last_modified": 1752714480.3308647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/config/system_config.py",
+      "size_bytes": 7369,
+      "lines_of_code": 210,
+      "last_modified": 1752714480.3308647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/__init__.py",
+      "size_bytes": 488,
+      "lines_of_code": 7,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/async_processor.py",
+      "size_bytes": 10026,
+      "lines_of_code": 289,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/cache_manager.py",
+      "size_bytes": 13119,
+      "lines_of_code": 353,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/data_optimizer.py",
+      "size_bytes": 5229,
+      "lines_of_code": 136,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/performance.py",
+      "size_bytes": 6870,
+      "lines_of_code": 204,
+      "last_modified": 1752714480.3328645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/performance_monitor.py",
+      "size_bytes": 11844,
+      "lines_of_code": 303,
+      "last_modified": 1752714480.3338647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/integration/tiered_responder.py",
+      "size_bytes": 12564,
+      "lines_of_code": 342,
+      "last_modified": 1752714480.3338647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/agent_audit.py",
+      "size_bytes": 4285,
+      "lines_of_code": 119,
+      "last_modified": 1752714480.3358645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/auto_fix_health_checks.py",
+      "size_bytes": 9393,
+      "lines_of_code": 289,
+      "last_modified": 1752714480.3358645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/check_all_agents_health.py",
+      "size_bytes": 8315,
+      "lines_of_code": 233,
+      "last_modified": 1752714480.3358645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/check_gpu.py",
+      "size_bytes": 8032,
+      "lines_of_code": 230,
+      "last_modified": 1752714480.3358645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/container_healthcheck.py",
+      "size_bytes": 3557,
+      "lines_of_code": 104,
+      "last_modified": 1752714480.3358645,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/dependency_resolver.py",
+      "size_bytes": 6997,
+      "lines_of_code": 199,
+      "last_modified": 1752714480.3358645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/fix_agent_health_issues.py",
+      "size_bytes": 13753,
+      "lines_of_code": 354,
+      "last_modified": 1752714480.3358645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/fix_syntax_errors.py",
+      "size_bytes": 6589,
+      "lines_of_code": 173,
+      "last_modified": 1752714480.3358645,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/health_check_client.py",
+      "size_bytes": 709,
+      "lines_of_code": 25,
+      "last_modified": 1752714480.3368647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/run_voice_flow_test.py",
+      "size_bytes": 6983,
+      "lines_of_code": 230,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/smoke_test_agents.py",
+      "size_bytes": 2234,
+      "lines_of_code": 71,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/start_agents_new.py",
+      "size_bytes": 12341,
+      "lines_of_code": 244,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/start_agents_win.py",
+      "size_bytes": 6255,
+      "lines_of_code": 150,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/start_all_agents.py",
+      "size_bytes": 5817,
+      "lines_of_code": 192,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/start_system.py",
+      "size_bytes": 10564,
+      "lines_of_code": 269,
+      "last_modified": 1752714480.3368647,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/test_pc2_sdt_connection.py",
+      "size_bytes": 2614,
+      "lines_of_code": 68,
+      "last_modified": 1752714480.3368647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/scripts/test_script.py",
+      "size_bytes": 43,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.3378646,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/scripts/test_sdt_improved.py",
+      "size_bytes": 6305,
+      "lines_of_code": 176,
+      "last_modified": 1752714480.3378646,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/scripts/test_sdt_local_connection.py",
+      "size_bytes": 6381,
+      "lines_of_code": 177,
+      "last_modified": 1752714480.3378646,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/scripts/test_task_router_health.py",
+      "size_bytes": 1766,
+      "lines_of_code": 57,
+      "last_modified": 1752714480.3378646,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/scripts/validate_agents.py",
+      "size_bytes": 5133,
+      "lines_of_code": 161,
+      "last_modified": 1752714480.3378646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/scripts/verify_all_health_checks.py",
+      "size_bytes": 8427,
+      "lines_of_code": 257,
+      "last_modified": 1752714480.3378646,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/services/stt_service.py",
+      "size_bytes": 22768,
+      "lines_of_code": 566,
+      "last_modified": 1752714480.3378646,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/services/tts_service.py",
+      "size_bytes": 19636,
+      "lines_of_code": 485,
+      "last_modified": 1752714480.3378646,
+      "classification": "active"
+    },
+    {
+      "file_path": "main_pc_code/src/__init__.py",
+      "size_bytes": 16,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.3388648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/tests/__init__.py",
+      "size_bytes": 0,
+      "lines_of_code": 0,
+      "last_modified": 1752714480.3408647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/tests/end_to_end_test.py",
+      "size_bytes": 7084,
+      "lines_of_code": 198,
+      "last_modified": 1752714480.3408647,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/tests/mainpc_health_suite.py",
+      "size_bytes": 3695,
+      "lines_of_code": 107,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_cross_machine_registration.py",
+      "size_bytes": 9209,
+      "lines_of_code": 226,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_integration_model_manager_api.py",
+      "size_bytes": 10132,
+      "lines_of_code": 258,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_model_client.py",
+      "size_bytes": 3061,
+      "lines_of_code": 80,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_model_manager_api.py",
+      "size_bytes": 3205,
+      "lines_of_code": 87,
+      "last_modified": 1752714480.3408647,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_no_direct_model_load.py",
+      "size_bytes": 3123,
+      "lines_of_code": 88,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_phase5_integration.py",
+      "size_bytes": 3531,
+      "lines_of_code": 111,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_pilot_migration_sla.py",
+      "size_bytes": 4427,
+      "lines_of_code": 124,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_unified_planning_agent.py",
+      "size_bytes": 5403,
+      "lines_of_code": 146,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_voice_command_flow.py",
+      "size_bytes": 12807,
+      "lines_of_code": 331,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/tests/test_vram_optimizer_agent.py",
+      "size_bytes": 5723,
+      "lines_of_code": 158,
+      "last_modified": 1752714480.3418648,
+      "classification": "test"
+    },
+    {
+      "file_path": "main_pc_code/utils/__init__.py",
+      "size_bytes": 556,
+      "lines_of_code": 19,
+      "last_modified": 1752714480.3418648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/agent_health.py",
+      "size_bytes": 2183,
+      "lines_of_code": 67,
+      "last_modified": 1752714480.3418648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/agent_supervisor.py",
+      "size_bytes": 21156,
+      "lines_of_code": 576,
+      "last_modified": 1752714480.3428648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/analyze_agent_blocking.py",
+      "size_bytes": 3516,
+      "lines_of_code": 104,
+      "last_modified": 1752714480.3428648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/bulk_refactor_agents.py",
+      "size_bytes": 4623,
+      "lines_of_code": 126,
+      "last_modified": 1752714480.3428648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/config_loader.py",
+      "size_bytes": 6930,
+      "lines_of_code": 206,
+      "last_modified": 1752714480.3428648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/config_manager.py",
+      "size_bytes": 15204,
+      "lines_of_code": 429,
+      "last_modified": 1752714480.3428648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/config_parser.py",
+      "size_bytes": 2090,
+      "lines_of_code": 62,
+      "last_modified": 1752714480.3428648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/data_optimizer.py",
+      "size_bytes": 5229,
+      "lines_of_code": 136,
+      "last_modified": 1752714480.3428648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/docker_network_utils.py",
+      "size_bytes": 5166,
+      "lines_of_code": 172,
+      "last_modified": 1752714480.3428648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/env_loader.py",
+      "size_bytes": 5001,
+      "lines_of_code": 158,
+      "last_modified": 1752714480.3428648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/log_manager.py",
+      "size_bytes": 19804,
+      "lines_of_code": 551,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/metrics_client.py",
+      "size_bytes": 11107,
+      "lines_of_code": 316,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/model_client.py",
+      "size_bytes": 5310,
+      "lines_of_code": 174,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/network.py",
+      "size_bytes": 1657,
+      "lines_of_code": 51,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/network_connectivity.py",
+      "size_bytes": 7241,
+      "lines_of_code": 212,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/network_utils.py",
+      "size_bytes": 10501,
+      "lines_of_code": 284,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/path_manager.py",
+      "size_bytes": 12925,
+      "lines_of_code": 357,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/service_discovery_client.py",
+      "size_bytes": 16255,
+      "lines_of_code": 433,
+      "last_modified": 1752714480.343865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/utils/system_config.py",
+      "size_bytes": 1428,
+      "lines_of_code": 59,
+      "last_modified": 1752714480.3448648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/utils/zmq_cleanup_utils.py",
+      "size_bytes": 7206,
+      "lines_of_code": 235,
+      "last_modified": 1752714480.3448648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/web_automation/__init__.py",
+      "size_bytes": 2996,
+      "lines_of_code": 86,
+      "last_modified": 1752714480.3448648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/src/network/__init__.py",
+      "size_bytes": 17,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.3388648,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/src/network/secure_zmq.py",
+      "size_bytes": 840,
+      "lines_of_code": 28,
+      "last_modified": 1752714480.3388648,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/services/translation_modules/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.3378646,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/_archive/enhanced_model_router.py",
+      "size_bytes": 15824,
+      "lines_of_code": 371,
+      "last_modified": 1752714480.2808635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_archive/interpreter.py",
+      "size_bytes": 48015,
+      "lines_of_code": 1120,
+      "last_modified": 1752714480.2808635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_archive/orchestrator.py",
+      "size_bytes": 30990,
+      "lines_of_code": 750,
+      "last_modified": 1752714480.2808635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_archive/parameter_extractor.py",
+      "size_bytes": 25018,
+      "lines_of_code": 623,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/AgentBreeder.py",
+      "size_bytes": 18618,
+      "lines_of_code": 516,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/LearningAgent.py",
+      "size_bytes": 17987,
+      "lines_of_code": 500,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/PredictiveActionAgent.py",
+      "size_bytes": 321,
+      "lines_of_code": 10,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/SecurityPolicyAgent.py",
+      "size_bytes": 13720,
+      "lines_of_code": 365,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/core_memory/context_summarizer_agent.py",
+      "size_bytes": 17913,
+      "lines_of_code": 446,
+      "last_modified": 1752714480.212862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/core_speech_output/streaming_tts_agent.py",
+      "size_bytes": 32631,
+      "lines_of_code": 741,
+      "last_modified": 1752714480.212862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/intent_handlers/code_generation_intent.py",
+      "size_bytes": 9931,
+      "lines_of_code": 262,
+      "last_modified": 1752714480.302864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/SessionAgent.py",
+      "size_bytes": 10793,
+      "lines_of_code": 308,
+      "last_modified": 1752714480.305864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/TimelineUIServer.py",
+      "size_bytes": 6038,
+      "lines_of_code": 182,
+      "last_modified": 1752714480.305864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/agent_utils.py",
+      "size_bytes": 19552,
+      "lines_of_code": 538,
+      "last_modified": 1752714480.306864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/ai_studio_assistant.py",
+      "size_bytes": 28450,
+      "lines_of_code": 677,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/auto_fixer_agent.py",
+      "size_bytes": 6745,
+      "lines_of_code": 164,
+      "last_modified": 1752714480.306864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/autogen_framework.py",
+      "size_bytes": 20892,
+      "lines_of_code": 564,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/autonomous_agent_framework.py",
+      "size_bytes": 29584,
+      "lines_of_code": 781,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/code_command_handler.py",
+      "size_bytes": 19334,
+      "lines_of_code": 469,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/command_clustering.py",
+      "size_bytes": 15400,
+      "lines_of_code": 404,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/command_confirmation.py",
+      "size_bytes": 16188,
+      "lines_of_code": 432,
+      "last_modified": 1752714480.306864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/command_queue.py",
+      "size_bytes": 8417,
+      "lines_of_code": 240,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/command_suggestion.py",
+      "size_bytes": 12095,
+      "lines_of_code": 301,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/command_suggestion_optimized.py",
+      "size_bytes": 29798,
+      "lines_of_code": 811,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/common_tagalog_phrases.py",
+      "size_bytes": 8462,
+      "lines_of_code": 277,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/context_bridge_agent.py",
+      "size_bytes": 10719,
+      "lines_of_code": 261,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/coordinator.py",
+      "size_bytes": 12060,
+      "lines_of_code": 299,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/custom_command_handler.py",
+      "size_bytes": 14957,
+      "lines_of_code": 388,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/discovery_service.py",
+      "size_bytes": 12073,
+      "lines_of_code": 308,
+      "last_modified": 1752714480.3078642,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/distributed_launcher.py",
+      "size_bytes": 18557,
+      "lines_of_code": 477,
+      "last_modified": 1752714480.308864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/error_handler.py",
+      "size_bytes": 6038,
+      "lines_of_code": 171,
+      "last_modified": 1752714480.308864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/filesystem_assistant_agent.py",
+      "size_bytes": 5880,
+      "lines_of_code": 144,
+      "last_modified": 1752714480.308864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/fixed_model_config_loader.py",
+      "size_bytes": 8794,
+      "lines_of_code": 161,
+      "last_modified": 1752714480.308864,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/needtoverify/fixed_streaming_translation.py",
+      "size_bytes": 27865,
+      "lines_of_code": 702,
+      "last_modified": 1752714480.308864,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/stt/dynamic_stt_manager.py",
+      "size_bytes": 5214,
+      "lines_of_code": 123,
+      "last_modified": 1752714480.3158643,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "main_pc_code/agents/utils/data_optimizer.py",
+      "size_bytes": 5229,
+      "lines_of_code": 136,
+      "last_modified": 1752714480.3168643,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/jarvis_memory_agent.py",
+      "size_bytes": 6187,
+      "lines_of_code": 159,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory.py",
+      "size_bytes": 18325,
+      "lines_of_code": 412,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/asr/streaming_whisper_asr.py",
+      "size_bytes": 6787,
+      "lines_of_code": 158,
+      "last_modified": 1752714480.2818635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/legacy_components/streaming_text_processor.py",
+      "size_bytes": 14035,
+      "lines_of_code": 361,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/legacy_text_processing/streaming_text_processor.py",
+      "size_bytes": 14035,
+      "lines_of_code": 361,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_agent.py",
+      "size_bytes": 16907,
+      "lines_of_code": 459,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/chain_of_thought_client.py",
+      "size_bytes": 4701,
+      "lines_of_code": 138,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/context_manager.py",
+      "size_bytes": 8508,
+      "lines_of_code": 225,
+      "last_modified": 1752714480.2828636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/context_summarizer_agent.py",
+      "size_bytes": 17913,
+      "lines_of_code": 446,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/contextual_memory_agent.py",
+      "size_bytes": 13718,
+      "lines_of_code": 325,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_database.py",
+      "size_bytes": 15842,
+      "lines_of_code": 431,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/error_pattern_memory.py",
+      "size_bytes": 20521,
+      "lines_of_code": 550,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/learning_mode_agent.py",
+      "size_bytes": 5572,
+      "lines_of_code": 143,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/llm_task_agent.py",
+      "size_bytes": 10722,
+      "lines_of_code": 314,
+      "last_modified": 1752714480.2838635,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/memory_client.py",
+      "size_bytes": 3896,
+      "lines_of_code": 121,
+      "last_modified": 1752714480.2848637,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/memory_reasoning/unified_memory_reasoning_agent.py",
+      "size_bytes": 7370,
+      "lines_of_code": 196,
+      "last_modified": 1752714480.2848637,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/basic_audio_test.py",
+      "size_bytes": 8275,
+      "lines_of_code": 232,
+      "last_modified": 1752714480.2848637,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/code_generator_agent_temp.py",
+      "size_bytes": 46670,
+      "lines_of_code": 1023,
+      "last_modified": 1752714480.2858636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/listener_debug.py",
+      "size_bytes": 16359,
+      "lines_of_code": 380,
+      "last_modified": 1752714480.2858636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/listener_new.py",
+      "size_bytes": 12218,
+      "lines_of_code": 302,
+      "last_modified": 1752714480.2858636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/simple_whisper_test.py",
+      "size_bytes": 5929,
+      "lines_of_code": 173,
+      "last_modified": 1752714480.2858636,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/test_audio_devices.py",
+      "size_bytes": 1930,
+      "lines_of_code": 55,
+      "last_modified": 1752714480.203862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/test_generator_agent.py",
+      "size_bytes": 17324,
+      "lines_of_code": 489,
+      "last_modified": 1752714480.203862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/trigger_test.py",
+      "size_bytes": 5020,
+      "lines_of_code": 160,
+      "last_modified": 1752714480.203862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/misc/whisper_test.py",
+      "size_bytes": 2008,
+      "lines_of_code": 67,
+      "last_modified": 1752714480.2048619,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/model_management/lazy_voting.py",
+      "size_bytes": 20709,
+      "lines_of_code": 511,
+      "last_modified": 1752714480.2048619,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent.py",
+      "size_bytes": 181962,
+      "lines_of_code": 3681,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_manager_agent_gguf_connector.py",
+      "size_bytes": 13282,
+      "lines_of_code": 356,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/model_management/model_voting_manager.py",
+      "size_bytes": 9387,
+      "lines_of_code": 270,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/model_management/modular_system_model_manager.py",
+      "size_bytes": 9348,
+      "lines_of_code": 213,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/chain_of_thought_agent.py",
+      "size_bytes": 20382,
+      "lines_of_code": 517,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/executor_agent.py",
+      "size_bytes": 21737,
+      "lines_of_code": 532,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/planner_agent.py",
+      "size_bytes": 17876,
+      "lines_of_code": 447,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/planning_utils/progressive_code_generator.py",
+      "size_bytes": 32199,
+      "lines_of_code": 808,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/translation/PC2TRANSLATOR_AGENT.py",
+      "size_bytes": 19894,
+      "lines_of_code": 548,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/translation/llm_translation_adapter.py",
+      "size_bytes": 18569,
+      "lines_of_code": 468,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/translation/taglish_detector.py",
+      "size_bytes": 5236,
+      "lines_of_code": 105,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/translation/translator_agent.py",
+      "size_bytes": 31687,
+      "lines_of_code": 810,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/bark_tts.py",
+      "size_bytes": 18713,
+      "lines_of_code": 443,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/coqui_fallback.py",
+      "size_bytes": 1056,
+      "lines_of_code": 33,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/improved_bark_tts.py",
+      "size_bytes": 17926,
+      "lines_of_code": 438,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/improved_simple_tts.py",
+      "size_bytes": 7002,
+      "lines_of_code": 193,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/streaming_tts_agent.py",
+      "size_bytes": 15817,
+      "lines_of_code": 423,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/tts/tts_agent.py",
+      "size_bytes": 14870,
+      "lines_of_code": 388,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web/autonomous_web_assistant.py",
+      "size_bytes": 27631,
+      "lines_of_code": 682,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web/unified_web_agent_main_pc.py",
+      "size_bytes": 10147,
+      "lines_of_code": 290,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web/unified_web_agent_old.py",
+      "size_bytes": 29555,
+      "lines_of_code": 760,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web_utils/browser_automation.py",
+      "size_bytes": 6818,
+      "lines_of_code": 166,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web_utils/enhanced_web_scraper.py",
+      "size_bytes": 32398,
+      "lines_of_code": 852,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web_utils/web_scraper_agent.py",
+      "size_bytes": 23568,
+      "lines_of_code": 570,
+      "last_modified": 1752714480.2108622,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/agents/_trash_2025-06-13/archive/web_utils/web_search.py",
+      "size_bytes": 3884,
+      "lines_of_code": 105,
+      "last_modified": 1752714480.2108622,
+      "classification": "archive"
+    },
+    {
+      "file_path": "main_pc_code/NEWMUSTFOLLOW/agents/system_digital_twin.py",
+      "size_bytes": 28810,
+      "lines_of_code": 703,
+      "last_modified": 1752714480.2648633,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agent_health_check_validation.py",
+      "size_bytes": 10836,
+      "lines_of_code": 295,
+      "last_modified": 1752714480.351865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agent_stabilization_sweep.py",
+      "size_bytes": 4757,
+      "lines_of_code": 133,
+      "last_modified": 1752714480.351865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/benchmark_translator.py",
+      "size_bytes": 14738,
+      "lines_of_code": 339,
+      "last_modified": 1752714480.2198622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/cascade_process_monitor.py",
+      "size_bytes": 3219,
+      "lines_of_code": 94,
+      "last_modified": 1752714480.2218623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/check_memory_agents.py",
+      "size_bytes": 2356,
+      "lines_of_code": 79,
+      "last_modified": 1752714480.2218623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/custom_translator_test.py",
+      "size_bytes": 8086,
+      "lines_of_code": 199,
+      "last_modified": 1752714480.2248623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/debug_wrapper.py",
+      "size_bytes": 3207,
+      "lines_of_code": 98,
+      "last_modified": 1752714480.2248623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/distributed_bridge_test.py",
+      "size_bytes": 1049,
+      "lines_of_code": 31,
+      "last_modified": 1752714480.2248623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/download_tinyllama_model.py",
+      "size_bytes": 247,
+      "lines_of_code": 7,
+      "last_modified": 1752714480.2278624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/final_phi_translator.py",
+      "size_bytes": 24935,
+      "lines_of_code": 697,
+      "last_modified": 1752714480.2278624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/fix_phi_adapter.py",
+      "size_bytes": 3225,
+      "lines_of_code": 89,
+      "last_modified": 1752714480.2278624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/fix_syntax.py",
+      "size_bytes": 11278,
+      "lines_of_code": 300,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/fix_translator_agent.py",
+      "size_bytes": 4188,
+      "lines_of_code": 94,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/force_second_pc_agents.py",
+      "size_bytes": 2153,
+      "lines_of_code": 77,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/health_check_pc2.py",
+      "size_bytes": 1613,
+      "lines_of_code": 40,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/healthcheck_all_services.py",
+      "size_bytes": 3927,
+      "lines_of_code": 62,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/healthcheck_pc2_services.py",
+      "size_bytes": 7018,
+      "lines_of_code": 139,
+      "last_modified": 1752714480.2288625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/helsinki_adapter.py",
+      "size_bytes": 7105,
+      "lines_of_code": 202,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/install_pytorch_for_nllb.py",
+      "size_bytes": 9732,
+      "lines_of_code": 214,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/logic_puzzle_solver.py",
+      "size_bytes": 6893,
+      "lines_of_code": 187,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/m2m_adapter.py",
+      "size_bytes": 13179,
+      "lines_of_code": 370,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/main_pc_integration_test.py",
+      "size_bytes": 13838,
+      "lines_of_code": 339,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/mediapipe_pose_xtts.py",
+      "size_bytes": 5475,
+      "lines_of_code": 121,
+      "last_modified": 1752714480.2298625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/mediapipe_pose_xtts_multi.py",
+      "size_bytes": 5359,
+      "lines_of_code": 107,
+      "last_modified": 1752714480.2308624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/model_loader_script.py",
+      "size_bytes": 7895,
+      "lines_of_code": 226,
+      "last_modified": 1752714480.2308624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/nllb_adapter.py",
+      "size_bytes": 11857,
+      "lines_of_code": 311,
+      "last_modified": 1752714480.2308624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/ollama_bridge.py",
+      "size_bytes": 4017,
+      "lines_of_code": 112,
+      "last_modified": 1752714480.2308624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_gpu_benchmark.py",
+      "size_bytes": 4527,
+      "lines_of_code": 132,
+      "last_modified": 1752714480.2318625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_health_check.py",
+      "size_bytes": 9660,
+      "lines_of_code": 247,
+      "last_modified": 1752714480.2318625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_phase1_validation.py",
+      "size_bytes": 3003,
+      "lines_of_code": 99,
+      "last_modified": 1752714480.2318625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_tinyllama_health_checker.py",
+      "size_bytes": 3726,
+      "lines_of_code": 101,
+      "last_modified": 1752714480.2318625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_translator_benchmark.py",
+      "size_bytes": 11836,
+      "lines_of_code": 269,
+      "last_modified": 1752714480.2318625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/pc2_translator_health_checker.py",
+      "size_bytes": 2808,
+      "lines_of_code": 84,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/phi_adapter.py",
+      "size_bytes": 9808,
+      "lines_of_code": 255,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/phi_adapter_final_fix.py",
+      "size_bytes": 13230,
+      "lines_of_code": 380,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/predownload_tinyllama.py",
+      "size_bytes": 724,
+      "lines_of_code": 19,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/primary_translator_diagnostic.py",
+      "size_bytes": 3593,
+      "lines_of_code": 75,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/quick_translator_fix.py",
+      "size_bytes": 7835,
+      "lines_of_code": 210,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/rca_healthcheck.py",
+      "size_bytes": 470,
+      "lines_of_code": 21,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/remove_services_from_active_agents.py",
+      "size_bytes": 1106,
+      "lines_of_code": 36,
+      "last_modified": 1752714480.2328625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/remove_services_from_config.py",
+      "size_bytes": 1229,
+      "lines_of_code": 43,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/restart_services.py",
+      "size_bytes": 8382,
+      "lines_of_code": 223,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/run_nllb_translator.py",
+      "size_bytes": 364,
+      "lines_of_code": 13,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/run_pc2_health_check.py",
+      "size_bytes": 4503,
+      "lines_of_code": 125,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/sample_prompt_outputs.py",
+      "size_bytes": 5823,
+      "lines_of_code": 134,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/second_pc_install_deps.py",
+      "size_bytes": 1353,
+      "lines_of_code": 48,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/setup.py",
+      "size_bytes": 635,
+      "lines_of_code": 13,
+      "last_modified": 1752714480.2358625,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/simple_ollama_test.py",
+      "size_bytes": 780,
+      "lines_of_code": 27,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/simple_test.py",
+      "size_bytes": 2986,
+      "lines_of_code": 105,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/simple_test_nllb.py",
+      "size_bytes": 3295,
+      "lines_of_code": 111,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/simple_translation_adapter.py",
+      "size_bytes": 6259,
+      "lines_of_code": 183,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/start_translator_service.py",
+      "size_bytes": 10958,
+      "lines_of_code": 307,
+      "last_modified": 1752714480.2368627,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/system_launcher.py",
+      "size_bytes": 13904,
+      "lines_of_code": 369,
+      "last_modified": 1752714480.2378626,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/test_adapter.py",
+      "size_bytes": 2069,
+      "lines_of_code": 67,
+      "last_modified": 1752714480.2378626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_agent_health.py",
+      "size_bytes": 2552,
+      "lines_of_code": 95,
+      "last_modified": 1752714480.2378626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_agent_integration.py",
+      "size_bytes": 5892,
+      "lines_of_code": 161,
+      "last_modified": 1752714480.2378626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_all_health_checks.py",
+      "size_bytes": 4662,
+      "lines_of_code": 137,
+      "last_modified": 1752714480.2378626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_async_processor.py",
+      "size_bytes": 1714,
+      "lines_of_code": 60,
+      "last_modified": 1752714480.2378626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_auth_agent.py",
+      "size_bytes": 1274,
+      "lines_of_code": 45,
+      "last_modified": 1752714480.2398627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_cache_manager.py",
+      "size_bytes": 1688,
+      "lines_of_code": 60,
+      "last_modified": 1752714480.2398627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_cache_standalone.py",
+      "size_bytes": 8497,
+      "lines_of_code": 238,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_contextual_memory.py",
+      "size_bytes": 16116,
+      "lines_of_code": 375,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_contextual_translation.py",
+      "size_bytes": 4806,
+      "lines_of_code": 129,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_dreaming_mode_agent.py",
+      "size_bytes": 3667,
+      "lines_of_code": 116,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_dreamworld_agent.py",
+      "size_bytes": 1212,
+      "lines_of_code": 48,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_episodic_memory_agent.py",
+      "size_bytes": 1596,
+      "lines_of_code": 58,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_health_rep.py",
+      "size_bytes": 236,
+      "lines_of_code": 10,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_health_rep_alert.py",
+      "size_bytes": 236,
+      "lines_of_code": 10,
+      "last_modified": 1752714480.2408626,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_nllb_translation.py",
+      "size_bytes": 16698,
+      "lines_of_code": 437,
+      "last_modified": 1752714480.2418628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_ollama.py",
+      "size_bytes": 3394,
+      "lines_of_code": 87,
+      "last_modified": 1752714480.2418628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_performance_monitor.py",
+      "size_bytes": 1766,
+      "lines_of_code": 60,
+      "last_modified": 1752714480.2448628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_performance_monitor_health.py",
+      "size_bytes": 1254,
+      "lines_of_code": 36,
+      "last_modified": 1752714480.2448628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_phi_adapter_advanced.py",
+      "size_bytes": 2150,
+      "lines_of_code": 83,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_proactive_context_monitor.py",
+      "size_bytes": 1200,
+      "lines_of_code": 37,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_rca_agent.py",
+      "size_bytes": 1068,
+      "lines_of_code": 37,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_self_healing_agent.py",
+      "size_bytes": 3757,
+      "lines_of_code": 120,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_simple_agent.py",
+      "size_bytes": 1722,
+      "lines_of_code": 56,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_taglish.py",
+      "size_bytes": 3003,
+      "lines_of_code": 98,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_tiered_responder.py",
+      "size_bytes": 2646,
+      "lines_of_code": 91,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_translation_cache.py",
+      "size_bytes": 2028,
+      "lines_of_code": 58,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_translation_pipeline.py",
+      "size_bytes": 3303,
+      "lines_of_code": 104,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_translator_client.py",
+      "size_bytes": 8603,
+      "lines_of_code": 235,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_translator_messages.py",
+      "size_bytes": 3028,
+      "lines_of_code": 105,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_unified_error_agent.py",
+      "size_bytes": 1134,
+      "lines_of_code": 37,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_unified_memory_agent.py",
+      "size_bytes": 1785,
+      "lines_of_code": 62,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_unified_utils_agent.py",
+      "size_bytes": 1142,
+      "lines_of_code": 37,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/test_unified_web_agent.py",
+      "size_bytes": 3678,
+      "lines_of_code": 119,
+      "last_modified": 1752714480.246863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/test_voice_pipeline.py",
+      "size_bytes": 6713,
+      "lines_of_code": 186,
+      "last_modified": 1752714480.246863,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/translator_test_suite.py",
+      "size_bytes": 17289,
+      "lines_of_code": 400,
+      "last_modified": 1752714480.2478628,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/verify_memory_protocol.py",
+      "size_bytes": 3543,
+      "lines_of_code": 103,
+      "last_modified": 1752714480.2478628,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/verify_pc2_services.py",
+      "size_bytes": 14583,
+      "lines_of_code": 386,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/verify_pc2_services_fixed.py",
+      "size_bytes": 18790,
+      "lines_of_code": 442,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/verify_pc2_target_config.py",
+      "size_bytes": 14339,
+      "lines_of_code": 367,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/zmq_bridge.py",
+      "size_bytes": 7450,
+      "lines_of_code": 216,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/zmq_echo_client.py",
+      "size_bytes": 421,
+      "lines_of_code": 20,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/zmq_echo_server.py",
+      "size_bytes": 374,
+      "lines_of_code": 18,
+      "last_modified": 1752714480.248863,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/ChainOfThoughtAgent.py",
+      "size_bytes": 20485,
+      "lines_of_code": 519,
+      "last_modified": 1752714480.348865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/CognitiveModelAgent.py",
+      "size_bytes": 9010,
+      "lines_of_code": 260,
+      "last_modified": 1752714480.348865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/EnhancedModelRouter.py",
+      "size_bytes": 32824,
+      "lines_of_code": 782,
+      "last_modified": 1752714480.348865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/GOT_TOTAgent.py",
+      "size_bytes": 11439,
+      "lines_of_code": 323,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/LearningAdjusterAgent.py",
+      "size_bytes": 13098,
+      "lines_of_code": 384,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/LocalFineTunerAgent.py",
+      "size_bytes": 21669,
+      "lines_of_code": 645,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/NLLBAdapter.py",
+      "size_bytes": 16763,
+      "lines_of_code": 426,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/SelfTrainingOrchestrator.py",
+      "size_bytes": 19174,
+      "lines_of_code": 564,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "size_bytes": 13919,
+      "lines_of_code": 380,
+      "last_modified": 1752714480.349865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/FORMAINPC/consolidated_translator.py",
+      "size_bytes": 61327,
+      "lines_of_code": 1577,
+      "last_modified": 1752714480.350865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/AgentTrustScorer.py",
+      "size_bytes": 14621,
+      "lines_of_code": 405,
+      "last_modified": 1752714480.351865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/DreamWorldAgent.py",
+      "size_bytes": 36672,
+      "lines_of_code": 981,
+      "last_modified": 1752714480.352865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/DreamingModeAgent.py",
+      "size_bytes": 21499,
+      "lines_of_code": 502,
+      "last_modified": 1752714480.352865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/LearningAdjusterAgent.py",
+      "size_bytes": 22832,
+      "lines_of_code": 534,
+      "last_modified": 1752714480.353865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/PerformanceLoggerAgent.py",
+      "size_bytes": 17114,
+      "lines_of_code": 479,
+      "last_modified": 1752714480.354865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/VisionProcessingAgent.py",
+      "size_bytes": 8166,
+      "lines_of_code": 219,
+      "last_modified": 1752714480.354865,
+      "classification": "active"
+    },
+    {
+      "file_path": "pc2_code/agents/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.354865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/advanced_router.py",
+      "size_bytes": 22167,
+      "lines_of_code": 578,
+      "last_modified": 1752714480.354865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/agent_utils.py",
+      "size_bytes": 18819,
+      "lines_of_code": 515,
+      "last_modified": 1752714480.354865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/async_processor.py",
+      "size_bytes": 16697,
+      "lines_of_code": 469,
+      "last_modified": 1752714480.2048619,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/auto_fixer_agent.py",
+      "size_bytes": 0,
+      "lines_of_code": 0,
+      "last_modified": 1752714480.2048619,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/cache_manager.py",
+      "size_bytes": 19049,
+      "lines_of_code": 490,
+      "last_modified": 1752714480.2108622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/check_gpu.py",
+      "size_bytes": 540,
+      "lines_of_code": 15,
+      "last_modified": 1752714480.2108622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/check_pytorch_cuda.py",
+      "size_bytes": 2163,
+      "lines_of_code": 57,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/context_manager.py",
+      "size_bytes": 15499,
+      "lines_of_code": 403,
+      "last_modified": 1752714480.211862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/custom_tutoring_test.py",
+      "size_bytes": 3476,
+      "lines_of_code": 113,
+      "last_modified": 1752714480.2138622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/direct_emr_test.py",
+      "size_bytes": 1435,
+      "lines_of_code": 43,
+      "last_modified": 1752714480.2138622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/error_bus_service.py",
+      "size_bytes": 19116,
+      "lines_of_code": 488,
+      "last_modified": 1752714480.2138622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/error_bus_template.py",
+      "size_bytes": 6568,
+      "lines_of_code": 188,
+      "last_modified": 1752714480.2138622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/experience_tracker.py",
+      "size_bytes": 10387,
+      "lines_of_code": 244,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/filesystem_assistant_agent.py",
+      "size_bytes": 29175,
+      "lines_of_code": 632,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/health_monitor.py",
+      "size_bytes": 8742,
+      "lines_of_code": 224,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/memory_orchestrator_service.py",
+      "size_bytes": 46930,
+      "lines_of_code": 1085,
+      "last_modified": 1752714480.2158623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/memory_scheduler.py",
+      "size_bytes": 17101,
+      "lines_of_code": 418,
+      "last_modified": 1752714480.2158623,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/model_evaluation_framework.py",
+      "size_bytes": 32994,
+      "lines_of_code": 820,
+      "last_modified": 1752714480.2168622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/monitor_web_ports.py",
+      "size_bytes": 2023,
+      "lines_of_code": 70,
+      "last_modified": 1752714480.2168622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/performance_monitor.py",
+      "size_bytes": 17606,
+      "lines_of_code": 458,
+      "last_modified": 1752714480.2168622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/port_config.py",
+      "size_bytes": 1440,
+      "lines_of_code": 36,
+      "last_modified": 1752714480.2168622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/port_health_check.py",
+      "size_bytes": 4818,
+      "lines_of_code": 145,
+      "last_modified": 1752714480.2168622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/remote_connector_agent.py",
+      "size_bytes": 39184,
+      "lines_of_code": 860,
+      "last_modified": 1752714480.2178621,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/resource_manager.py",
+      "size_bytes": 17412,
+      "lines_of_code": 483,
+      "last_modified": 1752714480.2178621,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/rollback_web_ports.py",
+      "size_bytes": 2941,
+      "lines_of_code": 83,
+      "last_modified": 1752714480.2178621,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/simple_gpu_check.py",
+      "size_bytes": 503,
+      "lines_of_code": 16,
+      "last_modified": 1752714480.2178621,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/task_scheduler.py",
+      "size_bytes": 9227,
+      "lines_of_code": 231,
+      "last_modified": 1752714480.2178621,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/test_compliant_agent.py",
+      "size_bytes": 5943,
+      "lines_of_code": 180,
+      "last_modified": 1752714480.2178621,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/test_dreamworld_updates.py",
+      "size_bytes": 1957,
+      "lines_of_code": 65,
+      "last_modified": 1752714480.2178621,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/test_model_management.py",
+      "size_bytes": 10237,
+      "lines_of_code": 302,
+      "last_modified": 1752714480.2188623,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/test_translator.py",
+      "size_bytes": 11463,
+      "lines_of_code": 334,
+      "last_modified": 1752714480.2188623,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/test_tutoring_feature.py",
+      "size_bytes": 2890,
+      "lines_of_code": 85,
+      "last_modified": 1752714480.2188623,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/test_web_connections.py",
+      "size_bytes": 1142,
+      "lines_of_code": 41,
+      "last_modified": 1752714480.2188623,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/agents/tiered_responder.py",
+      "size_bytes": 18732,
+      "lines_of_code": 506,
+      "last_modified": 1752714480.2188623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/tutor_agent.py",
+      "size_bytes": 23849,
+      "lines_of_code": 637,
+      "last_modified": 1752714480.2188623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/tutoring_agent.py",
+      "size_bytes": 19509,
+      "lines_of_code": 460,
+      "last_modified": 1752714480.2188623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/tutoring_service_agent.py",
+      "size_bytes": 3523,
+      "lines_of_code": 111,
+      "last_modified": 1752714480.2188623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/unified_memory_reasoning_agent.py",
+      "size_bytes": 34781,
+      "lines_of_code": 863,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/unified_memory_reasoning_agent_simplified.py",
+      "size_bytes": 9383,
+      "lines_of_code": 244,
+      "last_modified": 1752714480.2198622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/unified_web_agent.py",
+      "size_bytes": 81125,
+      "lines_of_code": 1928,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/config/pc2_connection.py",
+      "size_bytes": 4848,
+      "lines_of_code": 161,
+      "last_modified": 1752714480.2238624,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/config/system_config.py",
+      "size_bytes": 16688,
+      "lines_of_code": 440,
+      "last_modified": 1752714480.2248623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/scripts/agent_health_checker.py",
+      "size_bytes": 2821,
+      "lines_of_code": 82,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/check_agents.py",
+      "size_bytes": 2725,
+      "lines_of_code": 76,
+      "last_modified": 1752714480.2338626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/container_healthcheck.py",
+      "size_bytes": 5825,
+      "lines_of_code": 175,
+      "last_modified": 1752714480.2348626,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/scripts/health_check.py",
+      "size_bytes": 8259,
+      "lines_of_code": 226,
+      "last_modified": 1752714480.2348626,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/scripts/llm_model_manager.py",
+      "size_bytes": 12996,
+      "lines_of_code": 380,
+      "last_modified": 1752714480.2348626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/standardize_agents.py",
+      "size_bytes": 14579,
+      "lines_of_code": 412,
+      "last_modified": 1752714480.2348626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/start_agents.py",
+      "size_bytes": 5212,
+      "lines_of_code": 139,
+      "last_modified": 1752714480.2348626,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/start_container.py",
+      "size_bytes": 7977,
+      "lines_of_code": 231,
+      "last_modified": 1752714480.2358625,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/scripts/test_pc2_containers.py",
+      "size_bytes": 10724,
+      "lines_of_code": 285,
+      "last_modified": 1752714480.2358625,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/src/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.2368627,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/test_scripts/test_translator_health.py",
+      "size_bytes": 3456,
+      "lines_of_code": 110,
+      "last_modified": 1752714480.2458627,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/tests/end_to_end_test.py",
+      "size_bytes": 5542,
+      "lines_of_code": 141,
+      "last_modified": 1752714480.246863,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/tests/test_consolidated_translator.py",
+      "size_bytes": 8510,
+      "lines_of_code": 239,
+      "last_modified": 1752714480.2478628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/tests/test_memory_integration.py",
+      "size_bytes": 9880,
+      "lines_of_code": 273,
+      "last_modified": 1752714480.2478628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/tests/test_unified_memory_reasoning_agent.py",
+      "size_bytes": 5858,
+      "lines_of_code": 162,
+      "last_modified": 1752714480.2478628,
+      "classification": "test"
+    },
+    {
+      "file_path": "pc2_code/translation_components/nllb_translator.py",
+      "size_bytes": 3576,
+      "lines_of_code": 94,
+      "last_modified": 1752714480.2478628,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/utils/config_loader.py",
+      "size_bytes": 1610,
+      "lines_of_code": 57,
+      "last_modified": 1752714480.2478628,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/src/core/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.2368627,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/src/core/rca_agent.py",
+      "size_bytes": 17672,
+      "lines_of_code": 437,
+      "last_modified": 1752714480.2368627,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/src/monitoring/alert_manager.py",
+      "size_bytes": 24205,
+      "lines_of_code": 623,
+      "last_modified": 1752714480.2368627,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/src/monitoring/health_check.py",
+      "size_bytes": 15477,
+      "lines_of_code": 400,
+      "last_modified": 1752714480.2368627,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/src/monitoring/metrics_collector.py",
+      "size_bytes": 18249,
+      "lines_of_code": 475,
+      "last_modified": 1752714480.2368627,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/AuthenticationAgent.py",
+      "size_bytes": 17955,
+      "lines_of_code": 465,
+      "last_modified": 1752714480.352865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/Error_Management_System.py",
+      "size_bytes": 25009,
+      "lines_of_code": 570,
+      "last_modified": 1752714480.352865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.352865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/health_monitor.py",
+      "size_bytes": 23912,
+      "lines_of_code": 645,
+      "last_modified": 1752714480.352865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/proactive_context_monitor.py",
+      "size_bytes": 15335,
+      "lines_of_code": 383,
+      "last_modified": 1752714480.353865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/system_health_manager.py",
+      "size_bytes": 13741,
+      "lines_of_code": 334,
+      "last_modified": 1752714480.353865,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/test_task_router_health.py",
+      "size_bytes": 782,
+      "lines_of_code": 28,
+      "last_modified": 1752714480.353865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/unified_monitoring.py",
+      "size_bytes": 8378,
+      "lines_of_code": 217,
+      "last_modified": 1752714480.353865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/ForPC2/unified_utils_agent.py",
+      "size_bytes": 18220,
+      "lines_of_code": 424,
+      "last_modified": 1752714480.353865,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/AgentTrustScorer.py",
+      "size_bytes": 9061,
+      "lines_of_code": 283,
+      "last_modified": 1752714480.2048619,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/AuthenticationAgent.py",
+      "size_bytes": 13718,
+      "lines_of_code": 406,
+      "last_modified": 1752714480.2048619,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/DreamWorldAgent.py",
+      "size_bytes": 35555,
+      "lines_of_code": 977,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/DreamingModeAgent.py",
+      "size_bytes": 14938,
+      "lines_of_code": 362,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/EpisodicMemoryAgent.py",
+      "size_bytes": 28734,
+      "lines_of_code": 823,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/LearningAdjusterAgent.py",
+      "size_bytes": 20763,
+      "lines_of_code": 529,
+      "last_modified": 1752714480.205862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/PerformanceLoggerAgent.py",
+      "size_bytes": 14234,
+      "lines_of_code": 424,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/UnifiedErrorAgent.py",
+      "size_bytes": 10075,
+      "lines_of_code": 289,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/UnifiedMemoryReasoningAgent.py",
+      "size_bytes": 44462,
+      "lines_of_code": 1182,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/advanced_router.py",
+      "size_bytes": 8387,
+      "lines_of_code": 231,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/async_processor.py",
+      "size_bytes": 12447,
+      "lines_of_code": 385,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/cache_manager.py",
+      "size_bytes": 16188,
+      "lines_of_code": 446,
+      "last_modified": 1752714480.206862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/context_manager.py",
+      "size_bytes": 12465,
+      "lines_of_code": 324,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/experience_tracker.py",
+      "size_bytes": 7569,
+      "lines_of_code": 205,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/filesystem_assistant_agent.py",
+      "size_bytes": 17320,
+      "lines_of_code": 420,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/health_monitor.py",
+      "size_bytes": 6779,
+      "lines_of_code": 191,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/memory_manager.py",
+      "size_bytes": 20063,
+      "lines_of_code": 536,
+      "last_modified": 1752714480.2078621,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/performance_monitor.py",
+      "size_bytes": 14088,
+      "lines_of_code": 368,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/proactive_context_monitor.py",
+      "size_bytes": 9657,
+      "lines_of_code": 281,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/rca_agent.py",
+      "size_bytes": 20441,
+      "lines_of_code": 505,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/remote_connector_agent.py",
+      "size_bytes": 28229,
+      "lines_of_code": 698,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/resource_manager.py",
+      "size_bytes": 15420,
+      "lines_of_code": 429,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/self_healing_agent.py",
+      "size_bytes": 19103,
+      "lines_of_code": 498,
+      "last_modified": 1752714480.208862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/task_scheduler.py",
+      "size_bytes": 7155,
+      "lines_of_code": 197,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/tiered_responder.py",
+      "size_bytes": 15901,
+      "lines_of_code": 460,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/tutor_agent.py",
+      "size_bytes": 23717,
+      "lines_of_code": 633,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/tutoring_agent.py",
+      "size_bytes": 18469,
+      "lines_of_code": 441,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/tutoring_service_agent.py",
+      "size_bytes": 3095,
+      "lines_of_code": 99,
+      "last_modified": 1752714480.209862,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/unified_utils_agent.py",
+      "size_bytes": 12764,
+      "lines_of_code": 314,
+      "last_modified": 1752714480.2108622,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/backups/unified_web_agent.py",
+      "size_bytes": 77310,
+      "lines_of_code": 1922,
+      "last_modified": 1752714480.2108622,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/core_agents/LearningAdjusterAgent.py",
+      "size_bytes": 3227,
+      "lines_of_code": 95,
+      "last_modified": 1752714480.211862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/core_agents/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.211862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/core_agents/http_server.py",
+      "size_bytes": 140,
+      "lines_of_code": 6,
+      "last_modified": 1752714480.211862,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/core_agents/tutoring_agent.py",
+      "size_bytes": 11833,
+      "lines_of_code": 271,
+      "last_modified": 1752714480.211862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/core_agents/tutoring_service_agent.py",
+      "size_bytes": 11740,
+      "lines_of_code": 264,
+      "last_modified": 1752714480.211862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/__init__.py",
+      "size_bytes": 516,
+      "lines_of_code": 7,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/async_processor.py",
+      "size_bytes": 3800,
+      "lines_of_code": 129,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/cache_manager.py",
+      "size_bytes": 4891,
+      "lines_of_code": 134,
+      "last_modified": 1752714480.214862,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/data_optimizer.py",
+      "size_bytes": 5229,
+      "lines_of_code": 136,
+      "last_modified": 1752714480.2158623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/performance.py",
+      "size_bytes": 6897,
+      "lines_of_code": 204,
+      "last_modified": 1752714480.2158623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/performance_monitor.py",
+      "size_bytes": 3434,
+      "lines_of_code": 105,
+      "last_modified": 1752714480.2158623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/integration/tiered_responder.py",
+      "size_bytes": 7560,
+      "lines_of_code": 214,
+      "last_modified": 1752714480.2158623,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/utils/__init__.py",
+      "size_bytes": 1,
+      "lines_of_code": 1,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/utils/config_loader.py",
+      "size_bytes": 7138,
+      "lines_of_code": 210,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/utils/config_parser.py",
+      "size_bytes": 88,
+      "lines_of_code": 5,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/utils/data_optimizer.py",
+      "size_bytes": 5229,
+      "lines_of_code": 136,
+      "last_modified": 1752714480.2198622,
+      "classification": "duplicate"
+    },
+    {
+      "file_path": "pc2_code/agents/utils/pc2_agent_helpers.py",
+      "size_bytes": 4477,
+      "lines_of_code": 149,
+      "last_modified": 1752714480.2198622,
+      "classification": "ghost"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/chain_of_thought_agent.py",
+      "size_bytes": 20485,
+      "lines_of_code": 519,
+      "last_modified": 1752714480.354865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/context_manager.py",
+      "size_bytes": 8132,
+      "lines_of_code": 214,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/context_summarizer.py",
+      "size_bytes": 8715,
+      "lines_of_code": 211,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/context_summarizer_agent.py",
+      "size_bytes": 17182,
+      "lines_of_code": 428,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/contextual_memory_agent.py",
+      "size_bytes": 20957,
+      "lines_of_code": 509,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/error_pattern_memory.py",
+      "size_bytes": 11576,
+      "lines_of_code": 309,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/learning_mode_agent.py",
+      "size_bytes": 3325,
+      "lines_of_code": 91,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/memory.py",
+      "size_bytes": 20937,
+      "lines_of_code": 458,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/memory_agent.py",
+      "size_bytes": 6946,
+      "lines_of_code": 187,
+      "last_modified": 1752714480.355865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/progressive_code_generator.py",
+      "size_bytes": 31383,
+      "lines_of_code": 789,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/test_unified_memory_reasoning.py",
+      "size_bytes": 6029,
+      "lines_of_code": 189,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/memory_reasoning/unified_memory_reasoning_agent.py",
+      "size_bytes": 26476,
+      "lines_of_code": 678,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/auto_fixer_agent.py",
+      "size_bytes": 5489,
+      "lines_of_code": 134,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/check_llm_adapter.py",
+      "size_bytes": 1948,
+      "lines_of_code": 54,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/llm_task_agent.py",
+      "size_bytes": 8728,
+      "lines_of_code": 268,
+      "last_modified": 1752714480.3568652,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/model_manager_agent.py",
+      "size_bytes": 19008,
+      "lines_of_code": 447,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/proactive_agent_interface.py",
+      "size_bytes": 2283,
+      "lines_of_code": 80,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/pub_translator_test.py",
+      "size_bytes": 5255,
+      "lines_of_code": 137,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/test_main_pc_socket.py",
+      "size_bytes": 5918,
+      "lines_of_code": 156,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/test_self_healing.py",
+      "size_bytes": 3005,
+      "lines_of_code": 96,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/test_unified_web_agent.py",
+      "size_bytes": 6319,
+      "lines_of_code": 211,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/misc/tinyllama_service.py",
+      "size_bytes": 18488,
+      "lines_of_code": 439,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/translation/llm_translation_adapter.py",
+      "size_bytes": 41165,
+      "lines_of_code": 880,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/translation/translation_normalization.py",
+      "size_bytes": 2121,
+      "lines_of_code": 64,
+      "last_modified": 1752714480.357865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/translation/translator_agent.py",
+      "size_bytes": 41097,
+      "lines_of_code": 1028,
+      "last_modified": 1752714480.358865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/translation/translator_fixed.py",
+      "size_bytes": 67799,
+      "lines_of_code": 1567,
+      "last_modified": 1752714480.358865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/web/autonomous_web_assistant.py",
+      "size_bytes": 27409,
+      "lines_of_code": 676,
+      "last_modified": 1752714480.358865,
+      "classification": "archive"
+    },
+    {
+      "file_path": "pc2_code/agents/archive/web/web_scraper_agent.py",
+      "size_bytes": 22627,
+      "lines_of_code": 549,
+      "last_modified": 1752714480.358865,
+      "classification": "archive"
+    }
+  ]

@@ -1,0 +1,40 @@
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ],
+  "builder": {
+    "gc": {
+      "enabled": true,
+      "defaultKeepStorage": "20GB",
+      "policy": [
+        {
+          "keepStorage": "10GB",
+          "filter": ["unused-for=2160h"]
+        },
+        {
+          "keepStorage": "50GB",
+          "filter": ["unused-for=168h"]
+        },
+        {
+          "keepStorage": "100GB",
+          "all": true
+        }
+      ]
+    }
+  },
+  "max-concurrent-downloads": 6,
+  "max-concurrent-uploads": 5,
+  "default-ulimits": {
+    "nofile": {
+      "Hard": 64000,
+      "Name": "nofile",
+      "Soft": 64000
+    }
+  }
+} 

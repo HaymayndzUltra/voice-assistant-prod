@@ -1,0 +1,110 @@
+[
+  {
+    "service_name": "Primary Translator",
+    "script_path": "agents/translator_fixed.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat. Uses translator_fixed.py logic. Copied from Deprecated agent.",
+    "port": 5563,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": ["NLLB Adapter", "Google Translate (fallback)"],
+    "config_notes": "Uses tiered translation logic from translator_fixed.py. Enhanced with advanced caching/session."
+  },
+  {
+    "service_name": "TinyLlama Service",
+    "script_path": "agents/tinyllama_service_enhanced.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat. Corrected path to agents directory.",
+    "port": 5615,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Binds to 0.0.0.0:5615. Supports on-demand model loading/unloading. Health check returns status and model_status."
+  },
+  {
+    "service_name": "Chain of Thought Agent",
+    "script_path": "agents/chain_of_thought_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat. Log path fixed.",
+    "port": 5612,
+    "health_check_payload": {"request_type": "health_check"},
+    "dependencies": ["Remote Connector Agent"],
+    "config_notes": "Depends on Remote Connector Agent for model inference. Binds to 0.0.0.0:5612."
+  },
+  {
+    "service_name": "Remote Connector Agent",
+    "script_path": "agents/remote_connector_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat. Now supports standalone mode if Model Manager is unavailable.",
+    "port": 5557,
+    "health_check_payload": {"request_type": "health_check"},
+    "dependencies": ["Model Manager (optional)"],
+    "config_notes": "Gracefully falls back to standalone mode if Model Manager is unreachable. Binds to 0.0.0.0:5557."
+  },
+  {
+    "service_name": "NLLB Adapter",
+    "script_path": "NLLB_adapter.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat. Script is in root directory.",
+    "port": 5581,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Implements facebook/nllb-200-distilled-600M model. Response format may differ from other agents."
+  },
+  {
+    "service_name": "Fallback Translator",
+    "script_path": "quick_translator_fix.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat with --port 5564.",
+    "port": 5564,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Lightweight emergency fallback for translation. Hard-coded translations."
+  },
+  {
+    "service_name": "Memory Agent",
+    "script_path": "agents/memory_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5590,
+    "health_check_payload": {"request_type": "health_check"},
+    "dependencies": [],
+    "config_notes": "Expects health check payload with 'request_type'."
+  },
+  {
+    "service_name": "Contextual Memory Agent",
+    "script_path": "agents/contextual_memory_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5596,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Maintains rolling summary and hierarchical memory."
+  },
+  {
+    "service_name": "Digital Twin Agent",
+    "script_path": "agents/digital_twin_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5597,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Maintains digital twin state for users."
+  },
+  {
+    "service_name": "Error Pattern Memory",
+    "script_path": "agents/error_pattern_memory.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5611,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Tracks error patterns and fixes."
+  },
+  {
+    "service_name": "Context Summarizer",
+    "script_path": "agents/context_summarizer_agent.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5610,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": [],
+    "config_notes": "Maintains rolling summary and session context."
+  },
+  {
+    "service_name": "Enhanced Model Router",
+    "script_path": "agents/enhanced_model_router.py",
+    "startup_command_notes": "Started by start_essential_pc2_services_fixed.bat.",
+    "port": 5598,
+    "health_check_payload": {"action": "health_check"},
+    "dependencies": ["Memory Agent", "Contextual Memory Agent"],
+    "config_notes": "Routes requests to appropriate model/service."
+  }
+]

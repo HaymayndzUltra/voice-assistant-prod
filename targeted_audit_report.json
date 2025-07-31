@@ -1,0 +1,2425 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T22:46:21.433671",
+    "version": "1.0.0",
+    "monorepo_path": "/home/haymayndz/AI_System_Monorepo"
+  },
+  "agents": {
+    "streaming_audio_capture": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_audio_capture.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "fused_audio_preprocessor": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/audio/fused_audio_preprocessor.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "wake_word_detector": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def __init__(self, port: int = None, health_check_port=None, wake_word_path=None,",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/wake_word_detector.py",
+      "compliance": {
+        "score": 38,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "streaming_speech_recognition": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "language_and_translation_coordinator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/language_and_translation_coordinator.py",
+      "compliance": {
+        "score": 90,
+        "rating": "A-",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "code_generator_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (3) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "executor": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 11 resources created but only 2 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/executor.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "task_router": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 3 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/task_router.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "ChainOfThoughtAgent": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+      "compliance": {
+        "score": 95,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "GOT_TOTAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "model_manager_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "vram_optimizer_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (6) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "coordinator_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/coordinator_agent.py",
+      "compliance": {
+        "score": 74,
+        "rating": "C",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "GoalOrchestratorAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/GoalOrchestratorAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "IntentionValidatorAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/IntentionValidatorAgent.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "DynamicIdentityAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "EmpathyAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "ProactiveAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (3)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
+      "compliance": {
+        "score": 29,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 4,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "predictive_loader": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (3)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_loader.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "emotion_engine": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "mood_tracker_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "human_awareness_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def stop(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py",
+      "compliance": {
+        "score": 48,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "emotion_synthesis_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "tone_detector": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tone_detector.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "voice_profiling_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 3 resources created but only 1 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_profiling_agent.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "nlu_agent": {
+      "issues": [
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/nlu_agent.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    },
+    "advanced_command_handler": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (2) but not all closed (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_command_handler.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "chitchat_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/chitchat_agent.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "feedback_handler": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/feedback_handler.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "responder": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (8) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/responder.py",
+      "compliance": {
+        "score": 39,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "streaming_language_analyzer": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_language_analyzer.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "learning_manager": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_manager.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "knowledge_base": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py",
+      "compliance": {
+        "score": 95,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "MetaCognitionAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MetaCognitionAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "active_learning_monitor": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/active_learning_monitor.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "EnhancedModelRouter": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def wrapper(*args, **kwargs):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/EnhancedModelRouter.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "TinyLlamaServiceEnhanced": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def stop(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "compliance": {
+        "score": 58,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "NLLBAdapter": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def stop(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/NLLBAdapter.py",
+      "compliance": {
+        "score": 58,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "LearningAdjusterAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "LocalFineTunerAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "SelfTrainingOrchestrator": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+      "compliance": {
+        "score": 49,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "CognitiveModelAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "consolidated_translator": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 4 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def wrapper(*args, **kwargs):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/consolidated_translator.py",
+      "compliance": {
+        "score": 83,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "session_memory_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py",
+      "compliance": {
+        "score": 60,
+        "rating": "D-",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "memory_manager": {
+      "issues": [
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_manager.py",
+      "compliance": {
+        "score": 79,
+        "rating": "C+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    },
+    "memory_orchestrator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_orchestrator.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "memory_client": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (3)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_client.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "predictive_health_monitor": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_health_monitor.py",
+      "compliance": {
+        "score": 59,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "system_digital_twin": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    },
+    "unified_planning_agent": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_planning_agent.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "MultiAgentSwarmManager": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def _perform_initialization(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MultiAgentSwarmManager.py",
+      "compliance": {
+        "score": 48,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "unified_system_agent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "tts_connector": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 3 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_connector.py",
+      "compliance": {
+        "score": 79,
+        "rating": "C+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    },
+    "tts_cache": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 1 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_cache.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "streaming_tts_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_tts_agent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "tts_agent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_agent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "streaming_interrupt_handler": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n        \n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n        \ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n    \n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n    \n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def stop(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt_handler.py",
+      "compliance": {
+        "score": 48,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "vision_capture_agent": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/vision/vision_capture_agent.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "face_recognition_agent": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 7 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    }
+  },
+  "port_conflicts": [],
+  "system_compliance": {
+    "score": 0,
+    "rating": "F",
+    "critical_issues": 35,
+    "high_issues": 99,
+    "medium_issues": 41,
+    "low_issues": 57
+  },
+  "summary": {
+    "total_agents": 59,
+    "agents_with_issues": 59,
+    "port_conflicts": 0,
+    "total_issues": 232,
+    "issues_by_severity": {
+      "CRITICAL": 35,
+      "HIGH": 99,
+      "MEDIUM": 41,
+      "LOW": 57
+    }
+  }
+}

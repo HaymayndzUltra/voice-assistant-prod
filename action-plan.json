@@ -1,0 +1,59 @@
+{
+  "plan_id": "sample_action_plan_001",
+  "title": "Sample Action Plan - System Testing",
+  "created_date": "2025-07-27",
+  "current_phase": 1,
+  "total_phases": 4,
+  "status": "active",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Initialize Project Setup",
+      "status": "active",
+      "tasks": [
+        "Create project directory structure",
+        "Set up configuration files",
+        "Initialize version control",
+        "Validate setup completion"
+      ],
+      "completion_note": "After completing all tasks, run 'advance-phase.sh' to proceed to Phase 2"
+    },
+    {
+      "phase": 2,
+      "title": "Core Implementation",
+      "status": "pending",
+      "tasks": [
+        "Implement main functionality",
+        "Add error handling",
+        "Write unit tests",
+        "Perform integration testing"
+      ],
+      "completion_note": "After completing all tasks, run 'advance-phase.sh' to proceed to Phase 3"
+    },
+    {
+      "phase": 3,
+      "title": "Documentation and Optimization",
+      "status": "pending",
+      "tasks": [
+        "Write comprehensive documentation",
+        "Optimize performance bottlenecks",
+        "Code review and refactoring",
+        "Update deployment scripts"
+      ],
+      "completion_note": "After completing all tasks, run 'advance-phase.sh' to proceed to Phase 4"
+    },
+    {
+      "phase": 4,
+      "title": "Final Deployment",
+      "status": "pending",
+      "tasks": [
+        "Deploy to staging environment",
+        "Run final validation tests",
+        "Deploy to production",
+        "Monitor initial rollout"
+      ],
+      "completion_note": "After completing all tasks, run 'advance-phase.sh' to mark project complete"
+    }
+  ],
+  "last_updated": "2025-07-27T18:30:00.000Z"
+} 

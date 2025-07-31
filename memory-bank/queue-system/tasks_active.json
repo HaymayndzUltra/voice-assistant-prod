@@ -1,0 +1,213 @@
+[
+  {
+    "id": "20250730T200000_Reorganize_Agent_Groups_for_Docker_Production",
+    "description": "Reorganize Agent Groups for Docker Production Deployment",
+    "todos": [
+      {
+        "text": "Analyze current agent dependencies and resource usage patterns in both MainPC and PC2 systems",
+        "done": false
+      },
+      {
+        "text": "Map functional cohesion and failure domains for logical grouping",
+        "done": false
+      },
+      {
+        "text": "Design logical group structures optimized for Docker deployment",
+        "done": false
+      },
+      {
+        "text": "Update main_pc_code/config/startup_config.yaml with new logical groups",
+        "done": false
+      },
+      {
+        "text": "Update pc2_code/config/startup_config.yaml with new logical groups",
+        "done": false
+      },
+      {
+        "text": "Create dependency mapping diagrams for each system",
+        "done": false
+      },
+      {
+        "text": "Optimize startup sequences and health check strategies per group",
+        "done": false
+      },
+      {
+        "text": "Design Docker deployment configurations for both RTX 4090 (MainPC) and RTX 3060 (PC2) systems",
+        "done": false
+      },
+      {
+        "text": "Create cross-system communication protocols and documentation",
+        "done": false
+      }
+    ],
+    "status": "active",
+    "created": "2025-07-30T20:00:00.000000+08:00",
+    "updated": "2025-07-30T20:00:00.000000+08:00"
+  },
+  {
+    "id": "20250730T173037_(Optional_Advanced_Step)",
+    "description": "(Optional Advanced Step)",
+    "todos": [
+      {
+        "text": "Auto-suggest Standardization/Magbigay ng suggestions per pattern kung paano pwede gawing standard ang mga import, config loading, at agent base class usage sa codebase.\"",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:30:37.906126+08:00",
+    "updated": "2025-07-30T17:49:26.295946+08:00"
+  },
+  {
+    "id": "20250730T173055_Step_6:_Output_Summary",
+    "description": "Step 6: Output Summary",
+    "todos": [
+      {
+        "text": "I-generate ang summary table (o structured JSON) per file na nagpapakita ng: filename, imports, class inheritance, config pattern, utilities used, at mga napansin mong inconsistencies o kakaiba.",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:30:55.853873+08:00",
+    "updated": "2025-07-30T17:49:20.462292+08:00"
+  },
+  {
+    "id": "20250730T173115_Step_5:_Inconsistency_&_Uniqueness",
+    "description": "Step 5: Inconsistency & Uniqueness",
+    "todos": [
+      {
+        "text": "I-analyze mo per file kung may unique, duplicate, o inconsistent usage ng imports, base class, config, o helpers/utilities. Bigyan ng summary o highlight bawat kaso",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:31:15.781675+08:00",
+    "updated": "2025-07-30T17:49:10.506243+08:00"
+  },
+  {
+    "id": "20250730T173149_Step_4:_Helper/Utility_Usage",
+    "description": "Step 4: Helper/Utility Usage",
+    "todos": [
+      {
+        "text": "I-identify at ilista lahat ng custom/helper/utilities na ginagamit sa bawat agent file (hal. get_port, ErrorPublisher, metrics_client, path_manager, etc). Pakita per file kung saan ginagamit",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:31:49.485173+08:00",
+    "updated": "2025-07-30T17:49:15.814426+08:00"
+  },
+  {
+    "id": "20250730T173204_Step_3:_Config_Usage_Extraction",
+    "description": "Step 3: Config Usage Extraction",
+    "todos": [
+      {
+        "text": "I-extract at ilista per file lahat ng config loading/initialization patterns—kasama na ang direct dict usage, os.getenv, custom loader functions, unified config manager, atbp",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:32:04.465662+08:00",
+    "updated": "2025-07-30T17:53:22.902299+08:00"
+  },
+  {
+    "id": "20250730T173211_Step_2:_Imports_&_Class_Mapping",
+    "description": "Step 2: Imports & Class Mapping",
+    "todos": [
+      {
+        "text": "Sa bawat agent file, kunin lahat ng import statements, class definitions, at parent class (base class). Output as: filename, imports, class name, parent class/es",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:32:11.574753+08:00",
+    "updated": "2025-07-30T17:53:27.864260+08:00"
+  },
+  {
+    "id": "20250730T173217_Step_1_File_Inventory",
+    "description": "Step 1 File Inventory",
+    "todos": [
+      {
+        "text": "Hanapin at ilista lahat ng agent-related Python files (yung may class na nag-iinherit, or gumamit ng import na mukhang agent module) sa buong monorepo ko. Ipakita lahat ng filenames at relative paths",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T17:32:17.555006+08:00",
+    "updated": "2025-07-30T17:54:11.625805+08:00"
+  },
+  {
+    "id": "20250730T183201_O3_Implementation_Planning_&_Execution",
+    "description": "O3 Implementation Planning & Execution",
+    "todos": [
+      {
+        "text": "Wait for O3 Pro Max detailed roadmap response",
+        "done": true
+      },
+      {
+        "text": "Parse O3's implementation plan into executable tasks",
+        "done": true
+      },
+      {
+        "text": "Setup task queue system based on O3's recommendations",
+        "done": true
+      },
+      {
+        "text": "Begin systematic execution of AI System fixes following O3 roadmap",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T18:32:01.517366+08:00",
+    "updated": "2025-07-30T18:38:58.082888+08:00"
+  },
+  {
+    "id": "20250730T183318_Phase_1:_Critical_Fixes_(Week_1)_-_O3_Roadmap",
+    "description": "Phase 1: Critical Fixes (Week 1) - O3 Roadmap",
+    "todos": [
+      {
+        "text": "1.1 Fix Fatal Import Error - Add get_port import to service_registry_agent.py",
+        "done": true
+      },
+      {
+        "text": "1.2 Create Unified Config Manager - Build common/config/unified_config_manager.py",
+        "done": true
+      },
+      {
+        "text": "1.3 Extend ErrorPublisher to PC2 - Integrate error bus into all 23 PC2 agents",
+        "done": true
+      },
+      {
+        "text": "1.4 Unused Import Cleanup - Run ruff and autoflake across codebase",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T18:33:18.073965+08:00",
+    "updated": "2025-07-30T18:59:24.276696+08:00"
+  },
+  {
+    "id": "20250730T183537_Phase_2:_High_Priority_Improvements_(Week_2-3)_-_O",
+    "description": "Phase 2: High Priority Improvements (Week 2-3) - O3 Roadmap",
+    "todos": [
+      {
+        "text": "2.1 Standardized EnhancedBaseAgent Wrapper - Create agent_factory.py with uniform metrics",
+        "done": true
+      },
+      {
+        "text": "2.2 Centralized FastJSON Utility - Create common/utils/fast_json.py with orjson fallback",
+        "done": true
+      },
+      {
+        "text": "2.3 Async Socket Wrappers - Create common/pools/async_zmq_pool.py for asyncio channels",
+        "done": true
+      },
+      {
+        "text": "2.4 Configuration Validation & Schema - Add JSON-Schema validation to ConfigManager",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-30T18:35:37.230372+08:00",
+    "updated": "2025-07-30T19:31:26.922657+08:00"
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--memory=512m",
+        "--cpus=0.5",
+        "--security-opt=no-new-privileges",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${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}"
+      },
+      "timeout": 30000,
+      "retries": 3
+    },
+    "memory": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "memory_system.mcp_bridge",
+        "--db-path",
+        "memory-bank/memory.db"
+      ],
+      "timeout": 10000,
+      "retries": 2
+    },
+    "sequential-thinking": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "ghcr.io/modelcontextprotocol/servers/sequential-thinking"
+      ],
+      "timeout": 30000
+    }
+  }
+}

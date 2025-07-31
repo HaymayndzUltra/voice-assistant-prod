@@ -1,0 +1,442 @@
+[
+  {
+    "name": "TaskRouter",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/task_router.py",
+    "status": "ok"
+  },
+  {
+    "name": "ChainOfThoughtAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "GOT_TOTAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ModelManagerAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "VRAMOptimizerAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "CoordinatorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/coordinator_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "GoalOrchestratorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/GoalOrchestratorAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "IntentionValidatorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/IntentionValidatorAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "DynamicIdentityAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "EmpathyAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ProactiveAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "PredictiveLoader",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_loader.py",
+    "status": "ok"
+  },
+  {
+    "name": "EnhancedModelRouter",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/EnhancedModelRouter.py",
+    "status": "ok"
+  },
+  {
+    "name": "TinyLlamaService",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+    "status": "ok"
+  },
+  {
+    "name": "NLLBAdapter",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/NLLBAdapter.py",
+    "status": "ok"
+  },
+  {
+    "name": "LearningAdjusterAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "LocalFineTunerAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "SelfTrainingOrchestrator",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+    "status": "ok"
+  },
+  {
+    "name": "CognitiveModelAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ConsolidatedTranslator",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/consolidated_translator.py",
+    "status": "ok"
+  },
+  {
+    "name": "EmotionEngine",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py",
+    "status": "ok"
+  },
+  {
+    "name": "MoodTrackerAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "HumanAwarenessAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "EmotionSynthesisAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ToneDetector",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tone_detector.py",
+    "status": "ok"
+  },
+  {
+    "name": "VoiceProfiler",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_profiling_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "NLUAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/nlu_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "AdvancedCommandHandler",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_command_handler.py",
+    "status": "ok"
+  },
+  {
+    "name": "ChitchatAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/chitchat_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "FeedbackHandler",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/feedback_handler.py",
+    "status": "ok"
+  },
+  {
+    "name": "Responder",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/responder.py",
+    "status": "ok"
+  },
+  {
+    "name": "StreamingLanguageAnalyzer",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_language_analyzer.py",
+    "status": "ok"
+  },
+  {
+    "name": "SessionMemoryAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "MemoryManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "MemoryOrchestrator",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_orchestrator.py",
+    "status": "ok"
+  },
+  {
+    "name": "MemoryClient",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_client.py",
+    "status": "ok"
+  },
+  {
+    "name": "LearningManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "KnowledgeBase",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py",
+    "status": "ok"
+  },
+  {
+    "name": "MetaCognitionAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MetaCognitionAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ActiveLearningMonitor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/active_learning_monitor.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedPlanningAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_planning_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "MultiAgentSwarmManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MultiAgentSwarmManager.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedSystemAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "TTSConnector",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_connector.py",
+    "status": "ok"
+  },
+  {
+    "name": "TTSCache",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_cache.py",
+    "status": "ok"
+  },
+  {
+    "name": "StreamingTTSAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_tts_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "TTSAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "StreamingInterruptHandler",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt_handler.py",
+    "status": "ok"
+  },
+  {
+    "name": "CodeGenerator",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "Executor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/executor.py",
+    "status": "ok"
+  },
+  {
+    "name": "AudioCapture",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_audio_capture.py",
+    "status": "ok"
+  },
+  {
+    "name": "FusedAudioPreprocessor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/audio/fused_audio_preprocessor.py",
+    "status": "ok"
+  },
+  {
+    "name": "WakeWordDetector",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/wake_word_detector.py",
+    "status": "ok"
+  },
+  {
+    "name": "StreamingSpeechRecognition",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py",
+    "status": "ok"
+  },
+  {
+    "name": "LanguageAndTranslationCoordinator",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/language_and_translation_coordinator.py",
+    "status": "ok"
+  },
+  {
+    "name": "VisionCaptureAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/vision/vision_capture_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "FaceRecognitionAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "PredictiveHealthMonitor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/agents/predictive_health_monitor.py",
+    "status": "ok"
+  },
+  {
+    "name": "SystemDigitalTwin",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py",
+    "status": "ok"
+  },
+  {
+    "name": "TieredResponder",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+    "status": "ok"
+  },
+  {
+    "name": "AsyncProcessor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+    "status": "ok"
+  },
+  {
+    "name": "CacheManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "PerformanceMonitor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/performance_monitor.py",
+    "status": "ok"
+  },
+  {
+    "name": "DreamWorldAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedMemoryReasoningAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/UnifiedMemoryReasoningAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "EpisodicMemoryAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/EpisodicMemoryAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "LearningAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/LearningAdjusterAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "TutorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "TutoringServiceAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_service_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "MemoryManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/memory_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "ContextManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "ExperienceTracker",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+    "status": "ok"
+  },
+  {
+    "name": "ResourceManager",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+    "status": "ok"
+  },
+  {
+    "name": "HealthMonitor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/health_monitor.py",
+    "status": "ok"
+  },
+  {
+    "name": "TaskScheduler",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+    "status": "ok"
+  },
+  {
+    "name": "AuthenticationAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedErrorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/UnifiedErrorAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedUtilsAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "ProactiveContextMonitor",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+    "status": "ok"
+  },
+  {
+    "name": "RCAAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/rca_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "AgentTrustScorer",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+    "status": "ok"
+  },
+  {
+    "name": "FileSystemAssistantAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "RemoteConnectorAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "SelfHealingAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/self_healing_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "UnifiedWebAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+    "status": "ok"
+  },
+  {
+    "name": "DreamingModeAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "PerformanceLoggerAgent",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/PerformanceLoggerAgent.py",
+    "status": "ok"
+  },
+  {
+    "name": "AdvancedRouter",
+    "script_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+    "status": "ok"
+  }
+]

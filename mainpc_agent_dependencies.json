@@ -1,0 +1,497 @@
+{
+  "ServiceRegistry": {
+    "script": "main_pc_code/agents/service_registry_agent.py",
+    "port": 7200,
+    "dependencies": [],
+    "group": "core_services"
+  },
+  "SystemDigitalTwin": {
+    "script": "main_pc_code/agents/system_digital_twin.py",
+    "port": 7220,
+    "dependencies": [
+      "ServiceRegistry"
+    ],
+    "group": "core_services"
+  },
+  "RequestCoordinator": {
+    "script": "main_pc_code/agents/request_coordinator.py",
+    "port": 26002,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "core_services"
+  },
+  "UnifiedSystemAgent": {
+    "script": "main_pc_code/agents/unified_system_agent.py",
+    "port": 7225,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "core_services"
+  },
+  "ObservabilityHub": {
+    "script": "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py",
+    "port": 9000,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "core_services"
+  },
+  "ModelManagerSuite": {
+    "script": "main_pc_code/model_manager_suite.py",
+    "port": 7211,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "core_services"
+  },
+  "MemoryClient": {
+    "script": "main_pc_code/agents/memory_client.py",
+    "port": 5713,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "memory_system"
+  },
+  "SessionMemoryAgent": {
+    "script": "main_pc_code/agents/session_memory_agent.py",
+    "port": 5574,
+    "dependencies": [
+      "RequestCoordinator",
+      "SystemDigitalTwin",
+      "MemoryClient"
+    ],
+    "group": "memory_system"
+  },
+  "KnowledgeBase": {
+    "script": "main_pc_code/agents/knowledge_base.py",
+    "port": 5715,
+    "dependencies": [
+      "MemoryClient",
+      "SystemDigitalTwin"
+    ],
+    "group": "memory_system"
+  },
+  "CodeGenerator": {
+    "script": "main_pc_code/agents/code_generator_agent.py",
+    "port": 5650,
+    "dependencies": [
+      "SystemDigitalTwin",
+      "ModelManagerSuite"
+    ],
+    "group": "utility_services"
+  },
+  "SelfTrainingOrchestrator": {
+    "script": "main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+    "port": 5660,
+    "dependencies": [
+      "SystemDigitalTwin",
+      "ModelManagerSuite"
+    ],
+    "group": "utility_services"
+  },
+  "PredictiveHealthMonitor": {
+    "script": "main_pc_code/agents/predictive_health_monitor.py",
+    "port": 5613,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "FixedStreamingTranslation": {
+    "script": "main_pc_code/agents/fixed_streaming_translation.py",
+    "port": 5584,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "Executor": {
+    "script": "main_pc_code/agents/executor.py",
+    "port": 5606,
+    "dependencies": [
+      "CodeGenerator",
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "TinyLlamaServiceEnhanced": {
+    "script": "main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+    "port": 5615,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "LocalFineTunerAgent": {
+    "script": "main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+    "port": 5642,
+    "dependencies": [
+      "SelfTrainingOrchestrator",
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "NLLBAdapter": {
+    "script": "main_pc_code/FORMAINPC/NLLBAdapter.py",
+    "port": 5581,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "utility_services"
+  },
+  "VRAMOptimizerAgent": {
+    "script": "main_pc_code/agents/vram_optimizer_agent.py",
+    "port": 5572,
+    "dependencies": [
+      "ModelManagerSuite",
+      "RequestCoordinator",
+      "SystemDigitalTwin"
+    ],
+    "group": "gpu_infrastructure"
+  },
+  "ChainOfThoughtAgent": {
+    "script": "main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+    "port": 5612,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "reasoning_services"
+  },
+  "GoTToTAgent": {
+    "script": "main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+    "port": 5646,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin",
+      "ChainOfThoughtAgent"
+    ],
+    "group": "reasoning_services"
+  },
+  "CognitiveModelAgent": {
+    "script": "main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+    "port": 5641,
+    "dependencies": [
+      "ChainOfThoughtAgent",
+      "SystemDigitalTwin"
+    ],
+    "group": "reasoning_services"
+  },
+  "FaceRecognitionAgent": {
+    "script": "main_pc_code/agents/face_recognition_agent.py",
+    "port": 5610,
+    "dependencies": [
+      "RequestCoordinator",
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "vision_processing"
+  },
+  "LearningOrchestrationService": {
+    "script": "main_pc_code/agents/learning_orchestration_service.py",
+    "port": 7210,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "learning_knowledge"
+  },
+  "LearningOpportunityDetector": {
+    "script": "main_pc_code/agents/learning_opportunity_detector.py",
+    "port": 7202,
+    "dependencies": [
+      "LearningOrchestrationService",
+      "MemoryClient",
+      "SystemDigitalTwin"
+    ],
+    "group": "learning_knowledge"
+  },
+  "LearningManager": {
+    "script": "main_pc_code/agents/learning_manager.py",
+    "port": 5580,
+    "dependencies": [
+      "MemoryClient",
+      "RequestCoordinator",
+      "SystemDigitalTwin"
+    ],
+    "group": "learning_knowledge"
+  },
+  "ActiveLearningMonitor": {
+    "script": "main_pc_code/agents/active_learning_monitor.py",
+    "port": 5638,
+    "dependencies": [
+      "LearningManager",
+      "SystemDigitalTwin"
+    ],
+    "group": "learning_knowledge"
+  },
+  "LearningAdjusterAgent": {
+    "script": "main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+    "port": 5643,
+    "dependencies": [
+      "SelfTrainingOrchestrator",
+      "SystemDigitalTwin"
+    ],
+    "group": "learning_knowledge"
+  },
+  "ModelOrchestrator": {
+    "script": "main_pc_code/agents/model_orchestrator.py",
+    "port": 7213,
+    "dependencies": [
+      "RequestCoordinator",
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "GoalManager": {
+    "script": "main_pc_code/agents/goal_manager.py",
+    "port": 7205,
+    "dependencies": [
+      "RequestCoordinator",
+      "ModelOrchestrator",
+      "SystemDigitalTwin",
+      "MemoryClient"
+    ],
+    "group": "language_processing"
+  },
+  "IntentionValidatorAgent": {
+    "script": "main_pc_code/agents/IntentionValidatorAgent.py",
+    "port": 5701,
+    "dependencies": [
+      "RequestCoordinator",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "NLUAgent": {
+    "script": "main_pc_code/agents/nlu_agent.py",
+    "port": 5709,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "AdvancedCommandHandler": {
+    "script": "main_pc_code/agents/advanced_command_handler.py",
+    "port": 5710,
+    "dependencies": [
+      "NLUAgent",
+      "CodeGenerator",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "ChitchatAgent": {
+    "script": "main_pc_code/agents/chitchat_agent.py",
+    "port": 5711,
+    "dependencies": [
+      "NLUAgent",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "FeedbackHandler": {
+    "script": "main_pc_code/agents/feedback_handler.py",
+    "port": 5636,
+    "dependencies": [
+      "NLUAgent",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "Responder": {
+    "script": "main_pc_code/agents/responder.py",
+    "port": 5637,
+    "dependencies": [
+      "EmotionEngine",
+      "FaceRecognitionAgent",
+      "NLUAgent",
+      "StreamingTTSAgent",
+      "SystemDigitalTwin",
+      "TTSService"
+    ],
+    "group": "language_processing"
+  },
+  "TranslationService": {
+    "script": "main_pc_code/agents/translation_service.py",
+    "port": 5595,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "DynamicIdentityAgent": {
+    "script": "main_pc_code/agents/DynamicIdentityAgent.py",
+    "port": 5802,
+    "dependencies": [
+      "RequestCoordinator",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "EmotionSynthesisAgent": {
+    "script": "main_pc_code/agents/emotion_synthesis_agent.py",
+    "port": 5706,
+    "dependencies": [
+      "RequestCoordinator",
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "language_processing"
+  },
+  "STTService": {
+    "script": "main_pc_code/services/stt_service.py",
+    "port": 5800,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin"
+    ],
+    "group": "speech_services"
+  },
+  "TTSService": {
+    "script": "main_pc_code/services/tts_service.py",
+    "port": 5801,
+    "dependencies": [
+      "ModelManagerSuite",
+      "SystemDigitalTwin",
+      "StreamingInterruptHandler"
+    ],
+    "group": "speech_services"
+  },
+  "AudioCapture": {
+    "script": "main_pc_code/agents/streaming_audio_capture.py",
+    "port": 6550,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "FusedAudioPreprocessor": {
+    "script": "main_pc_code/agents/fused_audio_preprocessor.py",
+    "port": 6551,
+    "dependencies": [
+      "AudioCapture",
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "StreamingInterruptHandler": {
+    "script": "main_pc_code/agents/streaming_interrupt_handler.py",
+    "port": 5576,
+    "dependencies": [
+      "StreamingSpeechRecognition",
+      "StreamingTTSAgent",
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "StreamingSpeechRecognition": {
+    "script": "main_pc_code/agents/streaming_speech_recognition.py",
+    "port": 6553,
+    "dependencies": [
+      "FusedAudioPreprocessor",
+      "RequestCoordinator",
+      "STTService",
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "StreamingTTSAgent": {
+    "script": "main_pc_code/agents/streaming_tts_agent.py",
+    "port": 5562,
+    "dependencies": [
+      "RequestCoordinator",
+      "TTSService",
+      "SystemDigitalTwin",
+      "UnifiedSystemAgent"
+    ],
+    "group": "audio_interface"
+  },
+  "WakeWordDetector": {
+    "script": "main_pc_code/agents/wake_word_detector.py",
+    "port": 6552,
+    "dependencies": [
+      "AudioCapture",
+      "FusedAudioPreprocessor",
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "StreamingLanguageAnalyzer": {
+    "script": "main_pc_code/agents/streaming_language_analyzer.py",
+    "port": 5579,
+    "dependencies": [
+      "StreamingSpeechRecognition",
+      "SystemDigitalTwin",
+      "TranslationService"
+    ],
+    "group": "audio_interface"
+  },
+  "ProactiveAgent": {
+    "script": "main_pc_code/agents/ProactiveAgent.py",
+    "port": 5624,
+    "dependencies": [
+      "RequestCoordinator",
+      "SystemDigitalTwin"
+    ],
+    "group": "audio_interface"
+  },
+  "EmotionEngine": {
+    "script": "main_pc_code/agents/emotion_engine.py",
+    "port": 5590,
+    "dependencies": [
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  },
+  "MoodTrackerAgent": {
+    "script": "main_pc_code/agents/mood_tracker_agent.py",
+    "port": 5704,
+    "dependencies": [
+      "EmotionEngine",
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  },
+  "HumanAwarenessAgent": {
+    "script": "main_pc_code/agents/human_awareness_agent.py",
+    "port": 5705,
+    "dependencies": [
+      "EmotionEngine",
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  },
+  "ToneDetector": {
+    "script": "main_pc_code/agents/tone_detector.py",
+    "port": 5625,
+    "dependencies": [
+      "EmotionEngine",
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  },
+  "VoiceProfilingAgent": {
+    "script": "main_pc_code/agents/voice_profiling_agent.py",
+    "port": 5708,
+    "dependencies": [
+      "EmotionEngine",
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  },
+  "EmpathyAgent": {
+    "script": "main_pc_code/agents/EmpathyAgent.py",
+    "port": 5703,
+    "dependencies": [
+      "EmotionEngine",
+      "StreamingTTSAgent",
+      "SystemDigitalTwin"
+    ],
+    "group": "emotion_system"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "total": 18,
+  "passed": 0,
+  "skipped": 0,
+  "failed": 18,
+  "by_method": {},
+  "by_category": {
+    "basic": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "commands": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "complex": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "taglish": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "english": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    },
+    "edge_cases": {
+      "total": 3,
+      "passed": 0,
+      "skipped": 0,
+      "failed": 3
+    }
+  },
+  "tests": [
+    {
+      "category": "basic",
+      "text": "Magandang umaga",
+      "translated": "TIMEOUT",
+      "expected": "Good morning",
+      "method": "timeout",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "basic",
+      "text": "Kumusta ka?",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "How are you?",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "basic",
+      "text": "Salamat sa tulong mo",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Thank you for your help",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "buksan mo ang file",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "open the file",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "i-save mo ang document",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "save the document",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "commands",
+      "text": "isara mo ang window",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "close the window",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "complex",
+      "text": "Ang teknolohiya ay mabilis na umuunlad sa ating panahon",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Technology is rapidly advancing in our time",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "complex",
+      "text": "Mahalaga ang pag-aaral ng mga wika para sa komunikasyon",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Learning languages is important for communication",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "complex",
+      "text": "Ang artificial intelligence ay nagbibigay ng maraming oportunidad",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Artificial intelligence provides many opportunities",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "Pwede mo ba i-check ang email ko?",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Can you check my email?",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "I-download mo yung file na yan",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Download that file",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "taglish",
+      "text": "Na-receive mo ba ang message ko?",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Did you receive my message?",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "english",
+      "text": "Hello, how are you today?",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Hello, how are you today?",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "english",
+      "text": "Can you help me with this?",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Can you help me with this?",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "english",
+      "text": "Open the document please",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "Open the document please",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "   ",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "   ",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    },
+    {
+      "category": "edge_cases",
+      "text": "123456",
+      "translated": "ERROR: Operation cannot be accomplished in current state",
+      "expected": "123456",
+      "method": "error",
+      "confidence": 0,
+      "time_ms": 0,
+      "result": "FAILED"
+    }
+  ]
+}

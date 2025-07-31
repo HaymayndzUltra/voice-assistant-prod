@@ -1,0 +1,46 @@
+[
+  {
+    "test_id": 1,
+    "description": "Basic Tagalog greeting",
+    "input": "Kumusta ka?",
+    "result": {
+      "status": "success",
+      "translated_text": "Kumusta ka?",
+      "engine_used": "nllb",
+      "cache_hit": false
+    }
+  },
+  {
+    "test_id": 2,
+    "description": "English to Tagalog technical phrase",
+    "input": "I need to check the status of my application.",
+    "result": {
+      "status": "success",
+      "translated_text": "Kailangan kong suriin ang katayuan ng aking aplikasyon.",
+      "engine_used": "nllb",
+      "cache_hit": false
+    }
+  },
+  {
+    "test_id": 3,
+    "description": "Taglish mixed language",
+    "input": "Maganda ang weather today, perfect for a walk.",
+    "result": {
+      "status": "success",
+      "translated_text": "Maganda ang weather today, perfect for a walk.",
+      "engine_used": "nllb",
+      "cache_hit": false
+    }
+  },
+  {
+    "test_id": 4,
+    "description": "Tagalog with food terms",
+    "input": "Gusto ko magluto ng adobo at sinigang.",
+    "result": {
+      "status": "success",
+      "translated_text": "I'd like to have a drink at Sinigang.",
+      "engine_used": "nllb",
+      "cache_hit": false
+    }
+  }
+]

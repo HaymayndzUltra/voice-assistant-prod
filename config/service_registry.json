@@ -1,0 +1,722 @@
+{
+  "humanawareness": [
+    {
+      "name": "humanawareness",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840124",
+      "is_healthy": true
+    }
+  ],
+  "circuitbreaker": [
+    {
+      "name": "circuitbreaker",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840166",
+      "is_healthy": true
+    }
+  ],
+  "resourcemanager": [
+    {
+      "name": "resourcemanager",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840163",
+      "is_healthy": true
+    }
+  ],
+  "proactive_interface": [
+    {
+      "name": "proactive_interface",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840165",
+      "is_healthy": true
+    }
+  ],
+  "sessionmemory": [
+    {
+      "name": "sessionmemory",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 6583,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840169",
+      "is_healthy": true
+    }
+  ],
+  "textrequest": [
+    {
+      "name": "textrequest",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840171",
+      "is_healthy": true
+    }
+  ],
+  "chitchat": [
+    {
+      "name": "chitchat",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 6582,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840173",
+      "is_healthy": true
+    }
+  ],
+  "proactive": [
+    {
+      "name": "proactive",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840175",
+      "is_healthy": true
+    }
+  ],
+  "predictivehealthmonitor": [
+    {
+      "name": "predictivehealthmonitor",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840177",
+      "is_healthy": true
+    }
+  ],
+  "nlu": [
+    {
+      "name": "nlu",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840179",
+      "is_healthy": true
+    }
+  ],
+  "wakeworddetector": [
+    {
+      "name": "wakeworddetector",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840181",
+      "is_healthy": true
+    }
+  ],
+  "advancedcommandhandler": [
+    {
+      "name": "advancedcommandhandler",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840184",
+      "is_healthy": true
+    }
+  ],
+  "pc2_zmq_protocol_finder_extended": [
+    {
+      "name": "pc2_zmq_protocol_finder_extended",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840186",
+      "is_healthy": true
+    }
+  ],
+  "tonedetector": [
+    {
+      "name": "tonedetector",
+      "host": "localhost",
+      "port": 5575,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840188",
+      "is_healthy": true
+    }
+  ],
+  "feedbackhandler": [
+    {
+      "name": "feedbackhandler",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840190",
+      "is_healthy": true
+    }
+  ],
+  "triggerworddetector": [
+    {
+      "name": "triggerworddetector",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840192",
+      "is_healthy": true
+    }
+  ],
+  "generate_code_with_cga_method": [
+    {
+      "name": "generate_code_with_cga_method",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840194",
+      "is_healthy": true
+    }
+  ],
+  "systemdigitaltwin": [
+    {
+      "name": "systemdigitaltwin",
+      "host": "localhost",
+      "port": 7120,
+      "health_port": 8120,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840196",
+      "is_healthy": true
+    }
+  ],
+  "noisereduction": [
+    {
+      "name": "noisereduction",
+      "host": "localhost",
+      "port": 6575,
+      "health_port": 6576,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840198",
+      "is_healthy": true
+    }
+  ],
+  "knowledgebase": [
+    {
+      "name": "knowledgebase",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840200",
+      "is_healthy": true
+    }
+  ],
+  "unifiedsystem": [
+    {
+      "name": "unifiedsystem",
+      "host": "localhost",
+      "port": 5568,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840202",
+      "is_healthy": true
+    }
+  ],
+  "check_ports": [
+    {
+      "name": "check_ports",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840204",
+      "is_healthy": true
+    }
+  ],
+  "streamingwhisperasr": [
+    {
+      "name": "streamingwhisperasr",
+      "host": "localhost",
+      "port": 6575,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840207",
+      "is_healthy": true
+    }
+  ],
+  "for": [
+    {
+      "name": "for",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840209",
+      "is_healthy": true
+    }
+  ],
+  "voicemeetercontrol": [
+    {
+      "name": "voicemeetercontrol",
+      "host": "localhost",
+      "port": 5645,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840211",
+      "is_healthy": true
+    }
+  ],
+  "streamingpartialtranscripts": [
+    {
+      "name": "streamingpartialtranscripts",
+      "host": "localhost",
+      "port": 5570,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840213",
+      "is_healthy": true
+    }
+  ],
+  "learningopportunitydetector": [
+    {
+      "name": "learningopportunitydetector",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840215",
+      "is_healthy": true
+    }
+  ],
+  "emotionengine": [
+    {
+      "name": "emotionengine",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840217",
+      "is_healthy": true
+    }
+  ],
+  "moodtracker": [
+    {
+      "name": "moodtracker",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840218",
+      "is_healthy": true
+    }
+  ],
+  "responder": [
+    {
+      "name": "responder",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840220",
+      "is_healthy": true
+    }
+  ],
+  "streaminglanguageanalyzer": [
+    {
+      "name": "streaminglanguageanalyzer",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840222",
+      "is_healthy": true
+    }
+  ],
+  "emotionsynthesis": [
+    {
+      "name": "emotionsynthesis",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840224",
+      "is_healthy": true
+    }
+  ],
+  "voiceprofiling": [
+    {
+      "name": "voiceprofiling",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840226",
+      "is_healthy": true
+    }
+  ],
+  "from": [
+    {
+      "name": "from",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840338",
+      "is_healthy": true
+    }
+  ],
+  "executor": [
+    {
+      "name": "executor",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840230",
+      "is_healthy": true
+    }
+  ],
+  "performancemonitor": [
+    {
+      "name": "performancemonitor",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840232",
+      "is_healthy": true
+    }
+  ],
+  "streaminglanguagetollm": [
+    {
+      "name": "streaminglanguagetollm",
+      "host": "localhost",
+      "port": 5577,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840234",
+      "is_healthy": true
+    }
+  ],
+  "streaminginterrupt": [
+    {
+      "name": "streaminginterrupt",
+      "host": "localhost",
+      "port": 5562,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840236",
+      "is_healthy": true
+    }
+  ],
+  "metacognition": [
+    {
+      "name": "metacognition",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840238",
+      "is_healthy": true
+    }
+  ],
+  "ggufmodelmanager": [
+    {
+      "name": "ggufmodelmanager",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840240",
+      "is_healthy": true
+    }
+  ],
+  "learningmanager": [
+    {
+      "name": "learningmanager",
+      "host": "localhost",
+      "port": 5588,
+      "health_port": 6588,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840241",
+      "is_healthy": true
+    }
+  ],
+  "learningorchestration": [
+    {
+      "name": "learningorchestration",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840243",
+      "is_healthy": true
+    }
+  ],
+  "test_meta_cognition": [
+    {
+      "name": "test_meta_cognition",
+      "host": "localhost",
+      "port": 5630,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840245",
+      "is_healthy": true
+    }
+  ],
+  "activelearningmonitor": [
+    {
+      "name": "activelearningmonitor",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840248",
+      "is_healthy": true
+    }
+  ],
+  "advancedtimeoutmanager": [
+    {
+      "name": "advancedtimeoutmanager",
+      "host": "localhost",
+      "port": 5595,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840250",
+      "is_healthy": true
+    }
+  ],
+  "and": [
+    {
+      "name": "and",
+      "host": "localhost",
+      "port": 8120,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840252",
+      "is_healthy": true
+    }
+  ],
+  "modelevaluationframework": [
+    {
+      "name": "modelevaluationframework",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840254",
+      "is_healthy": true
+    }
+  ],
+  "remoteconnector": [
+    {
+      "name": "remoteconnector",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840256",
+      "is_healthy": true
+    }
+  ],
+  "test_web_connections": [
+    {
+      "name": "test_web_connections",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840258",
+      "is_healthy": true
+    }
+  ],
+  "test_tutoring_feature": [
+    {
+      "name": "test_tutoring_feature",
+      "host": "localhost",
+      "port": 5558,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840306",
+      "is_healthy": true
+    }
+  ],
+  "my": [
+    {
+      "name": "my",
+      "host": "localhost",
+      "port": 5555,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840311",
+      "is_healthy": true
+    }
+  ],
+  "tutoring": [
+    {
+      "name": "tutoring",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840313",
+      "is_healthy": true
+    }
+  ],
+  "custom_tutoring_test": [
+    {
+      "name": "custom_tutoring_test",
+      "host": "localhost",
+      "port": 5558,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840315",
+      "is_healthy": true
+    }
+  ],
+  "direct_emr_test": [
+    {
+      "name": "direct_emr_test",
+      "host": "localhost",
+      "port": 5598,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840317",
+      "is_healthy": true
+    }
+  ],
+  "unifiedweb": [
+    {
+      "name": "unifiedweb",
+      "host": "localhost",
+      "port": 7126,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840320",
+      "is_healthy": true
+    }
+  ],
+  "dreamworldtester": [
+    {
+      "name": "dreamworldtester",
+      "host": "localhost",
+      "port": 5599,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840321",
+      "is_healthy": true
+    }
+  ],
+  "chainofthought": [
+    {
+      "name": "chainofthought",
+      "host": "localhost",
+      "port": 8080,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840327",
+      "is_healthy": true
+    }
+  ],
+  "node": [
+    {
+      "name": "node",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840329",
+      "is_healthy": true
+    }
+  ],
+  "cognitivemodel": [
+    {
+      "name": "cognitivemodel",
+      "host": "localhost",
+      "port": 7150,
+      "health_port": 8081,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840333",
+      "is_healthy": true
+    }
+  ],
+  "simpletranslatorserver": [
+    {
+      "name": "simpletranslatorserver",
+      "host": "localhost",
+      "port": 5563,
+      "health_port": 5564,
+      "protocol": "http",
+      "mesh_type": "istio",
+      "last_health_check": "2025-07-19T07:55:33.840335",
+      "is_healthy": true
+    }
+  ]
+}

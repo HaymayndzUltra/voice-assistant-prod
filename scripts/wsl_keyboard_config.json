@@ -1,0 +1,23 @@
+{
+  "ctrl+0": "python3 memory_system_cli.py",
+  "ctrl+1": "docker ps -a",
+  "ctrl+2": "git status",
+  "ctrl+3": "docker-compose up -d",
+  "ctrl+4": "docker-compose down",
+  "ctrl+5": "git pull origin main",
+  "ctrl+6": "git push origin main",
+  "ctrl+7": "df -h",
+  "ctrl+8": "free -h",
+  "ctrl+9": "python3 --version",
+  "ctrl+shift+1": "docker logs -f",
+  "ctrl+shift+2": "git log --oneline -10",
+  "ctrl+shift+3": "docker system prune -f",
+  "ctrl+shift+4": "systemctl status",
+  "ctrl+shift+5": "netstat -tuln | grep LISTEN",
+  "alt+1": "cd ~/AI_System_Monorepo",
+  "alt+2": "cd ~/AI_System_Monorepo/scripts",
+  "alt+3": "cd ~/AI_System_Monorepo/memory_system",
+  "alt+4": "ls -la",
+  "alt+5": "pwd",
+  "ctrl+shift+0": "echo 'Test command'"
+}

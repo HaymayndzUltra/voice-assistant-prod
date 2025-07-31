@@ -1,0 +1,203 @@
+{
+  "analysis_summary": {
+    "total_agents": 57,
+    "legacy_agents": 7,
+    "baseagent_compliant": 50
+  },
+  "top_risks": [
+    {
+      "name": "ModelManagerAgent",
+      "file_path": "main_pc_code/agents/model_manager_agent.py",
+      "risk_score": 35,
+      "risk_factors": [
+        "Manual socket management",
+        "Custom health check logic",
+        "Large file size (227.3KB)",
+        "High complexity (3557 lines)",
+        "Manual threading/multiprocessing",
+        "Database connections",
+        "Custom config management"
+      ],
+      "complexity_score": 3772,
+      "dependencies": [
+        "Tuple\nimport zmq\nimport torch\nimport json\nimport time\nimport logging\nimport requests\nimport threading\nimport sys\nimport os\nimport re\nfrom pathlib import Path\nimport pickle\nfrom datetime import datetime",
+        "get_service_connection",
+        "BaseAgent\nfrom common",
+        "get_instance as get_gguf_manager\n\nclass ModelManagerAgent",
+        "get_machine_ip\n            logger",
+        "get_zmq_connection_string",
+        "Dict",
+        "load_pc2_services",
+        "RotatingFileHandler",
+        "get_machine_ip\n                self",
+        "get_service_address\n                    sdt_address",
+        "get_env\nimport yaml\nimport numpy as np",
+        "Union",
+        "discover_service\n        from main_pc_code",
+        "Optional",
+        "Config",
+        "list_available_services",
+        "Any",
+        "system_config",
+        "get_machine_ip\n        print",
+        "parse_agent_args\nconfig",
+        "get_instance as get_gguf_manager\n                gguf_manager",
+        "nullcontext\n                lock",
+        "get_instance as get_gguf_manager\n            gguf_manager",
+        "Path\nMAIN_PC_CODE_DIR",
+        "timedelta\nimport traceback\nimport logging",
+        "configure_secure_client",
+        "start_auth\n                        start_auth",
+        "load_unified_config\nconfig",
+        "List"
+      ],
+      "uses_baseagent": true,
+      "file_size_kb": 227.2568359375,
+      "lines_of_code": 3557
+    },
+    {
+      "name": "ModelManagerAgent",
+      "file_path": "main_pc_code/agents/model_manager_agent_day4_optimized.py",
+      "risk_score": 35,
+      "risk_factors": [
+        "Manual socket management",
+        "Custom health check logic",
+        "Large file size (227.7KB)",
+        "High complexity (3557 lines)",
+        "Manual threading/multiprocessing",
+        "Database connections",
+        "Custom config management"
+      ],
+      "complexity_score": 3772,
+      "dependencies": [
+        "Tuple\nimport zmq\nimport torch\nimport json\nimport time\nimport logging\nimport requests\nimport threading\nimport sys\nimport os\nimport re\nfrom pathlib import Path\nimport pickle\nfrom datetime import datetime",
+        "get_service_connection",
+        "BaseAgent\nfrom common",
+        "get_instance as get_gguf_manager\n\nclass ModelManagerAgent",
+        "get_machine_ip\n            logger",
+        "get_zmq_connection_string",
+        "Dict",
+        "load_pc2_services",
+        "RotatingFileHandler",
+        "get_machine_ip\n                self",
+        "get_service_address\n                    sdt_address",
+        "get_env\nimport yaml\nimport numpy as np",
+        "Union",
+        "discover_service\n        from main_pc_code",
+        "Optional",
+        "Config",
+        "list_available_services",
+        "Any",
+        "system_config",
+        "get_machine_ip\n        print",
+        "parse_agent_args\nconfig",
+        "get_instance as get_gguf_manager\n                gguf_manager",
+        "nullcontext\n                lock",
+        "get_instance as get_gguf_manager\n            gguf_manager",
+        "Path\nMAIN_PC_CODE_DIR",
+        "timedelta\nimport traceback\nimport logging",
+        "configure_secure_client",
+        "start_auth\n                        start_auth",
+        "load_unified_config\nconfig",
+        "List"
+      ],
+      "uses_baseagent": true,
+      "file_size_kb": 227.650390625,
+      "lines_of_code": 3557
+    },
+    {
+      "name": "ModelManagerAgent",
+      "file_path": "main_pc_code/agents/model_manager_agent.py",
+      "risk_score": 35,
+      "risk_factors": [
+        "Manual socket management",
+        "Custom health check logic",
+        "Large file size (227.3KB)",
+        "High complexity (3557 lines)",
+        "Manual threading/multiprocessing",
+        "Database connections",
+        "Custom config management"
+      ],
+      "complexity_score": 3772,
+      "dependencies": [
+        "Tuple\nimport zmq\nimport torch\nimport json\nimport time\nimport logging\nimport requests\nimport threading\nimport sys\nimport os\nimport re\nfrom pathlib import Path\nimport pickle\nfrom datetime import datetime",
+        "get_service_connection",
+        "BaseAgent\nfrom common",
+        "get_instance as get_gguf_manager\n\nclass ModelManagerAgent",
+        "get_machine_ip\n            logger",
+        "get_zmq_connection_string",
+        "Dict",
+        "load_pc2_services",
+        "RotatingFileHandler",
+        "get_machine_ip\n                self",
+        "get_service_address\n                    sdt_address",
+        "get_env\nimport yaml\nimport numpy as np",
+        "Union",
+        "discover_service\n        from main_pc_code",
+        "Optional",
+        "Config",
+        "list_available_services",
+        "Any",
+        "system_config",
+        "get_machine_ip\n        print",
+        "parse_agent_args\nconfig",
+        "get_instance as get_gguf_manager\n                gguf_manager",
+        "nullcontext\n                lock",
+        "get_instance as get_gguf_manager\n            gguf_manager",
+        "Path\nMAIN_PC_CODE_DIR",
+        "timedelta\nimport traceback\nimport logging",
+        "configure_secure_client",
+        "start_auth\n                        start_auth",
+        "load_unified_config\nconfig",
+        "List"
+      ],
+      "uses_baseagent": true,
+      "file_size_kb": 227.2568359375,
+      "lines_of_code": 3557
+    }
+  ],
+  "all_legacy_agents": [
+    {
+      "name": "validate_pc2_zmq_services",
+      "file_path": "main_pc_code/agents/validate_pc2_zmq_services.py",
+      "risk_score": 21,
+      "uses_baseagent": false
+    },
+    {
+      "name": "check_pc2_zmq_services",
+      "file_path": "main_pc_code/agents/check_pc2_zmq_services.py",
+      "risk_score": 16,
+      "uses_baseagent": false
+    },
+    {
+      "name": "auto_fixer_agent",
+      "file_path": "pc2_code/agents/auto_fixer_agent.py",
+      "risk_score": 10,
+      "uses_baseagent": false
+    },
+    {
+      "name": "pc2_agent_helpers",
+      "file_path": "pc2_code/agents/utils/pc2_agent_helpers.py",
+      "risk_score": 15,
+      "uses_baseagent": false
+    },
+    {
+      "name": "tutoring_agent",
+      "file_path": "pc2_code/agents/core_agents/tutoring_agent.py",
+      "risk_score": 28,
+      "uses_baseagent": false
+    },
+    {
+      "name": "tutoring_service_agent",
+      "file_path": "pc2_code/agents/core_agents/tutoring_service_agent.py",
+      "risk_score": 23,
+      "uses_baseagent": false
+    },
+    {
+      "name": "tutoring_service_agent",
+      "file_path": "pc2_code/agents/core_agents/tutoring_service_agent.py",
+      "risk_score": 23,
+      "uses_baseagent": false
+    }
+  ]
+}

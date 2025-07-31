@@ -1,0 +1,10 @@
+{
+  "total_agents": 0,
+  "healthy_agents": 0,
+  "optimized_agents": 18,
+  "average_improvement": 29.166666666666668,
+  "regressions": [],
+  "alerts": [],
+  "agent_metrics": {},
+  "success": true
+}

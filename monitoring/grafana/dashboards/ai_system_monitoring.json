@@ -1,0 +1,32 @@
+{
+  "title": "AI System Monitoring",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Agent Health",
+      "targets": [
+        {
+          "expr": "observability_agent_health_status"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Response Time",
+      "targets": [
+        {
+          "expr": "observability_response_time_seconds"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Active Agents",
+      "targets": [
+        {
+          "expr": "observability_active_agents_total"
+        }
+      ]
+    }
+  ]
+}

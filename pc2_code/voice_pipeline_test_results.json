@@ -1,0 +1,66 @@
+[
+  {
+    "test": "clean_speech",
+    "machine": "main_pc",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "clean_speech",
+    "machine": "pc2",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "noisy_speech",
+    "machine": "main_pc",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "noisy_speech",
+    "machine": "pc2",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "accented_speech",
+    "machine": "main_pc",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "accented_speech",
+    "machine": "pc2",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "silence",
+    "machine": "main_pc",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  },
+  {
+    "test": "silence",
+    "machine": "pc2",
+    "result": {
+      "status": "error",
+      "message": "Object of type bytes is not JSON serializable"
+    }
+  }
+]

@@ -1,0 +1,1292 @@
+{
+  "timestamp": "2025-07-19T07:48:09.842047",
+  "system_metrics": {
+    "total_agents": 71,
+    "healthy_agents": 71,
+    "critical_agents": 6,
+    "dependency_cycles_count": 0,
+    "performance_bottlenecks_count": 0,
+    "security_vulnerabilities_count": 71
+  },
+  "agents": {
+    "human_awareness_agent": {
+      "file_path": "main_pc_code/agents/human_awareness_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 66,
+      "import_count": 19,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "memory_client": {
+      "file_path": "main_pc_code/agents/memory_client.py",
+      "port": 7140,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 62,
+      "import_count": 8,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "streaming_speech_recognition": {
+      "file_path": "main_pc_code/agents/streaming_speech_recognition.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 266,
+      "import_count": 35,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect"
+      ]
+    },
+    "streaming_translation": {
+      "file_path": "main_pc_code/agents/streaming_translation.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 18,
+      "import_count": 9,
+      "zmq_patterns": []
+    },
+    "proactive_agent_interface": {
+      "file_path": "main_pc_code/agents/proactive_agent_interface.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 33,
+      "import_count": 5,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "goal_manager": {
+      "file_path": "main_pc_code/agents/goal_manager.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 61,
+      "import_count": 19,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "session_memory_agent": {
+      "file_path": "main_pc_code/agents/session_memory_agent.py",
+      "port": 7150,
+      "health_port": 6583,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 60,
+      "import_count": 16,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "request_coordinator": {
+      "file_path": "main_pc_code/agents/request_coordinator.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 228,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "chitchat_agent": {
+      "file_path": "main_pc_code/agents/chitchat_agent.py",
+      "port": 7150,
+      "health_port": 6582,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 152,
+      "import_count": 16,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "ProactiveAgent": {
+      "file_path": "main_pc_code/agents/ProactiveAgent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 106,
+      "import_count": 16,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "predictive_health_monitor": {
+      "file_path": "main_pc_code/agents/predictive_health_monitor.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 278,
+      "import_count": 29,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "bind",
+        "socket",
+        "bind",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "nlu_agent": {
+      "file_path": "main_pc_code/agents/nlu_agent.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 81,
+      "import_count": 15,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect"
+      ]
+    },
+    "EmpathyAgent": {
+      "file_path": "main_pc_code/agents/EmpathyAgent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 74,
+      "import_count": 22,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "wake_word_detector": {
+      "file_path": "main_pc_code/agents/wake_word_detector.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 151,
+      "import_count": 18,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind"
+      ]
+    },
+    "advanced_command_handler": {
+      "file_path": "main_pc_code/agents/advanced_command_handler.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 107,
+      "import_count": 19,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "pc2_zmq_protocol_finder_extended": {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_extended.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 45,
+      "import_count": 11,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "tone_detector": {
+      "file_path": "main_pc_code/agents/tone_detector.py",
+      "port": 5575,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 127,
+      "import_count": 29,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "feedback_handler": {
+      "file_path": "main_pc_code/agents/feedback_handler.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 128,
+      "import_count": 15,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "connect"
+      ]
+    },
+    "trigger_word_detector": {
+      "file_path": "main_pc_code/agents/trigger_word_detector.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 82,
+      "import_count": 18,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "generate_code_with_cga_method": {
+      "file_path": "main_pc_code/agents/generate_code_with_cga_method.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 29,
+      "import_count": 3,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "system_digital_twin": {
+      "file_path": "main_pc_code/agents/system_digital_twin.py",
+      "port": 7120,
+      "health_port": 8120,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 122,
+      "import_count": 28,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "noise_reduction_agent": {
+      "file_path": "main_pc_code/agents/noise_reduction_agent.py",
+      "port": 6575,
+      "health_port": 6576,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 108,
+      "import_count": 17,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind"
+      ]
+    },
+    "knowledge_base": {
+      "file_path": "main_pc_code/agents/knowledge_base.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 47,
+      "import_count": 12,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "unified_system_agent": {
+      "file_path": "main_pc_code/agents/unified_system_agent.py",
+      "port": 5568,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 244,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "check_ports": {
+      "file_path": "main_pc_code/agents/check_ports.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 41,
+      "import_count": 9,
+      "zmq_patterns": [
+        "socket",
+        "bind"
+      ]
+    },
+    "streaming_whisper_asr": {
+      "file_path": "main_pc_code/agents/streaming_whisper_asr.py",
+      "port": 6575,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 96,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "error_publisher": {
+      "file_path": "main_pc_code/agents/error_publisher.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 46,
+      "import_count": 10,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "voicemeeter_control_agent": {
+      "file_path": "main_pc_code/agents/voicemeeter_control_agent.py",
+      "port": 5645,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 64,
+      "import_count": 18,
+      "zmq_patterns": [
+        "socket",
+        "bind"
+      ]
+    },
+    "streaming_partial_transcripts": {
+      "file_path": "main_pc_code/agents/streaming_partial_transcripts.py",
+      "port": 5570,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 88,
+      "import_count": 21,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "learning_opportunity_detector": {
+      "file_path": "main_pc_code/agents/learning_opportunity_detector.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 183,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect"
+      ]
+    },
+    "emotion_engine": {
+      "file_path": "main_pc_code/agents/emotion_engine.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 112,
+      "import_count": 23,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "socket",
+        "socket",
+        "bind"
+      ]
+    },
+    "mood_tracker_agent": {
+      "file_path": "main_pc_code/agents/mood_tracker_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 81,
+      "import_count": 15,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "responder": {
+      "file_path": "main_pc_code/agents/responder.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 226,
+      "import_count": 27,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "streaming_language_analyzer": {
+      "file_path": "main_pc_code/agents/streaming_language_analyzer.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 236,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "emotion_synthesis_agent": {
+      "file_path": "main_pc_code/agents/emotion_synthesis_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 66,
+      "import_count": 19,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "voice_profiling_agent": {
+      "file_path": "main_pc_code/agents/voice_profiling_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 70,
+      "import_count": 21,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "face_recognition_agent": {
+      "file_path": "main_pc_code/agents/face_recognition_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 129,
+      "import_count": 39,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "bind"
+      ]
+    },
+    "executor": {
+      "file_path": "main_pc_code/agents/executor.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 131,
+      "import_count": 17,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect"
+      ]
+    },
+    "fixed_streaming_translation": {
+      "file_path": "main_pc_code/agents/fixed_streaming_translation.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 200,
+      "import_count": 18,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "record_and_transcribe": {
+      "file_path": "main_pc_code/agents/record_and_transcribe.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 28,
+      "import_count": 14,
+      "zmq_patterns": []
+    },
+    "streaming_language_to_llm": {
+      "file_path": "main_pc_code/agents/streaming_language_to_llm.py",
+      "port": 5577,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 66,
+      "import_count": 10,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "streaming_interrupt": {
+      "file_path": "main_pc_code/agents/streaming_interrupt.py",
+      "port": 5562,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 45,
+      "import_count": 11,
+      "zmq_patterns": [
+        "socket",
+        "bind"
+      ]
+    },
+    "MetaCognitionAgent": {
+      "file_path": "main_pc_code/agents/MetaCognitionAgent.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 270,
+      "import_count": 25,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect"
+      ]
+    },
+    "gguf_model_manager": {
+      "file_path": "main_pc_code/agents/gguf_model_manager.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 59,
+      "import_count": 18,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "learning_manager": {
+      "file_path": "main_pc_code/agents/learning_manager.py",
+      "port": 5588,
+      "health_port": 6588,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 76,
+      "import_count": 15,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "learning_orchestration_service": {
+      "file_path": "main_pc_code/agents/learning_orchestration_service.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 155,
+      "import_count": 23,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "connect",
+        "connect",
+        "connect"
+      ]
+    },
+    "test_meta_cognition": {
+      "file_path": "main_pc_code/agents/test_meta_cognition.py",
+      "port": 5630,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 81,
+      "import_count": 6,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "active_learning_monitor": {
+      "file_path": "main_pc_code/agents/active_learning_monitor.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 111,
+      "import_count": 14,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "pc2_zmq_health_report": {
+      "file_path": "main_pc_code/agents/pc2_zmq_health_report.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 52,
+      "import_count": 16,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "translation_service": {
+      "file_path": "main_pc_code/agents/translation_service.py",
+      "port": 5595,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 107,
+      "import_count": 32,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "socket",
+        "bind"
+      ]
+    },
+    "system_digital_twin_launcher": {
+      "file_path": "main_pc_code/agents/system_digital_twin_launcher.py",
+      "port": 8120,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "critical",
+      "performance_score": 60,
+      "import_count": 16,
+      "zmq_patterns": [
+        "socket",
+        "bind"
+      ]
+    },
+    "sd_config": {
+      "file_path": "main_pc_code/agents/sd_config.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 8,
+      "import_count": 4,
+      "zmq_patterns": []
+    },
+    "pc2_zmq_protocol_finder_win": {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_win.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 44,
+      "import_count": 12,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "voice_controller": {
+      "file_path": "main_pc_code/agents/voice_controller.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 16,
+      "import_count": 8,
+      "zmq_patterns": []
+    },
+    "model_evaluation_framework": {
+      "file_path": "main_pc_code/agents/model_evaluation_framework.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 171,
+      "import_count": 21,
+      "zmq_patterns": [
+        "socket",
+        "connect",
+        "connect",
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "connect",
+        "connect",
+        "connect",
+        "connect",
+        "connect"
+      ]
+    },
+    "check_pc2_zmq_services": {
+      "file_path": "main_pc_code/agents/check_pc2_zmq_services.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "low",
+      "performance_score": 10,
+      "import_count": 5,
+      "zmq_patterns": []
+    },
+    "model_orchestrator": {
+      "file_path": "main_pc_code/agents/model_orchestrator.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 50,
+      "import_count": 25,
+      "zmq_patterns": []
+    },
+    "remote_connector_agent": {
+      "file_path": "main_pc_code/agents/remote_connector_agent.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "high",
+      "performance_score": 131,
+      "import_count": 17,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "service_registry_agent": {
+      "file_path": "main_pc_code/agents/service_registry_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "MainPC",
+      "priority": "medium",
+      "performance_score": 34,
+      "import_count": 12,
+      "zmq_patterns": []
+    },
+    "port_config": {
+      "file_path": "pc2_code/agents/port_config.py",
+      "port": 5598,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 2,
+      "import_count": 1,
+      "zmq_patterns": []
+    },
+    "test_web_connections": {
+      "file_path": "pc2_code/agents/test_web_connections.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 31,
+      "import_count": 4,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "test_tutoring_feature": {
+      "file_path": "pc2_code/agents/test_tutoring_feature.py",
+      "port": 5558,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 31,
+      "import_count": 4,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "error_bus_template": {
+      "file_path": "pc2_code/agents/error_bus_template.py",
+      "port": 5555,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 43,
+      "import_count": 10,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "auto_fixer_agent": {
+      "file_path": "pc2_code/agents/auto_fixer_agent.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 0,
+      "import_count": 0,
+      "zmq_patterns": []
+    },
+    "tutoring_service_agent": {
+      "file_path": "pc2_code/agents/tutoring_service_agent.py",
+      "port": 7150,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "medium",
+      "performance_score": 52,
+      "import_count": 12,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "check_gpu": {
+      "file_path": "pc2_code/agents/check_gpu.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 6,
+      "import_count": 3,
+      "zmq_patterns": []
+    },
+    "custom_tutoring_test": {
+      "file_path": "pc2_code/agents/custom_tutoring_test.py",
+      "port": 5558,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 33,
+      "import_count": 5,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "direct_emr_test": {
+      "file_path": "pc2_code/agents/direct_emr_test.py",
+      "port": 5598,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 31,
+      "import_count": 4,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    },
+    "unified_web_agent": {
+      "file_path": "pc2_code/agents/unified_web_agent.py",
+      "port": 7126,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "high",
+      "performance_score": 212,
+      "import_count": 43,
+      "zmq_patterns": [
+        "socket",
+        "bind",
+        "socket",
+        "bind",
+        "socket",
+        "connect",
+        "connect",
+        "socket",
+        "connect",
+        "socket",
+        "connect"
+      ]
+    },
+    "check_pytorch_cuda": {
+      "file_path": "pc2_code/agents/check_pytorch_cuda.py",
+      "port": 0,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 6,
+      "import_count": 3,
+      "zmq_patterns": []
+    },
+    "test_dreamworld_updates": {
+      "file_path": "pc2_code/agents/test_dreamworld_updates.py",
+      "port": 5599,
+      "health_port": 0,
+      "dependencies": [],
+      "group": "PC2",
+      "priority": "low",
+      "performance_score": 35,
+      "import_count": 6,
+      "zmq_patterns": [
+        "socket",
+        "connect"
+      ]
+    }
+  },
+  "issues": {
+    "dependency_cycles": [],
+    "performance_bottlenecks": [],
+    "security_vulnerabilities": [
+      "human_awareness_agent",
+      "memory_client",
+      "streaming_speech_recognition",
+      "streaming_translation",
+      "proactive_agent_interface",
+      "goal_manager",
+      "session_memory_agent",
+      "request_coordinator",
+      "chitchat_agent",
+      "ProactiveAgent",
+      "predictive_health_monitor",
+      "nlu_agent",
+      "EmpathyAgent",
+      "wake_word_detector",
+      "advanced_command_handler",
+      "pc2_zmq_protocol_finder_extended",
+      "tone_detector",
+      "feedback_handler",
+      "trigger_word_detector",
+      "generate_code_with_cga_method",
+      "system_digital_twin",
+      "noise_reduction_agent",
+      "knowledge_base",
+      "unified_system_agent",
+      "check_ports",
+      "streaming_whisper_asr",
+      "error_publisher",
+      "voicemeeter_control_agent",
+      "streaming_partial_transcripts",
+      "learning_opportunity_detector",
+      "emotion_engine",
+      "mood_tracker_agent",
+      "responder",
+      "streaming_language_analyzer",
+      "emotion_synthesis_agent",
+      "voice_profiling_agent",
+      "face_recognition_agent",
+      "executor",
+      "fixed_streaming_translation",
+      "record_and_transcribe",
+      "streaming_language_to_llm",
+      "streaming_interrupt",
+      "MetaCognitionAgent",
+      "gguf_model_manager",
+      "learning_manager",
+      "learning_orchestration_service",
+      "test_meta_cognition",
+      "active_learning_monitor",
+      "pc2_zmq_health_report",
+      "translation_service",
+      "system_digital_twin_launcher",
+      "sd_config",
+      "pc2_zmq_protocol_finder_win",
+      "voice_controller",
+      "model_evaluation_framework",
+      "check_pc2_zmq_services",
+      "model_orchestrator",
+      "remote_connector_agent",
+      "service_registry_agent",
+      "port_config",
+      "test_web_connections",
+      "test_tutoring_feature",
+      "error_bus_template",
+      "auto_fixer_agent",
+      "tutoring_service_agent",
+      "check_gpu",
+      "custom_tutoring_test",
+      "direct_emr_test",
+      "unified_web_agent",
+      "check_pytorch_cuda",
+      "test_dreamworld_updates"
+    ]
+  }
+}

@@ -1,0 +1,553 @@
+{
+  "mma_specific_metrics": [
+    {
+      "name": "mma_gpu_memory_utilization",
+      "type": "gauge",
+      "description": "GPU memory utilization percentage for ModelManagerAgent",
+      "labels": [
+        "gpu_device",
+        "model_name"
+      ],
+      "collection_frequency": "5s",
+      "critical_threshold": 90.0
+    },
+    {
+      "name": "mma_model_loading_duration_seconds",
+      "type": "histogram",
+      "description": "Time taken to load models in seconds",
+      "labels": [
+        "model_name",
+        "model_type",
+        "gpu_device"
+      ],
+      "buckets": [
+        0.1,
+        0.5,
+        1.0,
+        2.0,
+        5.0,
+        10.0,
+        30.0
+      ],
+      "collection_frequency": "per_operation"
+    },
+    {
+      "name": "mma_model_unloading_duration_seconds",
+      "type": "histogram",
+      "description": "Time taken to unload models in seconds",
+      "labels": [
+        "model_name",
+        "model_type",
+        "reason"
+      ],
+      "buckets": [
+        0.1,
+        0.5,
+        1.0,
+        2.0,
+        5.0
+      ],
+      "collection_frequency": "per_operation"
+    },
+    {
+      "name": "mma_active_models_count",
+      "type": "gauge",
+      "description": "Number of currently loaded models",
+      "labels": [
+        "gpu_device"
+      ],
+      "collection_frequency": "10s"
+    },
+    {
+      "name": "mma_vram_budget_utilization",
+      "type": "gauge",
+      "description": "VRAM budget utilization percentage",
+      "labels": [
+        "gpu_device"
+      ],
+      "collection_frequency": "5s",
+      "critical_threshold": 95.0
+    },
+    {
+      "name": "mma_thread_health_status",
+      "type": "gauge",
+      "description": "Health status of MMA threads (1=healthy, 0=unhealthy)",
+      "labels": [
+        "thread_name",
+        "thread_type"
+      ],
+      "collection_frequency": "10s"
+    },
+    {
+      "name": "mma_socket_connection_status",
+      "type": "gauge",
+      "description": "Socket connection status (1=connected, 0=disconnected)",
+      "labels": [
+        "socket_type",
+        "endpoint"
+      ],
+      "collection_frequency": "30s"
+    },
+    {
+      "name": "mma_model_request_total",
+      "type": "counter",
+      "description": "Total number of model requests processed",
+      "labels": [
+        "request_type",
+        "model_name",
+        "status"
+      ],
+      "collection_frequency": "per_request"
+    },
+    {
+      "name": "mma_gpu_temperature_celsius",
+      "type": "gauge",
+      "description": "GPU temperature in Celsius",
+      "labels": [
+        "gpu_device"
+      ],
+      "collection_frequency": "15s",
+      "warning_threshold": 80.0,
+      "critical_threshold": 90.0
+    }
+  ],
+  "observability_hub_integration": {
+    "enabled": true,
+    "enhanced_metrics_endpoint": "/metrics/mma",
+    "custom_collectors": [
+      {
+        "name": "MMAGPUCollector",
+        "description": "Collects GPU-specific metrics for ModelManagerAgent",
+        "metrics": [
+          "mma_gpu_memory_utilization",
+          "mma_gpu_temperature_celsius",
+          "mma_vram_budget_utilization"
+        ],
+        "collection_interval": "5s"
+      },
+      {
+        "name": "MMAModelCollector",
+        "description": "Collects model operation metrics",
+        "metrics": [
+          "mma_model_loading_duration_seconds",
+          "mma_model_unloading_duration_seconds",
+          "mma_active_models_count"
+        ],
+        "collection_interval": "per_operation"
+      },
+      {
+        "name": "MMAInfrastructureCollector",
+        "description": "Collects infrastructure health metrics",
+        "metrics": [
+          "mma_thread_health_status",
+          "mma_socket_connection_status"
+        ],
+        "collection_interval": "10s"
+      }
+    ],
+    "dashboard_panels": [
+      {
+        "title": "MMA GPU Memory Utilization",
+        "type": "graph",
+        "metrics": [
+          "mma_gpu_memory_utilization",
+          "mma_vram_budget_utilization"
+        ],
+        "alert_threshold": 90.0
+      },
+      {
+        "title": "MMA Model Operations",
+        "type": "table",
+        "metrics": [
+          "mma_model_loading_duration_seconds",
+          "mma_active_models_count"
+        ],
+        "refresh_interval": "5s"
+      },
+      {
+        "title": "MMA Infrastructure Health",
+        "type": "stat",
+        "metrics": [
+          "mma_thread_health_status",
+          "mma_socket_connection_status"
+        ],
+        "color_thresholds": {
+          "healthy": "green",
+          "warning": "yellow",
+          "critical": "red"
+        }
+      }
+    ],
+    "cross_machine_sync": {
+      "enabled": true,
+      "sync_mma_metrics_to_pc2": true,
+      "pc2_backup_monitoring": "Enable PC2 to monitor MMA status for failover"
+    }
+  },
+  "grafana_dashboard": {
+    "dashboard": {
+      "id": null,
+      "title": "ModelManagerAgent Migration Monitoring",
+      "tags": [
+        "modelmanager",
+        "gpu",
+        "migration",
+        "week4"
+      ],
+      "timezone": "browser",
+      "panels": [
+        {
+          "id": 1,
+          "title": "GPU Memory Utilization",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "mma_gpu_memory_utilization",
+              "legendFormat": "GPU {{gpu_device}} - {{model_name}}"
+            }
+          ],
+          "yAxes": [
+            {
+              "min": 0,
+              "max": 100,
+              "unit": "percent"
+            }
+          ],
+          "alert": {
+            "conditions": [
+              {
+                "query": {
+                  "params": [
+                    "A",
+                    "5m",
+                    "now"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "evaluator": {
+                  "params": [
+                    90
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "executionErrorState": "alerting",
+            "noDataState": "no_data",
+            "frequency": "10s"
+          }
+        },
+        {
+          "id": 2,
+          "title": "Model Loading Performance",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(mma_model_loading_duration_seconds_sum[5m]) / rate(mma_model_loading_duration_seconds_count[5m])",
+              "legendFormat": "Avg Loading Time - {{model_name}}"
+            }
+          ],
+          "yAxes": [
+            {
+              "min": 0,
+              "unit": "s"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Active Models Count",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "mma_active_models_count",
+              "legendFormat": "GPU {{gpu_device}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 3
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Thread Health Status",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "mma_thread_health_status",
+              "legendFormat": "{{thread_name}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": 0
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "GPU Temperature",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "mma_gpu_temperature_celsius",
+              "legendFormat": "GPU {{gpu_device}} Temperature"
+            }
+          ],
+          "yAxes": [
+            {
+              "min": 0,
+              "max": 100,
+              "unit": "celsius"
+            }
+          ],
+          "alert": {
+            "conditions": [
+              {
+                "query": {
+                  "params": [
+                    "A",
+                    "5m",
+                    "now"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "evaluator": {
+                  "params": [
+                    85
+                  ],
+                  "type": "gt"
+                }
+              }
+            ],
+            "executionErrorState": "alerting",
+            "noDataState": "no_data",
+            "frequency": "30s"
+          }
+        }
+      ],
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "5s"
+    }
+  },
+  "alert_rules": [
+    {
+      "alert": "MMAGPUMemoryHigh",
+      "expr": "mma_gpu_memory_utilization > 90",
+      "for": "2m",
+      "labels": {
+        "severity": "warning",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent GPU memory usage is high",
+        "description": "GPU memory utilization is {{ $value }}% on device {{ $labels.gpu_device }}"
+      }
+    },
+    {
+      "alert": "MMAGPUMemoryCritical",
+      "expr": "mma_gpu_memory_utilization > 95",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent GPU memory usage is critical",
+        "description": "GPU memory utilization is {{ $value }}% on device {{ $labels.gpu_device }}. Immediate action required."
+      }
+    },
+    {
+      "alert": "MMAModelLoadingSlow",
+      "expr": "rate(mma_model_loading_duration_seconds_sum[5m]) / rate(mma_model_loading_duration_seconds_count[5m]) > 10",
+      "for": "3m",
+      "labels": {
+        "severity": "warning",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent model loading is slow",
+        "description": "Average model loading time is {{ $value }}s for model {{ $labels.model_name }}"
+      }
+    },
+    {
+      "alert": "MMAThreadUnhealthy",
+      "expr": "mma_thread_health_status == 0",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent thread is unhealthy",
+        "description": "Thread {{ $labels.thread_name }} of type {{ $labels.thread_type }} is unhealthy"
+      }
+    },
+    {
+      "alert": "MMASocketDisconnected",
+      "expr": "mma_socket_connection_status == 0",
+      "for": "30s",
+      "labels": {
+        "severity": "warning",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent socket disconnected",
+        "description": "Socket {{ $labels.socket_type }} to {{ $labels.endpoint }} is disconnected"
+      }
+    },
+    {
+      "alert": "MMAGPUTemperatureHigh",
+      "expr": "mma_gpu_temperature_celsius > 85",
+      "for": "2m",
+      "labels": {
+        "severity": "warning",
+        "component": "ModelManagerAgent"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent GPU temperature is high",
+        "description": "GPU {{ $labels.gpu_device }} temperature is {{ $value }}\u00b0C"
+      }
+    },
+    {
+      "alert": "MMAMigrationRollbackTrigger",
+      "expr": "mma_thread_health_status == 0 OR mma_gpu_memory_utilization > 98 OR mma_gpu_temperature_celsius > 90",
+      "for": "1m",
+      "labels": {
+        "severity": "critical",
+        "component": "ModelManagerAgent",
+        "action": "rollback"
+      },
+      "annotations": {
+        "summary": "ModelManagerAgent migration rollback trigger activated",
+        "description": "Critical condition detected - consider migration rollback"
+      }
+    }
+  ],
+  "performance_baselines": {
+    "model_loading_time": {
+      "small_models": {
+        "baseline": 2.0,
+        "max_acceptable": 2.2,
+        "unit": "seconds"
+      },
+      "medium_models": {
+        "baseline": 5.0,
+        "max_acceptable": 5.5,
+        "unit": "seconds"
+      },
+      "large_models": {
+        "baseline": 15.0,
+        "max_acceptable": 16.5,
+        "unit": "seconds"
+      }
+    },
+    "gpu_memory_utilization": {
+      "idle": {
+        "baseline": 10.0,
+        "max_acceptable": 15.0,
+        "unit": "percent"
+      },
+      "single_model": {
+        "baseline": 40.0,
+        "max_acceptable": 50.0,
+        "unit": "percent"
+      },
+      "multiple_models": {
+        "baseline": 75.0,
+        "max_acceptable": 85.0,
+        "unit": "percent"
+      }
+    },
+    "thread_response_time": {
+      "memory_management": {
+        "baseline": 0.1,
+        "max_acceptable": 0.2,
+        "unit": "seconds"
+      },
+      "health_monitoring": {
+        "baseline": 0.05,
+        "max_acceptable": 0.1,
+        "unit": "seconds"
+      },
+      "request_handling": {
+        "baseline": 0.5,
+        "max_acceptable": 0.75,
+        "unit": "seconds"
+      }
+    },
+    "socket_connection_time": {
+      "local_connections": {
+        "baseline": 0.01,
+        "max_acceptable": 0.05,
+        "unit": "seconds"
+      },
+      "cross_machine_connections": {
+        "baseline": 0.1,
+        "max_acceptable": 0.2,
+        "unit": "seconds"
+      }
+    },
+    "rollback_triggers": {
+      "performance_degradation": {
+        "threshold": 20.0,
+        "unit": "percent"
+      },
+      "memory_utilization": {
+        "threshold": 95.0,
+        "unit": "percent"
+      },
+      "thread_failure": {
+        "threshold": 1,
+        "unit": "count"
+      },
+      "temperature": {
+        "threshold": 90.0,
+        "unit": "celsius"
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-07-19T07:55:43.755312",
+  "total_agents": 132,
+  "error_bus_candidates": 128,
+  "priority_breakdown": {
+    "critical": 66,
+    "high": 5,
+    "medium": 6,
+    "unknown": 51
+  },
+  "error_bus_coverage": 96.96969696969697,
+  "top_error_agents": [
+    {
+      "agent": "unified_web_agent",
+      "error_score": 1296,
+      "priority": "critical",
+      "logging_calls": 130,
+      "exception_handlers": 64
+    },
+    {
+      "agent": "predictive_health_monitor",
+      "error_score": 1090,
+      "priority": "critical",
+      "logging_calls": 108,
+      "exception_handlers": 54
+    },
+    {
+      "agent": "translation_service",
+      "error_score": 1001,
+      "priority": "critical",
+      "logging_calls": 101,
+      "exception_handlers": 49
+    },
+    {
+      "agent": "streaming_speech_recognition",
+      "error_score": 794,
+      "priority": "critical",
+      "logging_calls": 74,
+      "exception_handlers": 41
+    },
+    {
+      "agent": "responder",
+      "error_score": 657,
+      "priority": "critical",
+      "logging_calls": 73,
+      "exception_handlers": 28
+    },
+    {
+      "agent": "unified_system_agent",
+      "error_score": 616,
+      "priority": "critical",
+      "logging_calls": 78,
+      "exception_handlers": 22
+    },
+    {
+      "agent": "streaming_language_analyzer",
+      "error_score": 575,
+      "priority": "critical",
+      "logging_calls": 65,
+      "exception_handlers": 24
+    },
+    {
+      "agent": "system_digital_twin",
+      "error_score": 574,
+      "priority": "critical",
+      "logging_calls": 50,
+      "exception_handlers": 32
+    },
+    {
+      "agent": "request_coordinator",
+      "error_score": 455,
+      "priority": "critical",
+      "logging_calls": 51,
+      "exception_handlers": 20
+    },
+    {
+      "agent": "model_orchestrator",
+      "error_score": 455,
+      "priority": "critical",
+      "logging_calls": 47,
+      "exception_handlers": 22
+    }
+  ]
+}

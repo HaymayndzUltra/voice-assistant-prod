@@ -1,0 +1,321 @@
+{
+  "metadata": {
+    "created": "2025-07-23T09:54:22.173601",
+    "target_agent": "ModelManagerAgent",
+    "risk_level": "CRITICAL",
+    "approach": "STAGED_MIGRATION"
+  },
+  "phases": [
+    {
+      "phase": "PRE_MIGRATION",
+      "name": "Comprehensive Backup Strategy",
+      "critical_importance": "MAXIMUM - 227KB critical component",
+      "backup_targets": [
+        {
+          "target": "main_pc_code/agents/model_manager_agent.py",
+          "backup_path": "backups/week4_mma_migration/model_manager_agent_original.py",
+          "description": "Original ModelManagerAgent source",
+          "validation": "File size and MD5 checksum verification"
+        },
+        {
+          "target": "main_pc_code/config/startup_config.yaml",
+          "backup_path": "backups/week4_mma_migration/startup_config_original.yaml",
+          "description": "Original startup configuration",
+          "validation": "YAML syntax and agent registration verification"
+        },
+        {
+          "target": "main_pc_code/config/llm_config.yaml",
+          "backup_path": "backups/week4_mma_migration/llm_config_original.yaml",
+          "description": "Model configuration dependencies",
+          "validation": "Model registry completeness check"
+        }
+      ],
+      "parallel_environment": {
+        "enabled": true,
+        "approach": "Create testing copy with different port",
+        "test_port": 5571,
+        "validation_endpoint": "http://localhost:5571/health",
+        "gpu_isolation": "Use CUDA_VISIBLE_DEVICES=1 for testing if available"
+      },
+      "automated_scripts": [
+        "scripts/backup_mma_environment.py",
+        "scripts/restore_mma_environment.py",
+        "scripts/validate_mma_backup.py"
+      ]
+    },
+    {
+      "phase": "INFRASTRUCTURE_MIGRATION",
+      "name": "Socket Management Migration",
+      "priority": "HIGH - 53 socket patterns identified",
+      "approach": "Gradual replacement with BaseAgent patterns",
+      "socket_categories": {
+        "zmq_rep_sockets": {
+          "count": 0,
+          "migration_strategy": "Migrate to BaseAgent request handling",
+          "baseagent_equivalent": "self.handle_request() method",
+          "validation": "Request-response pattern testing"
+        },
+        "zmq_pub_sockets": {
+          "count": 0,
+          "migration_strategy": "Migrate to BaseAgent status publishing",
+          "baseagent_equivalent": "self.publish_status() method",
+          "validation": "Status broadcast verification"
+        },
+        "raw_sockets": {
+          "count": 0,
+          "migration_strategy": "Replace with BaseAgent health checks",
+          "baseagent_equivalent": "BaseAgent health system",
+          "validation": "Health check endpoint verification"
+        }
+      },
+      "migration_steps": [
+        {
+          "step": 1,
+          "action": "Identify all ZMQ socket creation patterns",
+          "validation": "Catalog all socket.bind() and socket.connect() calls"
+        },
+        {
+          "step": 2,
+          "action": "Replace REP sockets with BaseAgent request handling",
+          "validation": "Test model loading/unloading via BaseAgent patterns"
+        },
+        {
+          "step": 3,
+          "action": "Replace PUB sockets with BaseAgent status system",
+          "validation": "Verify status publishing to ObservabilityHub"
+        },
+        {
+          "step": 4,
+          "action": "Migrate raw socket health checks to BaseAgent",
+          "validation": "Confirm _get_health_status() integration"
+        }
+      ],
+      "rollback_triggers": [
+        "Any socket connection failure",
+        "Model request handling failure",
+        "Status publishing failure",
+        "Health check endpoint unavailable"
+      ]
+    },
+    {
+      "phase": "CONCURRENCY_MIGRATION",
+      "name": "Threading Pattern Migration",
+      "priority": "CRITICAL - 7 custom threads running",
+      "approach": "Integrate with BaseAgent lifecycle",
+      "thread_categories": {
+        "memory_management": {
+          "current_pattern": "self._memory_management_loop",
+          "migration_target": "BaseAgent background task",
+          "critical_functions": [
+            "check_idle_models",
+            "vram_optimization"
+          ],
+          "validation": "VRAM usage monitoring, model unloading verification"
+        },
+        "health_monitoring": {
+          "current_pattern": "self._health_check_loop",
+          "migration_target": "BaseAgent health system",
+          "critical_functions": [
+            "_check_model_health",
+            "GPU status"
+          ],
+          "validation": "Health endpoint responsiveness, GPU state accuracy"
+        },
+        "request_handling": {
+          "current_pattern": "self._handle_model_requests_loop",
+          "migration_target": "BaseAgent request processing",
+          "critical_functions": [
+            "load_model",
+            "unload_model",
+            "model_status"
+          ],
+          "validation": "Model loading performance, request queue processing"
+        }
+      },
+      "migration_steps": [
+        {
+          "step": 1,
+          "action": "Analyze thread dependencies and shared state",
+          "validation": "Map all threading.Lock() usage and shared variables"
+        },
+        {
+          "step": 2,
+          "action": "Migrate memory management to BaseAgent background tasks",
+          "validation": "Verify VRAM optimization continues functioning"
+        },
+        {
+          "step": 3,
+          "action": "Integrate health monitoring with BaseAgent health system",
+          "validation": "Confirm GPU status reporting via BaseAgent health"
+        },
+        {
+          "step": 4,
+          "action": "Migrate request handling to BaseAgent patterns",
+          "validation": "Test model loading/unloading performance"
+        }
+      ],
+      "critical_validations": [
+        "VRAM optimization performance (must maintain <20% degradation)",
+        "Model loading time (must not increase >10%)",
+        "GPU memory tracking accuracy",
+        "Thread synchronization (no race conditions)",
+        "Memory leak prevention (proper cleanup)"
+      ]
+    }
+  ],
+  "rollback_procedures": [
+    {
+      "trigger": "GPU operation failure",
+      "severity": "CRITICAL",
+      "timeframe": "Immediate (< 2 minutes)",
+      "procedure": [
+        "Stop ModelManagerAgent immediately",
+        "Restore original model_manager_agent.py",
+        "Restart with original configuration",
+        "Verify GPU memory state",
+        "Confirm model loading capability"
+      ],
+      "validation": "GPU operations return to normal, no VRAM leaks"
+    },
+    {
+      "trigger": "Model loading/unloading failure",
+      "severity": "HIGH",
+      "timeframe": "Fast (< 5 minutes)",
+      "procedure": [
+        "Attempt graceful model unloading",
+        "If unsuccessful, force restart ModelManagerAgent",
+        "Restore backup configuration",
+        "Clear GPU memory cache",
+        "Restart with known-good state"
+      ],
+      "validation": "All models load/unload successfully"
+    },
+    {
+      "trigger": "Performance degradation >20%",
+      "severity": "MEDIUM",
+      "timeframe": "Planned (< 15 minutes)",
+      "procedure": [
+        "Document performance metrics",
+        "Stop new model requests",
+        "Complete pending operations",
+        "Restore previous version",
+        "Verify performance restoration"
+      ],
+      "validation": "Performance returns to baseline levels"
+    },
+    {
+      "trigger": "Cross-machine communication failure",
+      "severity": "HIGH",
+      "timeframe": "Fast (< 5 minutes)",
+      "procedure": [
+        "Check network connectivity to PC2",
+        "Verify ObservabilityHub status",
+        "Restore original socket configuration",
+        "Re-establish cross-machine coordination",
+        "Validate PC2 agent communication"
+      ],
+      "validation": "PC2 agents respond normally, metrics flow restored"
+    }
+  ],
+  "validation_steps": [
+    {
+      "category": "GPU Operations",
+      "tests": [
+        "CUDA availability check",
+        "GPU memory allocation test",
+        "Model loading to GPU verification",
+        "VRAM optimization functionality",
+        "GPU memory cleanup verification"
+      ],
+      "success_criteria": "All GPU operations complete successfully, no memory leaks"
+    },
+    {
+      "category": "Model Management",
+      "tests": [
+        "Load model from registry",
+        "Unload model and free memory",
+        "Multiple model switching",
+        "Model performance benchmarking",
+        "Model status reporting accuracy"
+      ],
+      "success_criteria": "Model operations maintain <10% performance variance"
+    },
+    {
+      "category": "BaseAgent Integration",
+      "tests": [
+        "Health endpoint responsiveness",
+        "Request handling via BaseAgent",
+        "Status publishing to ObservabilityHub",
+        "Configuration loading via BaseAgent",
+        "Prometheus metrics exposure"
+      ],
+      "success_criteria": "All BaseAgent features functional, no regressions"
+    },
+    {
+      "category": "Cross-Machine Coordination",
+      "tests": [
+        "PC2 agent communication",
+        "Metrics synchronization",
+        "Status broadcasting",
+        "Error reporting to PC2 ErrorBus",
+        "Failover behavior testing"
+      ],
+      "success_criteria": "Cross-machine communication maintains current functionality"
+    }
+  ],
+  "monitoring_requirements": {
+    "real_time_metrics": [
+      {
+        "metric": "gpu_memory_usage",
+        "frequency": "5 seconds",
+        "alert_threshold": "> 90% VRAM usage",
+        "source": "ModelManagerAgent CUDA monitoring"
+      },
+      {
+        "metric": "model_loading_time",
+        "frequency": "Per operation",
+        "alert_threshold": "> 10% increase from baseline",
+        "source": "Model loading performance timer"
+      },
+      {
+        "metric": "thread_health_status",
+        "frequency": "10 seconds",
+        "alert_threshold": "Any thread failure or deadlock",
+        "source": "Thread monitoring system"
+      },
+      {
+        "metric": "socket_connection_status",
+        "frequency": "30 seconds",
+        "alert_threshold": "Connection failure or timeout",
+        "source": "Socket health monitoring"
+      }
+    ],
+    "observability_hub_integration": {
+      "enabled": true,
+      "custom_metrics": [
+        "mma_gpu_memory_utilization",
+        "mma_model_operation_latency",
+        "mma_thread_status",
+        "mma_socket_health"
+      ],
+      "dashboard_updates": "Add ModelManagerAgent-specific panels"
+    },
+    "automated_alerts": [
+      {
+        "condition": "GPU memory > 95%",
+        "action": "Trigger model unloading sequence",
+        "severity": "WARNING"
+      },
+      {
+        "condition": "Model loading failure",
+        "action": "Alert + investigate GPU state",
+        "severity": "ERROR"
+      },
+      {
+        "condition": "Thread deadlock detected",
+        "action": "Immediate rollback trigger",
+        "severity": "CRITICAL"
+      }
+    ]
+  }
+}

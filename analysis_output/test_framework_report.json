@@ -1,0 +1,1269 @@
+{
+  "mode": "system",
+  "start_time": 1751479764.7382395,
+  "health": {
+    "TaskRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ChainOfThoughtAgent": {
+      "status": "error",
+      "message": "Unknown request type: "
+    },
+    "GOT_TOTAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ModelManagerAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VRAMOptimizerAgent": {
+      "status": "ok",
+      "ready": true,
+      "initialized": true,
+      "message": "KnowledgeBase is healthy",
+      "timestamp": "2025-07-03T02:09:27.751943",
+      "uptime": 24.067604064941406,
+      "active_threads": 2,
+      "db_status": true,
+      "fact_count": 0,
+      "db_path": "data/knowledge.db"
+    },
+    "CoordinatorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "GoalOrchestratorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "IntentionValidatorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DynamicIdentityAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EmpathyAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ProactiveAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PredictiveLoader": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EnhancedModelRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TinyLlamaService": {
+      "error": "name 'datetime' is not defined"
+    },
+    "NLLBAdapter": {
+      "status": "error",
+      "message": "Internal server error"
+    },
+    "LearningAdjusterAgent": {
+      "status": "error",
+      "message": "name 'datetime' is not defined"
+    },
+    "LocalFineTunerAgent": {
+      "status": "error",
+      "message": "'LocalFineTunerAgent' object has no attribute '_update_health_status'"
+    },
+    "SelfTrainingOrchestrator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "CognitiveModelAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ConsolidatedTranslator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EmotionEngine": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MoodTrackerAgent": {
+      "status": "HEALTHY",
+      "details": {
+        "status_message": "Agent is operational.",
+        "uptime_seconds": 64.92843556404114,
+        "cache_entries": 0
+      }
+    },
+    "HumanAwarenessAgent": {
+      "status": "HEALTHY",
+      "details": {
+        "status_message": "Agent is operational.",
+        "uptime_seconds": 64.92975759506226,
+        "cache_entries": 0
+      }
+    },
+    "EmotionSynthesisAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ToneDetector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VoiceProfiler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "NLUAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AdvancedCommandHandler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ChitchatAgent": {
+      "status": "ok",
+      "message": "VisionCaptureAgent is running"
+    },
+    "FeedbackHandler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "Responder": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingLanguageAnalyzer": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "SessionMemoryAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryOrchestrator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryClient": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LearningManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "KnowledgeBase": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MetaCognitionAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ActiveLearningMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedPlanningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MultiAgentSwarmManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedSystemAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSConnector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSCache": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingTTSAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingInterruptHandler": {
+      "status": "ok"
+    },
+    "CodeGenerator": {
+      "status": "ok",
+      "ready": true,
+      "initialized": true,
+      "message": "TutoringServiceAgent is healthy",
+      "timestamp": "2025-07-03T02:10:00.041137",
+      "uptime": 75.58432054519653,
+      "active_threads": 2,
+      "agent_type": "tutoring_service",
+      "service_state": 0
+    },
+    "Executor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AudioCapture": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FusedAudioPreprocessor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "WakeWordDetector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingSpeechRecognition": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LanguageAndTranslationCoordinator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VisionCaptureAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FaceRecognitionAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PredictiveHealthMonitor": {
+      "status": "HEALTHY",
+      "details": {
+        "status_message": "Agent is operational.",
+        "uptime_seconds": 123.11413931846619
+      }
+    },
+    "SystemDigitalTwin": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TieredResponder": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AsyncProcessor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "CacheManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PerformanceMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DreamWorldAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedMemoryReasoningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EpisodicMemoryAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LearningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TutorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TutoringServiceAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ContextManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ExperienceTracker": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ResourceManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "HealthMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TaskScheduler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AuthenticationAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedErrorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedUtilsAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ProactiveContextMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "RCAAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AgentTrustScorer": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FileSystemAssistantAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "RemoteConnectorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "SelfHealingAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedWebAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DreamingModeAgent": {
+      "status": "success",
+      "agent": "DreamingModeAgent",
+      "timestamp": "2025-07-03T02:10:31.488402",
+      "is_dreaming": false,
+      "dream_count": 1,
+      "total_dream_time": 27.532066106796265,
+      "dream_success_rate": 0.0,
+      "avg_dream_quality": 0.0,
+      "uptime": 94.32485461235046,
+      "port": 7127,
+      "dreamworld_connected": true
+    },
+    "PerformanceLoggerAgent": {
+      "status": "success",
+      "agent": "DreamingModeAgent",
+      "timestamp": "2025-07-03T02:10:31.489188",
+      "is_dreaming": false,
+      "dream_count": 1,
+      "total_dream_time": 27.532066106796265,
+      "dream_success_rate": 0.0,
+      "avg_dream_quality": 0.0,
+      "uptime": 94.32562637329102,
+      "port": 7127,
+      "dreamworld_connected": true
+    },
+    "AdvancedRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    }
+  },
+  "message_flow": {
+    "TaskRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ChainOfThoughtAgent": {
+      "status": "error",
+      "message": "Unknown request type: "
+    },
+    "GOT_TOTAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ModelManagerAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VRAMOptimizerAgent": {
+      "status": "ok",
+      "ready": true,
+      "initialized": true,
+      "message": "KnowledgeBase is healthy",
+      "timestamp": "2025-07-03T02:10:35.032386",
+      "uptime": 91.34804344177246,
+      "active_threads": 2,
+      "db_status": true,
+      "fact_count": 0,
+      "db_path": "data/knowledge.db"
+    },
+    "CoordinatorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "GoalOrchestratorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "IntentionValidatorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DynamicIdentityAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EmpathyAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ProactiveAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PredictiveLoader": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EnhancedModelRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TinyLlamaService": {
+      "error": "Unknown action: test_message"
+    },
+    "NLLBAdapter": {
+      "status": "error",
+      "message": "Unknown action: test_message"
+    },
+    "LearningAdjusterAgent": {
+      "status": "error",
+      "message": "Unknown action"
+    },
+    "LocalFineTunerAgent": {
+      "status": "error",
+      "message": "'LocalFineTunerAgent' object has no attribute '_update_health_status'"
+    },
+    "SelfTrainingOrchestrator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "CognitiveModelAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ConsolidatedTranslator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EmotionEngine": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MoodTrackerAgent": {
+      "status": "error",
+      "error": "Unknown action: test_message"
+    },
+    "HumanAwarenessAgent": {
+      "status": "HEALTHY",
+      "details": {
+        "status_message": "Agent is operational.",
+        "uptime_seconds": 131.7746183872223,
+        "cache_entries": 0
+      }
+    },
+    "EmotionSynthesisAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ToneDetector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VoiceProfiler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "NLUAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AdvancedCommandHandler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ChitchatAgent": {
+      "status": "error",
+      "error": "Unknown action: test_message"
+    },
+    "FeedbackHandler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "Responder": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingLanguageAnalyzer": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "SessionMemoryAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryOrchestrator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MemoryClient": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LearningManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "KnowledgeBase": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MetaCognitionAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ActiveLearningMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedPlanningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "MultiAgentSwarmManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedSystemAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSConnector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSCache": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingTTSAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TTSAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingInterruptHandler": {
+      "status": "error",
+      "request_id": "unknown",
+      "error": {
+        "code": "invalid_action",
+        "message": "Unknown action: test_message"
+      },
+      "timestamp": "2025-07-02T18:11:07.168951+00:00"
+    },
+    "CodeGenerator": {
+      "status": "success",
+      "message": "Tutoring service updated"
+    },
+    "Executor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AudioCapture": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FusedAudioPreprocessor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "WakeWordDetector": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "StreamingSpeechRecognition": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LanguageAndTranslationCoordinator": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "VisionCaptureAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FaceRecognitionAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PredictiveHealthMonitor": {
+      "status": "HEALTHY",
+      "details": {
+        "status_message": "Agent is operational.",
+        "uptime_seconds": 190.13862872123718
+      }
+    },
+    "SystemDigitalTwin": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TieredResponder": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AsyncProcessor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "CacheManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "PerformanceMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DreamWorldAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedMemoryReasoningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "EpisodicMemoryAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "LearningAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TutorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TutoringServiceAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ContextManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ExperienceTracker": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ResourceManager": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "HealthMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "TaskScheduler": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AuthenticationAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedErrorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedUtilsAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "ProactiveContextMonitor": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "RCAAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "AgentTrustScorer": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "FileSystemAssistantAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "RemoteConnectorAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "SelfHealingAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "UnifiedWebAgent": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    },
+    "DreamingModeAgent": {
+      "status": "error",
+      "message": "Unknown action: test_message"
+    },
+    "PerformanceLoggerAgent": {
+      "status": "error",
+      "error": "Invalid health check request"
+    },
+    "AdvancedRouter": {
+      "status": "unreachable",
+      "error": "Resource temporarily unavailable"
+    }
+  },
+  "resources": {
+    "ChainOfThoughtAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 20.59765625,
+      "num_threads": 6
+    },
+    "GOT_TOTAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "VRAMOptimizerAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "EmpathyAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ProactiveAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "PredictiveLoader": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "EnhancedModelRouter": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TinyLlamaService": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "NLLBAdapter": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "LearningAdjusterAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 83.66015625,
+      "num_threads": 29
+    },
+    "LocalFineTunerAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "SelfTrainingOrchestrator": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "CognitiveModelAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ConsolidatedTranslator": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "MoodTrackerAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "HumanAwarenessAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "EmotionSynthesisAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ToneDetector": {
+      "cpu_percent": 0.0,
+      "memory_mb": 473.70703125,
+      "num_threads": 31
+    },
+    "VoiceProfiler": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AdvancedCommandHandler": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ChitchatAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "FeedbackHandler": {
+      "cpu_percent": 0.0,
+      "memory_mb": 21.8203125,
+      "num_threads": 9
+    },
+    "Responder": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "StreamingLanguageAnalyzer": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "SessionMemoryAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "MemoryOrchestrator": {
+      "cpu_percent": 0.0,
+      "memory_mb": 17.1875,
+      "num_threads": 6
+    },
+    "MemoryClient": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "MetaCognitionAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ActiveLearningMonitor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 20.01953125,
+      "num_threads": 11
+    },
+    "MultiAgentSwarmManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedSystemAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TTSConnector": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TTSCache": {
+      "cpu_percent": 0.0,
+      "memory_mb": 79.53125,
+      "num_threads": 29
+    },
+    "TTSAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "Executor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "WakeWordDetector": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "VisionCaptureAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 22.5234375,
+      "num_threads": 6
+    },
+    "FaceRecognitionAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "PredictiveHealthMonitor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TieredResponder": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "PerformanceMonitor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 83.1015625,
+      "num_threads": 38
+    },
+    "LearningAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TutorAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TutoringServiceAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 16.63671875,
+      "num_threads": 6
+    },
+    "ExperienceTracker": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ResourceManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "TaskScheduler": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AuthenticationAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedErrorAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedUtilsAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ProactiveContextMonitor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 26.02734375,
+      "num_threads": 6
+    },
+    "RCAAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AgentTrustScorer": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "FileSystemAssistantAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "RemoteConnectorAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "SelfHealingAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedWebAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "DreamingModeAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 19.671875,
+      "num_threads": 8
+    },
+    "PerformanceLoggerAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AdvancedRouter": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "SystemDigitalTwin": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "CodeGenerator": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "NLUAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 19.23828125,
+      "num_threads": 6
+    },
+    "EmotionEngine": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "KnowledgeBase": {
+      "cpu_percent": 0.0,
+      "memory_mb": 23.90625,
+      "num_threads": 6
+    },
+    "LearningManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedPlanningAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "StreamingInterruptHandler": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "FusedAudioPreprocessor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "EpisodicMemoryAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AsyncProcessor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ContextManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "HealthMonitor": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "DreamWorldAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "ModelManagerAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "LanguageAndTranslationCoordinator": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "GoalOrchestratorAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "IntentionValidatorAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "AudioCapture": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "MemoryManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "UnifiedMemoryReasoningAgent": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    },
+    "CacheManager": {
+      "cpu_percent": 0.0,
+      "memory_mb": 0.0,
+      "num_threads": 1
+    }
+  },
+  "anomalies": [
+    "TaskRouter unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ChainOfThoughtAgent unhealthy: {'status': 'error', 'message': 'Unknown request type: '}",
+    "GOT_TOTAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ModelManagerAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "VRAMOptimizerAgent unhealthy: {'status': 'ok', 'ready': True, 'initialized': True, 'message': 'KnowledgeBase is healthy', 'timestamp': '2025-07-03T02:09:27.751943', 'uptime': 24.067604064941406, 'active_threads': 2, 'db_status': True, 'fact_count': 0, 'db_path': 'data/knowledge.db'}",
+    "CoordinatorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "GoalOrchestratorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "IntentionValidatorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "DynamicIdentityAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "EmpathyAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ProactiveAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "PredictiveLoader unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "EnhancedModelRouter unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TinyLlamaService unhealthy: {'error': \"name 'datetime' is not defined\"}",
+    "NLLBAdapter unhealthy: {'status': 'error', 'message': 'Internal server error'}",
+    "LearningAdjusterAgent unhealthy: {'status': 'error', 'message': \"name 'datetime' is not defined\"}",
+    "LocalFineTunerAgent unhealthy: {'status': 'error', 'message': \"'LocalFineTunerAgent' object has no attribute '_update_health_status'\"}",
+    "SelfTrainingOrchestrator unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "CognitiveModelAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ConsolidatedTranslator unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "EmotionEngine unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MoodTrackerAgent unhealthy: {'status': 'HEALTHY', 'details': {'status_message': 'Agent is operational.', 'uptime_seconds': 64.92843556404114, 'cache_entries': 0}}",
+    "HumanAwarenessAgent unhealthy: {'status': 'HEALTHY', 'details': {'status_message': 'Agent is operational.', 'uptime_seconds': 64.92975759506226, 'cache_entries': 0}}",
+    "EmotionSynthesisAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ToneDetector unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "VoiceProfiler unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "NLUAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "AdvancedCommandHandler unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ChitchatAgent unhealthy: {'status': 'ok', 'message': 'VisionCaptureAgent is running'}",
+    "FeedbackHandler unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "Responder unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "StreamingLanguageAnalyzer unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "SessionMemoryAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MemoryManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MemoryOrchestrator unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MemoryClient unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "LearningManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "KnowledgeBase unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MetaCognitionAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ActiveLearningMonitor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedPlanningAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "MultiAgentSwarmManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedSystemAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TTSConnector unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TTSCache unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "StreamingTTSAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TTSAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "StreamingInterruptHandler unhealthy: {'status': 'ok'}",
+    "CodeGenerator unhealthy: {'status': 'ok', 'ready': True, 'initialized': True, 'message': 'TutoringServiceAgent is healthy', 'timestamp': '2025-07-03T02:10:00.041137', 'uptime': 75.58432054519653, 'active_threads': 2, 'agent_type': 'tutoring_service', 'service_state': 0}",
+    "Executor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "AudioCapture unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "FusedAudioPreprocessor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "WakeWordDetector unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "StreamingSpeechRecognition unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "LanguageAndTranslationCoordinator unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "VisionCaptureAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "FaceRecognitionAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "PredictiveHealthMonitor unhealthy: {'status': 'HEALTHY', 'details': {'status_message': 'Agent is operational.', 'uptime_seconds': 123.11413931846619}}",
+    "SystemDigitalTwin unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TieredResponder unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "AsyncProcessor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "CacheManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "PerformanceMonitor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "DreamWorldAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedMemoryReasoningAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "EpisodicMemoryAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "LearningAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TutorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TutoringServiceAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ContextManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ExperienceTracker unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ResourceManager unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "HealthMonitor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "TaskScheduler unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "AuthenticationAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedErrorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedUtilsAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "ProactiveContextMonitor unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "RCAAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "AgentTrustScorer unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "FileSystemAssistantAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "RemoteConnectorAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "SelfHealingAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "UnifiedWebAgent unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}",
+    "DreamingModeAgent unhealthy: {'status': 'success', 'agent': 'DreamingModeAgent', 'timestamp': '2025-07-03T02:10:31.488402', 'is_dreaming': False, 'dream_count': 1, 'total_dream_time': 27.532066106796265, 'dream_success_rate': 0.0, 'avg_dream_quality': 0.0, 'uptime': 94.32485461235046, 'port': 7127, 'dreamworld_connected': True}",
+    "PerformanceLoggerAgent unhealthy: {'status': 'success', 'agent': 'DreamingModeAgent', 'timestamp': '2025-07-03T02:10:31.489188', 'is_dreaming': False, 'dream_count': 1, 'total_dream_time': 27.532066106796265, 'dream_success_rate': 0.0, 'avg_dream_quality': 0.0, 'uptime': 94.32562637329102, 'port': 7127, 'dreamworld_connected': True}",
+    "AdvancedRouter unhealthy: {'status': 'unreachable', 'error': 'Resource temporarily unavailable'}"
+  ],
+  "missing_scripts": [],
+  "failed_agents": [],
+  "end_time": 1751479906.8477495
+}

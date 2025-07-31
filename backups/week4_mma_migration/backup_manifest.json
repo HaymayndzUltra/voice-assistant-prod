@@ -1,0 +1,18 @@
+{
+  "created": "2025-07-23T10:01:54.211252",
+  "files": [
+    [
+      "main_pc_code/agents/model_manager_agent.py",
+      "model_manager_agent_original.py"
+    ],
+    [
+      "main_pc_code/config/startup_config.yaml",
+      "startup_config_original.yaml"
+    ],
+    [
+      "main_pc_code/config/llm_config.yaml",
+      "llm_config_original.yaml"
+    ]
+  ],
+  "original_file_size": 232844
+}

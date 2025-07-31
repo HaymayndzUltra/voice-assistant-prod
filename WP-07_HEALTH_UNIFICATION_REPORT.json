@@ -1,0 +1,1440 @@
+{
+  "timestamp": "2025-07-19T07:48:29.877702",
+  "total_agents": 123,
+  "unified_agents": 0,
+  "agents_needing_unification": 123,
+  "health_unification_coverage": 0.0,
+  "agents_analysis": [
+    {
+      "file_path": "main_pc_code/agents/human_awareness_agent.py",
+      "agent_name": "human_awareness_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/memory_client.py",
+      "agent_name": "memory_client",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_speech_recognition.py",
+      "agent_name": "streaming_speech_recognition",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_broadcast_loop",
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_translation.py",
+      "agent_name": "streaming_translation",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/proactive_agent_interface.py",
+      "agent_name": "proactive_agent_interface",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/goal_manager.py",
+      "agent_name": "goal_manager",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/advanced_suggestion_system.py",
+      "agent_name": "advanced_suggestion_system",
+      "error": "invalid syntax (<unknown>, line 47)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/tiered_responder.py",
+      "agent_name": "tiered_responder",
+      "error": "unmatched ')' (<unknown>, line 19)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/llm_runtime_tools.py",
+      "agent_name": "llm_runtime_tools",
+      "error": "unmatched ')' (<unknown>, line 38)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/model_manager_agent.py",
+      "agent_name": "model_manager_agent",
+      "error": "expected an indented block after 'try' statement on line 4011 (<unknown>, line 4013)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/session_memory_agent.py",
+      "agent_name": "session_memory_agent",
+      "has_health_endpoint": true,
+      "health_port": 6583,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/request_coordinator.py",
+      "agent_name": "request_coordinator",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder.py",
+      "agent_name": "pc2_zmq_protocol_finder",
+      "error": "unmatched ')' (<unknown>, line 14)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/chitchat_agent.py",
+      "agent_name": "chitchat_agent",
+      "has_health_endpoint": true,
+      "health_port": 6582,
+      "health_methods": [
+        "health_broadcast_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/ProactiveAgent.py",
+      "agent_name": "ProactiveAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/predictive_health_monitor.py",
+      "agent_name": "predictive_health_monitor",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "check_agent_health",
+        "_record_health_event",
+        "_run_health_check_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_failed"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/IntentionValidatorAgent.py",
+      "agent_name": "IntentionValidatorAgent",
+      "error": "unmatched ')' (<unknown>, line 19)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/nlu_agent.py",
+      "agent_name": "nlu_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_health_report_win.py",
+      "agent_name": "pc2_zmq_health_report_win",
+      "error": "unmatched ')' (<unknown>, line 20)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/validate_pc2_zmq_services.py",
+      "agent_name": "validate_pc2_zmq_services",
+      "error": "unmatched ')' (<unknown>, line 15)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/EmpathyAgent.py",
+      "agent_name": "EmpathyAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check",
+        "get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/wake_word_detector.py",
+      "agent_name": "wake_word_detector",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_publish_health_status",
+        "_health_broadcast_thread",
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/vram_optimizer_agent.py",
+      "agent_name": "vram_optimizer_agent",
+      "error": "unmatched ')' (<unknown>, line 396)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/vision_capture_agent.py",
+      "agent_name": "vision_capture_agent",
+      "error": "unmatched ')' (<unknown>, line 30)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/advanced_command_handler.py",
+      "agent_name": "advanced_command_handler",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_extended.py",
+      "agent_name": "pc2_zmq_protocol_finder_extended",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check"
+      ],
+      "health_score": 70,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/tone_detector.py",
+      "agent_name": "tone_detector",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/feedback_handler.py",
+      "agent_name": "feedback_handler",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/trigger_word_detector.py",
+      "agent_name": "trigger_word_detector",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/code_generator_agent.py",
+      "agent_name": "code_generator_agent",
+      "error": "unmatched ')' (<unknown>, line 39)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_audio_capture.py",
+      "agent_name": "streaming_audio_capture",
+      "error": "unmatched ')' (<unknown>, line 42)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/generate_code_with_cga_method.py",
+      "agent_name": "generate_code_with_cga_method",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/HumanAwarenessAgent.py",
+      "agent_name": "HumanAwarenessAgent",
+      "error": "unmatched ')' (<unknown>, line 36)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/system_digital_twin.py",
+      "agent_name": "system_digital_twin",
+      "has_health_endpoint": true,
+      "health_port": 8120,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port",
+        "health_check_port",
+        "health_check_port",
+        "health_check_port",
+        "health_check_port",
+        "health_check_port",
+        "health_check_port",
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/noise_reduction_agent.py",
+      "agent_name": "noise_reduction_agent",
+      "has_health_endpoint": true,
+      "health_port": 6576,
+      "health_methods": [
+        "health_broadcast_loop",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/knowledge_base.py",
+      "agent_name": "knowledge_base",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "perform_health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/unified_system_agent.py",
+      "agent_name": "unified_system_agent",
+      "has_health_endpoint": true,
+      "health_port": 5569,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/fused_audio_preprocessor.py",
+      "agent_name": "fused_audio_preprocessor",
+      "error": "unmatched ')' (<unknown>, line 48)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/check_ports.py",
+      "agent_name": "check_ports",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_whisper_asr.py",
+      "agent_name": "streaming_whisper_asr",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/error_publisher.py",
+      "agent_name": "error_publisher",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/voicemeeter_control_agent.py",
+      "agent_name": "voicemeeter_control_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_partial_transcripts.py",
+      "agent_name": "streaming_partial_transcripts",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_opportunity_detector.py",
+      "agent_name": "learning_opportunity_detector",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/emotion_engine.py",
+      "agent_name": "emotion_engine",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_health_check_loop",
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/DynamicIdentityAgent.py",
+      "agent_name": "DynamicIdentityAgent",
+      "error": "unmatched ')' (<unknown>, line 18)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/mood_tracker_agent.py",
+      "agent_name": "mood_tracker_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/responder.py",
+      "agent_name": "responder",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check",
+        "_monitor_health",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check",
+        "health_check",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_language_analyzer.py",
+      "agent_name": "streaming_language_analyzer",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "report_health",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/emotion_synthesis_agent.py",
+      "agent_name": "emotion_synthesis_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/voice_profiling_agent.py",
+      "agent_name": "voice_profiling_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/face_recognition_agent.py",
+      "agent_name": "face_recognition_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/predictive_loader.py",
+      "agent_name": "predictive_loader",
+      "error": "unmatched ')' (<unknown>, line 130)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/executor.py",
+      "agent_name": "executor",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/fixed_streaming_translation.py",
+      "agent_name": "fixed_streaming_translation",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_tts_agent.py",
+      "agent_name": "streaming_tts_agent",
+      "error": "unexpected indent (<unknown>, line 732)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/record_and_transcribe.py",
+      "agent_name": "record_and_transcribe",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_language_to_llm.py",
+      "agent_name": "streaming_language_to_llm",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_interrupt_handler.py",
+      "agent_name": "streaming_interrupt_handler",
+      "error": "unexpected indent (<unknown>, line 343)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/agents/streaming_interrupt.py",
+      "agent_name": "streaming_interrupt",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/MetaCognitionAgent.py",
+      "agent_name": "MetaCognitionAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/gguf_model_manager.py",
+      "agent_name": "gguf_model_manager",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_manager.py",
+      "agent_name": "learning_manager",
+      "has_health_endpoint": true,
+      "health_port": 6588,
+      "health_methods": [
+        "health_broadcast_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/learning_orchestration_service.py",
+      "agent_name": "learning_orchestration_service",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/active_learning_monitor.py",
+      "agent_name": "active_learning_monitor",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_health_report.py",
+      "agent_name": "pc2_zmq_health_report",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "generate_health_report"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/translation_service.py",
+      "agent_name": "translation_service",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/system_digital_twin_launcher.py",
+      "agent_name": "system_digital_twin_launcher",
+      "has_health_endpoint": true,
+      "health_port": 8120,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 70,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/sd_config.py",
+      "agent_name": "sd_config",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/pc2_zmq_protocol_finder_win.py",
+      "agent_name": "pc2_zmq_protocol_finder_win",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "find_working_health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/voice_controller.py",
+      "agent_name": "voice_controller",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/model_evaluation_framework.py",
+      "agent_name": "model_evaluation_framework",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/check_pc2_zmq_services.py",
+      "agent_name": "check_pc2_zmq_services",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/model_orchestrator.py",
+      "agent_name": "model_orchestrator",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/remote_connector_agent.py",
+      "agent_name": "remote_connector_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/agents/service_registry_agent.py",
+      "agent_name": "service_registry_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "Service Registry Agent\n\nA minimal, highly-available registry that other agents can query to discover\nendpoints. It intentionally keeps zero external dependencies so that it can\nstart before the rest of the platform.\n\nImplements two core actions:\n1. ``register_agent`` \u2013 store/overwrite metadata about an agent.\n2. ``get_agent_endpoint`` \u2013 return host/port (and extras) for a given agent.\n\nStandard health actions (``ping``, ``health``, ``health_check``) are inherited\nfrom :class:`common.core.base_agent.BaseAgent`.\n\nSupports multiple backend storage options:\n- In-memory (default): Fast but non-persistent\n- Redis: Persistent and supports high-availability\n",
+        "health_check_port",
+        "health_check",
+        "health_check_port"
+      ],
+      "health_score": 70,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/VisionProcessingAgent.py",
+      "agent_name": "VisionProcessingAgent",
+      "error": "unmatched ')' (<unknown>, line 26)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/port_config.py",
+      "agent_name": "port_config",
+      "has_health_endpoint": false,
+      "health_port": 5611,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/tiered_responder.py",
+      "agent_name": "tiered_responder",
+      "error": "unmatched ')' (<unknown>, line 22)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/rollback_web_ports.py",
+      "agent_name": "rollback_web_ports",
+      "error": "invalid syntax (<unknown>, line 20)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/DreamingModeAgent.py",
+      "agent_name": "DreamingModeAgent",
+      "error": "unmatched ')' (<unknown>, line 33)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/task_scheduler.py",
+      "agent_name": "task_scheduler",
+      "error": "unmatched ')' (<unknown>, line 16)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/context_manager.py",
+      "agent_name": "context_manager",
+      "error": "unmatched ')' (<unknown>, line 20)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/performance_monitor.py",
+      "agent_name": "performance_monitor",
+      "error": "unmatched ')' (<unknown>, line 21)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/unified_memory_reasoning_agent.py",
+      "agent_name": "unified_memory_reasoning_agent",
+      "error": "unmatched ')' (<unknown>, line 30)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/advanced_router.py",
+      "agent_name": "advanced_router",
+      "error": "unmatched ')' (<unknown>, line 29)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/tutoring_agent.py",
+      "agent_name": "tutoring_agent",
+      "error": "unmatched ')' (<unknown>, line 17)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/error_bus_service.py",
+      "agent_name": "error_bus_service",
+      "error": "unmatched ')' (<unknown>, line 27)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/error_bus_template.py",
+      "agent_name": "error_bus_template",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/health_monitor.py",
+      "agent_name": "health_monitor",
+      "error": "unmatched ')' (<unknown>, line 16)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/auto_fixer_agent.py",
+      "agent_name": "auto_fixer_agent",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": false,
+      "route_patterns": [],
+      "health_score": 0,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/tutoring_service_agent.py",
+      "agent_name": "tutoring_service_agent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/check_gpu.py",
+      "agent_name": "check_gpu",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/agent_utils.py",
+      "agent_name": "agent_utils",
+      "error": "closing parenthesis ')' does not match opening parenthesis '{' (<unknown>, line 277)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/experience_tracker.py",
+      "agent_name": "experience_tracker",
+      "error": "unmatched ')' (<unknown>, line 16)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/resource_manager.py",
+      "agent_name": "resource_manager",
+      "error": "unmatched ')' (<unknown>, line 18)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/unified_web_agent.py",
+      "agent_name": "unified_web_agent",
+      "has_health_endpoint": true,
+      "health_port": 7127,
+      "health_methods": [
+        "_health_check",
+        "_health_check_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port",
+        "health_check_requests",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/tutor_agent.py",
+      "agent_name": "tutor_agent",
+      "error": "unmatched ')' (<unknown>, line 25)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/check_pytorch_cuda.py",
+      "agent_name": "check_pytorch_cuda",
+      "has_health_endpoint": false,
+      "health_port": 0,
+      "health_methods": [],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 40,
+      "needs_unification": true
+    },
+    {
+      "file_path": "pc2_code/agents/unified_memory_reasoning_agent_simplified.py",
+      "agent_name": "unified_memory_reasoning_agent_simplified",
+      "error": "unmatched ')' (<unknown>, line 21)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/simple_gpu_check.py",
+      "agent_name": "simple_gpu_check",
+      "error": "invalid syntax (<unknown>, line 4)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/monitor_web_ports.py",
+      "agent_name": "monitor_web_ports",
+      "error": "invalid syntax (<unknown>, line 22)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/async_processor.py",
+      "agent_name": "async_processor",
+      "error": "unmatched ')' (<unknown>, line 23)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/DreamWorldAgent.py",
+      "agent_name": "DreamWorldAgent",
+      "error": "unmatched ')' (<unknown>, line 29)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/memory_orchestrator_service.py",
+      "agent_name": "memory_orchestrator_service",
+      "error": "unmatched ')' (<unknown>, line 27)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/cache_manager.py",
+      "agent_name": "cache_manager",
+      "error": "unmatched ')' (<unknown>, line 21)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/memory_scheduler.py",
+      "agent_name": "memory_scheduler",
+      "error": "unmatched ')' (<unknown>, line 28)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/LearningAdjusterAgent.py",
+      "agent_name": "LearningAdjusterAgent",
+      "error": "invalid syntax (<unknown>, line 59)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/filesystem_assistant_agent.py",
+      "agent_name": "filesystem_assistant_agent",
+      "error": "unmatched ')' (<unknown>, line 28)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/port_health_check.py",
+      "agent_name": "port_health_check",
+      "error": "invalid syntax (<unknown>, line 12)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/AgentTrustScorer.py",
+      "agent_name": "AgentTrustScorer",
+      "error": "unmatched ')' (<unknown>, line 17)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/PerformanceLoggerAgent.py",
+      "agent_name": "PerformanceLoggerAgent",
+      "error": "unmatched ')' (<unknown>, line 18)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "pc2_code/agents/remote_connector_agent.py",
+      "agent_name": "remote_connector_agent",
+      "error": "unmatched ')' (<unknown>, line 28)",
+      "needs_unification": true,
+      "health_score": 0
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/NLLBAdapter.py",
+      "agent_name": "NLLBAdapter",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "agent_name": "TinyLlamaServiceEnhanced",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_start_health_check",
+        "_health_check_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "\nTinyLLama Service\n- Provides access to the TinyLLama model via ZMQ\n- Supports on-demand loading/unloading for VRAM management\n- Compatible with the ModelManagerAgent (MMA) for orchestration\n- Enhanced resource management and generation handling\n\nRequest Format:\n- For text generation: {\"action\": \"generate\", \"prompt\": \"Your prompt here\", \"max_tokens\": 100}\n- For loading model: {\"action\": \"ensure_loaded\"}\n- For unloading model: {\"action\": \"request_unload\"}\n- For health check: {\"action\": \"health_check\"}\n- For resource stats: {\"action\": \"resource_stats\"}\n\nResponse Format:\n- For generation: {\"status\": \"success\", \"text\": \"Generated text\"}\n- For load/unload: {\"status\": \"success\", \"message\": \"Model loaded/unloaded\"}\n- For health check: {\"status\": \"ok\", \"service\": \"tinyllama_service\", \n                    \"model_status\": \"loaded\" or \"unloaded\", \"timestamp\": time.time()}\n- For resource stats: {\"status\": \"success\", \"stats\": {...}}\n",
+        "health_check_port",
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+      "agent_name": "ChainOfThoughtAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check_port"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+      "agent_name": "GOT_TOTAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/ConsolidatedTranslator.py",
+      "agent_name": "ConsolidatedTranslator",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status"
+      ],
+      "inherits_base_agent": false,
+      "route_patterns": [],
+      "health_score": 50,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+      "agent_name": "SelfTrainingOrchestrator",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_health_check_loop",
+        "_get_health_status"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+      "agent_name": "CognitiveModelAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "_update_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/consolidated_translator_simple.py",
+      "agent_name": "consolidated_translator_simple",
+      "has_health_endpoint": true,
+      "health_port": 5564,
+      "health_methods": [
+        "_run_health_server",
+        "_handle_health_check"
+      ],
+      "inherits_base_agent": false,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 50,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+      "agent_name": "LearningAdjusterAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_update_health_status",
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    },
+    {
+      "file_path": "main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+      "agent_name": "LocalFineTunerAgent",
+      "has_health_endpoint": true,
+      "health_port": 0,
+      "health_methods": [
+        "_get_health_status",
+        "health_check"
+      ],
+      "inherits_base_agent": true,
+      "route_patterns": [
+        "health_check"
+      ],
+      "health_score": 90,
+      "needs_unification": true
+    }
+  ]
+}

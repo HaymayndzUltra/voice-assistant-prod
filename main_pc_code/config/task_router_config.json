@@ -1,0 +1,14 @@
+{
+  "services": {
+    "translator": {
+      "name": "ConsolidatedTranslator",
+      "port": 5563,
+      "host": "localhost",
+      "capabilities": [
+        "translation",
+        "language_detection"
+      ],
+      "priority": 1
+    }
+  }
+}

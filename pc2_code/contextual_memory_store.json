@@ -1,0 +1,128 @@
+{
+  "sessions": {
+    "tester_test_project": [
+      {
+        "timestamp": 1748124974.398799,
+        "type": "user_query",
+        "content": "This is a unique test query: unique_test_id_1748124974"
+      },
+      {
+        "timestamp": 1748124974.3415442,
+        "type": "code",
+        "content": "\n        from flask import Flask, request, jsonify\n        import requests  # For HTTP requests in WEB apps\n        \n        app = Flask(__name__)  # WEB application setup\n        \n        # WEB API endpoint\n        @app.route('/api/data', methods=['GET'])\n        def get_data():\n            # WEB API implementation\n            response = requests.get('https://example.com/api')  # HTTP request\n            return jsonify({'status': 'success', 'data': response.json()})  # WEB response\n            \n        if __name__ == '__main__':\n            # Start the WEB server\n            app.run(debug=True, port=8080)  # Run WEB server\n        "
+      },
+      {
+        "timestamp": 1748124974.327896,
+        "type": "code",
+        "content": "\n        import sqlite3\n        \n        # DATABASE OPERATIONS FUNCTION\n        def query_database(query):\n            # Connect to SQL DATABASE\n            conn = sqlite3.connect('example.db')  # SQLite DATABASE connection\n            cursor = conn.cursor()  # Database cursor\n            cursor.execute(query)  # Execute SQL query on DATABASE\n            results = cursor.fetchall()  # Get DATABASE results\n            conn.close()  # Close DATABASE connection\n            return results  # Return DATABASE query results\n        "
+      },
+      {
+        "timestamp": 1748124974.2977748,
+        "type": "system_response",
+        "content": "This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. "
+      },
+      {
+        "timestamp": 1748124692.8750849,
+        "type": "user_query",
+        "content": "This is a unique test query: unique_test_id_1748124692"
+      },
+      {
+        "timestamp": 1748124692.78947,
+        "type": "code",
+        "content": "\n        from flask import Flask, request\n        import requests  # For HTTP requests\n        \n        app = Flask(__name__)  # Web application\n        \n        @app.route('/api/data', methods=['GET'])\n        def get_data():\n            # API endpoint implementation\n            response = requests.get('https://example.com/api')\n            return {'status': 'success', 'data': response.json()}\n            \n        if __name__ == '__main__':\n            # Start the web server\n            app.run(debug=True)\n        "
+      },
+      {
+        "timestamp": 1748124692.77549,
+        "type": "code",
+        "content": "\n        import sqlite3\n        \n        # Database operations function\n        def query_database(query):\n            # Connect to SQL database\n            conn = sqlite3.connect('example.db')\n            cursor = conn.cursor()\n            cursor.execute(query)  # Execute SQL query\n            results = cursor.fetchall()  # Get database results\n            conn.close()\n            return results\n        "
+      },
+      {
+        "timestamp": 1748124692.7289824,
+        "type": "system_response",
+        "content": "This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. This is a very long response that should definitely trigger the token compression feature. "
+      },
+      {
+        "timestamp": 1748123392.547527,
+        "type": "user_query",
+        "content": "This is a unique test query: unique_test_id_1748123392"
+      },
+      {
+        "timestamp": 1748123392.483637,
+        "type": "code",
+        "content": "\n        from flask import Flask, request\n        \n        app = Flask(__name__)\n        \n        @app.route('/api/data', methods=['GET'])\n        def get_data():\n            return {'status': 'success', 'data': [1, 2, 3]}\n            \n        if __name__ == '__main__':\n            app.run(debug=True)\n        "
+      },
+      {
+        "timestamp": 1748123392.4750147,
+        "type": "code",
+        "content": "\n        import sqlite3\n        \n        def query_database(query):\n            conn = sqlite3.connect('example.db')\n            cursor = conn.cursor()\n            cursor.execute(query)\n            results = cursor.fetchall()\n            conn.close()\n            return results\n        "
+      },
+      {
+        "timestamp": 1748123392.4477453,
+        "type": "system_response",
+        "content": "This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response "
+      },
+      {
+        "timestamp": 1748121239.1969733,
+        "type": "user_query",
+        "content": "This is a unique test query: unique_test_id_1748121239"
+      },
+      {
+        "timestamp": 1748121239.1566265,
+        "type": "code",
+        "content": "\n        from flask import Flask, request\n        \n        app = Flask(__name__)\n        \n        @app.route('/api/data', methods=['GET'])\n        def get_data():\n            return {'status': 'success', 'data': [1, 2, 3]}\n            \n        if __name__ == '__main__':\n            app.run(debug=True)\n        "
+      },
+      {
+        "timestamp": 1748121239.1417973,
+        "type": "code",
+        "content": "\n        import sqlite3\n        \n        def query_database(query):\n            conn = sqlite3.connect('example.db')\n            cursor = conn.cursor()\n            cursor.execute(query)\n            results = cursor.fetchall()\n            conn.close()\n            return results\n        "
+      },
+      {
+        "timestamp": 1748121239.1042545,
+        "type": "system_response",
+        "content": "This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response "
+      },
+      {
+        "timestamp": 1748121228.4912844,
+        "type": "user_query",
+        "content": "This is a test query"
+      },
+      {
+        "timestamp": 1748121098.472084,
+        "type": "user_query",
+        "content": "This is a test query"
+      },
+      {
+        "timestamp": 1748120771.1991088,
+        "type": "system_response",
+        "content": "This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response This is a very long response "
+      }
+    ],
+    "default_2025-05-25": [
+      {
+        "timestamp": 1748130582.716868,
+        "type": "system_response",
+        "content": "Error: Error contacting Ollama model 'phi3': 404 Client Error: Not Found for url: http://localhost:11434/api/generate"
+      },
+      {
+        "timestamp": 1748130582.7138758,
+        "type": "user_query",
+        "content": ""
+      }
+    ]
+  },
+  "summaries": {
+    "tester_test_project": {
+      "last_updated": 1748121228.5078049,
+      "code_context": "",
+      "conversation_summary": "Recent conversation:\n• Q: This is a test query → Response provided\n",
+      "errors_encountered": [],
+      "key_decisions": []
+    },
+    "default_2025-05-25": {
+      "last_updated": 1748130883.2900665,
+      "conversation_summary": "Recent conversation:\n• Q:  → Response provided\n",
+      "errors_encountered": [],
+      "key_decisions": []
+    }
+  }
+}

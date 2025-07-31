@@ -1,0 +1,2042 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-28T07:41:27.434328",
+    "version": "1.0.0",
+    "monorepo_path": "/home/haymayndz/AI_System_Monorepo"
+  },
+  "agents": {
+    "AudioCapture": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9100,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_audio_capture.py",
+      "compliance": {
+        "score": 74,
+        "rating": "C",
+        "critical_issues": 1,
+        "high_issues": 0,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "FusedAudioPreprocessor": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9101,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/audio/fused_audio_preprocessor.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "StreamingSpeechRecognition": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "health_port": 9103,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_speech_recognition.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "LanguageAndTranslationCoordinator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        }
+      ],
+      "ports": {
+        "health_port": 9104,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/language_and_translation_coordinator.py",
+      "compliance": {
+        "score": 90,
+        "rating": "A-",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "CodeGenerator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (3) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9500,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/code_generator_agent.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "Executor": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 11 resources created but only 2 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9501,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/executor.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "TaskRouter": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 3 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9000,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/core/task_router.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "ChainOfThoughtAgent": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9001,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/ChainOfThoughtAgent.py",
+      "compliance": {
+        "score": 95,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "GOT_TOTAgent": {
+      "issues": [
+        {
+          "category": "hardcoded_port",
+          "details": "Contains hardcoded port numbers",
+          "severity": "HIGH",
+          "fix_suggestion": "Use PORT_REGISTRY from config.port_registry instead of hardcoded values"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def __init__(self, port=5555, name=\"FallbackAgent\", health_check_port=None, zmq_health_port=None):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "health_port": 9002,
+        "regular_ports": [
+          5555,
+          6000
+        ],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/GOT_TOTAgent.py",
+      "compliance": {
+        "score": 83,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "ModelManagerAgent": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (7) but not all terminated (6)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9003,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/model_manager_agent.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "VRAMOptimizerAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (6) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9004,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/vram_optimizer_agent.py",
+      "compliance": {
+        "score": 70,
+        "rating": "C-",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "CoordinatorAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9005,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/coordinator_agent.py",
+      "compliance": {
+        "score": 74,
+        "rating": "C",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "GoalOrchestratorAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9006,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/GoalOrchestratorAgent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "IntentionValidatorAgent": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9007,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/IntentionValidatorAgent.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "DynamicIdentityAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9008,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/DynamicIdentityAgent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "EmpathyAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9009,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/EmpathyAgent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "ProactiveAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (4) but not all closed (3)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9010,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/ProactiveAgent.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "PredictiveLoader": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        }
+      ],
+      "ports": {
+        "health_port": 9011,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_loader.py",
+      "compliance": {
+        "score": 90,
+        "rating": "A-",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "EmotionEngine": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        }
+      ],
+      "ports": {
+        "health_port": 9250,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_engine.py",
+      "compliance": {
+        "score": 75,
+        "rating": "C",
+        "critical_issues": 1,
+        "high_issues": 0,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "MoodTrackerAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9251,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/mood_tracker_agent.py",
+      "compliance": {
+        "score": 80,
+        "rating": "B-",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "HumanAwarenessAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9252,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/human_awareness_agent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "EmotionSynthesisAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9253,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/emotion_synthesis_agent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "ToneDetector": {
+      "issues": [
+        {
+          "category": "no_baseagent",
+          "details": "Does not appear to inherit from BaseAgent",
+          "severity": "HIGH",
+          "fix_suggestion": "Inherit from BaseAgent by changing class definition to 'class YourAgent(BaseAgent):'"
+        },
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9254,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tone_detector.py",
+      "compliance": {
+        "score": 44,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "VoiceProfiler": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 3 resources created but only 1 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9255,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/voice_profiling_agent.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "NLUAgent": {
+      "issues": [
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9150,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/nlu_agent.py",
+      "compliance": {
+        "score": 74,
+        "rating": "C",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "AdvancedCommandHandler": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9151,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/advanced_command_handler.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "ChitchatAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9152,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/chitchat_agent.py",
+      "compliance": {
+        "score": 69,
+        "rating": "D+",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "FeedbackHandler": {
+      "issues": [
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (1) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        }
+      ],
+      "ports": {
+        "health_port": 9153,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/feedback_handler.py",
+      "compliance": {
+        "score": 74,
+        "rating": "C",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "Responder": {
+      "issues": [
+        {
+          "category": "hardcoded_port",
+          "details": "Contains hardcoded port numbers",
+          "severity": "HIGH",
+          "fix_suggestion": "Use PORT_REGISTRY from config.port_registry instead of hardcoded values"
+        },
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (6) but not all closed (2)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "health_port": 9154,
+        "regular_ports": [
+          5637,
+          5576
+        ],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/responder.py",
+      "compliance": {
+        "score": 64,
+        "rating": "D",
+        "critical_issues": 0,
+        "high_issues": 3,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "StreamingLanguageAnalyzer": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9155,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_language_analyzer.py",
+      "compliance": {
+        "score": 99,
+        "rating": "A+",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "LearningManager": {
+      "issues": [
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (1)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "health_port": 9300,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/learning_manager.py",
+      "compliance": {
+        "score": 79,
+        "rating": "C+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 2,
+        "low_issues": 1
+      }
+    },
+    "KnowledgeBase": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9301,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/knowledge_base.py",
+      "compliance": {
+        "score": 95,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "MetaCognitionAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9302,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MetaCognitionAgent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "ActiveLearningMonitor": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9303,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/active_learning_monitor.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "EnhancedModelRouter": {
+      "issues": [
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def wrapper(*args, **kwargs):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9550,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/EnhancedModelRouter.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "TinyLlamaService": {
+      "issues": [
+        {
+          "category": "hardcoded_port",
+          "details": "Contains hardcoded port numbers",
+          "severity": "HIGH",
+          "fix_suggestion": "Use PORT_REGISTRY from config.port_registry instead of hardcoded values"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def __init__(self, *args, **kwargs):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "health_port": 9551,
+        "regular_ports": [
+          5544
+        ],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/TinyLlamaServiceEnhanced.py",
+      "compliance": {
+        "score": 78,
+        "rating": "C+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 2,
+        "low_issues": 2
+      }
+    },
+    "NLLBAdapter": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def stop(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "health_port": 9552,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/NLLBAdapter.py",
+      "compliance": {
+        "score": 93,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "LearningAdjusterAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9553,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LearningAdjusterAgent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "LocalFineTunerAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9554,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/LocalFineTunerAgent.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "SelfTrainingOrchestrator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9555,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/SelfTrainingOrchestrator.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "CognitiveModelAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (5) but not all closed (4)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "health_port": 9556,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/CognitiveModelAgent.py",
+      "compliance": {
+        "score": 79,
+        "rating": "C+",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "ConsolidatedTranslator": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 4 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def wrapper(*args, **kwargs):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9557,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/FORMAINPC/consolidated_translator.py",
+      "compliance": {
+        "score": 83,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "SessionMemoryAgent": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "thread_no_join",
+          "details": "Creates threads but no thread.join() calls found",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Add thread.join() calls in cleanup method to properly terminate threads"
+        }
+      ],
+      "ports": {
+        "health_port": 9200,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/session_memory_agent.py",
+      "compliance": {
+        "score": 70,
+        "rating": "C-",
+        "critical_issues": 1,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "MemoryManager": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9201,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/memory_manager.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "MemoryOrchestrator": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9202,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_orchestrator.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "MemoryClient": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        }
+      ],
+      "ports": {
+        "health_port": 9203,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/memory/memory_client.py",
+      "compliance": {
+        "score": 65,
+        "rating": "D",
+        "critical_issues": 1,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 0
+      }
+    },
+    "PredictiveHealthMonitor": {
+      "issues": [
+        {
+          "category": "anonymous_exception",
+          "details": "Contains 'except Exception:' without capturing the exception object",
+          "severity": "LOW",
+          "fix_suggestion": "Replace 'except Exception:' with 'except Exception as e:' and use the exception object"
+        },
+        {
+          "category": "zmq_resource_leak",
+          "details": "ZMQ sockets created (2) but not all closed (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all sockets are closed in cleanup method with socket.close()"
+        }
+      ],
+      "ports": {
+        "health_port": 9650,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/predictive_health_monitor.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "SystemDigitalTwin": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 2 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9651,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/system_digital_twin.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "UnifiedPlanningAgent": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9350,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_planning_agent.py",
+      "compliance": {
+        "score": 99,
+        "rating": "A+",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "MultiAgentSwarmManager": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "indentation_issue",
+          "details": "Potential indentation issue near: def _perform_initialization(self):",
+          "severity": "LOW",
+          "fix_suggestion": "Check indentation of the specified line and ensure consistent indentation"
+        }
+      ],
+      "ports": {
+        "health_port": 9351,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/MultiAgentSwarmManager.py",
+      "compliance": {
+        "score": 83,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 2
+      }
+    },
+    "UnifiedSystemAgent": {
+      "issues": [
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "zmq_context_leak",
+          "details": "ZMQ contexts created (2) but not all terminated (0)",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all contexts are terminated in cleanup method with context.term()"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 1 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9352,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/unified_system_agent.py",
+      "compliance": {
+        "score": 75,
+        "rating": "C",
+        "critical_issues": 0,
+        "high_issues": 2,
+        "medium_issues": 1,
+        "low_issues": 0
+      }
+    },
+    "TTSConnector": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 3 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 0 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9450,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_connector.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "TTSCache": {
+      "issues": [
+        {
+          "category": "missing_health_check",
+          "details": "Missing a recognizable health_check method",
+          "severity": "CRITICAL",
+          "fix_suggestion": "\ndef health_check(self):\n    \"\"\"Health check endpoint for the agent.\"\"\"\n    try:\n        # Get agent-specific metrics\n        agent_metrics = self._get_agent_specific_metrics()\n\n        return {\n            \"status\": \"healthy\",\n            \"message\": f\"{self.__class__.__name__} is running\",\n            \"timestamp\": datetime.now().isoformat(),\n            \"uptime\": time.time() - self.start_time if hasattr(self, 'start_time') else 0,\n            \"metrics\": agent_metrics\n        }\n    except Exception as e:\n        logger.error(f\"Error in health check: {e}\")\n        return {\"status\": \"unhealthy\", \"error\": str(e)}\n\ndef _get_agent_specific_metrics(self):\n    \"\"\"Get agent-specific metrics for health check.\"\"\"\n    return {\"initialized\": True}\n"
+        },
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "memory_leak",
+          "details": "Potential resource leak: 2 resources created but only 1 cleaned up",
+          "severity": "HIGH",
+          "fix_suggestion": "Ensure all resources are properly cleaned up"
+        }
+      ],
+      "ports": {
+        "health_port": 9451,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_cache.py",
+      "compliance": {
+        "score": 54,
+        "rating": "F",
+        "critical_issues": 1,
+        "high_issues": 2,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "StreamingTTSAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9452,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_tts_agent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "TTSAgent": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9453,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/tts_agent.py",
+      "compliance": {
+        "score": 89,
+        "rating": "B+",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "StreamingInterruptHandler": {
+      "issues": [
+        {
+          "category": "no_cleanup_method",
+          "details": "No cleanup method found but resources are used",
+          "severity": "HIGH",
+          "fix_suggestion": "\ndef cleanup(self):\n    \"\"\"Clean up resources before shutdown.\"\"\"\n    logger.info(f\"{self.__class__.__name__} cleaning up resources...\")\n    self.running = False\n\n    # Join threads\n    # Close sockets\n    # Terminate ZMQ context\n\n    logger.info(f\"{self.__class__.__name__} cleanup complete\")\n"
+        },
+        {
+          "category": "bare_except",
+          "details": "Contains bare 'except:' blocks without specific exceptions",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Replace 'except:' with 'except Exception as e:' and handle the exception"
+        },
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9454,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/streaming_interrupt_handler.py",
+      "compliance": {
+        "score": 84,
+        "rating": "B",
+        "critical_issues": 0,
+        "high_issues": 1,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    },
+    "VisionCaptureAgent": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        }
+      ],
+      "ports": {
+        "health_port": 9400,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/src/vision/vision_capture_agent.py",
+      "compliance": {
+        "score": 99,
+        "rating": "A+",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 0,
+        "low_issues": 1
+      }
+    },
+    "FaceRecognitionAgent": {
+      "issues": [
+        {
+          "category": "mixed_logging",
+          "details": "Mixes logging with print statements",
+          "severity": "LOW",
+          "fix_suggestion": "Replace print statements with appropriate logger calls (logger.info, logger.debug, etc.)"
+        },
+        {
+          "category": "duplicate_health_check",
+          "details": "Contains 7 health_check method implementations",
+          "severity": "MEDIUM",
+          "fix_suggestion": "Remove duplicate health_check methods, keeping only one implementation"
+        }
+      ],
+      "ports": {
+        "health_port": 9401,
+        "regular_ports": [],
+        "health_ports": []
+      },
+      "file_path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/agents/face_recognition_agent.py",
+      "compliance": {
+        "score": 94,
+        "rating": "A",
+        "critical_issues": 0,
+        "high_issues": 0,
+        "medium_issues": 1,
+        "low_issues": 1
+      }
+    }
+  },
+  "port_conflicts": [],
+  "system_compliance": {
+    "score": 0,
+    "rating": "F",
+    "critical_issues": 9,
+    "high_issues": 70,
+    "medium_issues": 29,
+    "low_issues": 52
+  },
+  "summary": {
+    "total_agents": 58,
+    "agents_with_issues": 58,
+    "port_conflicts": 0,
+    "total_issues": 160,
+    "issues_by_severity": {
+      "CRITICAL": 9,
+      "HIGH": 70,
+      "MEDIUM": 29,
+      "LOW": 52
+    }
+  }
+}

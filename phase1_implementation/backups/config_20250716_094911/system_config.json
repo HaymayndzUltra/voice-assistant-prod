@@ -1,0 +1,41 @@
+{
+    "common_settings": {
+        "system": {
+            "version": "1.0.0",
+            "name": "Voice Assistant",
+            "enable_telemetry": true,
+            "telemetry": {
+                "interval_sec": 30,
+                "retention_hours": 24,
+                "dashboard_port": 8088
+            }
+        },
+        "audio": {
+            "input_device": null,
+            "output_device": null,
+            "sample_rate": 16000,
+            "channels": 1,
+            "chunk_size": 1024
+        }
+    },
+    "main_pc_settings": {
+        "agents": {
+            "task_router": {
+                "port": 8570,
+                "host": "localhost"
+            },
+            "chain_of_thought": {
+                "port": 5572,
+                "host": "localhost"
+            }
+        }
+    },
+    "pc2_settings": {
+        "agents": {
+            "task_router": {
+                "port": 8570,
+                "host": "localhost"
+            }
+        }
+    }
+}

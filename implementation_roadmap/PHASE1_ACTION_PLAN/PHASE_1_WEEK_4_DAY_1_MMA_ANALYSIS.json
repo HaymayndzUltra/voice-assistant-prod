@@ -1,0 +1,706 @@
+{
+  "file_info": {
+    "total_lines": 4795,
+    "code_lines": 3557,
+    "file_size_kb": 227.2568359375,
+    "comment_lines": 507,
+    "blank_lines": 731
+  },
+  "socket_patterns": [
+    {
+      "line_num": 83,
+      "pattern": "socket\\.socket\\(",
+      "context": "with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 223,
+      "pattern": "context\\.socket\\(",
+      "context": "self.error_bus_pub = self.context.socket(zmq.PUB)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 278,
+      "pattern": "context\\.socket\\(",
+      "context": "self.socket = self.context.socket(zmq.REP)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 345,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.socket.bind(f\"tcp://*:{self.model_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 345,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.socket.bind(f\"tcp://*:{self.model_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 359,
+      "pattern": "context\\.socket\\(",
+      "context": "self.status_socket = self.context.socket(zmq.PUB)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 366,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.status_socket.bind(f\"tcp://*:{self.status_pub_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 366,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.status_socket.bind(f\"tcp://*:{self.status_pub_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 379,
+      "pattern": "context\\.socket\\(",
+      "context": "self.health_socket = self.context.socket(zmq.REP)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 388,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.health_socket.bind(f\"tcp://*:{self.health_check_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 388,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.health_socket.bind(f\"tcp://*:{self.health_check_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 408,
+      "pattern": "socket\\.socket\\(",
+      "context": "with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 538,
+      "pattern": "socket\\.recv\\(",
+      "context": "message = self.health_socket.recv()",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 805,
+      "pattern": "context\\.socket\\(",
+      "context": "vram_optimizer_socket = self.context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 814,
+      "pattern": "socket\\.connect\\(",
+      "context": "vram_optimizer_socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 814,
+      "pattern": "socket\\.connect\\(",
+      "context": "vram_optimizer_socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 1084,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = self.context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1093,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1093,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 1465,
+      "pattern": "context\\.socket\\(",
+      "context": "unload_socket = temp_context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1469,
+      "pattern": "socket\\.connect\\(",
+      "context": "unload_socket.connect(zmq_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1469,
+      "pattern": "socket\\.connect\\(",
+      "context": "unload_socket.connect(zmq_address)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 1571,
+      "pattern": "context\\.socket\\(",
+      "context": "load_socket = temp_context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1578,
+      "pattern": "socket\\.connect\\(",
+      "context": "load_socket.connect(zmq_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1578,
+      "pattern": "socket\\.connect\\(",
+      "context": "load_socket.connect(zmq_address)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 1908,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1914,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(zmq_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 1914,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(zmq_address)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 2037,
+      "pattern": "context\\.socket\\(",
+      "context": "req_socket = req_context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2043,
+      "pattern": "socket\\.connect\\(",
+      "context": "req_socket.connect(zmq_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2043,
+      "pattern": "socket\\.connect\\(",
+      "context": "req_socket.connect(zmq_address)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 2130,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2142,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(model_info.get('zmq_address'))",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2142,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(model_info.get('zmq_address'))",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 2148,
+      "pattern": "socket\\.recv\\(",
+      "context": "raw_response_bytes = socket.recv()",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2508,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = self.context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2517,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 2517,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(f\"tcp://{vram_optimizer_host}:{vram_optimizer_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 3016,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3019,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(get_zmq_connection_string(cga_port, \"localhost\"))",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3019,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(get_zmq_connection_string(cga_port, \"localhost\"))",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 3719,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3758,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(sdt_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3758,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(sdt_address)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 3952,
+      "pattern": "context\\.socket\\(",
+      "context": "self.socket = self.context.socket(zmq.REP)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3956,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.socket.bind(f\"tcp://*:{self.model_port}\")",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 3956,
+      "pattern": "socket\\.bind\\(",
+      "context": "self.socket.bind(f\"tcp://*:{self.model_port}\")",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 4500,
+      "pattern": "context\\.socket\\(",
+      "context": "health_socket = self.context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 4523,
+      "pattern": "socket\\.connect\\(",
+      "context": "health_socket.connect(connection_str)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 4523,
+      "pattern": "socket\\.connect\\(",
+      "context": "health_socket.connect(connection_str)",
+      "risk_level": "HIGH"
+    },
+    {
+      "line_num": 4607,
+      "pattern": "context\\.socket\\(",
+      "context": "socket = context.socket(zmq.REQ)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 4645,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(sdt_address)",
+      "risk_level": "MEDIUM"
+    },
+    {
+      "line_num": 4645,
+      "pattern": "socket\\.connect\\(",
+      "context": "socket.connect(sdt_address)",
+      "risk_level": "HIGH"
+    }
+  ],
+  "threading_patterns": [
+    {
+      "line_num": 190,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Threading lock creation"
+    },
+    {
+      "line_num": 415,
+      "thread_name": "self._memory_management_loop",
+      "target_function": "self._memory_management_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 415,
+      "thread_name": "self._memory_management_loop",
+      "target_function": "self._memory_management_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 415,
+      "thread_name": "memory_thread",
+      "target_function": "memory_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 418,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 422,
+      "thread_name": "self._health_check_loop",
+      "target_function": "self._health_check_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 422,
+      "thread_name": "self._health_check_loop",
+      "target_function": "self._health_check_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 422,
+      "thread_name": "health_thread",
+      "target_function": "health_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 425,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 429,
+      "thread_name": "self._health_response_loop",
+      "target_function": "self._health_response_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 429,
+      "thread_name": "self._health_response_loop",
+      "target_function": "self._health_response_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 429,
+      "thread_name": "health_response_thread",
+      "target_function": "health_response_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 432,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 436,
+      "thread_name": "self._handle_model_requests_loop",
+      "target_function": "self._handle_model_requests_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 436,
+      "thread_name": "self._handle_model_requests_loop",
+      "target_function": "self._handle_model_requests_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 436,
+      "thread_name": "request_thread",
+      "target_function": "request_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 439,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 594,
+      "thread_name": "self._memory_management_loop",
+      "target_function": "self._memory_management_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 594,
+      "thread_name": "self._memory_management_loop",
+      "target_function": "self._memory_management_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 594,
+      "thread_name": "memory_thread",
+      "target_function": "memory_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 595,
+      "thread_name": "self._health_check_loop",
+      "target_function": "self._health_check_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 595,
+      "thread_name": "self._health_check_loop",
+      "target_function": "self._health_check_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 595,
+      "thread_name": "health_thread",
+      "target_function": "health_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 596,
+      "thread_name": "self._handle_model_requests_loop",
+      "target_function": "self._handle_model_requests_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 596,
+      "thread_name": "self._handle_model_requests_loop",
+      "target_function": "self._handle_model_requests_loop",
+      "purpose": "Thread creation"
+    },
+    {
+      "line_num": 596,
+      "thread_name": "request_thread",
+      "target_function": "request_thread",
+      "purpose": "Thread variable assignment"
+    },
+    {
+      "line_num": 602,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 603,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    },
+    {
+      "line_num": 604,
+      "thread_name": "unknown",
+      "target_function": "unknown",
+      "purpose": "Thread start"
+    }
+  ],
+  "dependency_patterns": [],
+  "baseagent_usage": {
+    "inheritance": true,
+    "super_init": true,
+    "baseagent_import": true,
+    "health_method": true,
+    "custom_sockets": 2,
+    "custom_threads": 7
+  },
+  "critical_functions": [
+    {
+      "line_num": 167,
+      "function_name": "__init__",
+      "type": "Function definition",
+      "context": "def __init__(self, config_path=None, **kwargs):"
+    },
+    {
+      "line_num": 226,
+      "function_name": "_get_health_status",
+      "type": "Function definition",
+      "context": "def _get_health_status(self):"
+    },
+    {
+      "line_num": 237,
+      "function_name": "_initialize_vram_management",
+      "type": "Function definition",
+      "context": "def _initialize_vram_management(self):"
+    },
+    {
+      "line_num": 237,
+      "function_name": "_initialize_vram_management",
+      "type": "VRAM management function",
+      "context": "def _initialize_vram_management(self):"
+    },
+    {
+      "line_num": 272,
+      "function_name": "_init_zmq",
+      "type": "Function definition",
+      "context": "def _init_zmq(self, test_ports: Optional[Tuple[int, int]] = None):"
+    },
+    {
+      "line_num": 412,
+      "function_name": "_start_background_threads",
+      "type": "Function definition",
+      "context": "def _start_background_threads(self):"
+    },
+    {
+      "line_num": 442,
+      "function_name": "_check_model_health",
+      "type": "Function definition",
+      "context": "def _check_model_health(self, model_id: str) -> bool:"
+    },
+    {
+      "line_num": 474,
+      "function_name": "_vram_management_loop",
+      "type": "Function definition",
+      "context": "def _vram_management_loop(self):"
+    },
+    {
+      "line_num": 474,
+      "function_name": "_vram_management_loop",
+      "type": "VRAM management function",
+      "context": "def _vram_management_loop(self):"
+    },
+    {
+      "line_num": 528,
+      "function_name": "_health_response_loop",
+      "type": "Function definition",
+      "context": "def _health_response_loop(self):"
+    },
+    {
+      "line_num": 628,
+      "function_name": "_get_current_vram",
+      "type": "Function definition",
+      "context": "def _get_current_vram(self) -> float:"
+    },
+    {
+      "line_num": 628,
+      "function_name": "_get_current_vram",
+      "type": "VRAM management function",
+      "context": "def _get_current_vram(self) -> float:"
+    },
+    {
+      "line_num": 647,
+      "function_name": "_get_total_vram",
+      "type": "Function definition",
+      "context": "def _get_total_vram(self) -> float:"
+    },
+    {
+      "line_num": 647,
+      "function_name": "_get_total_vram",
+      "type": "VRAM management function",
+      "context": "def _get_total_vram(self) -> float:"
+    },
+    {
+      "line_num": 666,
+      "function_name": "_unload_least_important_model",
+      "type": "Function definition",
+      "context": "def _unload_least_important_model(self):"
+    },
+    {
+      "line_num": 681,
+      "function_name": "_load_configuration",
+      "type": "Function definition",
+      "context": "def _load_configuration(self) -> None:"
+    },
+    {
+      "line_num": 719,
+      "function_name": "_validate_vram_config",
+      "type": "Function definition",
+      "context": "def _validate_vram_config(self) -> None:"
+    },
+    {
+      "line_num": 719,
+      "function_name": "_validate_vram_config",
+      "type": "VRAM management function",
+      "context": "def _validate_vram_config(self) -> None:"
+    },
+    {
+      "line_num": 763,
+      "function_name": "_load_cache",
+      "type": "Function definition",
+      "context": "def _load_cache(self):"
+    },
+    {
+      "line_num": 789,
+      "function_name": "_memory_management_loop",
+      "type": "Function definition",
+      "context": "def _memory_management_loop(self):"
+    }
+  ],
+  "migration_risk_assessment": {
+    "risk_factors": {
+      "socket_complexity": 53,
+      "threading_complexity": 29,
+      "file_size_risk": "HIGH",
+      "code_complexity": "HIGH",
+      "baseagent_integration": "PARTIAL"
+    },
+    "overall_risk_score": 55,
+    "risk_level": "CRITICAL"
+  },
+  "migration_strategy": {
+    "approach": "STAGED_MIGRATION",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Infrastructure Preparation",
+        "tasks": [
+          "Create comprehensive backup",
+          "Set up parallel testing environment",
+          "Deploy enhanced monitoring for GPU/VRAM operations",
+          "Create automated rollback scripts"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "BaseAgent Integration",
+        "tasks": [
+          "Verify BaseAgent inheritance is working",
+          "Migrate custom socket management to BaseAgent patterns",
+          "Integrate health check with BaseAgent health system",
+          "Update configuration management to use BaseAgent patterns"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Threading Migration",
+        "tasks": [
+          "Analyze custom threading patterns",
+          "Migrate memory management thread to BaseAgent lifecycle",
+          "Migrate health check thread to BaseAgent health system",
+          "Migrate request handling thread to BaseAgent request system"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Business Logic Validation",
+        "tasks": [
+          "Validate model loading/unloading functionality",
+          "Verify VRAM optimization remains functional",
+          "Test cross-machine coordination with PC2 agents",
+          "Comprehensive integration testing"
+        ]
+      }
+    ],
+    "rollback_triggers": [
+      "Any GPU operation failure",
+      "Model loading/unloading failure",
+      "VRAM optimization degradation >20%",
+      "Cross-machine communication failure",
+      "Health check failure for >5 minutes"
+    ],
+    "monitoring_requirements": [
+      "Real-time GPU memory tracking",
+      "Model loading performance metrics",
+      "Thread health monitoring",
+      "Socket connection status",
+      "Cross-machine coordination status"
+    ]
+  }
+}

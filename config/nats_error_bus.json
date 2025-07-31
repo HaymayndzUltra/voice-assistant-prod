@@ -1,0 +1,42 @@
+{
+  "nats": {
+    "servers": [
+      "nats://localhost:4222"
+    ],
+    "error_stream": "ERROR_STREAM",
+    "error_subject": "errors",
+    "retention_days": 7,
+    "max_messages": 1000000
+  },
+  "error_patterns": [
+    {
+      "pattern": "ConnectionError",
+      "threshold": 10,
+      "time_window": 60,
+      "action": "THROTTLE"
+    },
+    {
+      "pattern": "TimeoutError",
+      "threshold": 5,
+      "time_window": 30,
+      "action": "THROTTLE"
+    },
+    {
+      "pattern": "MemoryError",
+      "threshold": 3,
+      "time_window": 300,
+      "action": "ESCALATE"
+    },
+    {
+      "pattern": "CRITICAL",
+      "threshold": 5,
+      "time_window": 60,
+      "action": "ESCALATE"
+    }
+  ],
+  "dashboard": {
+    "update_interval": 5,
+    "max_timeline_entries": 1000,
+    "flood_detection_window": 300
+  }
+}

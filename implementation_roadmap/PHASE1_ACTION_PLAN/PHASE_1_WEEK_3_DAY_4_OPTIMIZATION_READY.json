@@ -1,0 +1,152 @@
+{
+  "timestamp": 1753229237.7752147,
+  "optimization_ready_agents": [
+    {
+      "name": "TieredResponder",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/tiered_responder.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tiered_responder.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "AsyncProcessor",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/async_processor.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/async_processor.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "CacheManager",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/cache_manager.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/cache_manager.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "VisionProcessingAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/VisionProcessingAgent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/VisionProcessingAgent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "DreamWorldAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/DreamWorldAgent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamWorldAgent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "UnifiedMemoryReasoningAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/unified_memory_reasoning_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_memory_reasoning_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "TutorAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/tutor_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutor_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "TutoringAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/tutoring_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/tutoring_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "ContextManager",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/context_manager.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/context_manager.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "ExperienceTracker",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/experience_tracker.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/experience_tracker.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "ResourceManager",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/resource_manager.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/resource_manager.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "TaskScheduler",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/task_scheduler.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/task_scheduler.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "AuthenticationAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/ForPC2/AuthenticationAgent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/AuthenticationAgent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "UnifiedUtilsAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/ForPC2/unified_utils_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/unified_utils_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "ProactiveContextMonitor",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/ForPC2/proactive_context_monitor.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/ForPC2/proactive_context_monitor.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "AgentTrustScorer",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/AgentTrustScorer.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/AgentTrustScorer.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "FileSystemAssistantAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/filesystem_assistant_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/filesystem_assistant_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "RemoteConnectorAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/remote_connector_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/remote_connector_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "UnifiedWebAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/unified_web_agent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/unified_web_agent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "DreamingModeAgent",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/DreamingModeAgent.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/DreamingModeAgent.py",
+      "recommended_action": "ready"
+    },
+    {
+      "name": "AdvancedRouter",
+      "environment": "pc2",
+      "script_path": "pc2_code/agents/advanced_router.py",
+      "resolved_path": "/home/haymayndz/AI_System_Monorepo/pc2_code/agents/advanced_router.py",
+      "recommended_action": "ready"
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+[
+  {
+    "agent": "SystemDigitalTwin",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "RequestCoordinator",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "UnifiedSystemAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ObservabilityHub",
+    "issues": [
+      "Large file: 1685 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ModelManagerSuite",
+    "issues": [
+      "Large file: 1562 lines"
+    ]
+  },
+  {
+    "agent": "MemoryClient",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "KnowledgeBase",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "CodeGenerator",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "SelfTrainingOrchestrator",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "PredictiveHealthMonitor",
+    "issues": [
+      "Large file: 1623 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "FixedStreamingTranslation",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "Executor",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "TinyLlamaServiceEnhanced",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "LocalFineTunerAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "NLLBAdapter",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "VRAMOptimizerAgent",
+    "issues": [
+      "Large file: 1512 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ChainOfThoughtAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "GoTToTAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "CognitiveModelAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "FaceRecognitionAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "LearningOpportunityDetector",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "LearningManager",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ActiveLearningMonitor",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "LearningAdjusterAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ModelOrchestrator",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "GoalManager",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "IntentionValidatorAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "NLUAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "FeedbackHandler",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "Responder",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "TranslationService",
+    "issues": [
+      "Large file: 2228 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "DynamicIdentityAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "EmotionSynthesisAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "STTService",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "TTSService",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "AudioCapture",
+    "issues": [
+      "Large file: 1078 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "FusedAudioPreprocessor",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "StreamingInterruptHandler",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "StreamingSpeechRecognition",
+    "issues": [
+      "Large file: 1004 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "StreamingTTSAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "WakeWordDetector",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "StreamingLanguageAnalyzer",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "ProactiveAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "EmotionEngine",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "MoodTrackerAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "HumanAwarenessAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "VoiceProfilingAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "EmpathyAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "VisionProcessingAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "DreamWorldAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "TutorAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "TutoringAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "AgentTrustScorer",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "UnifiedWebAgent",
+    "issues": [
+      "Large file: 1900 lines",
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "DreamingModeAgent",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  },
+  {
+    "agent": "AdvancedRouter",
+    "issues": [
+      "No main function or entry point found"
+    ]
+  }
+]
