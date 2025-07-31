@@ -305,3 +305,54 @@ pc2_network:
 # This duplicate entry was causing port conflicts (7140 used twice) and health port confusion (8140 vs 7141)
 
 error_bus_port: "${PORT_OFFSET}+7150"
+
+# -----------------------------------------------------------------------------
+# Logical Docker deployment group definitions (added 2025-07-31)
+# These groups guide production Docker compose generation for RTX-3060 machine.
+# -----------------------------------------------------------------------------
+docker_groups:
+  infra_core:
+    description: Core observability & resource management infrastructure
+    agents:
+      - ObservabilityHub
+      - ResourceManager
+  memory_stack:
+    description: Memory orchestration & reasoning services
+    agents:
+      - MemoryOrchestratorService
+      - CacheManager
+      - UnifiedMemoryReasoningAgent
+      - ContextManager
+      - ExperienceTracker
+  async_pipeline:
+    description: Asynchronous task processing & routing pipeline
+    agents:
+      - AsyncProcessor
+      - TaskScheduler
+      - AdvancedRouter
+      - TieredResponder
+  tutoring_cpu:
+    description: Tutoring and educational agents (CPU-bound)
+    agents:
+      - TutorAgent
+      - TutoringAgent
+  vision_dream_gpu:
+    description: GPU-intensive vision processing and dream world services
+    agents:
+      - VisionProcessingAgent
+      - DreamWorldAgent
+      - DreamingModeAgent
+  utility_cpu:
+    description: Support utilities and miscellaneous helpers
+    agents:
+      - UnifiedUtilsAgent
+      - FileSystemAssistantAgent
+      - RemoteConnectorAgent
+      - AuthenticationAgent
+      - AgentTrustScorer
+      - ProactiveContextMonitor
+  web_interface:
+    description: User-facing web interface agents
+    agents:
+      - UnifiedWebAgent
+# -----------------------------------------------------------------------------

@@ -536,3 +536,97 @@ agent_groups:
       required: true
       dependencies:
       - SystemDigitalTwin
+
+# -----------------------------------------------------------------------------
+# Logical Docker deployment group definitions (added 2025-07-31)
+# These groups are used by the Docker compose generator to build production
+# stacks optimised for the RTX-4090 hardware.  They do NOT affect existing
+# agent_groups and are purely declarative.
+# -----------------------------------------------------------------------------
+docker_groups:
+  infra_core:
+    description: Core service discovery & digital-twin infrastructure
+    agents:
+      - ServiceRegistry
+      - SystemDigitalTwin
+  coordination:
+    description: Request routing, GPU model lifecycle & VRAM optimisation
+    agents:
+      - RequestCoordinator
+      - ModelManagerSuite
+      - VRAMOptimizerAgent
+  observability:
+    description: Centralised telemetry, metrics, prediction & health
+    agents:
+      - ObservabilityHub
+  memory_stack:
+    description: Short/long-term memory services
+    agents:
+      - MemoryClient
+      - SessionMemoryAgent
+      - KnowledgeBase
+  vision_gpu:
+    description: GPU-bound vision processing services
+    agents:
+      - FaceRecognitionAgent
+  speech_gpu:
+    description: GPU-bound STT/TTS & audio streaming pipeline
+    agents:
+      - STTService
+      - TTSService
+      - AudioCapture
+      - FusedAudioPreprocessor
+      - StreamingSpeechRecognition
+      - StreamingTTSAgent
+      - WakeWordDetector
+      - StreamingInterruptHandler
+      - StreamingLanguageAnalyzer
+  learning_gpu:
+    description: Active/self learning pipeline using GPU training slices
+    agents:
+      - SelfTrainingOrchestrator
+      - LocalFineTunerAgent
+      - LearningManager
+      - LearningOrchestrationService
+      - LearningOpportunityDetector
+      - ActiveLearningMonitor
+      - LearningAdjusterAgent
+  reasoning_gpu:
+    description: Large-context reasoning agents utilising GPU inference
+    agents:
+      - ChainOfThoughtAgent
+      - GoTToTAgent
+      - CognitiveModelAgent
+  language_stack:
+    description: High-level dialogue, NLU, identity & emotional synthesis
+    agents:
+      - NLUAgent
+      - IntentionValidatorAgent
+      - AdvancedCommandHandler
+      - ChitchatAgent
+      - FeedbackHandler
+      - Responder
+      - DynamicIdentityAgent
+      - EmotionSynthesisAgent
+      - GoalManager
+      - ModelOrchestrator
+      - ProactiveAgent
+  utility_cpu:
+    description: Miscellaneous CPU-bound utility agents
+    agents:
+      - CodeGenerator
+      - Executor
+      - PredictiveHealthMonitor
+      - TranslationService
+      - FixedStreamingTranslation
+      - NLLBAdapter
+  emotion_system:
+    description: Emotional state modelling & awareness
+    agents:
+      - EmotionEngine
+      - MoodTrackerAgent
+      - HumanAwarenessAgent
+      - ToneDetector
+      - VoiceProfilingAgent
+      - EmpathyAgent
+# -----------------------------------------------------------------------------
