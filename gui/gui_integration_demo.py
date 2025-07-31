@@ -105,8 +105,7 @@ class GUIIntegrationDemo:
             cmd_frame,
             textvariable=self.suggestions_var,
             font=("Arial", 9),
-            fg="blue",
-            bg=cmd_frame.cget("background")
+            fg="blue"
         )
         suggestions_label.pack(padx=10, pady=(0, 10))
     
