@@ -413,10 +413,6 @@
         "done": false
       },
       {
-        "text": "Deploy core AI services using Docker Compose",
-        "done": true
-      },
-      {
         "text": "Deploy observability stack (Prometheus, Grafana, Jaeger)",
         "done": false
       },
@@ -443,7 +439,7 @@
     ],
     "status": "in_progress",
     "created": "2025-07-31T20:19:47.923682+08:00",
-    "updated": "2025-08-01T01:18:50.221996+08:00"
+    "updated": "2025-08-01T01:22:35.017487+08:00"
   },
   {
     "id": "20250731T225350_test_task_1",
