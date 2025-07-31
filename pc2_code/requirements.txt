@@ -24,6 +24,7 @@ datasets==2.16.1
 
 # Web & API
 requests==2.31.0
+fastapi==0.109.2
 aiohttp==3.9.3
 beautifulsoup4==4.12.3
 playwright==1.42.0
