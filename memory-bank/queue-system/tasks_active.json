@@ -413,14 +413,6 @@
         "done": false
       },
       {
-        "text": "Deploy core AI services using Docker Compose",
-        "done": false
-      },
-      {
-        "text": "Deploy observability stack (Prometheus, Grafana, Jaeger)",
-        "done": false
-      },
-      {
         "text": "Run end-to-end tests to validate deployment",
         "done": false
       },
@@ -435,10 +427,113 @@
       {
         "text": "Setup automated backup and health monitoring",
         "done": false
+      },
+      {
+        "text": "Deploy core AI services using Docker Compose",
+        "done": false
+      },
+      {
+        "text": "Deploy observability stack (Prometheus, Grafana, Jaeger)",
+        "done": false
       }
     ],
     "status": "in_progress",
     "created": "2025-07-31T20:19:47.923682+08:00",
-    "updated": "2025-07-31T20:20:00.580552+08:00"
+    "updated": "2025-08-01T01:27:10.369513+08:00"
+  },
+  {
+    "id": "20250731T225350_test_task_1",
+    "description": "test task 1",
+    "todos": [
+      {
+        "text": "Test the implementation",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-07-31T22:53:50.526304+08:00",
+    "updated": "2025-07-31T22:53:50.532720+08:00"
+  },
+  {
+    "id": "20250731T225350_test_task_2",
+    "description": "test task 2",
+    "todos": [
+      {
+        "text": "Test the implementation",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-07-31T22:53:50.534616+08:00",
+    "updated": "2025-07-31T22:53:50.536624+08:00"
+  },
+  {
+    "id": "20250801T000959_enhance_todo_manager.py_with_hierarchical_TODO_sup",
+    "description": "enhance todo_manager.py with hierarchical TODO support including sub-steps, commands, and execution capabilities for background agent to local agent workflow",
+    "todos": [
+      {
+        "text": "Steps",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:09:59.137905+08:00",
+    "updated": "2025-08-01T00:09:59.141088+08:00"
+  },
+  {
+    "id": "20250801T001014_create_detailed_hierarchical_TODO_for_Docker_deplo",
+    "description": "create detailed hierarchical TODO for Docker deployment: verify config files, build images with docker-compose build, start services with docker-compose up -d, health checks, validation, rollback procedures",
+    "todos": [
+      {
+        "text": "Compose build",
+        "done": false
+      },
+      {
+        "text": "Compose up -d",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:10:14.691527+08:00",
+    "updated": "2025-08-01T00:10:14.697139+08:00"
+  },
+  {
+    "id": "20250801T005658_deploy_AI_services_using_Docker_Compose_with_confi",
+    "description": "deploy AI services using Docker Compose with config verification, image building, service startup, health checks, endpoint validation, and rollback procedures",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Create the required component",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:56:58.533276+08:00",
+    "updated": "2025-08-01T00:56:58.536313+08:00"
+  },
+  {
+    "id": "20250801T005712_deploy_core_AI_services_using_docker-compose_with_",
+    "description": "deploy core AI services using docker-compose with verification, build, start, and health checks",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Compose with verification",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:57:12.995549+08:00",
+    "updated": "2025-08-01T00:57:12.998621+08:00"
+  },
+  {
+    "id": "20250801T005814_deploy_services_using_docker-compose_with_full_wor",
+    "description": "deploy services using docker-compose with full workflow including verification of config files, image building, service startup, health validation, endpoint testing, and rollback capabilities",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Compose with full workflow including verification of config files",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:58:14.987644+08:00",
+    "updated": "2025-08-01T00:58:14.991259+08:00"
   }
 ]
