@@ -2,6 +2,7 @@
 # Python / General
 # ===================================================================
 memory-bank/current-session.md
+cursor_state.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
