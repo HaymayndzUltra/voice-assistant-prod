@@ -1,0 +1,122 @@
+version: "3.9"
+
+x-default-logging: &default_logging
+  driver: "json-file"
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+x-default-health: &default_health
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+services:
+  infra_core:
+    image: ai_system_pc2/infra_core:latest
+    environment:
+      - PYTHONPATH=/app
+      - PROMETHEUS_PORT=${PORT_OFFSET:-0}9100
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 512m
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}9110/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  memory_stack:
+    image: ai_system_pc2/memory_stack:latest
+    depends_on: [infra_core]
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"
+          memory: 3g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8140/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  async_pipeline:
+    image: ai_system_pc2/async_pipeline:latest
+    depends_on: [memory_stack]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8101/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  tutoring_cpu:
+    image: ai_system_pc2/tutoring_suite:latest
+    depends_on: [memory_stack]
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8108/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  vision_dream_gpu:
+    image: ai_system_pc2/vision_dream_suite:latest
+    depends_on: [memory_stack]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
+        limits:
+          cpus: "4.0"
+          memory: 6g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8150/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  utility_cpu:
+    image: ai_system_pc2/utility_suite:latest
+    depends_on: [infra_core]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8123/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+  web_interface:
+    image: ai_system_pc2/web_interface:latest
+    depends_on: [utility_cpu]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8126/health"]
+      <<: *default_health
+    networks: [agent_net]
+
+networks:
+  agent_net:
+    driver: bridge
