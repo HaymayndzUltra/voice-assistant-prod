@@ -521,6 +521,18 @@ class ActionItemExtractor:
                 else:
                     aggregated_steps.append("Remove the specified items")
                     
+            elif 'docker' in task_lower or 'compose' in task_lower:
+                # Enhanced Docker and Docker Compose deployment breakdown
+                aggregated_steps.extend([
+                    "Verify docker-compose.yml and .env are up to date",
+                    "Build images: docker-compose build --no-cache", 
+                    "Start services: docker-compose up -d --remove-orphans",
+                    "Check service health: docker-compose ps && docker-compose logs --tail=50",
+                    "Run post-deploy script: chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh",
+                    "Validate endpoints: curl -f http://localhost:8080/health || echo 'Health endpoint check'",
+                    "If failed, rollback: docker-compose down && echo 'DEPLOYMENT FAILED - ROLLBACK COMPLETED'"
+                ])
+                
             elif any(verb in task_lower for verb in ['create', 'gumawa', 'make', 'build']):
                 # Check for complex creation tasks and break them down
                 if 'pipeline' in task_lower and 'ci/cd' in task_lower:
@@ -556,7 +568,50 @@ class ActionItemExtractor:
                 aggregated_steps.append("Test the implementation")
                 
             elif any(verb in task_lower for verb in ['deploy', 'release']):
-                aggregated_steps.append("Deploy the changes")
+                # Enhanced Docker deployment breakdown
+                if 'docker' in task_lower or 'compose' in task_lower:
+                    aggregated_steps.extend([
+                        "Verify docker-compose.yml and .env are up to date",
+                        "Build images: docker-compose build --no-cache", 
+                        "Start services: docker-compose up -d --remove-orphans",
+                        "Check service health: docker-compose ps && docker-compose logs --tail=50",
+                        "Run post-deploy script: chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh",
+                        "Validate endpoints: curl -f http://localhost:8080/health || echo 'Health endpoint check'",
+                        "If failed, rollback: docker-compose down && echo 'DEPLOYMENT FAILED - ROLLBACK COMPLETED'"
+                    ])
+                elif 'kubernetes' in task_lower or 'k8s' in task_lower:
+                    aggregated_steps.extend([
+                        "Apply Kubernetes manifests: kubectl apply -f k8s/",
+                        "Check pod status: kubectl get pods -w",
+                        "Verify service endpoints: kubectl get services",
+                        "Check deployment rollout: kubectl rollout status deployment/app",
+                        "Run health checks: kubectl exec -it pod -- curl localhost:8080/health",
+                        "If failed, rollback: kubectl rollout undo deployment/app"
+                    ])
+                elif 'production' in task_lower or 'prod' in task_lower:
+                    aggregated_steps.extend([
+                        "Backup current production state",
+                        "Run pre-deployment checks and validations",
+                        "Deploy to staging environment first",
+                        "Execute production deployment",
+                        "Run post-deployment verification tests",
+                        "Monitor system health and performance",
+                        "If issues detected, execute rollback procedure"
+                    ])
+                else:
+                    aggregated_steps.append("Deploy the changes")
+            
+            # Special Docker/Compose pattern recognition before generic fallback
+            if not aggregated_steps and ('docker' in task_lower or 'compose' in task_lower):
+                aggregated_steps.extend([
+                    "Verify docker-compose.yml and .env are up to date",
+                    "Build images: docker-compose build --no-cache", 
+                    "Start services: docker-compose up -d --remove-orphans",
+                    "Check service health: docker-compose ps && docker-compose logs --tail=50",
+                    "Run post-deploy script: chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh",
+                    "Validate endpoints: curl -f http://localhost:8080/health || echo 'Health endpoint check'",
+                    "If failed, rollback: docker-compose down && echo 'DEPLOYMENT FAILED - ROLLBACK COMPLETED'"
+                ])
             
             # If still no steps, create a generic one
             if not aggregated_steps:
@@ -1562,19 +1617,34 @@ class SmartTaskExecutionManager:
                 existing_todos = [todo['text'] for todo in existing_task.get('todos', [])]
                 logger.info(f"📋 Found {len(existing_todos)} existing TODOs")
             
-            for i, subtask in enumerate(chunked_task.subtasks):
+            # Enhanced hierarchical TODO creation
+            hierarchical_groups = self._group_subtasks_hierarchically(chunked_task.subtasks, task_description)
+            
+            for group_name, subtasks in hierarchical_groups.items():
                 try:
-                    # Skip if TODO already exists
-                    if subtask.description in existing_todos:
-                        logger.info(f"⏭️  TODO {i+1} already exists: {subtask.description[:30]}...")
+                    # Skip if main TODO already exists
+                    if group_name in existing_todos:
+                        logger.info(f"⏭️  Main TODO already exists: {group_name[:30]}...")
                         todos_added += 1
                         continue
                     
-                    add_todo(task_id, subtask.description)
+                    # Create main TODO with hierarchical structure
+                    hierarchical_todo_text = self._create_hierarchical_todo_text(group_name, subtasks)
+                    add_todo(task_id, hierarchical_todo_text)
                     todos_added += 1
-                    logger.info(f"✅ Added TODO {i+1}: {subtask.description[:30]}...")
+                    logger.info(f"✅ Added hierarchical TODO: {group_name[:30]}...")
+                    
                 except Exception as e:
-                    logger.error(f"❌ Failed to add TODO {i+1}: {e}")
+                    logger.error(f"❌ Failed to add hierarchical TODO '{group_name}': {e}")
+                    # Fallback to individual TODOs
+                    for i, subtask in enumerate(subtasks):
+                        try:
+                            if subtask.description not in existing_todos:
+                                add_todo(task_id, subtask.description)
+                                todos_added += 1
+                                logger.info(f"✅ Added fallback TODO {i+1}: {subtask.description[:30]}...")
+                        except Exception as e2:
+                            logger.error(f"❌ Failed to add fallback TODO {i+1}: {e2}")
             
             logger.info(f"📊 Successfully processed {todos_added}/{len(chunked_task.subtasks)} TODOs")
             
@@ -1674,6 +1744,167 @@ class SmartTaskExecutionManager:
                 "status": "failed",
                 "error": str(e)
             }
+    
+    def _group_subtasks_hierarchically(self, subtasks: List[Subtask], task_description: str) -> Dict[str, List[Subtask]]:
+        """Group subtasks into hierarchical structure based on task type and content"""
+        
+        task_lower = task_description.lower()
+        
+        # Docker deployment pattern
+        if 'docker' in task_lower and 'deploy' in task_lower:
+            return {"Deploy core AI services using Docker Compose": subtasks}
+        
+        # Kubernetes deployment pattern  
+        elif 'kubernetes' in task_lower or 'k8s' in task_lower:
+            return {"Deploy services to Kubernetes cluster": subtasks}
+        
+        # Production deployment pattern
+        elif 'production' in task_lower and 'deploy' in task_lower:
+            return {"Deploy to production environment": subtasks}
+        
+        # TODO manager enhancement pattern
+        elif 'todo' in task_lower and 'hierarchical' in task_lower:
+            return {"Enhance TODO Manager with hierarchical support": subtasks}
+        
+        # AI services pattern
+        elif 'ai' in task_lower and ('service' in task_lower or 'system' in task_lower):
+            return {"Setup AI services infrastructure": subtasks}
+        
+        # Security hardening pattern
+        elif 'security' in task_lower and ('harden' in task_lower or 'hardening' in task_lower):
+            return {"Apply security hardening measures": subtasks}
+        
+        # GPU setup pattern
+        elif 'gpu' in task_lower and ('setup' in task_lower or 'partition' in task_lower):
+            return {"Configure GPU partitioning and monitoring": subtasks}
+        
+        # Monitoring setup pattern
+        elif 'monitoring' in task_lower or ('prometheus' in task_lower and 'grafana' in task_lower):
+            return {"Setup monitoring and observability stack": subtasks}
+        
+        # Testing pattern
+        elif 'test' in task_lower and ('e2e' in task_lower or 'end-to-end' in task_lower):
+            return {"Execute end-to-end testing pipeline": subtasks}
+        
+        # Backup pattern
+        elif 'backup' in task_lower or 'disaster' in task_lower:
+            return {"Configure backup and disaster recovery": subtasks}
+        
+        # Generic complex task - group by estimated complexity
+        elif len(subtasks) > 3:
+            # Group related subtasks together
+            if any('config' in sub.description.lower() for sub in subtasks):
+                config_tasks = [sub for sub in subtasks if 'config' in sub.description.lower()]
+                other_tasks = [sub for sub in subtasks if 'config' not in sub.description.lower()]
+                
+                groups = {}
+                if config_tasks:
+                    groups["Configuration and setup tasks"] = config_tasks
+                if other_tasks:
+                    groups["Implementation and validation tasks"] = other_tasks
+                return groups
+        
+        # Default: single group with descriptive name
+        main_action = self._extract_main_action(task_description)
+        return {main_action: subtasks}
+    
+    def _extract_main_action(self, task_description: str) -> str:
+        """Extract the main action from task description for grouping"""
+        
+        # Clean up the description
+        clean_desc = task_description.strip()
+        if len(clean_desc) > 50:
+            clean_desc = clean_desc[:47] + "..."
+        
+        # Capitalize first letter
+        if clean_desc:
+            clean_desc = clean_desc[0].upper() + clean_desc[1:]
+        
+        return clean_desc
+    
+    def _create_hierarchical_todo_text(self, group_name: str, subtasks: List[Subtask]) -> str:
+        """Create hierarchical TODO text with sub-steps and commands"""
+        
+        # Start with main TODO
+        todo_lines = [group_name]
+        
+        # Add sub-steps with commands
+        for i, subtask in enumerate(subtasks, 1):
+            step_number = f"{i}"
+            step_text = f"    {step_number}. {subtask.description}"
+            
+            # Add command if it looks like one or we can infer it
+            command = self._infer_command_from_description(subtask.description)
+            if command:
+                step_text += f"\n        └── Command: {command}"
+            
+            todo_lines.append(step_text)
+        
+        return "\n".join(todo_lines)
+    
+    def _infer_command_from_description(self, description: str) -> str:
+        """Infer shell command from step description"""
+        
+        desc_lower = description.lower()
+        
+        # Docker commands
+        if 'verify docker-compose' in desc_lower and '.env' in desc_lower:
+            return "diff docker-compose.yml docker-compose.yml.backup || echo 'Files are different or backup not found'"
+        elif 'build images' in desc_lower and 'docker-compose build' in desc_lower:
+            return "docker-compose build --no-cache"
+        elif 'start services' in desc_lower and 'docker-compose up' in desc_lower:
+            return "docker-compose up -d --remove-orphans"
+        elif 'check service health' in desc_lower and 'docker-compose' in desc_lower:
+            return "docker-compose ps && docker-compose logs --tail=50"
+        elif 'post-deploy script' in desc_lower and 'verify-services' in desc_lower:
+            return "chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh"
+        elif 'validate endpoints' in desc_lower and 'curl' in desc_lower:
+            return "curl -f http://localhost:8080/health || echo 'Health endpoint check'"
+        elif 'rollback' in desc_lower and 'docker-compose down' in desc_lower:
+            return "docker-compose down && echo 'DEPLOYMENT FAILED - ROLLBACK COMPLETED'"
+        
+        # Kubernetes commands
+        elif 'apply kubernetes' in desc_lower or 'kubectl apply' in desc_lower:
+            return "kubectl apply -f k8s/"
+        elif 'check pod status' in desc_lower:
+            return "kubectl get pods -w"
+        elif 'verify service endpoints' in desc_lower and 'kubectl' in desc_lower:
+            return "kubectl get services"
+        elif 'deployment rollout' in desc_lower:
+            return "kubectl rollout status deployment/app"
+        elif 'health checks' in desc_lower and 'kubectl exec' in desc_lower:
+            return "kubectl exec -it pod -- curl localhost:8080/health"
+        elif 'rollback' in desc_lower and 'kubectl' in desc_lower:
+            return "kubectl rollout undo deployment/app"
+        
+        # Security commands
+        elif 'security hardening' in desc_lower and 'script' in desc_lower:
+            return "./scripts/security-hardening.sh"
+        elif 'gpu partitioning' in desc_lower and 'script' in desc_lower:
+            return "./scripts/setup-gpu-partitioning.sh"
+        
+        # Testing commands
+        elif 'end-to-end' in desc_lower and 'test' in desc_lower:
+            return "python3 -m pytest tests/e2e/ -v"
+        elif 'resilience validation' in desc_lower:
+            return "./scripts/resilience-validation-pipeline.sh"
+        
+        # Backup commands
+        elif 'backup' in desc_lower and 'script' in desc_lower:
+            return "./scripts/backup-restore.sh backup"
+        
+        # Git commands
+        elif 'commit' in desc_lower and 'change' in desc_lower:
+            return "git add . && git commit -m 'Update: {description}'"
+        
+        # File operations
+        elif 'edit' in desc_lower and 'file' in desc_lower:
+            return "nano filename.ext  # Edit the specified file"
+        elif 'create' in desc_lower and 'file' in desc_lower:
+            return "touch filename.ext  # Create the specified file"
+        
+        # Default: no command
+        return ""
 
 
 # Global execution manager instance

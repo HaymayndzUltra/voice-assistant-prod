@@ -496,5 +496,44 @@
     "status": "in_progress",
     "created": "2025-08-01T00:10:14.691527+08:00",
     "updated": "2025-08-01T00:10:14.697139+08:00"
+  },
+  {
+    "id": "20250801T005658_deploy_AI_services_using_Docker_Compose_with_confi",
+    "description": "deploy AI services using Docker Compose with config verification, image building, service startup, health checks, endpoint validation, and rollback procedures",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Create the required component",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:56:58.533276+08:00",
+    "updated": "2025-08-01T00:56:58.536313+08:00"
+  },
+  {
+    "id": "20250801T005712_deploy_core_AI_services_using_docker-compose_with_",
+    "description": "deploy core AI services using docker-compose with verification, build, start, and health checks",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Compose with verification",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:57:12.995549+08:00",
+    "updated": "2025-08-01T00:57:12.998621+08:00"
+  },
+  {
+    "id": "20250801T005814_deploy_services_using_docker-compose_with_full_wor",
+    "description": "deploy services using docker-compose with full workflow including verification of config files, image building, service startup, health validation, endpoint testing, and rollback capabilities",
+    "todos": [
+      {
+        "text": "Deploy core AI services using Docker Compose\n    1. Compose with full workflow including verification of config files",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-01T00:58:14.987644+08:00",
+    "updated": "2025-08-01T00:58:14.991259+08:00"
   }
 ]
