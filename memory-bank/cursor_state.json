@@ -1,8 +1,8 @@
 {
   "cursor_session": {
-    "disconnected_at": "2025-07-31T19:30:58.443108+08:00",
-    "current_task": "Harden network security with mutual-TLS and Docker Content Trust",
+    "disconnected_at": "2025-07-31T19:33:36.022249+08:00",
+    "current_task": "Add distributed tracing (OpenTelemetry) across services and define SLO dashboards",
     "progress": 0.0,
-    "last_activity": "2025-07-31T19:30:58.430626+08:00"
+    "last_activity": "2025-07-31T19:33:36.009441+08:00"
   }
 }
