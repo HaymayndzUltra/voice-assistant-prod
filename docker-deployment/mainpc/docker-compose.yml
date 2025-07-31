@@ -1,0 +1,377 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &default-restart
+  restart: unless-stopped
+
+networks:
+  cascade-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  cascade-external:
+    driver: bridge
+
+volumes:
+  unified_memory:
+  redis_data:
+  model_cache:
+  model_configs:
+  memory_data:
+  learning_data:
+  training_checkpoints:
+  logs:
+  metrics:
+
+services:
+  # ===== GROUP 1: Core Platform Services =====
+  service-registry:
+    <<: *default-restart
+    image: cascade/service-registry:${CASCADE_VERSION:-latest}
+    container_name: cascade-service-registry
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: ServiceRegistry
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.10
+    ports:
+      - "${PORT_OFFSET:-0}7200:7200"  # Service port
+      - "${PORT_OFFSET:-0}8200:8200"  # Health check port
+    environment:
+      - SERVICE_NAME=ServiceRegistry
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BACKEND=memory
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging: *default-logging
+    volumes:
+      - logs:/app/logs
+
+  system-digital-twin:
+    <<: *default-restart
+    image: cascade/system-digital-twin:${CASCADE_VERSION:-latest}
+    container_name: cascade-system-digital-twin
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: SystemDigitalTwin
+    depends_on:
+      service-registry:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.11
+    ports:
+      - "${PORT_OFFSET:-0}7220:7220"
+      - "${PORT_OFFSET:-0}8220:8220"
+    environment:
+      - SERVICE_NAME=SystemDigitalTwin
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DB_PATH=/data/unified_memory.db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8220/health').raise_for_status()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+    volumes:
+      - unified_memory:/data
+      - logs:/app/logs
+
+  observability-hub:
+    <<: *default-restart
+    image: cascade/observability-hub:${CASCADE_VERSION:-latest}
+    container_name: cascade-observability-hub
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: ObservabilityHub
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.12
+      cascade-external:
+    ports:
+      - "${PORT_OFFSET:-0}9000:9000"
+      - "${PORT_OFFSET:-0}9001:9001"
+      - "${PORT_OFFSET:-0}9090:9090"  # Prometheus metrics
+    environment:
+      - SERVICE_NAME=ObservabilityHub
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PROMETHEUS_ENABLED=true
+      - PARALLEL_HEALTH_CHECKS=true
+      - PREDICTION_ENABLED=true
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    volumes:
+      - metrics:/app/metrics
+      - logs:/app/logs
+
+  unified-system-agent:
+    <<: *default-restart
+    image: cascade/unified-system-agent:${CASCADE_VERSION:-latest}
+    container_name: cascade-unified-system-agent
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: UnifiedSystemAgent
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.13
+    ports:
+      - "${PORT_OFFSET:-0}7201:7201"
+      - "${PORT_OFFSET:-0}8201:8201"
+    environment:
+      - SERVICE_NAME=UnifiedSystemAgent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8201/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+
+  # ===== GROUP 2: AI Engine Services =====
+  model-manager-suite:
+    <<: *default-restart
+    image: cascade/model-manager-suite:${CASCADE_VERSION:-latest}
+    container_name: cascade-model-manager-suite
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.ai-engine
+      args:
+        SERVICE: ModelManagerSuite
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.20
+    ports:
+      - "${PORT_OFFSET:-0}7211:7211"
+      - "${PORT_OFFSET:-0}8211:8211"
+    environment:
+      - SERVICE_NAME=ModelManagerSuite
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NVIDIA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0
+      - VRAM_BUDGET_PERCENTAGE=80
+      - MODEL_CACHE_DIR=/models
+      - IDLE_TIMEOUT=300
+      - HYBRID_INFERENCE_ENABLED=true
+      - PYTHONPATH=/app
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 32G
+    healthcheck:
+      test: ["CMD", "python", "/app/health_check.py", "model-manager"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+    logging: *default-logging
+    volumes:
+      - model_cache:/models:cached
+      - model_configs:/configs
+      - logs:/app/logs
+
+  vram-optimizer:
+    <<: *default-restart
+    image: cascade/vram-optimizer:${CASCADE_VERSION:-latest}
+    container_name: cascade-vram-optimizer
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.ai-engine
+      args:
+        SERVICE: VRAMOptimizerAgent
+    depends_on:
+      model-manager-suite:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.21
+    ports:
+      - "${PORT_OFFSET:-0}5572:5572"
+      - "${PORT_OFFSET:-0}6572:6572"
+    environment:
+      - SERVICE_NAME=VRAMOptimizerAgent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NVIDIA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6572/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+
+  # Additional AI Engine services...
+  model-orchestrator:
+    <<: *default-restart
+    image: cascade/model-orchestrator:${CASCADE_VERSION:-latest}
+    container_name: cascade-model-orchestrator
+    depends_on:
+      model-manager-suite:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.22
+    ports:
+      - "${PORT_OFFSET:-0}7213:7213"
+      - "${PORT_OFFSET:-0}8213:8213"
+    environment:
+      - SERVICE_NAME=ModelOrchestrator
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8213/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  # ===== GROUP 3: Request Processing =====
+  request-coordinator:
+    <<: *default-restart
+    image: cascade/request-coordinator:${CASCADE_VERSION:-latest}
+    container_name: cascade-request-coordinator
+    build:
+      context: ../../
+      dockerfile: docker-deployment/mainpc/dockerfiles/Dockerfile.request
+      args:
+        SERVICE: RequestCoordinator
+    depends_on:
+      system-digital-twin:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.30
+      cascade-external:
+    ports:
+      - "26002:26002"
+      - "27002:27002"
+    environment:
+      - SERVICE_NAME=RequestCoordinator
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:27002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  # ===== Supporting Services =====
+  redis:
+    <<: *default-restart
+    image: redis:7-alpine
+    container_name: cascade-redis
+    networks:
+      cascade-internal:
+        ipv4_address: 172.20.1.5
+    ports:
+      - "${PORT_OFFSET:-0}6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    logging: *default-logging
+
+  # ===== Monitoring Stack =====
+  prometheus:
+    <<: *default-restart
+    image: prom/prometheus:latest
+    container_name: cascade-prometheus
+    networks:
+      cascade-internal:
+      cascade-external:
+    ports:
+      - "${PORT_OFFSET:-0}9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - metrics:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    logging: *default-logging
+
+  grafana:
+    <<: *default-restart
+    image: grafana/grafana:latest
+    container_name: cascade-grafana
+    networks:
+      cascade-internal:
+      cascade-external:
+    ports:
+      - "${PORT_OFFSET:-0}3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    logging: *default-logging

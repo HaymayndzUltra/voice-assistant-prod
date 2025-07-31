@@ -1,0 +1,389 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &default-restart
+  restart: unless-stopped
+
+networks:
+  cascade-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  cascade-external:
+    driver: bridge
+
+volumes:
+  memory_data:
+  cache_data:
+  task_data:
+  logs:
+  metrics:
+
+services:
+  # ===== GROUP 1: Core Services =====
+  observability-hub-pc2:
+    <<: *default-restart
+    image: cascade/observability-hub:${CASCADE_VERSION:-latest}
+    container_name: cascade-observability-hub-pc2
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: ObservabilityHub
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.10
+      cascade-external:
+    ports:
+      - "${PORT_OFFSET:-0}9100:9100"
+      - "${PORT_OFFSET:-0}9110:9110"
+    environment:
+      - SERVICE_NAME=ObservabilityHub-PC2
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SCOPE=pc2_agents
+      - PROMETHEUS_PORT=9100
+      - CROSS_MACHINE_SYNC=true
+      - MAINPC_HUB_ENDPOINT=${MAINPC_OBS_HUB:-http://mainpc:9000}
+      - PARALLEL_HEALTH_CHECKS=true
+      - PREDICTION_ENABLED=true
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9110/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    volumes:
+      - metrics:/app/metrics
+      - logs:/app/logs
+
+  memory-orchestrator:
+    <<: *default-restart
+    image: cascade/memory-orchestrator:${CASCADE_VERSION:-latest}
+    container_name: cascade-memory-orchestrator
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: MemoryOrchestratorService
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.11
+    ports:
+      - "${PORT_OFFSET:-0}7140:7140"
+      - "${PORT_OFFSET:-0}8140:8140"
+    environment:
+      - SERVICE_NAME=MemoryOrchestratorService
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8140/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+    volumes:
+      - memory_data:/app/memory
+      - logs:/app/logs
+
+  resource-manager:
+    <<: *default-restart
+    image: cascade/resource-manager:${CASCADE_VERSION:-latest}
+    container_name: cascade-resource-manager
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: ResourceManager
+    depends_on:
+      observability-hub-pc2:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.12
+    ports:
+      - "${PORT_OFFSET:-0}7113:7113"
+      - "${PORT_OFFSET:-0}8113:8113"
+    environment:
+      - SERVICE_NAME=ResourceManager
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8113/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+
+  async-processor:
+    <<: *default-restart
+    image: cascade/async-processor:${CASCADE_VERSION:-latest}
+    container_name: cascade-async-processor
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: AsyncProcessor
+    depends_on:
+      resource-manager:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.13
+    ports:
+      - "${PORT_OFFSET:-0}7101:7101"
+      - "${PORT_OFFSET:-0}8101:8101"
+    environment:
+      - SERVICE_NAME=AsyncProcessor
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8101/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+
+  cache-manager:
+    <<: *default-restart
+    image: cascade/cache-manager:${CASCADE_VERSION:-latest}
+    container_name: cascade-cache-manager
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.core
+      args:
+        SERVICE: CacheManager
+    depends_on:
+      memory-orchestrator:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.14
+    ports:
+      - "${PORT_OFFSET:-0}7102:7102"
+      - "${PORT_OFFSET:-0}8102:8102"
+    environment:
+      - SERVICE_NAME=CacheManager
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8102/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+    volumes:
+      - cache_data:/app/cache
+
+  # ===== GROUP 2: Application Services =====
+  # These can be deployed in parallel after core services are healthy
+  
+  # Request Processing
+  tiered-responder:
+    <<: *default-restart
+    image: cascade/tiered-responder:${CASCADE_VERSION:-latest}
+    container_name: cascade-tiered-responder
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.apps
+      args:
+        SERVICE: TieredResponder
+    depends_on:
+      resource-manager:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.2.20
+    ports:
+      - "${PORT_OFFSET:-0}7100:7100"
+      - "${PORT_OFFSET:-0}8100:8100"
+    environment:
+      - SERVICE_NAME=TieredResponder
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+
+  # Memory & Learning Services
+  dream-world-agent:
+    <<: *default-restart
+    image: cascade/dream-world-agent:${CASCADE_VERSION:-latest}
+    container_name: cascade-dream-world-agent
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.apps
+      args:
+        SERVICE: DreamWorldAgent
+    depends_on:
+      memory-orchestrator:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.2.21
+    ports:
+      - "${PORT_OFFSET:-0}7104:7104"
+      - "${PORT_OFFSET:-0}8104:8104"
+    environment:
+      - SERVICE_NAME=DreamWorldAgent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8104/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *default-logging
+    volumes:
+      - memory_data:/app/memory
+
+  # Task Management
+  task-scheduler:
+    <<: *default-restart
+    image: cascade/task-scheduler:${CASCADE_VERSION:-latest}
+    container_name: cascade-task-scheduler
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.apps
+      args:
+        SERVICE: TaskScheduler
+    depends_on:
+      async-processor:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.2.22
+    ports:
+      - "${PORT_OFFSET:-0}7115:7115"
+      - "${PORT_OFFSET:-0}8115:8115"
+    environment:
+      - SERVICE_NAME=TaskScheduler
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8115/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+    volumes:
+      - task_data:/app/tasks
+
+  # Utility Services
+  unified-utils-agent:
+    <<: *default-restart
+    image: cascade/unified-utils-agent:${CASCADE_VERSION:-latest}
+    container_name: cascade-unified-utils-agent
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.apps
+      args:
+        SERVICE: UnifiedUtilsAgent
+    depends_on:
+      observability-hub-pc2:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.2.23
+    ports:
+      - "${PORT_OFFSET:-0}7118:7118"
+      - "${PORT_OFFSET:-0}8118:8118"
+    environment:
+      - SERVICE_NAME=UnifiedUtilsAgent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8118/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *default-logging
+
+  # Vision Processing
+  vision-processing-agent:
+    <<: *default-restart
+    image: cascade/vision-processing-agent:${CASCADE_VERSION:-latest}
+    container_name: cascade-vision-processing-agent
+    build:
+      context: ../../
+      dockerfile: docker-deployment/pc2/dockerfiles/Dockerfile.apps
+      args:
+        SERVICE: VisionProcessingAgent
+    depends_on:
+      cache-manager:
+        condition: service_healthy
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.2.24
+    ports:
+      - "${PORT_OFFSET:-0}7150:7150"
+      - "${PORT_OFFSET:-0}8150:8150"
+    environment:
+      - SERVICE_NAME=VisionProcessingAgent
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NVIDIA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8150/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  # ===== Supporting Services =====
+  redis-pc2:
+    <<: *default-restart
+    image: redis:7-alpine
+    container_name: cascade-redis-pc2
+    networks:
+      cascade-internal:
+        ipv4_address: 172.21.1.5
+    ports:
+      - "${PORT_OFFSET:-0}6380:6379"
+    volumes:
+      - cache_data:/data
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    logging: *default-logging
