@@ -21,7 +21,14 @@ def _extract_main_agents(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
     agent_groups = cfg.get("agent_groups", {})
     agents: List[Dict[str, Any]] = []
     for group_name, group in agent_groups.items():
+        if not group:
+            # Skip YAML anchors or empty groups
+            continue
+        if not isinstance(group, dict):
+            continue
         for agent_name, spec in group.items():
+            if spec is None:
+                continue
             agents.append(
                 {
                     "name": agent_name,
