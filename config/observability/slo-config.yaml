@@ -1,0 +1,401 @@
+# SLO Configuration for AI System
+# Service Level Objectives for MainPC and PC2
+
+# Global SLO settings
+global:
+  error_budget_window: "30d"  # 30-day error budget calculation
+  alert_threshold: 95.0       # Alert when SLO compliance drops below 95%
+  critical_threshold: 90.0    # Critical alert below 90%
+
+# Service Level Objectives
+slos:
+  
+  # MainPC Service SLOs
+  coordination_availability:
+    description: "Coordination service must be available 99.9% of the time"
+    service: "coordination"
+    type: "availability"
+    threshold: 99.9
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="coordination",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="coordination"}[24h])) * 100
+    
+  coordination_latency:
+    description: "Coordination service P99 latency must be under 500ms"
+    service: "coordination"
+    type: "latency"
+    threshold: 0.5  # 500ms
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="coordination"}[5m])) by (le)
+      )
+      
+  memory_stack_availability:
+    description: "Memory stack must be available 99.95% of the time"
+    service: "memory-stack"
+    type: "availability"
+    threshold: 99.95
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="memory-stack",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="memory-stack"}[24h])) * 100
+      
+  memory_stack_latency:
+    description: "Memory operations P99 latency must be under 100ms"
+    service: "memory-stack"
+    type: "latency"
+    threshold: 0.1  # 100ms
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="memory-stack"}[5m])) by (le)
+      )
+      
+  vision_gpu_availability:
+    description: "Vision GPU service must be available 99.5% of the time"
+    service: "vision-gpu"
+    type: "availability"
+    threshold: 99.5
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="vision-gpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="vision-gpu"}[24h])) * 100
+      
+  vision_gpu_latency:
+    description: "Vision processing P99 latency must be under 2s"
+    service: "vision-gpu"
+    type: "latency"
+    threshold: 2.0  # 2 seconds
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="vision-gpu"}[5m])) by (le)
+      )
+      
+  speech_gpu_availability:
+    description: "Speech GPU service must be available 99.5% of the time"
+    service: "speech-gpu"
+    type: "availability"
+    threshold: 99.5
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="speech-gpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="speech-gpu"}[24h])) * 100
+      
+  speech_gpu_latency:
+    description: "Speech processing P99 latency must be under 1.5s"
+    service: "speech-gpu"
+    type: "latency"
+    threshold: 1.5  # 1.5 seconds
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="speech-gpu"}[5m])) by (le)
+      )
+      
+  learning_gpu_availability:
+    description: "Learning GPU service must be available 99.0% of the time"
+    service: "learning-gpu"
+    type: "availability"
+    threshold: 99.0
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="learning-gpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="learning-gpu"}[24h])) * 100
+      
+  reasoning_gpu_availability:
+    description: "Reasoning GPU service must be available 99.5% of the time"
+    service: "reasoning-gpu"
+    type: "availability"
+    threshold: 99.5
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="reasoning-gpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="reasoning-gpu"}[24h])) * 100
+      
+  reasoning_gpu_latency:
+    description: "Reasoning P99 latency must be under 3s"
+    service: "reasoning-gpu"
+    type: "latency"
+    threshold: 3.0  # 3 seconds
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="reasoning-gpu"}[5m])) by (le)
+      )
+      
+  language_stack_availability:
+    description: "Language stack must be available 99.9% of the time"
+    service: "language-stack"
+    type: "availability"
+    threshold: 99.9
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="language-stack",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="language-stack"}[24h])) * 100
+      
+  language_stack_latency:
+    description: "Language processing P99 latency must be under 1s"
+    service: "language-stack"
+    type: "latency"
+    threshold: 1.0  # 1 second
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="language-stack"}[5m])) by (le)
+      )
+      
+  observability_availability:
+    description: "Observability hub must be available 99.9% of the time"
+    service: "observability"
+    type: "availability"
+    threshold: 99.9
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="observability",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="observability"}[24h])) * 100
+      
+  # PC2 Service SLOs
+  pc2_memory_stack_availability:
+    description: "PC2 memory stack must be available 99.5% of the time"
+    service: "pc2-memory-stack"
+    type: "availability"
+    threshold: 99.5
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="pc2-memory-stack",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="pc2-memory-stack"}[24h])) * 100
+      
+  pc2_async_pipeline_availability:
+    description: "PC2 async pipeline must be available 99.0% of the time"
+    service: "pc2-async-pipeline"
+    type: "availability"
+    threshold: 99.0
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="pc2-async-pipeline",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="pc2-async-pipeline"}[24h])) * 100
+      
+  pc2_tutoring_availability:
+    description: "PC2 tutoring service must be available 99.5% of the time"
+    service: "pc2-tutoring-cpu"
+    type: "availability"
+    threshold: 99.5
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="pc2-tutoring-cpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="pc2-tutoring-cpu"}[24h])) * 100
+      
+  pc2_vision_dream_availability:
+    description: "PC2 vision dream service must be available 99.0% of the time"
+    service: "pc2-vision-dream-gpu"
+    type: "availability"
+    threshold: 99.0
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="pc2-vision-dream-gpu",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="pc2-vision-dream-gpu"}[24h])) * 100
+      
+  pc2_vision_dream_latency:
+    description: "PC2 vision dream P99 latency must be under 5s"
+    service: "pc2-vision-dream-gpu"
+    type: "latency"
+    threshold: 5.0  # 5 seconds (more relaxed for dream generation)
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="pc2-vision-dream-gpu"}[5m])) by (le)
+      )
+      
+  pc2_web_interface_availability:
+    description: "PC2 web interface must be available 99.9% of the time"
+    service: "pc2-web-interface"
+    type: "availability"
+    threshold: 99.9
+    window: "24h"
+    query: |
+      sum(rate(ai_request_count{service="pc2-web-interface",status!~"5.."}[24h])) /
+      sum(rate(ai_request_count{service="pc2-web-interface"}[24h])) * 100
+      
+  pc2_web_interface_latency:
+    description: "PC2 web interface P99 latency must be under 300ms"
+    service: "pc2-web-interface"
+    type: "latency"
+    threshold: 0.3  # 300ms
+    window: "5m"
+    query: |
+      histogram_quantile(0.99, 
+        sum(rate(ai_request_duration_bucket{service="pc2-web-interface"}[5m])) by (le)
+      )
+
+# Error Rate SLOs
+error_rate_slos:
+  
+  coordination_error_rate:
+    description: "Coordination service error rate must be below 0.1%"
+    service: "coordination"
+    type: "error_rate"
+    threshold: 0.1  # 0.1%
+    window: "5m"
+    query: |
+      sum(rate(ai_request_count{service="coordination",status=~"5.."}[5m])) /
+      sum(rate(ai_request_count{service="coordination"}[5m])) * 100
+      
+  memory_stack_error_rate:
+    description: "Memory stack error rate must be below 0.05%"
+    service: "memory-stack"
+    type: "error_rate"
+    threshold: 0.05  # 0.05%
+    window: "5m"
+    query: |
+      sum(rate(ai_request_count{service="memory-stack",status=~"5.."}[5m])) /
+      sum(rate(ai_request_count{service="memory-stack"}[5m])) * 100
+      
+  gpu_services_error_rate:
+    description: "GPU services error rate must be below 0.2%"
+    service: "gpu-services"
+    type: "error_rate"
+    threshold: 0.2  # 0.2%
+    window: "5m"
+    query: |
+      sum(rate(ai_request_count{service=~".*-gpu",status=~"5.."}[5m])) /
+      sum(rate(ai_request_count{service=~".*-gpu"}[5m])) * 100
+
+# Business Logic SLOs
+business_slos:
+  
+  conversation_success_rate:
+    description: "AI conversations must have 95% success rate"
+    service: "coordination"
+    type: "business"
+    threshold: 95.0
+    window: "1h"
+    query: |
+      sum(rate(ai_conversation_completed_total{status="success"}[1h])) /
+      sum(rate(ai_conversation_started_total[1h])) * 100
+      
+  model_inference_success:
+    description: "Model inference must succeed 99% of the time"
+    service: "gpu-services"
+    type: "business"
+    threshold: 99.0
+    window: "5m"
+    query: |
+      sum(rate(ai_model_inference_total{status="success"}[5m])) /
+      sum(rate(ai_model_inference_total[5m])) * 100
+      
+  memory_retrieval_accuracy:
+    description: "Memory retrieval must be 98% accurate"
+    service: "memory-stack"
+    type: "business"
+    threshold: 98.0
+    window: "1h"
+    query: |
+      sum(rate(ai_memory_retrieval_total{accuracy="high"}[1h])) /
+      sum(rate(ai_memory_retrieval_total[1h])) * 100
+
+# Resource Utilization SLOs
+resource_slos:
+  
+  rtx4090_gpu_utilization:
+    description: "RTX 4090 GPU utilization should be 60-85%"
+    service: "mainpc-gpu"
+    type: "resource"
+    threshold: 85.0  # Upper bound
+    lower_threshold: 60.0  # Lower bound
+    window: "5m"
+    query: |
+      avg(nvidia_smi_utilization_gpu_ratio{gpu_type="rtx-4090"}) * 100
+      
+  rtx3060_gpu_utilization:
+    description: "RTX 3060 GPU utilization should be 60-85%"
+    service: "pc2-gpu"
+    type: "resource"
+    threshold: 85.0  # Upper bound
+    lower_threshold: 60.0  # Lower bound
+    window: "5m"
+    query: |
+      avg(nvidia_smi_utilization_gpu_ratio{gpu_type="rtx-3060"}) * 100
+      
+  memory_usage_mainpc:
+    description: "MainPC memory usage should be below 80%"
+    service: "mainpc"
+    type: "resource"
+    threshold: 80.0
+    window: "5m"
+    query: |
+      (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+      
+  memory_usage_pc2:
+    description: "PC2 memory usage should be below 75%"
+    service: "pc2"
+    type: "resource"
+    threshold: 75.0
+    window: "5m"
+    query: |
+      (1 - (node_memory_MemAvailable_bytes{instance="pc2"} / node_memory_MemTotal_bytes{instance="pc2"})) * 100
+      
+  cpu_usage_mainpc:
+    description: "MainPC CPU usage should be below 80%"
+    service: "mainpc"
+    type: "resource"
+    threshold: 80.0
+    window: "5m"
+    query: |
+      100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      
+  cpu_usage_pc2:
+    description: "PC2 CPU usage should be below 70%"
+    service: "pc2"
+    type: "resource"
+    threshold: 70.0
+    window: "5m"
+    query: |
+      100 - (avg(rate(node_cpu_seconds_total{mode="idle",instance="pc2"}[5m])) * 100)
+
+# Alerting rules
+alerting:
+  
+  # Critical SLO violations
+  critical_slo_violation:
+    condition: "ai_system_slo_compliance < 90"
+    for: "5m"
+    severity: "critical"
+    description: "Critical SLO violation - compliance below 90%"
+    
+  # Warning SLO violations  
+  warning_slo_violation:
+    condition: "ai_system_slo_compliance < 95"
+    for: "10m"
+    severity: "warning"
+    description: "SLO violation - compliance below 95%"
+    
+  # Error budget exhaustion
+  error_budget_exhausted:
+    condition: "ai_system_slo_error_budget_remaining < 10"
+    for: "15m"
+    severity: "warning"
+    description: "Error budget almost exhausted - less than 10% remaining"
+    
+  # High latency
+  high_latency:
+    condition: "ai_system_response_time_p99_seconds > 5"
+    for: "2m"
+    severity: "critical"
+    description: "High latency detected - P99 response time above 5 seconds"
+    
+  # GPU underutilization
+  gpu_underutilized:
+    condition: "ai_system_gpu_slo_compliance{gpu_type='rtx-4090'} < 70"
+    for: "30m"
+    severity: "warning"
+    description: "GPU underutilized - efficiency below optimal range"
+    
+  # Service unavailable
+  service_down:
+    condition: "ai_system_availability_percentage < 95"
+    for: "1m"
+    severity: "critical"
+    description: "Service availability critically low"

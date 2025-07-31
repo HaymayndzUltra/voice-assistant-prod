@@ -345,9 +345,51 @@
   {
     "id": "20250731T193336_Add_distributed_tracing_(OpenTelemetry)_across_ser",
     "description": "Add distributed tracing (OpenTelemetry) across services and define SLO dashboards",
-    "todos": [],
-    "status": "in_progress",
+    "todos": [
+      {
+        "text": "Set up OpenTelemetry instrumentation for all AI services",
+        "done": true
+      },
+      {
+        "text": "Configure Jaeger backend for trace collection and storage",
+        "done": true
+      },
+      {
+        "text": "Create SLO dashboards in Grafana with alerting rules",
+        "done": true
+      },
+      {
+        "text": "Implement trace correlation across service boundaries",
+        "done": true
+      }
+    ],
+    "status": "completed",
     "created": "2025-07-31T19:33:36.009423+08:00",
-    "updated": "2025-07-31T19:33:36.009441+08:00"
+    "updated": "2025-07-31T19:39:09.603244+08:00"
+  },
+  {
+    "id": "20250731T193917_Set_up_chaos_and_load_testing_routines_for_resilie",
+    "description": "Set up chaos and load testing routines for resilience validation",
+    "todos": [
+      {
+        "text": "Implement chaos monkey for service fault injection",
+        "done": true
+      },
+      {
+        "text": "Create load testing suite with progressive traffic patterns",
+        "done": true
+      },
+      {
+        "text": "Design GPU stress testing and memory pressure scenarios",
+        "done": true
+      },
+      {
+        "text": "Build automated resilience validation pipeline",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:39:17.347305+08:00",
+    "updated": "2025-07-31T19:44:19.547565+08:00"
   }
 ]
