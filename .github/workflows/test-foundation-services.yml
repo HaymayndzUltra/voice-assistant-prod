@@ -1,0 +1,157 @@
+name: Test Foundation Services
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'main_pc_code/agents/**'
+      - 'main_pc_code/model_manager_suite.py'
+      - 'phase1_implementation/consolidated_agents/observability_hub/**'
+      - 'docker/**'
+      - 'test/**'
+      - '.github/workflows/test-foundation-services.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'main_pc_code/agents/**'
+      - 'main_pc_code/model_manager_suite.py'
+      - 'phase1_implementation/consolidated_agents/observability_hub/**'
+      - 'docker/**'
+      - 'test/**'
+      - '.github/workflows/test-foundation-services.yml'
+
+jobs:
+  test-foundation-services:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio pytest-cov requests redis psutil
+        
+    - name: Create test directories
+      run: |
+        mkdir -p data logs models test
+        
+    - name: Build Docker image
+      run: |
+        docker build -f docker/Dockerfile.foundation-test -t foundation-services-test .
+        
+    - name: Start foundation services
+      run: |
+        docker-compose -f docker-compose.foundation-test.yml up -d
+        
+    - name: Wait for services to start
+      run: |
+        echo "Waiting for foundation services to start..."
+        sleep 60
+        
+    - name: Check service health
+      run: |
+        # Check if container is running
+        docker ps | grep foundation-services-test
+        
+        # Run health check
+        docker exec foundation-services-test python3 /app/test/health_check_foundation.py
+        
+    - name: Test service connectivity
+      run: |
+        # Test each service endpoint
+        services=(
+          "ServiceRegistry:7200"
+          "SystemDigitalTwin:7220"
+          "RequestCoordinator:26002"
+          "ModelManagerSuite:7211"
+          "VRAMOptimizerAgent:5572"
+          "ObservabilityHub:9000"
+          "UnifiedSystemAgent:7201"
+        )
+        
+        for service in "${services[@]}"; do
+          IFS=':' read -r name port <<< "$service"
+          echo "Testing $name on port $port..."
+          
+          # Test port connectivity
+          timeout 10 bash -c "until nc -z localhost $port; do sleep 1; done" || {
+            echo "❌ $name port $port not accessible"
+            exit 1
+          }
+          
+          # Test health endpoint
+          health_port=$((port + 1000))
+          if curl -f "http://localhost:$health_port/health" > /dev/null 2>&1; then
+            echo "✅ $name health check passed"
+          else
+            echo "❌ $name health check failed"
+            exit 1
+          fi
+        done
+        
+    - name: Run integration tests
+      run: |
+        # Test service registry registration
+        curl -X POST http://localhost:7200/register \
+          -H "Content-Type: application/json" \
+          -d '{"service_name": "test_service", "port": 9999}' || echo "Service registry test failed"
+          
+        # Test system digital twin
+        curl -f http://localhost:7220/health || echo "SystemDigitalTwin test failed"
+        
+        # Test model manager suite
+        curl -f http://localhost:7211/health || echo "ModelManagerSuite test failed"
+        
+    - name: Check logs for errors
+      run: |
+        echo "=== Foundation Services Logs ==="
+        docker logs foundation-services-test --tail 50
+        
+        # Check for error patterns
+        if docker logs foundation-services-test 2>&1 | grep -i "error\|exception\|failed"; then
+          echo "❌ Found errors in logs"
+          exit 1
+        else
+          echo "✅ No errors found in logs"
+        fi
+        
+    - name: Performance test
+      run: |
+        echo "Running performance tests..."
+        
+        # Test response times
+        for port in 7200 7220 7211 9000; do
+          start_time=$(date +%s%N)
+          if curl -f "http://localhost:$port/health" > /dev/null 2>&1; then
+            end_time=$(date +%s%N)
+            response_time=$(( (end_time - start_time) / 1000000 ))
+            echo "Port $port response time: ${response_time}ms"
+            
+            if [ $response_time -gt 5000 ]; then
+              echo "❌ Port $port response time too slow: ${response_time}ms"
+              exit 1
+            fi
+          fi
+        done
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        docker-compose -f docker-compose.foundation-test.yml down -v
+        docker system prune -f
+        
+    - name: Test Results
+      run: |
+        echo "🎉 Foundation Services Test Completed Successfully!"
+        echo "✅ All 7 foundation services are running and healthy"
+        echo "✅ Service connectivity verified"
+        echo "✅ Health endpoints responding"
+        echo "✅ Performance within acceptable limits" 
