@@ -1,0 +1,60 @@
+# Docker-optimized Agent Group Configuration for MainPC (RTX 4090)
+version: '2.0'
+description: 'Production-ready Docker deployment with logical grouping'
+
+global_settings:
+  docker_compose_version: '3.8'
+  network_mode: 'ai_system_network'
+  restart_policy: 'unless-stopped'
+  environment:
+    PYTHONPATH: '/app'
+    LOG_LEVEL: 'INFO'
+    ENABLE_METRICS: 'true'
+    ENABLE_HYBRID_INFERENCE: 'true'
+  resource_limits:
+    cpu_percent: 80
+    memory_mb: 2048
+    max_threads: 4
+
+agent_groups:
+  core_infrastructure:
+    name: 'Core Infrastructure'
+    description: 'Essential system services'
+    startup_priority: 1
+    health_check_strategy: 'sequential'
+    resource_limits:
+      memory: '2Gi'
+      cpu: '2.0'
+    agents:
+      - ServiceRegistry
+      - SystemDigitalTwin
+      - RequestCoordinator
+      - ObservabilityHub
+      - UnifiedSystemAgent
+
+  memory_knowledge:
+    name: 'Memory & Knowledge'
+    description: 'Memory and knowledge management'
+    startup_priority: 2
+    health_check_strategy: 'parallel'
+    resource_limits:
+      memory: '4Gi'
+      cpu: '2.0'
+    agents:
+      - MemoryClient
+      - SessionMemoryAgent
+      - KnowledgeBase
+
+  model_inference:
+    name: 'Model & Inference'
+    description: 'GPU inference services'
+    startup_priority: 2
+    health_check_strategy: 'sequential'
+    resource_limits:
+      memory: '8Gi'
+      cpu: '4.0'
+      nvidia.com/gpu: '1'
+    agents:
+      - ModelManagerSuite
+      - VRAMOptimizerAgent
+      - ModelOrchestrator
