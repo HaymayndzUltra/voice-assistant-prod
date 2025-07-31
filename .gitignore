@@ -75,7 +75,7 @@ fine_tuned_models/
 # Datasets - HUWAG ISAMA SA GIT!
 data/
 *.csv
-json
+
 *.jsonl
 *.parquet
 *.zip
