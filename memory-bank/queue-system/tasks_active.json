@@ -5,44 +5,44 @@
     "todos": [
       {
         "text": "Analyze current agent dependencies and resource usage patterns in both MainPC and PC2 systems",
-        "done": false
+        "done": true
       },
       {
         "text": "Map functional cohesion and failure domains for logical grouping",
-        "done": false
+        "done": true
       },
       {
         "text": "Design logical group structures optimized for Docker deployment",
-        "done": false
+        "done": true
       },
       {
         "text": "Update main_pc_code/config/startup_config.yaml with new logical groups",
-        "done": false
+        "done": true
       },
       {
         "text": "Update pc2_code/config/startup_config.yaml with new logical groups",
-        "done": false
+        "done": true
       },
       {
         "text": "Create dependency mapping diagrams for each system",
-        "done": false
+        "done": true
       },
       {
         "text": "Optimize startup sequences and health check strategies per group",
-        "done": false
+        "done": true
       },
       {
         "text": "Design Docker deployment configurations for both RTX 4090 (MainPC) and RTX 3060 (PC2) systems",
-        "done": false
+        "done": true
       },
       {
         "text": "Create cross-system communication protocols and documentation",
-        "done": false
+        "done": true
       }
     ],
-    "status": "active",
+    "status": "completed",
     "created": "2025-07-30T20:00:00.000000+08:00",
-    "updated": "2025-07-30T20:00:00.000000+08:00"
+    "updated": "2025-07-31T19:21:48.619057+08:00"
   },
   {
     "id": "20250730T173037_(Optional_Advanced_Step)",
@@ -209,5 +209,77 @@
     "status": "completed",
     "created": "2025-07-30T18:35:37.230372+08:00",
     "updated": "2025-07-30T19:31:26.922657+08:00"
+  },
+  {
+    "id": "20250731T192154_Implement_unified_health_probe_wrapper_script_acro",
+    "description": "Implement unified health probe wrapper script across all containers",
+    "todos": [
+      {
+        "text": "Create health_probe.py script with timeout and ObservabilityHub integration",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:21:54.808355+08:00",
+    "updated": "2025-07-31T19:22:10.920403+08:00"
+  },
+  {
+    "id": "20250731T192217_Set_up_GitHub_Actions_workflow_for_image_build,_te",
+    "description": "Set up GitHub Actions workflow for image build, test, scan, and push (CI/CD)",
+    "todos": [
+      {
+        "text": "Create .github/workflows/build-and-deploy.yml with matrix strategy for all images",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:22:17.119892+08:00",
+    "updated": "2025-07-31T19:22:27.299394+08:00"
+  },
+  {
+    "id": "20250731T192233_Create_automated_end-to-end_test_harness_using_doc",
+    "description": "Create automated end-to-end test harness using docker-compose test profile and synthetic workloads",
+    "todos": [
+      {
+        "text": "Create docker-compose.test.yml with lightweight test services",
+        "done": true
+      },
+      {
+        "text": "Create tests/e2e/test_dialogue_flow.py with comprehensive E2E tests",
+        "done": true
+      },
+      {
+        "text": "Create tests/e2e/Dockerfile for test runner container",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:22:33.470293+08:00",
+    "updated": "2025-07-31T19:22:47.526374+08:00"
+  },
+  {
+    "id": "20250731T192253_Integrate_secret_management_via_Docker_secrets_or_",
+    "description": "Integrate secret management via Docker secrets or HashiCorp Vault",
+    "todos": [
+      {
+        "text": "Create docker-compose.secrets.yml overlay for external secrets",
+        "done": true
+      },
+      {
+        "text": "Create scripts/manage-secrets.sh for secret lifecycle management",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:22:53.159255+08:00",
+    "updated": "2025-07-31T19:23:42.648749+08:00"
+  },
+  {
+    "id": "20250731T192348_Enable_NVIDIA_MIG/CUDA_MPS_partitioning_and_add_DC",
+    "description": "Enable NVIDIA MIG/CUDA MPS partitioning and add DCGM exporter metrics",
+    "todos": [],
+    "status": "in_progress",
+    "created": "2025-07-31T19:23:48.753838+08:00",
+    "updated": "2025-07-31T19:23:48.753852+08:00"
   }
 ]

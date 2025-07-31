@@ -1,8 +1,8 @@
 {
-  "current_task_id": "20250730T200000_Reorganize_Agent_Groups_for_Docker_Production",
-  "current_task_description": "Reorganize Agent Groups for Docker Production Deployment",
-  "status": "active",
-  "last_updated": "2025-07-30T20:00:00.000000+08:00",
-  "todos_count": 9,
+  "current_task_id": "20250731T192348_Enable_NVIDIA_MIG/CUDA_MPS_partitioning_and_add_DC",
+  "current_task_description": "Enable NVIDIA MIG/CUDA MPS partitioning and add DCGM exporter metrics",
+  "status": "in_progress",
+  "last_updated": "2025-07-31T19:23:48.753852+08:00",
+  "todos_count": 0,
   "completed_todos": 0
 }
