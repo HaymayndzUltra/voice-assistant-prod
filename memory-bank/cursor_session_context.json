@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-07-31T13:02:29.480636",
+  "workspace": "/workspace",
+  "production_status": "READY",
+  "intelligence_mode": "PRODUCTION_DEPLOYMENT_EXPERT",
+  "capabilities": {
+    "docker_deployment": true,
+    "security_hardening": true,
+    "gpu_management": true,
+    "monitoring_setup": true,
+    "chaos_testing": true,
+    "troubleshooting": true
+  },
+  "key_files": {
+    "deployment_summary": "docs/AI_SYSTEM_PRODUCTION_DEPLOYMENT_SUMMARY.md",
+    "local_guide": "docs/LOCAL_DEPLOYMENT_GUIDE.md",
+    "security_script": "scripts/security-hardening.sh",
+    "gpu_script": "scripts/setup-gpu-partitioning.sh",
+    "mainpc_compose": "main_pc_code/config/docker-compose.yml",
+    "pc2_compose": "pc2_code/config/docker-compose.yml",
+    "observability": "docker-compose.observability.yml"
+  },
+  "knowledge_base": {
+    "production_deployment": {
+      "steps": [
+        "git reset --hard origin/cursor/reorganize-agent-groups-for-docker-production-deployment-8f25",
+        "scripts/security-hardening.sh",
+        "scripts/setup-gpu-partitioning.sh",
+        "docker-compose up production services",
+        "deploy observability stack",
+        "run health checks"
+      ],
+      "requirements": [
+        "Docker",
+        "NVIDIA drivers",
+        "10GB disk space"
+      ],
+      "potential_issues": [
+        "Docker daemon",
+        "Port conflicts",
+        "GPU drivers"
+      ]
+    },
+    "troubleshooting": {
+      "docker_issues": [
+        "Check docker status",
+        "Review logs",
+        "Verify resources"
+      ],
+      "gpu_issues": [
+        "nvidia-smi",
+        "Check MIG/MPS",
+        "Verify Docker GPU access"
+      ],
+      "network_issues": [
+        "Check ports",
+        "Verify connectivity",
+        "Review firewall"
+      ]
+    },
+    "quick_commands": {
+      "status_check": "docker ps -a && nvidia-smi",
+      "logs": "docker-compose logs --tail=50",
+      "health": "curl http://localhost:3000/health",
+      "gpu_status": "nvidia-smi && docker run --gpus all nvidia/cuda:11.0-base nvidia-smi"
+    }
+  },
+  "system_state": {
+    "error": "[Errno 2] No such file or directory: 'docker'"
+  }
+}
