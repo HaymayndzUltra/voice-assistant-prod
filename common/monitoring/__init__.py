@@ -3,9 +3,10 @@
 """Common Monitoring Package
 
 Enterprise-grade monitoring and metrics collection for the AI System Monorepo.
-Provides Prometheus integration, custom metrics, and dashboard support.
+Provides Prometheus integration, custom metrics, dashboard support, and health monitoring.
 
 Part of Phase 3.3: Monitoring & Metrics Expansion - O3 Roadmap Implementation
+Extended in Phase 4.2: Enhanced Agent Factory and Lifecycle Management
 """
 
 # Prometheus integration (optional)
@@ -36,14 +37,49 @@ except ImportError:
     PROMETHEUS_AVAILABLE = False
     __prometheus_exports = []
 
+# Health Monitoring (Phase 4.2)
+try:
+    from .health_monitor import (
+        HealthMonitor,
+        HealthStatus,
+        HealthChecker,
+        BasicHealthChecker,
+        ResourceHealthChecker,
+        RecoveryStrategy,
+        RestartRecoveryStrategy,
+        get_health_monitor,
+        register_agent_health_monitoring,
+        start_health_monitoring,
+        stop_health_monitoring
+    )
+    HEALTH_MONITORING_AVAILABLE = True
+    
+    __health_exports = [
+        "HealthMonitor",
+        "HealthStatus",
+        "HealthChecker",
+        "BasicHealthChecker",
+        "ResourceHealthChecker", 
+        "RecoveryStrategy",
+        "RestartRecoveryStrategy",
+        "get_health_monitor",
+        "register_agent_health_monitoring",
+        "start_health_monitoring",
+        "stop_health_monitoring"
+    ]
+except ImportError:
+    HEALTH_MONITORING_AVAILABLE = False
+    __health_exports = []
+
 __all__ = [
-    # Prometheus availability
-    "PROMETHEUS_AVAILABLE"
-] + __prometheus_exports
+    # Availability flags
+    "PROMETHEUS_AVAILABLE",
+    "HEALTH_MONITORING_AVAILABLE"
+] + __prometheus_exports + __health_exports
 
 # Version info
-__version__ = "3.3.0"
-__phase__ = "Phase 3.3: Monitoring & Metrics Expansion"
+__version__ = "4.2.0"
+__phase__ = "Phase 4.2: Enhanced Agent Factory and Lifecycle Management"
 
 # Monitoring recommendations
 MONITORING_RECOMMENDATIONS = {

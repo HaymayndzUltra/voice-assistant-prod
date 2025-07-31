@@ -8,7 +8,7 @@ on:
       - 'requirements.txt'
       - 'docker/**'
       - 'test/**'
-      - '.github/workflows/test-foundation-services.yml'
+      - '.github/workflows/test-mainpc-foundation.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
@@ -16,10 +16,10 @@ on:
       - 'requirements.txt'
       - 'docker/**'
       - 'test/**'
-      - '.github/workflows/test-foundation-services.yml'
+      - '.github/workflows/test-mainpc-foundation.yml'
 
 jobs:
-  test-mainpc-foundation-services:
+  test-mainpc-foundation:
     runs-on: ubuntu-latest
     
     steps:
@@ -51,7 +51,7 @@ jobs:
         
     - name: Wait for services to start
       run: |
-        echo "Waiting for foundation services to start..."
+        echo "Waiting for MainPC foundation services to start..."
         sleep 60
         
     - name: Check service health
@@ -68,14 +68,13 @@ jobs:
         
     - name: Test service connectivity
       run: |
-        # Test each service endpoint
+        # Test each MainPC service endpoint
         services=(
           "ServiceRegistry:7200"
           "SystemDigitalTwin:7220"
           "RequestCoordinator:26002"
           "ModelManagerSuite:7211"
           "VRAMOptimizerAgent:5572"
-          "ObservabilityHub:9000"
           "UnifiedSystemAgent:7201"
         )
         
@@ -99,8 +98,10 @@ jobs:
           fi
         done
         
-    - name: Run integration tests
+    - name: Run MainPC integration tests
       run: |
+        echo "🧪 Running MainPC integration tests..."
+        
         # Test service registry registration
         curl -X POST http://localhost:7200/register \
           -H "Content-Type: application/json" \
@@ -112,9 +113,12 @@ jobs:
         # Test model manager suite
         curl -f http://localhost:7211/health || echo "ModelManagerSuite test failed"
         
+        # Test unified system agent
+        curl -f http://localhost:7201/health || echo "UnifiedSystemAgent test failed"
+        
     - name: Check logs for errors
       run: |
-        echo "=== Foundation Services Logs ==="
+        echo "=== MainPC Foundation Services Logs ==="
         docker logs foundation-services-test --tail 50
         
         # Check for error patterns
@@ -127,10 +131,10 @@ jobs:
         
     - name: Performance test
       run: |
-        echo "Running performance tests..."
+        echo "Running MainPC performance tests..."
         
-        # Test response times
-        for port in 7200 7220 7211 9000; do
+        # Test response times for MainPC services
+        for port in 7200 7220 7211 7201; do
           start_time=$(date +%s%N)
           if curl -f "http://localhost:$port/health" > /dev/null 2>&1; then
             end_time=$(date +%s%N)
@@ -157,7 +161,7 @@ jobs:
         echo "✅ Service connectivity verified"
         echo "✅ Health endpoints responding"
         echo "✅ Performance within acceptable limits"
-        echo "📊 Tested Services:"
+        echo "📊 Tested MainPC Services:"
         echo "   - ServiceRegistry (7200/8200)"
         echo "   - SystemDigitalTwin (7220/8220)"
         echo "   - RequestCoordinator (26002/27002)"
