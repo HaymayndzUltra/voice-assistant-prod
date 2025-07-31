@@ -136,8 +136,15 @@ class AutoSyncManager:
                 }
             }
             
+            # Update memory-bank version (primary)
             with open(self.state_files['cursor_state'], 'w') as f:
                 json.dump(cursor_state, f, indent=2)
+            
+            # Also update root level if it exists (for compatibility)
+            root_cursor_state = 'cursor_state.json'
+            if os.path.exists(root_cursor_state):
+                with open(root_cursor_state, 'w') as f:
+                    json.dump(cursor_state, f, indent=2)
             
         except Exception as e:
             logger.error(f"❌ Failed to update cursor_state.json: {e}")

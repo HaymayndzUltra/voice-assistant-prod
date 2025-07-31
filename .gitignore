@@ -1,7 +1,8 @@
 # ===================================================================
 # Python / General
 # ===================================================================
-
+memory-bank/current-session.md
+cursor_state.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -75,7 +76,7 @@ fine_tuned_models/
 # Datasets - HUWAG ISAMA SA GIT!
 data/
 *.csv
-json
+
 *.jsonl
 *.parquet
 *.zip

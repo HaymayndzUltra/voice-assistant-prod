@@ -1,0 +1,324 @@
+# OpenTelemetry Configuration for AI System
+# Distributed tracing across MainPC and PC2 services
+
+# Global OpenTelemetry settings
+otel:
+  # Service identification
+  service:
+    name: "ai-system"
+    version: "1.0.0"
+    namespace: "production"
+  
+  # Resource attributes for all services
+  resource:
+    attributes:
+      deployment.environment: "production"
+      service.instance.id: "${HOSTNAME}"
+      k8s.cluster.name: "ai-system-cluster"
+      k8s.namespace.name: "${K8S_NAMESPACE:-ai-system-core}"
+  
+  # Exporter configuration
+  exporter:
+    jaeger:
+      endpoint: "http://jaeger-collector:14268/api/traces"
+      timeout: 10s
+      headers:
+        authorization: "Bearer ${JAEGER_AUTH_TOKEN}"
+    
+    otlp:
+      endpoint: "http://otel-collector:4317"
+      timeout: 10s
+      compression: gzip
+      headers:
+        api-key: "${OTEL_API_KEY}"
+  
+  # Sampling configuration
+  tracer:
+    sampler:
+      type: "probabilistic"
+      param: 0.1  # 10% sampling rate for production
+    
+    # Batch processor settings
+    processor:
+      batch:
+        timeout: 5s
+        export_timeout: 30s
+        max_queue_size: 2048
+        max_export_batch_size: 512
+
+# Service-specific configurations
+services:
+  
+  # MainPC Services
+  mainpc:
+    coordination:
+      service_name: "coordination-service"
+      traces:
+        - "/api/coordination/execute"
+        - "/api/coordination/status" 
+        - "/health"
+      custom_attributes:
+        service.type: "orchestration"
+        gpu.type: "rtx-4090"
+        
+    observability:
+      service_name: "observability-hub"
+      traces:
+        - "/metrics/collect"
+        - "/logs/ingest"
+        - "/traces/export"
+      custom_attributes:
+        service.type: "monitoring"
+        
+    memory_stack:
+      service_name: "memory-stack"
+      traces:
+        - "/memory/store"
+        - "/memory/retrieve"
+        - "/memory/search"
+      custom_attributes:
+        service.type: "storage"
+        persistence.type: "hybrid"
+        
+    vision_gpu:
+      service_name: "vision-gpu-suite"
+      traces:
+        - "/vision/analyze"
+        - "/vision/process"
+        - "/vision/generate"
+      custom_attributes:
+        service.type: "ml-inference"
+        gpu.partition: "mig-1"
+        
+    speech_gpu:
+      service_name: "speech-gpu-suite"
+      traces:
+        - "/speech/transcribe"
+        - "/speech/synthesize"
+        - "/speech/process"
+      custom_attributes:
+        service.type: "ml-inference"
+        gpu.partition: "mig-2"
+        
+    learning_gpu:
+      service_name: "learning-gpu-suite"
+      traces:
+        - "/learning/train"
+        - "/learning/adapt"
+        - "/learning/optimize"
+      custom_attributes:
+        service.type: "ml-training"
+        gpu.partition: "mig-3"
+        
+    reasoning_gpu:
+      service_name: "reasoning-gpu-suite"
+      traces:
+        - "/reasoning/infer"
+        - "/reasoning/plan"
+        - "/reasoning/decide"
+      custom_attributes:
+        service.type: "ml-inference"
+        gpu.partition: "mig-4"
+        
+    language_stack:
+      service_name: "language-stack"
+      traces:
+        - "/language/understand"
+        - "/language/generate"
+        - "/language/translate"
+      custom_attributes:
+        service.type: "nlp"
+        
+    utility_cpu:
+      service_name: "utility-cpu-suite"
+      traces:
+        - "/utility/process"
+        - "/utility/transform"
+        - "/utility/validate"
+      custom_attributes:
+        service.type: "utility"
+        
+    emotion_system:
+      service_name: "emotion-system"
+      traces:
+        - "/emotion/analyze"
+        - "/emotion/respond"
+        - "/emotion/adapt"
+      custom_attributes:
+        service.type: "behavioral"
+
+  # PC2 Services  
+  pc2:
+    memory_stack:
+      service_name: "pc2-memory-stack"
+      traces:
+        - "/memory/store"
+        - "/memory/retrieve"
+      custom_attributes:
+        service.type: "storage"
+        system.type: "pc2"
+        
+    async_pipeline:
+      service_name: "pc2-async-pipeline"
+      traces:
+        - "/pipeline/process"
+        - "/pipeline/queue"
+      custom_attributes:
+        service.type: "pipeline"
+        system.type: "pc2"
+        
+    tutoring_cpu:
+      service_name: "pc2-tutoring-cpu"
+      traces:
+        - "/tutoring/session"
+        - "/tutoring/assess"
+      custom_attributes:
+        service.type: "education"
+        system.type: "pc2"
+        
+    vision_dream_gpu:
+      service_name: "pc2-vision-dream-gpu"
+      traces:
+        - "/vision/dream"
+        - "/vision/imagine"
+      custom_attributes:
+        service.type: "ml-inference"
+        gpu.type: "rtx-3060"
+        system.type: "pc2"
+        
+    utility_cpu:
+      service_name: "pc2-utility-cpu"
+      traces:
+        - "/utility/process"
+        - "/utility/support"
+      custom_attributes:
+        service.type: "utility"
+        system.type: "pc2"
+        
+    web_interface:
+      service_name: "pc2-web-interface"
+      traces:
+        - "/api/request"
+        - "/ui/render"
+        - "/websocket/message"
+      custom_attributes:
+        service.type: "frontend"
+        system.type: "pc2"
+
+# Instrumentation libraries
+instrumentation:
+  auto_instrument: true
+  
+  libraries:
+    - "opentelemetry-instrumentation-requests"
+    - "opentelemetry-instrumentation-flask"
+    - "opentelemetry-instrumentation-fastapi"
+    - "opentelemetry-instrumentation-sqlalchemy"
+    - "opentelemetry-instrumentation-redis"
+    - "opentelemetry-instrumentation-psycopg2"
+    - "opentelemetry-instrumentation-grpc"
+    - "opentelemetry-instrumentation-logging"
+    
+  # Custom instrumentation
+  custom:
+    - name: "ai-model-calls"
+      pattern: "*/models/*"
+      span_kind: "CLIENT"
+    - name: "gpu-operations"
+      pattern: "*/gpu/*"
+      span_kind: "INTERNAL"
+    - name: "memory-operations"
+      pattern: "*/memory/*"
+      span_kind: "INTERNAL"
+
+# Trace correlation
+correlation:
+  # Propagation formats
+  propagators:
+    - "tracecontext"
+    - "baggage" 
+    - "b3"
+    - "jaeger"
+  
+  # Cross-service correlation
+  headers:
+    trace_id: "x-trace-id"
+    span_id: "x-span-id"
+    parent_id: "x-parent-span-id"
+    user_id: "x-user-id"
+    session_id: "x-session-id"
+    request_id: "x-request-id"
+  
+  # Baggage for business context
+  baggage:
+    - "user.id"
+    - "session.id"
+    - "conversation.id"
+    - "request.priority"
+    - "feature.flag"
+
+# Metrics integration
+metrics:
+  # Span metrics
+  span_metrics:
+    enabled: true
+    histogram_buckets: [0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+    
+  # Custom metrics from traces
+  custom_metrics:
+    - name: "ai_request_duration"
+      type: "histogram"
+      description: "AI service request duration"
+      unit: "seconds"
+      
+    - name: "ai_request_count"
+      type: "counter"
+      description: "Total AI service requests"
+      
+    - name: "ai_error_rate"
+      type: "gauge"
+      description: "AI service error rate"
+      unit: "percentage"
+      
+    - name: "gpu_utilization_span"
+      type: "gauge"
+      description: "GPU utilization during span"
+      unit: "percentage"
+
+# Error handling
+error_handling:
+  # Span status on exceptions
+  record_exception: true
+  set_status_on_exception: true
+  
+  # Error sampling
+  error_sampler:
+    type: "always_on"  # Always sample errors
+    
+  # Error attributes
+  error_attributes:
+    - "exception.type"
+    - "exception.message"
+    - "exception.stacktrace"
+    - "error.code"
+    - "error.category"
+
+# Performance optimization
+performance:
+  # Async export
+  async_export: true
+  
+  # Compression
+  compression: "gzip"
+  
+  # Connection pooling
+  connection_pool:
+    max_connections: 10
+    timeout: 30s
+    
+  # Retries
+  retry_policy:
+    max_attempts: 3
+    backoff_multiplier: 2
+    initial_interval: 1s
+    max_interval: 30s

@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordination
+  namespace: ai-system-gpu
+  labels:
+    app.kubernetes.io/name: coordination
+    app.kubernetes.io/part-of: ai-system
+    app.kubernetes.io/component: gpu-coordination
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coordination
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: coordination
+        app.kubernetes.io/part-of: ai-system
+        app.kubernetes.io/component: gpu-coordination
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8211"
+        prometheus.io/path: "/metrics"
+    spec:
+      nodeSelector:
+        node.kubernetes.io/instance-type: gpu-node
+        nvidia.com/gpu.product: RTX-4090  # MainPC only
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values: ["gpu-coordination"]
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: coordination
+        image: ghcr.io/ai-system/coordination:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7211
+          name: http
+          protocol: TCP
+        - containerPort: 8211
+          name: metrics
+          protocol: TCP
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: PORT_OFFSET
+          value: "0"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: ai-system-config
+        - secretRef:
+            name: ai-system-secrets
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "8Gi"
+            cpu: "4"
+          requests:
+            nvidia.com/gpu: 1
+            memory: "4Gi"
+            cpu: "2"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8211
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8211
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        volumeMounts:
+        - name: model-cache
+          mountPath: /app/models
+        - name: vram-state
+          mountPath: /tmp/vram
+        - name: shared-config
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: model-cache-pvc
+      - name: vram-state
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: shared-config
+        configMap:
+          name: coordination-config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordination-service
+  namespace: ai-system-gpu
+  labels:
+    app.kubernetes.io/name: coordination
+    app.kubernetes.io/part-of: ai-system
+spec:
+  type: ClusterIP
+  ports:
+  - port: 7211
+    targetPort: 7211
+    protocol: TCP
+    name: http
+  - port: 8211
+    targetPort: 8211
+    protocol: TCP
+    name: metrics
+  selector:
+    app.kubernetes.io/name: coordination
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coordination-hpa
+  namespace: ai-system-gpu
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coordination
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: nvidia_gpu_memory_used_bytes
+      target:
+        type: AverageValue
+        averageValue: "16Gi"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 180

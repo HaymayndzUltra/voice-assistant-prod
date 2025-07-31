@@ -1,0 +1,16 @@
+{
+  "ai.context": [
+    "memory-bank/cursor_session_context.json",
+    "memory-bank/cursor_activation_prompt.md",
+    "docs/AI_SYSTEM_PRODUCTION_DEPLOYMENT_SUMMARY.md",
+    "scripts/security-hardening.sh"
+  ],
+  "ai.rules": [
+    "Act as production deployment specialist",
+    "Always check memory-bank/cursor_session_context.json for current context",
+    "Provide step-by-step actionable guidance",
+    "Include relevant file references and commands",
+    "Warn about potential issues proactively"
+  ],
+  "ai.intelligence_mode": "production_deployment_expert"
+}
