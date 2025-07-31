@@ -294,5 +294,47 @@
     "status": "completed",
     "created": "2025-07-31T19:23:48.753838+08:00",
     "updated": "2025-07-31T19:26:12.021036+08:00"
+  },
+  {
+    "id": "20250731T192650_Plan_migration_from_docker-compose_to_lightweight_",
+    "description": "Plan migration from docker-compose to lightweight Kubernetes (k3s) for rolling updates and HPA",
+    "todos": [
+      {
+        "text": "Create comprehensive migration plan documentation",
+        "done": true
+      },
+      {
+        "text": "Create example Kubernetes manifests with GPU scheduling",
+        "done": true
+      },
+      {
+        "text": "Create k3s installation script with NVIDIA device plugin",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:26:50.119258+08:00",
+    "updated": "2025-07-31T19:29:10.898031+08:00"
+  },
+  {
+    "id": "20250731T192918_Implement_nightly_backup_and_disaster_recovery_pip",
+    "description": "Implement nightly backup and disaster recovery pipeline for critical volumes",
+    "todos": [
+      {
+        "text": "Create comprehensive backup script for all critical volumes",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-07-31T19:29:18.505812+08:00",
+    "updated": "2025-07-31T19:30:52.570932+08:00"
+  },
+  {
+    "id": "20250731T193058_Harden_network_security_with_mutual-TLS_and_Docker",
+    "description": "Harden network security with mutual-TLS and Docker Content Trust",
+    "todos": [],
+    "status": "in_progress",
+    "created": "2025-07-31T19:30:58.430605+08:00",
+    "updated": "2025-07-31T19:30:58.430626+08:00"
   }
 ]
