@@ -30,6 +30,9 @@ def normalize_mainpc_config(config: Dict) -> Dict[str, Any]:
     unified_agents = []
     
     for group_name, agents in config['agent_groups'].items():
+        if not agents:
+            # Skip groups that are explicitly set to null or empty in YAML
+            continue
         for agent_name, agent_data in agents.items():
             unified_agent = {
                 'name': agent_name,

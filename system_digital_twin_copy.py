@@ -42,6 +42,7 @@ from common.utils.data_models import AgentRegistration, SystemEvent, ErrorReport
 from common.env_helpers import get_env
 from common.pools.redis_pool import get_redis_client_sync
 from common_utils.port_registry import get_port
+from common.utils.env_standardizer import get_pc2_ip
 
 # Configure logging
 project_root = Path(PathManager.get_project_root())
@@ -427,41 +428,7 @@ class SystemDigitalTwinAgent(BaseAgent):
 
     # ------------------------------------------------------------------
     #                      HTTP HEALTH ENDPOINT
-    # ------------------------------------------------------------------
-    def _start_http_health_server(self) -> None:
-        """Start a very lightweight HTTP server that returns health status.
-
-        Many container orchestration systems (and some existing health-check
-        scripts in this repo) expect an HTTP endpoint.  To remain compatible
-        while keeping the main ZMQ protocol unchanged, we expose a minimal
-        JSON endpoint on the configured ``health_port``.
-        """
-        from http.server import BaseHTTPRequestHandler, HTTPServer
-        import json, time as _time
-
-        class _HealthHandler(BaseHTTPRequestHandler):
-            # pylint: disable=attribute-defined-outside-init
-            def do_GET(self):  # noqa: N802 – BaseHTTP naming convention
-                if self.path in ("/", "/health", "/healthz"):
-                    payload = {"status": "healthy", "timestamp": _time.time()}
-                    response = json.dumps(payload).encode("utf-8")
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(response)))
-                    self.end_headers()
-                    self.wfile.write(response)
-                else:
-                    self.send_response(404)
-                    self.end_headers()
-
-            # Silence the default noisy logging
-            def log_message(self, *_args):  # type: ignore[override]
-                return
-
-        # Bind to 0.0.0.0 to cover Docker bridge
-        http_server = HTTPServer(("0.0.0.0", int(self.health_port)), _HealthHandler)
-        threading.Thread(target=http_server.serve_forever, daemon=True).start()
-        logger.info(f"HTTP health endpoint available at http://0.0.0.0:{self.health_port}/health")
+    # NOTE: _start_http_health_server is now handled by BaseAgent
 
     def _update_vram_metrics(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Update VRAM metrics from ModelManagerAgent reports."""
