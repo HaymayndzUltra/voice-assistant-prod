@@ -1,48 +1,241 @@
-## **📋 TODO MANAGER WORKFLOW STRATEGY**
+# **📋 TODO MANAGER WORKFLOW STRATEGY - ENHANCED HIERARCHICAL SYSTEM**
 
-### **TASK EXECUTION DISKARTE:**
+## **🎯 OVERVIEW: DUAL AI ARCHITECTURE**
 
-**1. SHOW TASK DETAILS:**
-```bash
-python3 todo_manager.py show TASK_ID
-# Shows task with all TODO items and their indices
+### **BACKGROUND AGENT (Claude 4 - Remote/Cloud):**
+- Creates detailed step-by-step plans with hierarchical TODOs
+- Analyzes complex tasks and breaks them into executable sub-steps
+- Updates memory-bank files with context and execution plans
+- Works in parallel on multiple branches
+
+### **LOCAL AGENT MODE (Cursor AI - Local IDE):**
+- Executes the detailed plans created by Background Agent
+- Handles real-time coding, file editing, terminal commands
+- Provides interactive supervision and user approval workflow
+- Auto-absorbs context from memory-bank when branch is pulled
+
+---
+
+## **📋 HIERARCHICAL TODO STRUCTURE**
+
+### **ENHANCED FORMAT:**
+```
+[✗] 4. Deploy core AI services using Docker Compose
+    4.1 Verify docker-compose.yml and .env are up to date
+        └── Command: diff docker-compose.yml docker-compose.yml.backup
+    4.2 Build images: docker-compose build
+        └── Command: docker-compose build --no-cache
+    4.3 Start services: docker-compose up -d
+        └── Command: docker-compose up -d --remove-orphans
+    4.4 Check service health: docker-compose ps && docker-compose logs
+        └── Command: docker-compose ps && docker-compose logs --tail=50
+    4.5 Run post-deploy script: ./scripts/verify-services.sh
+        └── Command: chmod +x ./scripts/verify-services.sh && ./scripts/verify-services.sh
+    4.6 Validate endpoints: curl http://localhost:...
+        └── Command: curl -f http://localhost:8080/health
+    4.7 If failed, rollback: docker-compose down && alert
+        └── Command: docker-compose down && echo "DEPLOYMENT FAILED - ROLLBACK COMPLETED"
 ```
 
-**2. MARK TODO AS DONE:**
-```bash
-python3 todo_manager.py done TASK_ID INDEX
-# INDEX = 0, 1, 2, etc. (position ng TODO item)
+### **SUB-TODO EXECUTION:**
+- Each main TODO (4) has multiple sub-steps (4.1, 4.2, 4.3...)
+- Each sub-step has specific commands ready for execution
+- Error handling and rollback procedures included
+- Progressive completion tracking
+
+---
+
+## **🔄 WORKFLOW EXECUTION STRATEGY**
+
+### **1. BACKGROUND AGENT PREPARATION:**
+```python
+# Background Agent creates:
+✅ Detailed hierarchical TODO breakdown
+✅ Memory-bank context updates
+✅ Cursor activation prompts
+✅ Auto-sync triggers
+✅ Branch-ready execution plans
 ```
 
-**3. TYPICAL WORKFLOW:**
-- `show TASK_ID` - Check lahat ng pending TODOs
-- Implement/execute ang TODO item
-- `done TASK_ID INDEX` - Mark as completed
-- Repeat hanggang lahat ng TODOs ay tapos na
-
-**4. EXAMPLE SEQUENCE:**
+### **2. LOCAL HANDOVER PROCESS:**
 ```bash
-# Check current tasks
-python3 todo_manager.py show 20250730T072914_GUI_Task
+# User pulls branch:
+git pull origin cursor/background-agent-work
 
-# Work on TODO item 0
-# ... do implementation work ...
-
-# Mark TODO 0 as done
-python3 todo_manager.py done 20250730T072914_GUI_Task 0
-
-# Continue with next TODO
-python3 todo_manager.py show 20250730T072914_GUI_Task
-# Work on TODO item 1...
+# Local Agent auto-absorbs:
+✅ Reads memory-bank/cursor_session_context.json
+✅ Loads hierarchical TODO structure
+✅ Understands execution context
+✅ Ready to execute WITHOUT user explanation
 ```
 
-**5. AUTO-SYNC INTEGRATION:**
-- Every `done` command triggers auto-sync
-- State files automatically updated
-- Progress tracked across sessions
+### **3. TASK EXECUTION COMMANDS:**
 
-**6. BEST PRACTICES:**
-- Always `show` first to see current status
-- Complete TODOs in sequence (0, 1, 2...)
-- Verify completion before moving to next
-- Use descriptive task and TODO descriptions
+**SHOW HIERARCHICAL STRUCTURE:**
+```bash
+python3 todo_manager.py show TASK_ID --hierarchical
+# Shows main TODOs with all sub-steps
+# Displays commands ready for execution
+```
+
+**EXECUTE SUB-TODO:**
+```bash
+python3 todo_manager.py exec TASK_ID 4.1
+# Executes specific sub-step (4.1)
+# Runs the associated command
+# Marks as completed automatically
+```
+
+**MARK MAIN TODO DONE:**
+```bash
+python3 todo_manager.py done TASK_ID 4
+# Marks main TODO as completed
+# Only when all sub-steps (4.1-4.7) are done
+```
+
+### **4. ENHANCED WORKFLOW SEQUENCE:**
+```bash
+# 1. Check hierarchical status
+python3 todo_manager.py show TASK_ID --hierarchical
+
+# 2. Execute sub-step with command
+python3 todo_manager.py exec TASK_ID 4.1
+# → Runs: diff docker-compose.yml docker-compose.yml.backup
+
+# 3. Continue to next sub-step
+python3 todo_manager.py exec TASK_ID 4.2
+# → Runs: docker-compose build --no-cache
+
+# 4. If sub-step fails, run rollback
+python3 todo_manager.py exec TASK_ID 4.7
+# → Runs: docker-compose down && echo "ROLLBACK COMPLETED"
+
+# 5. Mark main TODO done when all sub-steps complete
+python3 todo_manager.py done TASK_ID 4
+```
+
+---
+
+## **🧠 MEMORY SYSTEM INTEGRATION**
+
+### **AUTO-CONTEXT LOADING:**
+When Local Agent starts, it automatically reads:
+```json
+// memory-bank/cursor_session_context.json
+{
+  "current_focus": "Task execution ready",
+  "hierarchical_todos": {...},
+  "execution_commands": {...},
+  "context_level": "DETAILED_PLAN_READY"
+}
+```
+
+### **SEAMLESS HANDOVER:**
+- Background Agent → prepares everything
+- Local Agent → executes with full context
+- Zero explanation needed from user
+- Instant understanding of the plan
+
+---
+
+## **📊 TODO COMPLEXITY LEVELS**
+
+### **SIMPLE TODOS:**
+```
+[✗] 1. Update documentation
+    1.1 Edit README.md file
+    1.2 Commit changes
+```
+
+### **COMPLEX TODOS:**
+```
+[✗] 4. Deploy production system
+    4.1 Environment verification
+        └── Command: ./scripts/check-prerequisites.sh
+    4.2 Security hardening
+        └── Command: ./scripts/security-hardening.sh
+    4.3 Service deployment
+        └── Command: docker-compose up -d
+    4.4 Health validation
+        └── Command: ./scripts/health-check.sh
+    4.5 Monitoring setup
+        └── Command: ./scripts/setup-monitoring.sh
+    4.6 Backup configuration
+        └── Command: ./scripts/configure-backups.sh
+    4.7 Rollback if failed
+        └── Command: ./scripts/rollback-deployment.sh
+```
+
+---
+
+## **🎯 LOCAL AGENT MODE INSTRUCTIONS**
+
+### **WHEN USER MENTIONS TODO/TASK:**
+1. **ALWAYS** check current hierarchical structure first
+2. **IDENTIFY** which sub-step to execute
+3. **SHOW** the specific command to run
+4. **EXECUTE** with user approval
+5. **MARK** completion and update progress
+
+### **AUTO-ABSORB CONTEXT:**
+- Read memory-bank files for background context
+- Understand hierarchical TODO structures
+- No need for user explanation
+- Ready to execute detailed plans immediately
+
+### **EXECUTION PRIORITY:**
+- Follow sub-step sequence (4.1 → 4.2 → 4.3...)
+- Include error handling steps
+- Provide rollback options
+- Validate completion before moving forward
+
+---
+
+## **🚀 BEST PRACTICES FOR CURSOR AGENT MODE**
+
+### **1. HIERARCHICAL AWARENESS:**
+- Always understand the sub-step structure
+- Execute in proper sequence
+- Check dependencies between steps
+
+### **2. COMMAND EXECUTION:**
+- Show command before running
+- Get user approval for critical operations
+- Provide clear success/failure feedback
+
+### **3. PROGRESS TRACKING:**
+- Mark sub-steps as completed
+- Update main TODO status
+- Sync progress across sessions
+
+### **4. ERROR HANDLING:**
+- Follow rollback procedures when failures occur
+- Provide clear error messages
+- Suggest next steps for recovery
+
+---
+
+## **📱 QUICK REFERENCE COMMANDS**
+
+```bash
+# Show hierarchical structure
+python3 todo_manager.py show TASK_ID --hierarchical
+
+# Execute specific sub-step
+python3 todo_manager.py exec TASK_ID 4.1
+
+# Mark main TODO complete
+python3 todo_manager.py done TASK_ID 4
+
+# Show all active tasks
+python3 todo_manager.py list
+
+# Emergency rollback
+python3 todo_manager.py exec TASK_ID X.rollback
+```
+
+---
+
+**THIS IS THE NEW STANDARD:** Background planning → Local execution with zero context loss! 🚀
+
+**MEMORY**: Background Agent creates detailed plans. Local Agent executes them seamlessly. User gets precise, step-by-step workflow with full automation support.

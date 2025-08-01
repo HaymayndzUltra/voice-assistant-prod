@@ -98,7 +98,7 @@ COPY --chown=aiuser:aiuser common/ ./common/
 COPY --chown=aiuser:aiuser common_utils/ ./common_utils/
 COPY --chown=aiuser:aiuser events/ ./events/
 COPY --chown=aiuser:aiuser pyproject.toml ./
-COPY --chown=aiuser:aiuser startup_config.yaml ./
+COPY --chown=aiuser:aiuser config/startup_config.yaml ./
 
 # Create necessary directories
 RUN mkdir -p logs data backups && \
@@ -158,7 +158,7 @@ COPY --chown=aiuser:aiuser pc2_code/ ./pc2_code/
 COPY --chown=aiuser:aiuser common/ ./common/
 COPY --chown=aiuser:aiuser common_utils/ ./common_utils/
 COPY --chown=aiuser:aiuser events/ ./events/
-COPY --chown=aiuser:aiuser startup_config.yaml ./
+COPY --chown=aiuser:aiuser config/startup_config.yaml ./
 
 # Create directories
 RUN mkdir -p logs data backups && \

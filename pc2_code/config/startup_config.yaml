@@ -342,7 +342,7 @@ docker_groups:
       - VisionProcessingAgent
       - DreamWorldAgent
       - DreamingModeAgent
-  utility_cpu:
+  utility_suite:
     description: Support utilities and miscellaneous helpers
     agents:
       - UnifiedUtilsAgent

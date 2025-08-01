@@ -1,0 +1,29 @@
+{
+  "tasks": [
+    {
+      "id": "20250801T143532_PHASE_1_MAINPC_Verify_host_prerequisites",
+      "description": "PHASE 1 — MAINPC: Verify host prerequisites",
+      "todos": [
+        {
+          "text": "Check Docker Engine ≥ 24",
+          "done": false
+        },
+        {
+          "text": "Check Docker Compose v2", 
+          "done": false
+        },
+        {
+          "text": "Install / verify NVIDIA Container Toolkit & driver",
+          "done": false
+        },
+        {
+          "text": "Enable systemd-managed Docker on boot",
+          "done": false
+        }
+      ],
+      "status": "in_progress",
+      "created": "2025-08-01T14:35:32+08:00",
+      "updated": "2025-08-01T14:35:32+08:00"
+    }
+  ]
+}

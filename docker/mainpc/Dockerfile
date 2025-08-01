@@ -6,15 +6,24 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies with better error handling
+RUN apt-get update -y && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends --fix-missing \
     python3.10 \
     python3-pip \
     python3-setuptools \
     python3-dev \
+    python3-venv \
     build-essential \
     curl \
+    wget \
     git \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install media and audio libraries separately to handle potential conflicts
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libportaudio2 \
     libsndfile1 \
     portaudio19-dev \
@@ -22,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsm6 \
     libxext6 \
     libgl1-mesa-glx \
-    wget \
+    libasound2-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

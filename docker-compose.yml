@@ -1,362 +1,249 @@
 version: "3.9"
-name: mainpc_sot
 
-# -----------------------------------------------------------------------------
-# GLOBALS / VOLUMES / NETWORKS
-# -----------------------------------------------------------------------------
+x-default-logging: &default_logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
 
-volumes:
-  redis_data:
-  data:
-  models:
-  logs:
-
-networks:
-  backplane:
-    driver: bridge
+x-default-health: &default_health
+  interval: 30s
+  timeout: 10s
+  retries: 3
 
 services:
   # ---------------------------------------------------------------------------
-  # 1. INFRASTRUCTURE – Redis (shared in-memory registry)
+  # Core infrastructure
   # ---------------------------------------------------------------------------
-  redis:
-    image: redis:7-alpine
-    container_name: mainpc-redis
-    command: ["redis-server", "--appendonly", "yes"]
-    networks: [backplane]
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ---------------------------------------------------------------------------
-  # 2. FOUNDATION_SERVICES – Core orchestration & monitoring (4 agents)
-  # ---------------------------------------------------------------------------
-  foundation_services:
+  infra_core:
     build:
       context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/foundation_services:latest
-    container_name: mainpc-foundation-services
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups foundation_services
+      dockerfile: Dockerfile
+      target: production
+    image: ai_system/infra_core:latest
+    depends_on: {}
     environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-      PORT_OFFSET: 0
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks: [backplane]
-    ports:
-      - "7200:7200"   # ServiceRegistry
-      - "7220:7220"   # SystemDigitalTwin
-      - "26002:26002" # RequestCoordinator
-      - "7211:7211"   # ModelManagerSuite
-      - "5572:5572"   # VRAMOptimizerAgent
-      - "7201:7201"   # UnifiedSystemAgent
-      - "9000:9000"   # ObservabilityHub
-    volumes:
-      - logs:/app/logs
-      - data:/app/data
-    restart: unless-stopped
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+    logging: *default_logging
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8200/health"]
+      <<: *default_health
+    networks:
+      - agent_net
 
-  # ---------------------------------------------------------------------------
-  # 3. MODEL_MANAGEMENT – Heavy GPU services (currently empty)
-  # ---------------------------------------------------------------------------
-  # model_management service removed - no agents in gpu_infrastructure group
-  # GPU resources are handled by foundation_services (ModelManagerSuite, VRAMOptimizerAgent)
-
-  # ---------------------------------------------------------------------------
-  # 4. LANGUAGE_PIPELINE – Core NLP stack (language_processing group)
-  # ---------------------------------------------------------------------------
-  language_pipeline:
+  coordination:
     build:
       context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/language_pipeline:latest
-    container_name: mainpc-language-pipeline
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups language_processing
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
+      dockerfile: Dockerfile
+      target: production
+    image: ai_system/coordination:latest
     depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5709:5709"  # NLUAgent
-      - "5710:5710"  # AdvancedCommandHandler
-      - "5711:5711"  # ChitchatAgent
-      - "5637:5637"  # Responder
-      - "5701:5701"  # IntentionValidatorAgent
-    volumes:
-      - data:/app/data:ro
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5709/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 5. TRANSLATION_SERVICES – Dedicated translation agents
-  # ---------------------------------------------------------------------------
-  translation_services:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/translation_services:latest
-    container_name: mainpc-translation-services
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups translation_services
+      - infra_core
     environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5595:5595"  # TranslationService
-      - "5584:5584"  # FixedStreamingTranslation
-      - "5581:5581"  # NLLBAdapter
-    volumes:
-      - data:/app/data:ro
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5595/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 6. AUDIO_SPEECH – Full streaming audio pipeline (speech_services + audio_interface)
-  # ---------------------------------------------------------------------------
-  audio_speech:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/audio_speech:latest
-    container_name: mainpc-audio-speech
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups speech_services,audio_interface
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5800:5800"  # STTService
-      - "5801:5801"  # TTSService
-      - "6553:6553"  # StreamingSpeechRecognition
-      - "5562:5562"  # StreamingTTSAgent
-      - "5579:5579"  # StreamingLanguageAnalyzer
-      - "6552:6552"  # WakeWordDetector
-      - "6550:6550"  # AudioCapture
-      - "6551:6551"  # FusedAudioPreprocessor
-      - "5576:5576"  # StreamingInterruptHandler
-    volumes:
-      - data:/app/data:ro
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5800/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 7. VISION_PROCESSING – Face/vision agents
-  # ---------------------------------------------------------------------------
-  vision_processing:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/vision_processing:latest
-    container_name: mainpc-vision-processing
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups vision_processing
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5610:5610"  # FaceRecognitionAgent
-    volumes:
-      - data:/app/data:ro
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5610/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 8. MEMORY_SYSTEM – Memory-related agents
-  # ---------------------------------------------------------------------------
-  memory_system:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/memory_system:latest
-    container_name: mainpc-memory-system
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups memory_system
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5713:5713"  # MemoryClient
-      - "5574:5574"  # SessionMemoryAgent
-      - "5715:5715"  # KnowledgeBase
-    volumes:
-      - data:/app/data
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5713/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 9. EMOTION_SYSTEM – Emotion-related agents
-  # ---------------------------------------------------------------------------
-  emotion_system:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/emotion_system:latest
-    container_name: mainpc-emotion-system
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups emotion_system
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-    depends_on:
-      foundation_services:
-        condition: service_started
-      audio_speech:
-        condition: service_started
-    networks: [backplane]
-    ports:
-      - "5590:5590"  # EmotionEngine
-      - "5704:5704"  # MoodTrackerAgent
-      - "5705:5705"  # HumanAwarenessAgent
-      - "5625:5625"  # ToneDetector
-      - "5708:5708"  # VoiceProfilingAgent
-      - "5703:5703"  # EmpathyAgent
-    volumes:
-      - logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5590/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # ---------------------------------------------------------------------------
-  # 10. LEARNING_SERVICES – Learning & training agents
-  # ---------------------------------------------------------------------------
-  learning_services:
-    build:
-      context: .
-      dockerfile: docker/mainpc/Dockerfile
-    image: mainpc/learning_services:latest
-    container_name: mainpc-learning-services
-    command: >-
-      python -m main_pc_code.system_launcher_containerized \
-      --groups learning_knowledge,utility_services,reasoning_services
-    environment:
-      PYTHONPATH: /app
-      MACHINE_TYPE: mainpc
-      LOG_LEVEL: INFO
-      REDIS_URL: redis://redis:6380/0
-      NVIDIA_VISIBLE_DEVICES: 0
-    depends_on:
-      foundation_services:
-        condition: service_started
-    networks: [backplane]
+      - PYTHONPATH=/app
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
         limits:
-          cpus: "4"
-          memory: 8G
-    ports:
-      - "7210:7210"  # LearningOrchestrationService
-      - "7202:7202"  # LearningOpportunityDetector
-      - "5580:5580"  # LearningManager
-      - "5638:5638"  # ActiveLearningMonitor
-      - "5643:5643"  # LearningAdjusterAgent
-      - "5660:5660"  # SelfTrainingOrchestrator
-      - "5642:5642"  # LocalFineTunerAgent
-      - "5612:5612"  # ChainOfThoughtAgent
-      - "5646:5646"  # GoTToTAgent
-      - "5641:5641"  # CognitiveModelAgent
-    volumes:
-      - models:/app/models:ro
-      - data:/app/data:ro
-      - logs:/app/logs
-    restart: unless-stopped
+          cpus: "4.0"
+          memory: 8g
+    logging: *default_logging
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:7210/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}8211/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  observability:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: ai_system/observability_hub:latest
+    depends_on:
+      - infra_core
+    environment:
+      - PROMETHEUS_PORT=${PORT_OFFSET:-0}9000
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512m
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}9001/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  memory_stack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: ai_system/memory_stack:latest
+    depends_on:
+      - infra_core
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}6713/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  vision_gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: ai_system/vision_suite:latest
+    depends_on:
+      - coordination
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
+        limits:
+          cpus: "4.0"
+          memory: 6g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}6610/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  speech_gpu:
+    image: ai_system/speech_pipeline:latest
+    depends_on:
+      - coordination
+      - vision_gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
+        limits:
+          cpus: "4.0"
+          memory: 6g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}6800/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  learning_gpu:
+    image: ai_system/learning_pipeline:latest
+    depends_on:
+      - coordination
+      - memory_stack
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
+        limits:
+          cpus: "6.0"
+          memory: 10g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}5580/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  reasoning_gpu:
+    image: ai_system/reasoning_suite:latest
+    depends_on:
+      - coordination
+      - memory_stack
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: ["gpu"]
+        limits:
+          cpus: "4.0"
+          memory: 8g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}6612/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  language_stack:
+    image: ai_system/language_stack:latest
+    depends_on:
+      - memory_stack
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 6g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}5709/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  utility_cpu:
+    image: ai_system/utility_suite:latest
+    depends_on:
+      - infra_core
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}5650/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+  emotion_system:
+    image: ai_system/emotion_system:latest
+    depends_on:
+      - language_stack
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+    logging: *default_logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_OFFSET:-0}6590/health"]
+      <<: *default_health
+    networks:
+      - agent_net
+
+networks:
+  agent_net:
+    driver: bridge
