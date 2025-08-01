@@ -1,0 +1,34 @@
+# Infra Core Services - ServiceRegistry & SystemDigitalTwin
+FROM python:3.10-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory and user
+RUN useradd -m -u 1000 ai && mkdir -p /app && chown -R ai:ai /app
+WORKDIR /app
+
+# Copy requirements
+COPY --chown=ai:ai requirements.base.txt main_pc_code/requirements.txt ./
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=ai:ai main_pc_code/ ./main_pc_code/
+
+# Switch to non-root user
+USER ai
+
+# Default to ServiceRegistry, can be overridden in compose
+CMD ["python", "main_pc_code/agents/service_registry_agent.py"] 

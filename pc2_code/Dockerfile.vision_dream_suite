@@ -1,0 +1,52 @@
+# PC2 Vision Dream Suite - GPU-intensive vision & dream world services
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    curl \
+    git \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Create app directory and user
+RUN useradd -m -u 1000 ai && mkdir -p /app && chown -R ai:ai /app
+WORKDIR /app
+
+# Copy requirements
+COPY --chown=ai:ai requirements.base.txt pc2_code/requirements.txt ./
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir opencv-python-headless torch torchvision
+
+# Copy application code
+COPY --chown=ai:ai pc2_code/ ./pc2_code/
+COPY --chown=ai:ai common/ ./common/
+COPY --chown=ai:ai common_utils/ ./common_utils/
+
+# Switch to non-root user
+USER ai
+
+# Default to VisionProcessingAgent
+CMD ["python", "pc2_code/agents/VisionProcessingAgent.py"] 

@@ -40,7 +40,7 @@ DEFAULT_PORT = int(os.environ.get("KNOWLEDGE_BASE_PORT", config.get("knowledge_b
 DEFAULT_HEALTH_PORT = int(os.environ.get("KNOWLEDGE_BASE_HEALTH_PORT", config.get("knowledge_base", {}).get("health_port", 6715)))
 
 # Error Bus settings (Rule 8)
-ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", get_pc2_ip()))
+ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", get_pc2_ip())
 ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 ERROR_BUS_ENDPOINT = f"tcp://{ERROR_BUS_HOST}:{ERROR_BUS_PORT}"
 

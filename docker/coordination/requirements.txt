@@ -1,0 +1,29 @@
+# Core framework
+fastapi==0.111.0
+uvicorn==0.30.0
+pyzmq==26.0.3
+pydantic==2.7.1
+
+# AI/ML dependencies with GPU support
+transformers==4.42.0
+accelerate==0.28.0
+numpy==1.26.4
+
+# Data processing & utilities  
+redis==5.0.4
+nats-py==2.3.1
+aiohttp==3.9.5
+aiodns==3.2.0
+psutil==5.9.8
+
+# Monitoring & logging
+prometheus-client==0.20.0
+structlog==24.1.0
+rich==13.7.1
+
+# Configuration & utilities
+pyyaml==6.0.1
+tomli==2.0.1
+
+# Additional GPU utilities
+nvidia-ml-py3==7.352.0

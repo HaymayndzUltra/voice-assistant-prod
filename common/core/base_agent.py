@@ -104,12 +104,25 @@ class BaseAgent:
         # Initialize Prometheus metrics exporter
         self._setup_prometheus_metrics(kwargs)
         
-        # Initialize standardized health checker
+        # Initialize standardized health checker with Docker-aware defaults
+        from common.utils.env_standardizer import get_env
+        
+        # Parse Redis URL if available, otherwise use individual host/port
+        redis_url = get_env("REDIS_URL")
+        if redis_url:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(redis_url)
+            default_redis_host = parsed.hostname or 'localhost'
+            default_redis_port = parsed.port or 6379
+        else:
+            default_redis_host = 'localhost'
+            default_redis_port = 6379
+            
         self.health_checker = StandardizedHealthChecker(
             agent_name=self.name,
             port=self.port,
-            redis_host=kwargs.get('redis_host', 'localhost'),
-            redis_port=kwargs.get('redis_port', 6379)
+            redis_host=kwargs.get('redis_host', default_redis_host),
+            redis_port=kwargs.get('redis_port', default_redis_port)
         )
         
         # Initialize unified error handler (handles both legacy ZMQ and modern NATS)

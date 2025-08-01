@@ -1,0 +1,107 @@
+services:
+  # Backend services
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_coordination
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats_coordination
+    ports:
+      - "4222:4222"
+    command: ["--jetstream"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 4222"]
+      interval: 5s
+      timeout: 3s  
+      retries: 3
+      start_period: 10s
+
+  # Request Coordinator (main orchestrator)
+  request_coordinator:
+    build:
+      context: ../..
+      dockerfile: docker/coordination/Dockerfile
+    image: coordination:latest
+    container_name: request_coordinator
+    command: ["python", "-m", "main_pc_code.agents.request_coordinator"]
+    environment:
+      LOG_LEVEL: "INFO"
+      CUDA_VISIBLE_DEVICES: "0"
+      REDIS_HOST: "redis_coordination"
+      REDIS_PORT: "6379"
+      NATS_HOST: "nats_coordination"
+      NATS_PORT: "4222"
+    ports:
+      - "26002:26002"  # Main coordination port
+      - "27002:27002"  # Health check port  
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:27002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Model Manager Suite (GPU-accelerated model management)
+  model_manager_suite:
+    image: coordination:latest
+    container_name: model_manager_suite
+    command: ["python", "-m", "main_pc_code.model_manager_suite"]
+    environment:
+      LOG_LEVEL: "INFO" 
+      CUDA_VISIBLE_DEVICES: "0"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    depends_on:
+      request_coordinator:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # VRAM Optimizer Agent (optional - memory optimization)
+  vram_optimizer:
+    image: coordination:latest
+    container_name: vram_optimizer
+    command: ["python", "-m", "main_pc_code.agents.vram_optimizer_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      CUDA_VISIBLE_DEVICES: "0"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia 
+              count: 1
+              capabilities: ["gpu"]
+    depends_on:
+      request_coordinator:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - optional  # Only start if explicitly requested

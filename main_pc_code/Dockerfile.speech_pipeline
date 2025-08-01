@@ -1,0 +1,49 @@
+# Speech Pipeline - GPU-bound STT/TTS & audio streaming
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    curl \
+    git \
+    libportaudio2 \
+    libsndfile1 \
+    portaudio19-dev \
+    ffmpeg \
+    libasound2-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Create app directory and user
+RUN useradd -m -u 1000 ai && mkdir -p /app && chown -R ai:ai /app
+WORKDIR /app
+
+# Copy requirements
+COPY --chown=ai:ai requirements.base.txt main_pc_code/requirements.txt ./
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir pyaudio soundfile librosa
+
+# Copy application code
+COPY --chown=ai:ai main_pc_code/ ./main_pc_code/
+
+# Switch to non-root user
+USER ai
+
+# Default to STTService, can be overridden in compose
+CMD ["python", "main_pc_code/services/stt_service.py"] 

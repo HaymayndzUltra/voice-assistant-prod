@@ -1,0 +1,455 @@
+{
+  "current_structure": {
+    "directories": {
+      "common": {
+        "path": "/home/haymayndz/AI_System_Monorepo/common",
+        "files": [
+          "__init__.py",
+          "config_manager.py",
+          "health.py",
+          "env_helpers.py"
+        ],
+        "subdirectories": [
+          "observability",
+          "api",
+          "config",
+          "performance",
+          "service_discovery",
+          "monitoring",
+          "utils",
+          "security",
+          "resiliency",
+          "validation",
+          "error_bus",
+          "health",
+          "audit",
+          "core",
+          "factories",
+          "pools",
+          "logging",
+          "backends",
+          "service_mesh",
+          "lifecycle",
+          "resources"
+        ],
+        "total_files": 4,
+        "total_subdirs": 21
+      },
+      "common_utils": {
+        "path": "/home/haymayndz/AI_System_Monorepo/common_utils",
+        "files": [
+          "agent_helpers.py",
+          "env_loader.py",
+          "error_handling.py",
+          "lazy_loader.py",
+          "zmq_helper.py",
+          "port_registry.py"
+        ],
+        "subdirectories": [],
+        "total_files": 6,
+        "total_subdirs": 0
+      },
+      "common/utils": {
+        "path": "/home/haymayndz/AI_System_Monorepo/common/utils",
+        "files": [
+          "path_env.py",
+          "prometheus_exporter.py",
+          "env_standardizer.py",
+          "__init__.py",
+          "unified_config_loader.py",
+          "network_util.py",
+          "data_models.py",
+          "base_health_mixin.py",
+          "path_manager.py",
+          "logger_util.py",
+          "learning_models.py",
+          "hostname_resolver.py",
+          "docker_paths.py",
+          "async_io.py",
+          "secret_manager.py",
+          "fast_json.py",
+          "agent_ready_signal.py"
+        ],
+        "subdirectories": [],
+        "total_files": 17,
+        "total_subdirs": 0
+      }
+    },
+    "file_count": {
+      "common": 4,
+      "common_utils": 6,
+      "common/utils": 17
+    },
+    "categories": {
+      "Other": [
+        {
+          "file": "__init__.py",
+          "directory": "common",
+          "path": "common/__init__.py"
+        },
+        {
+          "file": "lazy_loader.py",
+          "directory": "common_utils",
+          "path": "common_utils/lazy_loader.py"
+        },
+        {
+          "file": "__init__.py",
+          "directory": "common/utils",
+          "path": "common/utils/__init__.py"
+        }
+      ],
+      "Configuration": [
+        {
+          "file": "config_manager.py",
+          "directory": "common",
+          "path": "common/config_manager.py"
+        },
+        {
+          "file": "env_helpers.py",
+          "directory": "common",
+          "path": "common/env_helpers.py"
+        },
+        {
+          "file": "env_loader.py",
+          "directory": "common_utils",
+          "path": "common_utils/env_loader.py"
+        },
+        {
+          "file": "path_env.py",
+          "directory": "common/utils",
+          "path": "common/utils/path_env.py"
+        },
+        {
+          "file": "env_standardizer.py",
+          "directory": "common/utils",
+          "path": "common/utils/env_standardizer.py"
+        },
+        {
+          "file": "unified_config_loader.py",
+          "directory": "common/utils",
+          "path": "common/utils/unified_config_loader.py"
+        },
+        {
+          "file": "path_manager.py",
+          "directory": "common/utils",
+          "path": "common/utils/path_manager.py"
+        },
+        {
+          "file": "docker_paths.py",
+          "directory": "common/utils",
+          "path": "common/utils/docker_paths.py"
+        }
+      ],
+      "Health": [
+        {
+          "file": "health.py",
+          "directory": "common",
+          "path": "common/health.py"
+        },
+        {
+          "file": "base_health_mixin.py",
+          "directory": "common/utils",
+          "path": "common/utils/base_health_mixin.py"
+        }
+      ],
+      "Agent Helpers": [
+        {
+          "file": "agent_helpers.py",
+          "directory": "common_utils",
+          "path": "common_utils/agent_helpers.py"
+        },
+        {
+          "file": "agent_ready_signal.py",
+          "directory": "common/utils",
+          "path": "common/utils/agent_ready_signal.py"
+        }
+      ],
+      "Error Handling": [
+        {
+          "file": "error_handling.py",
+          "directory": "common_utils",
+          "path": "common_utils/error_handling.py"
+        }
+      ],
+      "Networking": [
+        {
+          "file": "zmq_helper.py",
+          "directory": "common_utils",
+          "path": "common_utils/zmq_helper.py"
+        },
+        {
+          "file": "port_registry.py",
+          "directory": "common_utils",
+          "path": "common_utils/port_registry.py"
+        },
+        {
+          "file": "prometheus_exporter.py",
+          "directory": "common/utils",
+          "path": "common/utils/prometheus_exporter.py"
+        },
+        {
+          "file": "network_util.py",
+          "directory": "common/utils",
+          "path": "common/utils/network_util.py"
+        },
+        {
+          "file": "hostname_resolver.py",
+          "directory": "common/utils",
+          "path": "common/utils/hostname_resolver.py"
+        }
+      ],
+      "Data": [
+        {
+          "file": "data_models.py",
+          "directory": "common/utils",
+          "path": "common/utils/data_models.py"
+        },
+        {
+          "file": "fast_json.py",
+          "directory": "common/utils",
+          "path": "common/utils/fast_json.py"
+        }
+      ],
+      "Logging": [
+        {
+          "file": "logger_util.py",
+          "directory": "common/utils",
+          "path": "common/utils/logger_util.py"
+        }
+      ],
+      "Learning": [
+        {
+          "file": "learning_models.py",
+          "directory": "common/utils",
+          "path": "common/utils/learning_models.py"
+        }
+      ],
+      "Async": [
+        {
+          "file": "async_io.py",
+          "directory": "common/utils",
+          "path": "common/utils/async_io.py"
+        }
+      ],
+      "Security": [
+        {
+          "file": "secret_manager.py",
+          "directory": "common/utils",
+          "path": "common/utils/secret_manager.py"
+        }
+      ]
+    },
+    "duplicates": [
+      {
+        "base_name": "__init__",
+        "files": [
+          {
+            "file": "__init__.py",
+            "directory": "common",
+            "path": "common/__init__.py"
+          },
+          {
+            "file": "__init__.py",
+            "directory": "common/utils",
+            "path": "common/utils/__init__.py"
+          }
+        ]
+      }
+    ]
+  },
+  "proposed_structure": {
+    "root": "common_lib/",
+    "modules": {
+      "core": {
+        "description": "Core utilities and base classes",
+        "files": [
+          "base_health_mixin.py",
+          "data_models.py",
+          "lazy_loader.py"
+        ]
+      },
+      "config": {
+        "description": "Configuration management and environment handling",
+        "files": [
+          "config_manager.py",
+          "env_helpers.py",
+          "env_loader.py",
+          "env_standardizer.py",
+          "unified_config_loader.py",
+          "docker_paths.py",
+          "path_env.py"
+        ]
+      },
+      "networking": {
+        "description": "Network utilities, ZMQ, ports, and service discovery",
+        "files": [
+          "zmq_helper.py",
+          "port_registry.py",
+          "network_util.py",
+          "hostname_resolver.py"
+        ]
+      },
+      "observability": {
+        "description": "Logging, monitoring, and observability tools",
+        "files": [
+          "logger_util.py",
+          "prometheus_exporter.py",
+          "base_health_mixin.py",
+          "health.py"
+        ]
+      },
+      "security": {
+        "description": "Security and secret management",
+        "files": [
+          "secret_manager.py"
+        ]
+      },
+      "data": {
+        "description": "Data handling and JSON utilities",
+        "files": [
+          "fast_json.py",
+          "data_models.py"
+        ]
+      },
+      "async": {
+        "description": "Asynchronous utilities",
+        "files": [
+          "async_io.py"
+        ]
+      },
+      "agents": {
+        "description": "Agent-specific utilities",
+        "files": [
+          "agent_helpers.py",
+          "agent_ready_signal.py"
+        ]
+      },
+      "error": {
+        "description": "Error handling and resilience",
+        "files": [
+          "error_handling.py"
+        ]
+      },
+      "learning": {
+        "description": "Learning and ML utilities",
+        "files": [
+          "learning_models.py"
+        ]
+      },
+      "path": {
+        "description": "Path management utilities",
+        "files": [
+          "path_manager.py"
+        ]
+      }
+    }
+  },
+  "migration_steps": [
+    {
+      "step": 1,
+      "action": "Create new common_lib/ directory structure",
+      "description": "Set up the new unified directory structure with all modules",
+      "commands": [
+        "mkdir -p common_lib/{core,config,networking,observability,security,data,async,agents,error,learning,path}",
+        "touch common_lib/__init__.py",
+        "touch common_lib/{core,config,networking,observability,security,data,async,agents,error,learning,path}/__init__.py"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "Move files to new structure",
+      "description": "Move existing files to their new locations in common_lib/",
+      "commands": [
+        "# Example: mv common/utils/fast_json.py common_lib/data/",
+        "# Example: mv common_utils/zmq_helper.py common_lib/networking/",
+        "# Example: mv common/config_manager.py common_lib/config/"
+      ]
+    },
+    {
+      "step": 3,
+      "action": "Update import statements",
+      "description": "Update all import statements across the codebase to use new paths",
+      "commands": [
+        "# Find all Python files with old imports",
+        "find . -name '*.py' -exec grep -l 'from common' {} \\;",
+        "find . -name '*.py' -exec grep -l 'from common_utils' {} \\;",
+        "# Update imports to use common_lib"
+      ]
+    },
+    {
+      "step": 4,
+      "action": "Resolve duplicate functionality",
+      "description": "Merge duplicate files and consolidate similar functionality",
+      "commands": [
+        "# Review and merge __init__.py files",
+        "# Consolidate similar configuration utilities",
+        "# Merge overlapping networking utilities"
+      ]
+    },
+    {
+      "step": 5,
+      "action": "Update requirements and dependencies",
+      "description": "Ensure all dependencies are properly managed",
+      "commands": [
+        "# Update setup.py or pyproject.toml if needed",
+        "# Verify all imports work correctly",
+        "# Run tests to ensure functionality is preserved"
+      ]
+    },
+    {
+      "step": 6,
+      "action": "Clean up old directories",
+      "description": "Remove old common/ and common_utils/ directories after verification",
+      "commands": [
+        "# Backup old directories first",
+        "cp -r common common_backup_$(date +%Y%m%d)",
+        "cp -r common_utils common_utils_backup_$(date +%Y%m%d)",
+        "# Remove after successful migration",
+        "# rm -rf common common_utils"
+      ]
+    }
+  ],
+  "benefits": [
+    "Reduced code duplication and maintenance overhead",
+    "Improved code organization and discoverability",
+    "Clearer separation of concerns by functionality",
+    "Easier dependency management",
+    "Better import structure and namespace organization",
+    "Simplified CI/CD pipeline with unified utilities",
+    "Reduced Docker image sizes by eliminating duplicates"
+  ],
+  "risks": [
+    "Breaking changes to existing import statements",
+    "Potential functionality loss during consolidation",
+    "Temporary disruption during migration",
+    "Need to update documentation and examples",
+    "Risk of introducing bugs during refactoring"
+  ],
+  "timeline": {
+    "phase1": {
+      "duration": "1-2 days",
+      "tasks": [
+        "Create new structure",
+        "Move files",
+        "Update imports"
+      ],
+      "risk_level": "Medium"
+    },
+    "phase2": {
+      "duration": "1 day",
+      "tasks": [
+        "Resolve duplicates",
+        "Test functionality"
+      ],
+      "risk_level": "Low"
+    },
+    "phase3": {
+      "duration": "1 day",
+      "tasks": [
+        "Clean up",
+        "Update documentation"
+      ],
+      "risk_level": "Low"
+    }
+  }
+}

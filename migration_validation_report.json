@@ -1,0 +1,189 @@
+{
+  "repository_structure": {
+    "main_pc_code": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/main_pc_code"
+    },
+    "pc2_code": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/pc2_code"
+    },
+    "docker": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/docker"
+    },
+    "docs": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/docs"
+    },
+    "models": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/models"
+    },
+    "logs": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/logs"
+    },
+    "data": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/data"
+    }
+  },
+  "agent_paths": {
+    "MainPC": {
+      "total_agents": 54,
+      "valid_paths": 54,
+      "missing_paths": 0,
+      "missing_agents": []
+    },
+    "PC2": {
+      "total_agents": 23,
+      "valid_paths": 23,
+      "missing_paths": 0,
+      "missing_agents": []
+    }
+  },
+  "configuration_files": {
+    "main_pc_code/config/startup_config.yaml": {
+      "status": "\u2705 VALID YAML",
+      "path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/config/startup_config.yaml"
+    },
+    "pc2_code/config/startup_config.yaml": {
+      "status": "\u2705 VALID YAML",
+      "path": "/home/haymayndz/AI_System_Monorepo/pc2_code/config/startup_config.yaml"
+    }
+  },
+  "dependencies": {
+    "main_pc_code/requirements.txt": {
+      "status": "\u2705 EXISTS",
+      "unpinned_dependencies": [
+        "psutil>=5.9.0",
+        "numpy>=1.24.0",
+        "torch>=2.0.0",
+        "scikit-learn>=1.3.0",
+        "python-json-logger>=2.0.0",
+        "pynacl>=1.5.0",
+        "pytest>=7.0.0",
+        "black>=23.0.0",
+        "mypy>=1.0.0",
+        "flake8>=6.0.0"
+      ],
+      "path": "/home/haymayndz/AI_System_Monorepo/main_pc_code/requirements.txt"
+    },
+    "pc2_code/requirements.txt": {
+      "status": "\u2705 EXISTS",
+      "unpinned_dependencies": [],
+      "path": "/home/haymayndz/AI_System_Monorepo/pc2_code/requirements.txt"
+    },
+    "requirements.txt": {
+      "status": "\u2705 EXISTS",
+      "unpinned_dependencies": [
+        "PyYAML>=6.0",
+        "accelerate>=0.20.0",
+        "aiofiles>=23.0.0",
+        "asyncio-mqtt>=0.16.1",
+        "black>=23.7.0",
+        "click>=8.1.0",
+        "datasets>=2.10.0",
+        "fastapi>=0.100.0",
+        "flake8>=6.0.0",
+        "isort>=5.12.0",
+        "librosa>=0.10.0",
+        "matplotlib>=3.7.0",
+        "mypy>=1.5.0",
+        "numpy>=1.24.0",
+        "opencv-python>=4.8.0",
+        "opentelemetry-api>=1.18.0",
+        "opentelemetry-sdk>=1.18.0",
+        "orjson>=3.8.0",
+        "pandas>=2.0.0",
+        "pillow>=10.0.0",
+        "prometheus-client>=0.17.0",
+        "psutil>=5.9.0",
+        "pyaudio>=0.2.11",
+        "pybreaker>=1.0.0",
+        "pytest-asyncio>=0.21.0",
+        "pytest>=7.4.0",
+        "python-dotenv>=1.0.0",
+        "lz4>=4.0.0",
+        "redis>=4.5.0",
+        "requests>=2.31.0",
+        "rich>=13.4.0",
+        "scikit-learn>=1.3.0",
+        "speechrecognition>=3.10.0",
+        "structlog>=23.1.0",
+        "tenacity>=8.2.0",
+        "tokenizers>=0.13.0",
+        "torch>=2.0.0",
+        "tqdm>=4.65.0",
+        "transformers>=4.30.0",
+        "typer>=0.9.0",
+        "uvicorn>=0.23.0",
+        "websockets>=11.0.0",
+        "selenium>=4.21",
+        "webdriver-manager>=4.0",
+        "beautifulsoup4>=4.12",
+        "aiohttp>=3.9",
+        "sentence-transformers>=2.5",
+        "langchain>=0.1.4",
+        "networkx>=3.2",
+        "scipy>=1.12",
+        "plotly>=5.19",
+        "streamlit>=1.32",
+        "bitsandbytes>=0.41.3",
+        "peft>=0.7.1",
+        "playwright>=1.42",
+        "colorama>=0.4.6",
+        "jsonschema>=4.0.0",
+        "nltk>=3.8",
+        "chromadb>=0.4.0",
+        "faiss-cpu>=1.7.4"
+      ],
+      "path": "/home/haymayndz/AI_System_Monorepo/requirements.txt"
+    }
+  },
+  "docker_environment": {
+    "Dockerfile": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/Dockerfile"
+    },
+    "docker/mainpc/Dockerfile": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/docker/mainpc/Dockerfile"
+    },
+    "docker/pc2/Dockerfile": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/docker/pc2/Dockerfile"
+    },
+    "docker-compose.yml": {
+      "status": "\u2705 EXISTS",
+      "path": "/home/haymayndz/AI_System_Monorepo/docker-compose.yml"
+    }
+  },
+  "shared_resources": {
+    "models": {
+      "status": "\u2705 EXISTS",
+      "count": 0,
+      "files": []
+    },
+    "data": {
+      "status": "\u2705 EXISTS",
+      "db_files": [
+        "session_memory.db",
+        "learning_adjuster.db",
+        "unified_memory.db",
+        "local_fine_tuner.db",
+        "self_training.db",
+        "knowledge.db"
+      ]
+    },
+    "logs": {
+      "status": "\u2705 EXISTS",
+      "writable": true
+    }
+  },
+  "potential_issues": [
+    "Unpinned dependencies in main_pc_code/requirements.txt: ['psutil>=5.9.0', 'numpy>=1.24.0', 'torch>=2.0.0', 'scikit-learn>=1.3.0', 'python-json-logger>=2.0.0', 'pynacl>=1.5.0', 'pytest>=7.0.0', 'black>=23.0.0', 'mypy>=1.0.0', 'flake8>=6.0.0']",
+    "Unpinned dependencies in requirements.txt: ['PyYAML>=6.0', 'accelerate>=0.20.0', 'aiofiles>=23.0.0', 'asyncio-mqtt>=0.16.1', 'black>=23.7.0', 'click>=8.1.0', 'datasets>=2.10.0', 'fastapi>=0.100.0', 'flake8>=6.0.0', 'isort>=5.12.0', 'librosa>=0.10.0', 'matplotlib>=3.7.0', 'mypy>=1.5.0', 'numpy>=1.24.0', 'opencv-python>=4.8.0', 'opentelemetry-api>=1.18.0', 'opentelemetry-sdk>=1.18.0', 'orjson>=3.8.0', 'pandas>=2.0.0', 'pillow>=10.0.0', 'prometheus-client>=0.17.0', 'psutil>=5.9.0', 'pyaudio>=0.2.11', 'pybreaker>=1.0.0', 'pytest-asyncio>=0.21.0', 'pytest>=7.4.0', 'python-dotenv>=1.0.0', 'lz4>=4.0.0', 'redis>=4.5.0', 'requests>=2.31.0', 'rich>=13.4.0', 'scikit-learn>=1.3.0', 'speechrecognition>=3.10.0', 'structlog>=23.1.0', 'tenacity>=8.2.0', 'tokenizers>=0.13.0', 'torch>=2.0.0', 'tqdm>=4.65.0', 'transformers>=4.30.0', 'typer>=0.9.0', 'uvicorn>=0.23.0', 'websockets>=11.0.0', 'selenium>=4.21', 'webdriver-manager>=4.0', 'beautifulsoup4>=4.12', 'aiohttp>=3.9', 'sentence-transformers>=2.5', 'langchain>=0.1.4', 'networkx>=3.2', 'scipy>=1.12', 'plotly>=5.19', 'streamlit>=1.32', 'bitsandbytes>=0.41.3', 'peft>=0.7.1', 'playwright>=1.42', 'colorama>=0.4.6', 'jsonschema>=4.0.0', 'nltk>=3.8', 'chromadb>=0.4.0', 'faiss-cpu>=1.7.4']"
+  ]
+}

@@ -9,6 +9,7 @@ allowing other agents to store and retrieve memories.
 
 import os
 import json
+import zmq
 from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import logging
 import time
@@ -29,7 +30,7 @@ logger = logging.getLogger("MemoryClient")
 
 def get_service_address(service_name: str) -> str:
     # Use environment variable if available, otherwise use PC2 default IP with correct port
-    pc2_ip = get_pc2_ip())
+    pc2_ip = get_pc2_ip()
     memory_orchestrator_port = 7140  # Updated to correct port from PC2 config
     return os.environ.get("MEMORY_ORCHESTRATOR_ADDR", f"tcp://{pc2_ip}:{memory_orchestrator_port}")
 

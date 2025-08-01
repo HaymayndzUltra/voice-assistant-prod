@@ -1,0 +1,1723 @@
+{
+  "structure": {
+    "common": {
+      "path": "/home/haymayndz/AI_System_Monorepo/common",
+      "files": [
+        "__init__.py",
+        "config_manager.py",
+        "health.py",
+        "env_helpers.py",
+        "observability/migration_metrics.py",
+        "observability/tracing.py",
+        "observability/metrics.py",
+        "observability/logging.py",
+        "api/contract.py",
+        "api/openapi_generator.py",
+        "api/standard_contracts.py",
+        "config/__init__.py",
+        "config/validation.py",
+        "config/unified_config_manager.py",
+        "performance/caching.py",
+        "performance/optimizer.py",
+        "performance/profiler.py",
+        "monitoring/prometheus_exporter.py",
+        "monitoring/__init__.py",
+        "monitoring/health_monitor.py",
+        "utils/path_env.py",
+        "utils/prometheus_exporter.py",
+        "utils/env_standardizer.py",
+        "utils/__init__.py",
+        "utils/unified_config_loader.py",
+        "utils/network_util.py",
+        "utils/data_models.py",
+        "utils/base_health_mixin.py",
+        "utils/path_manager.py",
+        "utils/logger_util.py",
+        "utils/learning_models.py",
+        "utils/hostname_resolver.py",
+        "utils/docker_paths.py",
+        "utils/async_io.py",
+        "utils/secret_manager.py",
+        "utils/fast_json.py",
+        "utils/agent_ready_signal.py",
+        "security/authentication.py",
+        "security/encryption.py",
+        "security/access_control.py",
+        "resiliency/circuit_breaker.py",
+        "resiliency/health_monitor.py",
+        "resiliency/bulkhead.py",
+        "resiliency/retry.py",
+        "validation/__init__.py",
+        "validation/config_validator.py",
+        "error_bus/nats_client.py",
+        "error_bus/__init__.py",
+        "error_bus/nats_error_bus.py",
+        "error_bus/dashboard.py",
+        "error_bus/unified_error_handler.py",
+        "health/unified_health.py",
+        "health/__init__.py",
+        "health/standardized_health.py",
+        "audit/__init__.py",
+        "audit/audit_trail.py",
+        "core/__init__.py",
+        "core/base_agent.py",
+        "core/unified_config_manager.py",
+        "core/enhanced_base_agent.py",
+        "core/advanced_health_monitoring.py",
+        "factories/enhanced_agent_factory.py",
+        "factories/__init__.py",
+        "factories/agent_factory.py",
+        "pools/http_pool.py",
+        "pools/async_zmq_pool.py",
+        "pools/__init__.py",
+        "pools/zmq_pool.py",
+        "pools/sql_pool.py",
+        "pools/redis_pool.py",
+        "logging/structured_logger.py",
+        "logging/__init__.py",
+        "logging/log_aggregator.py",
+        "backends/memory_backend.py",
+        "backends/__init__.py",
+        "backends/redis_backend.py",
+        "service_mesh/__init__.py",
+        "service_mesh/unified_discovery_client.py",
+        "service_mesh/client.py",
+        "lifecycle/agent_lifecycle.py",
+        "lifecycle/__init__.py",
+        "resources/__init__.py",
+        "resources/resource_manager.py"
+      ],
+      "subdirectories": [
+        "observability",
+        "api",
+        "config",
+        "performance",
+        "service_discovery",
+        "monitoring",
+        "utils",
+        "security",
+        "resiliency",
+        "validation",
+        "error_bus",
+        "health",
+        "audit",
+        "core",
+        "factories",
+        "pools",
+        "logging",
+        "backends",
+        "service_mesh",
+        "lifecycle",
+        "resources"
+      ],
+      "total_files": 83,
+      "total_subdirs": 21
+    },
+    "common_utils": {
+      "path": "/home/haymayndz/AI_System_Monorepo/common_utils",
+      "files": [
+        "agent_helpers.py",
+        "env_loader.py",
+        "error_handling.py",
+        "lazy_loader.py",
+        "zmq_helper.py",
+        "port_registry.py"
+      ],
+      "subdirectories": [],
+      "total_files": 6,
+      "total_subdirs": 0
+    },
+    "common/utils": {
+      "path": "/home/haymayndz/AI_System_Monorepo/common/utils",
+      "files": [
+        "path_env.py",
+        "prometheus_exporter.py",
+        "env_standardizer.py",
+        "__init__.py",
+        "unified_config_loader.py",
+        "network_util.py",
+        "data_models.py",
+        "base_health_mixin.py",
+        "path_manager.py",
+        "logger_util.py",
+        "learning_models.py",
+        "hostname_resolver.py",
+        "docker_paths.py",
+        "async_io.py",
+        "secret_manager.py",
+        "fast_json.py",
+        "agent_ready_signal.py"
+      ],
+      "subdirectories": [],
+      "total_files": 17,
+      "total_subdirs": 0
+    }
+  },
+  "file_count": {
+    "common": 83,
+    "common_utils": 6,
+    "common/utils": 17
+  },
+  "categories": {
+    "Other": [
+      {
+        "file": "__init__.py",
+        "directory": "common",
+        "path": "common/__init__.py"
+      },
+      {
+        "file": "utils/__init__.py",
+        "directory": "common",
+        "path": "common/utils/__init__.py"
+      },
+      {
+        "file": "__init__.py",
+        "directory": "common/utils",
+        "path": "common/utils/__init__.py"
+      }
+    ],
+    "Configuration": [
+      {
+        "file": "config_manager.py",
+        "directory": "common",
+        "path": "common/config_manager.py"
+      },
+      {
+        "file": "env_helpers.py",
+        "directory": "common",
+        "path": "common/env_helpers.py"
+      },
+      {
+        "file": "config/__init__.py",
+        "directory": "common",
+        "path": "common/config/__init__.py"
+      },
+      {
+        "file": "config/validation.py",
+        "directory": "common",
+        "path": "common/config/validation.py"
+      },
+      {
+        "file": "config/unified_config_manager.py",
+        "directory": "common",
+        "path": "common/config/unified_config_manager.py"
+      },
+      {
+        "file": "utils/path_env.py",
+        "directory": "common",
+        "path": "common/utils/path_env.py"
+      },
+      {
+        "file": "utils/env_standardizer.py",
+        "directory": "common",
+        "path": "common/utils/env_standardizer.py"
+      },
+      {
+        "file": "utils/unified_config_loader.py",
+        "directory": "common",
+        "path": "common/utils/unified_config_loader.py"
+      },
+      {
+        "file": "utils/path_manager.py",
+        "directory": "common",
+        "path": "common/utils/path_manager.py"
+      },
+      {
+        "file": "utils/docker_paths.py",
+        "directory": "common",
+        "path": "common/utils/docker_paths.py"
+      },
+      {
+        "file": "validation/config_validator.py",
+        "directory": "common",
+        "path": "common/validation/config_validator.py"
+      },
+      {
+        "file": "env_loader.py",
+        "directory": "common_utils",
+        "path": "common_utils/env_loader.py"
+      },
+      {
+        "file": "path_env.py",
+        "directory": "common/utils",
+        "path": "common/utils/path_env.py"
+      },
+      {
+        "file": "env_standardizer.py",
+        "directory": "common/utils",
+        "path": "common/utils/env_standardizer.py"
+      },
+      {
+        "file": "unified_config_loader.py",
+        "directory": "common/utils",
+        "path": "common/utils/unified_config_loader.py"
+      },
+      {
+        "file": "path_manager.py",
+        "directory": "common/utils",
+        "path": "common/utils/path_manager.py"
+      },
+      {
+        "file": "docker_paths.py",
+        "directory": "common/utils",
+        "path": "common/utils/docker_paths.py"
+      }
+    ],
+    "Health": [
+      {
+        "file": "health.py",
+        "directory": "common",
+        "path": "common/health.py"
+      },
+      {
+        "file": "monitoring/__init__.py",
+        "directory": "common",
+        "path": "common/monitoring/__init__.py"
+      },
+      {
+        "file": "monitoring/health_monitor.py",
+        "directory": "common",
+        "path": "common/monitoring/health_monitor.py"
+      },
+      {
+        "file": "resiliency/health_monitor.py",
+        "directory": "common",
+        "path": "common/resiliency/health_monitor.py"
+      },
+      {
+        "file": "health/unified_health.py",
+        "directory": "common",
+        "path": "common/health/unified_health.py"
+      },
+      {
+        "file": "health/__init__.py",
+        "directory": "common",
+        "path": "common/health/__init__.py"
+      },
+      {
+        "file": "health/standardized_health.py",
+        "directory": "common",
+        "path": "common/health/standardized_health.py"
+      }
+    ],
+    "Async": [
+      {
+        "file": "observability/migration_metrics.py",
+        "directory": "common",
+        "path": "common/observability/migration_metrics.py"
+      },
+      {
+        "file": "utils/async_io.py",
+        "directory": "common",
+        "path": "common/utils/async_io.py"
+      },
+      {
+        "file": "validation/__init__.py",
+        "directory": "common",
+        "path": "common/validation/__init__.py"
+      },
+      {
+        "file": "async_io.py",
+        "directory": "common/utils",
+        "path": "common/utils/async_io.py"
+      }
+    ],
+    "Observability": [
+      {
+        "file": "observability/tracing.py",
+        "directory": "common",
+        "path": "common/observability/tracing.py"
+      },
+      {
+        "file": "observability/metrics.py",
+        "directory": "common",
+        "path": "common/observability/metrics.py"
+      }
+    ],
+    "Logging": [
+      {
+        "file": "observability/logging.py",
+        "directory": "common",
+        "path": "common/observability/logging.py"
+      },
+      {
+        "file": "utils/logger_util.py",
+        "directory": "common",
+        "path": "common/utils/logger_util.py"
+      },
+      {
+        "file": "logging/structured_logger.py",
+        "directory": "common",
+        "path": "common/logging/structured_logger.py"
+      },
+      {
+        "file": "logging/__init__.py",
+        "directory": "common",
+        "path": "common/logging/__init__.py"
+      },
+      {
+        "file": "logging/log_aggregator.py",
+        "directory": "common",
+        "path": "common/logging/log_aggregator.py"
+      },
+      {
+        "file": "logger_util.py",
+        "directory": "common/utils",
+        "path": "common/utils/logger_util.py"
+      }
+    ],
+    "API": [
+      {
+        "file": "api/contract.py",
+        "directory": "common",
+        "path": "common/api/contract.py"
+      },
+      {
+        "file": "api/openapi_generator.py",
+        "directory": "common",
+        "path": "common/api/openapi_generator.py"
+      },
+      {
+        "file": "api/standard_contracts.py",
+        "directory": "common",
+        "path": "common/api/standard_contracts.py"
+      }
+    ],
+    "Performance": [
+      {
+        "file": "performance/caching.py",
+        "directory": "common",
+        "path": "common/performance/caching.py"
+      },
+      {
+        "file": "performance/optimizer.py",
+        "directory": "common",
+        "path": "common/performance/optimizer.py"
+      },
+      {
+        "file": "performance/profiler.py",
+        "directory": "common",
+        "path": "common/performance/profiler.py"
+      }
+    ],
+    "Networking": [
+      {
+        "file": "monitoring/prometheus_exporter.py",
+        "directory": "common",
+        "path": "common/monitoring/prometheus_exporter.py"
+      },
+      {
+        "file": "utils/prometheus_exporter.py",
+        "directory": "common",
+        "path": "common/utils/prometheus_exporter.py"
+      },
+      {
+        "file": "utils/network_util.py",
+        "directory": "common",
+        "path": "common/utils/network_util.py"
+      },
+      {
+        "file": "utils/hostname_resolver.py",
+        "directory": "common",
+        "path": "common/utils/hostname_resolver.py"
+      },
+      {
+        "file": "pools/http_pool.py",
+        "directory": "common",
+        "path": "common/pools/http_pool.py"
+      },
+      {
+        "file": "pools/async_zmq_pool.py",
+        "directory": "common",
+        "path": "common/pools/async_zmq_pool.py"
+      },
+      {
+        "file": "pools/zmq_pool.py",
+        "directory": "common",
+        "path": "common/pools/zmq_pool.py"
+      },
+      {
+        "file": "zmq_helper.py",
+        "directory": "common_utils",
+        "path": "common_utils/zmq_helper.py"
+      },
+      {
+        "file": "port_registry.py",
+        "directory": "common_utils",
+        "path": "common_utils/port_registry.py"
+      },
+      {
+        "file": "prometheus_exporter.py",
+        "directory": "common/utils",
+        "path": "common/utils/prometheus_exporter.py"
+      },
+      {
+        "file": "network_util.py",
+        "directory": "common/utils",
+        "path": "common/utils/network_util.py"
+      },
+      {
+        "file": "hostname_resolver.py",
+        "directory": "common/utils",
+        "path": "common/utils/hostname_resolver.py"
+      }
+    ],
+    "Data": [
+      {
+        "file": "utils/data_models.py",
+        "directory": "common",
+        "path": "common/utils/data_models.py"
+      },
+      {
+        "file": "utils/fast_json.py",
+        "directory": "common",
+        "path": "common/utils/fast_json.py"
+      },
+      {
+        "file": "data_models.py",
+        "directory": "common/utils",
+        "path": "common/utils/data_models.py"
+      },
+      {
+        "file": "fast_json.py",
+        "directory": "common/utils",
+        "path": "common/utils/fast_json.py"
+      }
+    ],
+    "Core": [
+      {
+        "file": "utils/base_health_mixin.py",
+        "directory": "common",
+        "path": "common/utils/base_health_mixin.py"
+      },
+      {
+        "file": "core/__init__.py",
+        "directory": "common",
+        "path": "common/core/__init__.py"
+      },
+      {
+        "file": "core/base_agent.py",
+        "directory": "common",
+        "path": "common/core/base_agent.py"
+      },
+      {
+        "file": "core/unified_config_manager.py",
+        "directory": "common",
+        "path": "common/core/unified_config_manager.py"
+      },
+      {
+        "file": "core/enhanced_base_agent.py",
+        "directory": "common",
+        "path": "common/core/enhanced_base_agent.py"
+      },
+      {
+        "file": "core/advanced_health_monitoring.py",
+        "directory": "common",
+        "path": "common/core/advanced_health_monitoring.py"
+      },
+      {
+        "file": "factories/enhanced_agent_factory.py",
+        "directory": "common",
+        "path": "common/factories/enhanced_agent_factory.py"
+      },
+      {
+        "file": "base_health_mixin.py",
+        "directory": "common/utils",
+        "path": "common/utils/base_health_mixin.py"
+      }
+    ],
+    "Learning": [
+      {
+        "file": "utils/learning_models.py",
+        "directory": "common",
+        "path": "common/utils/learning_models.py"
+      },
+      {
+        "file": "learning_models.py",
+        "directory": "common/utils",
+        "path": "common/utils/learning_models.py"
+      }
+    ],
+    "Security": [
+      {
+        "file": "utils/secret_manager.py",
+        "directory": "common",
+        "path": "common/utils/secret_manager.py"
+      },
+      {
+        "file": "security/authentication.py",
+        "directory": "common",
+        "path": "common/security/authentication.py"
+      },
+      {
+        "file": "security/encryption.py",
+        "directory": "common",
+        "path": "common/security/encryption.py"
+      },
+      {
+        "file": "security/access_control.py",
+        "directory": "common",
+        "path": "common/security/access_control.py"
+      },
+      {
+        "file": "secret_manager.py",
+        "directory": "common/utils",
+        "path": "common/utils/secret_manager.py"
+      }
+    ],
+    "Agent Helpers": [
+      {
+        "file": "utils/agent_ready_signal.py",
+        "directory": "common",
+        "path": "common/utils/agent_ready_signal.py"
+      },
+      {
+        "file": "factories/agent_factory.py",
+        "directory": "common",
+        "path": "common/factories/agent_factory.py"
+      },
+      {
+        "file": "lifecycle/agent_lifecycle.py",
+        "directory": "common",
+        "path": "common/lifecycle/agent_lifecycle.py"
+      },
+      {
+        "file": "agent_helpers.py",
+        "directory": "common_utils",
+        "path": "common_utils/agent_helpers.py"
+      },
+      {
+        "file": "agent_ready_signal.py",
+        "directory": "common/utils",
+        "path": "common/utils/agent_ready_signal.py"
+      }
+    ],
+    "Resiliency": [
+      {
+        "file": "resiliency/circuit_breaker.py",
+        "directory": "common",
+        "path": "common/resiliency/circuit_breaker.py"
+      },
+      {
+        "file": "resiliency/bulkhead.py",
+        "directory": "common",
+        "path": "common/resiliency/bulkhead.py"
+      },
+      {
+        "file": "resiliency/retry.py",
+        "directory": "common",
+        "path": "common/resiliency/retry.py"
+      }
+    ],
+    "Error Handling": [
+      {
+        "file": "error_bus/nats_client.py",
+        "directory": "common",
+        "path": "common/error_bus/nats_client.py"
+      },
+      {
+        "file": "error_bus/__init__.py",
+        "directory": "common",
+        "path": "common/error_bus/__init__.py"
+      },
+      {
+        "file": "error_bus/nats_error_bus.py",
+        "directory": "common",
+        "path": "common/error_bus/nats_error_bus.py"
+      },
+      {
+        "file": "error_bus/dashboard.py",
+        "directory": "common",
+        "path": "common/error_bus/dashboard.py"
+      },
+      {
+        "file": "error_bus/unified_error_handler.py",
+        "directory": "common",
+        "path": "common/error_bus/unified_error_handler.py"
+      },
+      {
+        "file": "error_handling.py",
+        "directory": "common_utils",
+        "path": "common_utils/error_handling.py"
+      }
+    ],
+    "Audit": [
+      {
+        "file": "audit/__init__.py",
+        "directory": "common",
+        "path": "common/audit/__init__.py"
+      },
+      {
+        "file": "audit/audit_trail.py",
+        "directory": "common",
+        "path": "common/audit/audit_trail.py"
+      }
+    ],
+    "Factories": [
+      {
+        "file": "factories/__init__.py",
+        "directory": "common",
+        "path": "common/factories/__init__.py"
+      }
+    ],
+    "Pools": [
+      {
+        "file": "pools/__init__.py",
+        "directory": "common",
+        "path": "common/pools/__init__.py"
+      },
+      {
+        "file": "pools/sql_pool.py",
+        "directory": "common",
+        "path": "common/pools/sql_pool.py"
+      },
+      {
+        "file": "pools/redis_pool.py",
+        "directory": "common",
+        "path": "common/pools/redis_pool.py"
+      },
+      {
+        "file": "backends/redis_backend.py",
+        "directory": "common",
+        "path": "common/backends/redis_backend.py"
+      }
+    ],
+    "Backends": [
+      {
+        "file": "backends/memory_backend.py",
+        "directory": "common",
+        "path": "common/backends/memory_backend.py"
+      },
+      {
+        "file": "backends/__init__.py",
+        "directory": "common",
+        "path": "common/backends/__init__.py"
+      }
+    ],
+    "Service": [
+      {
+        "file": "service_mesh/__init__.py",
+        "directory": "common",
+        "path": "common/service_mesh/__init__.py"
+      },
+      {
+        "file": "service_mesh/unified_discovery_client.py",
+        "directory": "common",
+        "path": "common/service_mesh/unified_discovery_client.py"
+      },
+      {
+        "file": "service_mesh/client.py",
+        "directory": "common",
+        "path": "common/service_mesh/client.py"
+      }
+    ],
+    "Lifecycle": [
+      {
+        "file": "lifecycle/__init__.py",
+        "directory": "common",
+        "path": "common/lifecycle/__init__.py"
+      }
+    ],
+    "Resources": [
+      {
+        "file": "resources/__init__.py",
+        "directory": "common",
+        "path": "common/resources/__init__.py"
+      },
+      {
+        "file": "resources/resource_manager.py",
+        "directory": "common",
+        "path": "common/resources/resource_manager.py"
+      }
+    ],
+    "Lazy Loading": [
+      {
+        "file": "lazy_loader.py",
+        "directory": "common_utils",
+        "path": "common_utils/lazy_loader.py"
+      }
+    ]
+  },
+  "potential_duplicates": [
+    {
+      "base_name": "__init__",
+      "files": [
+        {
+          "file": "__init__.py",
+          "directory": "common",
+          "path": "common/__init__.py"
+        },
+        {
+          "file": "config/__init__.py",
+          "directory": "common",
+          "path": "common/config/__init__.py"
+        },
+        {
+          "file": "monitoring/__init__.py",
+          "directory": "common",
+          "path": "common/monitoring/__init__.py"
+        },
+        {
+          "file": "utils/__init__.py",
+          "directory": "common",
+          "path": "common/utils/__init__.py"
+        },
+        {
+          "file": "validation/__init__.py",
+          "directory": "common",
+          "path": "common/validation/__init__.py"
+        },
+        {
+          "file": "error_bus/__init__.py",
+          "directory": "common",
+          "path": "common/error_bus/__init__.py"
+        },
+        {
+          "file": "health/__init__.py",
+          "directory": "common",
+          "path": "common/health/__init__.py"
+        },
+        {
+          "file": "audit/__init__.py",
+          "directory": "common",
+          "path": "common/audit/__init__.py"
+        },
+        {
+          "file": "core/__init__.py",
+          "directory": "common",
+          "path": "common/core/__init__.py"
+        },
+        {
+          "file": "factories/__init__.py",
+          "directory": "common",
+          "path": "common/factories/__init__.py"
+        },
+        {
+          "file": "pools/__init__.py",
+          "directory": "common",
+          "path": "common/pools/__init__.py"
+        },
+        {
+          "file": "logging/__init__.py",
+          "directory": "common",
+          "path": "common/logging/__init__.py"
+        },
+        {
+          "file": "backends/__init__.py",
+          "directory": "common",
+          "path": "common/backends/__init__.py"
+        },
+        {
+          "file": "service_mesh/__init__.py",
+          "directory": "common",
+          "path": "common/service_mesh/__init__.py"
+        },
+        {
+          "file": "lifecycle/__init__.py",
+          "directory": "common",
+          "path": "common/lifecycle/__init__.py"
+        },
+        {
+          "file": "resources/__init__.py",
+          "directory": "common",
+          "path": "common/resources/__init__.py"
+        },
+        {
+          "file": "__init__.py",
+          "directory": "common/utils",
+          "path": "common/utils/__init__.py"
+        }
+      ]
+    },
+    {
+      "base_name": "unified_config_manager",
+      "files": [
+        {
+          "file": "config/unified_config_manager.py",
+          "directory": "common",
+          "path": "common/config/unified_config_manager.py"
+        },
+        {
+          "file": "core/unified_config_manager.py",
+          "directory": "common",
+          "path": "common/core/unified_config_manager.py"
+        }
+      ]
+    },
+    {
+      "base_name": "prometheus_exporter",
+      "files": [
+        {
+          "file": "monitoring/prometheus_exporter.py",
+          "directory": "common",
+          "path": "common/monitoring/prometheus_exporter.py"
+        },
+        {
+          "file": "utils/prometheus_exporter.py",
+          "directory": "common",
+          "path": "common/utils/prometheus_exporter.py"
+        },
+        {
+          "file": "prometheus_exporter.py",
+          "directory": "common/utils",
+          "path": "common/utils/prometheus_exporter.py"
+        }
+      ]
+    },
+    {
+      "base_name": "health_monitor",
+      "files": [
+        {
+          "file": "monitoring/health_monitor.py",
+          "directory": "common",
+          "path": "common/monitoring/health_monitor.py"
+        },
+        {
+          "file": "resiliency/health_monitor.py",
+          "directory": "common",
+          "path": "common/resiliency/health_monitor.py"
+        }
+      ]
+    },
+    {
+      "base_name": "path_env",
+      "files": [
+        {
+          "file": "utils/path_env.py",
+          "directory": "common",
+          "path": "common/utils/path_env.py"
+        },
+        {
+          "file": "path_env.py",
+          "directory": "common/utils",
+          "path": "common/utils/path_env.py"
+        }
+      ]
+    },
+    {
+      "base_name": "env_standardizer",
+      "files": [
+        {
+          "file": "utils/env_standardizer.py",
+          "directory": "common",
+          "path": "common/utils/env_standardizer.py"
+        },
+        {
+          "file": "env_standardizer.py",
+          "directory": "common/utils",
+          "path": "common/utils/env_standardizer.py"
+        }
+      ]
+    },
+    {
+      "base_name": "unified_config_loader",
+      "files": [
+        {
+          "file": "utils/unified_config_loader.py",
+          "directory": "common",
+          "path": "common/utils/unified_config_loader.py"
+        },
+        {
+          "file": "unified_config_loader.py",
+          "directory": "common/utils",
+          "path": "common/utils/unified_config_loader.py"
+        }
+      ]
+    },
+    {
+      "base_name": "network_util",
+      "files": [
+        {
+          "file": "utils/network_util.py",
+          "directory": "common",
+          "path": "common/utils/network_util.py"
+        },
+        {
+          "file": "network_util.py",
+          "directory": "common/utils",
+          "path": "common/utils/network_util.py"
+        }
+      ]
+    },
+    {
+      "base_name": "data_models",
+      "files": [
+        {
+          "file": "utils/data_models.py",
+          "directory": "common",
+          "path": "common/utils/data_models.py"
+        },
+        {
+          "file": "data_models.py",
+          "directory": "common/utils",
+          "path": "common/utils/data_models.py"
+        }
+      ]
+    },
+    {
+      "base_name": "base_health_mixin",
+      "files": [
+        {
+          "file": "utils/base_health_mixin.py",
+          "directory": "common",
+          "path": "common/utils/base_health_mixin.py"
+        },
+        {
+          "file": "base_health_mixin.py",
+          "directory": "common/utils",
+          "path": "common/utils/base_health_mixin.py"
+        }
+      ]
+    },
+    {
+      "base_name": "path_manager",
+      "files": [
+        {
+          "file": "utils/path_manager.py",
+          "directory": "common",
+          "path": "common/utils/path_manager.py"
+        },
+        {
+          "file": "path_manager.py",
+          "directory": "common/utils",
+          "path": "common/utils/path_manager.py"
+        }
+      ]
+    },
+    {
+      "base_name": "logger_util",
+      "files": [
+        {
+          "file": "utils/logger_util.py",
+          "directory": "common",
+          "path": "common/utils/logger_util.py"
+        },
+        {
+          "file": "logger_util.py",
+          "directory": "common/utils",
+          "path": "common/utils/logger_util.py"
+        }
+      ]
+    },
+    {
+      "base_name": "learning_models",
+      "files": [
+        {
+          "file": "utils/learning_models.py",
+          "directory": "common",
+          "path": "common/utils/learning_models.py"
+        },
+        {
+          "file": "learning_models.py",
+          "directory": "common/utils",
+          "path": "common/utils/learning_models.py"
+        }
+      ]
+    },
+    {
+      "base_name": "hostname_resolver",
+      "files": [
+        {
+          "file": "utils/hostname_resolver.py",
+          "directory": "common",
+          "path": "common/utils/hostname_resolver.py"
+        },
+        {
+          "file": "hostname_resolver.py",
+          "directory": "common/utils",
+          "path": "common/utils/hostname_resolver.py"
+        }
+      ]
+    },
+    {
+      "base_name": "docker_paths",
+      "files": [
+        {
+          "file": "utils/docker_paths.py",
+          "directory": "common",
+          "path": "common/utils/docker_paths.py"
+        },
+        {
+          "file": "docker_paths.py",
+          "directory": "common/utils",
+          "path": "common/utils/docker_paths.py"
+        }
+      ]
+    },
+    {
+      "base_name": "async_io",
+      "files": [
+        {
+          "file": "utils/async_io.py",
+          "directory": "common",
+          "path": "common/utils/async_io.py"
+        },
+        {
+          "file": "async_io.py",
+          "directory": "common/utils",
+          "path": "common/utils/async_io.py"
+        }
+      ]
+    },
+    {
+      "base_name": "secret_manager",
+      "files": [
+        {
+          "file": "utils/secret_manager.py",
+          "directory": "common",
+          "path": "common/utils/secret_manager.py"
+        },
+        {
+          "file": "secret_manager.py",
+          "directory": "common/utils",
+          "path": "common/utils/secret_manager.py"
+        }
+      ]
+    },
+    {
+      "base_name": "fast_json",
+      "files": [
+        {
+          "file": "utils/fast_json.py",
+          "directory": "common",
+          "path": "common/utils/fast_json.py"
+        },
+        {
+          "file": "fast_json.py",
+          "directory": "common/utils",
+          "path": "common/utils/fast_json.py"
+        }
+      ]
+    },
+    {
+      "base_name": "agent_ready_signal",
+      "files": [
+        {
+          "file": "utils/agent_ready_signal.py",
+          "directory": "common",
+          "path": "common/utils/agent_ready_signal.py"
+        },
+        {
+          "file": "agent_ready_signal.py",
+          "directory": "common/utils",
+          "path": "common/utils/agent_ready_signal.py"
+        }
+      ]
+    }
+  ],
+  "optimization_opportunities": [],
+  "complete_file_mapping": {
+    "common/__init__.py": {
+      "directory": "common",
+      "relative_path": "__init__.py",
+      "module_path": "__init__"
+    },
+    "common/config_manager.py": {
+      "directory": "common",
+      "relative_path": "config_manager.py",
+      "module_path": "config_manager"
+    },
+    "common/health.py": {
+      "directory": "common",
+      "relative_path": "health.py",
+      "module_path": "health"
+    },
+    "common/env_helpers.py": {
+      "directory": "common",
+      "relative_path": "env_helpers.py",
+      "module_path": "env_helpers"
+    },
+    "common/observability/migration_metrics.py": {
+      "directory": "common",
+      "relative_path": "observability/migration_metrics.py",
+      "module_path": "observability.migration_metrics"
+    },
+    "common/observability/tracing.py": {
+      "directory": "common",
+      "relative_path": "observability/tracing.py",
+      "module_path": "observability.tracing"
+    },
+    "common/observability/metrics.py": {
+      "directory": "common",
+      "relative_path": "observability/metrics.py",
+      "module_path": "observability.metrics"
+    },
+    "common/observability/logging.py": {
+      "directory": "common",
+      "relative_path": "observability/logging.py",
+      "module_path": "observability.logging"
+    },
+    "common/api/contract.py": {
+      "directory": "common",
+      "relative_path": "api/contract.py",
+      "module_path": "api.contract"
+    },
+    "common/api/openapi_generator.py": {
+      "directory": "common",
+      "relative_path": "api/openapi_generator.py",
+      "module_path": "api.openapi_generator"
+    },
+    "common/api/standard_contracts.py": {
+      "directory": "common",
+      "relative_path": "api/standard_contracts.py",
+      "module_path": "api.standard_contracts"
+    },
+    "common/config/__init__.py": {
+      "directory": "common",
+      "relative_path": "config/__init__.py",
+      "module_path": "config.__init__"
+    },
+    "common/config/validation.py": {
+      "directory": "common",
+      "relative_path": "config/validation.py",
+      "module_path": "config.validation"
+    },
+    "common/config/unified_config_manager.py": {
+      "directory": "common",
+      "relative_path": "config/unified_config_manager.py",
+      "module_path": "config.unified_config_manager"
+    },
+    "common/performance/caching.py": {
+      "directory": "common",
+      "relative_path": "performance/caching.py",
+      "module_path": "performance.caching"
+    },
+    "common/performance/optimizer.py": {
+      "directory": "common",
+      "relative_path": "performance/optimizer.py",
+      "module_path": "performance.optimizer"
+    },
+    "common/performance/profiler.py": {
+      "directory": "common",
+      "relative_path": "performance/profiler.py",
+      "module_path": "performance.profiler"
+    },
+    "common/monitoring/prometheus_exporter.py": {
+      "directory": "common",
+      "relative_path": "monitoring/prometheus_exporter.py",
+      "module_path": "monitoring.prometheus_exporter"
+    },
+    "common/monitoring/__init__.py": {
+      "directory": "common",
+      "relative_path": "monitoring/__init__.py",
+      "module_path": "monitoring.__init__"
+    },
+    "common/monitoring/health_monitor.py": {
+      "directory": "common",
+      "relative_path": "monitoring/health_monitor.py",
+      "module_path": "monitoring.health_monitor"
+    },
+    "common/utils/path_env.py": {
+      "directory": "common/utils",
+      "relative_path": "path_env.py",
+      "module_path": "path_env"
+    },
+    "common/utils/prometheus_exporter.py": {
+      "directory": "common/utils",
+      "relative_path": "prometheus_exporter.py",
+      "module_path": "prometheus_exporter"
+    },
+    "common/utils/env_standardizer.py": {
+      "directory": "common/utils",
+      "relative_path": "env_standardizer.py",
+      "module_path": "env_standardizer"
+    },
+    "common/utils/__init__.py": {
+      "directory": "common/utils",
+      "relative_path": "__init__.py",
+      "module_path": "__init__"
+    },
+    "common/utils/unified_config_loader.py": {
+      "directory": "common/utils",
+      "relative_path": "unified_config_loader.py",
+      "module_path": "unified_config_loader"
+    },
+    "common/utils/network_util.py": {
+      "directory": "common/utils",
+      "relative_path": "network_util.py",
+      "module_path": "network_util"
+    },
+    "common/utils/data_models.py": {
+      "directory": "common/utils",
+      "relative_path": "data_models.py",
+      "module_path": "data_models"
+    },
+    "common/utils/base_health_mixin.py": {
+      "directory": "common/utils",
+      "relative_path": "base_health_mixin.py",
+      "module_path": "base_health_mixin"
+    },
+    "common/utils/path_manager.py": {
+      "directory": "common/utils",
+      "relative_path": "path_manager.py",
+      "module_path": "path_manager"
+    },
+    "common/utils/logger_util.py": {
+      "directory": "common/utils",
+      "relative_path": "logger_util.py",
+      "module_path": "logger_util"
+    },
+    "common/utils/learning_models.py": {
+      "directory": "common/utils",
+      "relative_path": "learning_models.py",
+      "module_path": "learning_models"
+    },
+    "common/utils/hostname_resolver.py": {
+      "directory": "common/utils",
+      "relative_path": "hostname_resolver.py",
+      "module_path": "hostname_resolver"
+    },
+    "common/utils/docker_paths.py": {
+      "directory": "common/utils",
+      "relative_path": "docker_paths.py",
+      "module_path": "docker_paths"
+    },
+    "common/utils/async_io.py": {
+      "directory": "common/utils",
+      "relative_path": "async_io.py",
+      "module_path": "async_io"
+    },
+    "common/utils/secret_manager.py": {
+      "directory": "common/utils",
+      "relative_path": "secret_manager.py",
+      "module_path": "secret_manager"
+    },
+    "common/utils/fast_json.py": {
+      "directory": "common/utils",
+      "relative_path": "fast_json.py",
+      "module_path": "fast_json"
+    },
+    "common/utils/agent_ready_signal.py": {
+      "directory": "common/utils",
+      "relative_path": "agent_ready_signal.py",
+      "module_path": "agent_ready_signal"
+    },
+    "common/security/authentication.py": {
+      "directory": "common",
+      "relative_path": "security/authentication.py",
+      "module_path": "security.authentication"
+    },
+    "common/security/encryption.py": {
+      "directory": "common",
+      "relative_path": "security/encryption.py",
+      "module_path": "security.encryption"
+    },
+    "common/security/access_control.py": {
+      "directory": "common",
+      "relative_path": "security/access_control.py",
+      "module_path": "security.access_control"
+    },
+    "common/resiliency/circuit_breaker.py": {
+      "directory": "common",
+      "relative_path": "resiliency/circuit_breaker.py",
+      "module_path": "resiliency.circuit_breaker"
+    },
+    "common/resiliency/health_monitor.py": {
+      "directory": "common",
+      "relative_path": "resiliency/health_monitor.py",
+      "module_path": "resiliency.health_monitor"
+    },
+    "common/resiliency/bulkhead.py": {
+      "directory": "common",
+      "relative_path": "resiliency/bulkhead.py",
+      "module_path": "resiliency.bulkhead"
+    },
+    "common/resiliency/retry.py": {
+      "directory": "common",
+      "relative_path": "resiliency/retry.py",
+      "module_path": "resiliency.retry"
+    },
+    "common/validation/__init__.py": {
+      "directory": "common",
+      "relative_path": "validation/__init__.py",
+      "module_path": "validation.__init__"
+    },
+    "common/validation/config_validator.py": {
+      "directory": "common",
+      "relative_path": "validation/config_validator.py",
+      "module_path": "validation.config_validator"
+    },
+    "common/error_bus/nats_client.py": {
+      "directory": "common",
+      "relative_path": "error_bus/nats_client.py",
+      "module_path": "error_bus.nats_client"
+    },
+    "common/error_bus/__init__.py": {
+      "directory": "common",
+      "relative_path": "error_bus/__init__.py",
+      "module_path": "error_bus.__init__"
+    },
+    "common/error_bus/nats_error_bus.py": {
+      "directory": "common",
+      "relative_path": "error_bus/nats_error_bus.py",
+      "module_path": "error_bus.nats_error_bus"
+    },
+    "common/error_bus/dashboard.py": {
+      "directory": "common",
+      "relative_path": "error_bus/dashboard.py",
+      "module_path": "error_bus.dashboard"
+    },
+    "common/error_bus/unified_error_handler.py": {
+      "directory": "common",
+      "relative_path": "error_bus/unified_error_handler.py",
+      "module_path": "error_bus.unified_error_handler"
+    },
+    "common/health/unified_health.py": {
+      "directory": "common",
+      "relative_path": "health/unified_health.py",
+      "module_path": "health.unified_health"
+    },
+    "common/health/__init__.py": {
+      "directory": "common",
+      "relative_path": "health/__init__.py",
+      "module_path": "health.__init__"
+    },
+    "common/health/standardized_health.py": {
+      "directory": "common",
+      "relative_path": "health/standardized_health.py",
+      "module_path": "health.standardized_health"
+    },
+    "common/audit/__init__.py": {
+      "directory": "common",
+      "relative_path": "audit/__init__.py",
+      "module_path": "audit.__init__"
+    },
+    "common/audit/audit_trail.py": {
+      "directory": "common",
+      "relative_path": "audit/audit_trail.py",
+      "module_path": "audit.audit_trail"
+    },
+    "common/core/__init__.py": {
+      "directory": "common",
+      "relative_path": "core/__init__.py",
+      "module_path": "core.__init__"
+    },
+    "common/core/base_agent.py": {
+      "directory": "common",
+      "relative_path": "core/base_agent.py",
+      "module_path": "core.base_agent"
+    },
+    "common/core/unified_config_manager.py": {
+      "directory": "common",
+      "relative_path": "core/unified_config_manager.py",
+      "module_path": "core.unified_config_manager"
+    },
+    "common/core/enhanced_base_agent.py": {
+      "directory": "common",
+      "relative_path": "core/enhanced_base_agent.py",
+      "module_path": "core.enhanced_base_agent"
+    },
+    "common/core/advanced_health_monitoring.py": {
+      "directory": "common",
+      "relative_path": "core/advanced_health_monitoring.py",
+      "module_path": "core.advanced_health_monitoring"
+    },
+    "common/factories/enhanced_agent_factory.py": {
+      "directory": "common",
+      "relative_path": "factories/enhanced_agent_factory.py",
+      "module_path": "factories.enhanced_agent_factory"
+    },
+    "common/factories/__init__.py": {
+      "directory": "common",
+      "relative_path": "factories/__init__.py",
+      "module_path": "factories.__init__"
+    },
+    "common/factories/agent_factory.py": {
+      "directory": "common",
+      "relative_path": "factories/agent_factory.py",
+      "module_path": "factories.agent_factory"
+    },
+    "common/pools/http_pool.py": {
+      "directory": "common",
+      "relative_path": "pools/http_pool.py",
+      "module_path": "pools.http_pool"
+    },
+    "common/pools/async_zmq_pool.py": {
+      "directory": "common",
+      "relative_path": "pools/async_zmq_pool.py",
+      "module_path": "pools.async_zmq_pool"
+    },
+    "common/pools/__init__.py": {
+      "directory": "common",
+      "relative_path": "pools/__init__.py",
+      "module_path": "pools.__init__"
+    },
+    "common/pools/zmq_pool.py": {
+      "directory": "common",
+      "relative_path": "pools/zmq_pool.py",
+      "module_path": "pools.zmq_pool"
+    },
+    "common/pools/sql_pool.py": {
+      "directory": "common",
+      "relative_path": "pools/sql_pool.py",
+      "module_path": "pools.sql_pool"
+    },
+    "common/pools/redis_pool.py": {
+      "directory": "common",
+      "relative_path": "pools/redis_pool.py",
+      "module_path": "pools.redis_pool"
+    },
+    "common/logging/structured_logger.py": {
+      "directory": "common",
+      "relative_path": "logging/structured_logger.py",
+      "module_path": "logging.structured_logger"
+    },
+    "common/logging/__init__.py": {
+      "directory": "common",
+      "relative_path": "logging/__init__.py",
+      "module_path": "logging.__init__"
+    },
+    "common/logging/log_aggregator.py": {
+      "directory": "common",
+      "relative_path": "logging/log_aggregator.py",
+      "module_path": "logging.log_aggregator"
+    },
+    "common/backends/memory_backend.py": {
+      "directory": "common",
+      "relative_path": "backends/memory_backend.py",
+      "module_path": "backends.memory_backend"
+    },
+    "common/backends/__init__.py": {
+      "directory": "common",
+      "relative_path": "backends/__init__.py",
+      "module_path": "backends.__init__"
+    },
+    "common/backends/redis_backend.py": {
+      "directory": "common",
+      "relative_path": "backends/redis_backend.py",
+      "module_path": "backends.redis_backend"
+    },
+    "common/service_mesh/__init__.py": {
+      "directory": "common",
+      "relative_path": "service_mesh/__init__.py",
+      "module_path": "service_mesh.__init__"
+    },
+    "common/service_mesh/unified_discovery_client.py": {
+      "directory": "common",
+      "relative_path": "service_mesh/unified_discovery_client.py",
+      "module_path": "service_mesh.unified_discovery_client"
+    },
+    "common/service_mesh/client.py": {
+      "directory": "common",
+      "relative_path": "service_mesh/client.py",
+      "module_path": "service_mesh.client"
+    },
+    "common/lifecycle/agent_lifecycle.py": {
+      "directory": "common",
+      "relative_path": "lifecycle/agent_lifecycle.py",
+      "module_path": "lifecycle.agent_lifecycle"
+    },
+    "common/lifecycle/__init__.py": {
+      "directory": "common",
+      "relative_path": "lifecycle/__init__.py",
+      "module_path": "lifecycle.__init__"
+    },
+    "common/resources/__init__.py": {
+      "directory": "common",
+      "relative_path": "resources/__init__.py",
+      "module_path": "resources.__init__"
+    },
+    "common/resources/resource_manager.py": {
+      "directory": "common",
+      "relative_path": "resources/resource_manager.py",
+      "module_path": "resources.resource_manager"
+    },
+    "common_utils/agent_helpers.py": {
+      "directory": "common_utils",
+      "relative_path": "agent_helpers.py",
+      "module_path": "agent_helpers"
+    },
+    "common_utils/env_loader.py": {
+      "directory": "common_utils",
+      "relative_path": "env_loader.py",
+      "module_path": "env_loader"
+    },
+    "common_utils/error_handling.py": {
+      "directory": "common_utils",
+      "relative_path": "error_handling.py",
+      "module_path": "error_handling"
+    },
+    "common_utils/lazy_loader.py": {
+      "directory": "common_utils",
+      "relative_path": "lazy_loader.py",
+      "module_path": "lazy_loader"
+    },
+    "common_utils/zmq_helper.py": {
+      "directory": "common_utils",
+      "relative_path": "zmq_helper.py",
+      "module_path": "zmq_helper"
+    },
+    "common_utils/port_registry.py": {
+      "directory": "common_utils",
+      "relative_path": "port_registry.py",
+      "module_path": "port_registry"
+    }
+  },
+  "import_usage": {},
+  "proposed_structure": {
+    "root": "common_lib/",
+    "modules": {
+      "core": {
+        "description": "Core utilities and base classes",
+        "files": [
+          "core/base_agent.py",
+          "core/enhanced_base_agent.py",
+          "core/unified_config_manager.py",
+          "core/advanced_health_monitoring.py",
+          "base_health_mixin.py",
+          "data_models.py",
+          "lazy_loader.py"
+        ]
+      },
+      "config": {
+        "description": "Configuration management and environment handling",
+        "files": [
+          "config_manager.py",
+          "env_helpers.py",
+          "env_loader.py",
+          "env_standardizer.py",
+          "unified_config_loader.py",
+          "docker_paths.py",
+          "path_env.py"
+        ]
+      },
+      "networking": {
+        "description": "Network utilities, ZMQ, ports, and service discovery",
+        "files": [
+          "zmq_helper.py",
+          "port_registry.py",
+          "network_util.py",
+          "hostname_resolver.py",
+          "pools/zmq_pool.py",
+          "pools/async_zmq_pool.py",
+          "pools/http_pool.py"
+        ]
+      },
+      "observability": {
+        "description": "Logging, monitoring, and observability tools",
+        "files": [
+          "logger_util.py",
+          "prometheus_exporter.py",
+          "health.py",
+          "health/standardized_health.py",
+          "health/unified_health.py",
+          "monitoring/",
+          "observability/"
+        ]
+      },
+      "security": {
+        "description": "Security and secret management",
+        "files": [
+          "secret_manager.py",
+          "security/"
+        ]
+      },
+      "data": {
+        "description": "Data handling and JSON utilities",
+        "files": [
+          "fast_json.py",
+          "data_models.py"
+        ]
+      },
+      "async": {
+        "description": "Asynchronous utilities",
+        "files": [
+          "async_io.py"
+        ]
+      },
+      "agents": {
+        "description": "Agent-specific utilities",
+        "files": [
+          "agent_helpers.py",
+          "agent_ready_signal.py"
+        ]
+      },
+      "error": {
+        "description": "Error handling and resilience",
+        "files": [
+          "error_handling.py",
+          "error_bus/unified_error_handler.py",
+          "error_bus/nats_error_bus.py",
+          "error_bus/nats_client.py",
+          "error_bus/dashboard.py",
+          "resiliency/"
+        ]
+      },
+      "learning": {
+        "description": "Learning and ML utilities",
+        "files": [
+          "learning_models.py"
+        ]
+      },
+      "path": {
+        "description": "Path management utilities",
+        "files": [
+          "path_manager.py"
+        ]
+      },
+      "pools": {
+        "description": "Connection pools and resource management",
+        "files": [
+          "pools/redis_pool.py",
+          "pools/sql_pool.py",
+          "pools/__init__.py"
+        ]
+      },
+      "factories": {
+        "description": "Factory patterns and object creation",
+        "files": [
+          "factories/"
+        ]
+      },
+      "resources": {
+        "description": "Resource management utilities",
+        "files": [
+          "resources/"
+        ]
+      },
+      "backends": {
+        "description": "Backend service utilities",
+        "files": [
+          "backends/"
+        ]
+      },
+      "audit": {
+        "description": "Audit and compliance utilities",
+        "files": [
+          "audit/"
+        ]
+      },
+      "api": {
+        "description": "API utilities and helpers",
+        "files": [
+          "api/"
+        ]
+      },
+      "validation": {
+        "description": "Validation utilities",
+        "files": [
+          "validation/"
+        ]
+      },
+      "service": {
+        "description": "Service discovery and mesh utilities",
+        "files": [
+          "service_discovery/",
+          "service_mesh/"
+        ]
+      },
+      "performance": {
+        "description": "Performance monitoring utilities",
+        "files": [
+          "performance/"
+        ]
+      },
+      "lifecycle": {
+        "description": "Lifecycle management utilities",
+        "files": [
+          "lifecycle/"
+        ]
+      }
+    }
+  }
+}

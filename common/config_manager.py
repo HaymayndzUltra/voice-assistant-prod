@@ -30,6 +30,9 @@ def normalize_mainpc_config(config: Dict) -> Dict[str, Any]:
     unified_agents = []
     
     for group_name, agents in config['agent_groups'].items():
+        if not agents:
+            # Skip groups that are explicitly set to null or empty in YAML
+            continue
         for agent_name, agent_data in agents.items():
             unified_agent = {
                 'name': agent_name,
@@ -186,6 +189,17 @@ def get_redis_url(database: int = 0) -> str:
     Returns:
         Redis URL
     """
+    # Check for REDIS_URL environment variable first (Docker compatibility)
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        # If specific database requested, modify the URL
+        if database != 0:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(redis_url)
+            return f"{parsed.scheme}://{parsed.netloc}/{database}"
+        return redis_url
+    
+    # Fallback to legacy host/port method
     redis_host = get_service_ip("redis")
     redis_port = os.environ.get("REDIS_PORT", "6379")
     return f"redis://{redis_host}:{redis_port}/{database}"

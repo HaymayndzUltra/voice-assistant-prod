@@ -169,8 +169,19 @@ class RedisConnectionPool:
                  socket_connect_timeout: int = 5,
                  socket_timeout: int = 5):
         
-        self.host = host or get_env("REDIS_HOST", "redis")
-        self.port = port or int(get_env("REDIS_PORT", "6379"))
+        # Check for REDIS_URL first, then fall back to individual host/port
+        redis_url = get_env("REDIS_URL")
+        if redis_url and not host and not port:
+            # Parse redis://host:port/db format
+            import urllib.parse
+            parsed = urllib.parse.urlparse(redis_url)
+            self.host = parsed.hostname or "redis"
+            self.port = parsed.port or 6379
+            if parsed.path and parsed.path != '/':
+                self.db = int(parsed.path.lstrip('/')) or db
+        else:
+            self.host = host or get_env("REDIS_HOST", "redis")
+            self.port = port or int(get_env("REDIS_PORT", "6379"))
         self.db = db
         self.max_connections = max_connections
         self.max_connections_per_pool = max_connections_per_pool

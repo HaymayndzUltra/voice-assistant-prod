@@ -1,0 +1,485 @@
+{
+  "docker_groups": {
+    "main_pc_code/config/startup_config.yaml": {
+      "infra_core": {
+        "description": "Core service discovery & digital-twin infrastructure",
+        "agents": [
+          "ServiceRegistry",
+          "SystemDigitalTwin"
+        ]
+      },
+      "coordination": {
+        "description": "Request routing, GPU model lifecycle & VRAM optimisation",
+        "agents": [
+          "RequestCoordinator",
+          "ModelManagerSuite",
+          "VRAMOptimizerAgent"
+        ]
+      },
+      "observability": {
+        "description": "Centralised telemetry, metrics, prediction & health",
+        "agents": [
+          "ObservabilityHub"
+        ]
+      },
+      "memory_stack": {
+        "description": "Short/long-term memory services",
+        "agents": [
+          "MemoryClient",
+          "SessionMemoryAgent",
+          "KnowledgeBase"
+        ]
+      },
+      "vision_gpu": {
+        "description": "GPU-bound vision processing services",
+        "agents": [
+          "FaceRecognitionAgent"
+        ]
+      },
+      "speech_gpu": {
+        "description": "GPU-bound STT/TTS & audio streaming pipeline",
+        "agents": [
+          "STTService",
+          "TTSService",
+          "AudioCapture",
+          "FusedAudioPreprocessor",
+          "StreamingSpeechRecognition",
+          "StreamingTTSAgent",
+          "WakeWordDetector",
+          "StreamingInterruptHandler",
+          "StreamingLanguageAnalyzer"
+        ]
+      },
+      "learning_gpu": {
+        "description": "Active/self learning pipeline using GPU training slices",
+        "agents": [
+          "SelfTrainingOrchestrator",
+          "LocalFineTunerAgent",
+          "LearningManager",
+          "LearningOrchestrationService",
+          "LearningOpportunityDetector",
+          "ActiveLearningMonitor",
+          "LearningAdjusterAgent"
+        ]
+      },
+      "reasoning_gpu": {
+        "description": "Large-context reasoning agents utilising GPU inference",
+        "agents": [
+          "ChainOfThoughtAgent",
+          "GoTToTAgent",
+          "CognitiveModelAgent"
+        ]
+      },
+      "language_stack": {
+        "description": "High-level dialogue, NLU, identity & emotional synthesis",
+        "agents": [
+          "NLUAgent",
+          "IntentionValidatorAgent",
+          "AdvancedCommandHandler",
+          "ChitchatAgent",
+          "FeedbackHandler",
+          "Responder",
+          "DynamicIdentityAgent",
+          "EmotionSynthesisAgent",
+          "GoalManager",
+          "ModelOrchestrator",
+          "ProactiveAgent"
+        ]
+      },
+      "utility_cpu": {
+        "description": "Miscellaneous CPU-bound utility agents",
+        "agents": [
+          "CodeGenerator",
+          "Executor",
+          "PredictiveHealthMonitor",
+          "TranslationService",
+          "FixedStreamingTranslation",
+          "NLLBAdapter"
+        ]
+      },
+      "emotion_system": {
+        "description": "Emotional state modelling & awareness",
+        "agents": [
+          "EmotionEngine",
+          "MoodTrackerAgent",
+          "HumanAwarenessAgent",
+          "ToneDetector",
+          "VoiceProfilingAgent",
+          "EmpathyAgent"
+        ]
+      }
+    },
+    "pc2_code/config/startup_config.yaml": {
+      "infra_core": {
+        "description": "Core observability & resource management infrastructure",
+        "agents": [
+          "ObservabilityHub",
+          "ResourceManager"
+        ]
+      },
+      "memory_stack": {
+        "description": "Memory orchestration & reasoning services",
+        "agents": [
+          "MemoryOrchestratorService",
+          "CacheManager",
+          "UnifiedMemoryReasoningAgent",
+          "ContextManager",
+          "ExperienceTracker"
+        ]
+      },
+      "async_pipeline": {
+        "description": "Asynchronous task processing & routing pipeline",
+        "agents": [
+          "AsyncProcessor",
+          "TaskScheduler",
+          "AdvancedRouter",
+          "TieredResponder"
+        ]
+      },
+      "tutoring_cpu": {
+        "description": "Tutoring and educational agents (CPU-bound)",
+        "agents": [
+          "TutorAgent",
+          "TutoringAgent"
+        ]
+      },
+      "vision_dream_gpu": {
+        "description": "GPU-intensive vision processing and dream world services",
+        "agents": [
+          "VisionProcessingAgent",
+          "DreamWorldAgent",
+          "DreamingModeAgent"
+        ]
+      },
+      "utility_suite": {
+        "description": "Support utilities and miscellaneous helpers",
+        "agents": [
+          "UnifiedUtilsAgent",
+          "FileSystemAssistantAgent",
+          "RemoteConnectorAgent",
+          "AuthenticationAgent",
+          "AgentTrustScorer",
+          "ProactiveContextMonitor"
+        ]
+      },
+      "web_interface": {
+        "description": "User-facing web interface agents",
+        "agents": [
+          "UnifiedWebAgent"
+        ]
+      }
+    }
+  },
+  "validation": {
+    "main_pc_code/config/startup_config.yaml": {
+      "system": "MainPC",
+      "groups": {
+        "infra_core": {
+          "expected": [
+            "ServiceRegistry",
+            "SystemDigitalTwin"
+          ],
+          "found": [
+            "ServiceRegistry",
+            "SystemDigitalTwin"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "coordination": {
+          "expected": [
+            "RequestCoordinator",
+            "ModelManagerSuite",
+            "VRAMOptimizerAgent"
+          ],
+          "found": [
+            "RequestCoordinator",
+            "ModelManagerSuite",
+            "VRAMOptimizerAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "observability": {
+          "expected": [
+            "ObservabilityHub"
+          ],
+          "found": [
+            "ObservabilityHub"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "memory_stack": {
+          "expected": [
+            "MemoryClient",
+            "SessionMemoryAgent",
+            "KnowledgeBase"
+          ],
+          "found": [
+            "MemoryClient",
+            "SessionMemoryAgent",
+            "KnowledgeBase"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "vision_gpu": {
+          "expected": [
+            "FaceRecognitionAgent"
+          ],
+          "found": [
+            "FaceRecognitionAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "speech_gpu": {
+          "expected": [
+            "STTService",
+            "TTSService",
+            "AudioCapture",
+            "FusedAudioPreprocessor",
+            "StreamingSpeechRecognition",
+            "StreamingTTSAgent",
+            "WakeWordDetector",
+            "StreamingInterruptHandler",
+            "StreamingLanguageAnalyzer"
+          ],
+          "found": [
+            "STTService",
+            "TTSService",
+            "AudioCapture",
+            "FusedAudioPreprocessor",
+            "StreamingSpeechRecognition",
+            "StreamingTTSAgent",
+            "WakeWordDetector",
+            "StreamingInterruptHandler",
+            "StreamingLanguageAnalyzer"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "learning_gpu": {
+          "expected": [
+            "SelfTrainingOrchestrator",
+            "LocalFineTunerAgent",
+            "LearningManager",
+            "LearningOrchestrationService",
+            "LearningOpportunityDetector",
+            "ActiveLearningMonitor",
+            "LearningAdjusterAgent"
+          ],
+          "found": [
+            "SelfTrainingOrchestrator",
+            "LocalFineTunerAgent",
+            "LearningManager",
+            "LearningOrchestrationService",
+            "LearningOpportunityDetector",
+            "ActiveLearningMonitor",
+            "LearningAdjusterAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "reasoning_gpu": {
+          "expected": [
+            "ChainOfThoughtAgent",
+            "GoTToTAgent",
+            "CognitiveModelAgent"
+          ],
+          "found": [
+            "ChainOfThoughtAgent",
+            "GoTToTAgent",
+            "CognitiveModelAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "language_stack": {
+          "expected": [
+            "NLUAgent",
+            "IntentionValidatorAgent",
+            "AdvancedCommandHandler",
+            "ChitchatAgent",
+            "FeedbackHandler",
+            "Responder",
+            "DynamicIdentityAgent",
+            "EmotionSynthesisAgent",
+            "GoalManager",
+            "ModelOrchestrator",
+            "ProactiveAgent"
+          ],
+          "found": [
+            "NLUAgent",
+            "IntentionValidatorAgent",
+            "AdvancedCommandHandler",
+            "ChitchatAgent",
+            "FeedbackHandler",
+            "Responder",
+            "DynamicIdentityAgent",
+            "EmotionSynthesisAgent",
+            "GoalManager",
+            "ModelOrchestrator",
+            "ProactiveAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "utility_cpu": {
+          "expected": [
+            "CodeGenerator",
+            "Executor",
+            "PredictiveHealthMonitor",
+            "TranslationService",
+            "FixedStreamingTranslation",
+            "NLLBAdapter"
+          ],
+          "found": [
+            "CodeGenerator",
+            "Executor",
+            "PredictiveHealthMonitor",
+            "TranslationService",
+            "FixedStreamingTranslation",
+            "NLLBAdapter"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "emotion_system": {
+          "expected": [
+            "EmotionEngine",
+            "MoodTrackerAgent",
+            "HumanAwarenessAgent",
+            "ToneDetector",
+            "VoiceProfilingAgent",
+            "EmpathyAgent"
+          ],
+          "found": [
+            "EmotionEngine",
+            "MoodTrackerAgent",
+            "HumanAwarenessAgent",
+            "ToneDetector",
+            "VoiceProfilingAgent",
+            "EmpathyAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        }
+      },
+      "missing_agents": [],
+      "unexpected_agents": [],
+      "coverage_percentage": 100.0
+    },
+    "pc2_code/config/startup_config.yaml": {
+      "system": "PC2",
+      "groups": {
+        "infra_core": {
+          "expected": [
+            "ObservabilityHub",
+            "ResourceManager"
+          ],
+          "found": [
+            "ObservabilityHub",
+            "ResourceManager"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "memory_stack": {
+          "expected": [
+            "MemoryOrchestratorService",
+            "CacheManager",
+            "UnifiedMemoryReasoningAgent",
+            "ContextManager",
+            "ExperienceTracker"
+          ],
+          "found": [
+            "MemoryOrchestratorService",
+            "CacheManager",
+            "UnifiedMemoryReasoningAgent",
+            "ContextManager",
+            "ExperienceTracker"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "async_pipeline": {
+          "expected": [
+            "AsyncProcessor",
+            "TaskScheduler",
+            "AdvancedRouter",
+            "TieredResponder"
+          ],
+          "found": [
+            "AsyncProcessor",
+            "TaskScheduler",
+            "AdvancedRouter",
+            "TieredResponder"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "tutoring_cpu": {
+          "expected": [
+            "TutorAgent",
+            "TutoringAgent"
+          ],
+          "found": [
+            "TutorAgent",
+            "TutoringAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "vision_dream_gpu": {
+          "expected": [
+            "VisionProcessingAgent",
+            "DreamWorldAgent",
+            "DreamingModeAgent"
+          ],
+          "found": [
+            "VisionProcessingAgent",
+            "DreamWorldAgent",
+            "DreamingModeAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "utility_suite": {
+          "expected": [
+            "UnifiedUtilsAgent",
+            "FileSystemAssistantAgent",
+            "RemoteConnectorAgent",
+            "AuthenticationAgent",
+            "AgentTrustScorer",
+            "ProactiveContextMonitor"
+          ],
+          "found": [
+            "UnifiedUtilsAgent",
+            "FileSystemAssistantAgent",
+            "RemoteConnectorAgent",
+            "AuthenticationAgent",
+            "AgentTrustScorer",
+            "ProactiveContextMonitor"
+          ],
+          "missing": [],
+          "unexpected": []
+        },
+        "web_interface": {
+          "expected": [
+            "UnifiedWebAgent"
+          ],
+          "found": [
+            "UnifiedWebAgent"
+          ],
+          "missing": [],
+          "unexpected": []
+        }
+      },
+      "missing_agents": [],
+      "unexpected_agents": [],
+      "coverage_percentage": 100.0
+    }
+  }
+}

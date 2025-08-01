@@ -8,6 +8,7 @@ Replaces legacy ZMQ-based error handling with scalable, distributed error manage
 
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
@@ -63,7 +64,12 @@ class NATSErrorBus:
                  nats_servers: List[str] = None,
                  agent_name: str = "unknown",
                  max_reconnect_attempts: int = 10):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        # Check NATS_SERVERS environment variable first
+        env_nats_servers = os.getenv("NATS_SERVERS")
+        if env_nats_servers and not nats_servers:
+            self.nats_servers = [env_nats_servers] if isinstance(env_nats_servers, str) else env_nats_servers
+        else:
+            self.nats_servers = nats_servers or ["nats://localhost:4222"]
         self.agent_name = agent_name
         self.max_reconnect_attempts = max_reconnect_attempts
         

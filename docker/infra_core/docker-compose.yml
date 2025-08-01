@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Backend services
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats
+    ports:
+      - "4222:4222"
+    networks:
+      - ai_system_network
+    restart: unless-stopped
+
+  # Infra core agents (one process per container)
+  service_registry:
+    image: infra_core:latest
+    container_name: service_registry
+    build:
+      context: ../..
+      dockerfile: docker/infra_core/Dockerfile
+    command: ["python", "-m", "main_pc_code.agents.service_registry_agent"]
+    ports:
+      - "7200:7200"   # ZMQ port
+      - "8200:8200"   # Health port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+    networks:
+      - ai_system_network
+    depends_on:
+      - redis
+      - nats
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  system_digital_twin:
+    image: infra_core:latest
+    container_name: system_digital_twin
+    command: ["python", "-m", "main_pc_code.agents.system_digital_twin"]
+    ports:
+      - "7220:7220"   # ZMQ port
+      - "8220:8220"   # Health port
+    environment:
+      ERROR_BUS_HOST: "localhost"
+      ERROR_BUS_PORT: "7150"
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+    networks:
+      - ai_system_network
+    depends_on:
+      - service_registry
+      - redis
+      - nats
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8220/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  ai_system_network:
+    driver: bridge

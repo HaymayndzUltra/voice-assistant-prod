@@ -177,7 +177,7 @@ class RequestCoordinator(BaseAgent):
         port = kwargs.get('port', DEFAULT_PORT)
         super().__init__(name="RequestCoordinator", port=port, health_check_port=port + 1)
 
-        self.context = None  # Using pool
+        self.context = zmq.Context()  # ZMQ context for socket creation
         self._init_zmq_sockets()
 
         # Modern error reporting now handled by BaseAgent's UnifiedErrorHandler

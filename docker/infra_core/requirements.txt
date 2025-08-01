@@ -1,0 +1,22 @@
+# Core runtime
+pyzmq==26.0.3
+fastapi==0.111.0
+uvicorn==0.30.0
+pydantic==2.7.1
+tomli==2.0.1          # config loader fallback for <py311
+# Observability / logging
+rich==13.7.1
+structlog==24.1.0
+# YAML parsing
+pyyaml==6.0.1
+# System monitoring and database
+psutil==5.9.8
+redis==5.0.4
+# NATS messaging
+nats-py==2.6.0
+# Async HTTP & service-mesh
+aiohttp==3.9.5           # async HTTP used by unified_discovery_client
+aiodns==3.2.0           # speeds up aiohttp DNS (optional but recommended)
+# Prometheus monitoring
+prometheus-client==0.20.0
+# (Add others if import errors appear – see troubleshooting)

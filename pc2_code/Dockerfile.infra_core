@@ -1,0 +1,40 @@
+# PC2 Infra Core - ObservabilityHub & ResourceManager
+FROM python:3.10-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory and user
+RUN useradd -m -u 1000 ai && mkdir -p /app && chown -R ai:ai /app
+WORKDIR /app
+
+# Copy requirements
+COPY --chown=ai:ai requirements.base.txt pc2_code/requirements.txt ./
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=ai:ai pc2_code/ ./pc2_code/
+COPY --chown=ai:ai phase1_implementation/ ./phase1_implementation/
+COPY --chown=ai:ai common/ ./common/
+COPY --chown=ai:ai common_utils/ ./common_utils/
+
+# Expose Prometheus metrics port for PC2
+EXPOSE 9100
+
+# Switch to non-root user
+USER ai
+
+# Default to ObservabilityHub, can be overridden in compose
+CMD ["python", "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py"] 

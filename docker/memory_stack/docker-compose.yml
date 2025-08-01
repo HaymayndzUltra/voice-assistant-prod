@@ -1,0 +1,92 @@
+services:
+  # ---- Backend Services ----
+  redis_memory:
+    image: redis:7.2-alpine
+    container_name: redis_memory
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - ai_net
+
+  nats_memory:
+    image: nats:2.10-alpine
+    container_name: nats_memory
+    ports:
+      - "4223:4222"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - ai_net
+
+  # ---- Memory Stack Services ----
+  memory_client:
+    build:
+      context: ../..
+      dockerfile: docker/memory_stack/Dockerfile
+    image: memory_stack:latest
+    container_name: memory_client
+    command: ["python", "-m", "main_pc_code.agents.memory_client"]
+    ports:
+      - "5715:5715"  # HTTP health endpoint
+    environment:
+      LOG_LEVEL: "INFO"
+      # Override Redis/NATS connection URLs for Docker network
+      REDIS_URL: "redis://redis_memory:6379/0"
+      SERVICE_REGISTRY_REDIS_URL: "redis://redis_memory:6379/0"
+      NATS_SERVERS: "nats://nats_memory:4222"
+    depends_on:
+      redis_memory:
+        condition: service_healthy
+      nats_memory:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai_net
+
+  session_memory_agent:
+    image: memory_stack:latest
+    container_name: session_memory_agent
+    command: ["python", "-m", "main_pc_code.agents.session_memory_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_memory:6379/0"
+      NATS_SERVERS: "nats://nats_memory:4222"
+    depends_on:
+      memory_client:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ai_net
+
+  knowledge_base:
+    image: memory_stack:latest
+    container_name: knowledge_base
+    command: ["python", "-m", "main_pc_code.agents.knowledge_base"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_memory:6379/0"
+      NATS_SERVERS: "nats://nats_memory:4222"
+    depends_on:
+      memory_client:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ai_net
+
+networks:
+  ai_net:
+    driver: bridge

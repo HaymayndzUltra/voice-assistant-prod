@@ -440,4 +440,19 @@ def get_legacy_env(legacy_name: str, default: Any = None) -> Any:
     """Get environment variable by legacy name with automatic mapping."""
     mapping = EnvStandardizer.get_legacy_mapping()
     standard_name = mapping.get(legacy_name, legacy_name)
-    return EnvStandardizer.get(standard_name, default) 
+    return EnvStandardizer.get(standard_name, default)
+
+# Docker Network Connection Fallbacks
+# Set default Redis and NATS URLs for containerized environments
+if is_docker_environment() or os.getenv('DOCKER_CONTAINER'):
+    # Memory stack Docker network defaults
+    os.environ.setdefault("REDIS_URL", "redis://redis_memory:6379/0")
+    os.environ.setdefault("SERVICE_REGISTRY_REDIS_URL", "redis://redis_memory:6379/0")
+    os.environ.setdefault("NATS_SERVERS", "nats://nats_memory:4222")
+    
+    logger.debug("Applied Docker network fallback defaults for Redis/NATS connections")
+else:
+    # Local development defaults
+    os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+    os.environ.setdefault("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
+    os.environ.setdefault("NATS_SERVERS", "nats://localhost:4222") 

@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import uuid
+import zmq
 from datetime import datetime
 from typing import Any, Optional
 

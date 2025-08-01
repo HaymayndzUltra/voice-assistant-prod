@@ -1,0 +1,47 @@
+# Learning Pipeline - Active/self learning using GPU training
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Create app directory and user
+RUN useradd -m -u 1000 ai && mkdir -p /app /app/training_data && chown -R ai:ai /app
+WORKDIR /app
+
+# Copy requirements
+COPY --chown=ai:ai requirements.base.txt main_pc_code/requirements.txt ./
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.base.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Copy application code
+COPY --chown=ai:ai main_pc_code/ ./main_pc_code/
+
+# Create volume for training data
+VOLUME ["/app/training_data"]
+
+# Switch to non-root user
+USER ai
+
+# Default to SelfTrainingOrchestrator
+CMD ["python", "main_pc_code/FORMAINPC/self_training_orchestrator.py"] 
