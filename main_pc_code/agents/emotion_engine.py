@@ -45,7 +45,10 @@ class EmotionEngine(BaseAgent):
         
         # Get name and port from config or environment
         agent_name = kwargs.get('name', os.environ.get("AGENT_NAME", "EmotionEngine"))
-        agent_port = int(kwargs.get('port', os.environ.get("AGENT_PORT", config.get("port", 5590))))
+        
+        # Safe port resolution with proper fallbacks
+        port_value = kwargs.get('port') or os.environ.get("AGENT_PORT") or config.get("port") or 5590
+        agent_port = int(port_value)
         health_port = int(os.environ.get("HEALTH_CHECK_PORT", str(agent_port + 1)))
         
         # Call BaseAgent's __init__ with proper parameters

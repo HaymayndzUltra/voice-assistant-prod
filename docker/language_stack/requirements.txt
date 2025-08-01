@@ -1,0 +1,23 @@
+# Core dependencies
+pyzmq==26.0.3
+redis==5.0.4
+aiohttp==3.9.5
+pydantic==2.7.1
+pyyaml==6.0.1
+
+# Monitoring and logging
+prometheus-client==0.20.0
+rich==13.7.1
+structlog==24.1.0
+
+# System utilities
+psutil==5.9.8
+requests==2.32.4
+
+# Message bus
+nats-py==2.3.1
+
+# Basic NLP utilities
+scikit-learn==1.4.2
+scipy==1.13.0
+numpy==1.26.4

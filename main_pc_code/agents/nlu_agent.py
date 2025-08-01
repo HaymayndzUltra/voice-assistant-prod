@@ -69,13 +69,21 @@ class NLUAgent(BaseClass):
     
     def __init__(self, port: int = None, name: str = None, **kwargs):
         """Initialize the NLU Agent."""
-        # Get port and name from config with fallbacks
-        agent_port = int(config.get("port", 5558)) if port is None else int(port)
-        agent_name = str(config.get("name", 'NLUAgent')) if name is None else str(name)
+        # Get port and name from environment variables or config with fallbacks
+        agent_port = int(os.getenv('AGENT_PORT', '5558')) if port is None else int(port)
+        agent_name = os.getenv('AGENT_NAME', 'NLUAgent') if name is None else str(name)
         super().__init__(port=agent_port, name=agent_name)
+        
+        # Set endpoint for ZMQ communication
+        self.endpoint = f"tcp://localhost:{agent_port}"
         
         # Initialize basic state
         self.running = True
+        self.initialization_status = {
+            "is_initialized": False,
+            "progress": 0.0,
+            "error": None
+        }
         
         # Initialize enhanced features if available
         if ENHANCED_AVAILABLE:
@@ -140,7 +148,10 @@ class NLUAgent(BaseClass):
         self.start_time = time.time()
         
         logger.info("NLUAgent basic initialization complete")
-        self.error_publisher = ErrorPublisher(self.name)
+        # Initialize error publisher - temporarily disabled for Docker deployment
+        # TODO: Migrate to UnifiedErrorHandler
+        # self.error_publisher = ErrorPublisher(self.name)
+        self.error_publisher = None
     
     
 
@@ -169,7 +180,8 @@ class NLUAgent(BaseClass):
                 "progress": 0.0
             })
             logger.error(f"ZMQ initialization failed: {e}")
-            self.error_publisher.publish_error(error_type="initialization", severity="critical", details=str(e))
+            # self.error_publisher.publish_error(error_type="initialization", severity="critical", details=str(e))
+            logger.error(f"Initialization error: {e}")
     
     def start(self):
         """Start the NLU Agent."""

@@ -1,0 +1,105 @@
+services:
+  # ---- Backend Services ----
+  redis_translation:
+    image: redis:7.2-alpine
+    container_name: redis_translation
+    ports:
+      - "6384:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - translation_net
+
+  nats_translation:
+    image: nats:2.10-alpine
+    container_name: nats_translation
+    ports:
+      - "4226:4222"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - translation_net
+
+  # ---- GPU Translation Services ----
+  fixed_streaming_translation:
+    build:
+      context: ../..
+      dockerfile: docker/translation_services/Dockerfile
+    image: translation_services:latest
+    container_name: fixed_streaming_translation
+    command: ["python", "-m", "main_pc_code.agents.fixed_streaming_translation"]
+    ports:
+      - "5584:5584"
+      - "6584:6584"
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_translation:6379/0"
+      SERVICE_REGISTRY_REDIS_URL: "redis://redis_translation:6379/0"
+      NATS_SERVERS: "nats://nats_translation:4222"
+      # CUDA settings
+      CUDA_VISIBLE_DEVICES: "0"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      # Override any hardcoded ports
+      TRANSLATION_ZMQ_PORT: "5584"
+      TRANSLATION_PUB_PORT: "6584"
+    depends_on:
+      redis_translation:
+        condition: service_healthy
+      nats_translation:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    runtime: nvidia
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    networks:
+      - translation_net
+
+  nllb_adapter:
+    image: translation_services:latest
+    container_name: nllb_adapter
+    command: ["python", "-m", "main_pc_code.FORMAINPC.nllb_adapter"]
+    ports:
+      - "5582:5582"
+      - "6582:6582"
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_translation:6379/0"
+      NATS_SERVERS: "nats://nats_translation:4222"
+      # CUDA settings
+      CUDA_VISIBLE_DEVICES: "0"
+      NVIDIA_VISIBLE_DEVICES: "all"
+    depends_on:
+      fixed_streaming_translation:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    runtime: nvidia
+    networks:
+      - translation_net
+
+networks:
+  translation_net:
+    driver: bridge

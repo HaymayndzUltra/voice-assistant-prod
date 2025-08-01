@@ -20,10 +20,10 @@ from common.utils.path_manager import PathManager
 from common.env_helpers import get_env
 # Import standardized environment variables (Blueprint.md Step 4)
 from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine
-sys.path.insert(0, get_project_root())
+sys.path.insert(0, PathManager.get_project_root())
 # Add the project's main_pc_code directory to the Python path
-PROJECT_ROOT = get_project_root()
-MAIN_PC_CODE = get_main_pc_code()
+PROJECT_ROOT = PathManager.get_project_root()
+MAIN_PC_CODE = PathManager.get_main_pc_code()
 if MAIN_PC_CODE not in sys.path:
     sys.path.insert(0, MAIN_PC_CODE)
 

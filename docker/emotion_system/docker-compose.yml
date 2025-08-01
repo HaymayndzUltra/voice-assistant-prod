@@ -1,0 +1,137 @@
+services:
+  # ---- Backend Services ----
+  redis_emotion:
+    image: redis:7.2-alpine
+    container_name: redis_emotion
+    ports:
+      - "6383:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - emotion_net
+
+  nats_emotion:
+    image: nats:2.10-alpine
+    container_name: nats_emotion
+    ports:
+      - "4225:4222"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - emotion_net
+
+  # ---- Emotion System Services ----
+  emotion_engine:
+    build:
+      context: ../..
+      dockerfile: docker/emotion_system/Dockerfile
+    image: emotion_system:latest
+    container_name: emotion_engine
+    command: ["python", "-m", "main_pc_code.agents.emotion_engine"]
+    ports:
+      - "5590:5590"
+      - "6590:6590"
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      SERVICE_REGISTRY_REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      redis_emotion:
+        condition: service_healthy
+      nats_emotion:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - emotion_net
+
+  mood_tracker:
+    image: emotion_system:latest
+    container_name: mood_tracker
+    command: ["python", "-m", "main_pc_code.agents.mood_tracker_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      emotion_engine:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emotion_net
+
+  human_awareness:
+    image: emotion_system:latest
+    container_name: human_awareness
+    command: ["python", "-m", "main_pc_code.agents.human_awareness_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      emotion_engine:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emotion_net
+
+  tone_detector:
+    image: emotion_system:latest
+    container_name: tone_detector
+    command: ["python", "-m", "main_pc_code.agents.tone_detector"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      emotion_engine:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emotion_net
+
+  voice_profiling:
+    image: emotion_system:latest
+    container_name: voice_profiling
+    command: ["python", "-m", "main_pc_code.agents.voice_profiling_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      emotion_engine:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emotion_net
+
+  empathy_agent:
+    image: emotion_system:latest
+    container_name: empathy_agent
+    command: ["python", "-m", "main_pc_code.agents.EmpathyAgent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_emotion:6379/0"
+      NATS_SERVERS: "nats://nats_emotion:4222"
+    depends_on:
+      emotion_engine:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emotion_net
+
+networks:
+  emotion_net:
+    driver: bridge

@@ -1,0 +1,349 @@
+version: '3.8'
+
+networks:
+  language_net:
+    driver: bridge
+
+services:
+  # Redis for language stack
+  redis_language:
+    image: redis:7.2-alpine
+    container_name: redis_language
+    ports:
+      - "6385:6379"
+    networks:
+      - language_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # NATS for language stack
+  nats_language:
+    image: nats:2.10-alpine
+    container_name: nats_language
+    ports:
+      - "4227:4222"
+    networks:
+      - language_net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4222"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # NLU Agent - Natural Language Understanding
+  nlu_agent:
+    build:
+      context: ../..
+      dockerfile: docker/language_stack/Dockerfile
+    image: language_stack:latest
+    container_name: nlu_agent
+    command: ["python", "-m", "main_pc_code.agents.nlu_agent"]
+    ports:
+      - "5585:5585"
+      - "6585:6585"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=NLUAgent
+      - AGENT_PORT=5585
+      - HEALTH_PORT=6585
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      redis_language:
+        condition: service_started
+      nats_language:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6585/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Intention Validator Agent
+  intention_validator:
+    image: language_stack:latest
+    container_name: intention_validator
+    command: ["python", "-m", "main_pc_code.agents.IntentionValidatorAgent"]
+    ports:
+      - "5586:5586"
+      - "6586:6586"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=IntentionValidatorAgent
+      - AGENT_PORT=5586
+      - HEALTH_PORT=6586
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6586/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Advanced Command Handler
+  advanced_command_handler:
+    image: language_stack:latest
+    container_name: advanced_command_handler
+    command: ["python", "-m", "main_pc_code.agents.AdvancedCommandHandler"]
+    ports:
+      - "5587:5587"
+      - "6587:6587"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=AdvancedCommandHandler
+      - AGENT_PORT=5587
+      - HEALTH_PORT=6587
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6587/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Chitchat Agent - Conversational
+  chitchat_agent:
+    image: language_stack:latest
+    container_name: chitchat_agent
+    command: ["python", "-m", "main_pc_code.agents.chitchat_agent"]
+    ports:
+      - "5588:5588"
+      - "6588:6588"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=ChitchatAgent
+      - AGENT_PORT=5588
+      - HEALTH_PORT=6588
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6588/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Feedback Handler
+  feedback_handler:
+    image: language_stack:latest
+    container_name: feedback_handler
+    command: ["python", "-m", "main_pc_code.agents.FeedbackHandler"]
+    ports:
+      - "5589:5589"
+      - "6589:6589"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=FeedbackHandler
+      - AGENT_PORT=5589
+      - HEALTH_PORT=6589
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6589/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Responder
+  responder:
+    image: language_stack:latest
+    container_name: responder
+    command: ["python", "-m", "main_pc_code.agents.Responder"]
+    ports:
+      - "5590:5590"
+      - "6590:6590"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=Responder
+      - AGENT_PORT=5590
+      - HEALTH_PORT=6590
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:6590/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    restart: unless-stopped
+
+  # Dynamic Identity Agent
+  dynamic_identity_agent:
+    image: language_stack:latest
+    container_name: dynamic_identity_agent
+    command: ["python", "-m", "main_pc_code.agents.DynamicIdentityAgent"]
+    ports:
+      - "5591:5591"
+      - "6591:6591"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=DynamicIdentityAgent
+      - AGENT_PORT=5591
+      - HEALTH_PORT=6591
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6591/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Emotion Synthesis Agent
+  emotion_synthesis_agent:
+    image: language_stack:latest
+    container_name: emotion_synthesis_agent
+    command: ["python", "-m", "main_pc_code.agents.EmotionSynthesisAgent"]
+    ports:
+      - "5592:5592"
+      - "6592:6592"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=EmotionSynthesisAgent
+      - AGENT_PORT=5592
+      - HEALTH_PORT=6592
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6592/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Goal Manager
+  goal_manager:
+    image: language_stack:latest
+    container_name: goal_manager
+    command: ["python", "-m", "main_pc_code.agents.GoalManager"]
+    ports:
+      - "5593:5593"
+      - "6593:6593"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=GoalManager
+      - AGENT_PORT=5593
+      - HEALTH_PORT=6593
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6593/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Model Orchestrator
+  model_orchestrator:
+    image: language_stack:latest
+    container_name: model_orchestrator
+    command: ["python", "-m", "main_pc_code.agents.model_orchestrator"]
+    ports:
+      - "5594:5594"
+      - "6594:6594"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=ModelOrchestrator
+      - AGENT_PORT=5594
+      - HEALTH_PORT=6594
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6594/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Proactive Agent
+  proactive_agent:
+    image: language_stack:latest
+    container_name: proactive_agent
+    command: ["python", "-m", "main_pc_code.agents.ProactiveAgent"]
+    ports:
+      - "5595:5595"
+      - "6595:6595"
+    environment:
+      - REDIS_URL=redis://redis_language:6379/0
+      - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
+      - NATS_SERVERS=nats://nats_language:4222
+      - AGENT_NAME=ProactiveAgent
+      - AGENT_PORT=5595
+      - HEALTH_PORT=6595
+      - LOG_LEVEL=INFO
+    networks:
+      - language_net
+    depends_on:
+      nlu_agent:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6595/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
