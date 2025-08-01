@@ -1,0 +1,110 @@
+services:
+  # ---- Backend Services ----
+  redis_utility:
+    image: redis:7.2-alpine
+    container_name: redis_utility
+    ports:
+      - "6382:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - utility_net
+
+  nats_utility:
+    image: nats:2.10-alpine
+    container_name: nats_utility
+    ports:
+      - "4224:4222"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - utility_net
+
+  # ---- Utility CPU Services ----
+  code_generator:
+    build:
+      context: ../..
+      dockerfile: docker/utility_cpu/Dockerfile
+    image: utility_cpu:latest
+    container_name: code_generator
+    command: ["python", "-m", "main_pc_code.agents.code_generator_agent"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_utility:6379/0"
+      SERVICE_REGISTRY_REDIS_URL: "redis://redis_utility:6379/0"
+      NATS_SERVERS: "nats://nats_utility:4222"
+    depends_on:
+      redis_utility:
+        condition: service_healthy
+      nats_utility:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - utility_net
+
+  executor:
+    image: utility_cpu:latest
+    container_name: executor
+    command: ["python", "-m", "main_pc_code.agents.executor"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_utility:6379/0"
+      NATS_SERVERS: "nats://nats_utility:4222"
+    depends_on:
+      code_generator:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - utility_net
+
+  predictive_health_monitor:
+    image: utility_cpu:latest
+    container_name: predictive_health_monitor
+    command: ["python", "-m", "main_pc_code.agents.predictive_health_monitor"]
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_utility:6379/0"
+      NATS_SERVERS: "nats://nats_utility:4222"
+    depends_on:
+      code_generator:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - utility_net
+
+  translation_service:
+    image: utility_cpu:latest
+    container_name: translation_service
+    command: ["python", "-m", "main_pc_code.agents.translation_service"]
+    ports:
+      - "5597:5597"
+      - "6597:6597"
+    environment:
+      LOG_LEVEL: "INFO"
+      REDIS_URL: "redis://redis_utility:6379/0"
+      NATS_SERVERS: "nats://nats_utility:4222"
+      # Override ZMQ ports to avoid conflicts
+      TRANSLATION_ZMQ_PORT: "5597"
+      TRANSLATION_PUB_PORT: "6597"
+    depends_on:
+      code_generator:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - utility_net
+
+networks:
+  utility_net:
+    driver: bridge

@@ -1557,10 +1557,13 @@ class TranslationService(BaseAgent):
         """Initialize the Translation Service agent."""
         # Set required properties before calling super().__init__
         self.name = "TranslationService"
-        self.port = 5595  # Default port
+        self.port = int(os.getenv("TRANSLATION_ZMQ_PORT", 5595))  # Support env override
         
         # Call BaseAgent's __init__ with proper parameters
         super().__init__(name=self.name, port=self.port)
+        
+        # Set up the endpoint for ZMQ socket
+        self.endpoint = f"tcp://*:{self.port}"
         
         # Check if secure ZMQ is enabled
         self.secure_zmq = is_secure_zmq_enabled()
@@ -1771,7 +1774,7 @@ class TranslationService(BaseAgent):
             self.logger.info("Applying CurveZMQ security to main socket")
             configure_secure_server(self.socket)
             
-        self.socket.bind(f"tcp://*:{self.port}")
+        # Socket is already bound by get_rep_socket, no need to bind again
         self.logger.info(f"Translation Service bound to port {self.port}")
         
     def _register_with_digital_twin(self):
