@@ -102,7 +102,13 @@ class SystemDigitalTwinAgent(BaseAgent):
             # Fallback only if port registry completely fails
             self.port = int(os.getenv("SYSTEM_DIGITAL_TWIN_PORT", 7220))
             logger.warning(f"Port registry lookup failed ({e}), using env fallback: {self.port}")
-        
+
+        # Determine health port EARLY so BaseAgent can use it
+        try:
+            self.health_port = get_port("SystemDigitalTwin") + 1000  # Standard pattern
+        except Exception:
+            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
+
         self.bind_address = config.get("bind_address", BIND_ADDRESS)
         self.zmq_timeout = int(config.get("zmq_request_timeout", ZMQ_REQUEST_TIMEOUT))
         self.start_time = time.time()
@@ -115,7 +121,8 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.metrics_thread = None
         self.secure_zmq_enabled = False
         
-        super().__init__(name=self.name, port=self.port, **kwargs)
+        # Pass health_check_port explicitly to BaseAgent so its HTTP health server uses the pre-computed port
+        super().__init__(name=self.name, port=self.port, health_check_port=self.health_port, **kwargs)
         
         self.config = DEFAULT_CONFIG.copy()
         self.config.update(config)
@@ -125,16 +132,6 @@ class SystemDigitalTwinAgent(BaseAgent):
         
         self.main_port = self.port
         # Health port using standard pattern
-        try:
-            self.health_port = get_port("SystemDigitalTwin") + 1000  # Standard health port pattern
-        except Exception:
-            self.health_port = int(os.getenv("SYSTEM_DIGITAL_TWIN_HEALTH_PORT", 8220))
-
-        # Start HTTP health endpoint for environments expecting HTTP probes
-        try:
-            self._start_http_health_server()
-        except Exception as http_err:
-            logger.warning(f"Failed to start HTTP health server on port {self.health_port}: {http_err}")
         
         self.metrics_history = {
             "cpu_usage": [], "vram_usage_mb": [], "ram_usage_mb": [],
