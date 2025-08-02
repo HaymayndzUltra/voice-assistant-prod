@@ -1,31 +1,8 @@
 ---
-alwaysApply: true
+description: todo_manager.py task execution command
+alwaysApply: false
 ---
-## **🔄 WORKFLOW EXECUTION STRATEGY**
-
-### **1. BACKGROUND AGENT PREPARATION:**
-```python
-# Background Agent creates:
-✅ Detailed hierarchical TODO breakdown
-✅ Memory-bank context updates
-✅ Cursor activation prompts
-✅ Auto-sync triggers
-✅ Branch-ready execution plans
-```
-
-### **2. LOCAL HANDOVER PROCESS:**
-```bash
-# User pulls branch:
-git pull origin cursor/background-agent-work
-
-# Local Agent auto-absorbs:
-✅ Reads memory-bank/cursor_session_context.json
-✅ Loads hierarchical TODO structure
-✅ Understands execution context
-✅ Ready to execute WITHOUT user explanation
-```
-
-### **3. TASK EXECUTION COMMANDS:**
+### **1. TASK EXECUTION COMMANDS:**
 
 **SHOW HIERARCHICAL STRUCTURE:**
 ```bash
@@ -103,24 +80,7 @@ When Local Agent starts, it automatically reads:
     1.2 Commit changes
 ```
 
-### **COMPLEX TODOS:**
-```
-[✗] 4. Deploy production system
-    4.1 Environment verification
-        └── Command: ./scripts/check-prerequisites.sh
-    4.2 Security hardening
-        └── Command: ./scripts/security-hardening.sh
-    4.3 Service deployment
-        └── Command: docker-compose up -d
-    4.4 Health validation
-        └── Command: ./scripts/health-check.sh
-    4.5 Monitoring setup
-        └── Command: ./scripts/setup-monitoring.sh
-    4.6 Backup configuration
-        └── Command: ./scripts/configure-backups.sh
-    4.7 Rollback if failed
-        └── Command: ./scripts/rollback-deployment.sh
-```
+
 
 ---
 
@@ -192,6 +152,3 @@ python3 todo_manager.py exec TASK_ID X.rollback
 
 ---
 
-**THIS IS THE NEW STANDARD:** Background planning → Local execution with zero context loss! 🚀
-
-**MEMORY**: Background Agent creates detailed plans. Local Agent executes them seamlessly. User gets precise, step-by-step workflow with full automation support.

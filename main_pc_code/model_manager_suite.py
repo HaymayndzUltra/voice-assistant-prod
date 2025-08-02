@@ -128,6 +128,14 @@ from datetime import datetime
 import socket
 import errno
 
+# Import get_env utility function
+try:
+    from utils.env_loader import get_env
+except ImportError:
+    # Fallback if get_env not available
+    def get_env(name, default=None):
+        return os.getenv(name, default)
+
 # imports handled below with optional stubs
 # import yaml
 # import numpy as np
@@ -533,15 +541,36 @@ class ModelManagerSuite(BaseAgent):
         self.evaluation_scores = {}
         self.performance_history = {}
     
+    def _bind_socket_with_fallback(self, sock, base_port, max_tries=10):
+        """Helper to bind socket with port fallback if base port is occupied"""
+        import errno
+        port = base_port
+        for _ in range(max_tries):
+            try:
+                sock.bind(f"tcp://*:{port}")
+                return port
+            except zmq.error.ZMQError as e:
+                if e.errno == errno.EADDRINUSE:
+                    port += 1  # Try next port
+                    continue
+                raise
+        raise RuntimeError(f"No free port found starting from {base_port}")
+    
     def _init_zmq(self):
         """Initialize ZMQ sockets and networking"""
-        # Main service socket
-        self.socket = self.context.socket(zmq.REP)
-        self.socket.bind(f"tcp://*:{self.port}")
+        # Environment fallbacks
+        self.port = int(os.getenv("AGENT_PORT", self.port))
+        self.health_check_port = int(os.getenv("HEALTH_PORT", self.health_check_port))
         
-        # Health check socket
+        # Main service socket with fallback
+        self.socket = self.context.socket(zmq.REP)
+        self.port = self._bind_socket_with_fallback(self.socket, self.port)
+        
+        # Health check socket with fallback
         self.health_socket = self.context.socket(zmq.REP)
-        self.health_socket.bind(f"tcp://*:{self.health_check_port}")
+        self.health_check_port = self._bind_socket_with_fallback(self.health_socket, self.health_check_port)
+        
+        logger.info(f"ZMQ bound - Main:{self.port} Health:{self.health_check_port}")
         
         # Request coordinator connection
         self.request_coordinator_port = self.config.get('request_coordinator_port', 8571)
@@ -972,10 +1001,9 @@ class ModelManagerSuite(BaseAgent):
             logger.warning("run() called on ModelManagerSuite with IO disabled; nothing to do.")
             return
 
-        logger.info("ModelManagerSuite starting")
+        logger.info("ModelManagerSuite starting main request handling loop")
         try:
-            while self.running:
-                time.sleep(1)
+            self._main_loop()  # Start the actual request processing loop
         except KeyboardInterrupt:
             logger.info("Received shutdown signal")
         finally:

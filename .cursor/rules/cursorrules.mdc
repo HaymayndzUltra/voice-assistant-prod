@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+description: TASK , MEMORY , NEW SESSION
+alwaysApply: false
 ---
 ## **⚡ TASK EXECUTION PROTOCOL**
 

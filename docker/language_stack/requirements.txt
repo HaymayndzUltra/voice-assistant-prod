@@ -13,6 +13,7 @@ structlog==24.1.0
 # System utilities
 psutil==5.9.8
 requests==2.32.4
+GPUtil==1.4.0
 
 # Message bus
 nats-py==2.3.1

@@ -1,8 +1,8 @@
 {
-  "current_task_id": "20250802T020019_6_speech_gpu_(8_agents)",
-  "current_task_description": "6 speech_gpu (8 agents)",
+  "current_task_id": "20240521_mms_migration_phased_playbook",
+  "current_task_description": "Phased Playbook: Migrate system from MMA-only to ModelManagerSuite-only",
   "status": "in_progress",
-  "last_updated": "2025-08-02T08:05:54.636655+08:00",
-  "todos_count": 5,
-  "completed_todos": 3
+  "last_updated": "2024-05-21T18:00:00.000000+08:00",
+  "todos_count": 8,
+  "completed_todos": 0
 }

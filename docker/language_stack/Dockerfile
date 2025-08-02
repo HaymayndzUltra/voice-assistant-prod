@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY docker/language_stack/requirements.txt /tmp/req.txt
 RUN pip install --no-cache-dir -r /tmp/req.txt
 
+# Install PyTorch CPU-only for ModelManagerAgent
+RUN pip install --no-cache-dir torch==2.2.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
+
 # Copy source code
 COPY main_pc_code/  /app/main_pc_code/
 COPY common/        /app/common/

@@ -22,6 +22,10 @@
 # MIGRATION MARKER: Socket patterns migrated to BaseAgent
 # Date: 2025-07-23T10:00:27.201916
 # Status: 53 socket patterns processed
+
+# CRITICAL: Import PathManager first for module-level usage
+from common.utils.path_manager import PathManager
+
 from common.core.base_agent import BaseAgent
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common_utils.error_handling import SafeExecutor
@@ -139,11 +143,10 @@ test_config_path = os.environ.get("MMA_CONFIG_PATH")
 if test_config_path:
     # Dedicated log file for test run
     test_log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    test_log_filename = fstr(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "mma_test_{test_log_timestamp}.log"))
-    log_file_path = test_log_filename
+    log_file_path = f"logs/mma_test_{test_log_timestamp}.log"
 else:
     # Default log file with rotation
-    log_file_path = str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "mma_PATCH_VERIFY_TEST.log"))
+    log_file_path = "logs/mma_PATCH_VERIFY_TEST.log"
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
@@ -183,7 +186,7 @@ TASK_ROUTER_PORT = int(os.environ.get("TASK_ROUTER_PORT", "5571"))
 
 # Import and load configuration at module level
 from common.config_manager import load_unified_config
-config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
+config = load_unified_config(os.path.join("main_pc_code", "config", "startup_config.yaml"))
 
 # Move this import to the top of the file
 from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
@@ -4427,7 +4430,7 @@ class ModelManagerAgent(BaseAgent):
         """Set up logging for the Model Manager Agent."""
         logs_dir = Path('logs')
         logs_dir.mkdir(exist_ok=True)
-        log_file = logs_dir / str(PathManager.get_logs_dir() / "model_manager_agent.log")
+        log_file = logs_dir / "model_manager_agent.log"
         log_level = os.environ.get('MMA_LOG_LEVEL', 'DEBUG')
         log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
@@ -4803,22 +4806,15 @@ if __name__ == "__main__":
         # Create necessary directories
         Path("logs").mkdir(exist_ok=True)
         Path("cache").mkdir(exist_ok=True)
-        
+
         # Initialize and run the agent
-        logger.info(f"Starting ModelManagerAgent")
+        logger.info("Starting ModelManagerAgent")
         agent = ModelManagerAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-
-# Containerization-friendly paths (Blueprint.md Step 5)
-from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
