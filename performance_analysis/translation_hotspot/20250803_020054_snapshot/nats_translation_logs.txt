@@ -1,0 +1,12 @@
+[1] 2025/08/01 23:07:36.113274 [INF] Starting nats-server
+[1] 2025/08/01 23:07:36.113973 [INF]   Version:  2.10.29
+[1] 2025/08/01 23:07:36.113976 [INF]   Git:      [f91ddd8]
+[1] 2025/08/01 23:07:36.113978 [INF]   Cluster:  my_cluster
+[1] 2025/08/01 23:07:36.113980 [INF]   Name:     NB4W5ZCNRI2JVKRFBEWP6P2M3BK4GRZY3B2W7XO4Z2Z3ZLIJQA2X754T
+[1] 2025/08/01 23:07:36.113998 [INF]   ID:       NB4W5ZCNRI2JVKRFBEWP6P2M3BK4GRZY3B2W7XO4Z2Z3ZLIJQA2X754T
+[1] 2025/08/01 23:07:36.114126 [INF] Using configuration file: /etc/nats/nats-server.conf
+[1] 2025/08/01 23:07:36.115040 [INF] Starting http monitor on 0.0.0.0:8222
+[1] 2025/08/01 23:07:36.115256 [INF] Listening for client connections on 0.0.0.0:4222
+[1] 2025/08/01 23:07:36.115452 [INF] Server is ready
+[1] 2025/08/01 23:07:36.115497 [INF] Cluster name is my_cluster
+[1] 2025/08/01 23:07:36.115520 [INF] Listening for route connections on 0.0.0.0:6222

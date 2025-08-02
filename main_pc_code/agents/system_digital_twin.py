@@ -114,6 +114,9 @@ class SystemDigitalTwinAgent(BaseAgent):
         self.zmq_timeout = int(config.get("zmq_request_timeout", ZMQ_REQUEST_TIMEOUT))
         self.start_time = time.time()
         
+        # Fix: Define endpoint for ZMQ socket binding
+        self.endpoint = f"tcp://*:{self.port}"
+        
         self.running = True
         self.service_registry = {}
         self.registered_agents = {}

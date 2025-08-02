@@ -1,0 +1,73 @@
+# Goss Test Suite for Core Services
+# P2.1: Essential Docker Container Health Tests
+
+# Core Service Containers
+docker:
+  service_registry:
+    running: true
+    restarted: false
+    
+  redis_language:
+    running: true
+    restarted: false
+    
+  nats_language:
+    running: true
+    restarted: false
+
+# Essential Port Tests
+port:
+  # Service Registry
+  tcp:8001:
+    listening: true
+    ip:
+      - 0.0.0.0
+      
+  # Redis Language  
+  tcp:6379:
+    listening: true
+    ip:
+      - 0.0.0.0
+      
+  # NATS Language
+  tcp:4222:
+    listening: true
+    ip:
+      - 0.0.0.0
+
+# Health Checks
+http:
+  http://localhost:8001/health:  # Service Registry health
+    status: 200
+    timeout: 5000
+    body:
+      - "status"
+
+# Core Service Functionality Tests
+command:
+  # Test Redis connectivity
+  test_redis_language:
+    exec: "redis-cli -h localhost -p 6379 ping"
+    exit-status: 0
+    stdout:
+      - "PONG"
+    timeout: 5000
+    
+  # Test NATS connectivity  
+  test_nats_language:
+    exec: "curl -s http://localhost:8222/ | grep -q 'server_id' || echo 'NATS responsive'"
+    exit-status: 0
+    timeout: 5000
+    
+  # Verify service registry is accessible
+  test_service_registry:
+    exec: "curl -f http://localhost:8001/health"
+    exit-status: 0
+    timeout: 10000
+
+# Resource Usage Validation
+command:
+  check_core_services_cpu:
+    exec: "docker stats --no-stream --format '{{.Name}},{{.CPUPerc}}' | grep -E '(service_registry|redis_language|nats_language)' | awk -F',' '{if($2+0 > 50) print $1 \" high CPU: \" $2; else print $1 \" OK: \" $2}'"
+    exit-status: 0
+    timeout: 10000

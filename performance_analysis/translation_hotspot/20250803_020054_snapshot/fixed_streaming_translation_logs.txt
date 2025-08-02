@@ -1,0 +1,100 @@
+2025-08-02 18:00:36,778 - common.core.base_agent - WARNING - Strict port mode enabled, will retry with same ports
+2025-08-02 18:00:36,779 - common.core.base_agent - WARNING - Attempt 4/5 failed to initialize sockets: Address already in use (addr='tcp://*:5584')
+2025-08-02 18:00:37,779 - common.core.base_agent - WARNING - Strict port mode enabled, will retry with same ports
+2025-08-02 18:00:37,779 - common.core.base_agent - WARNING - Attempt 5/5 failed to initialize sockets: Address already in use (addr='tcp://*:5584')
+2025-08-02 18:00:37,779 - common.core.base_agent - ERROR - Failed to initialize sockets after 5 attempts
+2025-08-02 18:00:37,779 - common.core.base_agent - INFO - FixedStreamingTranslation cleaning up resources
+2025-08-02 18:00:37,779 - common.core.base_agent - INFO - 🛑 FixedStreamingTranslation marked as not ready in Redis
+2025-08-02 18:00:37,780 - common.core.base_agent - INFO - ✅ Prometheus metrics exporter cleaned up for FixedStreamingTranslation
+2025-08-02 18:00:37,780 - common.error_bus.nats_error_bus - WARNING - Failed to unsubscribe: Event loop is closed
+2025-08-02 18:00:37,780 - common.error_bus.nats_error_bus - WARNING - Failed to unsubscribe: Event loop is closed
+2025-08-02 18:00:37,780 - common.error_bus.unified_error_handler - WARNING - Failed to close NATS error bus: Event loop is closed
+2025-08-02 18:00:37,780 - common.core.base_agent - INFO - ✅ Unified error handler closed for FixedStreamingTranslation
+2025-08-02 18:00:37,780 - common.core.base_agent - INFO - FixedStreamingTranslation: joined 0 background thread(s)
+2025-08-02 18:00:37,781 - common.core.base_agent - INFO - FixedStreamingTranslation cleanup complete
+Traceback (most recent call last):
+  File "/app/main_pc_code/agents/fixed_streaming_translation.py", line 640, in <module>
+    agent = FixedStreamingTranslation()
+  File "/app/main_pc_code/agents/fixed_streaming_translation.py", line 435, in __init__
+    self.performance_monitor = PerformanceMonitor()
+  File "/app/main_pc_code/agents/fixed_streaming_translation.py", line 70, in __init__
+    super().__init__(port=port, name="FixedStreamingTranslation")
+  File "/app/common/core/base_agent.py", line 138, in __init__
+    self._init_sockets()
+  File "/app/common/core/base_agent.py", line 296, in _init_sockets
+    self.socket.bind(f"tcp://*:{self.port}")
+  File "/usr/local/lib/python3.10/dist-packages/zmq/sugar/socket.py", line 311, in bind
+    super().bind(addr)
+  File "_zmq.py", line 898, in zmq.backend.cython._zmq.Socket.bind
+  File "_zmq.py", line 160, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Address already in use (addr='tcp://*:5584')
+An unexpected error occurred in agent: Address already in use (addr='tcp://*:5584')
+2025-08-02 18:00:37,803 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-15' coro=<Client._read_loop() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/client.py:2049> wait_for=<Future cancelled>>
+2025-08-02 18:00:37,803 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-16' coro=<Client._ping_interval() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/client.py:2032> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+Exception ignored in: <coroutine object Client._flusher at 0x7f3241d50660>
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/nats/aio/client.py", line 2014, in _flusher
+    future: asyncio.Future = await self._flush_queue.get()
+  File "/usr/lib/python3.10/asyncio/queues.py", line 161, in get
+    getter.cancel()  # Just in case getter is not done yet.
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 753, in call_soon
+    self._check_closed()
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 515, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+2025-08-02 18:00:37,804 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-17' coro=<Client._flusher() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/client.py:2003> wait_for=<Future cancelled>>
+Exception ignored in: <coroutine object Subscription._wait_for_msgs at 0x7f3241d50820>
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/nats/aio/subscription.py", line 306, in _wait_for_msgs
+    msg = await self._pending_queue.get()
+  File "/usr/lib/python3.10/asyncio/queues.py", line 161, in get
+    getter.cancel()  # Just in case getter is not done yet.
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 753, in call_soon
+    self._check_closed()
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 515, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+2025-08-02 18:00:37,805 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-18' coro=<Subscription._wait_for_msgs() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/subscription.py:297> wait_for=<Future cancelled>>
+2025-08-02 18:00:37,805 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-19' coro=<Subscription._wait_for_msgs() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/subscription.py:297> wait_for=<Future cancelled>>
+2025-08-02 18:00:37,805 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-20' coro=<Subscription._wait_for_msgs() done, defined at /usr/local/lib/python3.10/dist-packages/nats/aio/subscription.py:297> wait_for=<Future cancelled>>
+
+==========
+== CUDA ==
+==========
+
+CUDA Version 12.3.0
+
+Container image Copyright (c) 2016-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.
+By pulling and using the container, you accept the terms and conditions of this license:
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
+
+A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
+
+{"timestamp": "2025-08-02T18:00:39Z", "level": "INFO", "agent": "FixedStreamingTranslation", "message": "Rotating JSON logger configured"}
+2025-08-02 18:00:39,479 - FixedStreamingTranslation - INFO - Rotating JSON logger configured
+{"timestamp": "2025-08-02T18:00:39Z", "level": "INFO", "agent": "FixedStreamingTranslation", "message": "Initialized rotating JSON logging -> /app/logs/fixedstreamingtranslation.log"}
+2025-08-02 18:00:39,480 - FixedStreamingTranslation - INFO - Initialized rotating JSON logging -> /app/logs/fixedstreamingtranslation.log
+{"timestamp": "2025-08-02T18:00:39Z", "level": "INFO", "agent": "FixedStreamingTranslation", "message": "Log rotation: 10MB max, 5 backups"}
+2025-08-02 18:00:39,480 - FixedStreamingTranslation - INFO - Log rotation: 10MB max, 5 backups
+{"timestamp": "2025-08-02T18:00:39Z", "level": "INFO", "agent": "FixedStreamingTranslation", "message": "Prometheus metrics exporter initialized"}
+2025-08-02 18:00:39,481 - FixedStreamingTranslation - INFO - Prometheus metrics exporter initialized
+2025-08-02 18:00:39,483 - common.core.base_agent - INFO - FixedStreamingTranslation successfully bound to ports 5584 and 6584
+2025-08-02 18:00:39,483 - common.core.base_agent - INFO - FixedStreamingTranslation health check loop started
+2025-08-02 18:00:39,487 - common.core.base_agent - INFO - Started HTTP health server on port 6585 (ZMQ health on 6584)
+2025-08-02 18:00:39,490 - common.error_bus.nats_error_bus - WARNING - Failed to setup streams: nats: ServiceUnavailableError: code=None err_code=None description='None'
+2025-08-02 18:00:39,490 - common.error_bus.nats_error_bus - INFO - ✅ Error subscriptions active for FixedStreamingTranslation
+2025-08-02 18:00:39,490 - common.health.standardized_health - INFO - ✅ FixedStreamingTranslation marked as ready in Redis
+2025-08-02 18:00:39,491 - common.error_bus.nats_error_bus - INFO - ✅ NATS Error Bus connected for FixedStreamingTranslation
+2025-08-02 18:00:39,491 - common.core.base_agent - INFO - ✅ FixedStreamingTranslation marked as ready in Redis
+2025-08-02 18:00:39,491 - common.error_bus.unified_error_handler - INFO - ✅ NATS error bus initialized for FixedStreamingTranslation
+2025-08-02 18:00:39,491 - common.core.base_agent - INFO - ✅ Unified Error Handler initialized for FixedStreamingTranslation
+2025-08-02 18:00:44,497 - common.core.base_agent - WARNING - Timeout waiting for response from SystemDigitalTwin (attempt 1/3)
+2025-08-02 18:00:51,528 - common.core.base_agent - WARNING - Timeout waiting for response from SystemDigitalTwin (attempt 2/3)

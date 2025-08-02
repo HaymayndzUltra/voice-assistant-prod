@@ -1,0 +1,20 @@
+=== P1.1 Translation Services Performance Snapshot ===
+Timestamp: Sun Aug  3 02:00:57 PST 2025
+Uptime Analysis:
+- nllb_adapter: 19+ hours (POTENTIAL HOTSPOT - long running)
+- fixed_streaming_translation: Recently restarted (suspicious)
+- Supporting services: redis_translation, nats_translation (19+ hours)
+
+Key Findings:
+1. fixed_streaming_translation was recently restarted (possible crash/restart due to performance issue)
+2. nllb_adapter has been running for 19+ hours continuously
+3. Supporting infrastructure (Redis, NATS) stable
+
+Next Steps (P1.2):
+- Correlate resource usage with incoming request rates
+- Monitor nllb_adapter for CPU/memory hotspots
+- Check for memory leaks in long-running nllb_adapter
+
+Evidence for Defect Ticket (P1.4):
+- Container restart pattern indicates instability
+- Need to monitor for resource exhaustion patterns

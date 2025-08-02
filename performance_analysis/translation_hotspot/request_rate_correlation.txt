@@ -1,0 +1,30 @@
+Sample 1/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8114419      0      0 0       4509095      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU
+Sample 2/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8114511      0      0 0       4509104      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU
+Sample 3/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8114634      0      0 0       4509104      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU
+Sample 4/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8114795      0      0 0       4509127      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU
+Sample 5/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8114926      0      0 0       4509173      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU
+Sample 6/6:
+1
+docker0   1500    13762      0      0 0           109      0      0      0 BMRU
+eth0      1500  8115180      0      0 0       4509265      0      0      0 BMRU
+veth0d9c  1500        3      0      0 0            43      0      0      0 BMRU

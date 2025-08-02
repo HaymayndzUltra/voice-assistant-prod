@@ -1,0 +1,100 @@
+{"timestamp": "2025-08-02T17:14:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.0, 'gpu_memory': 0}"}
+2025-08-02 17:14:00,831 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:15:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.1, 'gpu_memory': 0}"}
+2025-08-02 17:15:00,432 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.1, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:16:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}"}
+2025-08-02 17:16:00,527 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:17:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}"}
+2025-08-02 17:17:00,638 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:18:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}"}
+2025-08-02 17:18:00,737 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:19:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 55.4, 'gpu_memory': 0}"}
+2025-08-02 17:19:00,810 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 55.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:20:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}"}
+2025-08-02 17:20:00,907 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:21:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}"}
+2025-08-02 17:21:00,007 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:22:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.0, 'gpu_memory': 0}"}
+2025-08-02 17:22:00,103 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:23:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}"}
+2025-08-02 17:23:00,194 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:24:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}"}
+2025-08-02 17:24:00,254 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:24:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}"}
+2025-08-02 17:24:00,742 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:25:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}"}
+2025-08-02 17:25:00,810 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:26:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}"}
+2025-08-02 17:26:00,899 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:27:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:27:00,018 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:28:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.1, 'gpu_memory': 0}"}
+2025-08-02 17:28:00,084 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.1, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:29:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:29:00,131 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:30:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:30:00,224 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:31:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}"}
+2025-08-02 17:31:00,285 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:32:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:32:00,346 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:33:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}"}
+2025-08-02 17:33:00,395 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.2, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:33:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:33:00,875 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:34:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}"}
+2025-08-02 17:34:00,931 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:35:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}"}
+2025-08-02 17:35:00,979 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:36:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.6, 'gpu_memory': 0}"}
+2025-08-02 17:36:00,028 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.6, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:37:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}"}
+2025-08-02 17:37:00,100 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:38:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}"}
+2025-08-02 17:38:00,175 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.8, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:39:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 56.7, 'gpu_memory': 0}"}
+2025-08-02 17:39:00,228 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 56.7, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:40:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.7, 'gpu_memory': 0}"}
+2025-08-02 17:40:00,308 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.7, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:41:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 40.9, 'gpu_memory': 0}"}
+2025-08-02 17:41:00,377 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 40.9, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:42:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 41.4, 'gpu_memory': 0}"}
+2025-08-02 17:42:00,426 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 41.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:43:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 39.3, 'gpu_memory': 0}"}
+2025-08-02 17:43:00,897 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 39.3, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:44:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}"}
+2025-08-02 17:44:00,928 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:45:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.4, 'gpu_memory': 0}"}
+2025-08-02 17:45:00,028 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:46:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}"}
+2025-08-02 17:46:00,075 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:47:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 44.9, 'gpu_memory': 0}"}
+2025-08-02 17:47:00,120 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 44.9, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:48:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 44.8, 'gpu_memory': 0}"}
+2025-08-02 17:48:00,130 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 44.8, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:49:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 44.7, 'gpu_memory': 0}"}
+2025-08-02 17:49:00,170 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 44.7, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:50:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 44.4, 'gpu_memory': 0}"}
+2025-08-02 17:50:00,197 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 44.4, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:51:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.1, 'gpu_memory': 0}"}
+2025-08-02 17:51:00,212 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.1, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:52:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.6, 'gpu_memory': 0}"}
+2025-08-02 17:52:00,218 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.6, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:52:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.6, 'gpu_memory': 0}"}
+2025-08-02 17:52:00,695 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.6, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:53:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.5, 'gpu_memory': 0}"}
+2025-08-02 17:53:00,696 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:54:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}"}
+2025-08-02 17:54:00,739 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:55:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.5, 'gpu_memory': 0}"}
+2025-08-02 17:55:00,768 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.5, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:56:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 40.6, 'gpu_memory': 0}"}
+2025-08-02 17:56:00,765 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 40.6, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:57:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.8, 'gpu_memory': 0}"}
+2025-08-02 17:57:00,803 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.8, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:58:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 43.0, 'gpu_memory': 0}"}
+2025-08-02 17:58:00,877 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 43.0, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T17:59:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 42.7, 'gpu_memory': 0}"}
+2025-08-02 17:59:00,908 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 42.7, 'gpu_memory': 0}
+{"timestamp": "2025-08-02T18:00:00Z", "level": "INFO", "agent": "NLLBTranslationAdapter", "message": "Resource stats: {'device': 'cuda', 'memory_usage': 43.3, 'gpu_memory': 0}"}
+2025-08-02 18:00:00,984 - INFO - Resource stats: {'device': 'cuda', 'memory_usage': 43.3, 'gpu_memory': 0}

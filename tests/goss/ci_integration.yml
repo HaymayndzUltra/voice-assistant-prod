@@ -1,0 +1,91 @@
+# CI Integration for Goss Tests
+# P2.2: Integrate into existing CI pipeline
+
+name: "P2 Goss Regression Tests"
+
+# This should be added to .github/workflows/ci_migration.yml
+
+goss-regression-tests:
+  needs: [docker-validation]
+  runs-on: ubuntu-latest
+  steps:
+    - name: 🛎️ Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🏗️ Start Required Services
+      run: |
+        # Start translation services for testing
+        cd docker/translation_services/
+        docker-compose up -d
+        
+        # Wait for services to be healthy
+        sleep 30
+        
+        # Verify services are running
+        docker ps --filter "name=*translation*"
+        
+    - name: 📦 Install Goss
+      run: |
+        curl -fsSL https://github.com/goss-org/goss/releases/download/v0.4.4/goss-linux-amd64 -o /usr/local/bin/goss
+        sudo chmod +x /usr/local/bin/goss
+        goss --version
+        
+    - name: 🧪 Run Goss Regression Tests
+      run: |
+        chmod +x tests/goss/goss_runner.sh
+        ./tests/goss/goss_runner.sh
+        
+    - name: 📊 Upload Test Reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: goss-test-reports
+        path: tests/goss/reports/
+        retention-days: 30
+        
+    - name: 📋 Post Test Summary
+      if: always()
+      run: |
+        if [ -f tests/goss/reports/test_summary_*.md ]; then
+          echo "## P2 Goss Test Results" >> $GITHUB_STEP_SUMMARY
+          cat tests/goss/reports/test_summary_*.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: 🧹 Cleanup Test Environment
+      if: always()
+      run: |
+        cd docker/translation_services/
+        docker-compose down || true
+
+# Health Check Deployment Integration
+healthcheck-validation:
+  needs: [goss-regression-tests]
+  runs-on: ubuntu-latest
+  steps:
+    - name: 🛎️ Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Validate Health Check Specs
+      run: |
+        # Ensure all services have health check specifications
+        find . -name "docker-compose*.yml" -exec grep -l "healthcheck:" {} \; > healthcheck_files.txt
+        
+        if [ -s healthcheck_files.txt ]; then
+          echo "✅ Health checks found in:"
+          cat healthcheck_files.txt
+        else
+          echo "❌ No health checks found in Docker Compose files"
+          exit 1
+        fi
+        
+    - name: 📋 Generate Health Check Report
+      run: |
+        echo "# Health Check Deployment Report" > healthcheck_report.md
+        echo "Generated: $(date)" >> healthcheck_report.md
+        echo "" >> healthcheck_report.md
+        
+        echo "## Services with Health Checks:" >> healthcheck_report.md
+        grep -r "healthcheck:" docker/ --include="*.yml" | cut -d: -f1 | sort | uniq >> healthcheck_report.md

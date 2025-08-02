@@ -1,0 +1,3 @@
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.3 55039692 52804 ?      Ssl  Aug01   0:33 python -m main_pc_code.FORMAINPC.nllb_adapter
+root        65  0.0  0.0   7064  1564 ?        Rs   18:00   0:00 ps aux
