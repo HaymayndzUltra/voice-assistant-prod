@@ -30,3 +30,6 @@ scikit-learn==1.4.2
 scipy==1.13.0
 # Kalman filtering for face tracking
 filterpy==1.4.5
+# PyTorch for deep learning
+torch==2.2.2
+torchvision==0.17.2
