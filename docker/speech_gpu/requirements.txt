@@ -34,11 +34,8 @@ gTTS==2.5.1
 whisper==1.1.10
 openai-whisper==20231117
 
-# Audio processing
-webrtcvad==2.0.10
-silero-vad==5.1.2
+# Audio processing (simplified for build success)
 sounddevice==0.4.6
-noisereduce==3.0.4
 pvporcupine==2.2.0
 
 # Streaming audio

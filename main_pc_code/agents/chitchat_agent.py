@@ -9,6 +9,7 @@ Handles natural conversational interactions:
 """
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
+from common.utils.env_standardizer import get_pc2_ip
 
 # Add the project's main_pc_code directory to the Python path
 import sys
@@ -55,7 +56,7 @@ ZMQ_REQUEST_TIMEOUT = 5000  # 5 seconds timeout for requests
 
 # Conversation settings
 MAX_HISTORY_LENGTH = 10  # Maximum number of conversation turns to remember
-MAX_HISTORY_${SECRET_PLACEHOLDER} 2000  # Maximum number of tokens in history
+MAX_HISTORY_TOKENS = 2000  # Maximum number of tokens in history
 
 class ChitchatAgent(BaseAgent):
     """Agent for handling natural conversational interactions. Now reports errors via the central, event-driven Error Bus (ZMQ PUB/SUB, topic 'ERROR:')."""
@@ -67,7 +68,7 @@ class ChitchatAgent(BaseAgent):
     def __init__(self):
         """Initialize the chitchat agent."""
         # Use config loader for agent args or set defaults
-        self.config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")) if callable(load_config) else {}
+        self.config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml")) if callable(load_unified_config) else {}
         super().__init__(
             name=getattr(self.config, 'name', 'ChitchatAgent'),
             port=getattr(self.config, 'port', 5711)
@@ -471,9 +472,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:

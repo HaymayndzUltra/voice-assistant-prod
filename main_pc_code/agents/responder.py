@@ -21,8 +21,8 @@ import json
 import numpy as np
 import threading
 import queue
-from TTS.api import TTS
-import torch
+import pyttsx3
+# import torch  # Commented out for now to avoid dependency conflicts
 import logging
 import time
 import pickle

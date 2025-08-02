@@ -53,6 +53,11 @@ services:
       - AGENT_NAME=NLUAgent
       - AGENT_PORT=5585
       - HEALTH_PORT=6585
+      # Hybrid API Configuration (API key loaded from .env.secrets)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - USE_LOCAL_MODELS=true
+      - FALLBACK_TO_CLOUD=true
+      - LOCAL_MODEL_TIMEOUT=5
       - LOG_LEVEL=INFO
     networks:
       - language_net

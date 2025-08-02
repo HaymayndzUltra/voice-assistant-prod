@@ -17,7 +17,7 @@ services:
     image: nats:2.10-alpine
     container_name: nats_speech
     ports:
-      - "4228:4222"
+      - "4229:4222"
     volumes:
       - ./nats-server.conf:/config/nats-server.conf
     command: ["-c", "/config/nats-server.conf"]
@@ -163,6 +163,8 @@ services:
       - REDIS_URL=redis://redis_speech:6379
       - NATS_SERVERS=nats://nats_speech:4222
       - LOG_LEVEL=INFO
+      - PORCUPINE_ACCESS_KEY=NUv4S1SW3VoT8vbF5XLn6nn2+czHtMsEX3U+YM42LwPTAtiNjSpkww==
+      - WAKE_WORD_PATH=/app/main_pc_code/config/wake_words/High-minds_en_linux_v3_0_0.ppn
     depends_on:
       stt_service:
         condition: service_started

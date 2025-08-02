@@ -163,6 +163,9 @@ Thumbs.db
 **/*secret*.txt
 **/*secret*.json
 **/*secret*.yaml
+*.env.secrets
+secrets/
+**/secrets/
 certificates/*.key
 certificates/*.pem
 certificates/*.crt
