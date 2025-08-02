@@ -825,9 +825,53 @@ class RequestCoordinator(BaseAgent):
         logger.info("RequestCoordinator is running...")
         try:
             while self.running:
-                time.sleep(1)
+                try:
+                    # Poll for incoming ZMQ messages
+                    if self.main_socket.poll(1000):  # 1 second timeout
+                        message = self.main_socket.recv_json(zmq.NOBLOCK)
+                        logger.info(f"Received request: {message}")
+                        
+                        # Process the request and send response
+                        response = self._process_request(message)
+                        self.main_socket.send_json(response)
+                        logger.info(f"Sent response: {response}")
+                    
+                except zmq.Again:
+                    # Timeout - continue polling
+                    continue
+                except Exception as e:
+                    logger.error(f"Error processing request: {e}")
+                    # Send error response if possible
+                    try:
+                        error_response = {"status": "error", "message": str(e)}
+                        self.main_socket.send_json(error_response)
+                    except:
+                        pass
+                        
         except KeyboardInterrupt:
             self.stop()
+
+    def _process_request(self, message):
+        """Process incoming request and return response"""
+        try:
+            action = message.get('action', 'unknown')
+            
+            if action == 'ping':
+                return {"status": "success", "message": "pong", "service": "RequestCoordinator"}
+            elif action == 'generate':
+                # Mock response for now - would integrate with MMS
+                return {
+                    "status": "success", 
+                    "action": action,
+                    "prompt": message.get('prompt', ''),
+                    "response": "Mock generation response",
+                    "service": "RequestCoordinator"
+                }
+            else:
+                return {"status": "error", "message": f"Unknown action: {action}"}
+                
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     # report_error() method now inherited from BaseAgent (UnifiedErrorHandler)
 
