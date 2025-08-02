@@ -14,11 +14,12 @@ RUN pip install --no-cache-dir -r /tmp/req.txt
 # Install PyTorch CPU-only for ModelManagerAgent
 RUN pip install --no-cache-dir torch==2.2.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
+# Install build dependencies for llama-cpp-python
+RUN pip install --no-cache-dir scikit-build-core[pyproject]
+
 # Install llama-cpp-python for GGUF model support (Phase 5 fix)
 RUN pip install --no-cache-dir "llama-cpp-python==0.2.58" \
-    && python - <<'PY'  # quick smoke-test at build time
-import importlib, sys; sys.exit(0 if importlib.util.find_spec("llama_cpp") else 1)
-PY
+    && python -c "import llama_cpp; print('llama-cpp-python installed successfully')"
 
 # Copy source code
 COPY main_pc_code/  /app/main_pc_code/

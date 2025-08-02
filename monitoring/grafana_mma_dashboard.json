@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "id": null,
-    "title": "ModelManagerAgent Migration Monitoring",
+    "title": "ModelManagerSuite Monitoring",
     "tags": [
       "modelmanager",
       "gpu",
