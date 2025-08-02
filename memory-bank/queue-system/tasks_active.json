@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "20250801T235719_Test_Memory_System_Functionality",
+    "description": "Test Memory System Functionality",
+    "todos": [
+      {
+        "text": "Test auto-sync functionality",
+        "done": true
+      }
+    ],
+    "status": "completed",
+    "created": "2025-08-01T23:57:19.688991+08:00",
+    "updated": "2025-08-01T23:58:04.232692+08:00"
+  }
+]

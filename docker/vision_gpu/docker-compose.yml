@@ -1,0 +1,70 @@
+version: '3.8'
+
+networks:
+  vision_net:
+    driver: bridge
+
+services:
+  # Redis for caching and state management
+  redis_vision:
+    image: redis:7.2-alpine
+    container_name: redis_vision
+    ports:
+      - "6386:6379"
+    networks:
+      - vision_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # NATS for messaging
+  nats_vision:
+    image: nats:2.10-alpine
+    container_name: nats_vision
+    ports:
+      - "4228:4222"
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    volumes:
+      - ./nats-server.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - vision_net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4222"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Face Recognition Agent
+  face_recognition_agent:
+    image: vision_gpu:latest
+    container_name: face_recognition_agent
+    command: ["python", "-m", "main_pc_code.agents.face_recognition_agent"]
+    ports:
+      - "5596:5596"  # Main service port
+      - "6596:6596"  # Health check port
+    environment:
+      - AGENT_NAME=FaceRecognitionAgent
+      - AGENT_PORT=5596
+      - REDIS_URL=redis://redis_vision:6379
+      - NATS_SERVERS=nats://nats_vision:4222
+      - LOG_LEVEL=INFO
+      - CUDA_VISIBLE_DEVICES=0
+    depends_on:
+      redis_vision:
+        condition: service_started
+      nats_vision:
+        condition: service_started
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - vision_net
+    restart: unless-stopped
