@@ -1,0 +1,44 @@
+{
+    "snapshot": "POPULATED_FROM_SETTINGS",
+    "install": "apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose git curl build-essential",
+    "start": "sudo service docker start",
+    "terminals": [
+      {
+        "name": "Build All Groups",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && docker-compose up -d --build); done"
+      },
+      {
+        "name": "Pytest All Agents",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && for svc in $(docker-compose ps --services); do docker-compose exec $svc pytest || true; done); done"
+      },
+      {
+        "name": "Lint All Agents",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && for svc in $(docker-compose ps --services); do docker-compose exec $svc flake8 . || true; done); done"
+      },
+      {
+        "name": "Logs All Agents",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && for svc in $(docker-compose ps --services); do docker-compose logs $svc --tail=100; done); done"
+      },
+      {
+        "name": "Show Docker Info",
+        "command": "docker info"
+      },
+      {
+        "name": "List Containers",
+        "command": "docker ps -a"
+      },
+      {
+        "name": "Cleanup Docker",
+        "command": "docker system prune -af"
+      },
+      {
+        "name": "Migration All DB",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && for svc in $(docker-compose ps --services); do docker-compose exec $svc alembic upgrade head || true; done); done"
+      },
+      {
+        "name": "Shell All Agents",
+        "command": "for d in docker/*/ ; do [ -f \"$d/docker-compose.yml\" ] && (cd \"$d\" && for svc in $(docker-compose ps --services); do docker-compose exec $svc bash || true; done); done"
+      }
+    ]
+  }
+  
