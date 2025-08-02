@@ -4803,9 +4803,9 @@ if __name__ == "__main__":
         # Create necessary directories
         Path("logs").mkdir(exist_ok=True)
         Path("cache").mkdir(exist_ok=True)
-        
+
         # Initialize and run the agent
-        logger.info(f"Starting ModelManagerAgent")
+        logger.info("Starting ModelManagerAgent")
         agent = ModelManagerAgent()
         agent.run()
     except KeyboardInterrupt:
