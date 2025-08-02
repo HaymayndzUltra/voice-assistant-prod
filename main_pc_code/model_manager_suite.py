@@ -28,6 +28,10 @@ import json
 import logging
 import threading
 
+# Phase 3.2: Module alias to maintain import paths for backward compatibility
+import sys as _sys
+_sys.modules['main_pc_code.agents.model_manager_agent'] = _sys.modules[__name__]
+
 # ZMQ is optional for serverless/unit-test mode. Provide lightweight stub if missing.
 try:
     import zmq  # type: ignore

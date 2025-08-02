@@ -13,15 +13,15 @@
       },
       {
         "text": "PHASE 2 – VALIDATE MODEL MANAGER SUITE (MMS)\n\n2.1 Add temporary compose service `model_manager_suite_test` (no port conflict) in `docker/language_stack/docker-compose.override.yml`.\n\n2.2 Launch & smoke-test\n`docker compose -f ... up -d model_manager_suite_test`\n`python3 utils/mms_smoke_test.py`\n\n2.3 Functional diff vs MMA\n- Write a pytest that fires identical JSON RPC calls to MMA (tcp://localhost:5570) and MMS (tcp://localhost:7721).\n- Compare results for success status and key presence.\n\n2.4 Identify and fix any \"status\": \"error\" or \"…not implemented…\" from MMS by porting logic from `model_manager_agent.py` to `model_manager_suite.py`.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang pinakamahalagang validation step. Huwag magpatuloy sa Phase 3 hangga't hindi pumapasa ang lahat ng parity tests (≥ 99%). Ang anumang 'error' o 'not implemented' na isyu ay dapat munang ayusin.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 3 – PREPARE DROP-IN REPLACEMENT\n\n3.1 Expose MMS on LEGACY PORTS while still in test container.\n\n3.2 Add module alias in `model_manager_suite.py` to maintain import paths:\n`import sys as _sys`\n`_sys.modules['main_pc_code.agents.model_manager_agent'] = _sys.modules[__name__]`\n\n3.3 Run `grep -R \"ModelManagerAgent(\" *` to ensure no direct class instantiation.\n\n3.4 Verify all clients read `MODEL_MANAGER_PORT` from environment variables.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Bago isagawa ang aktwal na cut-over, siguraduhing lahat ng paghahanda sa phase na ito ay tapos na. I-verify na ang MMS ay gumagana sa legacy ports at lahat ng code-level dependencies ay naayos na para maiwasan ang 'downtime' sa susunod na phase.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 4 – CUT-OVER\n\n4.1 In `docker-compose.yml`, replace the `model_manager_agent` service with the `model_manager_suite` service, pointing to ports 5570/6570.\n\n4.2 Remove or comment out the old `model_manager_agent` service stanza.\n\n4.3 Re-deploy:\n`docker compose up -d --build model_manager_suite`\n`docker compose rm -f model_manager_agent`\n\n4.4 Health validation:\n- `curl -s tcp://localhost:6570`\n- Run pytest from 2.3 pointing only to 5570.\n- Run end-to-end voice command test.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Pagkatapos ng cut-over, magsagawa ng masusing health validation. Huwag magpatuloy sa clean-up (Phase 5) hangga't hindi 100% kumpirmado na ang sistema ay fully operational gamit ang ModelManagerSuite.",
-        "done": false
+        "done": true
       },
       {
         "text": "PHASE 5 – CLEAN-UP & OBSERVABILITY\n\n5.1 Update monitoring & dashboards to track `ModelManagerSuite` health port 6570.\n\n5.2 Remove old MMA image to avoid accidental roll-back.\n\n5.3 Merge branch to main, push tags, and create PR:\n`git add .`\n`git commit -m \"Replace ModelManagerAgent with consolidated ModelManagerSuite\"`\n`git push origin migrate-to-mms`\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang clean-up ay ang huling hakbang para gawing permanente ang pagbabago. Siguraduhing na-update na ang monitoring at na-merge na ang code bago ituring na 'tapos' ang buong migration.",
@@ -38,6 +38,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-21T18:00:00.000000+08:00",
-    "updated": "2024-05-21T18:00:00.000000+08:00"
+    "updated": "2025-08-02T14:47:32.636077+08:00"
   }
 ]

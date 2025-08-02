@@ -189,7 +189,7 @@ from common.config_manager import load_unified_config
 config = load_unified_config(os.path.join("main_pc_code", "config", "startup_config.yaml"))
 
 # Move this import to the top of the file
-from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
+# from main_pc_code.agents.gguf_model_manager import get_instance as get_gguf_manager
 
 class ModelManagerAgent(BaseAgent):
     def __init__(self, config_path=None, **kwargs):

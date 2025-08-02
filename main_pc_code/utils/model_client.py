@@ -119,7 +119,7 @@ def _send_request(request: Dict[str, Any]) -> Dict[str, Any]:
         The response dictionary
     """
     # Get MMA port from environment or use default
-    mma_port = int(os.environ.get("MMA_PORT", DEFAULT_MMA_PORT))
+    mma_port = int(os.environ.get("MODEL_MANAGER_PORT", DEFAULT_MMA_PORT))
     
     # Create ZMQ context and socket
     context = zmq.Context()

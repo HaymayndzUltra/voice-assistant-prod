@@ -2,7 +2,7 @@
   "current_task_id": "20240521_mms_migration_phased_playbook",
   "current_task_description": "Phased Playbook: Migrate system from MMA-only to ModelManagerSuite-only",
   "status": "in_progress",
-  "last_updated": "2024-05-21T18:00:00.000000+08:00",
+  "last_updated": "2025-08-02T14:47:32.636077+08:00",
   "todos_count": 8,
-  "completed_todos": 0
+  "completed_todos": 3
 }

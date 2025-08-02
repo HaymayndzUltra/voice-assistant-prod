@@ -7,6 +7,7 @@ import yaml
 
 # IMPORTANT: This requires the ModelManagerAgent class to be importable.
 from common.env_helpers import get_env
+from main_pc_code.agents.model_manager_agent import ModelManagerAgent
 
 # Containerization-friendly paths (Blueprint.md Step 5)
 from common.utils.path_manager import PathManager

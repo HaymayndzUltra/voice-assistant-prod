@@ -353,11 +353,14 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Model Manager Agent
-  model_manager_agent:
+  # Model Manager Suite (Phase 4 Cut-over: Replaced ModelManagerAgent)
+  model_manager_suite:
+    build:
+      context: ../..
+      dockerfile: docker/language_stack/Dockerfile
     image: language_stack:latest
-    container_name: model_manager_agent
-    command: ["python", "-m", "main_pc_code.agents.model_manager_agent"]
+    container_name: model_manager_suite
+    command: ["python", "-m", "main_pc_code.model_manager_suite", "--port", "5570", "--health-port", "6570"]
     ports:
       - "5570:5570"
       - "6570:6570"
@@ -365,7 +368,7 @@ services:
       - REDIS_URL=redis://redis_language:6379/0
       - SERVICE_REGISTRY_REDIS_URL=redis://redis_language:6379/0
       - NATS_SERVERS=nats://nats_language:4222
-      - AGENT_NAME=ModelManagerAgent
+      - AGENT_NAME=ModelManagerSuite
       - AGENT_PORT=5570
       - HEALTH_PORT=6570
       - LOG_LEVEL=INFO

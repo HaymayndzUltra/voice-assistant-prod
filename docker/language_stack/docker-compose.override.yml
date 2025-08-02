@@ -14,6 +14,7 @@ services:
       - "8721:8721"
     networks:
       - language_net
-    depends_on:
-      model_manager_agent:
-        condition: service_started
+
+  # Phase 4.2: MMA service removed - replaced by model_manager_suite in main compose
+  
+  # Phase 4.2: Legacy test service removed - MMS now in main compose
