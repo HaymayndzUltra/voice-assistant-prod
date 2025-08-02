@@ -37,6 +37,9 @@ openai-whisper==20231117
 # Audio processing
 webrtcvad==2.0.10
 silero-vad==5.1.2
+sounddevice==0.4.6
+noisereduce==3.0.4
+pvporcupine==2.2.0
 
 # Streaming audio
 asyncio-mqtt==0.13.0

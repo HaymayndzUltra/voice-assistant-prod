@@ -28,3 +28,5 @@ onnxruntime==1.17.1
 scikit-learn==1.4.2
 # Basic image processing
 scipy==1.13.0
+# Kalman filtering for face tracking
+filterpy==1.4.5
