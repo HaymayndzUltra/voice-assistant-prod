@@ -8,7 +8,7 @@ LABEL maintainer="YOU <you@example.com>" \
 
 # ─── System-level deps ───────────────────────────────────────────────────────
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc build-essential && \
+    apt-get install -y --no-install-recommends gcc build-essential curl && \
     rm -rf /var/lib/apt/lists/*
 
 # ─── Python deps ─────────────────────────────────────────────────────────────
