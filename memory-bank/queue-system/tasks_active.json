@@ -1,15 +1,331 @@
 [
   {
-    "id": "20250801T235719_Test_Memory_System_Functionality",
-    "description": "Test Memory System Functionality",
+    "id": "20250802T015923_1_infra_core_(ServiceRegistry,_SystemDigitalTwin)",
+    "description": "1 infra_core (ServiceRegistry, SystemDigitalTwin)",
     "todos": [
       {
-        "text": "Test auto-sync functionality",
+        "text": "[AGENT TEST] ★ CMD: curl -f http://$DOCKER_HOST_IP:8200/health\nEXP: {\"status\":\"healthy\", ...}",
+        "done": true
+      },
+      {
+        "text": "[AGENT TEST] ★ CMD: curl -f http://$DOCKER_HOST_IP:8221/health # note +1 000 HTTP port\nEXP: healthy JSON",
+        "done": true
+      },
+      {
+        "text": "[AGENT TEST] ○ CMD: docker exec service_registry redis-cli ping (if redis backend)\nEXP: PONG",
+        "done": false
+      },
+      {
+        "text": "[INTEGRATION] ★ CMD: python scripts/health_probe.py --target SystemDigitalTwin --registry tcp://$DOCKER_HOST_IP:7200\nEXP: probe returns OK",
+        "done": true
+      },
+      {
+        "text": "[CROSS-GROUP] ★ CMD: python - <<'PY'\\nimport zmq, json; s=zmq.Context().socket(zmq.REQ); s.connect('tcp://%s:7200'%'\\''$DOCKER_HOST_IP'\\''); s.send_json({'action':'list_agents'}); print(s.recv_json())\\nPY\nEXP: list contains at least ServiceRegistry & SystemDigitalTwin.",
+        "done": true
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T01:59:23.291324+08:00",
+    "updated": "2025-08-02T02:16:58.613390+08:00"
+  },
+  {
+    "id": "20250802T015947_2_coordination_(RequestCoordinator,_ModelManagerSu",
+    "description": "2 coordination (RequestCoordinator, ModelManagerSuite, VRAMOptimizerAgent)",
+    "todos": [
+      {
+        "text": "[AGENT TEST] ★ CMD: curl -f http://$DOCKER_HOST_IP:27002/health",
+        "done": true
+      },
+      {
+        "text": "[AGENT TEST] ★ CMD: curl -f http://$DOCKER_HOST_IP:8211/health",
+        "done": false
+      },
+      {
+        "text": "[AGENT TEST] ○ CMD: curl -f http://$DOCKER_HOST_IP:6572/health (VRAM Optimizer)",
+        "done": false
+      },
+      {
+        "text": "[SMOKE NLP] ★ CMD: python - <<'PY'\\nimport zmq, json, sys, time; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect(\"tcp://$DOCKER_HOST_IP:26002\".replace(\"$DOCKER_HOST_IP\",sys.argv[1])); s.send_json({\"action\":\"generate\",\"prompt\":\"Hello\"}); print(s.recv_json())\\nPY $DOCKER_HOST_IP\nEXP: JSON with engine: field (phi-2 or cloud).",
+        "done": true
+      },
+      {
+        "text": "[INTEGRATION] ★ RequestCoordinator must call ModelManagerSuite.\nCMD: docker logs --tail=30 request_coordinator | grep \"Forwarded to ModelManagerSuite\"\nEXP: at least one line.",
+        "done": true
+      },
+      {
+        "text": "[CROSS-GROUP] ★ CMD: curl -f http://$DOCKER_HOST_IP:8221/health | jq '.service'\nEXP: \"SystemDigitalTwin\" (means coordination can see infra_core).",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T01:59:47.400917+08:00",
+    "updated": "2025-08-02T07:47:13.164683+08:00"
+  },
+  {
+    "id": "20250802T015957_3_observability_(ObservabilityHub)",
+    "description": "3 observability (ObservabilityHub)",
+    "todos": [
+      {
+        "text": "★ CMD: curl -f http://$DOCKER_HOST_IP:9000/health",
+        "done": true
+      },
+      {
+        "text": "★ CMD: curl -f http://$DOCKER_HOST_IP:9000/metrics | head",
+        "done": true
+      },
+      {
+        "text": "○ CMD: curl -X POST http://$DOCKER_HOST_IP:9000/register_agent -d '{\"agent_name\":\"dummy\",\"port\":1234}' -H \"Content-Type: application/json\"\nEXP: {\"status\":\"success\"...}",
+        "done": false
+      },
+      {
+        "text": "[Cross-Group] ★ Observe it scraped at least one metric:\nCMD: curl -s http://$DOCKER_HOST_IP:9000/health_summary | jq '.healthy_agents'\nEXP: non-zero.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T01:59:57.789897+08:00",
+    "updated": "2025-08-02T07:47:25.866685+08:00"
+  },
+  {
+    "id": "20250802T020004_4_memory_stack_(MemoryClient,_SessionMemoryAgent,_",
+    "description": "4 memory_stack (MemoryClient, SessionMemoryAgent, KnowledgeBase)",
+    "todos": [
+      {
+        "text": "★ CMD: curl -f http://$DOCKER_HOST_IP:6713/health",
+        "done": true
+      },
+      {
+        "text": "★ CMD: curl -f http://$DOCKER_HOST_IP:6574/health",
+        "done": true
+      },
+      {
+        "text": "○ CMD: curl -f http://$DOCKER_HOST_IP:6715/health",
+        "done": false
+      },
+      {
+        "text": "[Integration] ★ MemoryClient ↔ Redis\nCMD: docker logs memory_client | grep \"Connected to Redis\" -m1\nEXP: found.",
+        "done": false
+      },
+      {
+        "text": "[Integration] ★ SessionMemoryAgent ↔ MemoryClient\nCMD: curl -X POST http://$DOCKER_HOST_IP:6574/append -d '{\"key\":\"test\",\"value\":\"hello\"}' -H \"Content-Type: application/json\" then curl -s http://$DOCKER_HOST_IP:6574/get/test | grep hello",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:00:04.949710+08:00",
+    "updated": "2025-08-02T07:47:32.173789+08:00"
+  },
+  {
+    "id": "20250802T020012_5_vision_gpu_(FaceRecognitionAgent)",
+    "description": "5 vision_gpu (FaceRecognitionAgent)",
+    "todos": [
+      {
+        "text": "[Pre-condition] GPU base image present.",
+        "done": false
+      },
+      {
+        "text": "★ CMD: docker exec face_recognition_agent nvidia-smi (should list GPU)",
+        "done": false
+      },
+      {
+        "text": "★ CMD: curl -f http://$DOCKER_HOST_IP:6610/health",
+        "done": true
+      },
+      {
+        "text": "○ Demo inference (needs sample image face.jpg):\nCMD: curl -F \"file=@face.jpg\" http://$DOCKER_HOST_IP:5610/recognize\nEXP: JSON with bounding-box or name.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:00:12.762549+08:00",
+    "updated": "2025-08-02T07:47:54.691731+08:00"
+  },
+  {
+    "id": "20250802T020019_6_speech_gpu_(8_agents)",
+    "description": "6 speech_gpu (8 agents)",
+    "todos": [
+      {
+        "text": "[Smoke] ★ curl -f http://$DOCKER_HOST_IP:6800/health (STT)",
+        "done": true
+      },
+      {
+        "text": "[Smoke] ★ curl -f http://$DOCKER_HOST_IP:6801/health (TTS)",
+        "done": true
+      },
+      {
+        "text": "[Smoke] ★ curl -f http://$DOCKER_HOST_IP:6576/health (StreamingInterrupt)",
+        "done": true
+      },
+      {
+        "text": "[End-to-end streaming test] ○ Run scripts/audio_pipeline_test.py (sends 5-sec wav, expects text JSON).",
+        "done": false
+      },
+      {
+        "text": "[Integration] ★ Verify WakeWordDetector publishes interrupt:\nCMD: docker logs wake_word_detector | grep \"WAKE_WORD_DETECTED\" -m1",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:00:19.425377+08:00",
+    "updated": "2025-08-02T08:05:54.636655+08:00"
+  },
+  {
+    "id": "20250802T020026_7_learning_gpu_(7_agents)",
+    "description": "7 learning_gpu (7 agents)",
+    "todos": [
+      {
+        "text": "[Smoke] ★ curl -f http://$DOCKER_HOST_IP:8212/health (LearningOrchestrationService)",
+        "done": true
+      },
+      {
+        "text": "[Smoke] ★ curl -f http://$DOCKER_HOST_IP:6580/health (LearningManager)",
+        "done": true
+      },
+      {
+        "text": "[GPU check] ★ docker exec self_training_orchestrator nvidia-smi",
+        "done": false
+      },
+      {
+        "text": "[Integration] ★ After triggering orchestrator:\nCMD: docker exec self_training_orchestrator python -m trigger_dummy_job then check logs of LocalFineTunerAgent for “Training complete”.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:00:26.562197+08:00",
+    "updated": "2025-08-02T08:05:54.539035+08:00"
+  },
+  {
+    "id": "20250802T020038_8_reasoning_gpu_(3_agents)",
+    "description": "8 reasoning_gpu (3 agents)",
+    "todos": [
+      {
+        "text": "★ Health ports: curl -f http://$DOCKER_HOST_IP:6612/health",
+        "done": true
+      },
+      {
+        "text": "★ Health ports: curl -f http://$DOCKER_HOST_IP:6646/health",
+        "done": true
+      },
+      {
+        "text": "★ Health ports: curl -f http://$DOCKER_HOST_IP:6641/health",
+        "done": true
+      },
+      {
+        "text": "[Smoke generation] ★ curl -X POST http://$DOCKER_HOST_IP:6612/chain -d '{\"query\":\"2+2\"}' -H \"Content-Type: application/json\"\nEXP: JSON with reasoning steps.",
         "done": true
       }
     ],
     "status": "completed",
-    "created": "2025-08-01T23:57:19.688991+08:00",
-    "updated": "2025-08-01T23:58:04.232692+08:00"
+    "created": "2025-08-02T02:00:38.344805+08:00",
+    "updated": "2025-08-02T08:05:54.587192+08:00"
+  },
+  {
+    "id": "20250802T020044_9_language_stack_(11_agents)",
+    "description": "9 language_stack (11 agents)",
+    "todos": [
+      {
+        "text": "[Required smoke] ★ curl -f http://$DOCKER_HOST_IP:6709/health (NLU)",
+        "done": true
+      },
+      {
+        "text": "[Required smoke] ★ curl -f http://$DOCKER_HOST_IP:6710/health (AdvCmd)",
+        "done": true
+      },
+      {
+        "text": "[Required smoke] ★ curl -f http://$DOCKER_HOST_IP:6706/health (EmotionSynth)",
+        "done": true
+      },
+      {
+        "text": "[Conversation round-trip] ○ python scripts/dialogue_roundtrip.py \"Hello there\" → expect combined NLU→Responder JSON.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:00:44.373150+08:00",
+    "updated": "2025-08-02T07:47:36.875984+08:00"
+  },
+  {
+    "id": "20250802T020110_10_utility_cpu_(6_agents)",
+    "description": "10 utility_cpu (6 agents)",
+    "todos": [
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6650/health (CodeGenerator)",
+        "done": true
+      },
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6606/health (Executor)",
+        "done": true
+      },
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6595/health (TranslationService or new port 6597)",
+        "done": false
+      },
+      {
+        "text": "[Quick compile test] ○ curl -X POST http://$DOCKER_HOST_IP:6650/generate -d '{\"prompt\":\"print(1+1)\"}'",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:01:10.700911+08:00",
+    "updated": "2025-08-02T08:05:41.980101+08:00"
+  },
+  {
+    "id": "20250802T020119_11_emotion_system_(6_agents)",
+    "description": "11 emotion_system (6 agents)",
+    "todos": [
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6590/health",
+        "done": true
+      },
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6703/health (EmpathyAgent)",
+        "done": true
+      },
+      {
+        "text": "[Integration] ★ Post mood update\nCMD: curl -X POST http://$DOCKER_HOST_IP:6704/update -d '{\"mood\":\"happy\"}'\nEXP: status\":\"success\" then EmotionEngine log shows new mood.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:01:19.466622+08:00",
+    "updated": "2025-08-02T07:47:42.316014+08:00"
+  },
+  {
+    "id": "20250802T020130_12_translation_services_(GPU_adapters)",
+    "description": "12 translation_services (GPU adapters)",
+    "todos": [
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6584/health",
+        "done": true
+      },
+      {
+        "text": "★ curl -f http://$DOCKER_HOST_IP:6582/health",
+        "done": true
+      },
+      {
+        "text": "[Smoke] ○ curl -X POST http://$DOCKER_HOST_IP:6584/translate -d '{\"text\":\"Hello\",\"target\":\"fr\"}'\nEXP: \"Bonjour\" in JSON.",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:01:30.170548+08:00",
+    "updated": "2025-08-02T08:05:47.736543+08:00"
+  },
+  {
+    "id": "20250802T020200_CROSS_GROUP_HYBRID_ROUTING_TESTS",
+    "description": "CROSS-GROUP / HYBRID ROUTING TESTS",
+    "todos": [
+      {
+        "text": "★ Local-first then fallback:\nCMD: python scripts/hybrid_test.py --prompt \"Summarise this text.\" --quality-threshold 0.01\nEXP: Response JSON shows \"engine\":\"gpt-4o\"",
+        "done": false
+      },
+      {
+        "text": "★ Memory lookup across groups\n– Insert via SessionMemoryAgent, retrieve via KnowledgeBase REST (ensures MessageBus path).",
+        "done": false
+      }
+    ],
+    "status": "in_progress",
+    "created": "2025-08-02T02:02:00.000000+08:00",
+    "updated": "2025-08-02T02:02:00.000000+08:00"
   }
 ]
