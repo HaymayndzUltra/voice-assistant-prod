@@ -72,7 +72,7 @@ services:
   intention_validator:
     image: language_stack:latest
     container_name: intention_validator
-    command: ["python", "-m", "main_pc_code.agents.IntentionValidatorAgent"]
+    command: ["python", "-m", "main_pc_code.agents.intention_validator_agent"]
     ports:
       - "5586:5586"
       - "6586:6586"
@@ -100,7 +100,7 @@ services:
   advanced_command_handler:
     image: language_stack:latest
     container_name: advanced_command_handler
-    command: ["python", "-m", "main_pc_code.agents.AdvancedCommandHandler"]
+    command: ["python", "-m", "main_pc_code.agents.advanced_command_handler"]
     ports:
       - "5587:5587"
       - "6587:6587"
@@ -156,7 +156,7 @@ services:
   feedback_handler:
     image: language_stack:latest
     container_name: feedback_handler
-    command: ["python", "-m", "main_pc_code.agents.FeedbackHandler"]
+    command: ["python", "-m", "main_pc_code.agents.feedback_handler"]
     ports:
       - "5589:5589"
       - "6589:6589"
@@ -184,7 +184,7 @@ services:
   responder:
     image: language_stack:latest
     container_name: responder
-    command: ["python", "-m", "main_pc_code.agents.Responder"]
+    command: ["python", "-m", "main_pc_code.agents.responder"]
     ports:
       - "5590:5590"
       - "6590:6590"
@@ -212,7 +212,7 @@ services:
   dynamic_identity_agent:
     image: language_stack:latest
     container_name: dynamic_identity_agent
-    command: ["python", "-m", "main_pc_code.agents.DynamicIdentityAgent"]
+    command: ["python", "-m", "main_pc_code.agents.dynamic_identity_agent"]
     ports:
       - "5591:5591"
       - "6591:6591"
@@ -240,7 +240,7 @@ services:
   emotion_synthesis_agent:
     image: language_stack:latest
     container_name: emotion_synthesis_agent
-    command: ["python", "-m", "main_pc_code.agents.EmotionSynthesisAgent"]
+    command: ["python", "-m", "main_pc_code.agents.emotion_synthesis_agent"]
     ports:
       - "5592:5592"
       - "6592:6592"
@@ -268,7 +268,7 @@ services:
   goal_manager:
     image: language_stack:latest
     container_name: goal_manager
-    command: ["python", "-m", "main_pc_code.agents.GoalManager"]
+    command: ["python", "-m", "main_pc_code.agents.goal_manager"]
     ports:
       - "5593:5593"
       - "6593:6593"

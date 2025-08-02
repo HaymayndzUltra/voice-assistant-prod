@@ -40,3 +40,8 @@ silero-vad==5.1.2
 
 # Streaming audio
 asyncio-mqtt==0.13.0
+
+# Missing audio dependencies
+sounddevice==0.5.1
+pvporcupine==3.0.3
+noisereduce==3.0.2

@@ -120,7 +120,7 @@ services:
   empathy_agent:
     image: emotion_system:latest
     container_name: empathy_agent
-    command: ["python", "-m", "main_pc_code.agents.EmpathyAgent"]
+    command: ["python", "-m", "main_pc_code.agents.empathy_agent"]
     environment:
       LOG_LEVEL: "INFO"
       REDIS_URL: "redis://redis_emotion:6379/0"
