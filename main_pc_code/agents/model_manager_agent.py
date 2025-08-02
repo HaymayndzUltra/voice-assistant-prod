@@ -4803,22 +4803,15 @@ if __name__ == "__main__":
         # Create necessary directories
         Path("logs").mkdir(exist_ok=True)
         Path("cache").mkdir(exist_ok=True)
-        
+
         # Initialize and run the agent
-        logger.info(f"Starting ModelManagerAgent")
+        logger.info("Starting ModelManagerAgent")
         agent = ModelManagerAgent()
         agent.run()
     except KeyboardInterrupt:
         print(f"Shutting down {agent.name if agent else 'agent'}...")
     except Exception as e:
         import traceback
-        from main_pc_code.utils.network_utils import get_zmq_connection_string, get_machine_ip
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
-
-# Containerization-friendly paths (Blueprint.md Step 5)
-from common.utils.path_manager import PathManager
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'}: {e}")
         traceback.print_exc()
     finally:
