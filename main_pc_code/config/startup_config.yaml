@@ -166,14 +166,15 @@ agent_groups:
       dependencies:
       - SystemDigitalTwin
       - ModelManagerSuite
-    SelfTrainingOrchestrator:
-      script_path: main_pc_code/FORMAINPC/self_training_orchestrator.py
-      port: "${PORT_OFFSET}+5660"
-      health_check_port: "${PORT_OFFSET}+6660"
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-      - ModelManagerSuite
+    # SelfTrainingOrchestrator:
+    #   # DISABLED: Local training orchestration - moved to cloud
+    #   script_path: main_pc_code/FORMAINPC/self_training_orchestrator.py
+    #   port: "${PORT_OFFSET}+5660"
+    #   health_check_port: "${PORT_OFFSET}+6660"
+    #   required: true
+    #   dependencies:
+    #   - SystemDigitalTwin
+    #   - ModelManagerSuite
     PredictiveHealthMonitor:
       script_path: main_pc_code/agents/predictive_health_monitor.py
       port: "${PORT_OFFSET}+5613"
@@ -197,14 +198,15 @@ agent_groups:
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
-    LocalFineTunerAgent:
-      script_path: main_pc_code/FORMAINPC/local_fine_tuner_agent.py
-      port: "${PORT_OFFSET}+5642"
-      health_check_port: "${PORT_OFFSET}+6642"
-      required: true
-      dependencies:
-      - SelfTrainingOrchestrator
-      - SystemDigitalTwin    
+    # LocalFineTunerAgent:
+    #   # DISABLED: Local model fine-tuning - moved to cloud
+    #   script_path: main_pc_code/FORMAINPC/local_fine_tuner_agent.py
+    #   port: "${PORT_OFFSET}+5642"
+    #   health_check_port: "${PORT_OFFSET}+6642"
+    #   required: true
+    #   dependencies:
+    #   - SelfTrainingOrchestrator
+    #   - SystemDigitalTwin    
   gpu_infrastructure:
     # VRAMOptimizerAgent moved to foundation_services to avoid duplication
   reasoning_services:
@@ -278,14 +280,15 @@ agent_groups:
       dependencies:
       - LearningManager
       - SystemDigitalTwin
-    LearningAdjusterAgent:
-      script_path: main_pc_code/FORMAINPC/learning_adjuster_agent.py
-      port: "${PORT_OFFSET}+5643"
-      health_check_port: "${PORT_OFFSET}+6643"
-      required: true
-      dependencies:
-      - SelfTrainingOrchestrator
-      - SystemDigitalTwin
+    # LearningAdjusterAgent:
+    #   # DISABLED: Local learning parameter optimization - moved to cloud
+    #   script_path: main_pc_code/FORMAINPC/learning_adjuster_agent.py
+    #   port: "${PORT_OFFSET}+5643"
+    #   health_check_port: "${PORT_OFFSET}+6643"
+    #   required: true
+    #   dependencies:
+    #   - SelfTrainingOrchestrator
+    #   - SystemDigitalTwin
   language_processing:
     ModelOrchestrator:
       script_path: main_pc_code/agents/model_orchestrator.py
@@ -514,25 +517,35 @@ agent_groups:
       - SystemDigitalTwin
 
   translation_services:
-    TranslationService:
-      script_path: main_pc_code/agents/translation_service.py
-      port: "${PORT_OFFSET}+5595"
-      health_check_port: "${PORT_OFFSET}+6595"
-      required: true
-      dependencies:
-      - SystemDigitalTwin
-    FixedStreamingTranslation:
-      script_path: main_pc_code/agents/fixed_streaming_translation.py
-      port: "${PORT_OFFSET}+5584"
-      health_check_port: "${PORT_OFFSET}+6584"
-      required: true
-      dependencies:
-      - ModelManagerSuite
-      - SystemDigitalTwin
-    NLLBAdapter:
-      script_path: main_pc_code/FORMAINPC/nllb_adapter.py
-      port: "${PORT_OFFSET}+5582"
-      health_check_port: "${PORT_OFFSET}+6582"
+    # DISABLED: Local translation services (moved to cloud)
+    # TranslationService:
+    #   script_path: main_pc_code/agents/translation_service.py
+    #   port: "${PORT_OFFSET}+5595"
+    #   health_check_port: "${PORT_OFFSET}+6595"
+    #   required: true
+    #   dependencies:
+    #   - SystemDigitalTwin
+    # FixedStreamingTranslation:
+    #   script_path: main_pc_code/agents/fixed_streaming_translation.py
+    #   port: "${PORT_OFFSET}+5584"
+    #   health_check_port: "${PORT_OFFSET}+6584"
+    #   required: true
+    #   dependencies:
+    #   - ModelManagerSuite
+    #   - SystemDigitalTwin
+    # NLLBAdapter:
+    #   script_path: main_pc_code/FORMAINPC/nllb_adapter.py
+    #   port: "${PORT_OFFSET}+5582"
+    #   health_check_port: "${PORT_OFFSET}+6582"
+    #   required: true
+    #   dependencies:
+    #   - SystemDigitalTwin
+    
+    # New cloud-only translation service
+    CloudTranslationService:
+      script_path: main_pc_code/agents/cloud_translation_service.py
+      port: "${PORT_OFFSET}+5590"
+      health_check_port: "${PORT_OFFSET}+6590"
       required: true
       dependencies:
       - SystemDigitalTwin
@@ -584,19 +597,22 @@ docker_groups:
   learning_gpu:
     description: Active/self learning pipeline using GPU training slices
     agents:
-      - SelfTrainingOrchestrator
-      - LocalFineTunerAgent
+      # Cloud-delegated learning services (lightweight local coordinators only)
       - LearningManager
       - LearningOrchestrationService
       - LearningOpportunityDetector
       - ActiveLearningMonitor
-      - LearningAdjusterAgent
+      # Disabled heavy local services (moved to cloud):
+      # - SelfTrainingOrchestrator (local training orchestration)
+      # - LocalFineTunerAgent (model fine-tuning)
+      # - LearningAdjusterAgent (parameter optimization)
   reasoning_gpu:
     description: Large-context reasoning agents utilising GPU inference
     agents:
-      - ChainOfThoughtAgent
-      - GoTToTAgent
+      - ChainOfThoughtAgent  # Lightweight local reasoning
       - CognitiveModelAgent
+      # Disabled heavy reasoning (moved to cloud LLM):
+      # - GoTToTAgent (Graph/Tree-of-Thought reasoning)
   language_stack:
     description: High-level dialogue, NLU, identity & emotional synthesis
     agents:

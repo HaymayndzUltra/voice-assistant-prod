@@ -31,48 +31,49 @@ services:
       - learning_net
 
   # ---- Learning GPU Services ----
-  self_training_orchestrator:
-    build:
-      context: ../..
-      dockerfile: docker/learning_gpu/Dockerfile
-    image: learning_gpu:latest
-    container_name: self_training_orchestrator
-    command: ["python", "-m", "main_pc_code.agents.learning_manager"]
-    ports:
-      - "5560:5560"
-      - "6560:6560"
-    environment:
-      - AGENT_NAME=SelfTrainingOrchestrator
-      - AGENT_PORT=5560
-      - REDIS_URL=redis://redis_learning:6379
-      - NATS_SERVERS=nats://nats_learning:4222
-      - LOG_LEVEL=INFO
-    depends_on:
-      redis_learning:
-        condition: service_healthy
-      nats_learning:
-        condition: service_started
-    networks:
-      - learning_net
+  # DISABLED: Heavy local training services (moved to cloud)
+  # redis_learning:
+  #   build:
+  #     context: ../..
+  #     dockerfile: docker/learning_gpu/Dockerfile
+  #   image: learning_gpu:latest
+  #   container_name: self_training_orchestrator
+  #   command: ["python", "-m", "main_pc_code.agents.learning_manager"]
+  #   ports:
+  #     - "5560:5560"
+  #     - "6560:6560"
+  #   environment:
+  #     - AGENT_NAME=SelfTrainingOrchestrator
+  #     - AGENT_PORT=5560
+  #     - REDIS_URL=redis://redis_learning:6379
+  #     - NATS_SERVERS=nats://nats_learning:4222
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     redis_learning:
+  #       condition: service_healthy
+  #     nats_learning:
+  #       condition: service_healthy
+  #   networks:
+  #     - learning_net
 
-  local_fine_tuner_agent:
-    image: learning_gpu:latest
-    container_name: local_fine_tuner_agent
-    command: ["python", "-m", "main_pc_code.agents.learning_manager"]
-    ports:
-      - "5561:5561"
-      - "6561:6561"
-    environment:
-      - AGENT_NAME=LocalFineTunerAgent
-      - AGENT_PORT=5561
-      - REDIS_URL=redis://redis_learning:6379
-      - NATS_SERVERS=nats://nats_learning:4222
-      - LOG_LEVEL=INFO
-    depends_on:
-      self_training_orchestrator:
-        condition: service_started
-    networks:
-      - learning_net
+  # local_fine_tuner_agent:
+  #   image: learning_gpu:latest
+  #   container_name: local_fine_tuner_agent
+  #   command: ["python", "-m", "main_pc_code.agents.learning_manager"]
+  #   ports:
+  #     - "5561:5561"
+  #     - "6561:6561"
+  #   environment:
+  #     - AGENT_NAME=LocalFineTunerAgent
+  #     - AGENT_PORT=5561
+  #     - REDIS_URL=redis://redis_learning:6379
+  #     - NATS_SERVERS=nats://nats_learning:4222
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     redis_learning:
+  #       condition: service_healthy
+  #   networks:
+  #     - learning_net
 
   learning_manager:
     image: learning_gpu:latest
@@ -89,8 +90,8 @@ services:
       - NATS_SERVERS=nats://nats_learning:4222
       - LOG_LEVEL=INFO
     depends_on:
-      self_training_orchestrator:
-        condition: service_started
+      redis_learning:
+        condition: service_healthy
     networks:
       - learning_net
 
@@ -109,8 +110,8 @@ services:
       - NATS_SERVERS=nats://nats_learning:4222
       - LOG_LEVEL=INFO
     depends_on:
-      self_training_orchestrator:
-        condition: service_started
+      redis_learning:
+        condition: service_healthy
     networks:
       - learning_net
 
@@ -128,8 +129,8 @@ services:
       - NATS_SERVERS=nats://nats_learning:4222
       - LOG_LEVEL=INFO
     depends_on:
-      self_training_orchestrator:
-        condition: service_started
+      redis_learning:
+        condition: service_healthy
     networks:
       - learning_net
 
@@ -147,29 +148,30 @@ services:
       - NATS_SERVERS=nats://nats_learning:4222
       - LOG_LEVEL=INFO
     depends_on:
-      self_training_orchestrator:
-        condition: service_started
+      redis_learning:
+        condition: service_healthy
     networks:
       - learning_net
 
-  learning_adjuster_agent:
-    image: learning_gpu:latest
-    container_name: learning_adjuster_agent
-    command: ["python", "-m", "main_pc_code.agents.learning_manager"]
-    ports:
-      - "5566:5566"
-      - "6566:6566"
-    environment:
-      - AGENT_NAME=LearningAdjusterAgent
-      - AGENT_PORT=5566
-      - REDIS_URL=redis://redis_learning:6379
-      - NATS_SERVERS=nats://nats_learning:4222
-      - LOG_LEVEL=INFO
-    depends_on:
-      self_training_orchestrator:
-        condition: service_started
-    networks:
-      - learning_net
+  # learning_adjuster_agent:
+  #   # DISABLED: Local learning parameter optimization - moved to cloud
+  #   image: learning_gpu:latest
+  #   container_name: learning_adjuster_agent
+  #   command: ["python", "-m", "main_pc_code.agents.learning_manager"]
+  #   ports:
+  #     - "5566:5566"
+  #     - "6566:6566"
+  #   environment:
+  #     - AGENT_NAME=LearningAdjusterAgent
+  #     - AGENT_PORT=5566
+  #     - REDIS_URL=redis://redis_learning:6379
+  #     - NATS_SERVERS=nats://nats_learning:4222
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     redis_learning:
+  #       condition: service_healthy
+  #   networks:
+  #     - learning_net
 
 networks:
   learning_net:

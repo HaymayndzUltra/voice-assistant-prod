@@ -1,10 +1,10 @@
 services:
-  # ---- Backend Services ----
-  redis_translation:
+  # Backend services (shared with coordination)  
+  redis:
     image: redis:7.2-alpine
     container_name: redis_translation
     ports:
-      - "6384:6379"
+      - "6384:6379"  # Different port to avoid conflict
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -13,92 +13,75 @@ services:
     networks:
       - translation_net
 
-  nats_translation:
+  nats:
     image: nats:2.10-alpine
     container_name: nats_translation
     ports:
-      - "4226:4222"
+      - "4298:4222"  # Updated to avoid conflict
+    volumes:
+      - ./nats-server.conf:/config/nats-server.conf
+    command: ["-c", "/config/nats-server.conf"]
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
-      interval: 10s
-      timeout: 3s
+      test: ["CMD", "nc", "-z", "localhost", "4222"]
+      interval: 30s
+      timeout: 5s
       retries: 3
+      start_period: 60s
     networks:
       - translation_net
 
-  # ---- GPU Translation Services ----
-  fixed_streaming_translation:
+  # ---- Cloud Translation Services ----
+  cloud_translation_service:
     build:
       context: ../..
       dockerfile: docker/translation_services/Dockerfile
     image: translation_services:latest
-    container_name: fixed_streaming_translation
-    command: ["python", "-m", "main_pc_code.agents.fixed_streaming_translation"]
+    container_name: cloud_translation_service
+    command: ["python", "-m", "main_pc_code.agents.cloud_translation_service"]
     ports:
       - "5584:5584"
       - "6584:6584"
     environment:
-      LOG_LEVEL: "INFO"
-      REDIS_URL: "redis://redis_translation:6379/0"
-      SERVICE_REGISTRY_REDIS_URL: "redis://redis_translation:6379/0"
-      NATS_SERVERS: "nats://nats_translation:4222"
-      # CUDA settings
-      CUDA_VISIBLE_DEVICES: "0"
-      NVIDIA_VISIBLE_DEVICES: "all"
-      # Override any hardcoded ports
-      TRANSLATION_ZMQ_PORT: "5584"
-      TRANSLATION_PUB_PORT: "6584"
+      - AGENT_NAME=CloudTranslationService
+      - AGENT_PORT=5584
+      - HEALTH_CHECK_PORT=6584
+      - REDIS_URL=redis://redis_translation:6379
+      - NATS_SERVERS=nats://nats_translation:4222
+      - LOG_LEVEL=INFO
+      # Cloud Provider Configuration
+      - TRANSLATE_PRIMARY_PROVIDER=${TRANSLATE_PRIMARY_PROVIDER:-google}
+      - TRANSLATE_FALLBACK_PROVIDER=${TRANSLATE_FALLBACK_PROVIDER:-azure}
+      # API Keys from .env
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_TRANSLATE_API_KEY=${GOOGLE_TRANSLATE_API_KEY:-}
+      - AZURE_TRANSLATOR_KEY=${AZURE_TRANSLATOR_KEY:-}
+      - AZURE_TRANSLATOR_REGION=${AZURE_TRANSLATOR_REGION:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     depends_on:
-      redis_translation:
+      redis:
         condition: service_healthy
-      nats_translation:
-        condition: service_healthy
+      nats:
+        condition: service_started
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    runtime: nvidia
     healthcheck:
-      test: ["CMD", "python", "-c", "print('OK')"]
-      interval: 60s
-      timeout: 20s
+      test: ["CMD", "curl", "-f", "http://localhost:6584/health"]
+      interval: 30s
+      timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 40s
     networks:
       - translation_net
 
-  nllb_adapter:
-    image: translation_services:latest
-    container_name: nllb_adapter
-    command: ["python", "-m", "main_pc_code.FORMAINPC.nllb_adapter"]
-    ports:
-      - "5582:5582"
-      - "6582:6582"
-    environment:
-      LOG_LEVEL: "INFO"
-      REDIS_URL: "redis://redis_translation:6379/0"
-      NATS_SERVERS: "nats://nats_translation:4222"
-      # CUDA settings
-      CUDA_VISIBLE_DEVICES: "0"
-      NVIDIA_VISIBLE_DEVICES: "all"
-    depends_on:
-      fixed_streaming_translation:
-        condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    runtime: nvidia
-    networks:
-      - translation_net
+  # Legacy services (disabled - keep for reference)
+  # fixed_streaming_translation:
+  #   # DISABLED: Legacy PC2 routing service
+  #   # Replaced by cloud_translation_service
+  
+  # nllb_adapter:
+  #   # DISABLED: Local NLLB model service  
+  #   # Replaced by cloud providers in cloud_translation_service
 
 networks:
   translation_net:

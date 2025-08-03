@@ -56,25 +56,26 @@ services:
     networks:
       - reasoning_net
 
-  goto_agent:
-    image: reasoning_gpu:latest
-    container_name: goto_agent
-    command: ["python", "-m", "main_pc_code.agents.learning_manager"]
-    ports:
-      - "5646:5646"
-      - "6646:6646"
-    environment:
-      - AGENT_NAME=GoTToTAgent
-      - AGENT_PORT=5646
-      - HEALTH_CHECK_PORT=6646
-      - REDIS_URL=redis://redis_reasoning:6379
-      - NATS_SERVERS=nats://nats_reasoning:4222
-      - LOG_LEVEL=INFO
-    depends_on:
-      chain_of_thought_agent:
-        condition: service_started
-    networks:
-      - reasoning_net
+  # goto_agent:
+  #   # DISABLED: Heavy Graph/Tree-of-Thought reasoning - moved to cloud LLM
+  #   image: reasoning_gpu:latest
+  #   container_name: goto_agent
+  #   command: ["python", "-m", "main_pc_code.agents.learning_manager"]
+  #   ports:
+  #     - "5646:5646"
+  #     - "6646:6646"
+  #   environment:
+  #     - AGENT_NAME=GoTToTAgent
+  #     - AGENT_PORT=5646
+  #     - HEALTH_CHECK_PORT=6646
+  #     - REDIS_URL=redis://redis_reasoning:6379
+  #     - NATS_SERVERS=nats://nats_reasoning:4222
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     chain_of_thought_agent:
+  #       condition: service_started
+  #   networks:
+  #     - reasoning_net
 
   cognitive_model_agent:
     image: reasoning_gpu:latest
