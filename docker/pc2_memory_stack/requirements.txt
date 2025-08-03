@@ -1,0 +1,48 @@
+# Core dependencies
+redis==5.0.1
+nats-py==2.7.2
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.1
+python-dotenv==1.0.0
+
+# Monitoring and observability
+prometheus-client==0.19.0
+psutil==5.9.6
+
+# HTTP and async
+aiohttp==3.9.1
+asyncio-mqtt==0.13.0
+httpx==0.25.2
+aiofiles==23.2.1
+websockets==12.0
+requests==2.31.0
+
+# Data processing and ML
+numpy==1.24.4
+scipy==1.11.4
+scikit-learn==1.3.2
+
+# Security and JWT
+PyJWT==2.8.0
+
+# Communication and messaging
+pyzmq==25.1.2
+PyYAML==6.0.1
+
+# Additional memory-specific dependencies
+sqlalchemy==2.0.25
+chromadb==0.4.15
+sentence-transformers==2.2.2
+transformers==4.35.2
+torch==2.1.1
+faiss-cpu==1.7.4
+
+# Context and experience tracking
+pickle5==0.0.12
+joblib==1.3.2
+pandas==2.1.3
+
+# Caching utilities  
+diskcache==5.6.3
+memcached==1.59

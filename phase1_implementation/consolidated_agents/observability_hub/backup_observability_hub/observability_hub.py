@@ -16,12 +16,6 @@ import threading
 import asyncio
 import json
 import concurrent.futures
-try:
-    import numpy as np
-    NUMPY_AVAILABLE = True
-except ImportError:
-    NUMPY_AVAILABLE = False
-    logger.warning("NumPy not available, predictive analytics will be limited")
 import zmq
 import sqlite3
 import pickle
@@ -58,6 +52,14 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("ObservabilityHub")
+
+# NumPy integration
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    logger.warning("NumPy not available, predictive analytics will be limited")
 
 # Prometheus integration
 try:

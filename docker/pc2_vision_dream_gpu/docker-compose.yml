@@ -1,0 +1,196 @@
+services:
+  # Infrastructure - Redis for PC2 Vision Dream GPU
+  redis_pc2_vision:
+    image: redis:7.2-alpine
+    container_name: redis_pc2_vision
+    ports:
+      - "6394:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_pc2_vision_data:/data
+    networks:
+      - pc2_vision_dream_gpu_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Infrastructure - NATS for PC2 Vision Dream GPU
+  nats_pc2_vision:
+    image: nats:2.10-alpine
+    container_name: nats_pc2_vision
+    ports:
+      - "4304:4222"
+      - "8304:8222"  # HTTP monitoring
+    command: [
+      "--jetstream",
+      "--store_dir", "/data"
+    ]
+    volumes:
+      - nats_pc2_vision_data:/data
+    networks:
+      - pc2_vision_dream_gpu_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # VisionProcessingAgent - Advanced computer vision and image processing
+  vision_processing_agent:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_vision_dream_gpu/Dockerfile
+    image: pc2_vision_dream_gpu:latest
+    container_name: pc2_vision_processing_agent
+    command: ["python", "pc2_code/agents/VisionProcessingAgent.py"]
+    ports:
+      - "7450:7150"   # Service port (7150 + 300 offset)
+      - "8450:8150"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_vision:6379/0"
+      NATS_SERVERS: "nats://nats_pc2_vision:4222"
+      PORT: "7150"
+      HEALTH_PORT: "8150"
+      SCOPE: "pc2_vision_agents"
+      CUDA_VISIBLE_DEVICES: "0"
+      VISION_MODEL_CACHE: "/app/vision_data/models"
+      MAX_IMAGE_SIZE: "4096"
+      GPU_MEMORY_LIMIT: "8192"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - vision_models:/app/vision_data/models
+      - vision_cache:/app/vision_data/cache
+      - vision_uploads:/app/vision_data/uploads
+    networks:
+      - pc2_vision_dream_gpu_network
+    depends_on:
+      redis_pc2_vision:
+        condition: service_healthy
+      nats_pc2_vision:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # DreamWorldAgent - 3D world generation and virtual environment management
+  dream_world_agent:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_vision_dream_gpu/Dockerfile
+    image: pc2_vision_dream_gpu:latest
+    container_name: pc2_dream_world_agent
+    command: ["python", "pc2_code/agents/DreamWorldAgent.py"]
+    ports:
+      - "7404:7104"   # Service port (7104 + 300 offset)
+      - "8404:8104"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_vision:6379/1"
+      NATS_SERVERS: "nats://nats_pc2_vision:4222"
+      PORT: "7104"
+      HEALTH_PORT: "8104"
+      SCOPE: "pc2_vision_agents"
+      CUDA_VISIBLE_DEVICES: "0"
+      WORLD_DATA_PATH: "/app/dream_data/worlds"
+      ASSET_CACHE_PATH: "/app/dream_data/assets"
+      MAX_WORLD_SIZE: "1024"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - dream_worlds:/app/dream_data/worlds
+      - dream_assets:/app/dream_data/assets
+      - dream_cache:/app/dream_data/cache
+    networks:
+      - pc2_vision_dream_gpu_network
+    depends_on:
+      redis_pc2_vision:
+        condition: service_healthy
+      nats_pc2_vision:
+        condition: service_healthy
+      vision_processing_agent:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # DreamingModeAgent - AI-driven dreaming and creative processing
+  dreaming_mode_agent:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_vision_dream_gpu/Dockerfile
+    image: pc2_vision_dream_gpu:latest
+    container_name: pc2_dreaming_mode_agent
+    command: ["python", "pc2_code/agents/DreamingModeAgent.py"]
+    ports:
+      - "7427:7127"   # Service port (7127 + 300 offset)
+      - "8427:8127"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_vision:6379/2"
+      NATS_SERVERS: "nats://nats_pc2_vision:4222"
+      PORT: "7127"
+      HEALTH_PORT: "8127"
+      SCOPE: "pc2_vision_agents"
+      CUDA_VISIBLE_DEVICES: "0"
+      DREAM_MODE: "creative"
+      GENERATION_MODELS: "diffusion,transformer"
+      DREAM_CACHE_PATH: "/app/dream_data/generated"
+      MAX_DREAM_DURATION: "300"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - dream_generations:/app/dream_data/generated
+      - dream_models:/app/dream_data/models
+      - dream_cache:/app/dream_data/cache
+    networks:
+      - pc2_vision_dream_gpu_network
+    depends_on:
+      redis_pc2_vision:
+        condition: service_healthy
+      nats_pc2_vision:
+        condition: service_healthy
+      dream_world_agent:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# Networks
+networks:
+  pc2_vision_dream_gpu_network:
+    driver: bridge
+
+# Volumes
+volumes:
+  redis_pc2_vision_data:
+  nats_pc2_vision_data:
+  vision_models:
+  vision_cache:
+  vision_uploads:
+  dream_worlds:
+  dream_assets:
+  dream_generations:
+  dream_models:
+  dream_cache:

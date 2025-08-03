@@ -14,10 +14,10 @@ dual_hub_config:
     url: http://localhost:9000
   nats_integration:
     alerts_subject_prefix: observability.alerts
-    cluster_nats_url: nats://localhost:4223
+    cluster_nats_url: nats://nats_pc2_infra:4222
     health_subject_prefix: observability.health
     metrics_subject_prefix: observability.metrics
-    primary_nats_url: nats://localhost:4222
+    primary_nats_url: nats://nats_pc2_infra:4222
   primary_hub:
     health_endpoint: /health
     metrics_endpoint: /metrics

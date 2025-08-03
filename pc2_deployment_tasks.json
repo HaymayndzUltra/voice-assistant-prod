@@ -1,0 +1,246 @@
+{
+  "task_id": "20241231_pc2_subsystem_optimization",
+  "title": "PC2 Subsystem Deployment & Synchronization Plan",
+  "description": "Deploy and optimize PC2 subsystem with 7 service groups, implementing cross-machine sync with Main PC",
+  "status": "active",
+  "priority": "high",
+  "created_at": "2025-01-03T14:30:00+08:00",
+  "target_completion": "2025-01-31T23:59:59+08:00",
+  "progress": 15,
+  "current_phase": "planning_completed",
+  
+  "phases": [
+    {
+      "phase": "infrastructure_setup",
+      "description": "Setup Docker environment and apply NATS hot-patch",
+      "todos": [
+        {
+          "id": "pc2_nats_hotpatch",
+          "description": "Apply NATS connectivity hot-patch to PC2 codebase (localhost:4222 → nats_pc2_*:4222)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 2
+        },
+        {
+          "id": "pc2_docker_structure",
+          "description": "Create Docker directory structure for 7 PC2 service groups",
+          "status": "pending", 
+          "priority": "high",
+          "estimated_hours": 1
+        },
+        {
+          "id": "pc2_env_variables",
+          "description": "Setup PC2 environment variables (NATS_URL, REDIS_URL, MAINPC_OBS_HUB)",
+          "status": "pending",
+          "priority": "high", 
+          "estimated_hours": 1
+        }
+      ]
+    },
+    {
+      "phase": "docker_compose_generation",
+      "description": "Generate Docker compose files for each PC2 service group",
+      "todos": [
+        {
+          "id": "pc2_infra_core_compose", 
+          "description": "Generate docker-compose for PC2 infra_core group (ObservabilityHub, ResourceManager)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 3
+        },
+        {
+          "id": "pc2_memory_stack_compose",
+          "description": "Generate docker-compose for PC2 memory_stack group (5 agents)",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 4
+        },
+        {
+          "id": "pc2_async_pipeline_compose",
+          "description": "Generate docker-compose for PC2 async_pipeline group (4 agents)",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 3
+        },
+        {
+          "id": "pc2_tutoring_cpu_compose",
+          "description": "Generate docker-compose for PC2 tutoring_cpu group (2 agents)",
+          "status": "pending",
+          "priority": "medium",
+          "estimated_hours": 2
+        },
+        {
+          "id": "pc2_vision_dream_gpu_compose",
+          "description": "Generate docker-compose for PC2 vision_dream_gpu group (3 agents)",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 3
+        },
+        {
+          "id": "pc2_utility_suite_compose",
+          "description": "Generate docker-compose for PC2 utility_suite group (6 agents)",
+          "status": "pending",
+          "priority": "medium",
+          "estimated_hours": 4
+        },
+        {
+          "id": "pc2_web_interface_compose",
+          "description": "Generate docker-compose for PC2 web_interface group (1 agent)",
+          "status": "pending",
+          "priority": "low",
+          "estimated_hours": 2
+        }
+      ]
+    },
+    {
+      "phase": "cross_machine_sync",
+      "description": "Setup synchronization between PC2 and Main PC ObservabilityHubs",
+      "todos": [
+        {
+          "id": "pc2_network_tunnel",
+          "description": "Setup VPN/SSH tunnel for PC2 ↔ Main PC communication",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 4
+        },
+        {
+          "id": "pc2_observability_sync",
+          "description": "Configure ObservabilityHub cross-machine sync (PC2 → Main PC)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 6
+        },
+        {
+          "id": "pc2_redis_replication",
+          "description": "Setup Redis replication for shared state between PC2 and Main PC",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 3
+        },
+        {
+          "id": "pc2_nats_bridge",
+          "description": "Configure NATS cross-machine bridges for message passing",
+          "status": "pending", 
+          "priority": "high",
+          "estimated_hours": 4
+        }
+      ]
+    },
+    {
+      "phase": "sequential_deployment",
+      "description": "Deploy PC2 service groups in dependency order with testing",
+      "todos": [
+        {
+          "id": "pc2_deploy_infra_core",
+          "description": "Deploy & test PC2 infra_core group (ObservabilityHub, ResourceManager)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 4
+        },
+        {
+          "id": "pc2_deploy_memory_stack",
+          "description": "Deploy & test PC2 memory_stack group (5 memory agents)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 6
+        },
+        {
+          "id": "pc2_deploy_async_pipeline",
+          "description": "Deploy & test PC2 async_pipeline group (async processing)",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 5
+        },
+        {
+          "id": "pc2_deploy_utility_suite",
+          "description": "Deploy & test PC2 utility_suite group (support services)",
+          "status": "pending",
+          "priority": "medium",
+          "estimated_hours": 5
+        },
+        {
+          "id": "pc2_deploy_tutoring_cpu",
+          "description": "Deploy & test PC2 tutoring_cpu group (educational agents)",
+          "status": "pending",
+          "priority": "medium",
+          "estimated_hours": 3
+        },
+        {
+          "id": "pc2_deploy_vision_dream_gpu",
+          "description": "Deploy & test PC2 vision_dream_gpu group (GPU workloads)",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 6
+        },
+        {
+          "id": "pc2_deploy_web_interface",
+          "description": "Deploy & test PC2 web_interface group (user-facing web)",
+          "status": "pending",
+          "priority": "low",
+          "estimated_hours": 3
+        }
+      ]
+    },
+    {
+      "phase": "integration_testing",
+      "description": "End-to-end testing and optimization of PC2 subsystem",
+      "todos": [
+        {
+          "id": "pc2_integration_tests",
+          "description": "Execute comprehensive PC2 integration tests (all 7 groups)",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 8
+        },
+        {
+          "id": "pc2_performance_optimization",
+          "description": "Optimize PC2 performance and resource utilization",
+          "status": "pending",
+          "priority": "high",
+          "estimated_hours": 6
+        },
+        {
+          "id": "pc2_mainpc_sync_validation",
+          "description": "Validate bidirectional sync between PC2 and Main PC systems",
+          "status": "pending",
+          "priority": "critical",
+          "estimated_hours": 4
+        },
+        {
+          "id": "pc2_security_testing",
+          "description": "Execute security validation tests for PC2 subsystem",
+          "status": "pending",
+          "priority": "medium",
+          "estimated_hours": 4
+        }
+      ]
+    }
+  ],
+
+  "success_metrics": {
+    "target_success_rate": "90%",
+    "infrastructure_operational": "6/7 groups",
+    "cross_machine_sync": "100% connectivity",
+    "container_deployment": "100% successful", 
+    "resource_utilization": {
+      "gpu_usage": "<95%",
+      "cpu_usage": "<80%", 
+      "memory_usage": "<4GB"
+    }
+  },
+
+  "dependencies": [
+    "Main PC multimodal AI platform (91% operational)",
+    "Docker environment setup",
+    "Network connectivity between Main PC and PC2",
+    "GPU availability on PC2 machine"
+  ],
+
+  "completion_criteria": [
+    "All 7 PC2 service groups deployed and operational", 
+    "Cross-machine sync functioning between PC2 and Main PC",
+    "Integration tests passing with >90% success rate",
+    "Performance metrics within target thresholds",
+    "Security validation completed"
+  ]
+}

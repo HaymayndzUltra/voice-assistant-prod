@@ -1,0 +1,76 @@
+# Core dependencies
+redis==5.0.1
+nats-py==2.7.2
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.1
+python-dotenv==1.0.0
+
+# Monitoring and observability
+prometheus-client==0.19.0
+psutil==5.9.6
+
+# HTTP and async
+aiohttp==3.9.1
+asyncio-mqtt==0.13.0
+httpx==0.25.2
+aiofiles==23.2.1
+websockets==12.0
+requests==2.31.0
+
+# Communication and messaging
+pyzmq==25.1.2
+PyYAML==6.0.1
+
+# Security and JWT
+PyJWT==2.8.0
+
+# Vision processing dependencies (GPU-optimized)
+torch==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+torchvision==0.16.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+opencv-python==4.8.1.78
+Pillow==10.1.0
+numpy==1.24.4
+
+# Computer vision and image processing
+ultralytics==8.0.228
+detectron2 --find-links https://dl.fbaipublicfiles.com/detectron2/wheels/cu118/torch2.1/index.html
+timm==0.9.12
+albumentations==1.3.1
+imageio==2.33.1
+scikit-image==0.22.0
+
+# AI and ML models
+transformers==4.36.0
+diffusers==0.24.0
+accelerate==0.25.0
+safetensors==0.4.0
+huggingface-hub==0.19.4
+
+# Dream world and 3D processing
+open3d==0.18.0
+trimesh==4.0.5
+pyglet==2.0.10
+moderngl==5.8.2
+noise==1.2.2
+perlin-noise==1.12
+
+# Advanced vision features
+clip-by-openai==1.0
+controlnet-aux==0.0.7
+segment-anything==1.0
+groundingdino-py==0.4.0
+
+# Performance optimization
+numba==0.58.1
+cupy-cuda11x==12.3.0
+
+# Data processing and utilities
+pandas==2.1.3
+scipy==1.11.4
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Async and concurrency
+asyncio==3.4.3
+concurrent-futures==3.1.1

@@ -1,0 +1,132 @@
+services:
+  # ---- Backend Infrastructure ----
+  redis_pc2_infra:
+    image: redis:7.2-alpine
+    container_name: redis_pc2_infra
+    ports:
+      - "6390:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_pc2_infra_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - pc2_infra_core_network
+    restart: unless-stopped
+
+  nats_pc2_infra:
+    image: nats:2.10-alpine
+    container_name: nats_pc2_infra
+    ports:
+      - "4300:4222"
+      - "8300:8222"  # HTTP monitoring
+    command: [
+      "--jetstream",
+      "--store_dir", "/data",
+      "--http_port", "8222"
+    ]
+    volumes:
+      - nats_pc2_infra_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - pc2_infra_core_network
+    restart: unless-stopped
+
+  # ---- PC2 Infrastructure Core Agents ----
+  observability_hub:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_infra_core/Dockerfile
+    image: pc2_infra_core:latest
+    container_name: pc2_observability_hub
+    command: ["python", "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py"]
+    ports:
+      - "9200:9100"   # Prometheus metrics port
+      - "9210:9110"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_infra:6379/0"
+      NATS_SERVERS: "nats://nats_pc2_infra:4222"
+      PORT: "9100"
+      PROMETHEUS_PORT: "9100"
+      HEALTH_PORT: "9110"
+      SCOPE: "pc2_agents"
+      CROSS_MACHINE_SYNC: "true"
+      MAINPC_OBS_HUB: "${MAINPC_OBS_HUB:-http://mainpc:9000}"
+      PARALLEL_HEALTH_CHECKS: "true"
+      PREDICTION_ENABLED: "true"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../config:/app/config
+    networks:
+      - pc2_infra_core_network
+    depends_on:
+      redis_pc2_infra:
+        condition: service_healthy
+      nats_pc2_infra:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9110/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  resource_manager:
+    build:
+      context: ../..
+      dockerfile: docker/pc2_infra_core/Dockerfile
+    image: pc2_infra_core:latest
+    container_name: pc2_resource_manager
+    command: ["python", "pc2_code/agents/resource_manager.py"]
+    ports:
+      - "7213:7113"   # Service port
+      - "8213:8113"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_infra:6379/0"
+      NATS_SERVERS: "nats://nats_pc2_infra:4222"
+      HEALTH_PORT: "8113"
+      SERVICE_PORT: "7113"
+      OBSERVABILITY_HUB_URL: "http://observability_hub:9100"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker resource monitoring
+    networks:
+      - pc2_infra_core_network
+    depends_on:
+      redis_pc2_infra:
+        condition: service_healthy
+      nats_pc2_infra:
+        condition: service_healthy
+      observability_hub:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8113/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  pc2_infra_core_network:
+    driver: bridge
+    name: pc2_infra_core_network
+
+volumes:
+  redis_pc2_infra_data:
+    driver: local
+  nats_pc2_infra_data:
+    driver: local

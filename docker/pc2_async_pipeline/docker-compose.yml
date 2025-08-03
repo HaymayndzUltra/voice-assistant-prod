@@ -1,0 +1,193 @@
+services:
+  # Infrastructure - Redis for PC2 Async Pipeline
+  redis_pc2_async:
+    image: redis:7.2-alpine
+    container_name: redis_pc2_async
+    ports:
+      - "6392:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_pc2_async_data:/data
+    networks:
+      - pc2_async_pipeline_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Infrastructure - NATS for PC2 Async Pipeline
+  nats_pc2_async:
+    image: nats:2.10-alpine
+    container_name: nats_pc2_async
+    ports:
+      - "4302:4222"
+      - "8302:8222"  # HTTP monitoring
+    command: [
+      "--jetstream",
+      "--store_dir", "/data"
+    ]
+    volumes:
+      - nats_pc2_async_data:/data
+    networks:
+      - pc2_async_pipeline_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # AsyncProcessor - Core async task processing
+  async_processor:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_async_pipeline/Dockerfile
+    image: pc2_async_pipeline:latest
+    container_name: pc2_async_processor
+    command: ["python", "pc2_code/agents/async_processor.py"]
+    ports:
+      - "7301:7101"   # Service port (7101 + 200 offset)
+      - "8301:8101"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_async:6379/0"
+      NATS_SERVERS: "nats://nats_pc2_async:4222"
+      PORT: "7101"
+      HEALTH_PORT: "8101"
+      SCOPE: "pc2_async_agents"
+      PARALLEL_HEALTH_CHECKS: "true"
+      MAX_WORKERS: "10"
+      QUEUE_SIZE: "1000"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - async_queue:/app/queue
+    networks:
+      - pc2_async_pipeline_network
+    depends_on:
+      redis_pc2_async:
+        condition: service_healthy
+      nats_pc2_async:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # TieredResponder - Response routing and prioritization
+  tiered_responder:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_async_pipeline/Dockerfile
+    image: pc2_async_pipeline:latest
+    container_name: pc2_tiered_responder
+    command: ["python", "pc2_code/agents/tiered_responder.py"]
+    ports:
+      - "7300:7100"   # Service port
+      - "8300:8100"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_async:6379/1"
+      NATS_SERVERS: "nats://nats_pc2_async:4222"
+      PORT: "7100"
+      HEALTH_PORT: "8100"
+      SCOPE: "pc2_async_agents"
+      RESPONSE_TIERS: "3"
+      PRIORITY_QUEUE: "true"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+    networks:
+      - pc2_async_pipeline_network
+    depends_on:
+      redis_pc2_async:
+        condition: service_healthy
+      nats_pc2_async:
+        condition: service_healthy
+      async_processor:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # TaskScheduler - Task scheduling and management
+  task_scheduler:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_async_pipeline/Dockerfile
+    image: pc2_async_pipeline:latest
+    container_name: pc2_task_scheduler
+    command: ["python", "pc2_code/agents/task_scheduler.py"]
+    ports:
+      - "7315:7115"   # Service port
+      - "8315:7116"   # Health check port (note: 7116 not 8116 based on logs)
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_async:6379/2"
+      NATS_SERVERS: "nats://nats_pc2_async:4222"
+      PORT: "7115"
+      HEALTH_PORT: "7116"
+      SCOPE: "pc2_async_agents"
+      SCHEDULE_INTERVAL: "30"
+      MAX_PENDING_TASKS: "500"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - scheduler_data:/app/scheduler
+    networks:
+      - pc2_async_pipeline_network
+    depends_on:
+      redis_pc2_async:
+        condition: service_healthy
+      nats_pc2_async:
+        condition: service_healthy
+      async_processor:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # AdvancedRouter - Advanced message routing
+  advanced_router:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_async_pipeline/Dockerfile
+    image: pc2_async_pipeline:latest
+    container_name: pc2_advanced_router
+    command: ["python", "pc2_code/agents/advanced_router.py"]
+    ports:
+      - "7320:7120"   # Service port (using different port to avoid memory conflict)
+      - "8320:8120"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_async:6379/3"
+      NATS_SERVERS: "nats://nats_pc2_async:4222"
+      PORT: "7120"
+      HEALTH_PORT: "8120"
+      SCOPE: "pc2_async_agents"
+      ROUTING_ALGORITHM: "weighted_round_robin"
+      MAX_ROUTES: "100"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - routing_data:/app/routing
+    networks:
+      - pc2_async_pipeline_network
+    depends_on:
+      redis_pc2_async:
+        condition: service_healthy
+      nats_pc2_async:
+        condition: service_healthy
+      async_processor:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Networks
+networks:
+  pc2_async_pipeline_network:
+    driver: bridge
+
+# Volumes
+volumes:
+  redis_pc2_async_data:
+  nats_pc2_async_data:
+  async_queue:
+  scheduler_data:
+  routing_data:

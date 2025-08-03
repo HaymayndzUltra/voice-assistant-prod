@@ -1,0 +1,100 @@
+services:
+  # Infrastructure - Redis for PC2 Web Interface
+  redis_pc2_web:
+    image: redis:7.2-alpine
+    container_name: redis_pc2_web
+    ports:
+      - "6396:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_pc2_web_data:/data
+    networks:
+      - pc2_web_interface_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Infrastructure - NATS for PC2 Web Interface
+  nats_pc2_web:
+    image: nats:2.10-alpine
+    container_name: nats_pc2_web
+    ports:
+      - "4306:4222"
+      - "8306:8222"  # HTTP monitoring
+    command: [
+      "--jetstream",
+      "--store_dir", "/data"
+    ]
+    volumes:
+      - nats_pc2_web_data:/data
+    networks:
+      - pc2_web_interface_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # UnifiedWebAgent - Main web interface and API gateway
+  unified_web_agent:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_web_interface/Dockerfile
+    image: pc2_web_interface:latest
+    container_name: pc2_unified_web_agent
+    command: ["python", "pc2_code/agents/unified_web_agent.py"]
+    ports:
+      - "7426:7126"   # Service port (7126 + 300 offset)
+      - "8426:8126"   # Health check port
+      - "3000:3000"   # Frontend development port
+      - "8080:8080"   # Web UI port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_URL: "redis://redis_pc2_web:6379/0"
+      NATS_SERVERS: "nats://nats_pc2_web:4222"
+      PORT: "7126"
+      HEALTH_PORT: "8126"
+      WEB_PORT: "8080"
+      DEV_PORT: "3000"
+      SCOPE: "pc2_web_agents"
+      STATIC_FILES_PATH: "/app/static"
+      TEMPLATES_PATH: "/app/templates"
+      UPLOAD_PATH: "/app/web_data/uploads"
+      SESSION_SECRET_KEY: "${SESSION_SECRET_KEY:-pc2-web-secret-key-dev}"
+      CORS_ORIGINS: "*"
+      API_PREFIX: "/api/v1"
+      MAX_UPLOAD_SIZE: "50MB"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - web_static:/app/static
+      - web_templates:/app/templates
+      - web_uploads:/app/web_data/uploads
+      - web_sessions:/app/web_data/sessions
+      - web_cache:/app/web_data/cache
+    networks:
+      - pc2_web_interface_network
+    depends_on:
+      redis_pc2_web:
+        condition: service_healthy
+      nats_pc2_web:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Networks
+networks:
+  pc2_web_interface_network:
+    driver: bridge
+
+# Volumes
+volumes:
+  redis_pc2_web_data:
+  nats_pc2_web_data:
+  web_static:
+  web_templates:
+  web_uploads:
+  web_sessions:
+  web_cache:
