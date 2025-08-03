@@ -13,7 +13,7 @@
       },
       {
         "text": "STAGE 3: Cross-Machine Pre-Sync Validation\n\n• I-deploy ang PC2 Docker images at compose file sa PC2 machine.\n• Mula sa Main PC, patakbuhin ang scripts/cross_machine_network_check.sh para kumpirmahin ang network connectivity sa lahat ng kinakailangang ports.\n• I-verify na ang ObservabilityHub sa Main PC ay nakakatanggap ng data mula sa PC2 machine.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang unang pagsubok na kinasasangkutan ng dalawang magkahiwalay na makina. Ang tagumpay sa yugtong ito ay nangangahulugang mayroon nang basic network reachability. Huwag magpatuloy kung may pumalyang network check.",
-        "done": false
+        "done": true
       },
       {
         "text": "STAGE 4: Post-Sync Continuous Validation\n\n• Patakbuhin ang pytest suite nang remote sa PC2 machine at i-export ang mga resulta.\n• I-trigger ang Main-PC integration suite gamit ang remote URLs ng PC2 services.\n• Magsagawa ng load-balancing tests (e.g., weighted round-robin checks) at simulated latency injection para subukan ang system resiliency.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Dito sinusubok ang performance at katatagan ng distributed system sa ilalim ng mas makatotohanang kondisyon. Ang matagumpay na load-balancing at resiliency tests ay kritikal bago ideklarang production-ready ang system.",
@@ -26,6 +26,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-21T10:00:00Z",
-    "updated": "2025-08-03T15:45:16.629172+08:00"
+    "updated": "2025-08-03T15:48:32.900200+08:00"
   }
 ]
