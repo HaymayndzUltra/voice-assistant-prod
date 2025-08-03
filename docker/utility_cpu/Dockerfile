@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r /tmp/req.txt
 COPY main_pc_code/  /app/main_pc_code/
 COPY common/        /app/common/
 COPY common_utils/  /app/common_utils/
+COPY agents/        /app/agents/
 WORKDIR /app
 ENV PYTHONPATH=/app
 ENV LOG_LEVEL=INFO

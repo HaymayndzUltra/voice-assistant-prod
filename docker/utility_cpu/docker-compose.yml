@@ -105,6 +105,29 @@ services:
     networks:
       - utility_net
 
+  smart_home_agent:
+    image: utility_cpu:latest
+    container_name: smart_home_agent
+    command: ["python", "agents/simple_smart_home_agent.py"]
+    ports:
+      - "7125:7125"  # Smart Home ZMQ port (working agent)
+    environment:
+      LOG_LEVEL: "INFO"
+      # Working simple agent doesn't need Redis/NATS - it's self-contained
+      TAPO_USERNAME: "${TAPO_USERNAME}"
+      TAPO_PASSWORD: "${TAPO_PASSWORD}"
+      VOICE_CONTROL: "enabled"
+      # Your Tapo L520 configuration (hardcoded in working agent)
+      TAPO_L520_IP: "192.168.100.63"
+      TAPO_L520_NAME: "Living Room Light"
+      TAPO_L520_LOCATION: "living_room"
+    depends_on:
+      code_generator:
+        condition: service_healthy
+    restart: unless-stopped
+    # Host network access for local device discovery
+    network_mode: "host"
+
 networks:
   utility_net:
     driver: bridge

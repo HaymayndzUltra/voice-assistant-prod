@@ -1,0 +1,28 @@
+# PC2 Smart Home Configuration Template
+# Copy these environment variables to your .env file or export them
+
+# Tapo Smart Home Credentials (REQUIRED)
+export TAPO_USERNAME="your_tapo_email@example.com"
+export TAPO_PASSWORD="your_tapo_password"
+
+# Optional: Advanced Smart Home Settings
+export SMART_HOME_DEBUG="false"
+export DEVICE_DISCOVERY_TIMEOUT="30"
+export MAX_RETRY_ATTEMPTS="3"
+export AUTO_RECONNECT="true"
+
+# Network Configuration  
+export TAPO_DEVICE_NETWORK="192.168.100.0/24"
+export DEFAULT_DEVICE_TIMEOUT="10"
+
+# AI Features
+export INTELLIGENT_SCHEDULING="true"
+export VOICE_CONTROL_ENABLED="true"
+export CONTEXT_LEARNING="true"
+
+# Your Specific Device Configuration
+# Tapo L520 Smart Light
+export TAPO_L520_IP="192.168.100.63"
+export TAPO_L520_MAC="E0-D3-62-8A-72-5E"
+export TAPO_L520_NAME="Main Smart Light"
+export TAPO_L520_LOCATION="living_room"

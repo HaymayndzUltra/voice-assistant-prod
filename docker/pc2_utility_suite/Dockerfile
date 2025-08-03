@@ -33,7 +33,7 @@ ENV PYTHONUNBUFFERED=1
 ENV LOG_LEVEL=INFO
 
 # Create logs and data directories
-RUN mkdir -p /app/logs /app/data /app/filesystem_data /app/remote_data /app/utils_data
+RUN mkdir -p /app/logs /app/data /app/filesystem_data /app/remote_data /app/utils_data /app/smart_home_data
 
 # Health check script
 COPY docker/pc2_utility_suite/health_check.sh /health_check.sh
