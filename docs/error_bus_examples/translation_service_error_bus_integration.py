@@ -25,7 +25,7 @@ class TranslationServiceWithErrorBus:
             # Initialize error bus connection
             self.error_bus = await init_error_bus(
                 agent_name=self.agent_name,
-                nats_servers=["nats://localhost:4222"]
+                nats_servers=["nats://nats_coordination:4222"]
             )
             
             await report_error("AGENT_STARTUP", f"{self.agent_name} initialized successfully", "INFO")

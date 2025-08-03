@@ -66,7 +66,7 @@ class PilotAgentMigrator:
         
         # NATS and infrastructure endpoints
         self.infrastructure = {
-            "nats_url": "nats://localhost:4222",
+            "nats_url": "nats://nats_coordination:4222",
             "nats_cluster_url": "nats://localhost:4223",
             "pushgateway_main": "http://localhost:9091",
             "pushgateway_pc2": "http://localhost:9092",
@@ -191,7 +191,7 @@ class PilotAgentMigrator:
                     "max_backoff_seconds": 300
                 },
                 "nats_integration": {
-                    "primary_nats_url": "nats://localhost:4222",
+                    "primary_nats_url": "nats://nats_coordination:4222",
                     "cluster_nats_url": "nats://localhost:4223",
                     "health_subject_prefix": "observability.health",
                     "metrics_subject_prefix": "observability.metrics",

@@ -455,4 +455,4 @@ else:
     # Local development defaults
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
     os.environ.setdefault("SERVICE_REGISTRY_REDIS_URL", "redis://localhost:6379/0")
-    os.environ.setdefault("NATS_SERVERS", "nats://localhost:4222") 
+    os.environ.setdefault("NATS_SERVERS", "nats://nats_coordination:4222") 

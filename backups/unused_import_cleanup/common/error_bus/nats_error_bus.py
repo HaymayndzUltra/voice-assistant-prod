@@ -67,7 +67,7 @@ class NATSErrorBus:
                  nats_servers: List[str] = None,
                  agent_name: str = "unknown",
                  max_reconnect_attempts: int = 10):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        self.nats_servers = nats_servers or ["nats://nats_coordination:4222"]
         self.agent_name = agent_name
         self.max_reconnect_attempts = max_reconnect_attempts
         

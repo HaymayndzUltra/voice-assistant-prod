@@ -5,55 +5,55 @@
     "todos": [
       {
         "text": "────────── 1. coordination ──────────\nA. Inferred purpose\n• Orchestrate requests, manage model allocation, and optimise GPU memory.\n\nB. Logical test scenarios\n\nHappy-path orchestration: 1-in 1-out workflow reaches downstream services and returns within SLA.\nVRAM contention: multiple parallel requests trigger vram_optimizer to evict/relocate models without failures.\nModel hot-swap: model_manager_suite deploys a new model while processing live traffic.\nC. Executable scripts\n\n# 1) Functional orchestration (expect HTTP 200 & JSON payload)\ncurl -X POST http://$(docker inspect -f '{{.NetworkSettings.IPAddress}}' request_coordinator):8080/api/v1/process \\\n     -H 'Content-Type: application/json' \\\n     -d '{\"input\":\"Hello world\"}' | jq .\n\n# 2) VRAM contention (simulate 10 parallel large requests)\nseq 1 10 | xargs -n1 -P10 -I{} \\\n  curl -s -X POST http://$(docker inspect -f '{{.NetworkSettings.IPAddress}}' request_coordinator):8080/api/v1/process \\\n       -H 'Content-Type: application/json' -d '{\"input\":\"heavy\"}' > /dev/null; \\\ndocker exec vram_optimizer nvidia-smi  # verify <90% util per GPU\n\n# 3) Hot-swap (rolling model update)\ndocker exec model_manager_suite ./deploy_model.sh model_v2.onnx\ncurl -X GET http://$(docker inspect -f '{{.NetworkSettings.IPAddress}}' model_manager_suite):8081/status | jq '.active==\"model_v2\"'\nEdge-cases: network partition, GPU out-of-memory, invalid model artefact.\nFailure modes: coordinator returns 5xx; VRAM optimizer aborts kernel.\nPerformance: latency < 200 ms at P95, GPU util < 90 %.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang grupong ito ang sentro ng orkestrasyon. Siguraduhing pumasa ang lahat ng test dito bago magpatuloy, dahil ang anumang pagkabigo dito ay nangangahulugang hindi makakarating ang mga request sa tamang serbisyo at babagsak ang buong system flow.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 2. emotion_system ──────────\nA. Purpose\nDetect, track, and influence emotional state across sessions.\n\nB. Scenarios\n\nEmotion detection accuracy on labelled dataset.\nCross-session mood persistence in mood_tracker.\nSentinel: emotion_engine rejects malformed audio.\nC. Scripts\n\n# 1) Batch evaluation (expect ≥0.8 F1)\ndocker cp test/emotion_labeled.wav emotion_engine:/tmp/\ndocker exec emotion_engine python eval_emotion.py /tmp/emotion_labeled.wav\n\n# 2) Persistence check\ncurl -d '{\"user\":\"u1\",\"text\":\"I feel great!\"}' \\\n     http://emotion_engine:8090/detect\ncurl http://mood_tracker:8091/current?user=u1 | jq '.mood==\"positive\"'\n\n# 3) Malformed input\ncurl -f -s -o /dev/null -w '%{http_code}\\n' \\\n     --data-binary '@/dev/null' \\\n     http://emotion_engine:8090/detect | grep 400\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang pag-verify sa accuracy at persistence ng mood ay mahalaga para sa kalidad ng user experience. Tiyaking gumagana nang tama ang pag-reject sa malformed input upang maiwasan ang mga hindi inaasahang error.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 3. infra_core ──────────\nA. Purpose\nKeep authoritative service registry and a digital twin of system state.\n\nB. Scenarios\n\nRegistry health-check enumerates all 12 groups.\nDigital-twin publishes topology updates within 2 s of container restart.\nDuplicate registration rejected.\nC. Scripts\n\n# 1) Health check\ncurl http://service_registry:7000/services | jq 'length==12'\n\n# 2) Restart container & verify update\ndocker restart stt_service\nsleep 3\ncurl http://system_digital_twin:7001/topology | jq '.changes | length>0'\n\n# 3) Duplicate registration\ncurl -X POST http://service_registry:7000/register \\\n     -d '{\"service\":\"stt_service\",\"ip\":\"1.1.1.1\"}' | jq '.error==\"duplicate\"'\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang pundasyon ng buong system. Kung bagsak ang service registry, walang serbisyong makakapag-usap. Tiyaking 100% stable at pumapasa ang mga test na ito bago subukan ang iba pang mga component.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 4. language_stack ──────────\nA. Purpose\nNLP pipeline: NLU, context enrichment, generation, summarisation, etc.\n\nB. Scenarios\n\nNLU intent classification @≥92 % accuracy.\nModel hot-reload via model_manager_suite.\nStress test 500 RPS with <150 ms P95.\nC. Scripts\n\n# 1) Intent evaluation\ndocker exec nlu_agent pytest tests/test_intent_accuracy.py -q\n\n# 2) Hot-reload\ndocker exec model_manager_suite ./deploy_model.sh nlu_v3.bin\ncurl http://nlu_agent:8082/status | jq '.model==\"nlu_v3\"'\n\n# 3) Load test\nhey -z 30s -c 100 -q 500 \\\n    -m POST -H \"Content-Type: application/json\" \\\n    -d '{\"text\":\"Book me a flight\"}' \\\n    http://nlu_agent:8082/parse\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang performance at accuracy ng NLU ay kritikal. Siguraduhing naabot ang target na RPS at latency bago mag-integrate sa iba pang mga serbisyo na umaasa dito, tulad ng reasoning o translation.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 5. learning_gpu ──────────\nA. Purpose\nContinuous self-training & fine-tuning of foundation models.\n\nB. Scenarios\n\nTraining scheduler launches job on available GPU.\nCheck-point resume after kill -9.\nGradient explosion safeguard.\nC. Scripts\n\n# 1) Launch job\ndocker exec self_training_orchestrator python launch_job.py config/train.yaml\nwatch -n5 docker exec self_training_orchestrator nvidia-smi\n\n# 2) Simulate crash & resume\njob_id=$(curl -s http://self_training_orchestrator:9090/jobs/start | jq -r '.id')\ndocker exec self_training_orchestrator pkill -9 -f $job_id\nsleep 5\ncurl http://self_training_orchestrator:9090/jobs/resume/$job_id | jq '.status==\"running\"'\n\n# 3) Gradient clip\ndocker exec self_training_orchestrator pytest tests/test_grad_clip.py -q\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang mga training job ay kumakain ng maraming resources. Tiyaking gumagana ang crash-and-resume feature upang hindi masayang ang oras at computation kung magkaroon ng aberya. Isagawa ang mga test na ito sa off-peak hours.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 6. memory_stack ──────────\nA. Purpose\nFast session memory, long-term knowledge base, and retrieval.\n\nB. Scenarios\n\nSession write-read latency <5 ms.\nLRU eviction verified at capacity.\nKB semantic search returns top-3 relevant docs.\nC. Scripts\n\n# 1) RTT latency\ncurl -w '%{time_total}\\n' -o /dev/null -s \\\n     -d '{\"key\":\"k1\",\"val\":\"v1\"}' http://session_memory_agent:6060/set\n\n# 2) Eviction\nfor i in {1..10000}; do curl -s -d \"{\\\"k\\\":\\\"k$i\\\",\\\"v\\\":\\\"v\\\"}\" http://session_memory_agent:6060/set; done\ncurl http://session_memory_agent:6060/get?k=k1 | jq '.==null'\n\n# 3) Semantic search\ncurl -d '{\"query\":\"quantum computing\"}' \\\n     http://knowledge_base:6061/search | jq '.results|length==3'\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang bilis ng memory stack ay direktang nakakaapekto sa pangkalahatang system latency. I-verify na ang RTT latency at eviction logic ay gumagana ayon sa inaasahan upang maiwasan ang mga bottleneck.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 7. observability ──────────\nA. Purpose\nCentral hub for metrics, traces, logs.\n\nB. Scenarios\n\nMetrics scrape endpoint returns 200 & >1 k series.\nAlert fires when latency > threshold.\nLog ingestion from all groups.\nC. Scripts\n\n# 1) Metrics scrape\ncurl -s http://observability_hub:9091/metrics | wc -l | xargs -I{} test {} -gt 1000\n\n# 2) Inject slow call\ncurl -d '{\"delay_ms\":500}' http://request_coordinator:8080/api/v1/process\nsleep 10\ncurl http://observability_hub:9091/alerts | jq '.[].name==\"HighLatency\"'\n\n# 3) Log shipping\ndocker logs nlu_agent --since 1m | tail -1 | \\\n  curl --data-binary @- http://observability_hub:9091/logs\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Unahing i-validate ang observability hub. Kung hindi ito gumagana, magiging imposible ang pag-debug sa mga problema sa ibang serbisyo. Tiyaking nakakatanggap ito ng logs at gumagana ang alerting bago mag-stress test ng ibang bahagi.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 8. reasoning_gpu ──────────\nA. Purpose\nExecute chain-of-thought, symbolic reasoning, and planning.\n\nB. Scenarios\n\nMulti-hop QA accuracy on benchmark.\nGPU utilisation <95 % under 50 concurrent queries.\nTime-out protection at 5 s.\nC. Scripts\n\n# 1) Benchmark\ndocker exec chain_of_thought_agent python eval_hotpotqa.py --threshold 0.7\n\n# 2) Concurrency\nseq 1 50 | xargs -n1 -P50 -I{} \\\n  curl -s -d '{\"question\":\"What is the capital of France?\"}' \\\n  http://chain_of_thought_agent:8085/answer > /dev/null\ndocker exec chain_of_thought_agent nvidia-smi\n\n# 3) Time-out\ncurl -m 6 -w '%{http_code}\\n' \\\n     -d '{\"question\":\"Long reasoning\"}' \\\n     http://chain_of_thought_agent:8085/answer | grep 504\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang time-out protection test ay napakahalaga dito. Tinitiyak nito na ang isang mahabang query ay hindi magho-hostage ng GPU resources, na magiging sanhi ng pagbagal o pagkabigo ng iba pang mga request.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 9. speech_gpu ──────────\nA. Purpose\nSpeech-to-Text (STT) and Text-to-Speech (TTS) pipelines.\n\nB. Scenarios\n\nSTT WER ≤10 % on sample audio.\nTTS produces audio <500 ms for 50-token text.\nConcurrent STT+TTS 20-pair load without GPU OOM.\nC. Scripts\n\n# 1) WER\ndocker cp test/audio/test.wav stt_service:/tmp/\ndocker exec stt_service python wer_eval.py /tmp/test.wav | grep -E '^WER: 0\\.[0-1]'\n\n# 2) TTS latency\ncurl -w '%{time_total}\\n' -o /tmp/out.wav -s \\\n     -d '{\"text\":\"Hello world\"}' http://tts_service:8095/synthesize\n\n# 3) Load\nseq 1 20 | xargs -n1 -P20 -I{} \\\n  curl -s -d '{\"file_url\":\"http://files/audio/{}.wav\"}' \\\n  http://stt_service:8094/recognize > /dev/null\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang sabay-sabay na STT at TTS load test ay mahalaga upang masiguro na kaya ng serbisyo ang real-time, two-way na pag-uusap nang hindi nauubusan ng GPU memory (OOM).",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 10. translation_services ──────────\nA. Purpose\nReal-time and offline translation with NLLB models.\n\nB. Scenarios\n\nLatency <120 ms for streaming EN→ES.\nBLEU ≥35 on standard set.\nAdapter handles unsupported language gracefully.\nC. Scripts\n\n# 1) Streaming (netcat sim)\necho \"Hello world\" | nc -q0 fixed_streaming_translation 8100\n\n# 2) BLEU\ndocker exec nllb_adapter python eval_bleu.py data/test.en data/test.es\n\n# 3) Unsupported language\ncurl -f -s -o /dev/null -w '%{http_code}\\n' \\\n     -d '{\"text\":\"...\", \"src\":\"xx\",\"tgt\":\"en\"}' \\\n     http://nllb_adapter:8101/translate | grep 400\n\n──────────────────────────────────\nMAHALAGANG PAALALA: I-verify na ang serbisyo ay nagbibigay ng tamang error code (e.g., 400) para sa mga hindi suportadong wika. Pinipigilan nito ang mga hindi inaasahang pag-crash at nagbibigay ng malinaw na feedback sa mga client application.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 11. utility_cpu ──────────\nA. Purpose\nLightweight helpers: code generation, task execution, formatting.\n\nB. Scenarios\n\nCode generator returns syntactically valid Python 3.\nExecutor sandbox prevents file-system escape.\nRate-limit at 60 RPM.\nC. Scripts\n\n# 1) Generate code\ncurl -d '{\"prompt\":\"Write a function add(a,b)\"}' \\\n     http://code_generator:7070/generate | python -m py_compile -\n\n# 2) Sandbox escape attempt\ncurl -d '{\"code\":\"import os; os.remove(\\\"/\\\")\"}' \\\n     http://executor:7071/execute | jq '.error==\"sandbox_violation\"'\n\n# 3) Rate limit\nfor i in {1..65}; do curl -s -d '{\"code\":\"print(1)\"}' http://executor:7071/execute; done | tail -1 | jq '.error==\"rate_limited\"'\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang 'Sandbox escape attempt' ay isang kritikal na security test. Ang pagpasa dito ay kumpirmasyon na hindi maaaring gamitin ang serbisyo upang makompromiso ang host system. Huwag i-deploy kung bagsak ang test na ito.",
-        "done": false
+        "done": true
       },
       {
         "text": "────────── 12. vision_gpu ──────────\nA. Purpose\nHigh-performance face-recognition and visual processing.\n\nB. Scenarios\n\nRecognition accuracy ≥0.95 on benchmark dataset.\nThroughput ≥300 FPS inference.\nAdversarial image rejection.\nC. Scripts\n\n# 1) Accuracy\ndocker exec face_recognition_agent python eval_faces.py --dataset lfw --threshold 0.95\n\n# 2) Throughput\ndocker exec face_recognition_agent python bench.py --frames 1000 | grep 'FPS' | awk '{print $2}' | xargs -I{} test {} -ge 300\n\n# 3) Adversarial\ncurl -F 'image=@adv.png' http://face_recognition_agent:8088/identify | jq '.==\"rejected\"'\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang pag-verify sa adversarial image rejection ay isang mahalagang security control. Tinitiyak nito na ang sistema ay matatag laban sa mga pagtatangkang linlangin ang AI model gamit ang mga espesyal na ginawang imahe.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-21T10:30:00Z",
-    "updated": "2025-08-03T00:19:29.764030+08:00"
+    "updated": "2025-08-03T09:33:00.000000+08:00"
   }
 ]

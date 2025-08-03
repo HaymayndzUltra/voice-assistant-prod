@@ -250,7 +250,7 @@ class NATSErrorBus:
     """
     
     def __init__(self, nats_servers: List[str] = None, agent_name: str = "unknown"):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        self.nats_servers = nats_servers or ["nats://nats_coordination:4222"]
         self.agent_name = agent_name
         self.nc: Optional[nats.NATS] = None
         self.js: Optional[nats.aio.client.JetStreamContext] = None
@@ -439,7 +439,7 @@ def get_error_bus() -> NATSErrorBus:
     global _error_bus
     if _error_bus is None:
         agent_name = os.getenv("AGENT_NAME", "unknown")
-        nats_servers = os.getenv("NATS_SERVERS", "nats://localhost:4222").split(",")
+        nats_servers = os.getenv("NATS_SERVERS", "nats://nats_coordination:4222").split(",")
         _error_bus = NATSErrorBus(nats_servers, agent_name)
     return _error_bus
 
@@ -540,7 +540,7 @@ class ErrorContext:
 # Usage examples in comments:
 """
 # Initialize error bus
-await init_error_bus("my_agent", ["nats://localhost:4222"])
+await init_error_bus("my_agent", ["nats://nats_coordination:4222"])
 
 # Report errors
 await report_error("DATABASE_ERROR", "Connection failed", severity="CRITICAL")
@@ -579,7 +579,7 @@ class ErrorDashboard:
     """Real-time error monitoring dashboard"""
     
     def __init__(self, nats_servers: List[str] = None):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        self.nats_servers = nats_servers or ["nats://nats_coordination:4222"]
         self.nc = None
         self.js = None
         
@@ -828,7 +828,7 @@ class {agent_name.title().replace('_', '')}WithErrorBus:
             # Initialize error bus connection
             self.error_bus = await init_error_bus(
                 agent_name=self.agent_name,
-                nats_servers=["nats://localhost:4222"]
+                nats_servers=["nats://nats_coordination:4222"]
             )
             
             await report_error("AGENT_STARTUP", f"{{self.agent_name}} initialized successfully", "INFO")
@@ -1080,7 +1080,7 @@ def main():
     
     nats_config = {
         "nats": {
-            "servers": ["nats://localhost:4222"],
+            "servers": ["nats://nats_coordination:4222"],
             "error_stream": "ERROR_STREAM",
             "error_subject": "errors",
             "retention_days": 7,

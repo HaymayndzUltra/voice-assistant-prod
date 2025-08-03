@@ -27,7 +27,7 @@ class ErrorDashboard:
                  redis_host: str = "localhost",
                  redis_port: int = 6379,
                  port: int = 8080):
-        self.nats_servers = nats_servers or ["nats://localhost:4222"]
+        self.nats_servers = nats_servers or ["nats://nats_coordination:4222"]
         self.redis_host = redis_host
         self.redis_port = redis_port
         self.port = port

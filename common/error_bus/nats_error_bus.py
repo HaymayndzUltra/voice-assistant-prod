@@ -69,7 +69,7 @@ class NATSErrorBus:
         if env_nats_servers and not nats_servers:
             self.nats_servers = [env_nats_servers] if isinstance(env_nats_servers, str) else env_nats_servers
         else:
-            self.nats_servers = nats_servers or ["nats://localhost:4222"]
+            self.nats_servers = nats_servers or ["nats://nats_coordination:4222"]
         self.agent_name = agent_name
         self.max_reconnect_attempts = max_reconnect_attempts
         
