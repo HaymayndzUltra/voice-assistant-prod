@@ -1,0 +1,164 @@
+version: "3.9"
+
+# Stage 2 Integration Testing - Main PC + PC2 Combined Stack
+# This file simulates both Main PC and PC2 running on the same machine
+
+x-common:
+  &defaults
+  restart: on-failure
+  environment:
+    - PYTHONPATH=/app
+    - OTEL_EXPORTER_OTLP_ENDPOINT=http://observabilityhub:4318
+    - DOCKER_CONTAINER=true
+
+networks:
+  integration_net:
+    driver: bridge
+
+services:
+  # ===========================================================================
+  # OBSERVABILITY HUB (Shared between Main PC and PC2)
+  # ===========================================================================
+  observabilityhub:
+    <<: *defaults
+    image: elasticsearch:7.17.9
+    container_name: observabilityhub_integration
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "4318:4318"  # OTLP endpoint
+    networks:
+      - integration_net
+
+  # ===========================================================================
+  # MAIN PC SERVICES (Simplified for integration testing)
+  # ===========================================================================
+  
+  # Main PC Infra Core
+  mainpc_infra_core:
+    <<: *defaults
+    image: busybox:latest
+    container_name: mainpc_infra_core
+    command: sh -c "echo 'Main PC Infra Core Mock' && sleep infinity"
+    ports:
+      - "8200:8200"
+    networks:
+      - integration_net
+    labels:
+      - "stack=mainpc"
+      - "service=infra_core"
+
+  # Main PC Coordination
+  mainpc_coordination:
+    <<: *defaults
+    image: busybox:latest
+    container_name: mainpc_coordination
+    command: sh -c "echo 'Main PC Coordination Mock' && sleep infinity"
+    ports:
+      - "8201:8201"
+    networks:
+      - integration_net
+    labels:
+      - "stack=mainpc"
+      - "service=coordination"
+
+  # Main PC Memory Stack
+  mainpc_memory_stack:
+    <<: *defaults
+    image: busybox:latest
+    container_name: mainpc_memory_stack
+    command: sh -c "echo 'Main PC Memory Stack Mock' && sleep infinity"
+    ports:
+      - "8202:8202"
+    networks:
+      - integration_net
+    labels:
+      - "stack=mainpc"
+      - "service=memory_stack"
+
+  # Main PC Utility CPU
+  mainpc_utility_cpu:
+    <<: *defaults
+    image: busybox:latest
+    container_name: mainpc_utility_cpu
+    command: sh -c "echo 'Main PC Utility CPU Mock' && sleep infinity"
+    ports:
+      - "8203:8203"
+    networks:
+      - integration_net
+    labels:
+      - "stack=mainpc"
+      - "service=utility_cpu"
+
+  # ===========================================================================
+  # PC2 SERVICES (From Stage 1 configuration)
+  # ===========================================================================
+  
+  # PC2 Memory Services
+  pc2_memory_services:
+    <<: *defaults
+    image: busybox:latest
+    container_name: pc2_memory_services_integration
+    command: sh -c "echo 'PC2 Memory Services Mock' && sleep infinity"
+    ports:
+      - "50140:7140"
+      - "50102:7102"
+    networks:
+      - integration_net
+    labels:
+      - "stack=pc2"
+      - "service=memory_services"
+    environment:
+      - PC_ROLE=pc2
+      - SERVICE_NAME=pc2_memory_services
+
+  # PC2 AI Reasoning
+  pc2_ai_reasoning:
+    <<: *defaults
+    image: busybox:latest
+    container_name: pc2_ai_reasoning_integration
+    command: sh -c "echo 'PC2 AI Reasoning Mock' && sleep infinity"
+    ports:
+      - "50204:7104"
+      - "50227:7127"
+    networks:
+      - integration_net
+    labels:
+      - "stack=pc2"
+      - "service=ai_reasoning"
+    environment:
+      - PC_ROLE=pc2
+      - SERVICE_NAME=pc2_ai_reasoning
+
+  # PC2 Utility Suite (for testing integration with Main PC utility_cpu)
+  pc2_utility_suite:
+    <<: *defaults
+    image: busybox:latest
+    container_name: pc2_utility_suite_integration
+    command: sh -c "echo 'PC2 Utility Suite Mock' && sleep infinity"
+    ports:
+      - "50500:7500"
+    networks:
+      - integration_net
+    labels:
+      - "stack=pc2"
+      - "service=utility_suite"
+    environment:
+      - PC_ROLE=pc2
+      - SERVICE_NAME=pc2_utility_suite
+      - MAINPC_UTILITY_ENDPOINT=http://mainpc_utility_cpu:8203
+
+  # ===========================================================================
+  # SERVICE DISCOVERY (Mock service registry)
+  # ===========================================================================
+  service_registry:
+    <<: *defaults
+    image: redis:7-alpine
+    container_name: service_registry_integration
+    ports:
+      - "6379:6379"
+    networks:
+      - integration_net
+    command: redis-server --appendonly yes

@@ -1,0 +1,88 @@
+version: "3.9"
+
+x-common:
+  &defaults
+  restart: on-failure
+  networks: [ pc2_net ]
+  environment:
+    - PC_ROLE=pc2
+    - OTEL_EXPORTER_OTLP_ENDPOINT=http://observabilityhub:4318
+    - DOCKER_CONTAINER=true
+    - PYTHONPATH=/app
+
+services:
+  # Memory Services Group (mapped to 501xx range for local testing)
+  pc2_memory_services:
+    <<: *defaults
+    image: pc2-memory-services:latest
+    container_name: pc2_memory_services_local
+    ports:
+      - "50140:7140"  # MemoryOrchestratorService
+      - "50102:7102"  # CacheManager
+      - "50105:7105"  # UnifiedMemoryReasoningAgent
+      - "50111:7111"  # ContextManager
+      - "50112:7112"  # ExperienceTracker
+
+  # AI Reasoning Group (mapped to 502xx range)
+  pc2_ai_reasoning:
+    <<: *defaults
+    image: pc2-ai-reasoning:latest
+    container_name: pc2_ai_reasoning_local
+    ports:
+      - "50204:7104"  # DreamWorldAgent
+      - "50227:7127"  # DreamingModeAgent
+      - "50208:7108"  # TutorAgent
+      - "50231:7131"  # TutoringAgent
+      - "50250:7150"  # VisionProcessingAgent
+
+  # Web Services Group (mapped to 503xx range)
+  pc2_web_services:
+    <<: *defaults
+    image: pc2-web-services:latest
+    container_name: pc2_web_services_local
+    ports:
+      - "50323:7123"  # FileSystemAssistantAgent
+      - "50324:7124"  # RemoteConnectorAgent
+      - "50326:7126"  # UnifiedWebAgent
+
+  # Utility Services Group (mapped to 504xx range)
+  pc2_utility_services:
+    <<: *defaults
+    image: pc2-utility-services:latest
+    container_name: pc2_utility_services_local
+    ports:
+      - "50413:7113"  # UtilityAgent
+      - "50415:7115"  # ResourceManager
+      - "50417:7117"  # TaskScheduler
+      - "50418:7118"  # SystemMonitor
+
+  # Async Pipeline (mapped to 505xx range)
+  pc2_async_pipeline:
+    <<: *defaults
+    image: pc2-async-pipeline:latest
+    container_name: pc2_async_pipeline_local
+    ports:
+      - "50500:7100"  # AsyncPipelineAgent
+
+  # Infra Core (mapped to 506xx range)
+  pc2_infra_core:
+    <<: *defaults
+    image: pc2-infra-core:latest
+    container_name: pc2_infra_core_local
+    ports:
+      - "50600:7200"  # InfraCore services
+
+  # ObservabilityHub for local testing
+  observabilityhub:
+    <<: *defaults
+    image: elasticsearch:7.17.9
+    container_name: observabilityhub_local
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "5601:9200"  # Elasticsearch port
+
+networks:
+  pc2_net:
+    driver: bridge
