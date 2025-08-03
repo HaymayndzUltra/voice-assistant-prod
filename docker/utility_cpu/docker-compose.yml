@@ -125,8 +125,8 @@ services:
       code_generator:
         condition: service_healthy
     restart: unless-stopped
-    # Host network access for local device discovery
-    network_mode: "host"
+    networks:
+      - utility_net
 
 networks:
   utility_net:
