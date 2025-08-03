@@ -9,7 +9,7 @@
       },
       {
         "text": "STAGE 2: Integration Simulation (Main PC + PC2 locally)\n\n• Bring up the full Main-PC docker-compose (12 groups) alongside the PC2 compose file from Stage 1.\n• Execute integration tests to validate:\n  - Service discovery between the two stacks (e.g., utility_cpu ↔ pc2_utility_suite).\n  - End-to-end tasks that traverse both machine stacks, mocked via localhost.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang layunin dito ay mahuli ang mga isyu sa configuration at communication sa pagitan ng Main PC at PC2 stacks bago pa man ito i-deploy sa magkahiwalay na physical machines. Kumpirmahin na nag-uusap nang tama ang lahat ng serbisyo.",
-        "done": false
+        "done": true
       },
       {
         "text": "STAGE 3: Cross-Machine Pre-Sync Validation\n\n• I-deploy ang PC2 Docker images at compose file sa PC2 machine.\n• Mula sa Main PC, patakbuhin ang scripts/cross_machine_network_check.sh para kumpirmahin ang network connectivity sa lahat ng kinakailangang ports.\n• I-verify na ang ObservabilityHub sa Main PC ay nakakatanggap ng data mula sa PC2 machine.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang unang pagsubok na kinasasangkutan ng dalawang magkahiwalay na makina. Ang tagumpay sa yugtong ito ay nangangahulugang mayroon nang basic network reachability. Huwag magpatuloy kung may pumalyang network check.",
@@ -26,6 +26,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-21T10:00:00Z",
-    "updated": "2025-08-03T23:29:52.312507+08:00"
+    "updated": "2025-08-03T23:41:04.426558+08:00"
   }
 ]
