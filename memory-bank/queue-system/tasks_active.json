@@ -1,4 +1,3 @@
-
 [
   {
     "id": "20240521_pc_subsystem_testing",
@@ -6,7 +5,7 @@
     "todos": [
       {
         "text": "STAGE 1: Local PC2 Validation (Main PC only)\n\n• Spin up docker-compose.pc2-local.yml to run all seven PC2 stacks locally.\n• Run the pytest suite using files like tests/conftest.py, tests/test_inter_service.py, and tests/test_resource_allocation.py.\n• Collect and verify coverage/trace output in the ObservabilityHub.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Tiyaking pumasa ang lahat ng local tests sa yugtong ito. Ito ang pundasyon na nagpapatunay na gumagana nang tama ang PC2 services sa isang isolated environment bago subukan ang integration sa Main PC.",
-        "done": false
+        "done": true
       },
       {
         "text": "STAGE 2: Integration Simulation (Main PC + PC2 locally)\n\n• Bring up the full Main-PC docker-compose (12 groups) alongside the PC2 compose file from Stage 1.\n• Execute integration tests to validate:\n  - Service discovery between the two stacks (e.g., utility_cpu ↔ pc2_utility_suite).\n  - End-to-end tasks that traverse both machine stacks, mocked via localhost.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ang layunin dito ay mahuli ang mga isyu sa configuration at communication sa pagitan ng Main PC at PC2 stacks bago pa man ito i-deploy sa magkahiwalay na physical machines. Kumpirmahin na nag-uusap nang tama ang lahat ng serbisyo.",
@@ -27,6 +26,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-21T10:00:00Z",
-    "updated": "2024-05-21T10:00:00Z"
+    "updated": "2025-08-03T23:29:52.312507+08:00"
   }
 ]
