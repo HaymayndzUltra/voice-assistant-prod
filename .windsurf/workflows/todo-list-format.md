@@ -4,7 +4,7 @@ description: todo-list format
 
 ---
 description: Todo list format
-alwaysApply: false
+alwaysApply: true
 ---
 SYSTEM INSTRUCTION: Advanced Todolist Generation from Complex Documents
 

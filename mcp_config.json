@@ -22,7 +22,7 @@
     "my-memory": {
       "url": "https://memory-mcp.hpkv.io/sse",
       "headers": {
-        "X-API-KEY": "${8972d0bef87844fd861e1cd6abbd9f5b}"
+        "X-API-KEY": "${cc1c4836be8044a0bf7d7b053a2267f0}"
       },
       "timeout": 15000,
       "retries": 2,
