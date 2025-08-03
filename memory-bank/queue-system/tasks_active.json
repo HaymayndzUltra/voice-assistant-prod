@@ -17,15 +17,15 @@
       },
       {
         "text": "STAGE 4: Post-Sync Continuous Validation\n\n• Patakbuhin ang pytest suite nang remote sa PC2 machine at i-export ang mga resulta.\n• I-trigger ang Main-PC integration suite gamit ang remote URLs ng PC2 services.\n• Magsagawa ng load-balancing tests (e.g., weighted round-robin checks) at simulated latency injection para subukan ang system resiliency.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Dito sinusubok ang performance at katatagan ng distributed system sa ilalim ng mas makatotohanang kondisyon. Ang matagumpay na load-balancing at resiliency tests ay kritikal bago ideklarang production-ready ang system.",
-        "done": false
+        "done": true
       },
       {
         "text": "STAGE 5: Failover Scenarios\n\n• Magsagawa ng 'chaos testing': random na patayin ang mga container sa bawat machine upang matiyak na gumagana ang mga retry at circuit-breaker.\n• I-simulate ang isang network partition (gamit ang iptables DROP rules) at i-validate na ang system ay nagde-degrade nang maayos (graceful degradation) sa halip na mag-crash nang tuluyan.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang huling yugto ng pagsubok sa katatagan ng system. Kinukumpirma nito na ang arkitektura ay kayang humarap sa mga hindi inaasahang pagpalya. Ito ang pinakamahalagang hakbang upang matiyak ang isang 'bulletproof' na setup.",
-        "done": false
+        "done": true
       }
     ],
-    "status": "in_progress",
+    "status": "completed",
     "created": "2024-05-21T10:00:00Z",
-    "updated": "2025-08-03T15:48:32.900200+08:00"
+    "updated": "2025-08-03T15:58:01.358572+08:00"
   }
 ]
