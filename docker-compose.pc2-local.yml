@@ -1,0 +1,192 @@
+# PC2 Local Testing Configuration - STAGE 1: Local PC2 Validation
+# Uses existing individual PC2 Docker groups with 50100-50700 port range
+
+version: "3.9"
+
+services:
+  # ============================================================================
+  # PC2 GROUP 1: INFRA CORE (ObservabilityHub, ResourceManager)
+  # ============================================================================
+  pc2-infra-core:
+    build:
+      context: .
+      dockerfile: docker/pc2_infra_core/Dockerfile
+    container_name: pc2-infra-core-local
+    ports:
+      - "50200:9210"  # ObservabilityHub
+      - "50201:7213"  # ResourceManager
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 2: MEMORY STACK
+  # ============================================================================
+  pc2-memory-stack:
+    build:
+      context: .
+      dockerfile: docker/pc2_memory_stack/Dockerfile
+    container_name: pc2-memory-stack-local
+    ports:
+      - "50300:7240"  # MemoryOrchestrator
+      - "50301:7202"  # CacheManager
+      - "50302:7220"  # UnifiedMemoryReasoning
+      - "50303:7250"  # ContextManager
+      - "50304:7260"  # ExperienceTracker
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 3: ASYNC PIPELINE
+  # ============================================================================
+  pc2-async-pipeline:
+    build:
+      context: .
+      dockerfile: docker/pc2_async_pipeline/Dockerfile
+    container_name: pc2-async-pipeline-local
+    ports:
+      - "50100:7301"  # AsyncProcessor
+      - "50101:7300"  # TieredResponder
+      - "50102:7315"  # TaskScheduler
+      - "50103:7320"  # AdvancedRouter
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 4: TUTORING CPU
+  # ============================================================================
+  pc2-tutoring-cpu:
+    build:
+      context: .
+      dockerfile: docker/pc2_tutoring_cpu/Dockerfile
+    container_name: pc2-tutoring-cpu-local
+    ports:
+      - "50400:7408"  # TutorAgent
+      - "50401:7431"  # TutoringAgent
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 5: UTILITY SUITE
+  # ============================================================================
+  pc2-utility-suite:
+    build:
+      context: .
+      dockerfile: docker/pc2_utility_suite/Dockerfile
+    container_name: pc2-utility-suite-local
+    ports:
+      - "50500:7418"  # UnifiedUtilsAgent
+      - "50501:7423"  # FileSystemAssistantAgent
+      - "50502:7424"  # RemoteConnectorAgent
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 6: VISION DREAM GPU
+  # ============================================================================
+  pc2-vision-dream-gpu:
+    build:
+      context: .
+      dockerfile: docker/pc2_vision_dream_gpu/Dockerfile
+    container_name: pc2-vision-dream-gpu-local
+    ports:
+      - "50600:7450"  # VisionProcessingAgent
+      - "50601:7404"  # DreamWorldAgent
+      - "50602:7427"  # DreamingModeAgent
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - pc2_net
+    restart: on-failure
+
+  # ============================================================================
+  # PC2 GROUP 7: WEB INTERFACE
+  # ============================================================================
+  pc2-web-interface:
+    build:
+      context: .
+      dockerfile: docker/pc2_web_interface/Dockerfile
+    container_name: pc2-web-interface-local
+    ports:
+      - "50700:7426"  # UnifiedWebAgent
+      - "50701:8080"  # Web UI
+      - "50702:3000"  # Dev server
+    volumes:
+      - ./logs:/app/logs
+      - ./pc2_code:/app/pc2_code
+      - ./common:/app/common
+    environment:
+      - PC_ROLE=pc2
+      - PC2_TEST_MODE=local
+      - DOCKER_CONTAINER=true
+      - PYTHONPATH=/app
+    networks:
+      - pc2_net
+    restart: on-failure
+
+networks:
+  pc2_net:
+    driver: bridge
