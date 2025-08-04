@@ -1,0 +1,116 @@
+version: "3.9"
+
+x-main: &defaults
+  restart: on-failure
+  networks:
+    - mainpc_net
+  environment:
+    - PC_ROLE=mainpc
+    - OTEL_EXPORTER_OTLP_ENDPOINT=http://observabilityhub:4318
+
+services:
+  coordination:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: docker/coordination/Dockerfile
+    ports:
+      - "51100:51100"
+      
+  emotion_system:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: docker/emotion_system/Dockerfile
+    ports:
+      - "51200:51200"
+      
+  infra_core:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: docker/infra_core/Dockerfile
+    ports:
+      - "51300:51300"
+      
+  language_stack:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: docker/language_stack/Dockerfile
+    ports:
+      - "51400:51400"
+      
+  learning_gpu:
+    <<: *defaults
+    build:
+      context: .
+      dockerfile: docker/learning_gpu/Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    ports:
+      - "51500:51500"
+      
+  memory_stack:
+    <<: *defaults
+    image: mainpc/memory_stack:latest
+    ports:
+      - "51600:51600"
+      
+  observability:
+    <<: *defaults
+    image: mainpc/observability:latest
+    ports:
+      - "4318:4318"
+      - "5601:5601"
+      
+  reasoning_gpu:
+    <<: *defaults
+    image: mainpc/reasoning_gpu:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    ports:
+      - "51700:51700"
+      
+  speech_gpu:
+    <<: *defaults
+    image: mainpc/speech_gpu:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    ports:
+      - "51800:51800"
+      
+  translation_services:
+    <<: *defaults
+    image: mainpc/translation_services:latest
+    ports:
+      - "51900:51900"
+      
+  utility_cpu:
+    <<: *defaults
+    image: mainpc/utility_cpu:latest
+    ports:
+      - "52000:52000"
+      
+  vision_gpu:
+    <<: *defaults
+    image: mainpc/vision_gpu:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    ports:
+      - "52100:52100"
+
+networks:
+  mainpc_net: {}

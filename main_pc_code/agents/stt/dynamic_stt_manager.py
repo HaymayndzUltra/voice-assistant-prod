@@ -1,5 +1,5 @@
-from main_pc_code.src.core.base_agent import BaseAgent
 #!/usr/bin/env python3
+from common.core.base_agent import BaseAgent
 """
 Dynamic STT Model Manager
 ------------------------
@@ -25,14 +25,14 @@ class DynamicSTTModelManager(BaseAgent):
     Manages dynamic/context-aware STT model loading and switching.
     Supports multiple Whisper models and runtime selection based on context.
     """
-    def __init__(self, port: int = None, **kwargs):
+    def __init__(self, available_models: Dict = None, default_model: str = 'base', port: int = None, **kwargs):
         super().__init__(port=port, name="DynamicSttManager")
         """
         Args:
             available_models (dict): Mapping of model_id to model config (size, language, etc.)
             default_model (str): Default model_id to use if no context match
         """
-        self.available_models = available_models  # e.g., {'base': {...}, 'large': {...}, ...}
+        self.available_models = available_models or {'base': {'language': 'en', 'size': 'base'}}
         self.default_model = default_model
         self.loaded_models = {}  # model_id -> loaded model instance
         self.lock = threading.Lock()
@@ -67,8 +67,6 @@ class DynamicSTTModelManager(BaseAgent):
             
             try:
                 import whisper
-    except ImportError as e:
-        print(f"Import error: {e}")
                 self.logger.info(f"Loading STT model '{model_id}'...")
                 start_time = time.time()
                 model = whisper.load_model(model_id)
@@ -76,6 +74,9 @@ class DynamicSTTModelManager(BaseAgent):
                 end_time = time.time()
                 self.logger.info(f"Loaded model '{model_id}' in {end_time - start_time:.2f} seconds.")
                 return model
+            except ImportError as e:
+                self.logger.error(f"Whisper import failed: {e}", exc_info=True)
+                raise
             except Exception as e:
                 self.logger.error(f"Failed to load STT model '{model_id}': {e}", exc_info=True)
                 raise
