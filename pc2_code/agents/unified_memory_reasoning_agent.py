@@ -256,7 +256,6 @@ class UnifiedMemoryReasoningAgent(BaseAgent):
         if not hasattr(self, '_dependencies_loaded'):
             try:
                 import numpy as np
-from pc2_code.utils.pc2_error_publisher import PC2ErrorPublisher, create_pc2_error_publisher
                 self._dependencies_loaded = True
                 if hasattr(self, 'logger'):
                     self.logger.info(f'{self.name}: Dependencies loaded successfully')
