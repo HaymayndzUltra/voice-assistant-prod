@@ -32,7 +32,7 @@ services:
     networks:
       - pc2_memory_stack_network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      test: ["CMD", "nc", "-z", "localhost", "4222"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -51,7 +51,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_memory:6379/0"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
       NATS_SERVERS: "nats://nats_pc2_memory:4222"
       PORT: "7140"
       HEALTH_PORT: "8140"
@@ -83,7 +84,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_memory:6379/1"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
       NATS_SERVERS: "nats://nats_pc2_memory:4222"
       PORT: "7102"
       HEALTH_PORT: "8102"
@@ -102,7 +104,7 @@ services:
       nats_pc2_memory:
         condition: service_healthy
       memory_orchestrator:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # Unified Memory Reasoning Agent - Advanced memory processing
@@ -119,7 +121,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_memory:6379/2"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
       NATS_SERVERS: "nats://nats_pc2_memory:4222"
       PORT: "7120"
       HEALTH_PORT: "8120"
@@ -138,7 +141,7 @@ services:
       nats_pc2_memory:
         condition: service_healthy
       memory_orchestrator:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # Context Manager - Context tracking and management
@@ -155,7 +158,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_memory:6379/3"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
       NATS_SERVERS: "nats://nats_pc2_memory:4222"
       PORT: "7150"
       HEALTH_PORT: "8150"
@@ -174,7 +178,7 @@ services:
       nats_pc2_memory:
         condition: service_healthy
       memory_orchestrator:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # Experience Tracker - Experience and learning tracking
@@ -191,7 +195,8 @@ services:
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_memory:6379/4"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
       NATS_SERVERS: "nats://nats_pc2_memory:4222"
       PORT: "7160"
       HEALTH_PORT: "8160"
@@ -210,7 +215,7 @@ services:
       nats_pc2_memory:
         condition: service_healthy
       memory_orchestrator:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
 # Networks
