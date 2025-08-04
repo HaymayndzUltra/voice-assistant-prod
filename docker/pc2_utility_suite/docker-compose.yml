@@ -156,53 +156,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # SmartHomeAgent - Smart home device control and automation (Tapo Integration)
-  smart_home_agent:
-    build:
-      context: ../../
-      dockerfile: docker/pc2_utility_suite/Dockerfile
-    image: pc2_utility_suite:latest
-    container_name: pc2_smart_home_agent
-    command: ["python", "agents/smart_home_agent.py"]
-    ports:
-      - "7425:7125"   # Service port (7125 + 300 offset)
-      - "8425:8125"   # Health check port
-      - "9425:9125"   # Smart Home API port
-    environment:
-      LOG_LEVEL: "INFO"
-      PYTHONPATH: "/app"
-      REDIS_URL: "redis://redis_pc2_utility:6379/3"
-      NATS_SERVERS: "nats://nats_pc2_utility:4222"
-      PORT: "7125"
-      HEALTH_PORT: "8125"
-      API_PORT: "9125"
-      SCOPE: "pc2_utility_agents"
-      TAPO_USERNAME: "${TAPO_USERNAME}"  # From environment
-      TAPO_PASSWORD: "${TAPO_PASSWORD}"  # From environment
-      DEVICE_SCAN_INTERVAL: "60"
-      AUTO_DISCOVERY: "true"
-      INTELLIGENT_CONTROL: "enabled"
-      VOICE_CONTROL: "enabled"
-    volumes:
-      - ../../logs:/app/logs
-      - ../../data:/app/data
-      - smart_home_config:/app/smart_home_data/config
-      - smart_home_schedules:/app/smart_home_data/schedules
-      - smart_home_presets:/app/smart_home_data/presets
-      - smart_home_logs:/app/smart_home_data/logs
-    networks:
-      - pc2_utility_suite_network
-      - host  # Required for local network device discovery
-    depends_on:
-      redis_pc2_utility:
-        condition: service_healthy
-      nats_pc2_utility:
-        condition: service_healthy
-      unified_utils_agent:
-        condition: service_healthy
-    restart: unless-stopped
-    # Host network access for Tapo device communication
-    network_mode: "host"
+
 
 # Networks
 networks:
@@ -224,7 +178,3 @@ volumes:
   remote_keys:
   remote_logs:
   remote_cache:
-  smart_home_config:
-  smart_home_schedules:
-  smart_home_presets:
-  smart_home_logs:

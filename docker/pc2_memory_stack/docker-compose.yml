@@ -218,6 +218,44 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # Memory Scheduler - Automated memory maintenance and optimization
+  memory_scheduler:
+    build:
+      context: ../../
+      dockerfile: docker/pc2_memory_stack/Dockerfile
+    image: pc2_memory_stack:latest
+    container_name: pc2_memory_scheduler
+    command: ["python", "pc2_code/agents/memory_scheduler.py"]
+    ports:
+      - "7242:7142"   # Service port
+      - "8242:8142"   # Health check port
+    environment:
+      LOG_LEVEL: "INFO"
+      PYTHONPATH: "/app"
+      REDIS_HOST: "redis_pc2_memory"
+      REDIS_PORT: "6379"
+      NATS_SERVERS: "nats://nats_pc2_memory:4222"
+      PORT: "7142"
+      HEALTH_PORT: "8142"
+      SCOPE: "pc2_memory_agents"
+      DECAY_INTERVAL_HOURS: "24"
+      CONSOLIDATION_INTERVAL_HOURS: "6"
+      CLEANUP_INTERVAL_DAYS: "7"
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data:/app/data
+      - scheduler_store:/app/scheduler
+    networks:
+      - pc2_memory_stack_network
+    depends_on:
+      redis_pc2_memory:
+        condition: service_healthy
+      nats_pc2_memory:
+        condition: service_healthy
+      memory_orchestrator:
+        condition: service_started
+    restart: unless-stopped
+
 # Networks
 networks:
   pc2_memory_stack_network:
@@ -231,3 +269,4 @@ volumes:
   vector_store:
   context_store:
   experience_store:
+  scheduler_store:

@@ -117,14 +117,14 @@ services:
     command: ["python", "pc2_code/agents/task_scheduler.py"]
     ports:
       - "7315:7115"   # Service port
-      - "8315:7116"   # Health check port (note: 7116 not 8116 based on logs)
+      - "8315:8115"   # Health check port
     environment:
       LOG_LEVEL: "INFO"
       PYTHONPATH: "/app"
       REDIS_URL: "redis://redis_pc2_async:6379/2"
       NATS_SERVERS: "nats://nats_pc2_async:4222"
       PORT: "7115"
-      HEALTH_PORT: "7116"
+      HEALTH_PORT: "8115"
       SCOPE: "pc2_async_agents"
       SCHEDULE_INTERVAL: "30"
       MAX_PENDING_TASKS: "500"

@@ -44,33 +44,15 @@ RUN pip install --no-cache-dir \
     diskcache==5.6.3 \
     python-memcached==1.62
 
-# Install heavy ML dependencies separately with longer timeout
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    numpy==1.24.4
+# Install basic ML dependencies only (lightweight)
+RUN pip install --no-cache-dir \
+    numpy==1.24.4 \
+    pandas==2.1.3
 
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    scipy==1.11.4
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    scikit-learn==1.3.2
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    torch==2.1.1 --index-url https://download.pytorch.org/whl/cpu
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    transformers==4.35.2
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    sentence-transformers==2.2.2
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    chromadb==0.4.15
-
-RUN pip install --timeout=600 --retries=10 --no-cache-dir \
-    faiss-cpu==1.7.4
-
-# Copy the entire project
-COPY . .
+# Copy only necessary files (not entire project)
+COPY pc2_code/ ./pc2_code/
+COPY common/ ./common/
+COPY phase1_implementation/ ./phase1_implementation/
 
 # Set environment variables
 ENV PYTHONPATH=/app
