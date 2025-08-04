@@ -1,0 +1,5 @@
+[33m722055d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m 🔧 FIX: Python syntax errors in PC2 agents - indentation and misplaced imports
+[33mfa8db16[m  modified:   docker/pc2_memory_stack/Dockerfile        modified:   docker/pc2_memory_stack/docker-compose.yml
+[33me162317[m PC2 CONNECTIONS
+[33m84964b2[m PC2 DEPLOYMENT
+[33m2bec200[m READY FOR MAIN PC TESTING

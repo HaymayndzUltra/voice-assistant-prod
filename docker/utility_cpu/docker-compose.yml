@@ -108,16 +108,20 @@ services:
   smart_home_agent:
     image: utility_cpu:latest
     container_name: smart_home_agent
-    command: ["python", "agents/simple_smart_home_agent.py"]
+    command: ["python", "-m", "main_pc_code.agents.smart_home_agent"]
     ports:
-      - "7125:7125"  # Smart Home ZMQ port (working agent)
+      - "7125:7125"  # Smart Home ZMQ port
+      - "8125:8125"  # Health check port
     environment:
       LOG_LEVEL: "INFO"
-      # Working simple agent doesn't need Redis/NATS - it's self-contained
+      REDIS_URL: "redis://redis_utility:6379/0"
+      NATS_SERVERS: "nats://nats_utility:4222"
       TAPO_USERNAME: "${TAPO_USERNAME}"
       TAPO_PASSWORD: "${TAPO_PASSWORD}"
       VOICE_CONTROL: "enabled"
-      # Your Tapo L520 configuration (hardcoded in working agent)
+      INTELLIGENT_CONTROL: "enabled"
+      DEVICE_SCAN_INTERVAL: "60"
+      # Your Tapo L520 configuration
       TAPO_L520_IP: "192.168.100.63"
       TAPO_L520_NAME: "Living Room Light"
       TAPO_L520_LOCATION: "living_room"
@@ -125,6 +129,12 @@ services:
       code_generator:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8125/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - utility_net
 

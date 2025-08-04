@@ -15,9 +15,11 @@ import concurrent.futures
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
-# Add project paths
-sys.path.append('/app')
-sys.path.append('/home/haymayndz/AI_System_Monorepo')
+# Add project paths - use standard main_pc_code path management
+import os
+from pathlib import Path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from common.core.base_agent import BaseAgent
 from common.hybrid_api_manager import api_manager

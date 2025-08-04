@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.environment_standardizer import get_pc2_ip
+from common.utils.path_env import get_main_pc_code
 """
 Memory Scheduler Agent
 
@@ -24,10 +26,8 @@ from pathlib import Path
 
 
 # Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
 from common.utils.path_manager import PathManager
+
 # Add the project's pc2_code directory to the Python path
 PC2_CODE_DIR = get_main_pc_code()
 if PC2_CODE_DIR.as_posix() not in sys.path:
@@ -75,7 +75,7 @@ class MemoryScheduler(BaseAgent):
         super().__init__(name="MemoryScheduler", port=port, health_check_port=health_check_port, **kwargs)
         
         # Configuration
-        self.memory_orchestrator_host = get_pc2_ip())
+        self.memory_orchestrator_host = get_pc2_ip()
         self.memory_orchestrator_port = 7140
         self.memory_orchestrator_endpoint = f"tcp://{self.memory_orchestrator_host}:{self.memory_orchestrator_port}"
         

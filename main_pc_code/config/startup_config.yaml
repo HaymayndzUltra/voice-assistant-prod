@@ -198,6 +198,17 @@ agent_groups:
       dependencies:
       - ModelManagerSuite
       - SystemDigitalTwin
+    SmartHomeAgent:
+      script_path: main_pc_code/agents/smart_home_agent.py
+      port: "${PORT_OFFSET}+7125"
+      health_check_port: "${PORT_OFFSET}+8125"
+      required: false
+      dependencies:
+      - SystemDigitalTwin
+      config:
+        voice_control: enabled
+        intelligent_control: enabled
+        device_scan_interval: 60
     # LocalFineTunerAgent:
     #   # DISABLED: Local model fine-tuning - moved to cloud
     #   script_path: main_pc_code/FORMAINPC/local_fine_tuner_agent.py
@@ -633,6 +644,7 @@ docker_groups:
       - CodeGenerator
       - Executor
       - PredictiveHealthMonitor
+      - SmartHomeAgent
       - TranslationService
       - FixedStreamingTranslation
       - NLLBAdapter
