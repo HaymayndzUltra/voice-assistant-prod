@@ -20,11 +20,14 @@ pydub==0.25.1
 numpy==1.26.4
 scipy==1.13.0
 
-# Machine learning for speech
-torch==2.2.2
-torchaudio==2.2.2
+# Machine learning for speech (standardized versions)
+torch==2.1.0+cu121
+torchaudio==2.1.0
 transformers==4.39.3
 datasets==2.19.0
+
+# GPU-accelerated ONNX runtime (Main-PC hardening)
+onnxruntime-gpu==1.17.3
 
 # TTS engines
 pyttsx3==2.90

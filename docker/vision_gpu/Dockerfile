@@ -1,5 +1,5 @@
 # ---------- builder ----------
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,7 +12,7 @@ COPY docker/vision_gpu/minimal-requirements.txt /tmp/req.txt
 RUN pip install --no-cache-dir -r /tmp/req.txt
 
 # ---------- runtime ----------
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 libgl1-mesa-glx libglib2.0-0 \
@@ -29,4 +29,9 @@ COPY common/        /app/common/
 COPY common_utils/  /app/common_utils/
 
 WORKDIR /app
+
+# Add health check for GPU vision services
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python3 -c "import zmq; c = zmq.Context(); s = c.socket(zmq.REQ); s.connect('tcp://localhost:5556'); s.send_string('ping'); s.recv_string(); s.close(); c.term()" || exit 1
+
 CMD ["python3", "-m", "main_pc_code.agents.face_recognition_agent"]
