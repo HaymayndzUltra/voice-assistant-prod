@@ -15,6 +15,7 @@ import sys
 import os
 import time
 import logging
+from common.utils.log_setup import configure_logging
 import threading
 import json
 import zmq
@@ -30,9 +31,7 @@ import os
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -46,15 +45,7 @@ from main_pc_code.agents.request_coordinator import CircuitBreaker
 # --- Logging Setup ---
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_opportunity_detector.log"))),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger('LearningOpportunityDetector')
+logger = configure_logging(__name__, log_to_file=True)
 
 # --- Load configuration ---
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

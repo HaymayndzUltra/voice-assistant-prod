@@ -9,15 +9,10 @@ Predictive Health Monitor
 """
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 import logging
+from common.utils.log_setup import configure_logging
 import socket
 from common.pools.zmq_pool import get_req_socket, get_rep_socket
 
@@ -26,8 +21,7 @@ import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
-
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 from main_pc_code.utils.network import get_bind_address, get_host
 import yaml
 import time

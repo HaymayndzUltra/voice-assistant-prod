@@ -3,14 +3,14 @@ from common.utils.path_manager import PathManager
 # Ensure project root (main_pc_code) is in sys.path so that local packages can be imported reliably
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, '..'))
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 from common.core.base_agent import BaseAgent
 import json
 import subprocess
 import threading
 import logging
+from common.utils.log_setup import configure_logging
 import time
 # from web_automation import GLOBAL_TASK_MEMORY  # Unified adaptive memory and emotion/skill tracking (commented out for PC1)
 from common.config_manager import load_unified_config

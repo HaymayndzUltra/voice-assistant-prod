@@ -1,4 +1,5 @@
 import logging
+from common.utils.log_setup import configure_logging
 from common.pools.zmq_pool import get_rep_socket
 import time
 import uuid
@@ -19,8 +20,7 @@ from common.utils.data_models import ErrorSeverity
 import sys
 import os
 from common.utils.path_manager import PathManager
-
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 # Try importing optional dependencies
 try:
     LANGDETECT_AVAILABLE = True

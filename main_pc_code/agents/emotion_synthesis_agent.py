@@ -8,10 +8,7 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 from common.core.base_agent import BaseAgent
 import logging
@@ -25,16 +22,9 @@ import psutil
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "emotion_synthesis.log")),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Use canonical logging instead of basicConfig
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 class EmotionSynthesisAgent(BaseAgent):
     def __init__(self, port=None):

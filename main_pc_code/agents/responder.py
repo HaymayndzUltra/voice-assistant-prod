@@ -10,9 +10,7 @@ import os
 from common.utils.path_manager import PathManager
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
-# Ensure the main_pc_code directory is in sys.path
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
 from common.pools.zmq_pool import get_sub_socket
@@ -163,16 +161,9 @@ except ImportError as e:
 # VISUAL_FEEDBACK_ENABLED = False  # Set to True to enable visual feedback
 # VISUAL_FEEDBACK_DURATION = 3.0  # How long to show visual feedback in seconds
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-logger = logging.getLogger("ResponderAgent")
+# Use canonical logging instead of basicConfig
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Get interrupt port from args or use default
 # INTERRUPT_PORT = int(config.get("streaming_interrupt_handler_port", 5576))

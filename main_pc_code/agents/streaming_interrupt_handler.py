@@ -9,13 +9,7 @@ from datetime import datetime
 
 """
 
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = Path(PathManager.get_main_pc_code())
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 Streaming Interrupt Handler
 Monitors partial transcripts for interruption keywords and sends interrupt signals
@@ -25,6 +19,7 @@ import pickle
 import json
 import time
 import logging
+from common.utils.log_setup import configure_logging
 import os
 from main_pc_code.utils.service_discovery_client import get_service_address, register_service
 from main_pc_code.utils.env_loader import get_env

@@ -27,10 +27,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# --- Path Setup ---
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# --- Path Setup (sys.path.insert removed for Docker environment) ---
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent

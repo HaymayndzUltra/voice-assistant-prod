@@ -5,6 +5,7 @@ Feedback Handler Module
 Provides visual and voice confirmation feedback for command execution
 """
 import logging
+from common.utils.log_setup import configure_logging
 from main_pc_code.agents.error_publisher import ErrorPublisher
 import os
 import pickle

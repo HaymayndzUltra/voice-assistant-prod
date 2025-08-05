@@ -11,6 +11,7 @@ import sys
 import os
 from pathlib import Path
 import logging
+from common.utils.log_setup import configure_logging
 import time
 import threading
 import asyncio
@@ -43,15 +44,7 @@ import uvicorn
 log_file_path = Path(PathManager.get_project_root()) / "logs" / "observability_hub.log"
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(str(log_file_path))
-    ]
-)
-logger = logging.getLogger("ObservabilityHub")
+logger = configure_logging(__name__, log_to_file=True)
 
 # NumPy integration
 try:

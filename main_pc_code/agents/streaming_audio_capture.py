@@ -2,13 +2,10 @@
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = PathManager.get_project_root()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
 
 Streaming Audio Capture Module
 Streams audio chunks in real-time to downstream modules via ZMQ
@@ -40,9 +37,7 @@ import os
 from common.utils.path_manager import PathManager
 
 # Add project root to the Python path to allow for absolute imports
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 # Import with canonical path
 from common.core.base_agent import BaseAgent
@@ -67,9 +62,9 @@ except ImportError:
         logging.warning("Service discovery client not found; service registration disabled")
         return None
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("AudioCapture")
+# Use canonical logging instead of basicConfig
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Check for secure ZMQ configuration
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -124,10 +119,8 @@ class StreamingAudioCapture(BaseAgent):
         self.health_port = int(os.environ.get("HEALTH_CHECK_PORT", str(self.port + 1)))
         self.running = True
         self.start_time = time.time()
-        # Project root setup
+        # Project root setup (sys.path.insert removed for Docker environment)
         self.project_root = os.environ.get("PROJECT_ROOT", os.path.abspath(os.path.join("main_pc_code", "..")))
-        if self.project_root not in sys.path:
-            sys.path.insert(0, self.project_root)
         # Call BaseAgent's __init__
         super().__init__(port=self.port, name=self.name)
         # --- Original initialization preserved below ---

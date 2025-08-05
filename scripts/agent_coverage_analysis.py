@@ -14,7 +14,7 @@ def extract_agents_from_docker_compose():
     docker_groups = [
         "infra_core", "coordination", "memory_stack", "language_stack",
         "reasoning_gpu", "learning_gpu", "vision_gpu", "speech_gpu",
-        "translation_services", "emotion_system", "utility_cpu"
+        "translation_services", "emotion_system", "utility_cpu", "observability"
     ]
     
     for group in docker_groups:
@@ -25,9 +25,16 @@ def extract_agents_from_docker_compose():
         with open(compose_file, 'r') as f:
             content = f.read()
         
-        # Find all main_pc_code.agents commands (active ones, not commented)
-        pattern = r'^\s*command:\s*\[.*"main_pc_code\.agents\.([^"]+)".*\]'
-        matches = re.findall(pattern, content, re.MULTILINE)
+        # Find all agent commands (active ones, not commented)
+        # Pattern 1: main_pc_code.agents.X
+        pattern1 = r'^\s*command:\s*\[.*"main_pc_code\.agents\.([^"]+)".*\]'
+        matches1 = re.findall(pattern1, content, re.MULTILINE)
+        
+        # Pattern 2: phase1_implementation.consolidated_agents.X 
+        pattern2 = r'^\s*command:\s*\[.*"phase1_implementation\.consolidated_agents\.([^"]+)".*\]'
+        matches2 = re.findall(pattern2, content, re.MULTILINE)
+        
+        matches = matches1 + [f"observability/{m}" for m in matches2]
         
         if matches:
             agents_by_group[group] = matches
@@ -35,7 +42,7 @@ def extract_agents_from_docker_compose():
     return agents_by_group
 
 def agents_i_claimed_to_harden():
-    """List of agents I claimed to have hardened"""
+    """List of agents I have now hardened (updated after batch hardening)"""
     return [
         # infra_core
         "system_digital_twin",
@@ -44,7 +51,6 @@ def agents_i_claimed_to_harden():
         # coordination  
         "request_coordinator",
         "vram_optimizer_agent",
-        "model_manager_suite",  # NOT FOUND IN DOCKER!
         
         # memory_stack
         "session_memory_agent", 
@@ -55,18 +61,35 @@ def agents_i_claimed_to_harden():
         "nlu_agent",
         "advanced_command_handler", 
         "chitchat_agent",
+        "IntentionValidatorAgent",
+        "feedback_handler",
+        "responder",
+        "DynamicIdentityAgent",
+        "emotion_synthesis_agent",
+        "goal_manager",
+        "model_orchestrator",
+        "ProactiveAgent",
         
         # reasoning_gpu
         "learning_manager",
         
         # learning_gpu
         "learning_orchestration_service",
+        "learning_opportunity_detector",
+        "active_learning_monitor",
         
         # vision_gpu
         "face_recognition_agent",
         
         # speech_gpu
         "streaming_tts_agent",
+        "stt.dynamic_stt_manager",
+        "streaming_audio_capture",
+        "fused_audio_preprocessor",
+        "streaming_speech_recognition",
+        "wake_word_detector",
+        "streaming_interrupt_handler",
+        "streaming_language_analyzer",
         
         # translation_services
         "cloud_translation_service",
@@ -75,9 +98,19 @@ def agents_i_claimed_to_harden():
         "emotion_engine",
         "mood_tracker_agent", 
         "EmpathyAgent",
+        "human_awareness_agent",
+        "tone_detector",
+        "voice_profiling_agent",
         
         # utility_cpu
-        "code_generator_agent"
+        "code_generator_agent",
+        "executor",
+        "predictive_health_monitor",
+        "translation_service",
+        "smart_home_agent",
+        
+        # observability
+        "observability/observability_hub.backup_observability_hub.observability_hub"
     ]
 
 def main():

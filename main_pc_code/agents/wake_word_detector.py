@@ -17,6 +17,7 @@ import numpy as np
 import json
 import os
 import logging
+from common.utils.log_setup import configure_logging
 import threading
 import time
 import pickle
@@ -27,14 +28,7 @@ import psutil
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = configure_logging(__name__, log_to_file=True)
 
 # ZMQ Configuration from config with fallbacks
 ZMQ_PUB_PORT = int(config.get("pub_port", 6577))
@@ -430,8 +424,7 @@ class WakeWordDetector(BaseAgent):
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
     # Configure basic logging
-    logging.basicConfig(level=logging.INFO)
-    
+    logger = configure_logging(__name__, log_to_file=True)
     # Standardized main execution block
     agent = None
     try:
