@@ -17,7 +17,7 @@
       },
       {
         "text": "D. EXECUTION SCRIPT SKELETON — For each group G (loop in bash):\n\ncd docker/$G\n# 1. Static scan\npython /workspace/scripts/generate_requirements_${G}.py || exit 1\n# 2. Diff & update requirements.txt (sort -u)\npip install -r requirements.txt # ensure wheels resolve\n# 3. Build\ndocker build -t mainpc_${G}:latest .\n# 4. Compose up the subset\ndocker compose --profile main up -d $(yq '.services | keys | .[]' docker-compose.yml | grep $G)\n# 5. Health check\ndocker compose ps | grep $G | grep -v healthy && exit 1\n# 6. Test imports\nCID=$(docker compose ps -q $G | head -1)\ndocker exec $CID python /app/docker/$G/test_imports.py || exit 1\n\nAutomate in build_all_mainpc_groups.sh.\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Gamitin ang script na ito para sa bawat grupo upang masiguro ang pagkakapare-pareho ng proseso ng pag-build at pag-validate. Ang pag-automate ay nakakabawas ng human error. Huwag magpatuloy hangga't hindi tapos ang kasalukuyang hakbang. Bago sumulong, i-review ang natapos at ang susunod na gagawin. Ulitin ang review kung ang confidence score ay mababa sa 95%.",
-        "done": false
+        "done": true
       },
       {
         "text": "E. DONE DEFINITION\n☑ Zero sys.path.insert left in main_pc_code/agents.\n☑ logging.basicConfig removed / replaced.\n☑ python -m py_compile $(git ls-files 'main_pc_code/**/*.py') passes.\n☑ docker compose --profile main ps → all HEALTHY.\n☑ GPU images build and run with --gpus all.\n☑ Root compose (profiles main+pc2) starts full system with no unhealthy services.\nEstimated effort ≈ 12-14 engineer-hours (parallel build stages speed GPU images).\n\n──────────────────────────────────\nMAHALAGANG PAALALA: Ito ang huling checklist para sa acceptance. Ang buong gawain ay ituturing lamang na tapos kapag ang lahat ng item dito ay na-check at na-verify na. Huwag magpatuloy hangga't hindi tapos ang kasalukuyang hakbang. Bago sumulong, i-review ang natapos at ang susunod na gagawin. Ulitin ang review kung ang confidence score ay mababa sa 95%.",
@@ -26,6 +26,6 @@
     ],
     "status": "in_progress",
     "created": "2024-05-21T12:00:00Z",
-    "updated": "2025-08-05T22:53:53.470522+08:00"
+    "updated": "2025-08-05T23:30:18.452314+08:00"
   }
 ]
