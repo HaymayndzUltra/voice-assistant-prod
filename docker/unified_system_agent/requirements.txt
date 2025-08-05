@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+redis
+nats-py
+aiohttp
+requests
+psutil
+python-dotenv
+asyncio-mqtt
+numpy

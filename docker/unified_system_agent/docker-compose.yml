@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  unified_system_agent:
+    build:
+      context: ../..
+      dockerfile: docker/unified_system_agent/Dockerfile
+    image: unified_system_agent:latest
+    container_name: unified_system_agent
+    command: ["python", "-m", "main_pc_code.agents.unified_system_agent"]
+    ports:
+      - "7201:7201"  # Main service port
+      - "8201:8201"  # Health check port
+    environment:
+      LOG_LEVEL: INFO
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis:6379/0
+      NATS_SERVERS: nats://nats:4222
+      PORT: "7201"
+      HEALTH_PORT: "8201"
+      SERVICE_PORT: "7201"
+    depends_on:
+      - system_digital_twin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8201/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - unified_system_agent_net
+
+networks:
+  unified_system_agent_net:
+    driver: bridge
