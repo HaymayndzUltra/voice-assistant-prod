@@ -1,32 +1,25 @@
-# PC2 Infrastructure Core Requirements - Base packages
-redis==4.6.0
-nats-py==2.5.0
+# PC2 Infrastructure Core Requirements - Optimized for auto-detected imports
+# Core async and messaging
 fastapi==0.104.1
 uvicorn==0.24.0
+redis==4.6.0
+nats-py==2.5.0
+
+# ZMQ and monitoring
+pyzmq==25.1.2
 prometheus-client==0.19.0
 psutil==5.9.6
-aiohttp==3.9.1
-asyncio-mqtt==0.13.0
-pydantic==2.5.2
-python-dotenv==1.0.0
-PyJWT==2.8.0
-websockets==12.0
+
+# Network and HTTP
 requests==2.31.0
+aiohttp==3.9.1
 
-# ZMQ and YAML support
-pyzmq==25.1.2
+# Data handling
 PyYAML==6.0.1
-
-# Additional common dependencies (sqlite3 is built into Python)
-sqlalchemy==2.0.25
 numpy==1.24.4
-scipy==1.11.4
-scikit-learn==1.3.2
 
-# Optional GPU/ML libs used by some agents (ResourceManager GPU monitoring)
+# ML/GPU support (detected by auto scan)
 torch==2.1.0
 
-# HTTP and async support
-httpx==0.25.2
-aiofiles==23.2.1
-starlette==0.27.0
+# Python built-ins (sqlite3 is built-in, dataclasses in Python 3.7+)
+# Note: pc2_code is internal module, not external package
