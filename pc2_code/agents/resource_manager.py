@@ -16,6 +16,8 @@ from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
 # Import path utilities
 from common.utils.path_manager import PathManager
+# Import error publisher factory for centralized error handling
+from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
 # Try to import torch for GPU monitoring
 try:
     import torch
@@ -82,6 +84,7 @@ class ResourceManager(BaseAgent):
         # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
         # PC2 Error Bus Integration (Phase 1.3)
         self.error_publisher = create_pc2_error_publisher("resource_manager")
+
     def _setup_sockets(self):
         """Setup ZMQ sockets."""
         # Main socket for handling requests
