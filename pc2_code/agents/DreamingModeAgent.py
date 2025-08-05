@@ -27,6 +27,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+
 
 # Import path manager for containerization-friendly paths
 import sys
@@ -61,7 +64,7 @@ def load_network_config():
         # Default fallback values
         return {
             "main_pc_ip": get_mainpc_ip(),
-            "pc2_ip": get_pc2_ip()),
+            "pc2_ip": get_pc2_ip(),
             "bind_address": os.environ.get("BIND_ADDRESS", "0.0.0.0"),
             "secure_zmq": False,
             "ports": {
@@ -89,8 +92,8 @@ config = Config().get_config()
 network_config = load_network_config()
 
 # Get machine IPs from config
-MAIN_PC_IP = get_mainpc_ip())
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()))
+MAIN_PC_IP = get_mainpc_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", os.environ.get("BIND_ADDRESS", "0.0.0.0"))
 
 # Get port configuration
@@ -475,9 +478,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

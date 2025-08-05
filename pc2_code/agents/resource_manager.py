@@ -13,6 +13,8 @@ from collections import deque
 from typing import Dict, Any, Optional
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Import path utilities
 from common.utils.path_manager import PathManager
@@ -80,10 +82,10 @@ class ResourceManager(BaseAgent):
          self._init_thread.start()
          
          logger.info(f"ResourceManager starting on port {port} (health: {health_port})")
-    
-        # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
-        # PC2 Error Bus Integration (Phase 1.3)
-        self.error_publisher = create_pc2_error_publisher("resource_manager")
+         
+         # ✅ Using BaseAgent's built-in error reporting (UnifiedErrorHandler)
+         # PC2 Error Bus Integration (Phase 1.3)
+         self.error_publisher = create_pc2_error_publisher("resource_manager")
 
     def _setup_sockets(self):
         """Setup ZMQ sockets."""
@@ -444,9 +446,6 @@ if __name__ == "__main__":
         print(f"Shutting down {agent.name if agent else 'agent'} on PC2...")
     except Exception as e:
         import traceback
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:

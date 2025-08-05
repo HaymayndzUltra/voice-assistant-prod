@@ -38,3 +38,6 @@ EXPOSE 9100 9110 7113 8113
 
 # Default command (will be overridden by docker-compose)
 CMD ["python", "pc2_code/agents/resource_manager.py"]
+
+# Health check as required by endorsement document
+HEALTHCHECK CMD curl -f http://localhost:${HEALTH_PORT}/health || exit 1
