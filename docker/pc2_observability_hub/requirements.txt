@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+redis
+nats-py
+aiohttp
+requests
+prometheus-client
+psutil
+python-dotenv

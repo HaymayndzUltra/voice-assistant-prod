@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl gcc build-essential && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+COPY pc2_code /app/pc2_code
+COPY common /app/common
+COPY common_utils /app/common_utils
+COPY phase1_implementation /app/phase1_implementation
+WORKDIR /app
+ENV PYTHONPATH=/app
+HEALTHCHECK CMD curl -f http://localhost:9110/health || exit 1
+CMD ["python", "phase1_implementation/consolidated_agents/observability_hub/backup_observability_hub/observability_hub.py"]
