@@ -23,5 +23,9 @@ scikit-learn==1.4.2
 scipy==1.13.0
 numpy==1.26.4
 
+# Language processing libraries (Main-PC hardening)
+sentencepiece==0.1.99
+tokenizers==0.19.1
+
 # Text-to-Speech (simplified to avoid conflicts)
 pyttsx3==2.90

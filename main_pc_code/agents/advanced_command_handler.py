@@ -27,8 +27,9 @@ from common.core.base_agent import BaseAgent
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler
 from common.config_manager import load_unified_config
 config = load_unified_config(os.path.join(PathManager.get_project_root(), 'main_pc_code', 'config', 'startup_config.yaml'))
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('AdvancedCommandHandler')
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 ZMQ_EXECUTOR_PORT = 6001
 ZMQ_COORDINATOR_PORT = 5590
 ZMQ_REQUEST_TIMEOUT = 5000

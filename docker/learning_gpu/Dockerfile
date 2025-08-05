@@ -1,5 +1,5 @@
 # ---------- builder ----------
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04 AS builder
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -11,7 +11,7 @@ COPY docker/learning_gpu/minimal-requirements.txt /tmp/req.txt
 RUN pip install --no-cache-dir -r /tmp/req.txt
 
 # ---------- runtime ----------
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     && ln -s /usr/bin/python3 /usr/bin/python \
@@ -27,4 +27,12 @@ COPY common/        /app/common/
 COPY common_utils/  /app/common_utils/
 
 WORKDIR /app
+
+# Create data directory for model checkpoints
+RUN mkdir -p /workspace/data && chmod 755 /workspace/data
+
+# Add health check for GPU learning services
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python3 -c "import zmq; c = zmq.Context(); s = c.socket(zmq.REQ); s.connect('tcp://localhost:5562'); s.send_string('ping'); s.recv_string(); s.close(); c.term()" || exit 1
+
 CMD ["python3", "-m", "main_pc_code.agents.training_manager"]

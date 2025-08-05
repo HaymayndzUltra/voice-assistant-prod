@@ -25,9 +25,7 @@ import os
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -38,17 +36,8 @@ from common.utils.learning_models import TrainingCycle
 from remote_api_adapter.adapter import RemoteApiAdapter  # Hybrid LLM integration
 
 # --- Logging Setup ---
-log_dir = 'logs'
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "learning_orchestration_service.log"))),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger('LearningOrchestrationService')
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # --- Constants ---
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))

@@ -89,6 +89,8 @@ services:
       - REDIS_URL=redis://redis_learning:6379
       - NATS_SERVERS=nats://nats_learning:4222
       - LOG_LEVEL=INFO
+    volumes:
+      - /workspace/data:/workspace/data
     depends_on:
       redis_learning:
         condition: service_healthy

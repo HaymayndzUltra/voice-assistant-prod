@@ -7,9 +7,7 @@ from common.config.unified_config_manager import Config
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = get_main_pc_code()
-if MAIN_PC_CODE_DIR.as_posix() not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR.as_posix())
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 NLU Agent
 ---------
@@ -42,21 +40,14 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 # Load configuration at module level
 # New unified config manager - cached singleton with environment awareness
 config = Config.for_agent(__file__)
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "nlu_agent.log")))
-    ]
-)
-logger = logging.getLogger("NLUAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Constants
 ZMQ_REQUEST_TIMEOUT = 5000  # ms
