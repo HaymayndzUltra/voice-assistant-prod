@@ -38,6 +38,11 @@ def send_tutor_request(action, subject=None, difficulty=None, session_id=None, u
             print("\n<<< ERROR: No response within 10 seconds.")
             return None
     finally:
+        try:
+            socket.close()
+        except Exception:
+            pass
+
 def test_different_subjects():
     print("\n=== Testing Different Subjects ===")
     
