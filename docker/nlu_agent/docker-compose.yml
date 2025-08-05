@@ -1,0 +1,46 @@
+networks:
+  nlu_agent_net:
+    driver: bridge
+services:
+  nlu_agent:
+    build:
+      context: ../..
+      dockerfile: docker/nlu_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.nlu_agent
+    container_name: nlu_agent
+    depends_on:
+    - redis_language
+    - nats_language
+    environment:
+      AGENT_NAME: NLUAgent
+      AGENT_PORT: '5585'
+      FALLBACK_TO_CLOUD: 'true'
+      HEALTH_PORT: '6585'
+      LOCAL_MODEL_TIMEOUT: '5'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_language:4222
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      REDIS_URL: redis://redis_language:6379/0
+      SERVICE_REGISTRY_REDIS_URL: redis://redis_language:6379/0
+      USE_LOCAL_MODELS: 'true'
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6585/health
+      timeout: 10s
+    image: nlu_agent:latest
+    networks:
+    - nlu_agent_net
+    ports:
+    - 5585:5585
+    - 6585:6585
+    restart: unless-stopped
+version: '3.8'

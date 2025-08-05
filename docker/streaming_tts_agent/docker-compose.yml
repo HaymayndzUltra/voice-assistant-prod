@@ -1,0 +1,37 @@
+networks:
+  streaming_tts_agent_net:
+    driver: bridge
+services:
+  streaming_tts_agent:
+    build:
+      context: ../..
+      dockerfile: docker/streaming_tts_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.streaming_tts_agent
+    container_name: streaming_tts_agent
+    environment:
+      AGENT_NAME: StreamingTTSAgent
+      AGENT_PORT: '5556'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_speech:4222
+      REDIS_URL: redis://redis_speech:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6556/health
+      timeout: 10s
+    image: streaming_tts_agent:latest
+    networks:
+    - streaming_tts_agent_net
+    ports:
+    - 5556:5556
+    - 6556:6556
+    restart: unless-stopped
+version: '3.8'

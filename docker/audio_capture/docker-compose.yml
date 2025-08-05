@@ -1,0 +1,37 @@
+networks:
+  audio_capture_net:
+    driver: bridge
+services:
+  audio_capture:
+    build:
+      context: ../..
+      dockerfile: docker/audio_capture/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.streaming_audio_capture
+    container_name: audio_capture
+    environment:
+      AGENT_NAME: AudioCapture
+      AGENT_PORT: '5553'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_speech:4222
+      REDIS_URL: redis://redis_speech:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6553/health
+      timeout: 10s
+    image: audio_capture:latest
+    networks:
+    - audio_capture_net
+    ports:
+    - 5553:5553
+    - 6553:6553
+    restart: unless-stopped
+version: '3.8'

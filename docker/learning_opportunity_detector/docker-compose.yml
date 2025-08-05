@@ -1,0 +1,39 @@
+networks:
+  learning_opportunity_detector_net:
+    driver: bridge
+services:
+  learning_opportunity_detector:
+    build:
+      context: ../..
+      dockerfile: docker/learning_opportunity_detector/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.learning_opportunity_detector
+    container_name: learning_opportunity_detector
+    depends_on:
+    - redis_learning
+    environment:
+      AGENT_NAME: LearningOpportunityDetector
+      AGENT_PORT: '5564'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_learning:4222
+      REDIS_URL: redis://redis_learning:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6564/health
+      timeout: 10s
+    image: learning_opportunity_detector:latest
+    networks:
+    - learning_opportunity_detector_net
+    ports:
+    - 5564:5564
+    - 6564:6564
+    restart: unless-stopped
+version: '3.8'

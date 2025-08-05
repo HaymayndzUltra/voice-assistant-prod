@@ -1,0 +1,26 @@
+networks:
+  code_generator_net:
+    driver: bridge
+services:
+  code_generator:
+    build:
+      context: ../..
+      dockerfile: docker/code_generator/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.code_generator_agent
+    container_name: code_generator
+    depends_on:
+    - redis_utility
+    - nats_utility
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_utility:4222
+      REDIS_URL: redis://redis_utility:6379/0
+      SERVICE_REGISTRY_REDIS_URL: redis://redis_utility:6379/0
+    image: code_generator:latest
+    networks:
+    - code_generator_net
+    restart: unless-stopped
+version: '3.8'

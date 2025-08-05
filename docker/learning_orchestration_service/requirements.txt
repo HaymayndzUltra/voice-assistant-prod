@@ -1,0 +1,2 @@
+pyzmq
+remote_api_adapter

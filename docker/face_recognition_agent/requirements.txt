@@ -1,0 +1,8 @@
+dataclasses
+filterpy
+insightface
+numpy
+onnxruntime
+opencv-python
+psutil
+torch

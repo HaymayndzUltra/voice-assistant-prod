@@ -1,0 +1,22 @@
+networks:
+  executor_net:
+    driver: bridge
+services:
+  executor:
+    build:
+      context: ../..
+      dockerfile: docker/executor/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.executor
+    container_name: executor
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_utility:4222
+      REDIS_URL: redis://redis_utility:6379/0
+    image: executor:latest
+    networks:
+    - executor_net
+    restart: unless-stopped
+version: '3.8'

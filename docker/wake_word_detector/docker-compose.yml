@@ -1,0 +1,39 @@
+networks:
+  wake_word_detector_net:
+    driver: bridge
+services:
+  wake_word_detector:
+    build:
+      context: ../..
+      dockerfile: docker/wake_word_detector/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.wake_word_detector
+    container_name: wake_word_detector
+    environment:
+      AGENT_NAME: WakeWordDetector
+      AGENT_PORT: '5557'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_speech:4222
+      PORCUPINE_ACCESS_KEY: NUv4S1SW3VoT8vbF5XLn6nn2+czHtMsEX3U+YM42LwPTAtiNjSpkww==
+      REDIS_URL: redis://redis_speech:6379
+      WAKE_WORD_PATH: /app/main_pc_code/config/wake_words/High-minds_en_linux_v3_0_0.ppn
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6557/health
+      timeout: 10s
+    image: wake_word_detector:latest
+    networks:
+    - wake_word_detector_net
+    ports:
+    - 5557:5557
+    - 6557:6557
+    restart: unless-stopped
+version: '3.8'

@@ -1,0 +1,6 @@
+concurrent
+fasttext
+langdetect
+numpy
+pyzmq
+re

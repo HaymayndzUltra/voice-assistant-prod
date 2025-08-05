@@ -1,0 +1,22 @@
+networks:
+  tone_detector_net:
+    driver: bridge
+services:
+  tone_detector:
+    build:
+      context: ../..
+      dockerfile: docker/tone_detector/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.tone_detector
+    container_name: tone_detector
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_emotion:4222
+      REDIS_URL: redis://redis_emotion:6379/0
+    image: tone_detector:latest
+    networks:
+    - tone_detector_net
+    restart: unless-stopped
+version: '3.8'

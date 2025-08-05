@@ -1,0 +1,38 @@
+networks:
+  cognitive_model_agent_net:
+    driver: bridge
+services:
+  cognitive_model_agent:
+    build:
+      context: ../..
+      dockerfile: docker/cognitive_model_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.learning_manager
+    container_name: cognitive_model_agent
+    environment:
+      AGENT_NAME: CognitiveModelAgent
+      AGENT_PORT: '5641'
+      HEALTH_CHECK_PORT: '6641'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_reasoning:4222
+      REDIS_URL: redis://redis_reasoning:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6641/health
+      timeout: 10s
+    image: cognitive_model_agent:latest
+    networks:
+    - cognitive_model_agent_net
+    ports:
+    - 5641:5641
+    - 6641:6641
+    restart: unless-stopped
+version: '3.8'

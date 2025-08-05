@@ -1,0 +1,40 @@
+networks:
+  stt_service_net:
+    driver: bridge
+services:
+  stt_service:
+    build:
+      context: ../..
+      dockerfile: docker/stt_service/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.stt.dynamic_stt_manager
+    container_name: stt_service
+    depends_on:
+    - redis_speech
+    - nats_speech
+    environment:
+      AGENT_NAME: STTService
+      AGENT_PORT: '5551'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_speech:4222
+      REDIS_URL: redis://redis_speech:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6551/health
+      timeout: 10s
+    image: stt_service:latest
+    networks:
+    - stt_service_net
+    ports:
+    - 5551:5551
+    - 6551:6551
+    restart: unless-stopped
+version: '3.8'

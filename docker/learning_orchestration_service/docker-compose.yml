@@ -1,0 +1,40 @@
+networks:
+  learning_orchestration_service_net:
+    driver: bridge
+services:
+  learning_orchestration_service:
+    build:
+      context: ../..
+      dockerfile: docker/learning_orchestration_service/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.learning_orchestration_service
+    container_name: learning_orchestration_service
+    depends_on:
+    - redis_learning
+    environment:
+      AGENT_NAME: LearningOrchestrationService
+      AGENT_PORT: '5563'
+      HEALTH_CHECK_PORT: '6563'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_learning:4222
+      REDIS_URL: redis://redis_learning:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6563/health
+      timeout: 10s
+    image: learning_orchestration_service:latest
+    networks:
+    - learning_orchestration_service_net
+    ports:
+    - 5563:5563
+    - 6563:6563
+    restart: unless-stopped
+version: '3.8'

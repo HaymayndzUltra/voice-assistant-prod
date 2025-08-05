@@ -1,0 +1,22 @@
+networks:
+  mood_tracker_net:
+    driver: bridge
+services:
+  mood_tracker:
+    build:
+      context: ../..
+      dockerfile: docker/mood_tracker/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.mood_tracker_agent
+    container_name: mood_tracker
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_emotion:4222
+      REDIS_URL: redis://redis_emotion:6379/0
+    image: mood_tracker:latest
+    networks:
+    - mood_tracker_net
+    restart: unless-stopped
+version: '3.8'

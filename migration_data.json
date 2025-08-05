@@ -1,0 +1,680 @@
+{
+  "migration_plan": {
+    "total_agents": 47,
+    "extraction_timestamp": "2025-01-10T00:00:00Z",
+    "source_files_validated": [
+      "/workspace/docker/infra_core/docker-compose.yml",
+      "/workspace/docker/coordination/docker-compose.yml", 
+      "/workspace/docker/memory_stack/docker-compose.yml",
+      "/workspace/docker/language_stack/docker-compose.yml",
+      "/workspace/docker/reasoning_gpu/docker-compose.yml",
+      "/workspace/docker/learning_gpu/docker-compose.yml",
+      "/workspace/docker/vision_gpu/docker-compose.yml",
+      "/workspace/docker/speech_gpu/docker-compose.yml",
+      "/workspace/docker/translation_services/docker-compose.yml",
+      "/workspace/docker/emotion_system/docker-compose.yml",
+      "/workspace/docker/utility_cpu/docker-compose.yml",
+      "/workspace/docker/observability/docker-compose.yml"
+    ]
+  },
+  "agents": {
+    "service_registry": {
+      "source_file": "/workspace/docker/infra_core/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.service_registry_agent"],
+      "ports": ["7200:7200", "8200:8200"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app",
+        "NATS_SERVERS": "nats://nats:4222",
+        "REDIS_URL": "redis://redis:6379/0"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "system_digital_twin": {
+      "source_file": "/workspace/docker/infra_core/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.system_digital_twin"],
+      "ports": ["7220:7220", "8220:8220"],
+      "environment": {
+        "ERROR_BUS_HOST": "localhost",
+        "ERROR_BUS_PORT": "7150",
+        "LOG_LEVEL": "INFO",
+        "PYTHONPATH": "/app"
+      },
+      "depends_on": ["service_registry", "redis", "nats"]
+    },
+    "request_coordinator": {
+      "source_file": "/workspace/docker/coordination/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.request_coordinator"],
+      "ports": ["26002:26002", "27002:27002"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "REDIS_HOST": "redis_coordination",
+        "REDIS_PORT": "6379",
+        "NATS_HOST": "nats_coordination",
+        "NATS_PORT": "4222"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "model_manager_suite_coordination": {
+      "source_file": "/workspace/docker/coordination/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.model_manager_suite"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "CUDA_VISIBLE_DEVICES": "0"
+      },
+      "depends_on": ["request_coordinator", "redis"]
+    },
+    "vram_optimizer": {
+      "source_file": "/workspace/docker/coordination/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.vram_optimizer_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "CUDA_VISIBLE_DEVICES": "0"
+      },
+      "depends_on": ["request_coordinator"]
+    },
+    "memory_client": {
+      "source_file": "/workspace/docker/memory_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.memory_client"],
+      "ports": ["5715:5715"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_memory:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_memory:6379/0",
+        "NATS_SERVERS": "nats://nats_memory:4222"
+      },
+      "depends_on": ["redis_memory", "nats_memory"]
+    },
+    "session_memory_agent": {
+      "source_file": "/workspace/docker/memory_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.session_memory_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_memory:6379/0",
+        "NATS_SERVERS": "nats://nats_memory:4222"
+      },
+      "depends_on": ["memory_client"]
+    },
+    "knowledge_base": {
+      "source_file": "/workspace/docker/memory_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.knowledge_base"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_memory:6379/0",
+        "NATS_SERVERS": "nats://nats_memory:4222"
+      },
+      "depends_on": ["memory_client"]
+    },
+    "nlu_agent": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.nlu_agent"],
+      "ports": ["5585:5585", "6585:6585"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "NLUAgent",
+        "AGENT_PORT": "5585",
+        "HEALTH_PORT": "6585",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "USE_LOCAL_MODELS": "true",
+        "FALLBACK_TO_CLOUD": "true",
+        "LOCAL_MODEL_TIMEOUT": "5",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_language", "nats_language"]
+    },
+    "intention_validator": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.IntentionValidatorAgent"],
+      "ports": ["5586:5586", "6586:6586"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "IntentionValidatorAgent",
+        "AGENT_PORT": "5586",
+        "HEALTH_PORT": "6586",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "advanced_command_handler": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.advanced_command_handler"],
+      "ports": ["5587:5587", "6587:6587"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "AdvancedCommandHandler",
+        "AGENT_PORT": "5587",
+        "HEALTH_PORT": "6587",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "chitchat_agent": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.chitchat_agent"],
+      "ports": ["5588:5588", "6588:6588"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "ChitchatAgent",
+        "AGENT_PORT": "5588",
+        "HEALTH_PORT": "6588",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "feedback_handler": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.feedback_handler"],
+      "ports": ["5589:5589", "6589:6589"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "FeedbackHandler",
+        "AGENT_PORT": "5589",
+        "HEALTH_PORT": "6589",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "responder": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.responder"],
+      "ports": ["5598:5598", "6598:6598"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "Responder",
+        "AGENT_PORT": "5598",
+        "HEALTH_PORT": "6598",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "dynamic_identity_agent": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.DynamicIdentityAgent"],
+      "ports": ["5591:5591", "6591:6591"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "DynamicIdentityAgent",
+        "AGENT_PORT": "5591",
+        "HEALTH_PORT": "6591",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "emotion_synthesis_agent": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.emotion_synthesis_agent"],
+      "ports": ["5592:5592", "6592:6592"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "EmotionSynthesisAgent",
+        "AGENT_PORT": "5592",
+        "HEALTH_PORT": "6592",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "goal_manager": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.goal_manager"],
+      "ports": ["5593:5593", "6593:6593"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "GoalManager",
+        "AGENT_PORT": "5593",
+        "HEALTH_PORT": "6593",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "model_orchestrator": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.model_orchestrator"],
+      "ports": ["5594:5594", "6594:6594"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "ModelOrchestrator",
+        "AGENT_PORT": "5594",
+        "HEALTH_PORT": "6594",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "proactive_agent": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.ProactiveAgent"],
+      "ports": ["5595:5595", "6595:6595"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "ProactiveAgent",
+        "AGENT_PORT": "5595",
+        "HEALTH_PORT": "6595",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["nlu_agent"]
+    },
+    "model_manager_suite": {
+      "source_file": "/workspace/docker/language_stack/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.model_manager_suite", "--port", "5570", "--health-port", "6570"],
+      "ports": ["5570:5570", "6570:6570"],
+      "environment": {
+        "REDIS_URL": "redis://redis_language:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_language:6379/0",
+        "NATS_SERVERS": "nats://nats_language:4222",
+        "AGENT_NAME": "ModelManagerSuite",
+        "AGENT_PORT": "5570",
+        "HEALTH_PORT": "6570",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_language", "nats_language"]
+    },
+    "chain_of_thought_agent": {
+      "source_file": "/workspace/docker/reasoning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.learning_manager"],
+      "ports": ["5612:5612", "6612:6612"],
+      "environment": {
+        "AGENT_NAME": "ChainOfThoughtAgent",
+        "AGENT_PORT": "5612",
+        "HEALTH_CHECK_PORT": "6612",
+        "REDIS_URL": "redis://redis_reasoning:6379",
+        "NATS_SERVERS": "nats://nats_reasoning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_reasoning", "nats_reasoning"]
+    },
+    "cognitive_model_agent": {
+      "source_file": "/workspace/docker/reasoning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.learning_manager"],
+      "ports": ["5641:5641", "6641:6641"],
+      "environment": {
+        "AGENT_NAME": "CognitiveModelAgent",
+        "AGENT_PORT": "5641",
+        "HEALTH_CHECK_PORT": "6641",
+        "REDIS_URL": "redis://redis_reasoning:6379",
+        "NATS_SERVERS": "nats://nats_reasoning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["chain_of_thought_agent"]
+    },
+    "learning_manager": {
+      "source_file": "/workspace/docker/learning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.learning_manager"],
+      "ports": ["5562:5562", "6562:6562"],
+      "environment": {
+        "AGENT_NAME": "LearningManager",
+        "AGENT_PORT": "5562",
+        "HEALTH_CHECK_PORT": "6562",
+        "REDIS_URL": "redis://redis_learning:6379",
+        "NATS_SERVERS": "nats://nats_learning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_learning"]
+    },
+    "learning_orchestration_service": {
+      "source_file": "/workspace/docker/learning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.learning_orchestration_service"],
+      "ports": ["5563:5563", "6563:6563"],
+      "environment": {
+        "AGENT_NAME": "LearningOrchestrationService",
+        "AGENT_PORT": "5563",
+        "HEALTH_CHECK_PORT": "6563",
+        "REDIS_URL": "redis://redis_learning:6379",
+        "NATS_SERVERS": "nats://nats_learning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_learning"]
+    },
+    "learning_opportunity_detector": {
+      "source_file": "/workspace/docker/learning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.learning_opportunity_detector"],
+      "ports": ["5564:5564", "6564:6564"],
+      "environment": {
+        "AGENT_NAME": "LearningOpportunityDetector",
+        "AGENT_PORT": "5564",
+        "REDIS_URL": "redis://redis_learning:6379",
+        "NATS_SERVERS": "nats://nats_learning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_learning"]
+    },
+    "active_learning_monitor": {
+      "source_file": "/workspace/docker/learning_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.active_learning_monitor"],
+      "ports": ["5565:5565", "6565:6565"],
+      "environment": {
+        "AGENT_NAME": "ActiveLearningMonitor",
+        "AGENT_PORT": "5565",
+        "REDIS_URL": "redis://redis_learning:6379",
+        "NATS_SERVERS": "nats://nats_learning:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_learning"]
+    },
+    "face_recognition_agent": {
+      "source_file": "/workspace/docker/vision_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.face_recognition_agent"],
+      "ports": ["5596:5596", "6596:6596"],
+      "environment": {
+        "AGENT_NAME": "FaceRecognitionAgent",
+        "AGENT_PORT": "5596",
+        "REDIS_URL": "redis://redis_vision:6379",
+        "NATS_SERVERS": "nats://nats_vision:4222",
+        "LOG_LEVEL": "INFO",
+        "CUDA_VISIBLE_DEVICES": "0"
+      },
+      "depends_on": ["redis_vision", "nats_vision"]
+    },
+    "stt_service": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.stt.dynamic_stt_manager"],
+      "ports": ["5551:5551", "6551:6551"],
+      "environment": {
+        "AGENT_NAME": "STTService",
+        "AGENT_PORT": "5551",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["redis_speech", "nats_speech"]
+    },
+    "tts_service": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_tts_agent"],
+      "ports": ["5552:5552", "6552:6552"],
+      "environment": {
+        "AGENT_NAME": "TTSService",
+        "AGENT_PORT": "5552",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "audio_capture": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_audio_capture"],
+      "ports": ["5553:5553", "6553:6553"],
+      "environment": {
+        "AGENT_NAME": "AudioCapture",
+        "AGENT_PORT": "5553",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "fused_audio_preprocessor": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.fused_audio_preprocessor"],
+      "ports": ["5554:5554", "6554:6554"],
+      "environment": {
+        "AGENT_NAME": "FusedAudioPreprocessor",
+        "AGENT_PORT": "5554",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "streaming_speech_recognition": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_speech_recognition"],
+      "ports": ["5555:5555", "6555:6555"],
+      "environment": {
+        "AGENT_NAME": "StreamingSpeechRecognition",
+        "AGENT_PORT": "5555",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "streaming_tts_agent": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_tts_agent"],
+      "ports": ["5556:5556", "6556:6556"],
+      "environment": {
+        "AGENT_NAME": "StreamingTTSAgent",
+        "AGENT_PORT": "5556",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "wake_word_detector": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.wake_word_detector"],
+      "ports": ["5557:5557", "6557:6557"],
+      "environment": {
+        "AGENT_NAME": "WakeWordDetector",
+        "AGENT_PORT": "5557",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO",
+        "PORCUPINE_ACCESS_KEY": "NUv4S1SW3VoT8vbF5XLn6nn2+czHtMsEX3U+YM42LwPTAtiNjSpkww==",
+        "WAKE_WORD_PATH": "/app/main_pc_code/config/wake_words/High-minds_en_linux_v3_0_0.ppn"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "streaming_interrupt_handler": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_interrupt_handler"],
+      "ports": ["5558:5558", "6558:6558"],
+      "environment": {
+        "AGENT_NAME": "StreamingInterruptHandler",
+        "AGENT_PORT": "5558",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "streaming_language_analyzer": {
+      "source_file": "/workspace/docker/speech_gpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.streaming_language_analyzer"],
+      "ports": ["5559:5559", "6559:6559"],
+      "environment": {
+        "AGENT_NAME": "StreamingLanguageAnalyzer",
+        "AGENT_PORT": "5559",
+        "REDIS_URL": "redis://redis_speech:6379",
+        "NATS_SERVERS": "nats://nats_speech:4222",
+        "LOG_LEVEL": "INFO"
+      },
+      "depends_on": ["stt_service"]
+    },
+    "cloud_translation_service": {
+      "source_file": "/workspace/docker/translation_services/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.cloud_translation_service"],
+      "ports": ["5584:5584", "6584:6584"],
+      "environment": {
+        "AGENT_NAME": "CloudTranslationService",
+        "AGENT_PORT": "5584",
+        "HEALTH_CHECK_PORT": "6584",
+        "REDIS_URL": "redis://redis_translation:6379",
+        "NATS_SERVERS": "nats://nats_translation:4222",
+        "LOG_LEVEL": "INFO",
+        "TRANSLATE_PRIMARY_PROVIDER": "${TRANSLATE_PRIMARY_PROVIDER:-google}",
+        "TRANSLATE_FALLBACK_PROVIDER": "${TRANSLATE_FALLBACK_PROVIDER:-azure}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GOOGLE_TRANSLATE_API_KEY": "${GOOGLE_TRANSLATE_API_KEY:-}",
+        "AZURE_TRANSLATOR_KEY": "${AZURE_TRANSLATOR_KEY:-}",
+        "AZURE_TRANSLATOR_REGION": "${AZURE_TRANSLATOR_REGION:-}",
+        "AWS_ACCESS_KEY_ID": "${AWS_ACCESS_KEY_ID:-}",
+        "AWS_SECRET_ACCESS_KEY": "${AWS_SECRET_ACCESS_KEY:-}",
+        "AWS_REGION": "${AWS_REGION:-us-east-1}"
+      },
+      "depends_on": ["redis", "nats"]
+    },
+    "emotion_engine": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.emotion_engine"],
+      "ports": ["5590:5590", "6590:6590"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["redis_emotion", "nats_emotion"]
+    },
+    "mood_tracker": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.mood_tracker_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["emotion_engine"]
+    },
+    "human_awareness": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.human_awareness_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["emotion_engine"]
+    },
+    "tone_detector": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.tone_detector"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["emotion_engine"]
+    },
+    "voice_profiling": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.voice_profiling_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["emotion_engine"]
+    },
+    "empathy_agent": {
+      "source_file": "/workspace/docker/emotion_system/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.EmpathyAgent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_emotion:6379/0",
+        "NATS_SERVERS": "nats://nats_emotion:4222"
+      },
+      "depends_on": ["emotion_engine"]
+    },
+    "code_generator": {
+      "source_file": "/workspace/docker/utility_cpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.code_generator_agent"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_utility:6379/0",
+        "SERVICE_REGISTRY_REDIS_URL": "redis://redis_utility:6379/0",
+        "NATS_SERVERS": "nats://nats_utility:4222"
+      },
+      "depends_on": ["redis_utility", "nats_utility"]
+    },
+    "executor": {
+      "source_file": "/workspace/docker/utility_cpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.executor"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_utility:6379/0",
+        "NATS_SERVERS": "nats://nats_utility:4222"
+      },
+      "depends_on": ["code_generator"]
+    },
+    "predictive_health_monitor": {
+      "source_file": "/workspace/docker/utility_cpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.predictive_health_monitor"],
+      "ports": [],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_utility:6379/0",
+        "NATS_SERVERS": "nats://nats_utility:4222"
+      },
+      "depends_on": ["code_generator"]
+    },
+    "translation_service": {
+      "source_file": "/workspace/docker/utility_cpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.translation_service"],
+      "ports": ["5597:5597", "6597:6597"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_utility:6379/0",
+        "NATS_SERVERS": "nats://nats_utility:4222",
+        "TRANSLATION_ZMQ_PORT": "5597",
+        "TRANSLATION_PUB_PORT": "6597"
+      },
+      "depends_on": ["code_generator"]
+    },
+    "smart_home_agent": {
+      "source_file": "/workspace/docker/utility_cpu/docker-compose.yml",
+      "command": ["python", "-m", "main_pc_code.agents.smart_home_agent"],
+      "ports": ["7125:7125", "8125:8125"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_URL": "redis://redis_utility:6379/0",
+        "NATS_SERVERS": "nats://nats_utility:4222",
+        "TAPO_USERNAME": "${TAPO_USERNAME}",
+        "TAPO_PASSWORD": "${TAPO_PASSWORD}",
+        "VOICE_CONTROL": "enabled",
+        "INTELLIGENT_CONTROL": "enabled",
+        "DEVICE_SCAN_INTERVAL": "60",
+        "TAPO_L520_IP": "192.168.100.63",
+        "TAPO_L520_NAME": "Living Room Light",
+        "TAPO_L520_LOCATION": "living_room"
+      },
+      "depends_on": ["code_generator"]
+    },
+    "observability_hub": {
+      "source_file": "/workspace/docker/observability/docker-compose.yml",
+      "command": ["python", "-m", "phase1_implementation.consolidated_agents.observability_hub.backup_observability_hub.observability_hub"],
+      "ports": ["9000:9000"],
+      "environment": {
+        "LOG_LEVEL": "INFO",
+        "REDIS_HOST": "redis_observability",
+        "REDIS_PORT": "6379"
+      },
+      "depends_on": ["redis"]
+    }
+  }
+}

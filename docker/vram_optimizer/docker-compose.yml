@@ -1,0 +1,21 @@
+networks:
+  vram_optimizer_net:
+    driver: bridge
+services:
+  vram_optimizer:
+    build:
+      context: ../..
+      dockerfile: docker/vram_optimizer/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.vram_optimizer_agent
+    container_name: vram_optimizer
+    environment:
+      CUDA_VISIBLE_DEVICES: '0'
+      LOG_LEVEL: INFO
+    image: vram_optimizer:latest
+    networks:
+    - vram_optimizer_net
+    restart: unless-stopped
+version: '3.8'

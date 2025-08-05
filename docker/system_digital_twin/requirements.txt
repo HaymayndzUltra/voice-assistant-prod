@@ -1,0 +1,5 @@
+PyYAML
+prometheus_api_client
+psutil
+pyzmq
+redis

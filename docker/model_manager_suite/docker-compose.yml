@@ -1,0 +1,46 @@
+networks:
+  model_manager_suite_net:
+    driver: bridge
+services:
+  model_manager_suite:
+    build:
+      context: ../..
+      dockerfile: docker/model_manager_suite/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.model_manager_suite
+    - --port
+    - '5570'
+    - --health-port
+    - '6570'
+    container_name: model_manager_suite
+    depends_on:
+    - redis_language
+    - nats_language
+    environment:
+      AGENT_NAME: ModelManagerSuite
+      AGENT_PORT: '5570'
+      HEALTH_PORT: '6570'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_language:4222
+      REDIS_URL: redis://redis_language:6379/0
+      SERVICE_REGISTRY_REDIS_URL: redis://redis_language:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6570/health
+      timeout: 10s
+    image: model_manager_suite:latest
+    networks:
+    - model_manager_suite_net
+    ports:
+    - 5570:5570
+    - 6570:6570
+    restart: unless-stopped
+version: '3.8'

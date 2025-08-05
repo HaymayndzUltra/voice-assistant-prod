@@ -1,0 +1,22 @@
+networks:
+  knowledge_base_net:
+    driver: bridge
+services:
+  knowledge_base:
+    build:
+      context: ../..
+      dockerfile: docker/knowledge_base/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.knowledge_base
+    container_name: knowledge_base
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_memory:4222
+      REDIS_URL: redis://redis_memory:6379/0
+    image: knowledge_base:latest
+    networks:
+    - knowledge_base_net
+    restart: unless-stopped
+version: '3.8'

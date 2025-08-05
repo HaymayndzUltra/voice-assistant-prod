@@ -1,0 +1,22 @@
+networks:
+  session_memory_agent_net:
+    driver: bridge
+services:
+  session_memory_agent:
+    build:
+      context: ../..
+      dockerfile: docker/session_memory_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.session_memory_agent
+    container_name: session_memory_agent
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_memory:4222
+      REDIS_URL: redis://redis_memory:6379/0
+    image: session_memory_agent:latest
+    networks:
+    - session_memory_agent_net
+    restart: unless-stopped
+version: '3.8'

@@ -1,0 +1,39 @@
+networks:
+  emotion_synthesis_agent_net:
+    driver: bridge
+services:
+  emotion_synthesis_agent:
+    build:
+      context: ../..
+      dockerfile: docker/emotion_synthesis_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.emotion_synthesis_agent
+    container_name: emotion_synthesis_agent
+    environment:
+      AGENT_NAME: EmotionSynthesisAgent
+      AGENT_PORT: '5592'
+      HEALTH_PORT: '6592'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_language:4222
+      REDIS_URL: redis://redis_language:6379/0
+      SERVICE_REGISTRY_REDIS_URL: redis://redis_language:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6592/health
+      timeout: 10s
+    image: emotion_synthesis_agent:latest
+    networks:
+    - emotion_synthesis_agent_net
+    ports:
+    - 5592:5592
+    - 6592:6592
+    restart: unless-stopped
+version: '3.8'

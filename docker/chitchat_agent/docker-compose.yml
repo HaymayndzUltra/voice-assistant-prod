@@ -1,0 +1,39 @@
+networks:
+  chitchat_agent_net:
+    driver: bridge
+services:
+  chitchat_agent:
+    build:
+      context: ../..
+      dockerfile: docker/chitchat_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.chitchat_agent
+    container_name: chitchat_agent
+    environment:
+      AGENT_NAME: ChitchatAgent
+      AGENT_PORT: '5588'
+      HEALTH_PORT: '6588'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_language:4222
+      REDIS_URL: redis://redis_language:6379/0
+      SERVICE_REGISTRY_REDIS_URL: redis://redis_language:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6588/health
+      timeout: 10s
+    image: chitchat_agent:latest
+    networks:
+    - chitchat_agent_net
+    ports:
+    - 5588:5588
+    - 6588:6588
+    restart: unless-stopped
+version: '3.8'

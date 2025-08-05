@@ -1,0 +1,22 @@
+networks:
+  human_awareness_net:
+    driver: bridge
+services:
+  human_awareness:
+    build:
+      context: ../..
+      dockerfile: docker/human_awareness/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.human_awareness_agent
+    container_name: human_awareness
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_emotion:4222
+      REDIS_URL: redis://redis_emotion:6379/0
+    image: human_awareness:latest
+    networks:
+    - human_awareness_net
+    restart: unless-stopped
+version: '3.8'

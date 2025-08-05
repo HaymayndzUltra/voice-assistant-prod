@@ -1,0 +1,37 @@
+networks:
+  fused_audio_preprocessor_net:
+    driver: bridge
+services:
+  fused_audio_preprocessor:
+    build:
+      context: ../..
+      dockerfile: docker/fused_audio_preprocessor/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.fused_audio_preprocessor
+    container_name: fused_audio_preprocessor
+    environment:
+      AGENT_NAME: FusedAudioPreprocessor
+      AGENT_PORT: '5554'
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_speech:4222
+      REDIS_URL: redis://redis_speech:6379
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:6554/health
+      timeout: 10s
+    image: fused_audio_preprocessor:latest
+    networks:
+    - fused_audio_preprocessor_net
+    ports:
+    - 5554:5554
+    - 6554:6554
+    restart: unless-stopped
+version: '3.8'

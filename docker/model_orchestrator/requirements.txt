@@ -1,0 +1,4 @@
+numpy
+psutil
+remote_api_adapter
+sentence_transformers

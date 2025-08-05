@@ -1,0 +1,22 @@
+networks:
+  predictive_health_monitor_net:
+    driver: bridge
+services:
+  predictive_health_monitor:
+    build:
+      context: ../..
+      dockerfile: docker/predictive_health_monitor/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.predictive_health_monitor
+    container_name: predictive_health_monitor
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_utility:4222
+      REDIS_URL: redis://redis_utility:6379/0
+    image: predictive_health_monitor:latest
+    networks:
+    - predictive_health_monitor_net
+    restart: unless-stopped
+version: '3.8'

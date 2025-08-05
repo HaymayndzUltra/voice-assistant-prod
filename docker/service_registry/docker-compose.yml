@@ -1,0 +1,39 @@
+networks:
+  service_registry_net:
+    driver: bridge
+services:
+  service_registry:
+    build:
+      context: ../..
+      dockerfile: docker/service_registry/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.service_registry_agent
+    container_name: service_registry
+    depends_on:
+    - redis
+    - nats
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats:4222
+      PYTHONPATH: /app
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 40s
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:7200/health
+      timeout: 10s
+    image: service_registry:latest
+    networks:
+    - service_registry_net
+    ports:
+    - 7200:7200
+    - 8200:8200
+    restart: unless-stopped
+version: '3.8'

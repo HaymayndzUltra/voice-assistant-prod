@@ -1,0 +1,22 @@
+networks:
+  empathy_agent_net:
+    driver: bridge
+services:
+  empathy_agent:
+    build:
+      context: ../..
+      dockerfile: docker/empathy_agent/Dockerfile
+    command:
+    - python
+    - -m
+    - main_pc_code.agents.EmpathyAgent
+    container_name: empathy_agent
+    environment:
+      LOG_LEVEL: INFO
+      NATS_SERVERS: nats://nats_emotion:4222
+      REDIS_URL: redis://redis_emotion:6379/0
+    image: empathy_agent:latest
+    networks:
+    - empathy_agent_net
+    restart: unless-stopped
+version: '3.8'
