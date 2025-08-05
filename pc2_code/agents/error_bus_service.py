@@ -55,14 +55,14 @@ logging.basicConfig(
 logger = logging.getLogger("ErrorBus")
 
 class ErrorBusService(BaseAgent):
-    
-    # Parse agent arguments
-    _agent_args = parse_agent_args()"""
-    Error Bus Service
+    """Error Bus Service
     
     A centralized error bus for the distributed AI system.
     Uses ZeroMQ PUB/SUB pattern to decouple error reporting from error processing.
     """
+
+    # Parse agent arguments (command-line override support)
+    _agent_args = parse_agent_args()
     
     def __init__(self, port: int = 7150, **kwargs):
         super().__init__(name="ErrorBus", port=port, **kwargs)
