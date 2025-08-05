@@ -12,12 +12,11 @@ from datetime import datetime
 from collections import deque
 from typing import Dict, Any, Optional
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
-
-
-# Import path utilities
+# Canonical imports according to PC-2 hardening plan
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_env, get_current_machine
 from common.utils.path_manager import PathManager
-# Import error publisher factory for centralized error handling
 from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
+from common.utils.log_setup import configure_logging
 # Try to import torch for GPU monitoring
 try:
     import torch
@@ -33,7 +32,8 @@ from pc2_code.agents.utils.config_loader import Config
 
 # Load configuration at the module level
 config = Config().get_config()
-logger = logging.getLogger(__name__)
+# Use canonical logging
+logger = configure_logging(__name__, log_to_file=True)
 
 class ResourceManager(BaseAgent):
     """

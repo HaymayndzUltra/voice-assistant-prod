@@ -19,6 +19,8 @@ from pc2_code.utils.pc2_error_publisher import create_pc2_error_publisher
 
 # Load configuration at the module level
 config = Config().get_config()
+# Setup canonical logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Load network configuration
 def load_network_config():

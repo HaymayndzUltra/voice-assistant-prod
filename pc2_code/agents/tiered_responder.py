@@ -16,6 +16,7 @@ from datetime import datetime
 import asyncio
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
 from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
+from common.utils.log_setup import configure_logging
 
 
 # ✅ MODERNIZED: Path management using standardized PathManager
@@ -50,7 +51,7 @@ MAX_RESPONSE_TIME = {
 # Setup logging directory
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
-logger = logging.getLogger("TieredResponder")
+logger = configure_logging(__name__, log_to_file=True)
 
 class ResourceManager:
     """
@@ -201,7 +202,7 @@ class TieredResponder(BaseAgent):
     def _setup_logging(self):
         """Setup logging - TODO 1/3 compliance: use configure_logging instead of basicConfig"""
         # logging.basicConfig removed per canonical import requirements
-        self.logger = logging.getLogger('TieredResponder')
+        self.logger = configure_logging(__name__, log_to_file=True)
 
     def _setup_health_monitoring(self):
         """Setup health monitoring thread"""
