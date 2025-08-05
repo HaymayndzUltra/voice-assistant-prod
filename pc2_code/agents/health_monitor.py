@@ -8,17 +8,15 @@ import sys
 import os
 from datetime import datetime
 from typing import Dict, Any, Optional
+# Project-specific helpers
 from common.config_manager import get_service_ip, get_service_url, get_redis_url
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip
 
-
-# Import path manager for containerization-friendly paths
-import sys
-import os
-sys.path.insert(0, os.path.abspath(PathManager.join_path("pc2_code", "..")))
+# Ensure project root in path for relative imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from common.utils.path_manager import PathManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-logging.basicConfig
+# Configure logging format if not already configured elsewhere
+logging.basicConfig(level=logging.INFO)
 from common.core.base_agent import BaseAgent
 from pc2_code.agents.utils.config_loader import Config
 
@@ -77,7 +75,6 @@ class HealthMonitorAgent(BaseAgent):
         self._init_thread.start()
         logger.info(f"HealthMonitorAgent starting on port {port} (health: {health_port})")
 
-    
 
         self.error_bus_port = 7150
 
@@ -88,7 +85,9 @@ class HealthMonitorAgent(BaseAgent):
         self.error_bus_pub = self.context.socket(zmq.PUB)
 
         self.error_bus_pub.connect(self.error_bus_endpoint)
-def _setup_sockets(self):
+
+
+    def _setup_sockets(self):
         try:
             self.socket = self.context.socket(zmq.REP)
             self.socket.bind(f"tcp://*:{self.port}")
@@ -219,7 +218,6 @@ if __name__ == "__main__":
         import traceback
 
 # Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
         print(f"An unexpected error occurred in {agent.name if agent else 'agent'} on PC2: {e}")
         traceback.print_exc()
     finally:
