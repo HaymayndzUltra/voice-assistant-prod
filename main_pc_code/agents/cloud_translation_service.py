@@ -28,12 +28,9 @@ Features:
 - Language detection and validation
 """
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("CloudTranslationService")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Translation cache for frequent requests
 class TranslationCache:

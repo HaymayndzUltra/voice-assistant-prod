@@ -15,10 +15,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import sys
 import os
 from pathlib import Path
@@ -30,6 +27,7 @@ from common.core.base_agent import BaseAgent
 
 import time
 import logging
+from common.utils.log_setup import configure_logging
 import threading
 from common.pools.zmq_pool import get_req_socket, get_sub_socket
 import yaml
@@ -61,15 +59,7 @@ except ImportError as e:
     logger.warning(f"Failed to import audio processing libraries: {e}")
 
 # Configure logging for tone detector
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "tone_detector.log"))),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("ToneDetector")
+logger = configure_logging(__name__, log_to_file=True)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, 

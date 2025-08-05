@@ -8,12 +8,9 @@ Code Generator Agent
 """
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import sys
 from pathlib import Path
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import time
 import zmq
@@ -31,7 +28,7 @@ import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.utils.env_loader import get_env
@@ -41,18 +38,9 @@ from common.env_helpers import get_env
 # Parse command line arguments
 config = load_unified_config(str(Path(PathManager.get_project_root()) / "main_pc_code" / "config" / "startup_config.yaml"))
 
-# Configure logging
-log_file = PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "code_generator_agent.log")
-log_file.parent.mkdir(exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("CodeGeneratorAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 MODEL_IDLE_TIMEOUT = 600  # seconds
 model_last_used = {}

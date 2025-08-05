@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 # Add the parent directory to sys.path to import the config module
 # from main_pc_code.config.system_config import CONFIG as SYS_CONFIG
 from common.env_helpers import get_env
@@ -47,9 +47,7 @@ import os
 from pathlib import Path
 MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
 
-# Ensure the main_pc_code directory is in sys.path
-if str(Path(MAIN_PC_CODE_DIR)) not in sys.path:
-    sys.path.insert(0, str(Path(MAIN_PC_CODE_DIR)))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -76,15 +74,9 @@ except FileNotFoundError:
     }
     print("Warning: face_recognition_config.json not found, using defaults")
 
-LOG_PATH = str(PathManager.get_logs_dir() / "face_recognition_agent.log")
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Define ZMQ_PORT from system configuration
 ZMQ_PORT = 5560  # Fallback port since SYS_CONFIG is commented out

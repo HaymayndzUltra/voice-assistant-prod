@@ -21,10 +21,7 @@ import sys
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-# --- Path Setup ---
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# --- Path Setup (sys.path.insert removed for Docker environment) ---
 
 # --- Standardized Imports ---
 from common.core.base_agent import BaseAgent
@@ -665,15 +662,9 @@ class GoalManager(BaseAgent):
         super().cleanup()
 
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "goal_manager.log"))),
-            logging.StreamHandler()
-        ]
-    )
+    # Use canonical logging instead of basicConfig
+    from common.utils.log_setup import configure_logging
+    logger = configure_logging(__name__, log_to_file=True)
     
     try:
         agent = GoalManager()

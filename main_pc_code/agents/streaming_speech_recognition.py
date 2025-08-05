@@ -10,38 +10,42 @@ Features:
 - Multiple language support
 """
 
+from common.pools.zmq_pool import get_req_socket, get_rep_socket, get_pub_socket, get_sub_socket
 import pickle
 import numpy as np
 import time
 import threading
 import logging
 import os
+import tempfile
+import wave
+import orjson
 import json  # Fallback for compatibility
+from collections import deque
 from datetime import datetime
+import uuid
+import socket
 import sys
 import noisereduce as nr
 from scipy import signal
+from pathlib import Path
 from queue import Queue
 import psutil
 import traceback
 
 # Import with canonical paths
 from common.core.base_agent import BaseAgent
-from common.config_manager import load_unified_config
+from common.config_manager import load_unified_config, get_service_ip, get_service_url, get_redis_url
 from common.utils.path_manager import PathManager
 from main_pc_code.utils.service_discovery_client import discover_service, register_service
+from common.env_helpers import get_env
 
 # Parse agent arguments at module level with canonical import
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ])
-logger = logging.getLogger("StreamingSpeechRecognition")
+# Use canonical logging instead of basicConfig
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Check for secure ZMQ configuration
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -572,7 +576,7 @@ class StreamingSpeechRecognition(BaseAgent):
                         
                         # Extract audio chunk
                         audio_chunk = data.get('audio_chunk')
-                        data.get('sample_rate', SAMPLE_RATE)
+                        sample_rate = data.get('sample_rate', SAMPLE_RATE)
                         
                         # Check for empty audio
                         if audio_chunk is None or len(audio_chunk) == 0:

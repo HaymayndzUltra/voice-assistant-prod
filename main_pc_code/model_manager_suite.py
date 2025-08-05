@@ -238,7 +238,7 @@ def get_main_pc_code():
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 from common.core.base_agent import BaseAgent
 from common.utils.data_models import ErrorSeverity
 
@@ -252,18 +252,9 @@ except ImportError as e:
     LLAMA_CPP_AVAILABLE = False
     print(f"WARNING: llama-cpp-python not available. GGUF models will not work. Error: {e}")
 
-# Configure logging
-log_dir = 'logs'
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "model_manager_suite.log"))),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger("ModelManagerSuite")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Load configuration
 # config = load_config()

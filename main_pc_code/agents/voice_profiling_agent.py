@@ -8,6 +8,7 @@ import os
 import json
 import numpy as np
 import logging
+from common.utils.log_setup import configure_logging
 import time
 import psutil
 from datetime import datetime
@@ -22,16 +23,11 @@ import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
-
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('VoiceProfilingAgent')
+logger = configure_logging(__name__, log_to_file=True)
 
 class VoiceProfilingAgent(BaseAgent):
     def __init__(self):

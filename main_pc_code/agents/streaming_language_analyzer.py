@@ -6,6 +6,7 @@ Analyzes real-time transcriptions for language (English, Tagalog, Taglish)
 
 import pickle
 import logging
+from common.utils.log_setup import configure_logging
 import re
 import time
 import json

@@ -4,12 +4,9 @@ Tracks and analyzes user mood over time based on emotional state updates
 """
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import sys
 import os
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
 
 import sys
 import os
@@ -25,16 +22,9 @@ from common.core.base_agent import BaseAgent
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "mood_tracker.log")),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 class MoodTrackerAgent(BaseAgent):
     def __init__(self):

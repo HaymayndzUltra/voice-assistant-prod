@@ -25,9 +25,7 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # --- Path Setup ---
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 # --- Imports from Project ---
 from common.core.base_agent import BaseAgent
@@ -93,17 +91,8 @@ class AgentResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now, description="When the response was created")
 
 # --- Logging Setup ---
-log_dir = 'logs'
-os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, str(PathManager.get_logs_dir() / "request_coordinator.log"))),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger('RequestCoordinator')
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # --- Constants with Port Registry Integration ---
 # Port registry removed - using environment variables with startup_config.yaml defaults

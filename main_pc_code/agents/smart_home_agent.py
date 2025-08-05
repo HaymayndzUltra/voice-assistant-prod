@@ -7,6 +7,7 @@ Integrates with hybrid API manager for voice control
 import asyncio
 import json
 import logging
+from common.utils.log_setup import configure_logging
 import os
 import sys
 import time
@@ -19,8 +20,7 @@ from typing import Dict, List, Any, Optional
 import os
 from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 from common.core.base_agent import BaseAgent
 from common.hybrid_api_manager import api_manager
 

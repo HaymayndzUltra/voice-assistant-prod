@@ -8,11 +8,8 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 
-sys.path.insert(0, str(PathManager.get_project_root()))
-# Add the project's main_pc_code directory to the Python path
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 import os
 from common.pools.zmq_pool import get_rep_socket
@@ -26,16 +23,9 @@ from datetime import datetime
 from typing import Dict, Any
 from common.core.base_agent import BaseAgent
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / str(PathManager.get_logs_dir() / "emotion_engine.log"))),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('EmotionEngine')
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 class EmotionEngine(BaseAgent):
     def __init__(self, config=None, **kwargs):
@@ -54,10 +44,8 @@ class EmotionEngine(BaseAgent):
         # Call BaseAgent's __init__ with proper parameters
         super().__init__(name=agent_name, port=agent_port)
         
-        # Project root setup
+        # Project root setup (sys.path.insert removed for Docker environment)
         self.project_root = os.environ.get("PROJECT_ROOT", os.path.dirname(os.path.abspath(__file__)))
-        if self.project_root not in sys.path:
-            sys.path.insert(0, self.project_root)
         
         # Save core parameters
         self.port = agent_port

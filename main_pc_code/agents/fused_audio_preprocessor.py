@@ -10,19 +10,14 @@ Optimized audio preprocessing agent that combines noise reduction and voice acti
 """
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-from pathlib import Path
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 import zmq
 import pickle
 import numpy as np
 import time
 import logging
+from common.utils.log_setup import configure_logging
 import os
 import sys
 import json
@@ -43,21 +38,12 @@ import sys
 import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
-
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 # Load configuration at module level
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(PathManager.get_logs_dir() / "fused_audio_preprocessor.log")),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = configure_logging(__name__, log_to_file=True)
 
 # Check for secure ZMQ configuration
 SECURE_ZMQ = os.environ.get("SECURE_ZMQ", "0") == "1"
@@ -943,8 +929,7 @@ class FusedAudioPreprocessor(BaseAgent):
 # -------------------- Agent Entrypoint --------------------
 if __name__ == "__main__":
     # Configure basic logging
-    logging.basicConfig(level=logging.INFO)
-    
+    logger = configure_logging(__name__, log_to_file=True)
     # Standardized main execution block
     agent = None
     try:

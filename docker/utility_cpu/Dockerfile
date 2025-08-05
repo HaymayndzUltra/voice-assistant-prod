@@ -42,9 +42,9 @@ ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
 ENV LOG_LEVEL=INFO
 
-# Health check
+# Health check for utility CPU services
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)"
+    CMD python -c "import zmq; c = zmq.Context(); s = c.socket(zmq.REQ); s.connect('tcp://localhost:5591'); s.send_string('ping'); s.recv_string(); s.close(); c.term()" || exit 1
 
 # Default entrypoint - CodeGenerator agent
 CMD ["python", "-m", "main_pc_code.agents.code_generator_agent"]

@@ -6,9 +6,7 @@ from common.utils.path_manager import PathManager
 import sys
 import os
 from pathlib import Path
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if MAIN_PC_CODE_DIR not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 VRAM Optimizer Agent
 Handles VRAM monitoring, optimization, and model management
@@ -37,17 +35,19 @@ import os
 from pathlib import Path
 from common.utils.path_manager import PathManager
 
-sys.path.insert(0, str(PathManager.get_project_root()))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from common_utils.error_handling import SafeExecutor
+# Standardized environment variables (Blueprint.md Step 4)
+from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
 
 # Parse agent arguments
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("VRAMOptimizerAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 class VramOptimizerAgent(BaseAgent):
     def __init__(self, port: int = None, name: str = None, **kwargs):
@@ -1230,9 +1230,6 @@ class VramOptimizerAgent(BaseAgent):
                 # Register with SystemDigitalTwin
         try:
             from main_pc_code.utils.service_discovery_client import register_service
-
-# Standardized environment variables (Blueprint.md Step 4)
-from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current_machine, get_env
             register_service(
                 name="VRAMOptimizerAgent",
                 location="MainPC",

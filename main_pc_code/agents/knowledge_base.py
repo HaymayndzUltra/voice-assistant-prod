@@ -29,9 +29,7 @@ from common.utils.env_standardizer import get_mainpc_ip, get_pc2_ip, get_current
 # Configuration & Logging
 # -----------------------------------------------------------------------------
 
-MAIN_PC_CODE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'main_pc_code'))
-if MAIN_PC_CODE_DIR not in sys.path:
-    sys.path.insert(0, MAIN_PC_CODE_DIR)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_pc_code", "config", "startup_config.yaml"))
 
@@ -44,13 +42,9 @@ ERROR_BUS_HOST = os.environ.get("ERROR_BUS_HOST", get_pc2_ip())
 ERROR_BUS_PORT = int(os.environ.get("ERROR_BUS_PORT", 7150))
 ERROR_BUS_ENDPOINT = f"tcp://{ERROR_BUS_HOST}:{ERROR_BUS_PORT}"
 
-# Logging (Rule 7)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logger = logging.getLogger("KnowledgeBase")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # -----------------------------------------------------------------------------
 # Agent Definition

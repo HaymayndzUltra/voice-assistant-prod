@@ -11,9 +11,10 @@ psutil==5.9.8
 requests==2.32.4
 nats-py==2.6.0
 
-# Machine Learning and Training
-torch==2.2.2
+# Machine Learning and Training  
+torch==2.1.0+cu121
 torchvision==0.17.2
+tensorflow==2.15.0
 transformers==4.39.3
 datasets==2.19.0
 accelerate==0.29.3

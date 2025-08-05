@@ -4,17 +4,11 @@ Monitors and analyzes human presence and behavior
 """
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-import sys
-import os
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-
-# Ensure the main_pc_code directory is in sys.path  
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 import time
 import logging
+from common.utils.log_setup import configure_logging
 import threading
 import json
 import os
@@ -30,9 +24,7 @@ import os
 import sys
 from common.utils.path_manager import PathManager
 
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config

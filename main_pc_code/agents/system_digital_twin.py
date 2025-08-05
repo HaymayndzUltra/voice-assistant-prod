@@ -44,20 +44,9 @@ from common.pools.redis_pool import get_redis_client_sync
 from common_utils.port_registry import get_port
 from common.utils.env_standardizer import get_pc2_ip
 
-# Configure logging
-project_root = Path(PathManager.get_project_root())
-logs_dir = project_root / "logs"
-logs_dir.mkdir(exist_ok=True)
-log_file_path = logs_dir / str(PathManager.get_logs_dir() / "system_digital_twin.log")
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file_path)
-    ]
-)
-logger = logging.getLogger("SystemDigitalTwinAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # Load configuration at module level
 # Port registry removed - using startup_config.yaml as single source of truth

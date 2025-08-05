@@ -11,9 +11,7 @@ Extends the custom command handler with advanced features:
 from common.utils.path_manager import PathManager
 import sys
 import os
-MAIN_PC_CODE_DIR = PathManager.get_main_pc_code()
-if str(MAIN_PC_CODE_DIR) not in sys.path:
-    sys.path.insert(0, str(MAIN_PC_CODE_DIR))
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 import json
 import logging
 import time
@@ -27,8 +25,9 @@ from common.core.base_agent import BaseAgent
 from main_pc_code.agents.needtoverify.custom_command_handler import CustomCommandHandler
 from common.config_manager import load_unified_config
 config = load_unified_config(os.path.join(PathManager.get_project_root(), 'main_pc_code', 'config', 'startup_config.yaml'))
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('AdvancedCommandHandler')
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 ZMQ_EXECUTOR_PORT = 6001
 ZMQ_COORDINATOR_PORT = 5590
 ZMQ_REQUEST_TIMEOUT = 5000

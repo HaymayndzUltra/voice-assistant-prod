@@ -7,10 +7,7 @@ import sys
 import os
 from common.utils.path_manager import PathManager
 
-# Add the project's main_pc_code directory to the Python path
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 # Path setup completed above
 
 """
@@ -27,10 +24,6 @@ import json
 import time
 import logging
 import sys
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-logger.info(f"[{__name__}] Initial sys.path: {sys.path}")
 import os
 import threading
 import queue
@@ -46,19 +39,9 @@ config = load_unified_config(os.path.join(PathManager.get_project_root(), "main_
 
 # Add the parent directory to sys.path
 
-# Configure logging
-log_dir = PathManager.get_logs_dir()
-os.makedirs(log_dir, exist_ok=True)
-log_file = log_dir / str(PathManager.get_logs_dir() / "streaming_tts_agent.log")
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file)
-    ]
-)
-logger = logging.getLogger("UltimateTTSAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # ZMQ Configuration
 SAMPLE_RATE = int(config.get("sample_rate", 24000))

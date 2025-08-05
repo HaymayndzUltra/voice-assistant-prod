@@ -15,7 +15,7 @@ colorlog==6.9.0
 
 # ML and reasoning dependencies
 scikit-learn==1.4.2
-torch==2.2.2
+torch==2.1.0+cu121
 transformers==4.39.3
 datasets==2.19.0
 accelerate==0.29.3

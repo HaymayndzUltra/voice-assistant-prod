@@ -28,28 +28,15 @@ from common.utils.path_manager import PathManager
 # Import path manager for containerization-friendly paths
 import sys
 import os
-project_root = str(PathManager.get_project_root())
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Removed sys.path.insert - rely on PYTHONPATH=/app in Docker environment
 
 from common.core.base_agent import BaseAgent
 from common.config_manager import load_unified_config
 from main_pc_code.agents.memory_client import MemoryClient
 
-# Ensure logs directory exists
-logs_dir = PathManager.get_logs_dir()
-logs_dir.mkdir(parents=True, exist_ok=True)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(str(logs_dir / str(PathManager.get_logs_dir() / "session_memory_agent.log"))),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("SessionMemoryAgent")
+# Configure logging using canonical approach
+from common.utils.log_setup import configure_logging
+logger = configure_logging(__name__, log_to_file=True)
 
 # ZMQ Configuration
 ZMQ_MEMORY_PORT = 5574  # Port for session memory requests
