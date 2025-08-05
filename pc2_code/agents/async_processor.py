@@ -285,7 +285,7 @@ class AsyncProcessor(BaseAgent):
                     time.sleep(HEALTH_CHECK_INTERVAL)
                 except Exception as e:
                     self.logger.error(f"Health monitoring error: {str(e)}")
-                    self.report_error("health_monitoring_error", str(e)
+                    self.report_error("health_monitoring_error", str(e))
                     time.sleep(5)
                     
         thread = threading.Thread(target=monitor_health, daemon=True)
@@ -300,11 +300,11 @@ class AsyncProcessor(BaseAgent):
             
             try:
                 # Start the async processor task
-                self.processor_task = self.event_loop.create_task(self._async_process_loop()
+                self.processor_task = self.event_loop.create_task(self._async_process_loop())
                 self.event_loop.run_until_complete(self.processor_task)
             except Exception as e:
                 self.logger.error(f"Async processor error: {str(e)}")
-                self.report_error("async_processor_error", str(e)
+                self.report_error("async_processor_error", str(e))
             finally:
                 self.event_loop.close()
                     
@@ -345,7 +345,7 @@ class AsyncProcessor(BaseAgent):
                 
             except Exception as e:
                 self.logger.error(f"Error in async process loop: {str(e)}")
-                self.report_error("async_loop_error", str(e)
+                self.report_error("async_loop_error", str(e))
                 await asyncio.sleep(1)
     
     async def _process_queued_tasks(self):
@@ -375,7 +375,7 @@ class AsyncProcessor(BaseAgent):
                 
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
-                self.report_error("task_processing_error", str(e)
+                self.report_error("task_processing_error", str(e))
                 
             # Update task statistics
             duration = time.time() - start_time
@@ -401,7 +401,7 @@ class AsyncProcessor(BaseAgent):
                 })
             except Exception as e:
                 self.logger.error(f"Task processing error: {str(e)}")
-                self.report_error("task_processing_error", str(e)
+                self.report_error("task_processing_error", str(e))
                 success = False
                 
                 # Send error response
@@ -521,7 +521,7 @@ class AsyncProcessor(BaseAgent):
             self.pull_socket.send_json(health_status)
         except Exception as e:
             self.logger.error(f"Error handling health check: {str(e)}")
-            self.report_error("health_check_error", str(e)
+            self.report_error("health_check_error", str(e))
             error_response = {
                 'status': 'error',
                 'error': str(e),
@@ -691,7 +691,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

@@ -25,9 +25,8 @@ from pathlib import Path
 from common.utils.path_manager import PathManager
 
 # Add project root to path using PathManager
-PROJECT_ROOT = PathManager.get_project_root()
-if str(PROJECT_ROOT) not in sys.path:
-    
+# PROJECT_ROOT = PathManager.get_project_root() - TODO 1 compliance: remove sys.path hacks
+# if str(PROJECT_ROOT) not in sys.path: - removed per canonical import requirements
 
 from common.core.base_agent import BaseAgent
 from pc2_code.utils.config_loader import load_config, parse_agent_args
@@ -200,15 +199,10 @@ class TieredResponder(BaseAgent):
         ]
         
     def _setup_logging(self):
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_DIR / str(PathManager.get_logs_dir() / "tiered_responder.log"),
-                logging.StreamHandler()
-            ]
-        )
+        """Setup logging - TODO 1/3 compliance: use configure_logging instead of basicConfig"""
+        # logging.basicConfig removed per canonical import requirements
         self.logger = logging.getLogger('TieredResponder')
-        
+
     def _setup_health_monitoring(self):
         """Setup health monitoring thread"""
         def monitor_health():
@@ -273,11 +267,11 @@ class TieredResponder(BaseAgent):
         # Check instant response patterns first
         for tier in self.tiers:
             if any(pattern in text for pattern in tier['patterns']):
-                asyncio.run(tier['handler'](query, tier['name'])
+                asyncio.run(tier['handler'](query, tier['name']))
                 return
         
         # If no pattern matches, default to deep analysis
-        asyncio.run(self._handle_deep_response(query, 'deep')
+        asyncio.run(self._handle_deep_response(query, 'deep'))
 
     async def _handle_instant_response(self, query: Dict[str, Any], tier_name: str):
         """Handle instant response queries"""
@@ -482,7 +476,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 if __name__ == "__main__":

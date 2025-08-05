@@ -18,7 +18,10 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project
+# Copy agent source code
+COPY pc2_code /app/pc2_code
+
+# Copy the rest of the project
 COPY . .
 
 # Set environment variables

@@ -23,7 +23,7 @@ config = Config().get_config()
 # Load network configuration
 def load_network_config():
     """Load the network configuration from the central YAML file."""
-    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml"
+    config_path = Path(PathManager.get_project_root() / "config" / "network_config.yaml")
     try:
         with open(config_path, "r") as f:
             return yaml.safe_load(f)
@@ -42,7 +42,7 @@ network_config = load_network_config()
 
 # Get machine IPs from config
 MAIN_PC_IP = get_mainpc_ip()
-PC2_IP = network_config.get("pc2_ip", get_pc2_ip()
+PC2_IP = network_config.get("pc2_ip", get_pc2_ip())
 BIND_ADDRESS = network_config.get("bind_address", "0.0.0.0")
 
 class TaskSchedulerAgent(BaseAgent):
@@ -101,7 +101,7 @@ class TaskSchedulerAgent(BaseAgent):
             raise
         # Socket to communicate with AsyncProcessor
         self.async_socket = self.context.socket(zmq.REQ)
-        self.async_socket.connect(get_zmq_connection_string(self.async_processor_port, "localhost")
+        self.async_socket.connect(get_zmq_connection_string(self.async_processor_port, "localhost"))
 
     def _start_health_check(self):
         def health_check_loop():
